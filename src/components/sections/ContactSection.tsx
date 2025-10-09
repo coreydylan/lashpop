@@ -83,7 +83,3 @@ export function ContactSection() {
     </section>
   )
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d

@@ -65,7 +65,3 @@ export const DotPattern = ({ className = "" }: { className?: string }) => (
     <rect width="100" height="100" fill="url(#dots)" />
   </svg>
 )
-<<<<<<< HEAD
-
-=======
->>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d
