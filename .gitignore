@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 node_modules/
 npm-debug.log*
@@ -11,10 +12,15 @@ build/
 
 # Environment variables
 .env
+=======
+node_modules/
+.next/
+>>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+<<<<<<< HEAD
 
 # IDE
 .vscode/
@@ -80,3 +86,9 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+=======
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+>>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d

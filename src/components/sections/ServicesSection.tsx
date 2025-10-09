@@ -56,7 +56,11 @@ export function ServicesSection() {
   const [hoveredService, setHoveredService] = useState<string | null>(null)
   
   return (
+<<<<<<< HEAD
     <section className="relative pt-0 pb-[var(--space-xl)] bg-gradient-to-b from-transparent via-warm-sand/5 to-cream">
+=======
+    <section className="py-[var(--space-xl)] bg-warm-sand/20">
+>>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d
       <div className="container">
         {/* Section Header */}
         <motion.div

@@ -3,7 +3,11 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import Image from 'next/image'
+<<<<<<< HEAD
 import { SunIcon, CircleDecoration } from '../icons/DesertIcons'
+=======
+import { WaveShape, SunIcon, CircleDecoration } from '../icons/DesertIcons'
+>>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d
 
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -15,6 +19,7 @@ export function HeroSection() {
     <section ref={containerRef} className="relative min-h-screen flex items-center">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
+<<<<<<< HEAD
         {/* Soft gradient background - adjusted to blend better with transition */}
         <div className="absolute inset-0 bg-gradient-to-b from-[rgb(250,247,241)] via-[rgb(235,224,203)] to-[rgb(226,182,166)]" />
         
@@ -22,6 +27,12 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-sage/5" />
         
         {/* Floating circles with enhanced parallax */}
+=======
+        {/* Soft gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[rgb(250,247,241)] via-[rgb(235,224,203)] to-[rgb(188,201,194)]" />
+        
+        {/* Floating circles */}
+>>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d
         <motion.div 
           style={{ y }}
           className="absolute top-10 right-10 w-32 h-32 md:w-48 md:h-48"
@@ -31,11 +42,16 @@ export function HeroSection() {
         
         <motion.div 
           style={{ y: useTransform(scrollY, [0, 500], [0, -100]) }}
+<<<<<<< HEAD
           className="absolute bottom-40 left-10 w-24 h-24 md:w-36 md:h-36"
+=======
+          className="absolute bottom-20 left-10 w-24 h-24 md:w-36 md:h-36"
+>>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d
         >
           <CircleDecoration className="text-sage" />
         </motion.div>
         
+<<<<<<< HEAD
         {/* Additional floating element for smoother transition */}
         <motion.div
           style={{ y: useTransform(scrollY, [0, 500], [0, -60]) }}
@@ -43,6 +59,12 @@ export function HeroSection() {
         >
           <CircleDecoration className="text-golden" />
         </motion.div>
+=======
+        {/* Arch shape at bottom */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <WaveShape className="w-full h-24 md:h-32 text-cream" fill="rgb(250,247,241)" />
+        </div>
+>>>>>>> 88a9f9fc746390e8ce5b05595c419c35f4e6ce6d
       </div>
       
       {/* Main Content */}
