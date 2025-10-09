@@ -56,7 +56,7 @@ export function TestimonialsSection() {
                 ))}
               </div>
               <p className="body-lg text-dune/80 italic mb-4 max-w-2xl mx-auto">
-                "{testimonial.text}"
+                &ldquo;{testimonial.text}&rdquo;
               </p>
               <p className="caption text-dusty-rose">
                 — {testimonial.author}

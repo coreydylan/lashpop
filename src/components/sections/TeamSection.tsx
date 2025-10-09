@@ -72,7 +72,7 @@ export function TeamSection() {
                     className="absolute bottom-0 left-0 right-0 p-6 text-white"
                   >
                     <p className="text-sm italic mb-3 leading-relaxed">
-                      "{member.quote}"
+                      &ldquo;{member.quote}&rdquo;
                     </p>
                     <div className="flex gap-3">
                       <div className="flex items-center gap-1 text-xs">

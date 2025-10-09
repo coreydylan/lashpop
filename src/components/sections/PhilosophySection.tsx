@@ -61,7 +61,7 @@ export function PhilosophySection() {
             The LashPop Difference
           </h2>
           <p className="body-large mt-6 max-w-3xl mx-auto text-[rgb(74,74,74)]">
-            It's not just in how you look—it's in how you feel. Every service is a carefully crafted experience, 
+            It&apos;s not just in how you look—it&apos;s in how you feel. Every service is a carefully crafted experience,
             designed to honor your natural beauty while giving you that extra something that makes mirrors irresistible.
           </p>
         </motion.div>
@@ -152,3 +152,4 @@ export function PhilosophySection() {
     </motion.section>
   )
 }
+

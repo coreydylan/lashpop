@@ -82,7 +82,7 @@ export function AboutSection() {
                 <span className="block italic text-dusty-rose">mindful beauty</span>
               </h2>
               <p className="body-lg text-dune/70 mb-4">
-                Founded in 2016, LashPop Studios has become Oceanside's premier destination 
+                Founded in 2016, LashPop Studios has become Oceanside&apos;s premier destination
                 for lash artistry. We believe beauty should feel as good as it looks.
               </p>
               <p className="body text-dune/60">
@@ -159,3 +159,4 @@ export function AboutSection() {
     </section>
   )
 }
+
