@@ -9,9 +9,9 @@ const services = [
   {
     id: 'classic',
     icon: <MoonIcon className="w-8 h-8" />,
-    title: 'Classic',
-    subtitle: 'Natural enhancement',
-    description: 'One extension per natural lash for a subtle, elegant look.',
+    title: 'Classic Eyelash Extensions',
+    subtitle: 'The most natural look',
+    description: 'Your lash stylist will apply one individual extension to each of your natural eyelashes, determining the perfect length, shape, and curl for your eyes.',
     duration: '90 min',
     price: '$120+',
     image: '/lashpop-images/services/classic-lash.png',
@@ -20,10 +20,10 @@ const services = [
   {
     id: 'hybrid',
     icon: <StarIcon className="w-8 h-8" />,
-    title: 'Hybrid',
-    subtitle: 'Perfect balance',
-    description: 'A blend of classic and volume for natural fullness.',
-    duration: '120 min', 
+    title: 'Hybrid Eyelash Extensions',
+    subtitle: 'A medium-full, textured look',
+    description: 'Your lash stylist will apply a 50/50 blend of classic and volume lash extensions to each of your natural eyelashes, determining the perfect length, shape, and curl for your eyes.',
+    duration: '120 min',
     price: '$150+',
     image: '/lashpop-images/services/hybrid-lash.png',
     color: 'dusty-rose'
@@ -31,9 +31,9 @@ const services = [
   {
     id: 'volume',
     icon: <SunIcon className="w-8 h-8" />,
-    title: 'Volume',
-    subtitle: 'Full glamour',
-    description: 'Multiple fine extensions per lash for dramatic impact.',
+    title: 'Volume Eyelash Extensions',
+    subtitle: 'The most full and fluffy look',
+    description: 'Your lash stylist will apply a volume extension (consists of multiple lightweight extensions in the form of a fan) to each of your natural eyelashes, determining the perfect length, shape, and curl for your eyes.',
     duration: '150 min',
     price: '$180+',
     image: '/lashpop-images/services/volume-lash.png',
@@ -42,9 +42,9 @@ const services = [
   {
     id: 'lift',
     icon: <WaveIcon className="w-8 h-8" />,
-    title: 'Lash Lift',
-    subtitle: 'Natural curl',
-    description: 'Semi-permanent curl and tint for your natural lashes.',
+    title: 'Lash Lift + Tint',
+    subtitle: 'Your lashes, but better',
+    description: 'Picture your natural lashes elegantly transformed as your lash stylist uses a perming solution to curl them, creating a stunning lifted look lasting 6-8 weeks. This service is recommended with and best complemented by a lash tint.',
     duration: '45 min',
     price: '$85+',
     image: '/lashpop-images/services/lash-lift.png',
@@ -66,9 +66,9 @@ export function ServicesSection() {
           transition={{ duration: 0.8 }}
           className="text-center mb-[var(--space-lg)]"
         >
-          <span className="caption text-terracotta">Our Services</span>
+          <span className="caption text-terracotta">What We Offer</span>
           <h2 className="h2 text-dune mt-2">
-            Artistry tailored to you
+            Our Services
           </h2>
         </motion.div>
         
@@ -151,10 +151,10 @@ export function ServicesSection() {
           className="text-center mt-[var(--space-lg)]"
         >
           <p className="body-lg text-dune/70 mb-6">
-            Not sure which service is right for you?
+            Ready to enhance your natural beauty?
           </p>
           <button className="btn btn-primary">
-            Book a Consultation
+            Learn More
           </button>
         </motion.div>
       </div>

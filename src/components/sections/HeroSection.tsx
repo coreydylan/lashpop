@@ -10,7 +10,7 @@ export function HeroSection() {
   const { scrollY } = useScroll()
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
-  
+
   return (
     <section ref={containerRef} className="relative min-h-screen flex items-center">
       {/* Background Elements */}
@@ -46,7 +46,7 @@ export function HeroSection() {
       </div>
       
       {/* Main Content */}
-      <motion.div 
+      <motion.div
         style={{ opacity }}
         className="relative z-10 container-wide"
       >
@@ -70,27 +70,26 @@ export function HeroSection() {
             </motion.div>
             
             {/* Main heading */}
-            <motion.h1 
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
               className="h1 text-dune"
             >
-              Where natural beauty
+              Welcome to LashPop Studios
               <span className="block text-dusty-rose italic">
-                meets artistry
+                Effortless Beauty for the Modern Woman
               </span>
             </motion.h1>
-            
+
             {/* Description */}
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
               className="body-lg text-dune/80 max-w-md"
             >
-              A sanctuary for lash artistry where each appointment becomes 
-              a moment of tranquil transformation.
+              A collective of women-owned beauty businesses
             </motion.p>
             
             {/* CTA Buttons */}
@@ -101,10 +100,10 @@ export function HeroSection() {
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <button className="btn btn-primary">
-                Book Appointment
+                Book Now
               </button>
               <button className="btn btn-secondary">
-                View Services
+                Meet Our Team
               </button>
             </motion.div>
             
@@ -141,7 +140,7 @@ export function HeroSection() {
                   src="/lashpop-images/studio/studio-photos-by-salome.jpg"
                   alt="LashPop Studio Interior"
                   fill
-                  className="object-cover"
+                  className="object-cover object-right"
                   priority
                   quality={85}
                 />

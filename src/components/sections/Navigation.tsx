@@ -41,9 +41,17 @@ export function Navigation() {
             <Link href="/" className="relative">
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-2"
+                className="flex items-center"
               >
-                <span className="text-xl font-light tracking-widest text-dune">LASHPOP</span>
+                <Image
+                  src="/lashpop-images/branding/logo.png"
+                  alt="LashPop Studios"
+                  width={120}
+                  height={40}
+                  className="h-8 w-auto"
+                  style={{ filter: 'brightness(0) saturate(100%) invert(89%) sepia(8%) saturate(440%) hue-rotate(330deg) brightness(98%) contrast(93%)' }}
+                  priority
+                />
               </motion.div>
             </Link>
             

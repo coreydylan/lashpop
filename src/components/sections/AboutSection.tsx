@@ -6,37 +6,87 @@ import { LeafIcon, StarIcon } from '../icons/DesertIcons'
 
 const values = [
   {
+    icon: <StarIcon className="w-6 h-6" />,
+    title: 'Hand-Selected Professionals',
+    description: 'Every artist meets our high standards'
+  },
+  {
     icon: <LeafIcon className="w-6 h-6" />,
-    title: 'Natural Beauty',
-    description: 'Enhancing what nature gave you'
+    title: 'Effortless Beauty',
+    description: 'Low-maintenance looks that fit your lifestyle'
   },
   {
     icon: <StarIcon className="w-6 h-6" />,
-    title: 'Artistry',
-    description: 'Every lash placed with intention'
-  },
-  {
-    icon: <LeafIcon className="w-6 h-6" />,
-    title: 'Wellness',
-    description: 'Beauty as self-care ritual'
+    title: 'Peaceful Atmosphere',
+    description: 'A beautiful space for your beauty rituals'
   }
 ]
 
 const team = [
   {
-    name: 'Sarah',
+    name: 'Emily Rogers',
     role: 'Owner & Master Artist',
-    image: '/lashpop-images/team/savannah-scherer.jpeg'
-  },
-  {
-    name: 'Emily',
-    role: 'Senior Lash Artist',
     image: '/lashpop-images/team/emily-rogers.jpeg'
   },
   {
-    name: 'Grace',
+    name: 'Savannah Scherer',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/savannah-scherer.jpeg'
+  },
+  {
+    name: 'Grace Ramos',
     role: 'Lash Artist',
     image: '/lashpop-images/team/grace-ramos.jpg'
+  },
+  {
+    name: 'Adrianna Arnaud',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/adrianna-arnaud.jpg'
+  },
+  {
+    name: 'Ashley Petersen',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/ashley-petersen.jpg'
+  },
+  {
+    name: 'Ava Mata',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/ava-mata.jpg'
+  },
+  {
+    name: 'Bethany Peterson',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/bethany-peterson.jpeg'
+  },
+  {
+    name: 'Elena Castellanos',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/elena-castellanos.jpeg'
+  },
+  {
+    name: 'Evie Ells',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/evie-ells.jpg'
+  },
+  {
+    name: 'Kelly Katona',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/kelly-katona.jpeg'
+  },
+  {
+    name: 'Rachel Edwards',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/rachel-edwards.jpeg'
+  },
+  {
+    name: 'Renee Belton',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/renee-belton.jpg'
+  },
+  {
+    name: 'Ryann Alcorn',
+    role: 'Lash Artist',
+    image: '/lashpop-images/team/ryann-alcorn.png'
   }
 ]
 
@@ -76,19 +126,19 @@ export function AboutSection() {
             className="space-y-6"
           >
             <div>
-              <span className="caption text-terracotta">About LashPop</span>
+              <span className="caption text-terracotta">Why LashPop</span>
               <h2 className="h2 text-dune mt-2 mb-6">
-                Your sanctuary for
-                <span className="block italic text-dusty-rose">mindful beauty</span>
+                A collective of
+                <span className="block italic text-dusty-rose">exceptional talent</span>
               </h2>
               <p className="body-lg text-dune/70 mb-4">
-                Founded in 2016, LashPop Studios has become Oceanside&apos;s premier destination
-                for lash artistry. We believe beauty should feel as good as it looks.
+                Each beauty professional and business has been hand-selected to be part of our beauty collective,
+                meeting the LashPop standard and fitting into our effortless, low-maintenance beauty vibe.
               </p>
               <p className="body text-dune/60">
-                Our studio embodies the relaxed elegance of coastal California—where 
-                desert meets ocean, and beauty meets wellness. Every appointment is 
-                designed to be a moment of tranquility in your busy life.
+                You can expect consistency across the board with amazing services, talented and kind-hearted
+                service providers, and our cute and peaceful atmosphere. We believe in effortless beauty
+                for the modern woman.
               </p>
             </div>
             
@@ -123,13 +173,13 @@ export function AboutSection() {
             transition={{ duration: 0.8 }}
             className="text-center mb-[var(--space-lg)]"
           >
-            <span className="caption text-golden">Our Artists</span>
+            <span className="caption text-golden">Our Team</span>
             <h3 className="h2 text-dune mt-2">
-              Meet the hands behind the magic
+              Meet the collective
             </h3>
           </motion.div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-8">
             {team.map((member, index) => (
               <motion.div
                 key={member.name}
