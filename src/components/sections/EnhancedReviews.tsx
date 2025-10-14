@@ -87,7 +87,7 @@ export function EnhancedReviews() {
                 ))}
               </div>
               <p className="body text-dune/80 mb-6">
-                "{testimonial.text}"
+                &ldquo;{testimonial.text}&rdquo;
               </p>
               <div className="pt-4 border-t border-sage/10">
                 <p className="caption text-dusty-rose font-medium">

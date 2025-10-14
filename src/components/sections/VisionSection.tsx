@@ -42,19 +42,19 @@ export function VisionSection() {
             className="space-y-6"
           >
             <p className="body-lg text-dune/80 italic">
-              "When I founded LashPop Studios, I had a vision of creating more than just a beauty space—
-              I wanted to build a collective where talented professionals could thrive together."
+              &ldquo;When I founded LashPop Studios, I had a vision of creating more than just a beauty space—
+              I wanted to build a collective where talented professionals could thrive together.&rdquo;
             </p>
 
             <p className="body text-dune/70">
               Our studio is home to hand-selected beauty professionals who share our commitment to
-              effortless, low-maintenance beauty. Whether you're visiting one of our talented employees
+              effortless, low-maintenance beauty. Whether you&apos;re visiting one of our talented employees
               or an independent artist, you can expect the same high standard of service, skill, and
               kindness that defines the LashPop experience.
             </p>
 
             <p className="body text-dune/70">
-              We believe beauty should enhance your natural confidence, not define it. That's why we
+              We believe beauty should enhance your natural confidence, not define it. That&apos;s why we
               focus on creating looks that feel authentically you—beautiful, effortless, and perfectly
               suited to your modern lifestyle.
             </p>
