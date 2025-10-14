@@ -83,3 +83,6 @@ jspm_packages/
 
 # Vercel
 .vercel
+
+# Local template clone, not part of repo
+vendor/
