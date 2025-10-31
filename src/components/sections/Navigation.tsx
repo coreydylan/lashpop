@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Services', href: '#services' },
   { label: 'Gallery', href: '#gallery' },
   { label: 'About', href: '#about' },
+  { label: 'Team', href: '#team' },
   { label: 'Contact', href: '#contact' }
 ]
 
@@ -41,15 +42,17 @@ export function Navigation() {
             <Link href="/" className="relative">
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center"
+                className="flex items-center gap-2"
               >
                 <Image
                   src="/lashpop-images/branding/logo.png"
                   alt="LashPop Studios"
                   width={120}
                   height={40}
-                  className="h-8 w-auto"
-                  style={{ filter: 'brightness(0) saturate(100%) invert(89%) sepia(8%) saturate(440%) hue-rotate(330deg) brightness(98%) contrast(93%)' }}
+                  className="h-8 w-auto brightness-0 saturate-100"
+                  style={{
+                    filter: 'brightness(0) saturate(100%) invert(73%) sepia(10%) saturate(633%) hue-rotate(313deg) brightness(94%) contrast(88%)'
+                  }}
                   priority
                 />
               </motion.div>
