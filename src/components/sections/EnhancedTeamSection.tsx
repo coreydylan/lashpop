@@ -384,7 +384,7 @@ export function EnhancedTeamSection() {
                     {/* Quote */}
                     {selectedMember.quote && (
                       <blockquote className="italic text-[rgb(74,74,74)] pl-4 border-l-4 border-[rgb(232,180,184)]">
-                        "{selectedMember.quote}"
+                        &ldquo;{selectedMember.quote}&rdquo;
                       </blockquote>
                     )}
 
