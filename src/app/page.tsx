@@ -1,7 +1,6 @@
 import { Navigation } from '@/components/sections/Navigation'
 import { HeroSection } from '@/components/sections/HeroSection'
 import { PhotoTransition } from '@/components/sections/PhotoTransition'
-import { FounderLetter } from '@/components/sections/FounderLetter'
 import { ServicesSection } from '@/components/sections/ServicesSection'
 import { GallerySection } from '@/components/sections/GallerySection'
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection'
@@ -17,7 +16,6 @@ export default function HomePage() {
       <main className="overflow-x-hidden">
         <HeroSection />
         <PhotoTransition />
-        <FounderLetter />
         <div id="services">
           <ServicesSection />
         </div>
