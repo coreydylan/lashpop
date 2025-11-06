@@ -1,0 +1,303 @@
+openapi: 3.0.0
+info:
+  title: Vagaro Enterprise Business API
+  version: 2.0.0
+  description: Vagaro API for managing services, employees, appointments, and business operations
+
+servers:
+  - url: https://api.vagaro.com/{region}/api/v2
+    variables:
+      region:
+        default: us02
+        description: Your business region (e.g., us02, us04)
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        responseId:
+          type: string
+        responseCode:
+          type: integer
+        message:
+          type: string
+
+    AccessTokenResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+        responseId:
+          type: string
+        responseCode:
+          type: integer
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            access_token:
+              type: string
+            expires_in:
+              type: integer
+
+    Service:
+      type: object
+      properties:
+        serviceId:
+          type: string
+        serviceName:
+          type: string
+        categoryId:
+          type: string
+        categoryName:
+          type: string
+        description:
+          type: string
+        duration:
+          type: integer
+        price:
+          type: number
+        priceType:
+          type: string
+        status:
+          type: string
+
+    Employee:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        status:
+          type: string
+
+    Business:
+      type: object
+      properties:
+        businessId:
+          type: string
+        businessName:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        phone:
+          type: string
+
+security:
+  - BearerAuth: []
+
+paths:
+  /merchants/generate-access-token:
+    post:
+      summary: Generate Access Token
+      description: Generate an access token using client credentials
+      operationId: generateAccessToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - clientId
+                - clientSecretKey
+                - scope
+              properties:
+                clientId:
+                  type: string
+                  description: Your unique client ID
+                clientSecretKey:
+                  type: string
+                  description: Your unique client secret
+                scope:
+                  type: string
+                  description: Comma separated list of scopes
+                  example: "merchants.read,services.read,employees.read"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /merchants/business:
+    get:
+      summary: Get Business Information
+      description: Retrieve business/merchant information
+      operationId: getBusinessInfo
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  responseCode:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Business'
+
+  /services:
+    get:
+      summary: Get Services
+      description: Retrieve all services offered by the business
+      operationId: getServices
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: string
+          description: Filter by category ID
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+          description: Filter by service status
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  responseCode:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+
+  /services/{serviceId}:
+    get:
+      summary: Get Service by ID
+      description: Retrieve a specific service by ID
+      operationId: getServiceById
+      parameters:
+        - name: serviceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  responseCode:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Service'
+
+  /employees:
+    get:
+      summary: Get Employees
+      description: Retrieve all employees/staff members
+      operationId: getEmployees
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+          description: Filter by employee status
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  responseCode:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Employee'
+
+  /employees/{employeeId}:
+    get:
+      summary: Get Employee by ID
+      description: Retrieve a specific employee by ID
+      operationId: getEmployeeById
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                  responseCode:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Employee'
