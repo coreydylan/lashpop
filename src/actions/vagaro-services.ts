@@ -45,7 +45,7 @@ export async function getVagaroServices() {
 export async function getVagaroServicesByCategory(category: string) {
   try {
     const client = getVagaroClient()
-    const services = await client.getServices({ category })
+    const services = await client.getServices({ categoryId: category })
 
     return services
       .filter(s => s.status === 'active')
