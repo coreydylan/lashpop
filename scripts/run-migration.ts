@@ -13,7 +13,7 @@ async function runMigration() {
   console.log('🔄 Running migration...')
 
   const db = getDb()
-  const migration = fs.readFileSync('drizzle/0004_gigantic_micromax.sql', 'utf-8')
+  const migration = fs.readFileSync('drizzle/0003_round_stardust.sql', 'utf-8')
   const statements = migration
     .split('-->')
     .map(s => s.trim())

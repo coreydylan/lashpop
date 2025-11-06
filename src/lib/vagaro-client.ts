@@ -244,8 +244,9 @@ export class VagaroClient {
       }
     )
 
-    // API returns { services: [...] } not { data: [...] }
-    return response.services || response.data || []
+    // API returns { status, responseId, message, data: { services: [...], nextPage: "..." } }
+    const services = response.data?.services || response.services || response.data || []
+    return services
   }
 
   /**

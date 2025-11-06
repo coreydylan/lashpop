@@ -18,9 +18,9 @@ async function initialSync() {
     await syncAllServices()
     console.log('')
 
-    // Sync all team members
-    await syncAllTeamMembers()
-    console.log('')
+    // Sync all team members (disabled temporarily for debugging)
+    // await syncAllTeamMembers()
+    // console.log('')
 
     console.log('✅ Initial sync completed successfully!')
     console.log('\n📊 Next steps:')
