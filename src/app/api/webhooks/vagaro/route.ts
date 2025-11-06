@@ -1,74 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { syncService, syncTeamMember, syncAllServices, syncAllTeamMembers } from '@/lib/vagaro-sync'
+import {
+  syncAppointment,
+  syncCustomer,
+  syncBusinessLocation,
+  syncFormResponse,
+  syncTransaction
+} from '@/lib/vagaro-sync-all'
 
 /**
  * Vagaro Webhook Endpoint
  *
- * Receives webhook events from Vagaro and syncs data to local database.
- * Subscribed to: Services, Employees, Appointments, Customers, Locations, Transactions, Form Responses
+ * Receives ALL webhook events from Vagaro and syncs to local database mirror.
+ * Subscribed to: Appointments, Customers, Employees, Business Locations, Form Responses, Transactions
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const eventType = (body.type || body.eventType || '').toLowerCase()
+    const action = (body.action || '').toLowerCase()
+    const payload = body.payload || body
 
-    console.log('🎣 Vagaro Webhook Received!')
-    console.log('📦 Event Type:', body.eventType || body.event)
-    console.log('📦 Business ID:', body.businessId)
+    console.log(`🎣 Vagaro Webhook: ${eventType} - ${action}`)
 
-    const eventType = body.eventType || body.event || ''
+    // Route to appropriate sync function based on event type
+    switch (eventType) {
+      case 'appointment':
+        console.log('📅 Syncing appointment...')
+        await syncAppointment(payload)
+        break
 
-    // Process different event types
-    if (eventType.includes('service')) {
-      // Service created/updated/deleted
-      console.log('🔄 Processing service event...')
+      case 'customer':
+        console.log('👤 Syncing customer...')
+        await syncCustomer(payload)
+        break
 
-      if (body.service || body.data?.service) {
-        const service = body.service || body.data.service
-        await syncService(service)
-      } else {
-        // If no specific service, sync all services
-        await syncAllServices()
-      }
-    }
-    else if (eventType.includes('employee') || eventType.includes('provider')) {
-      // Employee/Service Provider created/updated/deleted
-      console.log('🔄 Processing employee event...')
+      case 'employee':
+        console.log('👨‍💼 Syncing employee...')
+        await syncTeamMember(payload)
+        break
 
-      if (body.employee || body.serviceProvider || body.data?.employee) {
-        const employee = body.employee || body.serviceProvider || body.data.employee
-        await syncTeamMember(employee)
-      } else {
-        // If no specific employee, sync all employees
-        await syncAllTeamMembers()
-      }
-    }
-    else if (eventType.includes('location')) {
-      // Location created/updated - might affect services/employees
-      console.log('🔄 Location changed, syncing all data...')
-      await Promise.all([
-        syncAllServices(),
-        syncAllTeamMembers()
-      ])
-    }
-    else {
-      // For other events (appointment, customer, transaction, form), just log
-      console.log('ℹ️ Event logged (no sync action):', eventType)
-      if (body.customerId) console.log('  Customer ID:', body.customerId)
-      if (body.appointmentId) console.log('  Appointment ID:', body.appointmentId)
+      case 'business_location':
+      case 'location':
+        console.log('🏢 Syncing business location...')
+        await syncBusinessLocation(payload)
+        // Location changes might affect services/employees
+        if (action === 'updated' || action === 'created') {
+          console.log('  Triggering full service/employee sync...')
+          await Promise.all([
+            syncAllServices(),
+            syncAllTeamMembers()
+          ])
+        }
+        break
+
+      case 'formresponse':
+      case 'form_response':
+        console.log('📋 Syncing form response...')
+        await syncFormResponse(payload)
+        break
+
+      case 'transaction':
+        console.log('💰 Syncing transaction...')
+        await syncTransaction(payload)
+        break
+
+      default:
+        // Log unknown event types for future handling
+        console.log(`ℹ️ Unknown event type: ${eventType}`)
+        console.log('   Payload:', JSON.stringify(payload, null, 2))
     }
 
     // Return 200 to acknowledge receipt
     return NextResponse.json({
       received: true,
       eventType,
+      action,
       timestamp: new Date().toISOString()
     })
 
   } catch (error) {
     console.error('❌ Webhook error:', error)
+    // Still return 200 to prevent retries for non-recoverable errors
     return NextResponse.json(
-      { error: 'Webhook processing failed' },
-      { status: 500 }
+      {
+        received: true,
+        error: 'Processing failed but acknowledged',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 200 } // Return 200 to prevent Vagaro from retrying
     )
   }
 }
