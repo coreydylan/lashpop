@@ -9,37 +9,20 @@ export async function getVagaroTeamMembers() {
   try {
     const client = getVagaroClient()
 
-    // First get locations to iterate through
-    const locations = await client.getLocations()
+    // Fetch all active employees
+    const employees = await client.getEmployees({ status: 'active' })
 
-    // Fetch employees for each location and deduplicate
-    const allEmployees = new Map()
-
-    for (const location of locations) {
-      try {
-        const employees = await client.getEmployees(location.location_id)
-
-        for (const employee of employees) {
-          if (employee.status === 'active' && !allEmployees.has(employee.employee_id)) {
-            allEmployees.set(employee.employee_id, {
-              id: employee.employee_id,
-              name: `${employee.first_name} ${employee.last_name}`,
-              firstName: employee.first_name,
-              lastName: employee.last_name,
-              email: employee.email,
-              phone: employee.phone,
-              locations: employee.locations,
-              services: employee.services,
-            })
-          }
-        }
-      } catch (error) {
-        console.warn(`Failed to fetch employees for location ${location.location_id}:`, error)
-        // Continue with other locations
-      }
-    }
-
-    return Array.from(allEmployees.values())
+    // Transform to frontend format
+    return employees.map(employee => ({
+      id: employee.employee_id,
+      name: `${employee.first_name} ${employee.last_name}`,
+      firstName: employee.first_name,
+      lastName: employee.last_name,
+      email: employee.email,
+      phone: employee.phone,
+      locations: employee.locations,
+      services: employee.services,
+    }))
   } catch (error) {
     console.error('Failed to fetch Vagaro team members:', error)
     throw new Error('Failed to fetch team members from Vagaro')
