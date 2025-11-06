@@ -117,12 +117,14 @@ export class VagaroClient {
         throw new Error(`Authentication failed: ${result.message || 'Unknown error'}`)
       }
 
-      this.accessToken = result.data.access_token
+      const token: string = result.data.access_token
+
+      this.accessToken = token
       // Set expiry 1 minute before actual expiry to be safe
       this.tokenExpiry = Date.now() + (result.data.expires_in * 1000) - 60000
 
       console.log('✓ Vagaro authentication successful')
-      return this.accessToken
+      return token
     } catch (error) {
       console.error('✗ Vagaro authentication failed:', error)
       throw error
