@@ -21,7 +21,7 @@ export function PhotoTransition() {
         className="relative w-full h-full"
       >
         <Image
-          src="/lashpop-images/gallery/lash-136.jpeg"
+          src="/lashpop-images/98F821AD-E77C-49E9-A73E-C95EC2622413_1_105_c.jpeg"
           alt="LashPop Work"
           fill
           className="object-cover"

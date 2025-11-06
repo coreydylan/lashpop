@@ -22,74 +22,6 @@ const values = [
   }
 ]
 
-const team = [
-  {
-    name: 'Emily Rogers',
-    role: 'Owner & Master Artist',
-    image: '/lashpop-images/team/emily-rogers.jpeg'
-  },
-  {
-    name: 'Savannah Scherer',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/savannah-scherer.jpeg'
-  },
-  {
-    name: 'Grace Ramos',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/grace-ramos.jpg'
-  },
-  {
-    name: 'Adrianna Arnaud',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/adrianna-arnaud.jpg'
-  },
-  {
-    name: 'Ashley Petersen',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/ashley-petersen.jpg'
-  },
-  {
-    name: 'Ava Mata',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/ava-mata.jpg'
-  },
-  {
-    name: 'Bethany Peterson',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/bethany-peterson.jpeg'
-  },
-  {
-    name: 'Elena Castellanos',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/elena-castellanos.jpeg'
-  },
-  {
-    name: 'Evie Ells',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/evie-ells.jpg'
-  },
-  {
-    name: 'Kelly Katona',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/kelly-katona.jpeg'
-  },
-  {
-    name: 'Rachel Edwards',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/rachel-edwards.jpeg'
-  },
-  {
-    name: 'Renee Belton',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/renee-belton.jpg'
-  },
-  {
-    name: 'Ryann Alcorn',
-    role: 'Lash Artist',
-    image: '/lashpop-images/team/ryann-alcorn.png'
-  }
-]
-
 export function AboutSection() {
   return (
     <section id="about" className="py-[var(--space-xl)] bg-ocean-mist/10">
@@ -162,48 +94,6 @@ export function AboutSection() {
               ))}
             </div>
           </motion.div>
-        </div>
-        
-        {/* Team Section */}
-        <div className="mt-[var(--space-xl)]">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-[var(--space-lg)]"
-          >
-            <span className="caption text-golden">Our Team</span>
-            <h3 className="h2 text-dune mt-2">
-              Meet the collective
-            </h3>
-          </motion.div>
-          
-          <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {team.map((member, index) => (
-              <motion.div
-                key={member.name}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="text-center"
-              >
-                <div className="relative mb-6">
-                  <div className="aspect-[3/4] rounded-[100px_100px_0_0] overflow-hidden">
-                    <Image
-                      src={member.image}
-                      alt={member.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </div>
-                <h4 className="text-lg font-light text-dune">{member.name}</h4>
-                <p className="caption text-dusty-rose">{member.role}</p>
-              </motion.div>
-            ))}
-          </div>
         </div>
       </div>
     </section>

@@ -73,6 +73,7 @@ export class VagaroClient {
   private region: string
   private clientId: string
   private clientSecret: string
+  private businessId: string
   private accessToken: string | null = null
   private tokenExpiry: number | null = null
 
@@ -81,9 +82,13 @@ export class VagaroClient {
     this.region = process.env.VAGARO_REGION || 'us02'
     this.clientId = process.env.VAGARO_CLIENT_ID || ''
     this.clientSecret = process.env.VAGARO_CLIENT_SECRET || ''
+    this.businessId = process.env.VAGARO_BUSINESS_ID || ''
 
     if (!this.clientId || !this.clientSecret) {
       throw new Error('Vagaro API credentials not configured')
+    }
+    if (!this.businessId) {
+      throw new Error('Vagaro businessId not configured')
     }
   }
 
@@ -230,18 +235,17 @@ export class VagaroClient {
     categoryId?: string
     status?: 'active' | 'inactive'
   }): Promise<VagaroService[]> {
-    const response = await this.requestWithRetry<{
-      status: number
-      responseCode: number
-      message: string
-      data: VagaroService[]
-    }>(
+    const response = await this.requestWithRetry<any>(
       'POST',
       '/api/v2/services',
-      filters || {}
+      {
+        businessId: this.businessId,
+        ...filters
+      }
     )
 
-    return response.data || []
+    // API returns { services: [...] } not { data: [...] }
+    return response.services || response.data || []
   }
 
   /**
@@ -256,7 +260,10 @@ export class VagaroClient {
     }>(
       'POST',
       '/api/v2/employees',
-      { employeeId }
+      {
+        businessId: this.businessId,
+        employeeId
+      }
     )
     return response.data
   }
@@ -267,17 +274,16 @@ export class VagaroClient {
   async getEmployees(filters?: {
     status?: 'active' | 'inactive'
   }): Promise<VagaroEmployee[]> {
-    const response = await this.requestWithRetry<{
-      status: number
-      responseCode: number
-      message: string
-      data: VagaroEmployee[]
-    }>(
+    const response = await this.requestWithRetry<any>(
       'POST',
       '/api/v2/employees',
-      filters || {}
+      {
+        businessId: this.businessId,
+        ...filters
+      }
     )
-    return response.data || []
+    // API might return { employees: [...] } or { data: [...] }
+    return response.employees || response.serviceProviders || response.data || []
   }
 
   /**

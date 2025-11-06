@@ -93,7 +93,7 @@ export function HeroSection() {
             </motion.p>
             
             {/* CTA Buttons */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.8 }}
@@ -102,8 +102,16 @@ export function HeroSection() {
               <button className="btn btn-primary">
                 Book Now
               </button>
-              <button className="btn btn-secondary">
-                Meet Our Team
+              <button
+                onClick={() => {
+                  const discoverSection = document.getElementById('discover-your-look')
+                  if (discoverSection) {
+                    discoverSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
+                }}
+                className="btn btn-secondary"
+              >
+                Discover Your Look
               </button>
             </motion.div>
             

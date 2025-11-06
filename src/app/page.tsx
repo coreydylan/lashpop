@@ -1,11 +1,11 @@
 import { Navigation } from '@/components/sections/Navigation'
 import { HeroSection } from '@/components/sections/HeroSection'
 import { PhotoTransition } from '@/components/sections/PhotoTransition'
-import { ServicesSection } from '@/components/sections/ServicesSection'
-import { GallerySection } from '@/components/sections/GallerySection'
+import { ServiceDiscoveryQuiz } from '@/components/sections/ServiceDiscoveryQuiz'
+import { ServicesSection } from '@/components/sections/ServicesSectionServer'
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection'
 import { AboutSection } from '@/components/sections/AboutSection'
-import { EnhancedTeamSection } from '@/components/sections/EnhancedTeamSection'
+import { EnhancedTeamSection } from '@/components/sections/EnhancedTeamSectionServer'
 import { ContactSection } from '@/components/sections/ContactSection'
 import { Footer } from '@/components/sections/Footer'
 
@@ -16,11 +16,9 @@ export default function HomePage() {
       <main className="overflow-x-hidden">
         <HeroSection />
         <PhotoTransition />
+        <ServiceDiscoveryQuiz />
         <div id="services">
           <ServicesSection />
-        </div>
-        <div id="gallery">
-          <GallerySection />
         </div>
         <TestimonialsSection />
         <AboutSection />

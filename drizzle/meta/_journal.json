@@ -8,6 +8,20 @@
       "when": 1760472938083,
       "tag": "0000_pretty_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1762460178933,
+      "tag": "0001_sticky_tomas",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762461070279,
+      "tag": "0002_pretty_harrier",
+      "breakpoints": true
     }
   ]
 }

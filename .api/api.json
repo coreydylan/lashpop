@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "apis": [
+    {
+      "identifier": "vagaro-enterprise-business-api",
+      "source": "@vagaro-enterprise-business-api/v2#gm83e2omfzw2d7v",
+      "integrity": "sha512-6jjxZ7mqdroZbGXmiBZpear9YANE5t+bX4Evbcmpn6zSA3N01pXpbmS4XybQ2nG54RpjaOLspq/fNlq3v1pX/w==",
+      "installerVersion": "6.1.3"
+    }
+  ]
+}
