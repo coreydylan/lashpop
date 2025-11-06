@@ -23,13 +23,13 @@ interface ServicesSectionClientProps {
 }
 
 const getIconForService = (id: string) => {
-  switch(id) {
-    case 'classic': return <MoonIcon className="w-8 h-8" />
-    case 'hybrid': return <StarIcon className="w-8 h-8" />
-    case 'volume': return <SunIcon className="w-8 h-8" />
-    case 'lift': return <WaveIcon className="w-8 h-8" />
-    default: return <StarIcon className="w-8 h-8" />
-  }
+  // Support base slug and variations (e.g., classic, classic-fill, classic-mini)
+  if (id.startsWith('classic')) return <MoonIcon className="w-8 h-8" />
+  if (id.startsWith('angel') || id.startsWith('wet')) return <WaveIcon className="w-8 h-8" />
+  if (id.startsWith('hybrid')) return <StarIcon className="w-8 h-8" />
+  if (id.startsWith('volume')) return <SunIcon className="w-8 h-8" />
+  if (id === 'lift') return <WaveIcon className="w-8 h-8" />
+  return <StarIcon className="w-8 h-8" />
 }
 
 export function ServicesSectionClient({ services }: ServicesSectionClientProps) {
