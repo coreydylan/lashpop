@@ -3,7 +3,12 @@
 import { getDb } from "@/db"
 import { services } from "@/db/schema/services"
 import { serviceCategories } from "@/db/schema/service_categories"
-import { and, eq } from "drizzle-orm"
+import { and, eq, asc } from "drizzle-orm"
+
+export interface ServiceFilter {
+  mainCategory?: string
+  subCategory?: string
+}
 
 export async function getServices() {
   const db = getDb()
@@ -13,6 +18,7 @@ export async function getServices() {
       id: services.id,
       categoryId: services.categoryId,
       name: services.name,
+      displayTitle: services.displayTitle,
       slug: services.slug,
       subtitle: services.subtitle,
       description: services.description,
@@ -56,4 +62,71 @@ export async function getServicesByCategory(categorySlug: string) {
     .orderBy(services.displayOrder)
 
   return categoryServices
+}
+
+export async function getAllServices(filter?: ServiceFilter) {
+  const db = getDb()
+
+  const conditions = [eq(services.isActive, true)]
+
+  if (filter?.mainCategory) {
+    conditions.push(eq(services.mainCategory, filter.mainCategory))
+  }
+
+  if (filter?.subCategory) {
+    conditions.push(eq(services.subCategory, filter.subCategory))
+  }
+
+  const allServices = await db
+    .select({
+      id: services.id,
+      name: services.name,
+      displayTitle: services.displayTitle,
+      slug: services.slug,
+      subtitle: services.subtitle,
+      description: services.description,
+      durationMinutes: services.durationMinutes,
+      priceStarting: services.priceStarting,
+      imageUrl: services.imageUrl,
+      color: services.color,
+      mainCategory: services.mainCategory,
+      subCategory: services.subCategory,
+      displayOrder: services.displayOrder
+    })
+    .from(services)
+    .where(and(...conditions))
+    .orderBy(asc(services.displayOrder))
+
+  return allServices
+}
+
+export async function getMainCategories() {
+  const db = getDb()
+
+  const result = await db
+    .selectDistinct({ mainCategory: services.mainCategory })
+    .from(services)
+    .where(eq(services.isActive, true))
+
+  return result.map(r => r.mainCategory).sort()
+}
+
+export async function getSubCategories(mainCategory?: string) {
+  const db = getDb()
+
+  const conditions = [eq(services.isActive, true)]
+
+  if (mainCategory) {
+    conditions.push(eq(services.mainCategory, mainCategory))
+  }
+
+  const result = await db
+    .selectDistinct({ subCategory: services.subCategory })
+    .from(services)
+    .where(and(...conditions))
+
+  return result
+    .map(r => r.subCategory)
+    .filter(sc => sc !== null)
+    .sort() as string[]
 }

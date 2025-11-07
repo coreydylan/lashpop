@@ -1,14 +1,15 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Image from 'next/image'
 import { StarIcon, MoonIcon, SunIcon, WaveIcon } from '../icons/DesertIcons'
-import { X } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 
 interface Service {
   id: string
-  category: string
+  mainCategory: string
+  subCategory: string
   title: string
   subtitle: string
   description: string
@@ -16,10 +17,13 @@ interface Service {
   price: string
   image: string
   color: string
+  displayOrder: number
 }
 
 interface ServicesSectionClientProps {
   services: Service[]
+  mainCategories: string[]
+  allSubCategories: string[]
 }
 
 const getIconForService = (id: string) => {
@@ -32,188 +36,393 @@ const getIconForService = (id: string) => {
   return <StarIcon className="w-8 h-8" />
 }
 
-export function ServicesSectionClient({ services }: ServicesSectionClientProps) {
+export function ServicesSectionClient({ services, mainCategories, allSubCategories }: ServicesSectionClientProps) {
   const [hoveredService, setHoveredService] = useState<string | null>(null)
-  const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const [selectedMainCategories, setSelectedMainCategories] = useState<Set<string>>(new Set())
+  const [selectedSubCategories, setSelectedSubCategories] = useState<Set<string>>(new Set())
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set())
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [highlightedService, setHighlightedService] = useState<string | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const cardsRef = useRef<HTMLDivElement>(null)
+
+  // Get available subcategories based on selected main categories
+  const availableSubCategories = useMemo(() => {
+    if (selectedMainCategories.size === 0) return []
+
+    const subCats = new Set<string>()
+    services.forEach(service => {
+      if (selectedMainCategories.has(service.mainCategory) && service.subCategory) {
+        subCats.add(service.subCategory)
+      }
+    })
+    return Array.from(subCats)
+  }, [services, selectedMainCategories])
+
+  // Filter services based on selected categories
+  const filteredServices = useMemo(() => {
+    if (selectedMainCategories.size === 0 && selectedSubCategories.size === 0) {
+      return services
+    }
+
+    return services.filter(service => {
+      const mainCategoryMatch = selectedMainCategories.size === 0 || selectedMainCategories.has(service.mainCategory)
+      const subCategoryMatch = selectedSubCategories.size === 0 || selectedSubCategories.has(service.subCategory)
+      return mainCategoryMatch && subCategoryMatch
+    })
+  }, [services, selectedMainCategories, selectedSubCategories])
+
+  // Group services by main category and subcategory
+  const groupedServices = useMemo(() => {
+    const groups: Record<string, Record<string, Service[]>> = {}
+
+    filteredServices.forEach(service => {
+      if (!groups[service.mainCategory]) {
+        groups[service.mainCategory] = {}
+      }
+      const subCat = service.subCategory || 'Other'
+      if (!groups[service.mainCategory][subCat]) {
+        groups[service.mainCategory][subCat] = []
+      }
+      groups[service.mainCategory][subCat].push(service)
+    })
+
+    // Sort services within each group by displayOrder
+    Object.values(groups).forEach(subGroups => {
+      Object.values(subGroups).forEach(serviceList => {
+        serviceList.sort((a, b) => a.displayOrder - b.displayOrder)
+      })
+    })
+
+    return groups
+  }, [filteredServices])
 
   // Listen for quiz completion events
   useEffect(() => {
     const handleQuizComplete = (event: CustomEvent) => {
       const { selectedCategories, lashStyle } = event.detail
 
-      // Set active filters based on selected categories
-      setActiveFilters(selectedCategories)
+      // Set selected main categories based on quiz results
+      if (selectedCategories && selectedCategories.length > 0) {
+        setSelectedMainCategories(new Set(selectedCategories))
+      }
 
       // Highlight the recommended lash style if one was selected
       if (lashStyle) {
         setHighlightedService(lashStyle)
+
+        // Auto-scroll to the highlighted service after a short delay
+        setTimeout(() => {
+          const element = document.getElementById(`service-${lashStyle}`)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }
+        }, 500)
       }
     }
 
-    window.addEventListener('service-quiz-complete', handleQuizComplete as EventListener)
+    window.addEventListener('quiz-complete', handleQuizComplete as EventListener)
     return () => {
-      window.removeEventListener('service-quiz-complete', handleQuizComplete as EventListener)
+      window.removeEventListener('quiz-complete', handleQuizComplete as EventListener)
     }
   }, [])
 
-  // Filter services based on active filters
-  const filteredServices = activeFilters.length > 0
-    ? services.filter(service => activeFilters.includes(service.category))
-    : services
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
 
-  const toggleFilter = (category: string) => {
-    setActiveFilters(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    )
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isDropdownOpen])
+
+  const toggleMainCategory = (category: string) => {
+    const newSet = new Set(selectedMainCategories)
+    if (newSet.has(category)) {
+      newSet.delete(category)
+      // Clear subcategories when main category is deselected
+      const subCatsToRemove = services
+        .filter(s => s.mainCategory === category && s.subCategory)
+        .map(s => s.subCategory)
+      const newSubSet = new Set(selectedSubCategories)
+      subCatsToRemove.forEach(subCat => newSubSet.delete(subCat))
+      setSelectedSubCategories(newSubSet)
+    } else {
+      newSet.add(category)
+    }
+    setSelectedMainCategories(newSet)
   }
 
-  const clearFilters = () => {
-    setActiveFilters([])
-    setHighlightedService(null)
+  const toggleSubCategory = (category: string) => {
+    const newSet = new Set(selectedSubCategories)
+    if (newSet.has(category)) {
+      newSet.delete(category)
+    } else {
+      newSet.add(category)
+    }
+    setSelectedSubCategories(newSet)
+  }
+
+  const toggleDescription = (serviceId: string) => {
+    const newSet = new Set(expandedDescriptions)
+    if (newSet.has(serviceId)) {
+      newSet.delete(serviceId)
+    } else {
+      newSet.add(serviceId)
+    }
+    setExpandedDescriptions(newSet)
+  }
+
+  const truncateDescription = (description: string, maxLength: number = 150) => {
+    if (description.length <= maxLength) return description
+    return description.slice(0, maxLength).trim() + '...'
+  }
+
+  const clearAllFilters = () => {
+    setSelectedMainCategories(new Set())
+    setSelectedSubCategories(new Set())
   }
 
   return (
-    <section className="relative pt-0 pb-[var(--space-xl)] bg-gradient-to-b from-transparent via-warm-sand/5 to-cream">
+    <section className="relative py-[var(--space-xl)] bg-gradient-to-b from-transparent via-warm-sand/5 to-cream">
       <div className="container">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-[var(--space-lg)]"
+          className="text-center mb-[var(--space-md)]"
         >
-          <span className="caption text-terracotta">What We Offer</span>
-          <h2 className="h2 text-dune mt-2">
-            Our Services
-          </h2>
-          {highlightedService && (
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="body text-dune/70 mt-4"
-            >
-              Based on your preferences, we recommend <strong className="text-terracotta">{highlightedService}</strong> lashes
-            </motion.p>
-          )}
+          <h2 className="h2 text-dune mb-4">Our Services</h2>
+          <p className="body-lg text-dune/70 max-w-2xl mx-auto">
+            Enhance your natural beauty with our premium lash and beauty services
+          </p>
         </motion.div>
 
-        {/* Filter Chips */}
-        {activeFilters.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap gap-3 justify-center mb-8"
-          >
-            {activeFilters.map((filter) => (
-              <button
-                key={filter}
-                onClick={() => toggleFilter(filter)}
-                className="flex items-center gap-2 px-4 py-2 bg-sage/20 text-sage rounded-full text-sm font-medium hover:bg-sage/30 transition-colors"
-              >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                <X className="w-3 h-3" />
-              </button>
-            ))}
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 text-dune/60 hover:text-dune text-sm font-medium transition-colors"
+        {/* Filter Dropdown */}
+        <div className="flex justify-center mb-8">
+          <div className="relative" ref={dropdownRef}>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="px-6 py-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg flex items-center gap-2 text-dune font-medium"
             >
-              Clear all
-            </button>
-          </motion.div>
-        )}
+              <span>Filter Services</span>
+              {selectedMainCategories.size > 0 && (
+                <span className="px-2 py-1 bg-sage/20 rounded-full text-xs">
+                  {selectedMainCategories.size + selectedSubCategories.size}
+                </span>
+              )}
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+              />
+            </motion.button>
 
-        {/* Services Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredServices.map((service, index) => {
-            const isHighlighted = highlightedService === service.id
-            return (
-              <motion.div
-                key={service.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                onMouseEnter={() => setHoveredService(service.id)}
-                onMouseLeave={() => setHoveredService(null)}
-                className="group relative"
-              >
-                <div className="relative h-full">
-                  {/* Highlighted Badge */}
-                  {isHighlighted && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10 px-4 py-1 bg-gradient-to-r from-sage to-ocean-mist text-white text-xs font-medium rounded-full shadow-lg"
-                    >
-                      ✨ Recommended for You
-                    </motion.div>
-                  )}
-
-                  {/* Card */}
-                  <div className={`
-                    bg-cream arch-full p-8 h-full flex flex-col items-center text-center transition-all duration-500 hover:shadow-xl
-                    ${isHighlighted ? 'ring-2 ring-sage shadow-xl' : ''}
-                  `}>
-                  {/* Icon */}
-                  <motion.div
-                    animate={{
-                      scale: hoveredService === service.id ? 1.1 : 1,
-                      rotate: hoveredService === service.id ? 360 : 0
-                    }}
-                    transition={{ duration: 0.5 }}
-                    className={`text-${service.color} mb-4`}
-                  >
-                    {getIconForService(service.id)}
-                  </motion.div>
-                  
-                  {/* Content */}
-                  <h3 className="h3 text-dune mb-2">{service.title}</h3>
-                  <p className="caption text-terracotta mb-4">{service.subtitle}</p>
-                  <p className="body text-dune/70 mb-6 flex-grow">
-                    {service.description}
-                  </p>
-                  
-                  {/* Details */}
-                  <div className="space-y-2 w-full">
-                    <div className="flex justify-between items-center py-2 border-t border-sage/10">
-                      <span className="caption text-dune/60">Duration</span>
-                      <span className="text-sm font-light">{service.duration}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-t border-sage/10">
-                      <span className="caption text-dune/60">Starting at</span>
-                      <span className="text-lg font-light text-terracotta">{service.price}</span>
+            {/* Dropdown Content */}
+            <AnimatePresence>
+              {isDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-[400px] max-h-[500px] overflow-y-auto bg-white rounded-2xl shadow-xl p-6 z-50"
+                >
+                  {/* Main Categories */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-semibold text-dune/60 uppercase tracking-wide mb-3">
+                      Main Categories
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {mainCategories.map(category => (
+                        <button
+                          key={category}
+                          onClick={() => toggleMainCategory(category)}
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                            selectedMainCategories.has(category)
+                              ? 'bg-sage text-white'
+                              : 'bg-sage/10 text-dune hover:bg-sage/20'
+                          }`}
+                        >
+                          {category}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  
-                  {/* Hidden image on hover */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ 
-                      opacity: hoveredService === service.id ? 1 : 0,
-                      scale: hoveredService === service.id ? 1 : 0.8
-                    }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute inset-0 arch-full overflow-hidden pointer-events-none"
-                  >
-                    <Image
-                      src={service.image}
-                      alt={service.title}
-                      fill
-                      className="object-cover opacity-10"
-                    />
-                  </motion.div>
-                </div>
-              </div>
-            </motion.div>
-          )
-        })}
+
+                  {/* Subcategories (if main categories selected) */}
+                  {availableSubCategories.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="text-sm font-semibold text-dune/60 uppercase tracking-wide mb-3">
+                        Subcategories
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {availableSubCategories.map(category => (
+                          <button
+                            key={category}
+                            onClick={() => toggleSubCategory(category)}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                              selectedSubCategories.has(category)
+                                ? 'bg-terracotta text-white'
+                                : 'bg-terracotta/10 text-dune hover:bg-terracotta/20'
+                            }`}
+                          >
+                            {category}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex justify-between items-center pt-4 border-t border-sage/10">
+                    <button
+                      onClick={clearAllFilters}
+                      className="text-sm text-dune/60 hover:text-dune transition-colors"
+                    >
+                      Clear all
+                    </button>
+                    <div className="text-sm text-dune/60">
+                      {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-        
+
+        {/* Service Cards Display */}
+        <div ref={cardsRef} className="space-y-16">
+          {Object.entries(groupedServices).map(([mainCategory, subGroups]) => (
+            <div key={mainCategory}>
+              {/* Main Category Header */}
+              {(selectedMainCategories.size === 0 || selectedMainCategories.size > 1) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                  className="text-center mb-8"
+                >
+                  <h3 className="h3 text-dune mb-2">{mainCategory}</h3>
+                  <div className="w-24 h-1 bg-gradient-to-r from-sage to-ocean-mist mx-auto rounded-full" />
+                </motion.div>
+              )}
+
+              {/* Subcategory Groups */}
+              {Object.entries(subGroups).map(([subCategory, categoryServices]) => (
+                <div key={`${mainCategory}-${subCategory}`} className="mb-12 last:mb-0">
+                  {/* Subcategory Header */}
+                  {subCategory !== 'Other' && selectedSubCategories.size === 0 && (
+                    <h4 className="text-xl font-light text-terracotta text-center mb-6">
+                      {subCategory}
+                    </h4>
+                  )}
+
+                  {/* Services Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {categoryServices.map((service, index) => (
+                      <motion.div
+                        key={service.id}
+                        id={`service-${service.id}`}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.2 }}
+                        transition={{ duration: 0.6, delay: index * 0.05 }}
+                        onMouseEnter={() => setHoveredService(service.id)}
+                        onMouseLeave={() => setHoveredService(null)}
+                        className={`group relative ${
+                          highlightedService === service.id
+                            ? 'ring-2 ring-terracotta ring-offset-2'
+                            : ''
+                        }`}
+                      >
+                        <div className="bg-white rounded-2xl p-6 h-full flex flex-col shadow-md hover:shadow-xl transition-all duration-300">
+                          {/* Icon */}
+                          <motion.div
+                            animate={{
+                              scale: hoveredService === service.id ? 1.1 : 1,
+                              rotate: hoveredService === service.id ? 360 : 0
+                            }}
+                            transition={{ duration: 0.5 }}
+                            className={`text-${service.color} mb-3`}
+                          >
+                            {getIconForService(service.id)}
+                          </motion.div>
+
+                          {/* Content */}
+                          <h3 className="text-lg font-medium text-dune mb-1">{service.title}</h3>
+                          {service.subtitle && (
+                            <p className="text-xs text-terracotta mb-3">{service.subtitle}</p>
+                          )}
+
+                          {/* Description */}
+                          <div className="text-sm text-dune/70 mb-4 flex-grow">
+                            <p>
+                              {expandedDescriptions.has(service.id)
+                                ? service.description
+                                : truncateDescription(service.description)
+                              }
+                            </p>
+                            {service.description.length > 150 && (
+                              <button
+                                onClick={() => toggleDescription(service.id)}
+                                className="text-sage hover:text-ocean-mist text-xs font-medium mt-2 transition-colors"
+                              >
+                                {expandedDescriptions.has(service.id) ? 'Show less' : 'Read more'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Details */}
+                          <div className="space-y-2 pt-4 border-t border-sage/10">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-dune/60">Duration</span>
+                              <span className="text-sm font-light">{service.duration}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-dune/60">Starting at</span>
+                              <span className="text-lg font-light text-terracotta">{service.price}</span>
+                            </div>
+                          </div>
+
+                          {/* Hidden image on hover (if available) */}
+                          {service.image && (
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{
+                                opacity: hoveredService === service.id ? 1 : 0
+                              }}
+                              transition={{ duration: 0.3 }}
+                              className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none"
+                            >
+                              <Image
+                                src={service.image}
+                                alt={service.title}
+                                fill
+                                className="object-cover opacity-10"
+                              />
+                            </motion.div>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
         {/* Bottom CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -225,9 +434,13 @@ export function ServicesSectionClient({ services }: ServicesSectionClientProps) 
           <p className="body-lg text-dune/70 mb-6">
             Ready to enhance your natural beauty?
           </p>
-          <button className="btn btn-primary">
-            Learn More
-          </button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="btn btn-primary"
+          >
+            Book Now
+          </motion.button>
         </motion.div>
       </div>
     </section>
