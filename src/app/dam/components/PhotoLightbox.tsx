@@ -154,12 +154,22 @@ export function PhotoLightbox({
         scrollToIndex(index)
       }}
       onVisibleChange={(visible) => {
-        onVisibilityChange?.(visible)
-        if (!visible) {
-          notifyActiveAsset(null)
+        // On mobile, delay visibility callback to prevent race conditions
+        if (isMobile && visible) {
+          // Use requestAnimationFrame to ensure DOM is ready
+          requestAnimationFrame(() => {
+            onVisibilityChange?.(visible)
+            notifyActiveAsset(currentIndexRef.current)
+            scrollToIndex(currentIndexRef.current)
+          })
         } else {
-          notifyActiveAsset(currentIndexRef.current)
-          scrollToIndex(currentIndexRef.current)
+          onVisibilityChange?.(visible)
+          if (!visible) {
+            notifyActiveAsset(null)
+          } else {
+            notifyActiveAsset(currentIndexRef.current)
+            scrollToIndex(currentIndexRef.current)
+          }
         }
       }}
       overlayRender={({ index, onIndexChange, visible }) => {

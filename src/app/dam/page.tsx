@@ -12,6 +12,7 @@ import { TagSelector } from "./components/TagSelector"
 import { PhotoLightbox } from "./components/PhotoLightbox"
 import { OmniBar } from "./components/OmniBar"
 import { OmniCommandPalette, type CommandItem } from "./components/OmniCommandPalette"
+import { TagEditor } from "./components/TagEditor"
 
 interface Asset {
   id: string
@@ -71,6 +72,7 @@ export default function DAMPage() {
   const [activeLightboxAsset, setActiveLightboxAsset] = useState<Asset | null>(null)
   const [activeLightboxIndex, setActiveLightboxIndex] = useState(-1)
   const [isLightboxVisible, setIsLightboxVisible] = useState(false)
+  const [lightboxOpenTime, setLightboxOpenTime] = useState<number>(0)
   const [singleTagDrafts, setSingleTagDrafts] = useState<any[]>([])
   const [pendingTagRemoval, setPendingTagRemoval] = useState<{
     tagId: string
@@ -88,6 +90,8 @@ export default function DAMPage() {
   const [groupByTags, setGroupByTags] = useState<string[]>([])  // Track up to 2 tags for grouping
   const [isCommandOpen, setIsCommandOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState("")
+  const [commandMode, setCommandMode] = useState<'normal' | 'edit'>('normal')
+  const [isTagEditorOpen, setIsTagEditorOpen] = useState(false)
 
   // Helper to make colors more vibrant in lightbox mode
   const getTagColor = (color: string | undefined, isLightbox: boolean = false) => {
@@ -118,6 +122,7 @@ export default function DAMPage() {
 
   const closeCommandPalette = useCallback(() => {
     setIsCommandOpen(false)
+    setCommandMode('normal')
   }, [])
 
   const makeSelectedTag = useCallback((category: any, tag: any) => ({
@@ -615,12 +620,22 @@ export default function DAMPage() {
     const selectionCount = selectedAssets.length
 
     if (selectionCount > 0) {
-      tagCategories.forEach((category) => {
-        category.tags?.forEach((tag: any) => {
+      // Sort tag categories alphabetically and build items
+      const sortedCategories = [...tagCategories].sort((a, b) =>
+        a.displayName.localeCompare(b.displayName)
+      )
+
+      sortedCategories.forEach((category) => {
+        // Sort tags within each category
+        const sortedTags = [...(category.tags || [])].sort((a: any, b: any) =>
+          a.displayName.localeCompare(b.displayName)
+        )
+
+        sortedTags.forEach((tag: any) => {
           items.push({
             id: `assign-${category.id}-${tag.id}`,
-            group: `Set ${category.displayName}`,
-            label: tag.displayName,
+            group: "Set Tag",
+            label: `${category.displayName} › ${tag.displayName}`,
             description: `Replace ${category.displayName.toLowerCase()} on ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
             badge: category.displayName,
             onSelect: () => {
@@ -631,7 +646,12 @@ export default function DAMPage() {
         })
       })
 
-      teamMembers.forEach((member) => {
+      // Sort team members alphabetically
+      const sortedTeamMembers = [...teamMembers].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      )
+
+      sortedTeamMembers.forEach((member) => {
         items.push({
           id: `assign-team-${member.id}`,
           group: "Set Team Member",
@@ -716,12 +736,22 @@ export default function DAMPage() {
         onSelect: () => setSelectedAssets(assets.map((asset) => asset.id))
       })
 
-      tagCategories.forEach((category) => {
-        category.tags?.forEach((tag: any) => {
+      // Sort tag categories alphabetically and build items
+      const sortedCategories = [...tagCategories].sort((a, b) =>
+        a.displayName.localeCompare(b.displayName)
+      )
+
+      sortedCategories.forEach((category) => {
+        // Sort tags within each category
+        const sortedTags = [...(category.tags || [])].sort((a: any, b: any) =>
+          a.displayName.localeCompare(b.displayName)
+        )
+
+        sortedTags.forEach((tag: any) => {
           items.push({
             id: `single-${category.id}-${tag.id}`,
-            group: `Tag ${category.displayName}`,
-            label: tag.displayName,
+            group: "Tag",
+            label: `${category.displayName} › ${tag.displayName}`,
             description: `Apply to "${activeLightboxAsset.fileName}"`,
             badge: category.displayName,
             onSelect: () => {
@@ -732,7 +762,12 @@ export default function DAMPage() {
         })
       })
 
-      teamMembers.forEach((member) => {
+      // Sort team members alphabetically
+      const sortedTeamMembers = [...teamMembers].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      )
+
+      sortedTeamMembers.forEach((member) => {
         items.push({
           id: `single-team-${member.id}`,
           group: "Set Team Member",
@@ -789,22 +824,37 @@ export default function DAMPage() {
         })
       })
     } else {
-      tagCategories.forEach((category) => {
-        category.tags?.forEach((tag: any) => {
+      // Sort tag categories alphabetically and build filter items
+      const sortedCategories = [...tagCategories].sort((a, b) =>
+        a.displayName.localeCompare(b.displayName)
+      )
+
+      sortedCategories.forEach((category) => {
+        // Sort tags within each category
+        const sortedTags = [...(category.tags || [])].sort((a: any, b: any) =>
+          a.displayName.localeCompare(b.displayName)
+        )
+
+        sortedTags.forEach((tag: any) => {
           const isActive = activeFilters.some((filter) => filter.optionId === tag.id)
           items.push({
             id: `filter-tag-${tag.id}`,
             group: "Filter by Tag",
-            label: tag.displayName,
-            description: category.displayName,
+            label: `${category.displayName} › ${tag.displayName}`,
+            description: isActive ? "Click to remove filter" : "Click to add filter",
             isActive,
-            badge: isActive ? "Active" : undefined,
+            badge: isActive ? "Active" : category.displayName,
             onSelect: () => handleTagFilterToggle(tag.id)
           })
         })
       })
 
-      teamMembers.forEach((member) => {
+      // Sort team members alphabetically
+      const sortedTeamMembers = [...teamMembers].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      )
+
+      sortedTeamMembers.forEach((member) => {
         const isActive = activeFilters.some((filter) =>
           filter.categoryName === "team" && filter.optionId === member.id
         )
@@ -879,6 +929,20 @@ export default function DAMPage() {
       label: isUploadOpen ? "Hide upload panel" : "Show upload panel",
       description: "Quick upload access",
       onSelect: toggleUploadPanel
+    })
+
+    // Add tag management command
+    items.push({
+      id: "manage-tags",
+      group: "Actions",
+      label: "Manage tags & categories",
+      description: "Edit, rename, or reorganize tags",
+      badge: "Admin",
+      onSelect: () => {
+        // Open the tag editor
+        setIsCommandOpen(false)
+        setIsTagEditorOpen(true)
+      }
     })
 
     return items
@@ -1388,7 +1452,20 @@ export default function DAMPage() {
       assets={assets}
       isMobile={isMobile}
       onOpenCommandPalette={() => openCommandPalette("")}
-      onVisibilityChange={setIsLightboxVisible}
+      onVisibilityChange={(visible) => {
+        if (visible) {
+          setIsLightboxVisible(true)
+          setLightboxOpenTime(Date.now())
+        } else {
+          // Prevent immediate closure on mobile - ensure at least 500ms has passed
+          const timeSinceOpen = Date.now() - lightboxOpenTime
+          if (isMobile && timeSinceOpen < 500) {
+            console.log('Preventing immediate lightbox close on mobile')
+            return
+          }
+          setIsLightboxVisible(false)
+        }
+      }}
       omniBarProps={{
         mode: "page",  // Use exact same mode as grid view
         chipsContent: renderChips(),
@@ -1517,6 +1594,10 @@ export default function DAMPage() {
         onClose={closeCommandPalette}
         items={commandItems}
         isMobile={isMobile}
+        mode={commandMode}
+        onModeChange={setCommandMode}
+        tagCategories={tagCategories}
+        onTagCategoriesChange={setTagCategories}
         contextSummary={{
           selectionCount: selectedAssets.length,
           filterCount: activeFilters.length,
@@ -1524,6 +1605,18 @@ export default function DAMPage() {
           activeAssetName: activeLightboxAsset?.fileName
         }}
       />
+
+      {isTagEditorOpen && (
+        <TagEditor
+          categories={tagCategories}
+          onSave={(updatedCategories) => {
+            setTagCategories(updatedCategories)
+            setIsTagEditorOpen(false)
+            // TODO: Save to database
+          }}
+          onClose={() => setIsTagEditorOpen(false)}
+        />
+      )}
 
       {isMobile && !isCommandOpen && (
         <div className="fixed bottom-5 left-0 right-0 z-40 px-6 lg:hidden">

@@ -34,6 +34,10 @@ interface OmniCommandPaletteProps {
   onClose: () => void
   items: CommandItem[]
   isMobile: boolean
+  mode?: 'normal' | 'edit'
+  onModeChange?: (mode: 'normal' | 'edit') => void
+  tagCategories?: any[]
+  onTagCategoriesChange?: (categories: any[]) => void
   contextSummary?: {
     selectionCount: number
     filterCount: number
@@ -49,6 +53,10 @@ export function OmniCommandPalette({
   onClose,
   items,
   isMobile,
+  mode = 'normal',
+  onModeChange,
+  tagCategories = [],
+  onTagCategoriesChange,
   contextSummary
 }: OmniCommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -56,24 +64,26 @@ export function OmniCommandPalette({
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const trimmedQuery = query.trim()
 
+  // Edit mode state
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
+  const [editingItem, setEditingItem] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState("")
+  const [unsavedChanges, setUnsavedChanges] = useState<Map<string, any>>(new Map())
+
   const getGroupMeta = (groupName: string): { icon: LucideIcon; description: string } => {
-    if (groupName.startsWith("Set ")) {
-      return {
-        icon: Wand2,
-        description: `Replace ${groupName.replace("Set ", "")} for the current context`
-      }
-    }
-    if (groupName.startsWith("Filter by")) {
-      return {
-        icon: Filter,
-        description: "Narrow the gallery instantly"
-      }
-    }
     switch (groupName) {
+      case "Tag":
+        return { icon: Tags, description: "Apply tags to photos" }
+      case "Set Tag":
+        return { icon: Tags, description: "Replace tags on selection" }
+      case "Filter by Tag":
+        return { icon: Filter, description: "Narrow the gallery by tags" }
       case "Set Team Member":
         return { icon: Users2, description: "Assign a featured artist" }
+      case "Filter by Team":
+        return { icon: Users2, description: "Filter by team member" }
       case "Selection":
-        return { icon: Wand2, description: "Commit queued changes" }
+        return { icon: Wand2, description: "Manage photo selections" }
       case "Filters":
         return { icon: Filter, description: "Reset or tweak active filters" }
       case "Grouping":
@@ -82,6 +92,10 @@ export function OmniCommandPalette({
         return { icon: Eye, description: "Adjust gallery layout or density" }
       case "Actions":
         return { icon: Share2, description: "Open supporting utilities" }
+      case "Photo Tools":
+        return { icon: Wand2, description: "Photo management actions" }
+      case "Current Tags":
+        return { icon: Tags, description: "Remove existing tags" }
       default:
         return { icon: Tags, description: "Quick DAM action" }
     }
@@ -91,7 +105,8 @@ export function OmniCommandPalette({
     const normalized = query.trim().toLowerCase()
     if (!normalized) return items
     return items.filter(item => {
-      const target = `${item.label} ${item.description ?? ""}`.toLowerCase()
+      // Include group name, label, description, and badge in search
+      const target = `${item.group} ${item.label} ${item.description ?? ""} ${item.badge ?? ""}`.toLowerCase()
       return target.includes(normalized)
     })
   }, [items, query])
@@ -346,6 +361,20 @@ export function OmniCommandPalette({
           ) : (
             Object.entries(grouped).map(([groupName, groupItems]) => {
               const meta = getGroupMeta(groupName)
+
+              // Group items by category prefix for better organization
+              const categorizedItems = groupItems.reduce<Record<string, CommandItem[]>>((acc, item) => {
+                // Extract category from label if it contains a separator
+                const category = item.label.includes(' › ')
+                  ? item.label.split(' › ')[0]
+                  : item.badge || 'Other'
+                if (!acc[category]) acc[category] = []
+                acc[category].push(item)
+                return acc
+              }, {})
+
+              const hasMultipleCategories = Object.keys(categorizedItems).length > 1
+
               return (
                 <div key={groupName} className="px-4 pb-4">
                   <div className="rounded-3xl border border-sage/20 bg-white/85 shadow-sm p-4 space-y-3">
@@ -366,9 +395,27 @@ export function OmniCommandPalette({
                         </button>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {groupItems.map(renderActionButton)}
-                    </div>
+                    {hasMultipleCategories ? (
+                      <div className="space-y-3">
+                        {Object.entries(categorizedItems)
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([category, items], index) => (
+                            <div key={category}>
+                              {index > 0 && <div className="border-t border-sage/10 pt-2 mb-2" />}
+                              <div className="text-[10px] uppercase tracking-widest text-sage/60 mb-1.5 px-1">
+                                {category}
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {items.map(renderActionButton)}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {groupItems.map(renderActionButton)}
+                      </div>
+                    )}
                   </div>
                 </div>
               )
