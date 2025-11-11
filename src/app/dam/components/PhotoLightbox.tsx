@@ -165,7 +165,15 @@ export function PhotoLightbox({
         return (
           <div className="photo-lightbox-overlay">
             {omniBarProps && (
-              <div className="photo-lightbox-omnibar">
+              <div
+                className="photo-lightbox-omnibar"
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+                onTouchEnd={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onPointerMove={(e) => e.stopPropagation()}
+                onPointerUp={(e) => e.stopPropagation()}
+              >
                 <OmniBar
                   {...omniBarProps}
                   counterSlot={`${index + 1} / ${assets.length}`}
@@ -309,6 +317,16 @@ export function PhotoLightbox({
         .photo-lightbox-omnibar .scrollbar-hidden {
           -webkit-overflow-scrolling: touch;
           touch-action: pan-x;
+          overscroll-behavior-x: contain;
+          will-change: scroll-position;
+        }
+
+        /* Force scrolling on mobile */
+        @supports (-webkit-touch-callout: none) {
+          .photo-lightbox-omnibar .overflow-x-auto {
+            overflow-x: scroll !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
         }
 
         @media (max-width: 768px) {

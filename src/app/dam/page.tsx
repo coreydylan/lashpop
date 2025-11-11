@@ -618,7 +618,7 @@ export default function DAMPage() {
     }
   }
 
-  const renderLightboxChips = () => {
+  const renderLightboxTags = () => {
     if (selectedAssets.length > 0) {
       return renderChips()
     }
@@ -636,8 +636,7 @@ export default function DAMPage() {
     const hasTags = Boolean(teamMember) || (activeLightboxAsset.tags && activeLightboxAsset.tags.length > 0)
 
     return (
-      <div className="flex flex-col gap-3 w-full">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
           {teamMember && (
             <div
               className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
@@ -730,17 +729,24 @@ export default function DAMPage() {
             </div>
           ))}
 
-          {!hasTags && (
-            <span className="text-sm text-cream/70">No tags yet. Add one below.</span>
-          )}
-        </div>
+        {!hasTags && (
+          <span className="text-sm text-cream/70">No tags yet. Add one below.</span>
+        )}
+      </div>
+    )
+  }
 
-        <div className="min-w-[240px]">
-          <TagSelector
-            selectedTags={singleTagDrafts}
-            onTagsChange={handleSingleTagsChange}
-          />
-        </div>
+  const renderLightboxTagSelector = () => {
+    if (selectedAssets.length > 0 || !activeLightboxAsset) {
+      return null
+    }
+
+    return (
+      <div className="min-w-[240px]">
+        <TagSelector
+          selectedTags={singleTagDrafts}
+          onTagsChange={handleSingleTagsChange}
+        />
       </div>
     )
   }
@@ -752,7 +758,8 @@ export default function DAMPage() {
       assets={assets}
       omniBarProps={{
         mode: "overlay",
-        chipsContent: renderLightboxChips(),
+        chipsContent: renderLightboxTags(),
+        tagSelectorContent: renderLightboxTagSelector(),
         selectedCount: selectedAssets.length,
         assetsCount: assets.length,
         totalAssetsCount: allAssets.length,

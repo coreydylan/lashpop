@@ -7,6 +7,7 @@ import { X, Grid3x3, LayoutGrid } from "lucide-react"
 export interface OmniBarProps {
   mode: "page" | "overlay"
   chipsContent?: ReactNode
+  tagSelectorContent?: ReactNode  // Separate content for tag selector
   selectedCount: number
   assetsCount: number
   totalAssetsCount: number
@@ -22,6 +23,7 @@ export interface OmniBarProps {
 export function OmniBar({
   mode,
   chipsContent,
+  tagSelectorContent,
   selectedCount,
   assetsCount,
   totalAssetsCount,
@@ -61,8 +63,15 @@ export function OmniBar({
       {/* Desktop layout */}
       <div className="hidden lg:flex items-center gap-4 px-6 py-5">
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            {chipsContent ?? null}
+          <div className={isOverlay && tagSelectorContent ? "space-y-3" : ""}>
+            <div className="flex flex-wrap items-center gap-2">
+              {chipsContent ?? null}
+            </div>
+            {isOverlay && tagSelectorContent && (
+              <div className="flex items-center gap-2">
+                {tagSelectorContent}
+              </div>
+            )}
           </div>
         </div>
 
@@ -179,13 +188,20 @@ export function OmniBar({
 
         {/* Chips/Filters area - always scroll in overlay mode, wrap in normal mode */}
         {chipsContent && (
-          <div className="relative w-full">
+          <div className="relative w-full overflow-hidden">
             {/* In overlay (lightbox), always use horizontal scroll. In normal mode, wrap if many selected */}
             {isOverlay || selectedCount <= 3 ? (
-              <div className={clsx(
-                "overflow-x-auto scrollbar-hidden",
-                isOverlay ? "px-3" : "-mx-3 px-3"
-              )}>
+              <div
+                className={clsx(
+                  "overflow-x-auto scrollbar-hidden",
+                  isOverlay ? "mx-0 px-3" : "-mx-3 px-3"
+                )}
+                style={isOverlay ? {
+                  WebkitOverflowScrolling: 'touch',
+                  overflowX: 'auto',
+                  overflowY: 'hidden'
+                } : undefined}
+              >
                 <div className="flex flex-nowrap items-center gap-2 min-w-max pb-1">
                   {chipsContent}
                 </div>
@@ -195,6 +211,24 @@ export function OmniBar({
                 {chipsContent}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Separate tag selector row for lightbox mode */}
+        {isOverlay && tagSelectorContent && (
+          <div className="relative w-full overflow-hidden">
+            <div
+              className="overflow-x-auto scrollbar-hidden px-3"
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                overflowX: 'auto',
+                overflowY: 'hidden'
+              }}
+            >
+              <div className="min-w-max pb-1">
+                {tagSelectorContent}
+              </div>
+            </div>
           </div>
         )}
       </div>
