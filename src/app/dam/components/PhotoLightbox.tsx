@@ -91,6 +91,9 @@ export function PhotoLightbox({
     }
 
     if (e.pointerType === "touch") {
+      // Prevent iOS context menu
+      e.preventDefault()
+
       touchStartXRef.current = e.clientX
       isScrollingRef.current = false
       clearThumbPressTimer()
@@ -181,6 +184,11 @@ export function PhotoLightbox({
                       <button
                         key={thumbAsset.id}
                         className={`photo-lightbox-thumb ${isActive ? "active" : ""} ${thumbSelected ? "selected" : ""}`}
+                        style={{
+                          WebkitTouchCallout: 'none',
+                          WebkitUserSelect: 'none',
+                          userSelect: 'none'
+                        }}
                         onClick={(e) => {
                           e.stopPropagation()
                           onIndexChange(thumbIndex)
@@ -191,8 +199,19 @@ export function PhotoLightbox({
                         onPointerUp={handleThumbPointerEnd}
                         onPointerLeave={handleThumbPointerEnd}
                         onPointerCancel={handleThumbPointerEnd}
+                        onContextMenu={(e) => e.preventDefault()}
                       >
-                        <img src={thumbAsset.filePath} alt={thumbAsset.fileName} />
+                        <img
+                          src={thumbAsset.filePath}
+                          alt={thumbAsset.fileName}
+                          draggable={false}
+                          style={{
+                            WebkitTouchCallout: 'none',
+                            WebkitUserSelect: 'none',
+                            userSelect: 'none'
+                          }}
+                          onContextMenu={(e) => e.preventDefault()}
+                        />
                         {thumbSelected && (
                           <div className="photo-lightbox-thumb__badge">
                             <CheckCircle />

@@ -88,6 +88,24 @@
   display: none;
 }
 
+/* Prevent iOS image context menu in DAM */
+.dam-grid img,
+.photo-lightbox-thumb img,
+.photo-lightbox-overlay img {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Ensure touch manipulation on containers */
+.dam-grid > div,
+.photo-lightbox-thumb {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 @layer components {
   /* Typography */
   .h1 {

@@ -115,7 +115,7 @@ export function AssetGrid({
       )}
 
       {/* Grid - Square or Masonry layout based on gridViewMode */}
-      <div className={`mt-4 ${
+      <div className={`dam-grid mt-4 ${
         gridViewMode === "square"
           ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
           : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
@@ -158,8 +158,11 @@ function AssetCard({
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isTouchDevice) return
+
+    // Prevent iOS context menu
+    e.preventDefault()
 
     const timer = setTimeout(() => {
       onLongPress()
@@ -167,7 +170,7 @@ function AssetCard({
     setPressTimer(timer)
   }
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e?: React.TouchEvent<HTMLDivElement>) => {
     if (pressTimer) {
       clearTimeout(pressTimer)
       setPressTimer(null)
@@ -178,9 +181,16 @@ function AssetCard({
     <img
       src={asset.filePath}
       alt={asset.fileName}
+      draggable={false}
       className={`w-full ${
         gridViewMode === "square" ? "h-full object-cover" : "h-auto"
       }`}
+      style={{
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
+      }}
+      onContextMenu={(e) => e.preventDefault()}
     />
   )
 
@@ -189,10 +199,16 @@ function AssetCard({
       className={`relative arch-full overflow-hidden bg-warm-sand/40 group cursor-pointer touch-manipulation shadow-sm hover:shadow-lg transition-shadow ${
         gridViewMode === "square" ? "aspect-square" : "break-inside-avoid mb-3 sm:mb-4"
       } ${isSelected ? "ring-4 ring-dusty-rose/80" : ""}`}
+      style={{
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
+      }}
       onClick={onClick}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onMouseLeave={handleTouchEnd}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {/* Image - wrapped in PhotoView when not in selection mode */}
       {isSelectionMode ? (
