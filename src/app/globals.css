@@ -79,6 +79,15 @@
   }
 }
 
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 @layer components {
   /* Typography */
   .h1 {
@@ -279,5 +288,15 @@
   
   .bg-cream {
     background-color: rgb(var(--cream));
+  }
+
+  /* Hide scrollbar utility */
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
   }
 }

@@ -1,10 +1,10 @@
 "use client"
 
-import type { ReactNode } from "react"
+import type { ReactNode, PointerEvent as ReactPointerEvent } from "react"
 import { useCallback, useRef } from "react"
 import { PhotoProvider } from "react-photo-view"
 import "react-photo-view/dist/react-photo-view.css"
-import { CheckCircle, Circle, ChevronLeft, ChevronRight } from "lucide-react"
+import { CheckCircle, Circle } from "lucide-react"
 import { OmniBar, type OmniBarProps } from "./OmniBar"
 
 interface Asset {
@@ -46,6 +46,7 @@ export function PhotoLightbox({
 }: PhotoLightboxProps) {
   const thumbnailStripRef = useRef<HTMLDivElement | null>(null)
   const currentIndexRef = useRef(0)
+  const thumbPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const notifyActiveAsset = useCallback(
     (index: number | null) => {
@@ -72,6 +73,32 @@ export function PhotoLightbox({
 
     container.scrollBy({ left: offset, behavior: "smooth" })
   }, [])
+
+  const clearThumbPressTimer = () => {
+    if (thumbPressTimerRef.current) {
+      clearTimeout(thumbPressTimerRef.current)
+      thumbPressTimerRef.current = null
+    }
+  }
+
+  const handleThumbPointerDown = (assetId: string, e: ReactPointerEvent<HTMLButtonElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.pointerType === "mouse") {
+      e.preventDefault()
+      handleToggleSelection(assetId)
+      return
+    }
+
+    if (e.pointerType === "touch") {
+      clearThumbPressTimer()
+      thumbPressTimerRef.current = window.setTimeout(() => {
+        handleToggleSelection(assetId)
+      }, 500)
+    }
+  }
+
+  const handleThumbPointerEnd = () => {
+    clearThumbPressTimer()
+  }
 
   const handleToggleSelection = (assetId: string) => {
     if (!onSelectionChange) return
@@ -124,43 +151,8 @@ export function PhotoLightbox({
               </div>
             )}
 
-            {onSelectionChange && (
-              <div className="photo-lightbox-select-control">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleToggleSelection(asset.id)
-                  }}
-                  className={`photo-lightbox-select-btn ${isSelected ? "selected" : "idle"}`}
-                >
-                  {isSelected ? (
-                    <>
-                      <CheckCircle className="icon" />
-                      <span>Selected</span>
-                    </>
-                  ) : (
-                    <>
-                      <Circle className="icon" />
-                      <span>Select</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-
             {assets.length > 1 && (
               <div className="photo-lightbox-thumbnails">
-                <button
-                  className="photo-lightbox-nav photo-lightbox-nav--left"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const nextIndex = (index - 1 + assets.length) % assets.length
-                    onIndexChange(nextIndex)
-                    scrollToIndex(nextIndex)
-                  }}
-                >
-                  <ChevronLeft />
-                </button>
                 <div className="photo-lightbox-thumbnails__scroller" ref={thumbnailStripRef}>
                   {assets.map((thumbAsset, thumbIndex) => {
                     const isActive = thumbIndex === index
@@ -169,12 +161,16 @@ export function PhotoLightbox({
                     return (
                       <button
                         key={thumbAsset.id}
-                        className={`photo-lightbox-thumb ${isActive ? "active" : ""}`}
+                        className={`photo-lightbox-thumb ${isActive ? "active" : ""} ${thumbSelected ? "selected" : ""}`}
                         onClick={(e) => {
                           e.stopPropagation()
                           onIndexChange(thumbIndex)
                           scrollToIndex(thumbIndex)
                         }}
+                        onPointerDown={(e) => handleThumbPointerDown(thumbAsset.id, e)}
+                        onPointerUp={handleThumbPointerEnd}
+                        onPointerLeave={handleThumbPointerEnd}
+                        onPointerCancel={handleThumbPointerEnd}
                       >
                         <img src={thumbAsset.filePath} alt={thumbAsset.fileName} />
                         {thumbSelected && (
@@ -186,38 +182,6 @@ export function PhotoLightbox({
                     )
                   })}
                 </div>
-                <button
-                  className="photo-lightbox-nav photo-lightbox-nav--right"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const nextIndex = (index + 1) % assets.length
-                    onIndexChange(nextIndex)
-                    scrollToIndex(nextIndex)
-                  }}
-                >
-                  <ChevronRight />
-                </button>
-                {onSelectionChange && (
-                  <button
-                    className={`photo-lightbox-select-btn photo-lightbox-select-btn--bottom ${isSelected ? "selected" : "idle"}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleToggleSelection(asset.id)
-                    }}
-                  >
-                    {isSelected ? (
-                      <>
-                        <CheckCircle className="icon" />
-                        <span>Selected</span>
-                      </>
-                    ) : (
-                      <>
-                        <Circle className="icon" />
-                        <span>Select</span>
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
             )}
           </div>
@@ -289,15 +253,10 @@ export function PhotoLightbox({
           top: 0;
           left: 0;
           right: 0;
-          background: linear-gradient(
-            to bottom,
-            rgba(20, 18, 16, 0.98) 0%,
-            rgba(20, 18, 16, 0.85) 65%,
-            transparent 100%
-          );
-          backdrop-filter: blur(36px) saturate(180%);
-          -webkit-backdrop-filter: blur(36px) saturate(180%);
-          padding: 32px 24px 36px;
+          background: rgba(10, 10, 10, 0.4);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          padding: 20px 16px 24px;
           pointer-events: auto;
         }
 
@@ -306,57 +265,29 @@ export function PhotoLightbox({
           margin: 0 auto;
         }
 
-        .photo-lightbox-select-btn {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: 999px;
-          border: none;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 600;
-          color: #F2EDE5;
-          background: rgba(242, 237, 229, 0.12);
-          transition: background 0.2s ease;
-        }
-
-        .photo-lightbox-select-btn .icon {
-          width: 18px;
-          height: 18px;
-        }
-
-        .photo-lightbox-select-btn.selected {
-          background: rgba(217, 136, 128, 0.9);
-        }
-
         .photo-lightbox-thumbnails {
           position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          background: linear-gradient(
-            to top,
-            rgba(20, 18, 16, 0.98) 0%,
-            rgba(20, 18, 16, 0.85) 65%,
-            transparent 100%
-          );
-          backdrop-filter: blur(36px) saturate(180%);
-          -webkit-backdrop-filter: blur(36px) saturate(180%);
-          padding: 20px 48px 40px;
+          bottom: 24px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: rgba(18, 16, 14, 0.55);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          padding: 14px 20px;
           pointer-events: auto;
           display: flex;
           align-items: center;
           gap: 16px;
-          justify-content: center;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.15);
+          box-shadow: 0 18px 45px rgba(0,0,0,0.45);
         }
 
         .photo-lightbox-thumbnails__scroller {
           display: flex;
           gap: 10px;
           overflow-x: auto;
-          padding-bottom: 8px;
-          max-width: 70vw;
+          max-width: 60vw;
           scrollbar-width: none;
         }
 
@@ -387,6 +318,11 @@ export function PhotoLightbox({
           box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
         }
 
+        .photo-lightbox-thumb.selected:not(.active) {
+          border: 2px solid rgba(217, 136, 128, 0.6);
+          opacity: 0.9;
+        }
+
         .photo-lightbox-thumb img {
           width: 100%;
           height: 100%;
@@ -411,41 +347,17 @@ export function PhotoLightbox({
           filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
         }
 
-        .photo-lightbox-nav {
-          width: 40px;
-          height: 40px;
-          border-radius: 999px;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          background: rgba(0, 0, 0, 0.25);
-          color: #F2EDE5;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: background 0.2s ease;
-        }
-
-        .photo-lightbox-nav:hover {
-          background: rgba(0, 0, 0, 0.45);
-        }
-
-        .photo-lightbox-select-btn--bottom {
-          position: absolute;
-          bottom: 12px;
-          right: 32px;
-          transform: translateY(50%);
-        }
-
         @media (max-width: 768px) {
           .photo-lightbox-thumbnails {
-            padding: 16px 32px 32px;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            width: calc(100vw - 32px);
           }
 
           .photo-lightbox-thumbnails__scroller {
-            max-width: 65vw;
-          }
-
-          .photo-lightbox-select-btn--bottom {
-            right: 16px;
+            max-width: 100%;
+            justify-content: center;
           }
         }
 
