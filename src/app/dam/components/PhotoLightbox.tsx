@@ -293,14 +293,33 @@ export function PhotoLightbox({
           left: 0;
           right: 0;
           background: transparent;
-          padding: 20px 16px 24px;
+          padding: 20px 0 24px;
           pointer-events: auto;
           z-index: 10;
+          overflow: visible;
+          width: 100%;
         }
 
         .photo-lightbox-omnibar > div {
           max-width: 1200px;
           margin: 0 auto;
+        }
+
+        /* Ensure scrollable areas work in lightbox */
+        .photo-lightbox-omnibar .scrollbar-hidden {
+          -webkit-overflow-scrolling: touch;
+          touch-action: pan-x;
+        }
+
+        @media (max-width: 768px) {
+          .photo-lightbox-omnibar {
+            padding: 12px 0 20px;
+            width: 100vw;
+          }
+
+          .photo-lightbox-omnibar > div {
+            max-width: 100%;
+          }
         }
 
         .photo-lightbox-thumbnails {

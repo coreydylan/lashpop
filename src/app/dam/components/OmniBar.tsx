@@ -36,12 +36,12 @@ export function OmniBar({
   const isOverlay = mode === "overlay"
 
   const containerClass = clsx(
-    "arch-full overflow-hidden transition-colors",
+    "arch-full transition-colors",
     isOverlay
-      ? "bg-black/25 backdrop-blur-md lg:bg-black/15 lg:backdrop-blur-sm"
+      ? "bg-black/25 backdrop-blur-md lg:bg-black/15 lg:backdrop-blur-sm overflow-visible"
       : selectedCount > 0
-      ? "bg-dusty-rose/30"
-      : "bg-warm-sand/30"
+      ? "bg-dusty-rose/30 overflow-hidden"
+      : "bg-warm-sand/30 overflow-hidden"
   )
 
   const textPrimary = isOverlay ? "text-cream" : "text-dune"
@@ -122,9 +122,9 @@ export function OmniBar({
       </div>
 
       {/* Mobile layout */}
-      <div className="block lg:hidden px-3 py-2 space-y-3">
+      <div className={clsx("block lg:hidden py-2 space-y-3", isOverlay ? "px-0" : "px-3")}>
         {/* Header row */}
-        <div className="flex items-center justify-between">
+        <div className={clsx("flex items-center justify-between", isOverlay ? "px-3" : "")}>
           {selectedCount > 0 ? (
             <>
               <div className="flex items-center gap-3">
@@ -177,22 +177,22 @@ export function OmniBar({
           )}
         </div>
 
-        {/* Chips/Filters area - wrap on mobile for better visibility */}
+        {/* Chips/Filters area - always scroll in overlay mode, wrap in normal mode */}
         {chipsContent && (
-          <div className={isOverlay ? "relative" : ""}>
-            {/* Show wrapping layout if many items selected, otherwise horizontal scroll */}
-            {selectedCount > 3 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {chipsContent}
-              </div>
-            ) : (
+          <div className="relative w-full">
+            {/* In overlay (lightbox), always use horizontal scroll. In normal mode, wrap if many selected */}
+            {isOverlay || selectedCount <= 3 ? (
               <div className={clsx(
                 "overflow-x-auto scrollbar-hidden",
-                isOverlay ? "-mx-3 px-3" : ""
+                isOverlay ? "px-3" : "-mx-3 px-3"
               )}>
                 <div className="flex flex-nowrap items-center gap-2 min-w-max pb-1">
                   {chipsContent}
                 </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {chipsContent}
               </div>
             )}
           </div>
