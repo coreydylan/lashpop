@@ -29,7 +29,10 @@ export async function syncService(vagaroService: any) {
 
   // Get duration - average across providers
   const durations = performers.map((p: any) => p.durationMinutes).filter(Boolean)
-  const durationMinutes = durations.length > 0 ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length) : 60
+  const durationMinutes =
+    durations.length > 0
+      ? Math.round(durations.reduce((a: number, b: number) => a + b, 0) / durations.length)
+      : 60
 
   // Generate slug from title
   const slug = title.toLowerCase()
@@ -107,7 +110,8 @@ export async function syncAllServices() {
     try {
       await syncService(service)
     } catch (error) {
-      console.error(`  ❌ Failed to sync service ${service.serviceTitle}:`, error)
+      const serviceName = (service as any)?.serviceTitle ?? (service as any)?.name ?? 'service'
+      console.error(`  ❌ Failed to sync service ${serviceName}:`, error)
     }
   }
 

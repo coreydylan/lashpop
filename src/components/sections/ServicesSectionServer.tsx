@@ -1,20 +1,16 @@
-import { getAllServices, getMainCategories, getSubCategories } from "@/actions/services"
+import { getAllServices } from "@/actions/services"
 import { ServicesSectionClient } from "./ServicesSectionClient"
 
 export async function ServicesSection() {
-  const [services, mainCategories, subCategories] = await Promise.all([
-    getAllServices(),
-    getMainCategories(),
-    getSubCategories()
-  ])
+  const services = await getAllServices()
 
   // Transform database format to component format
   const formattedServices = services.map(service => ({
     id: service.slug,
-    mainCategory: service.mainCategory,
-    subCategory: service.subCategory || '',
-    title: service.displayTitle || service.name, // Use displayTitle if available, fallback to name
-    fullTitle: service.name, // Keep full name for reference if needed
+    mainCategory: service.categoryName || "Featured",
+    subCategory: "",
+    title: service.name,
+    fullTitle: service.name,
     subtitle: service.subtitle || '',
     description: service.description,
     duration: `${service.durationMinutes} min`,
@@ -24,11 +20,14 @@ export async function ServicesSection() {
     displayOrder: service.displayOrder
   }))
 
+  const mainCategories = Array.from(
+    new Set(formattedServices.map(service => service.mainCategory))
+  ).sort()
+
   return (
     <ServicesSectionClient
       services={formattedServices}
       mainCategories={mainCategories}
-      allSubCategories={subCategories}
     />
   )
 }

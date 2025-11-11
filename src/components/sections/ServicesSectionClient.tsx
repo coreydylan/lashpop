@@ -23,7 +23,6 @@ interface Service {
 interface ServicesSectionClientProps {
   services: Service[]
   mainCategories: string[]
-  allSubCategories: string[]
 }
 
 const getIconForService = (id: string) => {
@@ -36,7 +35,7 @@ const getIconForService = (id: string) => {
   return <StarIcon className="w-8 h-8" />
 }
 
-export function ServicesSectionClient({ services, mainCategories, allSubCategories }: ServicesSectionClientProps) {
+export function ServicesSectionClient({ services, mainCategories }: ServicesSectionClientProps) {
   const [hoveredService, setHoveredService] = useState<string | null>(null)
   const [selectedMainCategories, setSelectedMainCategories] = useState<Set<string>>(new Set())
   const [selectedSubCategories, setSelectedSubCategories] = useState<Set<string>>(new Set())
