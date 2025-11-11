@@ -47,6 +47,8 @@ export function PhotoLightbox({
   const thumbnailStripRef = useRef<HTMLDivElement | null>(null)
   const currentIndexRef = useRef(0)
   const thumbPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const touchStartXRef = useRef<number | null>(null)
+  const isScrollingRef = useRef(false)
 
   const notifyActiveAsset = useCallback(
     (index: number | null) => {
@@ -89,15 +91,32 @@ export function PhotoLightbox({
     }
 
     if (e.pointerType === "touch") {
+      touchStartXRef.current = e.clientX
+      isScrollingRef.current = false
       clearThumbPressTimer()
+
       thumbPressTimerRef.current = window.setTimeout(() => {
-        handleToggleSelection(assetId)
+        if (!isScrollingRef.current) {
+          handleToggleSelection(assetId)
+        }
       }, 500)
+    }
+  }
+
+  const handleThumbPointerMove = (e: ReactPointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === "touch" && touchStartXRef.current !== null) {
+      const deltaX = Math.abs(e.clientX - touchStartXRef.current)
+      if (deltaX > 10) { // If moved more than 10px, consider it scrolling
+        isScrollingRef.current = true
+        clearThumbPressTimer()
+      }
     }
   }
 
   const handleThumbPointerEnd = () => {
     clearThumbPressTimer()
+    touchStartXRef.current = null
+    isScrollingRef.current = false
   }
 
   const handleToggleSelection = (assetId: string) => {
@@ -168,6 +187,7 @@ export function PhotoLightbox({
                           scrollToIndex(thumbIndex)
                         }}
                         onPointerDown={(e) => handleThumbPointerDown(thumbAsset.id, e)}
+                        onPointerMove={handleThumbPointerMove}
                         onPointerUp={handleThumbPointerEnd}
                         onPointerLeave={handleThumbPointerEnd}
                         onPointerCancel={handleThumbPointerEnd}
@@ -279,9 +299,13 @@ export function PhotoLightbox({
           display: flex;
           gap: 10px;
           overflow-x: auto;
+          overflow-y: hidden;
           max-width: 90vw;
           scrollbar-width: none;
           padding: 4px 0;
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+          touch-action: pan-x;
         }
 
         .photo-lightbox-thumbnails__scroller::-webkit-scrollbar {
