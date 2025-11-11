@@ -52,6 +52,7 @@ export default function DAMPage() {
   const [assets, setAssets] = useState<Asset[]>([])
   const [allAssets, setAllAssets] = useState<Asset[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [tagCategories, setTagCategories] = useState<any[]>([])
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
@@ -112,6 +113,7 @@ export default function DAMPage() {
 
     fetchAssets()
     fetchTeamMembers()
+    fetchTagCategories()
 
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
@@ -120,6 +122,11 @@ export default function DAMPage() {
     setPendingTagRemoval(null)
     setSingleTagDrafts([])
   }, [selectedAssets, activeLightboxAsset])
+
+  // Apply filters when activeFilters changes
+  useEffect(() => {
+    applyFilters(allAssets, activeFilters)
+  }, [activeFilters, allAssets])
 
   const fetchAssets = async () => {
     try {
@@ -194,6 +201,16 @@ export default function DAMPage() {
       setTeamMembers(data.teamMembers || [])
     } catch (error) {
       console.error("Failed to fetch team members:", error)
+    }
+  }
+
+  const fetchTagCategories = async () => {
+    try {
+      const response = await fetch("/api/dam/tags")
+      const data = await response.json()
+      setTagCategories(data.categories || [])
+    } catch (error) {
+      console.error("Failed to fetch tag categories:", error)
     }
   }
 
@@ -675,13 +692,118 @@ export default function DAMPage() {
       )
     } else {
       /* Filter Mode */
+      // Convert activeFilters to selected IDs format
+      const selectedTagIds = activeFilters
+        .filter(f => f.categoryName !== 'team')
+        .map(f => f.optionId)
+      const selectedTeamMemberIds = activeFilters
+        .filter(f => f.categoryName === 'team')
+        .map(f => f.optionId)
+
       return (
         <>
           {groupByContent}
+          {/* Render active filter chips */}
+          {activeFilters.map((filter) => (
+            <div
+              key={`${filter.categoryId}-${filter.optionId}`}
+              className="flex items-center gap-1 arch-full overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              style={{
+                background: `linear-gradient(135deg, ${filter.categoryColor || "#A19781"} 0%, ${filter.categoryColor || "#A19781"}CC 100%)`
+              }}
+            >
+              <div className="flex items-center gap-2 px-3 py-1.5">
+                {filter.imageUrl && (
+                  <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
+                    <img
+                      src={filter.imageUrl}
+                      alt={filter.optionDisplayName}
+                      className="w-full h-full object-cover"
+                      style={{
+                        objectPosition: 'center 25%',
+                        transform: 'scale(2)'
+                      }}
+                    />
+                  </div>
+                )}
+                <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                  {filter.categoryDisplayName}
+                </span>
+                <span className="text-cream/80 text-xs">›</span>
+                <span className="text-sm text-cream font-medium">
+                  {filter.optionDisplayName}
+                </span>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveFilters(activeFilters.filter(
+                    f => !(f.categoryId === filter.categoryId && f.optionId === filter.optionId)
+                  ))
+                }}
+                className="px-2 py-1.5 hover:bg-black/10 transition-colors"
+              >
+                <X className="w-3.5 h-3.5 text-cream" />
+              </button>
+            </div>
+          ))}
           <FilterSelector
-            activeFilters={activeFilters}
-            onFiltersChange={handleFiltersChange}
-          assets={assets}
+            categories={tagCategories}
+            teamMembers={teamMembers}
+            selectedTagIds={selectedTagIds}
+            selectedTeamMemberIds={selectedTeamMemberIds}
+            assets={assets}
+            onTagToggle={(tagId) => {
+              // Find the tag and its category
+              const category = tagCategories.find(cat =>
+                cat.tags?.some((tag: any) => tag.id === tagId)
+              )
+              if (category) {
+                const tag = category.tags.find((t: any) => t.id === tagId)
+                if (tag) {
+                  const isSelected = selectedTagIds.includes(tagId)
+                  if (isSelected) {
+                    // Remove filter
+                    setActiveFilters(activeFilters.filter(f => f.optionId !== tagId))
+                  } else {
+                    // Add filter
+                    const newFilter: ActiveFilter = {
+                      categoryId: category.id,
+                      categoryName: category.name,
+                      categoryDisplayName: category.displayName,
+                      categoryColor: category.color,
+                      optionId: tag.id,
+                      optionName: tag.name,
+                      optionDisplayName: tag.displayName
+                    }
+                    setActiveFilters([...activeFilters, newFilter])
+                  }
+                }
+              }
+            }}
+            onTeamMemberToggle={(memberId) => {
+              const isSelected = selectedTeamMemberIds.includes(memberId)
+              if (isSelected) {
+                // Remove filter
+                setActiveFilters(activeFilters.filter(f => f.optionId !== memberId))
+              } else {
+                // Add filter
+                const member = teamMembers.find(m => m.id === memberId)
+                if (member) {
+                  const newFilter: ActiveFilter = {
+                    categoryId: 'team',
+                    categoryName: 'team',
+                    categoryDisplayName: 'Team',
+                    categoryColor: '#BCC9C2',
+                    optionId: member.id,
+                    optionName: member.name,
+                    optionDisplayName: member.name,
+                    imageUrl: member.imageUrl
+                  }
+                  setActiveFilters([...activeFilters, newFilter])
+                }
+              }
+            }}
+            isLightbox={false}
           />
         </>
       )
@@ -838,9 +960,8 @@ export default function DAMPage() {
       onSelectionChange={handleSelectionChange}
       assets={assets}
       omniBarProps={{
-        mode: "overlay",
-        chipsContent: renderLightboxTags(),
-        tagSelectorContent: renderLightboxTagSelector(),
+        mode: "page",  // Use exact same mode as grid view
+        chipsContent: renderChips(),  // Use same chips renderer
         selectedCount: selectedAssets.length,
         assetsCount: assets.length,
         totalAssetsCount: allAssets.length,
@@ -849,7 +970,7 @@ export default function DAMPage() {
         onApplyTags: handleApplyTags,
         gridViewMode,
         onToggleGridView: toggleGridView,
-        showGridToggle: false,
+        showGridToggle: true,  // Show grid toggle like in main view
         counterSlot:
           assets.length > 0 && activeLightboxIndex >= 0
             ? `${Math.min(activeLightboxIndex + 1, assets.length)} / ${assets.length}`
