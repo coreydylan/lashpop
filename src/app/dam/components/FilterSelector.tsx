@@ -94,8 +94,7 @@ export function FilterSelector({
   const handleTagClick = useCallback((tagId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     onTagToggle(tagId)
-    // Go back to category list but keep menu open
-    setExpandedCategory(null)
+    // Stay in the same category to allow multiple selections
   }, [onTagToggle])
 
   const handleTeamMemberClick = useCallback((memberId: string, e: React.MouseEvent) => {
@@ -103,8 +102,7 @@ export function FilterSelector({
     if (onTeamMemberToggle) {
       onTeamMemberToggle(memberId)
     }
-    // Go back to category list but keep menu open
-    setExpandedCategory(null)
+    // Stay in the same category to allow multiple selections
   }, [onTeamMemberToggle])
 
   // Close menu when clicking outside
@@ -232,26 +230,34 @@ export function FilterSelector({
 
       return (
         <div className="filter-selector flex flex-wrap items-center gap-2">
-        {/* Back button to return to categories */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setExpandedCategory(null)
-          }}
-          className={clsx(
-            "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-sm font-medium transition-all",
-            baseTextColor, hoverBg,
-            "border",
-            isLightbox ? "border-white/20" : "border-sage/20"
-          )}
-        >
-          ← Back
-        </button>
+        {/* Navigation buttons */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setExpandedCategory(null)
+            }}
+            className={clsx(
+              "flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
+              baseTextColor, hoverBg,
+              "border",
+              isLightbox ? "border-white/20" : "border-sage/20"
+            )}
+          >
+            ← Back
+          </button>
 
-        {/* Category name indicator */}
-        <span className={clsx("px-2 text-sm font-semibold", baseTextColor)}>
-          {category.displayName}:
-        </span>
+          <span className={clsx("px-2 text-sm font-semibold", baseTextColor)}>
+            {category.displayName}
+          </span>
+
+          <span className={clsx("text-xs", isLightbox ? "text-cream/60" : "text-sage/60")}>
+            (select multiple)
+          </span>
+        </div>
+
+        {/* Divider */}
+        <div className={clsx("h-6 w-px", isLightbox ? "bg-white/20" : "bg-sage/20")} />
 
         {category.options.map((option: any) => {
           const isSelected = isTeamCategory
