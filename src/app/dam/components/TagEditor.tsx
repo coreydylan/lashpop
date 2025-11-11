@@ -74,6 +74,25 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
     })
   }, [selectedItems])
 
+  const handleDeleteTag = useCallback((tagId: string) => {
+    setEditedCategories(prev =>
+      prev.map(cat => ({
+        ...cat,
+        tags: cat.tags?.filter(tag => tag.id !== tagId)
+      }))
+    )
+    setSelectedItems(prev => {
+      if (!prev.has(`tag-${tagId}`)) return prev
+      const next = new Set(prev)
+      next.delete(`tag-${tagId}`)
+      return next
+    })
+    if (editingId === `tag-${tagId}`) {
+      setEditingId(null)
+      setEditValue("")
+    }
+  }, [editingId])
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") {
       if (editingId) {
@@ -344,15 +363,23 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                     <div
                       key={tag.id}
                       className={clsx(
-                        "flex items-center gap-3 px-3 py-2 rounded-xl transition cursor-pointer",
+                        "group flex items-center gap-3 px-3 py-2 rounded-xl transition cursor-pointer",
                         selectedItems.has(`tag-${tag.id}`)
                           ? "bg-dusty-rose/10 border border-dusty-rose/30"
                           : "hover:bg-sage/5"
                       )}
                       onClick={(e) => {
+                        e.stopPropagation()
                         if (e.shiftKey || e.metaKey || e.ctrlKey) {
                           toggleSelection(`tag-${tag.id}`)
+                        } else {
+                          setSelectedItems(new Set([`tag-${tag.id}`]))
                         }
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation()
+                        setEditingId(`tag-${tag.id}`)
+                        setEditValue(tag.displayName)
                       }}
                     >
                       <Tag className="w-3.5 h-3.5 text-sage/50" />
@@ -392,6 +419,17 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                           className="p-1 hover:bg-sage/10 rounded transition opacity-0 group-hover:opacity-100"
                         >
                           <Edit2 className="w-3 h-3 text-sage/70" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (window.confirm("Delete this tag?")) {
+                              handleDeleteTag(tag.id)
+                            }
+                          }}
+                          className="p-1 hover:bg-red-50 rounded transition opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-3 h-3 text-red-500" />
                         </button>
                       </div>
                     </div>

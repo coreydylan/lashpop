@@ -634,6 +634,18 @@ export default function DAMPage() {
   const commandItems = useMemo<CommandItem[]>(() => {
     const items: CommandItem[] = []
     const selectionCount = selectedAssets.length
+    const assetCount = assets.length
+
+    items.push({
+      id: "selection-all",
+      group: "Selection",
+      label: "Select all in view",
+      description: assetCount === 0
+        ? "No assets available to select"
+        : `Highlight all ${assetCount} asset${assetCount === 1 ? "" : "s"} currently filtered`,
+      disabled: assetCount === 0 || selectionCount === assetCount,
+      onSelect: () => setSelectedAssets(assets.map((asset) => asset.id))
+    })
 
     if (selectionCount > 0) {
       // Sort tag categories alphabetically and build items
@@ -712,15 +724,6 @@ export default function DAMPage() {
       })
 
       items.push({
-        id: "selection-all",
-        group: "Selection",
-        label: "Select all in view",
-        description: `Highlight all ${assets.length} assets currently filtered`,
-        disabled: selectedAssets.length === assets.length,
-        onSelect: () => setSelectedAssets(assets.map((asset) => asset.id))
-      })
-
-      items.push({
         id: "selection-delete",
         group: "Selection",
         label: selectionCount === 1 ? "Delete selected photo" : "Delete selected photos",
@@ -742,14 +745,6 @@ export default function DAMPage() {
             activeAssetSelected ? prev.filter((id) => id !== activeLightboxAsset.id) : [...prev, activeLightboxAsset.id]
           )
         }
-      })
-
-      items.push({
-        id: "single-select-all",
-        group: "Selection",
-        label: "Select all in view",
-        description: `Highlight all ${assets.length} assets currently filtered`,
-        onSelect: () => setSelectedAssets(assets.map((asset) => asset.id))
       })
 
       // Sort tag categories alphabetically and build items
