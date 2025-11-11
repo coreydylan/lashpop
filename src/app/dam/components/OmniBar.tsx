@@ -38,7 +38,7 @@ export function OmniBar({
   const containerClass = clsx(
     "arch-full overflow-hidden transition-colors",
     isOverlay
-      ? "bg-black/35 backdrop-blur-lg border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.45)]"
+      ? "bg-black/15 backdrop-blur-sm"
       : selectedCount > 0
       ? "bg-dusty-rose/30"
       : "bg-warm-sand/30"

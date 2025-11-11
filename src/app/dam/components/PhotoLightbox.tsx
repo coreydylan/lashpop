@@ -253,9 +253,7 @@ export function PhotoLightbox({
           top: 0;
           left: 0;
           right: 0;
-          background: rgba(10, 10, 10, 0.4);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
+          background: transparent;
           padding: 20px 16px 24px;
           pointer-events: auto;
         }
@@ -268,27 +266,22 @@ export function PhotoLightbox({
         .photo-lightbox-thumbnails {
           position: absolute;
           bottom: 24px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(18, 16, 14, 0.55);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          padding: 14px 20px;
+          left: 0;
+          right: 0;
+          padding: 0 24px;
           pointer-events: auto;
           display: flex;
           align-items: center;
-          gap: 16px;
-          border-radius: 999px;
-          border: 1px solid rgba(255,255,255,0.15);
-          box-shadow: 0 18px 45px rgba(0,0,0,0.45);
+          justify-content: center;
         }
 
         .photo-lightbox-thumbnails__scroller {
           display: flex;
           gap: 10px;
           overflow-x: auto;
-          max-width: 60vw;
+          max-width: 90vw;
           scrollbar-width: none;
+          padding: 4px 0;
         }
 
         .photo-lightbox-thumbnails__scroller::-webkit-scrollbar {
@@ -349,15 +342,23 @@ export function PhotoLightbox({
 
         @media (max-width: 768px) {
           .photo-lightbox-thumbnails {
-            flex-direction: column;
-            gap: 12px;
-            padding: 16px;
-            width: calc(100vw - 32px);
+            bottom: 16px;
+            padding: 0 16px;
           }
 
           .photo-lightbox-thumbnails__scroller {
             max-width: 100%;
-            justify-content: center;
+            justify-content: flex-start;
+          }
+
+          .photo-lightbox-thumb {
+            width: 56px;
+            height: 56px;
+          }
+
+          .photo-lightbox-thumb.active {
+            width: 64px;
+            height: 64px;
           }
         }
 
