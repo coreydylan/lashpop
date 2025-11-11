@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Upload as UploadIcon, Users, X, Grid3x3, LayoutGrid } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import type { ReactNode } from "react"
+import { Upload as UploadIcon, Users, X } from "lucide-react"
 import Link from "next/link"
 import { FileUploader } from "./components/FileUploader"
 import { AssetGrid } from "./components/AssetGrid"
 import { FilterSelector } from "./components/FilterSelector"
 import { TagSelector } from "./components/TagSelector"
 import { PhotoLightbox } from "./components/PhotoLightbox"
+import { OmniBar } from "./components/OmniBar"
 
 interface Asset {
   id: string
@@ -62,6 +64,16 @@ export default function DAMPage() {
 
   // Grid view state
   const [gridViewMode, setGridViewMode] = useState<"square" | "aspect">("square")
+  const [activeLightboxAsset, setActiveLightboxAsset] = useState<Asset | null>(null)
+  const [activeLightboxIndex, setActiveLightboxIndex] = useState(-1)
+  const [singleTagDrafts, setSingleTagDrafts] = useState<any[]>([])
+  const [pendingTagRemoval, setPendingTagRemoval] = useState<{
+    tagId: string
+    assetIds: string[]
+    label: string
+    count: number
+    context: string
+  } | null>(null)
 
   // Upload panel state
   const [isUploadOpen, setIsUploadOpen] = useState(false)
@@ -72,24 +84,31 @@ export default function DAMPage() {
     fetchTeamMembers()
   }, [])
 
+  useEffect(() => {
+    setPendingTagRemoval(null)
+    setSingleTagDrafts([])
+  }, [selectedAssets, activeLightboxAsset])
+
   const fetchAssets = async () => {
     try {
       const response = await fetch("/api/dam/assets")
       const data = await response.json()
       const fetchedAssets = data.assets || []
       setAllAssets(fetchedAssets)
-      applyFilters(fetchedAssets, activeFilters)
+      const filtered = applyFilters(fetchedAssets, activeFilters)
+      setIsLoading(false)
+      return filtered
     } catch (error) {
       console.error("Failed to fetch assets:", error)
-    } finally {
       setIsLoading(false)
+      return []
     }
   }
 
   const applyFilters = (assetsToFilter: Asset[], filters: ActiveFilter[]) => {
     if (filters.length === 0) {
       setAssets(assetsToFilter)
-      return
+      return assetsToFilter
     }
 
     let filtered = assetsToFilter
@@ -121,6 +140,7 @@ export default function DAMPage() {
     })
 
     setAssets(filtered)
+    return filtered
   }
 
   const handleFiltersChange = (filters: ActiveFilter[]) => {
@@ -167,6 +187,116 @@ export default function DAMPage() {
     setExistingTags(new Map())
   }
 
+  const computeExistingTags = useCallback((assetIds: string[], sourceAssets: Asset[]) => {
+    const tagCounts = new Map<string, number>()
+    const selectedAssetsData = sourceAssets.filter((asset) => assetIds.includes(asset.id))
+
+    selectedAssetsData.forEach((asset) => {
+      asset.tags?.forEach((tag) => {
+        tagCounts.set(tag.id, (tagCounts.get(tag.id) || 0) + 1)
+      })
+
+      if (asset.teamMemberId) {
+        const key = `team-${asset.teamMemberId}`
+        tagCounts.set(key, (tagCounts.get(key) || 0) + 1)
+      }
+    })
+
+    return tagCounts
+  }, [])
+
+  const handleSingleTagsChange = async (tags: any[]) => {
+    if (!activeLightboxAsset) return
+    if (tags.length === 0) {
+      setSingleTagDrafts([])
+      return
+    }
+
+    try {
+      setSingleTagDrafts(tags)
+      await applyTagsToAssetIds([activeLightboxAsset.id], tags)
+      setSingleTagDrafts([])
+      const updated = await fetchAssets()
+      syncActiveLightboxAsset(updated)
+    } catch (error) {
+      console.error("Failed to add tags:", error)
+      setSingleTagDrafts([])
+    }
+  }
+
+  const requestTagRemoval = (tagId: string, assetIds: string[], label: string, count: number, context: string) => {
+    setPendingTagRemoval({ tagId, assetIds, label, count, context })
+  }
+
+  const cancelTagRemoval = () => setPendingTagRemoval(null)
+
+  const confirmTagRemoval = async () => {
+    if (!pendingTagRemoval) return
+    await handleRemoveTag(pendingTagRemoval.tagId, pendingTagRemoval.count, pendingTagRemoval.assetIds, true)
+    setPendingTagRemoval(null)
+  }
+
+  const syncActiveLightboxAsset = useCallback((updatedAssets?: Asset[]) => {
+    setActiveLightboxAsset((prev) => {
+      if (!prev) return prev
+      const source = updatedAssets || assets
+      return source.find((asset) => asset.id === prev.id) || prev
+    })
+  }, [assets])
+
+  const applyTagsToAssetIds = async (targetAssetIds: string[], tagsToApply: any[]) => {
+    if (targetAssetIds.length === 0 || tagsToApply.length === 0) return
+
+    const teamMemberTags = tagsToApply.filter((tag) => tag.category?.name === "team")
+    const regularTags = tagsToApply.filter((tag) => tag.category?.name !== "team")
+
+    if (teamMemberTags.length > 0) {
+      const teamMemberId = teamMemberTags[0].id
+      const response = await fetch("/api/dam/assets/assign-team", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          assetIds: targetAssetIds,
+          teamMemberId
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to assign team member")
+      }
+    }
+
+    if (regularTags.length > 0) {
+      const response = await fetch("/api/dam/assets/bulk-tag", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          assetIds: targetAssetIds,
+          tagIds: regularTags.map((t: any) => t.id),
+          additive: true
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save tags")
+      }
+    }
+  }
+
+  const clearSelection = () => {
+    setSelectedAssets([])
+    setOmniTags([])
+    setExistingTags(new Map())
+  }
+
+  const toggleGridView = () => {
+    setGridViewMode((prev) => (prev === "square" ? "aspect" : "square"))
+  }
+
   const handleSelectionChange = (selectedIds: string[]) => {
     setSelectedAssets(selectedIds)
 
@@ -176,74 +306,17 @@ export default function DAMPage() {
       setOmniTags([])
       setExistingTags(new Map())
     } else {
-      // Calculate existing tags on selected assets (including team members)
-      const selectedAssetsData = assets.filter(a => selectedIds.includes(a.id))
-      const tagCounts = new Map<string, number>()
-
-      selectedAssetsData.forEach(asset => {
-        // Count regular tags
-        asset.tags?.forEach(tag => {
-          tagCounts.set(tag.id, (tagCounts.get(tag.id) || 0) + 1)
-        })
-
-        // Count team member as a "tag"
-        if (asset.teamMemberId) {
-          tagCounts.set(`team-${asset.teamMemberId}`, (tagCounts.get(`team-${asset.teamMemberId}`) || 0) + 1)
-        }
-      })
-
-      setExistingTags(tagCounts)
+      setExistingTags(computeExistingTags(selectedIds, assets))
       setOmniTags([])
     }
+    setPendingTagRemoval(null)
   }
 
   const handleApplyTags = async () => {
-    if (omniTags.length === 0) return
+    if (omniTags.length === 0 || selectedAssets.length === 0) return
 
     try {
-      // Separate team member tags from regular tags
-      const teamMemberTags = omniTags.filter(t => t.category.name === "team")
-      const regularTags = omniTags.filter(t => t.category.name !== "team")
-
-      // Apply team member assignments
-      if (teamMemberTags.length > 0) {
-        const teamMemberId = teamMemberTags[0].id
-        const response = await fetch("/api/dam/assets/assign-team", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            assetIds: selectedAssets,
-            teamMemberId
-          })
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to assign team member")
-        }
-      }
-
-      // Apply regular tags
-      if (regularTags.length > 0) {
-        const response = await fetch("/api/dam/assets/bulk-tag", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            assetIds: selectedAssets,
-            tagIds: regularTags.map(t => t.id),
-            additive: true
-          })
-        })
-
-        if (!response.ok) {
-          throw new Error("Failed to save tags")
-        }
-      }
-
-      // Refresh assets
+      await applyTagsToAssetIds(selectedAssets, omniTags)
       await fetchAssets()
       setSelectedAssets([])
       setOmniTags([])
@@ -253,11 +326,35 @@ export default function DAMPage() {
     }
   }
 
-  const handleRemoveTag = async (tagId: string, count: number) => {
+  const handleMultiTagSelectorChange = async (tags: any[]) => {
+    if (selectedAssets.length === 0) {
+      setOmniTags(tags)
+      return
+    }
+
+    const newlyAdded = tags.filter((tag: any) => !omniTags.some((existing) => existing.id === tag.id))
+    setOmniTags(tags)
+
+    if (newlyAdded.length === 0) return
+
+    try {
+      await applyTagsToAssetIds(selectedAssets, newlyAdded)
+      const updated = await fetchAssets()
+      setExistingTags(computeExistingTags(selectedAssets, updated))
+      setOmniTags([])
+    } catch (error) {
+      console.error("Failed to add tags instantly:", error)
+    }
+  }
+
+  const handleRemoveTag = async (tagId: string, count: number, targetAssetIds?: string[], skipPrompt = false) => {
     const isTeamMemberTag = tagId.startsWith('team-')
     const label = isTeamMemberTag ? "team member" : "tag"
+    const assetIds = targetAssetIds ?? selectedAssets
 
-    if (!confirm(`Remove this ${label} from ${count} image${count !== 1 ? 's' : ''}?`)) return
+    if (assetIds.length === 0) return
+
+    if (!skipPrompt && !confirm(`Remove this ${label} from ${count} image${count !== 1 ? 's' : ''}?`)) return
 
     try {
       if (isTeamMemberTag) {
@@ -268,7 +365,7 @@ export default function DAMPage() {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            assetIds: selectedAssets
+            assetIds
           })
         })
 
@@ -283,7 +380,7 @@ export default function DAMPage() {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            assetIds: selectedAssets,
+            assetIds,
             tagId
           })
         })
@@ -293,13 +390,16 @@ export default function DAMPage() {
         }
       }
 
-      // Refresh assets
-      await fetchAssets()
+      const updated = await fetchAssets()
 
-      // Update existing tags count
-      const newExistingTags = new Map(existingTags)
-      newExistingTags.delete(tagId)
-      setExistingTags(newExistingTags)
+      if (targetAssetIds) {
+        syncActiveLightboxAsset(updated)
+      } else {
+        const newExistingTags = new Map(existingTags)
+        newExistingTags.delete(tagId)
+        setExistingTags(newExistingTags)
+      }
+      setPendingTagRemoval(null)
     } catch (error) {
       console.error("Failed to remove tag:", error)
     }
@@ -334,6 +434,7 @@ export default function DAMPage() {
           {/* Selection Mode: Show existing tags with counts */}
           {Array.from(existingTags.entries()).map(([tagId, count]) => {
             const isTeamMemberTag = tagId.startsWith('team-')
+            const isPending = pendingTagRemoval && pendingTagRemoval.tagId === tagId && pendingTagRemoval.context === "multi"
 
             if (isTeamMemberTag) {
               const teamMemberId = tagId.replace('team-', '')
@@ -349,13 +450,17 @@ export default function DAMPage() {
                   }}
                 >
                   <div className="flex items-center gap-2 px-3 py-1.5">
-                    <button
-                      onClick={() => handleRemoveTag(tagId, count)}
-                      className="flex items-center gap-1 hover:bg-black/10 rounded px-1 transition-colors"
-                    >
-                      <X className="w-3 h-3 text-cream" />
-                      <span className="text-xs font-bold text-cream">{count}</span>
-                    </button>
+                    {isPending ? (
+                      <span className="text-xs font-semibold text-cream">Confirm removal?</span>
+                    ) : (
+                      <button
+                        onClick={() => requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")}
+                        className="flex items-center gap-1 hover:bg-black/10 rounded px-1 transition-colors"
+                      >
+                        <X className="w-3 h-3 text-cream" />
+                        <span className="text-xs font-bold text-cream">{count}</span>
+                      </button>
+                    )}
                     {teamMember.imageUrl && (
                       <img
                         src={teamMember.imageUrl}
@@ -371,6 +476,22 @@ export default function DAMPage() {
                       {teamMember.name}
                     </span>
                   </div>
+                  {isPending && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10">
+                      <button
+                        onClick={confirmTagRemoval}
+                        className="text-xs font-semibold text-cream bg-black/30 rounded-full px-2 py-0.5"
+                      >
+                        Remove
+                      </button>
+                      <button
+                        onClick={cancelTagRemoval}
+                        className="text-xs font-medium text-cream/80"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             }
@@ -390,13 +511,17 @@ export default function DAMPage() {
                 }}
               >
                 <div className="flex items-center gap-2 px-3 py-1.5">
-                  <button
-                    onClick={() => handleRemoveTag(tagId, count)}
-                    className="flex items-center gap-1 hover:bg-black/10 rounded px-1 transition-colors"
-                  >
-                    <X className="w-3 h-3 text-cream" />
-                    <span className="text-xs font-bold text-cream">{count}</span>
-                  </button>
+                  {isPending ? (
+                    <span className="text-xs font-semibold text-cream">Confirm removal?</span>
+                  ) : (
+                    <button
+                      onClick={() => requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")}
+                      className="flex items-center gap-1 hover:bg-black/10 rounded px-1 transition-colors"
+                    >
+                      <X className="w-3 h-3 text-cream" />
+                      <span className="text-xs font-bold text-cream">{count}</span>
+                    </button>
+                  )}
                   <span className="text-xs font-semibold text-cream uppercase tracking-wide">
                     {tag.category.displayName}
                   </span>
@@ -405,6 +530,22 @@ export default function DAMPage() {
                     {tag.displayName}
                   </span>
                 </div>
+                {isPending && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10">
+                    <button
+                      onClick={confirmTagRemoval}
+                      className="text-xs font-semibold text-cream bg-black/30 rounded-full px-2 py-0.5"
+                    >
+                      Remove
+                    </button>
+                    <button
+                      onClick={cancelTagRemoval}
+                      className="text-xs font-medium text-cream/80"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}
@@ -451,7 +592,7 @@ export default function DAMPage() {
           {/* Add Tag button */}
           <TagSelector
             selectedTags={omniTags}
-            onTagsChange={handleOmniTagsChange}
+            onTagsChange={handleMultiTagSelectorChange}
           />
         </>
       )
@@ -461,9 +602,137 @@ export default function DAMPage() {
         <FilterSelector
           activeFilters={activeFilters}
           onFiltersChange={handleFiltersChange}
+          assets={assets}
         />
       )
     }
+  }
+
+  const renderLightboxChips = () => {
+    if (selectedAssets.length > 0) {
+      return renderChips()
+    }
+
+    if (!activeLightboxAsset) {
+      return (
+        <span className="text-sm text-cream/70">Open a photo to view and edit tags.</span>
+      )
+    }
+
+    const teamMember = activeLightboxAsset.teamMemberId
+      ? teamMembers.find((member) => member.id === activeLightboxAsset.teamMemberId)
+      : undefined
+
+    const hasTags = Boolean(teamMember) || (activeLightboxAsset.tags && activeLightboxAsset.tags.length > 0)
+
+    return (
+      <div className="flex flex-col gap-3 w-full">
+        <div className="flex flex-wrap items-center gap-2">
+          {teamMember && (
+            <div
+              className="flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm"
+              style={{
+                background: `linear-gradient(135deg, #BCC9C2 0%, #BCC9C2CC 100%)`
+              }}
+            >
+              <div className="flex items-center gap-2 px-3 py-1.5">
+                {teamMember.imageUrl && (
+                  <img
+                    src={teamMember.imageUrl}
+                    alt={teamMember.name}
+                    className="w-5 h-5 rounded-full object-cover border border-cream/30"
+                  />
+                )}
+                <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                  Team
+                </span>
+                <span className="text-cream/80 text-xs">›</span>
+                <span className="text-sm text-cream font-medium">
+                  {teamMember.name}
+                </span>
+              </div>
+              {pendingTagRemoval && pendingTagRemoval.tagId === `team-${teamMember.id}` && pendingTagRemoval.context === `single-${activeLightboxAsset.id}` ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10">
+                  <button
+                    onClick={confirmTagRemoval}
+                    className="text-xs font-semibold text-cream bg-black/30 rounded-full px-2 py-0.5"
+                  >
+                    Remove
+                  </button>
+                  <button
+                    onClick={cancelTagRemoval}
+                    className="text-xs font-medium text-cream/80"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => requestTagRemoval(`team-${teamMember.id}`, [activeLightboxAsset.id], "team member", 1, `single-${activeLightboxAsset.id}`)}
+                  className="px-2 py-1.5 hover:bg-black/10 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5 text-cream" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {activeLightboxAsset.tags?.map((tag) => (
+            <div
+              key={tag.id}
+              className="flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm"
+              style={{
+                background: `linear-gradient(135deg, ${tag.category.color || "#A19781"} 0%, ${(tag.category.color || "#A19781")}CC 100%)`
+              }}
+              >
+                <div className="flex items-center gap-2 px-3 py-1.5">
+                  <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                    {tag.category.displayName}
+                  </span>
+                  <span className="text-cream/80 text-xs">›</span>
+                  <span className="text-sm text-cream font-medium">
+                    {tag.displayName}
+                  </span>
+                </div>
+              {pendingTagRemoval && pendingTagRemoval.tagId === tag.id && pendingTagRemoval.context === `single-${activeLightboxAsset.id}` ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10">
+                  <button
+                    onClick={confirmTagRemoval}
+                    className="text-xs font-semibold text-cream bg-black/30 rounded-full px-2 py-0.5"
+                  >
+                    Remove
+                  </button>
+                  <button
+                    onClick={cancelTagRemoval}
+                    className="text-xs font-medium text-cream/80"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => requestTagRemoval(tag.id, [activeLightboxAsset.id], "tag", 1, `single-${activeLightboxAsset.id}`)}
+                  className="px-2 py-1.5 hover:bg-black/10 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5 text-cream" />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {!hasTags && (
+            <span className="text-sm text-cream/70">No tags yet. Add one below.</span>
+          )}
+        </div>
+
+        <div className="min-w-[240px]">
+          <TagSelector
+            selectedTags={singleTagDrafts}
+            onTagsChange={handleSingleTagsChange}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -471,6 +740,27 @@ export default function DAMPage() {
       selectedAssetIds={selectedAssets}
       onSelectionChange={handleSelectionChange}
       assets={assets}
+      omniBarProps={{
+        mode: "overlay",
+        chipsContent: renderLightboxChips(),
+        selectedCount: selectedAssets.length,
+        assetsCount: assets.length,
+        totalAssetsCount: allAssets.length,
+        canApplyTags: selectedAssets.length === 0 ? omniTags.length > 0 : false,
+        onClearSelection: clearSelection,
+        onApplyTags: handleApplyTags,
+        gridViewMode,
+        onToggleGridView: toggleGridView,
+        showGridToggle: false,
+        counterSlot:
+          assets.length > 0 && activeLightboxIndex >= 0
+            ? `${Math.min(activeLightboxIndex + 1, assets.length)} / ${assets.length}`
+            : undefined
+      }}
+      onActiveAssetChange={(asset, index) => {
+        setActiveLightboxAsset(asset)
+        setActiveLightboxIndex(index)
+      }}
     >
       <div className="min-h-screen bg-cream">
         {/* Header - not sticky */}
@@ -514,127 +804,18 @@ export default function DAMPage() {
         {/* Sticky Omni Control Bar */}
         <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className={`arch-full overflow-hidden transition-colors ${
-              selectedAssets.length > 0
-                ? "bg-dusty-rose/30"
-                : "bg-warm-sand/30"
-            }`}>
-              {/* Desktop Layout */}
-              <div className="hidden lg:flex items-center gap-4 px-6 py-5">
-                {/* Chips area */}
-                <div className="flex-1 min-w-0 overflow-x-auto">
-                  <div className="flex items-center gap-3">
-                    {renderChips()}
-                  </div>
-                </div>
-
-                {/* Right side controls */}
-                <div className="flex-shrink-0 pl-4 flex items-center gap-3">
-                  {selectedAssets.length > 0 ? (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <span className="body text-dune whitespace-nowrap font-semibold">
-                          {selectedAssets.length} selected
-                        </span>
-                        <button
-                          onClick={() => {
-                            setSelectedAssets([])
-                            setOmniTags([])
-                            setExistingTags(new Map())
-                          }}
-                          className="p-1 hover:bg-dune/10 rounded-full transition-colors"
-                        >
-                          <X className="w-4 h-4 text-dune" />
-                        </button>
-                      </div>
-                      {omniTags.length > 0 && (
-                        <button
-                          onClick={handleApplyTags}
-                          className="px-6 py-2 rounded-full bg-dusty-rose text-cream font-semibold hover:bg-dusty-rose/80 transition-colors shadow-lg"
-                        >
-                          Apply
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <span className="body text-sage whitespace-nowrap">
-                        {assets.length} asset{assets.length !== 1 ? "s" : ""}
-                        {activeFilters.length > 0 && ` (${allAssets.length} total)`}
-                      </span>
-                      <button
-                        onClick={() => setGridViewMode(gridViewMode === "square" ? "aspect" : "square")}
-                        className="p-2 hover:bg-dune/10 rounded-full transition-colors"
-                        title={gridViewMode === "square" ? "Switch to aspect ratio view" : "Switch to square grid view"}
-                      >
-                        {gridViewMode === "square" ? (
-                          <LayoutGrid className="w-4 h-4 text-sage" />
-                        ) : (
-                          <Grid3x3 className="w-4 h-4 text-sage" />
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Mobile Layout - Stacked */}
-              <div className="block lg:hidden">
-                {/* Top row: Controls */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-sage/10">
-                  {selectedAssets.length > 0 ? (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <span className="body text-dune font-semibold">
-                          {selectedAssets.length} selected
-                        </span>
-                        <button
-                          onClick={() => {
-                            setSelectedAssets([])
-                            setOmniTags([])
-                            setExistingTags(new Map())
-                          }}
-                          className="p-1 hover:bg-dune/10 rounded-full transition-colors"
-                        >
-                          <X className="w-4 h-4 text-dune" />
-                        </button>
-                      </div>
-                      {omniTags.length > 0 && (
-                        <button
-                          onClick={handleApplyTags}
-                          className="px-4 py-1.5 rounded-full bg-dusty-rose text-cream text-sm font-semibold"
-                        >
-                          Apply
-                        </button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <span className="body text-sage">
-                        {assets.length} asset{assets.length !== 1 ? "s" : ""}
-                      </span>
-                      <button
-                        onClick={() => setGridViewMode(gridViewMode === "square" ? "aspect" : "square")}
-                        className="p-2 hover:bg-dune/10 rounded-full transition-colors"
-                      >
-                        {gridViewMode === "square" ? (
-                          <LayoutGrid className="w-4 h-4 text-sage" />
-                        ) : (
-                          <Grid3x3 className="w-4 h-4 text-sage" />
-                        )}
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* Bottom row: Chips */}
-                <div className="px-4 py-3 overflow-x-auto">
-                  <div className="flex items-center gap-2">
-                    {renderChips()}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <OmniBar
+              mode="page"
+              chipsContent={renderChips()}
+              selectedCount={selectedAssets.length}
+              assetsCount={assets.length}
+              totalAssetsCount={allAssets.length}
+              canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
+              onClearSelection={clearSelection}
+              onApplyTags={handleApplyTags}
+              gridViewMode={gridViewMode}
+              onToggleGridView={toggleGridView}
+            />
           </div>
         </div>
 

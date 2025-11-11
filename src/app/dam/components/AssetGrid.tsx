@@ -130,6 +130,8 @@ export function AssetGrid({
             gridViewMode={gridViewMode}
             onClick={(e) => handleAssetClick(asset, e)}
             onLongPress={() => handleLongPress(asset.id)}
+            onToggleSelect={() => toggleSelection(asset.id)}
+            onEnterSelectionMode={() => setIsSelectionMode(true)}
           />
         ))}
       </div>
@@ -145,6 +147,8 @@ interface AssetCardProps {
   gridViewMode: "square" | "aspect"
   onClick: (event: React.MouseEvent) => void
   onLongPress: () => void
+  onToggleSelect: () => void
+  onEnterSelectionMode: () => void
 }
 
 function AssetCard({
@@ -154,7 +158,9 @@ function AssetCard({
   isTouchDevice,
   gridViewMode,
   onClick,
-  onLongPress
+  onLongPress,
+  onToggleSelect,
+  onEnterSelectionMode
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
 
@@ -162,6 +168,7 @@ function AssetCard({
     if (!isTouchDevice) return
 
     const timer = setTimeout(() => {
+      onEnterSelectionMode()
       onLongPress()
     }, 500)
     setPressTimer(timer)
@@ -222,23 +229,36 @@ function AssetCard({
       )}
 
       {/* Checkbox - outline style */}
-      {isSelectionMode && (
-        <div className="absolute top-3 right-3 z-10">
-          <div
-            className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
-              isSelected
-                ? "bg-dusty-rose border-2 border-dusty-rose shadow-lg"
-                : "bg-white/80 backdrop-blur-sm border-2 border-sage/50"
-            }`}
-          >
-            {isSelected && (
-              <svg className="w-5 h-5 text-cream" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </div>
+      <button
+        type="button"
+        className={`absolute top-3 right-3 z-10 transition-opacity ${
+          isSelectionMode ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        }`}
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (!isSelectionMode) {
+            onEnterSelectionMode()
+          }
+          onToggleSelect()
+        }}
+      >
+        <div
+          className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
+            isSelected
+              ? "bg-dusty-rose border-2 border-dusty-rose shadow-lg text-cream"
+              : "bg-white/85 backdrop-blur-md border-2 border-sage/50 text-sage"
+          }`}
+        >
+          {isSelected ? (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <span className="text-xs font-semibold">Select</span>
+          )}
         </div>
-      )}
+      </button>
 
       {/* Tags badge */}
       {asset.tags && asset.tags.length > 0 && !isSelectionMode && (

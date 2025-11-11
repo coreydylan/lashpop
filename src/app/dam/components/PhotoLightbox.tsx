@@ -1,8 +1,11 @@
 "use client"
 
+import type { ReactNode } from "react"
+import { useCallback, useRef } from "react"
 import { PhotoProvider } from "react-photo-view"
 import "react-photo-view/dist/react-photo-view.css"
-import { CheckCircle, Circle } from "lucide-react"
+import { CheckCircle, Circle, ChevronLeft, ChevronRight } from "lucide-react"
+import { OmniBar, type OmniBarProps } from "./OmniBar"
 
 interface Asset {
   id: string
@@ -25,18 +28,51 @@ interface Asset {
 }
 
 interface PhotoLightboxProps {
-  children: React.ReactNode
+  children: ReactNode
   selectedAssetIds?: string[]
   onSelectionChange?: (selectedIds: string[]) => void
   assets?: Asset[]
+  omniBarProps?: OmniBarProps
+  onActiveAssetChange?: (asset: Asset | null, index: number) => void
 }
 
 export function PhotoLightbox({
   children,
   selectedAssetIds = [],
   onSelectionChange,
-  assets = []
+  assets = [],
+  omniBarProps,
+  onActiveAssetChange
 }: PhotoLightboxProps) {
+  const thumbnailStripRef = useRef<HTMLDivElement | null>(null)
+  const currentIndexRef = useRef(0)
+
+  const notifyActiveAsset = useCallback(
+    (index: number | null) => {
+      if (!onActiveAssetChange) return
+      if (index === null || index < 0 || !assets[index]) {
+        onActiveAssetChange(null, -1)
+      } else {
+        onActiveAssetChange(assets[index], index)
+      }
+    },
+    [assets, onActiveAssetChange]
+  )
+
+  const scrollToIndex = useCallback((idx: number) => {
+    const container = thumbnailStripRef.current
+    if (!container) return
+    const child = container.children[idx] as HTMLElement | undefined
+    if (!child) return
+
+    const containerWidth = container.clientWidth
+    const childRect = child.getBoundingClientRect()
+    const containerRect = container.getBoundingClientRect()
+    const offset = (childRect.left + childRect.width / 2) - (containerRect.left + containerWidth / 2)
+
+    container.scrollBy({ left: offset, behavior: "smooth" })
+  }, [])
+
   const handleToggleSelection = (assetId: string) => {
     if (!onSelectionChange) return
 
@@ -57,6 +93,19 @@ export function PhotoLightbox({
       photoClosable
       pullClosable
       bannerVisible={false}
+      onIndexChange={(index) => {
+        currentIndexRef.current = index
+        notifyActiveAsset(index)
+        scrollToIndex(index)
+      }}
+      onVisibleChange={(visible) => {
+        if (!visible) {
+          notifyActiveAsset(null)
+        } else {
+          notifyActiveAsset(currentIndexRef.current)
+          scrollToIndex(currentIndexRef.current)
+        }
+      }}
       overlayRender={({ index, onIndexChange, visible }) => {
         if (!visible) return null
         const asset = assets[index]
@@ -66,70 +115,53 @@ export function PhotoLightbox({
 
         return (
           <div className="photo-lightbox-overlay">
-            <div className="photo-lightbox-omnibar">
-              <div className="photo-lightbox-omnibar__content">
-                <div className="photo-lightbox-counter">
-                  {index + 1} / {assets.length}
-                </div>
-
-                {asset.tags && asset.tags.length > 0 ? (
-                  <div className="photo-lightbox-tags">
-                    {asset.tags.map((tag) => {
-                      const baseColor = tag.category.color || "#A19781"
-                      return (
-                        <span
-                          key={tag.id}
-                          className="photo-lightbox-tag"
-                          style={{
-                            background: `linear-gradient(135deg, ${baseColor} 0%, ${baseColor}CC 100%)`
-                          }}
-                        >
-                          {tag.displayName}
-                        </span>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className="photo-lightbox-tags photo-lightbox-tags--empty">
-                    No tags applied
-                  </div>
-                )}
-
-                <div className="photo-lightbox-actions">
-                  {selectedAssetIds.length > 0 && (
-                    <div className="photo-lightbox-selected-count">
-                      {selectedAssetIds.length} selected
-                    </div>
-                  )}
-
-                  {onSelectionChange && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleToggleSelection(asset.id)
-                      }}
-                      className={`photo-lightbox-select-btn ${isSelected ? "selected" : "idle"}`}
-                    >
-                      {isSelected ? (
-                        <>
-                          <CheckCircle className="icon" />
-                          <span>Selected</span>
-                        </>
-                      ) : (
-                        <>
-                          <Circle className="icon" />
-                          <span>Select</span>
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
+            {omniBarProps && (
+              <div className="photo-lightbox-omnibar">
+                <OmniBar
+                  {...omniBarProps}
+                  counterSlot={`${index + 1} / ${assets.length}`}
+                />
               </div>
-            </div>
+            )}
+
+            {onSelectionChange && (
+              <div className="photo-lightbox-select-control">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleToggleSelection(asset.id)
+                  }}
+                  className={`photo-lightbox-select-btn ${isSelected ? "selected" : "idle"}`}
+                >
+                  {isSelected ? (
+                    <>
+                      <CheckCircle className="icon" />
+                      <span>Selected</span>
+                    </>
+                  ) : (
+                    <>
+                      <Circle className="icon" />
+                      <span>Select</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
 
             {assets.length > 1 && (
               <div className="photo-lightbox-thumbnails">
-                <div className="photo-lightbox-thumbnails__scroller">
+                <button
+                  className="photo-lightbox-nav photo-lightbox-nav--left"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const nextIndex = (index - 1 + assets.length) % assets.length
+                    onIndexChange(nextIndex)
+                    scrollToIndex(nextIndex)
+                  }}
+                >
+                  <ChevronLeft />
+                </button>
+                <div className="photo-lightbox-thumbnails__scroller" ref={thumbnailStripRef}>
                   {assets.map((thumbAsset, thumbIndex) => {
                     const isActive = thumbIndex === index
                     const thumbSelected = selectedAssetIds.includes(thumbAsset.id)
@@ -141,6 +173,7 @@ export function PhotoLightbox({
                         onClick={(e) => {
                           e.stopPropagation()
                           onIndexChange(thumbIndex)
+                          scrollToIndex(thumbIndex)
                         }}
                       >
                         <img src={thumbAsset.filePath} alt={thumbAsset.fileName} />
@@ -153,6 +186,38 @@ export function PhotoLightbox({
                     )
                   })}
                 </div>
+                <button
+                  className="photo-lightbox-nav photo-lightbox-nav--right"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const nextIndex = (index + 1) % assets.length
+                    onIndexChange(nextIndex)
+                    scrollToIndex(nextIndex)
+                  }}
+                >
+                  <ChevronRight />
+                </button>
+                {onSelectionChange && (
+                  <button
+                    className={`photo-lightbox-select-btn photo-lightbox-select-btn--bottom ${isSelected ? "selected" : "idle"}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleToggleSelection(asset.id)
+                    }}
+                  >
+                    {isSelected ? (
+                      <>
+                        <CheckCircle className="icon" />
+                        <span>Selected</span>
+                      </>
+                    ) : (
+                      <>
+                        <Circle className="icon" />
+                        <span>Select</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -183,7 +248,7 @@ export function PhotoLightbox({
         }
 
         .PhotoView__PhotoWrap {
-          padding: 140px 0 220px !important;
+          padding: 240px 0 320px !important;
           box-sizing: border-box !important;
           display: flex !important;
           align-items: center !important;
@@ -191,8 +256,8 @@ export function PhotoLightbox({
         }
 
         .PhotoView__PhotoBox {
-          max-height: calc(100vh - 360px) !important;
-          max-width: min(90vw, 1400px) !important;
+          max-height: min(58vh, 620px) !important;
+          max-width: min(52vw, 900px) !important;
         }
 
         .PhotoView__Photo {
@@ -203,11 +268,12 @@ export function PhotoLightbox({
 
         @media (max-width: 768px) {
           .PhotoView__PhotoWrap {
-            padding: 100px 0 180px !important;
+            padding: 140px 0 240px !important;
           }
 
           .PhotoView__PhotoBox {
-            max-height: calc(100vh - 260px) !important;
+            max-height: min(55vh, 420px) !important;
+            max-width: 86vw !important;
           }
         }
 
@@ -231,65 +297,13 @@ export function PhotoLightbox({
           );
           backdrop-filter: blur(36px) saturate(180%);
           -webkit-backdrop-filter: blur(36px) saturate(180%);
-          padding: 28px 20px 32px;
+          padding: 32px 24px 36px;
           pointer-events: auto;
         }
 
-        .photo-lightbox-omnibar__content {
+        .photo-lightbox-omnibar > div {
           max-width: 1200px;
           margin: 0 auto;
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          justify-content: center;
-          gap: 16px;
-        }
-
-        .photo-lightbox-counter {
-          padding: 8px 16px;
-          background: rgba(242, 237, 229, 0.15);
-          border-radius: 999px;
-          color: #F2EDE5;
-          font-size: 14px;
-          font-weight: 600;
-        }
-
-        .photo-lightbox-tags {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex-wrap: wrap;
-          justify-content: center;
-        }
-
-        .photo-lightbox-tags--empty {
-          font-size: 13px;
-          color: rgba(242, 237, 229, 0.6);
-          font-weight: 500;
-        }
-
-        .photo-lightbox-tag {
-          padding: 6px 12px;
-          border-radius: 24px;
-          font-size: 12px;
-          font-weight: 600;
-          color: #F2EDE5;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-        }
-
-        .photo-lightbox-actions {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .photo-lightbox-selected-count {
-          padding: 6px 12px;
-          background: rgba(217, 136, 128, 0.9);
-          border-radius: 999px;
-          color: #F2EDE5;
-          font-size: 13px;
-          font-weight: 600;
         }
 
         .photo-lightbox-select-btn {
@@ -329,17 +343,25 @@ export function PhotoLightbox({
           );
           backdrop-filter: blur(36px) saturate(180%);
           -webkit-backdrop-filter: blur(36px) saturate(180%);
-          padding: 24px;
+          padding: 20px 48px 40px;
           pointer-events: auto;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          justify-content: center;
         }
 
         .photo-lightbox-thumbnails__scroller {
           display: flex;
           gap: 10px;
-          justify-content: center;
           overflow-x: auto;
           padding-bottom: 8px;
-          max-width: 100%;
+          max-width: 70vw;
+          scrollbar-width: none;
+        }
+
+        .photo-lightbox-thumbnails__scroller::-webkit-scrollbar {
+          display: none;
         }
 
         .photo-lightbox-thumb {
@@ -389,22 +411,46 @@ export function PhotoLightbox({
           filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
         }
 
+        .photo-lightbox-nav {
+          width: 40px;
+          height: 40px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          background: rgba(0, 0, 0, 0.25);
+          color: #F2EDE5;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.2s ease;
+        }
+
+        .photo-lightbox-nav:hover {
+          background: rgba(0, 0, 0, 0.45);
+        }
+
+        .photo-lightbox-select-btn--bottom {
+          position: absolute;
+          bottom: 12px;
+          right: 32px;
+          transform: translateY(50%);
+        }
+
+        @media (max-width: 768px) {
+          .photo-lightbox-thumbnails {
+            padding: 16px 32px 32px;
+          }
+
+          .photo-lightbox-thumbnails__scroller {
+            max-width: 65vw;
+          }
+
+          .photo-lightbox-select-btn--bottom {
+            right: 16px;
+          }
+        }
+
         .photo-lightbox-thumbnails__scroller::-webkit-scrollbar {
-          height: 6px;
-        }
-
-        .photo-lightbox-thumbnails__scroller::-webkit-scrollbar-track {
-          background: rgba(242, 237, 229, 0.08);
-          border-radius: 3px;
-        }
-
-        .photo-lightbox-thumbnails__scroller::-webkit-scrollbar-thumb {
-          background: rgba(242, 237, 229, 0.35);
-          border-radius: 3px;
-        }
-
-        .photo-lightbox-thumbnails__scroller::-webkit-scrollbar-thumb:hover {
-          background: rgba(242, 237, 229, 0.55);
+          display: none;
         }
       `}</style>
       {children}
