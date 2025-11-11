@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+/* eslint-disable @next/next/no-img-element */
+
+import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Upload as UploadIcon, Camera, ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -26,17 +28,7 @@ export default function TeamManagementPage() {
   const [editingPhoto, setEditingPhoto] = useState<TeamMemberPhoto | null>(null)
   const [isUploading, setIsUploading] = useState(false)
 
-  useEffect(() => {
-    fetchTeamMembers()
-  }, [])
-
-  useEffect(() => {
-    if (selectedMember) {
-      fetchMemberPhotos(selectedMember.id)
-    }
-  }, [selectedMember])
-
-  const fetchTeamMembers = async () => {
+  const fetchTeamMembers = useCallback(async () => {
     try {
       const response = await fetch("/api/dam/team-members")
       const data = await response.json()
@@ -44,9 +36,9 @@ export default function TeamManagementPage() {
     } catch (error) {
       console.error("Failed to fetch team members:", error)
     }
-  }
+  }, [])
 
-  const fetchMemberPhotos = async (memberId: string) => {
+  const fetchMemberPhotos = useCallback(async (memberId: string) => {
     try {
       const response = await fetch(`/api/dam/team/${memberId}/photos`)
       const data = await response.json()
@@ -70,7 +62,17 @@ export default function TeamManagementPage() {
     } catch (error) {
       console.error("Failed to fetch photos:", error)
     }
-  }
+  }, [selectedMember, teamMembers])
+
+  useEffect(() => {
+    void fetchTeamMembers()
+  }, [fetchTeamMembers])
+
+  useEffect(() => {
+    if (selectedMember) {
+      void fetchMemberPhotos(selectedMember.id)
+    }
+  }, [fetchMemberPhotos, selectedMember])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!selectedMember || !event.target.files?.[0]) return
@@ -118,7 +120,7 @@ export default function TeamManagementPage() {
 
       if (response.ok) {
         setEditingPhoto(null)
-        fetchMemberPhotos(selectedMember!.id)
+        void fetchMemberPhotos(selectedMember!.id)
       } else {
         const errorData = await response.json().catch(() => ({}))
         alert(`Failed to save crop settings: ${errorData.error || 'Unknown error'}`)
@@ -141,8 +143,8 @@ export default function TeamManagementPage() {
       })
 
       if (response.ok) {
-        fetchMemberPhotos(selectedMember.id)
-        fetchTeamMembers() // Refresh to update primary photo
+        void fetchMemberPhotos(selectedMember.id)
+        void fetchTeamMembers() // Refresh to update primary photo
       }
     } catch (error) {
       console.error("Failed to set primary:", error)

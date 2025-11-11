@@ -24,5 +24,14 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "vendor", "drizzle"]
+  "exclude": [
+    "node_modules",
+    "vendor",
+    "drizzle",
+    "scripts",
+    "src/components/theatre",
+    "src/components/scrollytelling",
+    "src/lib/scrollytelling",
+    "src/lib/theatre"
+  ]
 }

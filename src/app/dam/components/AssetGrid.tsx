@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useCallback, useEffect, useMemo } from "react"
+/* eslint-disable @next/next/no-img-element */
+
+import { useState, useCallback, useEffect, useMemo, type ReactElement } from "react"
 import { PhotoView } from "react-photo-view"
 
 interface Asset {
@@ -197,7 +199,11 @@ export function AssetGrid({
   const handleDragOver = useCallback(
     (assetId: string) => {
       if (isDragging && !draggedOverAssets.has(assetId)) {
-        setDraggedOverAssets(prev => new Set([...prev, assetId]))
+        setDraggedOverAssets(prev => {
+          const next = new Set(prev)
+          next.add(assetId)
+          return next
+        })
 
         // Toggle selection for this asset
         if (!selectedAssetIds.includes(assetId)) {
@@ -233,26 +239,31 @@ export function AssetGrid({
   }, [isDragging, handleDragEnd])
 
   // Render grouped assets recursively
-  const renderGroups = (groups: any, level: number): JSX.Element[] => {
-    const elements: JSX.Element[] = []
+  const renderGroups = (groups: any, level: number): ReactElement[] => {
+    const elements: ReactElement[] = []
 
     Object.entries(groups).forEach(([key, value]) => {
-      const [type, id] = key.includes('_') ? key.split('_') : ['', key]
-      const isUngrouped = key === 'ungrouped'
+      const groupKey = String(key)
+      const [type, id] = groupKey.includes('_') ? groupKey.split('_') : ['', groupKey]
+      const isUngrouped = groupKey === 'ungrouped'
 
       // Get display name for the group
-      let groupTitle = isUngrouped ? 'Other' : key
+      let groupTitle = isUngrouped ? 'Other' : groupKey
       if (type === 'team') {
         // TODO: Get team member name from ID
         groupTitle = 'Team Member'
       } else if (!isUngrouped) {
         // Extract tag display name
-        const sampleAsset = Array.isArray(value) ? value[0] : Object.values(value)[0][0]
+        const sampleAsset = Array.isArray(value)
+          ? value[0]
+          : (Object.values(value as Record<string, Asset[]>)[0]?.[0])
         if (sampleAsset) {
           const tag = sampleAsset.tags?.find((t: any) => t.category.name === type && t.name === id)
           groupTitle = tag ? `${tag.category.displayName}: ${tag.displayName}` : groupTitle
         }
       }
+
+      const groupArray = Array.isArray(value) ? (value as Asset[]) : null
 
       elements.push(
         <div key={key} className="space-y-4">
@@ -260,20 +271,20 @@ export function AssetGrid({
           <div className={`${level === 0 ? 'border-b-2 border-sage/20 pb-2' : 'border-b border-sage/10 pb-1 ml-4'}`}>
             <h3 className={`${level === 0 ? 'h3 text-sage' : 'h4 text-sage/80'}`}>
               {groupTitle}
-              {Array.isArray(value) && (
-                <span className="ml-2 text-sm text-sage/60">({value.length})</span>
+              {groupArray && (
+                <span className="ml-2 text-sm text-sage/60">({groupArray.length})</span>
               )}
             </h3>
           </div>
 
           {/* Group content */}
-          {Array.isArray(value) ? (
+          {groupArray ? (
             <div className={`dam-grid ${level > 0 ? 'ml-4' : ''} ${
               gridViewMode === "square"
                 ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
                 : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
             }`}>
-              {value.map((asset: Asset) => (
+              {groupArray.map((asset) => (
                 <AssetCard
                   key={asset.id}
                   asset={asset}
@@ -407,7 +418,7 @@ function AssetCard({
     setPressTimer(timer)
   }
 
-  const handleTouchEnd = (e?: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchEnd = () => {
     if (pressTimer) {
       clearTimeout(pressTimer)
       setPressTimer(null)

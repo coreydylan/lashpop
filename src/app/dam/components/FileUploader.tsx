@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useCallback, useRef, useEffect } from "react"
 import { Upload, X, CheckCircle, AlertCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -34,64 +36,7 @@ export function FileUploader({
   const [queuedAction, setQueuedAction] = useState<"apply" | "skip" | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFiles = useCallback((newFiles: FileList | File[]) => {
-    const fileArray = Array.from(newFiles)
-    const validFiles = fileArray.filter(
-      (file) => file.type.startsWith("image/") || file.type.startsWith("video/")
-    )
-
-    const filesWithPreview: FileWithPreview[] = validFiles.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-      id: Math.random().toString(36).substring(7),
-      status: "pending",
-      progress: 0
-    }))
-
-    setFiles((prev) => [...prev, ...filesWithPreview])
-
-    // Notify parent that files were added (for auto-selection)
-    if (onUploadStart) {
-      onUploadStart(filesWithPreview.map(f => f.id))
-    }
-
-    // Start uploading immediately
-    uploadFilesImmediately(filesWithPreview)
-  }, [onUploadStart])
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault()
-      setIsDragging(false)
-
-      if (e.dataTransfer.files) {
-        handleFiles(e.dataTransfer.files)
-      }
-    },
-    [handleFiles]
-  )
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }, [])
-
-  const removeFile = useCallback((id: string) => {
-    setFiles((prev) => {
-      const file = prev.find((f) => f.id === id)
-      if (file) {
-        URL.revokeObjectURL(file.preview)
-      }
-      return prev.filter((f) => f.id !== id)
-    })
-  }, [])
-
-  const uploadFilesImmediately = async (filesToUpload: FileWithPreview[]) => {
+  const uploadFilesImmediately = useCallback(async (filesToUpload: FileWithPreview[]) => {
     for (const fileWithPreview of filesToUpload) {
       try {
         // Update status to uploading
@@ -129,7 +74,6 @@ export function FileUploader({
           )
         )
 
-        // Store uploaded asset (but don't add to grid yet)
         if (result.assets) {
           setUploadedAssets((prev) => [...prev, ...result.assets])
         }
@@ -142,7 +86,64 @@ export function FileUploader({
         )
       }
     }
-  }
+  }, [teamMemberId])
+
+  const handleFiles = useCallback((newFiles: FileList | File[]) => {
+    const fileArray = Array.from(newFiles)
+    const validFiles = fileArray.filter(
+      (file) => file.type.startsWith("image/") || file.type.startsWith("video/")
+    )
+
+    const filesWithPreview: FileWithPreview[] = validFiles.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      id: Math.random().toString(36).substring(7),
+      status: "pending",
+      progress: 0
+    }))
+
+    setFiles((prev) => [...prev, ...filesWithPreview])
+
+    // Notify parent that files were added (for auto-selection)
+    if (onUploadStart) {
+      onUploadStart(filesWithPreview.map(f => f.id))
+    }
+
+    // Start uploading immediately
+    uploadFilesImmediately(filesWithPreview)
+  }, [onUploadStart, uploadFilesImmediately])
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      setIsDragging(false)
+
+      if (e.dataTransfer.files) {
+        handleFiles(e.dataTransfer.files)
+      }
+    },
+    [handleFiles]
+  )
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }, [])
+
+  const removeFile = useCallback((id: string) => {
+    setFiles((prev) => {
+      const file = prev.find((f) => f.id === id)
+      if (file) {
+        URL.revokeObjectURL(file.preview)
+      }
+      return prev.filter((f) => f.id !== id)
+    })
+  }, [])
 
   // Don't auto-select uploading assets anymore - wait for user to confirm batch
   // (Photos stay staged in upload area until tags applied or skipped)

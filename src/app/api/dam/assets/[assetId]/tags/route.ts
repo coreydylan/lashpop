@@ -2,26 +2,31 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { assetTags } from "@/db/schema/asset_tags"
 import { eq } from "drizzle-orm"
+import { getRouteParam } from "@/lib/server/getRouteParam"
 
-// Update tags for a single asset
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { assetId: string } }
-) {
+export async function POST(request: NextRequest, context: any) {
   try {
     const body = await request.json()
     const { tagIds } = body // Array of tag IDs to apply
+    const assetId = await getRouteParam(context, "assetId")
+
+    if (!assetId) {
+      return NextResponse.json(
+        { error: "Missing assetId" },
+        { status: 400 }
+      )
+    }
 
     const db = getDb()
 
     // Delete existing tags for this asset
-    await db.delete(assetTags).where(eq(assetTags.assetId, params.assetId))
+    await db.delete(assetTags).where(eq(assetTags.assetId, assetId))
 
     // Insert new tags
     if (tagIds && tagIds.length > 0) {
       await db.insert(assetTags).values(
         tagIds.map((tagId: string) => ({
-          assetId: params.assetId,
+          assetId,
           tagId
         }))
       )

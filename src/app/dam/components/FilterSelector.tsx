@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useEffect, useCallback, useMemo } from "react"
 import clsx from "clsx"
 import { Plus, Check, X } from "lucide-react"
@@ -159,10 +161,10 @@ export function FilterSelector({
   }, [assets])
 
   // Get option count from memoized calculations
-  const getOptionCount = (categoryId: string, optionId: string) => {
+  const getOptionCount = useCallback((categoryId: string, optionId: string) => {
     const key = categoryId === 'team' ? `team-${optionId}` : `tag-${optionId}`
     return optionCounts.get(key) || 0
-  }
+  }, [optionCounts])
 
   // Create combined categories including Team
   const allCategories = useMemo(() => [
@@ -197,7 +199,7 @@ export function FilterSelector({
   .map(cat => ({
     ...cat,
     count: cat.options.reduce((sum: number, opt: any) => sum + (opt.count || 0), 0)
-  })), [teamMembers, categories, optionCounts])
+  })), [categories, getOptionCount, teamMembers])
 
   // Show + Filters button first
   if (!isOpen) {

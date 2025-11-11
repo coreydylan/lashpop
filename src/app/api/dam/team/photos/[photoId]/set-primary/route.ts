@@ -2,15 +2,21 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { teamMembers } from "@/db/schema/team_members"
-import { eq, and } from "drizzle-orm"
+import { eq } from "drizzle-orm"
+import { getRouteParam } from "@/lib/server/getRouteParam"
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { photoId: string } }
-) {
+export async function POST(request: NextRequest, context: any) {
   try {
     const body = await request.json()
     const { teamMemberId } = body
+    const photoId = await getRouteParam(context, "photoId")
+
+    if (!photoId) {
+      return NextResponse.json(
+        { error: "Missing photoId" },
+        { status: 400 }
+      )
+    }
 
     const db = getDb()
 
@@ -18,7 +24,7 @@ export async function POST(
     const [photo] = await db
       .select()
       .from(teamMemberPhotos)
-      .where(eq(teamMemberPhotos.id, params.photoId))
+      .where(eq(teamMemberPhotos.id, photoId))
 
     if (!photo) {
       return NextResponse.json({ error: "Photo not found" }, { status: 404 })
@@ -34,7 +40,7 @@ export async function POST(
     await db
       .update(teamMemberPhotos)
       .set({ isPrimary: true, updatedAt: new Date() })
-      .where(eq(teamMemberPhotos.id, params.photoId))
+      .where(eq(teamMemberPhotos.id, photoId))
 
     // Update team member's imageUrl to use this photo
     await db

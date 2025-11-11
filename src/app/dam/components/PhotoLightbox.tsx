@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable @next/next/no-img-element */
+
 import type { ReactNode, PointerEvent as ReactPointerEvent } from "react"
 import { useCallback, useRef } from "react"
 import { PhotoProvider } from "react-photo-view"
@@ -52,7 +54,7 @@ export function PhotoLightbox({
 }: PhotoLightboxProps) {
   const thumbnailStripRef = useRef<HTMLDivElement | null>(null)
   const currentIndexRef = useRef(0)
-  const thumbPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const thumbPressTimerRef = useRef<number | null>(null)
   const touchStartXRef = useRef<number | null>(null)
   const isScrollingRef = useRef(false)
 

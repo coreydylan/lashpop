@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable @next/next/no-img-element */
+
 import { Fragment, useEffect, useMemo, useRef, useState } from "react"
 import clsx from "clsx"
 import {

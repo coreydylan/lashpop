@@ -1,5 +1,7 @@
 "use client"
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
 import clsx from "clsx"
@@ -61,6 +63,20 @@ export default function DAMPage() {
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
   const activeFiltersRef = useRef<ActiveFilter[]>([])
   const [uploadingAssetIds, setUploadingAssetIds] = useState<string[]>([])
+  const filterableAssets = useMemo(
+    () =>
+      allAssets.map((asset) => ({
+        id: asset.id,
+        teamMemberId: asset.teamMemberId,
+        tags: asset.tags?.map((tag) => ({
+          id: tag.id,
+          name: tag.name,
+          displayName: tag.displayName,
+          categoryId: tag.category.id
+        }))
+      })),
+    [allAssets]
+  )
 
   // Omni-bar state (used for both filtering and bulk tagging)
   const [omniTeamMemberId, setOmniTeamMemberId] = useState<string | undefined>()
@@ -527,7 +543,7 @@ export default function DAMPage() {
     }
   }, [applyTagsToAssetIds, computeExistingTags, fetchAssets, normalizeExclusiveTags, omniTags, selectedAssets])
 
-  const handleRemoveTag = async (tagId: string, count: number, targetAssetIds?: string[], skipPrompt = false) => {
+  const handleRemoveTag = useCallback(async (tagId: string, count: number, targetAssetIds?: string[], skipPrompt = false) => {
     const isTeamMemberTag = tagId.startsWith('team-')
     const label = isTeamMemberTag ? "team member" : "tag"
     const assetIds = targetAssetIds ?? selectedAssets
@@ -583,7 +599,7 @@ export default function DAMPage() {
     } catch (error) {
       console.error("Failed to remove tag:", error)
     }
-  }
+  }, [existingTags, fetchAssets, selectedAssets, syncActiveLightboxAsset])
 
   const handleDelete = useCallback(async (assetIds: string[]) => {
     try {
@@ -1003,7 +1019,7 @@ export default function DAMPage() {
     )
   }
 
-  const renderChips = () => {
+  const renderChips = (): ReactNode => {
     // Always show Group By chips first if any
     const groupByContent = renderGroupByChips()
     const commandLabel = selectedAssets.length > 0
@@ -1283,7 +1299,7 @@ export default function DAMPage() {
             teamMembers={teamMembers}
             selectedTagIds={selectedTagIds}
             selectedTeamMemberIds={selectedTeamMemberIds}
-            assets={allAssets}
+            assets={filterableAssets}
             onTagToggle={handleTagFilterToggle}
             onTeamMemberToggle={handleTeamFilterToggle}
             isLightbox={false}

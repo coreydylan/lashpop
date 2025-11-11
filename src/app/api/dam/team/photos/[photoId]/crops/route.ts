@@ -2,14 +2,20 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { eq } from "drizzle-orm"
+import { getRouteParam } from "@/lib/server/getRouteParam"
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { photoId: string } }
-) {
+export async function POST(request: NextRequest, context: any) {
   try {
     const body = await request.json()
     const { crops } = body
+    const photoId = await getRouteParam(context, "photoId")
+
+    if (!photoId) {
+      return NextResponse.json(
+        { error: "Missing photoId" },
+        { status: 400 }
+      )
+    }
 
     const db = getDb()
 
@@ -23,7 +29,7 @@ export async function POST(
         cropSquare: crops.square,
         updatedAt: new Date()
       })
-      .where(eq(teamMemberPhotos.id, params.photoId))
+      .where(eq(teamMemberPhotos.id, photoId))
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, Fragment } from "react"
+import { useState, useEffect, useRef, Fragment, useCallback } from "react"
 import clsx from "clsx"
 import {
   Edit2,
@@ -57,7 +57,24 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
     }
   }, [editingId])
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleSave = useCallback(() => {
+    onSave(editedCategories)
+    onClose()
+  }, [editedCategories, onClose, onSave])
+
+  const handleDelete = useCallback(() => {
+    setEditedCategories(prev => {
+      const newCategories = prev.map(cat => ({
+        ...cat,
+        tags: cat.tags?.filter(tag => !selectedItems.has(`tag-${tag.id}`))
+      })).filter(cat => !selectedItems.has(`cat-${cat.id}`))
+
+      setSelectedItems(new Set())
+      return newCategories
+    })
+  }, [selectedItems])
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === "Escape") {
       if (editingId) {
         setEditingId(null)
@@ -86,29 +103,12 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
         handleDelete()
       }
     }
-  }
+  }, [editingId, handleDelete, handleSave, onClose, selectedItems])
 
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [editingId, selectedItems])
-
-  const handleSave = () => {
-    onSave(editedCategories)
-    onClose()
-  }
-
-  const handleDelete = () => {
-    setEditedCategories(prev => {
-      const newCategories = prev.map(cat => ({
-        ...cat,
-        tags: cat.tags?.filter(tag => !selectedItems.has(`tag-${tag.id}`))
-      })).filter(cat => !selectedItems.has(`cat-${cat.id}`))
-
-      setSelectedItems(new Set())
-      return newCategories
-    })
-  }
+  }, [handleKeyDown])
 
   const handleRename = (id: string, newName: string, type: 'category' | 'tag') => {
     if (type === 'category') {

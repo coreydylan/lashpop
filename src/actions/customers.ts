@@ -11,9 +11,11 @@ export async function getCustomerByUserId(
 ): Promise<SelectCustomer | null> {
   if (!features.supabase) return null
   const db = getDb()
-  const customer = await db.query.customers.findFirst({
-    where: eq(customers.userId, userId)
-  })
+  const [customer] = await db
+    .select()
+    .from(customers)
+    .where(eq(customers.userId, userId))
+    .limit(1)
 
   return customer || null
 }
@@ -30,9 +32,12 @@ export async function getBillingDataByUserId(userId: string): Promise<{
   const customer = features.supabase
     ? await (async () => {
         const db = getDb()
-        return db.query.customers.findFirst({
-          where: eq(customers.userId, userId)
-        })
+        const [record] = await db
+          .select()
+          .from(customers)
+          .where(eq(customers.userId, userId))
+          .limit(1)
+        return record
       })()
     : null
 
