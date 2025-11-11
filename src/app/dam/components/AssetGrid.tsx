@@ -29,6 +29,7 @@ interface AssetGridProps {
   onSelectionChange?: (selectedIds: string[]) => void
   onDelete?: (assetIds: string[]) => void
   gridViewMode?: "square" | "aspect"
+  groupByCategories?: string[]
 }
 
 export function AssetGrid({
@@ -36,11 +37,69 @@ export function AssetGrid({
   selectedAssetIds = [],
   onSelectionChange,
   onDelete: _onDelete,
-  gridViewMode = "square"
+  gridViewMode = "square",
+  groupByCategories = []
 }: AssetGridProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(selectedAssetIds.length > 0)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
   const selectedAssetSet = useMemo(() => new Set(selectedAssetIds), [selectedAssetIds])
+
+  // Group assets based on groupByCategories
+  const groupedAssets = useMemo(() => {
+    if (groupByCategories.length === 0) {
+      return { ungrouped: assets }
+    }
+
+    const groups: Record<string, any> = {}
+    const ungrouped: Asset[] = []
+
+    assets.forEach(asset => {
+      let placed = false
+      const path: string[] = []
+
+      // Check each level of grouping
+      for (const categoryName of groupByCategories) {
+        if (categoryName === 'team') {
+          if (asset.teamMemberId) {
+            path.push(`team_${asset.teamMemberId}`)
+            placed = true
+          } else if (path.length === 0) {
+            // If first level and no team, skip this asset for grouping
+            break
+          }
+        } else {
+          const tag = asset.tags?.find(t => t.category.name === categoryName)
+          if (tag) {
+            path.push(`${categoryName}_${tag.name}`)
+            placed = true
+          } else if (path.length === 0) {
+            // If first level and no tag for this category, skip
+            break
+          }
+        }
+      }
+
+      if (placed && path.length > 0) {
+        // Navigate/create nested structure
+        let current = groups
+        for (let i = 0; i < path.length; i++) {
+          const key = path[i]
+          if (!current[key]) {
+            current[key] = i === path.length - 1 ? [] : {}
+          }
+          if (i === path.length - 1) {
+            current[key].push(asset)
+          } else {
+            current = current[key]
+          }
+        }
+      } else {
+        ungrouped.push(asset)
+      }
+    })
+
+    return ungrouped.length > 0 ? { ...groups, ungrouped } : groups
+  }, [assets, groupByCategories])
 
   // Detect touch device
   useEffect(() => {
@@ -102,6 +161,71 @@ export function AssetGrid({
     [isTouchDevice, toggleSelection]
   )
 
+  // Render grouped assets recursively
+  const renderGroups = (groups: any, level: number): JSX.Element[] => {
+    const elements: JSX.Element[] = []
+
+    Object.entries(groups).forEach(([key, value]) => {
+      const [type, id] = key.includes('_') ? key.split('_') : ['', key]
+      const isUngrouped = key === 'ungrouped'
+
+      // Get display name for the group
+      let groupTitle = isUngrouped ? 'Other' : key
+      if (type === 'team') {
+        // TODO: Get team member name from ID
+        groupTitle = 'Team Member'
+      } else if (!isUngrouped) {
+        // Extract tag display name
+        const sampleAsset = Array.isArray(value) ? value[0] : Object.values(value)[0][0]
+        if (sampleAsset) {
+          const tag = sampleAsset.tags?.find((t: any) => t.category.name === type && t.name === id)
+          groupTitle = tag ? `${tag.category.displayName}: ${tag.displayName}` : groupTitle
+        }
+      }
+
+      elements.push(
+        <div key={key} className="space-y-4">
+          {/* Group header */}
+          <div className={`${level === 0 ? 'border-b-2 border-sage/20 pb-2' : 'border-b border-sage/10 pb-1 ml-4'}`}>
+            <h3 className={`${level === 0 ? 'h3 text-sage' : 'h4 text-sage/80'}`}>
+              {groupTitle}
+              {Array.isArray(value) && (
+                <span className="ml-2 text-sm text-sage/60">({value.length})</span>
+              )}
+            </h3>
+          </div>
+
+          {/* Group content */}
+          {Array.isArray(value) ? (
+            <div className={`dam-grid ${level > 0 ? 'ml-4' : ''} ${
+              gridViewMode === "square"
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
+                : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
+            }`}>
+              {value.map((asset: Asset) => (
+                <AssetCard
+                  key={asset.id}
+                  asset={asset}
+                  isSelected={selectedAssetSet.has(asset.id)}
+                  isSelectionMode={isSelectionMode}
+                  isTouchDevice={isTouchDevice}
+                  gridViewMode={gridViewMode}
+                  onClick={(e) => handleAssetClick(asset, e)}
+                  onLongPress={() => handleLongPress(asset.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className={level > 0 ? 'ml-4' : ''}>
+              {renderGroups(value, level + 1)}
+            </div>
+          )}
+        </div>
+      )
+    })
+
+    return elements
+  }
 
   return (
     <div className="w-full">
@@ -114,25 +238,31 @@ export function AssetGrid({
         </div>
       )}
 
-      {/* Grid - Square or Masonry layout based on gridViewMode */}
-      <div className={`dam-grid mt-4 ${
-        gridViewMode === "square"
-          ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
-          : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
-      }`}>
-        {assets.map((asset) => (
-          <AssetCard
-            key={asset.id}
-            asset={asset}
-            isSelected={selectedAssetSet.has(asset.id)}
-            isSelectionMode={isSelectionMode}
-            isTouchDevice={isTouchDevice}
-            gridViewMode={gridViewMode}
-            onClick={(e) => handleAssetClick(asset, e)}
-            onLongPress={() => handleLongPress(asset.id)}
-          />
-        ))}
-      </div>
+      {/* Grouped or regular grid */}
+      {groupByCategories.length > 0 ? (
+        <div className="space-y-8 mt-4">
+          {renderGroups(groupedAssets, 0)}
+        </div>
+      ) : (
+        <div className={`dam-grid mt-4 ${
+          gridViewMode === "square"
+            ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
+            : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
+        }`}>
+          {assets.map((asset) => (
+            <AssetCard
+              key={asset.id}
+              asset={asset}
+              isSelected={selectedAssetSet.has(asset.id)}
+              isSelectionMode={isSelectionMode}
+              isTouchDevice={isTouchDevice}
+              gridViewMode={gridViewMode}
+              onClick={(e) => handleAssetClick(asset, e)}
+              onLongPress={() => handleLongPress(asset.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

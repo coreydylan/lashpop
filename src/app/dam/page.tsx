@@ -80,6 +80,28 @@ export default function DAMPage() {
 
   // Fetch initial data
   const [isMobile, setIsMobile] = useState(false)
+  const [groupByTags, setGroupByTags] = useState<string[]>([])  // Track up to 2 tags for grouping
+
+  // Helper to make colors more vibrant in lightbox mode
+  const getTagColor = (color: string | undefined, isLightbox: boolean = false) => {
+    const baseColor = color || "#A19781"
+    if (!isLightbox) {
+      return `linear-gradient(135deg, ${baseColor} 0%, ${baseColor}CC 100%)`
+    }
+    // In lightbox, use more saturated/vibrant version
+    return `linear-gradient(135deg, ${baseColor} 0%, ${baseColor}EE 100%)`
+  }
+
+  // Handle grouping by tag category
+  const handleGroupBy = (categoryName: string) => {
+    if (groupByTags.includes(categoryName)) return // Already grouping by this
+    if (groupByTags.length >= 2) return // Max 2 levels
+    setGroupByTags([...groupByTags, categoryName])
+  }
+
+  const handleRemoveGroupBy = (categoryName: string) => {
+    setGroupByTags(groupByTags.filter(c => c !== categoryName))
+  }
 
   useEffect(() => {
     const checkMobile = () => {
@@ -437,10 +459,43 @@ export default function DAMPage() {
     }
   }
 
+  const renderGroupByChips = () => {
+    if (groupByTags.length === 0) return null
+
+    return (
+      <div className="flex items-center gap-2">
+        <span className={`text-xs font-bold ${selectedAssets.length > 0 ? 'text-cream' : 'text-sage'} uppercase`}>
+          Group By:
+        </span>
+        {groupByTags.map((categoryName, index) => (
+          <div
+            key={categoryName}
+            className="flex items-center gap-1 px-3 py-1 bg-sage/20 rounded-full"
+          >
+            <span className="text-xs font-semibold text-sage uppercase">
+              {index > 0 && "→ "}
+              {categoryName}
+            </span>
+            <button
+              onClick={() => handleRemoveGroupBy(categoryName)}
+              className="p-0.5 hover:bg-sage/20 rounded-full transition-colors"
+            >
+              <X className="w-3 h-3 text-sage" />
+            </button>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   const renderChips = () => {
+    // Always show Group By chips first if any
+    const groupByContent = renderGroupByChips()
+
     if (selectedAssets.length > 0) {
       return (
         <>
+          {groupByContent}
           {/* Selection Mode: Show existing tags with counts */}
           {Array.from(existingTags.entries()).map(([tagId, count]) => {
             const isTeamMemberTag = tagId.startsWith('team-')
@@ -456,7 +511,7 @@ export default function DAMPage() {
                   key={tagId}
                   className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
                   style={{
-                    background: `linear-gradient(135deg, #BCC9C2 0%, #BCC9C2CC 100%)`
+                    background: getTagColor("#BCC9C2", false)
                   }}
                 >
                   <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
@@ -517,7 +572,7 @@ export default function DAMPage() {
                 key={tagId}
                 className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
                 style={{
-                  background: `linear-gradient(135deg, ${tag.category.color || "#A19781"} 0%, ${tag.category.color || "#A19781"}CC 100%)`
+                  background: getTagColor(tag.category.color, false)
                 }}
               >
                 <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
@@ -532,9 +587,15 @@ export default function DAMPage() {
                       <span className="text-xs font-bold text-cream">{count}</span>
                     </button>
                   )}
-                  <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                  <button
+                    onClick={() => handleGroupBy(tag.category.name)}
+                    className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
+                      groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
+                  >
                     {tag.category.displayName}
-                  </span>
+                  </button>
                   <span className="text-cream/80 text-xs">›</span>
                   <span className="text-sm text-cream font-medium">
                     {tag.displayName}
@@ -570,7 +631,7 @@ export default function DAMPage() {
                 key={`new-${tag.id}`}
                 className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm border-2 border-cream/40 ${isMobile ? 'text-xs' : ''}`}
                 style={{
-                  background: `linear-gradient(135deg, ${tag.category.color || "#A19781"} 0%, ${tag.category.color || "#A19781"}CC 100%)`
+                  background: getTagColor(tag.category.color, false)
                 }}
               >
                 <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
@@ -581,9 +642,15 @@ export default function DAMPage() {
                       className="w-5 h-5 rounded-full object-cover border border-cream/30"
                     />
                   )}
-                  <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                  <button
+                    onClick={() => handleGroupBy(tag.category.name)}
+                    className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
+                      groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
+                  >
                     {tag.category.displayName}
-                  </span>
+                  </button>
                   <span className="text-cream/80 text-xs">›</span>
                   <span className="text-sm text-cream font-medium">
                     {tag.displayName}
@@ -609,11 +676,14 @@ export default function DAMPage() {
     } else {
       /* Filter Mode */
       return (
-        <FilterSelector
-          activeFilters={activeFilters}
-          onFiltersChange={handleFiltersChange}
+        <>
+          {groupByContent}
+          <FilterSelector
+            activeFilters={activeFilters}
+            onFiltersChange={handleFiltersChange}
           assets={assets}
-        />
+          />
+        </>
       )
     }
   }
@@ -639,9 +709,9 @@ export default function DAMPage() {
       <div className="flex items-center gap-2">
           {teamMember && (
             <div
-              className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
+              className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm border border-white/20 ${isMobile ? 'text-xs' : ''}`}
               style={{
-                background: `linear-gradient(135deg, #BCC9C2 0%, #BCC9C2CC 100%)`
+                background: getTagColor("#BCC9C2", true)
               }}
             >
               <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
@@ -652,9 +722,15 @@ export default function DAMPage() {
                     className="w-5 h-5 rounded-full object-cover border border-cream/30"
                   />
                 )}
-                <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                <button
+                  onClick={() => handleGroupBy("team")}
+                  className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
+                    groupByTags.includes("team") ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
+                  disabled={groupByTags.includes("team") || groupByTags.length >= 2}
+                >
                   Team
-                </span>
+                </button>
                 <span className="text-cream/80 text-xs">›</span>
                 <span className="text-sm text-cream font-medium">
                   {teamMember.name}
@@ -689,15 +765,20 @@ export default function DAMPage() {
           {activeLightboxAsset.tags?.map((tag) => (
             <div
               key={tag.id}
-              className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
+              className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm border border-white/20 ${isMobile ? 'text-xs' : ''}`}
               style={{
-                background: `linear-gradient(135deg, ${tag.category.color || "#A19781"} 0%, ${(tag.category.color || "#A19781")}CC 100%)`
-              }}
-              >
+                background: getTagColor(tag.category.color, true)
+              }}>
                 <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
-                  <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                  <button
+                    onClick={() => handleGroupBy(tag.category.name)}
+                    className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
+                      groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    }`}
+                    disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
+                  >
                     {tag.category.displayName}
-                  </span>
+                  </button>
                   <span className="text-cream/80 text-xs">›</span>
                   <span className="text-sm text-cream font-medium">
                     {tag.displayName}
@@ -872,6 +953,7 @@ export default function DAMPage() {
               onSelectionChange={handleSelectionChange}
               onDelete={handleDelete}
               gridViewMode={gridViewMode}
+              groupByCategories={groupByTags}
             />
           )}
         </main>
