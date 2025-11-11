@@ -295,6 +295,7 @@ export function PhotoLightbox({
           background: transparent;
           padding: 20px 16px 24px;
           pointer-events: auto;
+          z-index: 10;
         }
 
         .photo-lightbox-omnibar > div {

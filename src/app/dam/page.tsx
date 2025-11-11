@@ -79,9 +79,19 @@ export default function DAMPage() {
   const [isUploadOpen, setIsUploadOpen] = useState(false)
 
   // Fetch initial data
+  const [isMobile, setIsMobile] = useState(false)
+
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
     fetchAssets()
     fetchTeamMembers()
+
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   useEffect(() => {
@@ -444,12 +454,12 @@ export default function DAMPage() {
               return (
                 <div
                   key={tagId}
-                  className="flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm"
+                  className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
                   style={{
                     background: `linear-gradient(135deg, #BCC9C2 0%, #BCC9C2CC 100%)`
                   }}
                 >
-                  <div className="flex items-center gap-2 px-3 py-1.5">
+                  <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                     {isPending ? (
                       <span className="text-xs font-semibold text-cream">Confirm removal?</span>
                     ) : (
@@ -505,12 +515,12 @@ export default function DAMPage() {
             return (
               <div
                 key={tagId}
-                className="flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm"
+                className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
                 style={{
                   background: `linear-gradient(135deg, ${tag.category.color || "#A19781"} 0%, ${tag.category.color || "#A19781"}CC 100%)`
                 }}
               >
-                <div className="flex items-center gap-2 px-3 py-1.5">
+                <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                   {isPending ? (
                     <span className="text-xs font-semibold text-cream">Confirm removal?</span>
                   ) : (
@@ -558,12 +568,12 @@ export default function DAMPage() {
             return (
               <div
                 key={`new-${tag.id}`}
-                className="flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm border-2 border-cream/40"
+                className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm border-2 border-cream/40 ${isMobile ? 'text-xs' : ''}`}
                 style={{
                   background: `linear-gradient(135deg, ${tag.category.color || "#A19781"} 0%, ${tag.category.color || "#A19781"}CC 100%)`
                 }}
               >
-                <div className="flex items-center gap-2 px-3 py-1.5">
+                <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                   {isTeamTag && teamMember?.imageUrl && (
                     <img
                       src={teamMember.imageUrl}
@@ -630,12 +640,12 @@ export default function DAMPage() {
         <div className="flex flex-wrap items-center gap-2">
           {teamMember && (
             <div
-              className="flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm"
+              className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
               style={{
                 background: `linear-gradient(135deg, #BCC9C2 0%, #BCC9C2CC 100%)`
               }}
             >
-              <div className="flex items-center gap-2 px-3 py-1.5">
+              <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                 {teamMember.imageUrl && (
                   <img
                     src={teamMember.imageUrl}
@@ -680,12 +690,12 @@ export default function DAMPage() {
           {activeLightboxAsset.tags?.map((tag) => (
             <div
               key={tag.id}
-              className="flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm"
+              className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
               style={{
                 background: `linear-gradient(135deg, ${tag.category.color || "#A19781"} 0%, ${(tag.category.color || "#A19781")}CC 100%)`
               }}
               >
-                <div className="flex items-center gap-2 px-3 py-1.5">
+                <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                   <span className="text-xs font-semibold text-cream uppercase tracking-wide">
                     {tag.category.displayName}
                   </span>

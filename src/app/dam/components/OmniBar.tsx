@@ -38,7 +38,7 @@ export function OmniBar({
   const containerClass = clsx(
     "arch-full overflow-hidden transition-colors",
     isOverlay
-      ? "bg-black/15 backdrop-blur-sm"
+      ? "bg-black/25 backdrop-blur-md lg:bg-black/15 lg:backdrop-blur-sm"
       : selectedCount > 0
       ? "bg-dusty-rose/30"
       : "bg-warm-sand/30"
@@ -122,65 +122,81 @@ export function OmniBar({
       </div>
 
       {/* Mobile layout */}
-      <div className="block lg:hidden px-3 py-3 space-y-2">
-        {selectedCount > 0 ? (
-          <div className="flex flex-wrap items-center gap-2 justify-between">
-            <div className="flex items-center gap-2">
-              <span className={clsx("text-sm font-semibold", textPrimary)}>
-                {selectedCount} selected
-              </span>
-              <button
-                onClick={onClearSelection}
-                className={clsx("p-1 rounded-full transition-colors", hoverClass)}
-                aria-label="Clear selection"
-              >
-                <X className={clsx("w-4 h-4", textPrimary)} />
-              </button>
-            </div>
-            {canApplyTags && (
-              <button
-                onClick={onApplyTags}
-                className={clsx("px-3 py-1 rounded-full text-xs font-semibold transition-colors", applyButtonClass)}
-              >
-                Apply
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center gap-3 justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <span className={textMuted}>
-                {assetsCount} {assetLabel}
-              </span>
-              {counterSlot && (
-                <span className="text-xs font-semibold text-cream bg-dune/40 rounded-full px-3 py-0.5">
-                  {counterSlot}
+      <div className="block lg:hidden px-3 py-2 space-y-3">
+        {/* Header row */}
+        <div className="flex items-center justify-between">
+          {selectedCount > 0 ? (
+            <>
+              <div className="flex items-center gap-3">
+                <span className={clsx("text-base font-bold", textPrimary)}>
+                  {selectedCount} selected
                 </span>
+                <button
+                  onClick={onClearSelection}
+                  className={clsx("p-1.5 rounded-full transition-colors", hoverClass)}
+                  aria-label="Clear selection"
+                >
+                  <X className={clsx("w-4 h-4", textPrimary)} />
+                </button>
+              </div>
+              {canApplyTags && (
+                <button
+                  onClick={onApplyTags}
+                  className={clsx("px-4 py-1.5 rounded-full text-sm font-semibold transition-colors", applyButtonClass)}
+                >
+                  Apply
+                </button>
               )}
-            </div>
-            {showGridToggle && (
-              <button
-                onClick={onToggleGridView}
-                className={clsx("p-2 rounded-full transition-colors", hoverClass)}
-                aria-label="Toggle grid view"
-              >
-                {gridViewMode === "square" ? (
-                  <LayoutGrid className={clsx("w-4 h-4", iconColor)} />
-                ) : (
-                  <Grid3x3 className={clsx("w-4 h-4", iconColor)} />
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <span className={clsx("text-base", textMuted)}>
+                  {assetsCount} {assetLabel}
+                </span>
+                {counterSlot && (
+                  <span className="text-xs font-bold text-cream bg-dune/30 rounded-full px-2.5 py-0.5">
+                    {counterSlot}
+                  </span>
                 )}
-              </button>
+              </div>
+              {showGridToggle && (
+                <button
+                  onClick={onToggleGridView}
+                  className={clsx("p-2 rounded-full transition-colors", hoverClass)}
+                  aria-label="Toggle grid view"
+                >
+                  {gridViewMode === "square" ? (
+                    <LayoutGrid className={clsx("w-5 h-5", iconColor)} />
+                  ) : (
+                    <Grid3x3 className={clsx("w-5 h-5", iconColor)} />
+                  )}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Chips/Filters area - wrap on mobile for better visibility */}
+        {chipsContent && (
+          <div className={isOverlay ? "relative" : ""}>
+            {/* Show wrapping layout if many items selected, otherwise horizontal scroll */}
+            {selectedCount > 3 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {chipsContent}
+              </div>
+            ) : (
+              <div className={clsx(
+                "overflow-x-auto scrollbar-hidden",
+                isOverlay ? "-mx-3 px-3" : ""
+              )}>
+                <div className="flex flex-nowrap items-center gap-2 min-w-max pb-1">
+                  {chipsContent}
+                </div>
+              </div>
             )}
           </div>
         )}
-
-        <div className="space-y-2 overflow-visible">
-          <div className="scrollbar-hidden overflow-x-auto -mx-3 px-3 py-1">
-            <div className="flex items-center gap-2 min-w-max">
-              {chipsContent ?? null}
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   )
