@@ -42,6 +42,9 @@ export function AssetGrid({
 }: AssetGridProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(selectedAssetIds.length > 0)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStartAssetId, setDragStartAssetId] = useState<string | null>(null)
+  const [draggedOverAssets, setDraggedOverAssets] = useState<Set<string>>(new Set())
   const selectedAssetSet = useMemo(() => new Set(selectedAssetIds), [selectedAssetIds])
 
   // Group assets based on groupByCategories
@@ -130,6 +133,13 @@ export function AssetGrid({
 
   const handleAssetClick = useCallback(
     (asset: Asset, event: React.MouseEvent) => {
+      // If we're dragging, don't process clicks
+      if (isDragging) {
+        event.preventDefault()
+        event.stopPropagation()
+        return
+      }
+
       // Desktop multi-select: Cmd/Ctrl + Click
       if (!isTouchDevice && (event.metaKey || event.ctrlKey)) {
         event.preventDefault()
@@ -147,7 +157,7 @@ export function AssetGrid({
       }
       // Otherwise, PhotoView will handle opening the viewer
     },
-    [isSelectionMode, isTouchDevice, toggleSelection]
+    [isSelectionMode, isTouchDevice, toggleSelection, isDragging]
   )
 
   const handleLongPress = useCallback(
@@ -160,6 +170,67 @@ export function AssetGrid({
     },
     [isTouchDevice, toggleSelection]
   )
+
+  // Handle drag selection start
+  const handleDragStart = useCallback(
+    (assetId: string, event: React.MouseEvent | React.TouchEvent) => {
+      // Only start drag if in selection mode or holding Shift
+      const isShiftPressed = 'shiftKey' in event && event.shiftKey
+
+      if (isSelectionMode || isShiftPressed) {
+        event.preventDefault()
+        setIsDragging(true)
+        setIsSelectionMode(true)
+        setDragStartAssetId(assetId)
+        setDraggedOverAssets(new Set([assetId]))
+
+        // Add the first asset to selection
+        if (!selectedAssetIds.includes(assetId)) {
+          toggleSelection(assetId)
+        }
+      }
+    },
+    [isSelectionMode, selectedAssetIds, toggleSelection]
+  )
+
+  // Handle drag over asset
+  const handleDragOver = useCallback(
+    (assetId: string) => {
+      if (isDragging && !draggedOverAssets.has(assetId)) {
+        setDraggedOverAssets(prev => new Set([...prev, assetId]))
+
+        // Toggle selection for this asset
+        if (!selectedAssetIds.includes(assetId)) {
+          toggleSelection(assetId)
+        }
+      }
+    },
+    [isDragging, draggedOverAssets, selectedAssetIds, toggleSelection]
+  )
+
+  // Handle drag end
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false)
+    setDragStartAssetId(null)
+    setDraggedOverAssets(new Set())
+  }, [])
+
+  // Add global listeners for drag end
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      if (isDragging) {
+        handleDragEnd()
+      }
+    }
+
+    window.addEventListener('mouseup', handleGlobalDragEnd)
+    window.addEventListener('touchend', handleGlobalDragEnd)
+
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalDragEnd)
+      window.removeEventListener('touchend', handleGlobalDragEnd)
+    }
+  }, [isDragging, handleDragEnd])
 
   // Render grouped assets recursively
   const renderGroups = (groups: any, level: number): JSX.Element[] => {
@@ -212,6 +283,9 @@ export function AssetGrid({
                   gridViewMode={gridViewMode}
                   onClick={(e) => handleAssetClick(asset, e)}
                   onLongPress={() => handleLongPress(asset.id)}
+                  onDragStart={(e) => handleDragStart(asset.id, e)}
+                  onDragOver={() => handleDragOver(asset.id)}
+                  isDragging={isDragging}
                 />
               ))}
             </div>
@@ -228,12 +302,12 @@ export function AssetGrid({
   }
 
   return (
-    <div className="w-full">
+    <div className={`w-full ${isDragging ? 'dragging-selection' : ''}`}>
       {/* Helper text for desktop */}
       {!isTouchDevice && !isSelectionMode && assets.length > 0 && (
         <div className="mb-4 text-center">
           <p className="caption text-sage">
-            {navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl'} + Click to select multiple
+            {navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl'} + Click to select • Shift + Drag to select multiple
           </p>
         </div>
       )}
@@ -259,6 +333,9 @@ export function AssetGrid({
               gridViewMode={gridViewMode}
               onClick={(e) => handleAssetClick(asset, e)}
               onLongPress={() => handleLongPress(asset.id)}
+              onDragStart={(e) => handleDragStart(asset.id, e)}
+              onDragOver={() => handleDragOver(asset.id)}
+              isDragging={isDragging}
             />
           ))}
         </div>
@@ -275,6 +352,9 @@ interface AssetCardProps {
   gridViewMode: "square" | "aspect"
   onClick: (event: React.MouseEvent) => void
   onLongPress: () => void
+  onDragStart: (event: React.MouseEvent | React.TouchEvent) => void
+  onDragOver: () => void
+  isDragging: boolean
 }
 
 function AssetCard({
@@ -284,9 +364,36 @@ function AssetCard({
   isTouchDevice,
   gridViewMode,
   onClick,
-  onLongPress
+  onLongPress,
+  onDragStart,
+  onDragOver,
+  isDragging
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
+  const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
+
+  // Track modifier keys to prevent PhotoView from opening
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        setIsModifierKeyPressed(true)
+      }
+    }
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        setIsModifierKeyPressed(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [])
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isTouchDevice) return
@@ -328,35 +435,48 @@ function AssetCard({
     <div
       className={`relative arch-full overflow-hidden bg-warm-sand/40 group cursor-pointer touch-manipulation shadow-sm hover:shadow-lg transition-shadow ${
         gridViewMode === "square" ? "aspect-square" : "break-inside-avoid mb-3 sm:mb-4"
-      } ${isSelected ? "ring-4 ring-dusty-rose/80" : ""}`}
+      } ${isSelected ? "ring-4 ring-dusty-rose/80" : ""} ${isDragging ? "pointer-events-none" : ""}`}
       style={{
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
         userSelect: 'none'
       }}
       onClick={onClick}
-      onTouchStart={handleTouchStart}
+      onMouseDown={(e) => {
+        if (e.shiftKey || isSelectionMode) {
+          onDragStart(e)
+        } else {
+          handleTouchStart(e as any)
+        }
+      }}
+      onTouchStart={(e) => {
+        if (isSelectionMode) {
+          onDragStart(e)
+        } else {
+          handleTouchStart(e)
+        }
+      }}
+      onMouseEnter={() => onDragOver()}
+      onTouchMove={(e) => {
+        // Get the element at the touch point
+        const touch = e.touches[0]
+        const element = document.elementFromPoint(touch.clientX, touch.clientY)
+        if (element && element.closest('.dam-grid > div')) {
+          onDragOver()
+        }
+      }}
       onTouchEnd={handleTouchEnd}
       onMouseLeave={handleTouchEnd}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Image - wrapped in PhotoView when not in selection mode */}
-      {isSelectionMode ? (
-        imageContent
+      {/* Image - wrapped in PhotoView when not in selection mode and no modifier key pressed */}
+      {isSelectionMode || isModifierKeyPressed ? (
+        <div className="w-full h-full">
+          {imageContent}
+        </div>
       ) : (
         <PhotoView src={asset.filePath}>
-          <div
-            onClick={(e) => {
-              // Check for Cmd/Ctrl key to enter selection mode
-              if (e.metaKey || e.ctrlKey) {
-                e.preventDefault()
-                e.stopPropagation()
-                onClick(e)
-                return
-              }
-              // Otherwise let PhotoView handle it
-            }}
-          >
+          <div className="w-full h-full">
             {imageContent}
           </div>
         </PhotoView>

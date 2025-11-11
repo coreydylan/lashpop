@@ -326,4 +326,17 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;  /* Safari and Chrome */
   }
+
+  /* Prevent text selection during drag */
+  .dragging-selection {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Disable pointer events on images during drag */
+  .dragging-selection img {
+    pointer-events: none;
+  }
 }

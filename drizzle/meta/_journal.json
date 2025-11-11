@@ -36,6 +36,34 @@
       "when": 1762468840450,
       "tag": "0004_gigantic_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1762828538519,
+      "tag": "0005_chunky_mac_gargan",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1762831011168,
+      "tag": "0006_fair_jetstream",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1762831592481,
+      "tag": "0007_giant_madame_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1762834502698,
+      "tag": "0008_amused_omega_flight",
+      "breakpoints": true
     }
   ]
 }

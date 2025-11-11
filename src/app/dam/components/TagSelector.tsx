@@ -1,0 +1,264 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Plus, ChevronLeft } from "lucide-react"
+
+interface Tag {
+  id: string
+  name: string
+  displayName: string
+}
+
+interface TagCategory {
+  id: string
+  name: string
+  displayName: string
+  color?: string
+  tags: Tag[]
+}
+
+interface SelectedTag extends Tag {
+  category: {
+    id: string
+    name: string
+    displayName: string
+    color?: string
+  }
+}
+
+interface TagSelectorProps {
+  selectedTags: SelectedTag[]
+  onTagsChange: (tags: SelectedTag[]) => void
+}
+
+export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
+  const [categories, setCategories] = useState<TagCategory[]>([])
+  const [teamMembers, setTeamMembers] = useState<any[]>([])
+  const [isAdding, setIsAdding] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<TagCategory | null>(null)
+
+  useEffect(() => {
+    fetchCategories()
+    fetchTeamMembers()
+  }, [])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("/api/dam/tags")
+      const data = await response.json()
+      setCategories(data.categories || [])
+    } catch (error) {
+      console.error("Failed to fetch categories:", error)
+    }
+  }
+
+  const fetchTeamMembers = async () => {
+    try {
+      const response = await fetch("/api/dam/team-members")
+      const data = await response.json()
+      setTeamMembers(data.teamMembers || [])
+    } catch (error) {
+      console.error("Failed to fetch team members:", error)
+    }
+  }
+
+  const handleAddTag = (category: TagCategory, tag: Tag) => {
+    // Check if tag is already selected
+    const isAlreadySelected = selectedTags.some((t) => t.id === tag.id)
+    if (isAlreadySelected) return
+
+    const newTag: SelectedTag = {
+      ...tag,
+      category: {
+        id: category.id,
+        name: category.name,
+        displayName: category.displayName,
+        color: category.color
+      }
+    }
+
+    onTagsChange([...selectedTags, newTag])
+    setSelectedCategory(null)
+    setIsAdding(false)
+  }
+
+  const handleCategoryClick = (category: TagCategory) => {
+    setSelectedCategory(category)
+  }
+
+  const handleBackToCategories = () => {
+    setSelectedCategory(null)
+  }
+
+  const handleCancel = () => {
+    setSelectedCategory(null)
+    setIsAdding(false)
+  }
+
+  const handleAddTeamMember = (member: any) => {
+    const isAlreadySelected = selectedTags.some((t) => t.id === member.id)
+    if (isAlreadySelected) return
+
+    const newTag: SelectedTag = {
+      id: member.id,
+      name: member.name,
+      displayName: member.name,
+      category: {
+        id: "team",
+        name: "team",
+        displayName: "Team",
+        color: "#BCC9C2"
+      }
+    }
+
+    onTagsChange([...selectedTags, newTag])
+    setSelectedCategory(null)
+    setIsAdding(false)
+  }
+
+  // Combine team category with tag categories
+  const allCategories = [
+    {
+      id: "team",
+      name: "team",
+      displayName: "Team",
+      color: "#BCC9C2",
+      tags: teamMembers.map(m => ({
+        id: m.id,
+        name: m.name,
+        displayName: m.name,
+        imageUrl: m.imageUrl
+      }))
+    },
+    ...categories
+  ]
+
+  return (
+    <div className="flex items-center gap-3 overflow-hidden">
+      {/* Add Tag Button */}
+      <button
+        onClick={() => setIsAdding(!isAdding)}
+        className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors border ${
+          isAdding
+            ? "bg-sage text-cream border-sage"
+            : "bg-sage/10 hover:bg-sage/20 text-sage border-sage/30"
+        }`}
+      >
+        <Plus className="w-4 h-4" />
+        <span className="text-sm font-medium">Add Tag</span>
+      </button>
+
+      {/* Category/Tag Selector - Horizontal scrolling flow */}
+      <AnimatePresence mode="wait">
+        {isAdding && (
+          <motion.div
+            key={selectedCategory ? "tags" : "categories"}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-2 overflow-x-auto flex-nowrap hide-scrollbar"
+            style={{ scrollbarWidth: 'thin' }}
+          >
+            {selectedCategory ? (
+              <>
+                {/* Back button */}
+                <button
+                  onClick={handleBackToCategories}
+                  className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full bg-warm-sand/50 hover:bg-warm-sand text-dune transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="text-sm font-medium">Back</span>
+                </button>
+
+                {/* Tags or Team Members */}
+                {selectedCategory.tags.map((tag: any) => {
+                  const isSelected = selectedTags.some((t) => t.id === tag.id)
+                  const isTeamCategory = selectedCategory.id === "team"
+
+                  return (
+                    <motion.button
+                      key={tag.id}
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.15 }}
+                      onClick={() => isTeamCategory ? handleAddTeamMember(tag) : handleAddTag(selectedCategory, tag)}
+                      disabled={isSelected}
+                      className={`flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-all shadow-sm ${
+                        isSelected
+                          ? "bg-sage/20 text-sage/60 cursor-not-allowed"
+                          : "hover:shadow-md"
+                      }`}
+                      style={{
+                        background: isSelected
+                          ? undefined
+                          : `linear-gradient(135deg, ${selectedCategory.color || "#A19781"} 0%, ${selectedCategory.color || "#A19781"}CC 100%)`,
+                        color: isSelected ? undefined : "#FAF7F1"
+                      }}
+                    >
+                      {isTeamCategory && tag.imageUrl && (
+                        <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
+                          <img
+                            src={tag.imageUrl}
+                            alt={tag.displayName}
+                            className="w-full h-full object-cover"
+                            style={
+                              tag.cropCloseUpCircle
+                                ? {
+                                    objectPosition: `${tag.cropCloseUpCircle.x}% ${tag.cropCloseUpCircle.y}%`,
+                                    transform: `scale(${tag.cropCloseUpCircle.scale})`
+                                  }
+                                : {
+                                    objectPosition: 'center 25%',
+                                    transform: 'scale(2)'
+                                  }
+                            }
+                          />
+                        </div>
+                      )}
+                      <span className="text-sm whitespace-nowrap">
+                        {tag.displayName}
+                        {isSelected && " ✓"}
+                      </span>
+                    </motion.button>
+                  )
+                })}
+              </>
+            ) : (
+              <>
+                {/* Categories */}
+                {allCategories.map((category, index) => (
+                  <motion.button
+                    key={category.id}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.15, delay: index * 0.03 }}
+                    onClick={() => handleCategoryClick(category)}
+                    className="flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full bg-warm-sand/50 hover:bg-warm-sand text-dune transition-all shadow-sm hover:shadow-md"
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: category.color || "#A19781" }}
+                    />
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      {category.displayName}
+                    </span>
+                  </motion.button>
+                ))}
+
+                {/* Cancel button */}
+                <button
+                  onClick={handleCancel}
+                  className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta/20 hover:bg-terracotta/30 text-terracotta transition-colors"
+                >
+                  <span className="text-sm font-medium whitespace-nowrap">Cancel</span>
+                </button>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
