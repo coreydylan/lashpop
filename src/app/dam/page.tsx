@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
-import { Upload as UploadIcon, Users, X } from "lucide-react"
+import clsx from "clsx"
+import { Upload as UploadIcon, Users, X, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { FileUploader } from "./components/FileUploader"
 import { AssetGrid } from "./components/AssetGrid"
@@ -10,6 +11,7 @@ import { FilterSelector } from "./components/FilterSelector"
 import { TagSelector } from "./components/TagSelector"
 import { PhotoLightbox } from "./components/PhotoLightbox"
 import { OmniBar } from "./components/OmniBar"
+import { OmniCommandPalette, type CommandItem } from "./components/OmniCommandPalette"
 
 interface Asset {
   id: string
@@ -56,6 +58,7 @@ export default function DAMPage() {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
+  const activeFiltersRef = useRef<ActiveFilter[]>([])
   const [uploadingAssetIds, setUploadingAssetIds] = useState<string[]>([])
 
   // Omni-bar state (used for both filtering and bulk tagging)
@@ -67,6 +70,7 @@ export default function DAMPage() {
   const [gridViewMode, setGridViewMode] = useState<"square" | "aspect">("square")
   const [activeLightboxAsset, setActiveLightboxAsset] = useState<Asset | null>(null)
   const [activeLightboxIndex, setActiveLightboxIndex] = useState(-1)
+  const [isLightboxVisible, setIsLightboxVisible] = useState(false)
   const [singleTagDrafts, setSingleTagDrafts] = useState<any[]>([])
   const [pendingTagRemoval, setPendingTagRemoval] = useState<{
     tagId: string
@@ -82,6 +86,8 @@ export default function DAMPage() {
   // Fetch initial data
   const [isMobile, setIsMobile] = useState(false)
   const [groupByTags, setGroupByTags] = useState<string[]>([])  // Track up to 2 tags for grouping
+  const [isCommandOpen, setIsCommandOpen] = useState(false)
+  const [commandQuery, setCommandQuery] = useState("")
 
   // Helper to make colors more vibrant in lightbox mode
   const getTagColor = (color: string | undefined, isLightbox: boolean = false) => {
@@ -94,57 +100,118 @@ export default function DAMPage() {
   }
 
   // Handle grouping by tag category
-  const handleGroupBy = (categoryName: string) => {
-    if (groupByTags.includes(categoryName)) return // Already grouping by this
-    if (groupByTags.length >= 2) return // Max 2 levels
-    setGroupByTags([...groupByTags, categoryName])
-  }
-
-  const handleRemoveGroupBy = (categoryName: string) => {
-    setGroupByTags(groupByTags.filter(c => c !== categoryName))
-  }
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-
-    fetchAssets()
-    fetchTeamMembers()
-    fetchTagCategories()
-
-    return () => window.removeEventListener('resize', checkMobile)
+  const handleGroupBy = useCallback((categoryName: string) => {
+    setGroupByTags(prev => {
+      if (prev.includes(categoryName) || prev.length >= 2) return prev
+      return [...prev, categoryName]
+    })
   }, [])
 
-  useEffect(() => {
-    setPendingTagRemoval(null)
-    setSingleTagDrafts([])
-  }, [selectedAssets, activeLightboxAsset])
+  const handleRemoveGroupBy = useCallback((categoryName: string) => {
+    setGroupByTags(prev => prev.filter(c => c !== categoryName))
+  }, [])
 
-  // Apply filters when activeFilters changes
-  useEffect(() => {
-    applyFilters(allAssets, activeFilters)
-  }, [activeFilters, allAssets])
+  const openCommandPalette = useCallback((prefill = "") => {
+    setCommandQuery(prefill)
+    setIsCommandOpen(true)
+  }, [])
 
-  const fetchAssets = async () => {
-    try {
-      const response = await fetch("/api/dam/assets")
-      const data = await response.json()
-      const fetchedAssets = data.assets || []
-      setAllAssets(fetchedAssets)
-      const filtered = applyFilters(fetchedAssets, activeFilters)
-      setIsLoading(false)
-      return filtered
-    } catch (error) {
-      console.error("Failed to fetch assets:", error)
-      setIsLoading(false)
-      return []
+  const closeCommandPalette = useCallback(() => {
+    setIsCommandOpen(false)
+  }, [])
+
+  const makeSelectedTag = useCallback((category: any, tag: any) => ({
+    id: tag.id,
+    name: tag.name,
+    displayName: tag.displayName,
+    category: {
+      id: category.id,
+      name: category.name,
+      displayName: category.displayName,
+      color: category.color
     }
-  }
+  }), [])
 
-  const applyFilters = (assetsToFilter: Asset[], filters: ActiveFilter[]) => {
+  const getCategoryDisplayName = useCallback((categoryName: string) => {
+    if (categoryName === "team") return "Team"
+    const category = tagCategories.find(cat => cat.name === categoryName)
+    return category?.displayName || categoryName
+  }, [tagCategories])
+
+  const handleTagFilterToggle = useCallback((tagId: string) => {
+    if (selectedAssets.length > 0) return
+    const category = tagCategories.find(cat =>
+      cat.tags?.some((tag: any) => tag.id === tagId)
+    )
+    if (!category) return
+    const tag = category.tags.find((t: any) => t.id === tagId)
+    if (!tag) return
+
+    setActiveFilters(prev => {
+      const exists = prev.some(f => f.optionId === tagId)
+      if (exists) {
+        return prev.filter(f => f.optionId !== tagId)
+      }
+      const newFilter: ActiveFilter = {
+        categoryId: category.id,
+        categoryName: category.name,
+        categoryDisplayName: category.displayName,
+        categoryColor: category.color,
+        optionId: tag.id,
+        optionName: tag.name,
+        optionDisplayName: tag.displayName
+      }
+      return [...prev, newFilter]
+    })
+  }, [selectedAssets.length, tagCategories])
+
+  const handleTeamFilterToggle = useCallback((memberId: string) => {
+    if (selectedAssets.length > 0) return
+    const member = teamMembers.find(m => m.id === memberId)
+    if (!member) return
+
+    setActiveFilters(prev => {
+      const exists = prev.some(f => f.optionId === memberId)
+      if (exists) {
+        return prev.filter(f => f.optionId !== memberId)
+      }
+      const newFilter: ActiveFilter = {
+        categoryId: 'team',
+        categoryName: 'team',
+        categoryDisplayName: 'Team',
+        categoryColor: '#BCC9C2',
+        optionId: member.id,
+        optionName: member.name,
+        optionDisplayName: member.name,
+        imageUrl: member.imageUrl
+      }
+      return [...prev, newFilter]
+    })
+  }, [selectedAssets.length, teamMembers])
+
+  const handleClearFilters = useCallback(() => {
+    setActiveFilters([])
+  }, [])
+
+  const toggleUploadPanel = useCallback(() => {
+    setIsUploadOpen(prev => !prev)
+  }, [])
+
+  const normalizeExclusiveTags = useCallback((tagsList: any[]) => {
+    const latestByCategory = new Map<string, any>()
+    tagsList.forEach((tag) => {
+      if (!tag) return
+      const key =
+        tag.category?.id ||
+        tag.category?.name ||
+        tag.categoryId ||
+        tag.id
+      latestByCategory.set(key, tag)
+    })
+    return Array.from(latestByCategory.values())
+  }, [])
+
+  const applyFilters = useCallback((assetsToFilter: Asset[], filters: ActiveFilter[]) => {
     if (filters.length === 0) {
       setAssets(assetsToFilter)
       return assetsToFilter
@@ -180,21 +247,64 @@ export default function DAMPage() {
 
     setAssets(filtered)
     return filtered
-  }
+  }, [])
 
-  const handleFiltersChange = (filters: ActiveFilter[]) => {
-    // Only apply filters if not in selection mode
-    if (selectedAssets.length === 0) {
-      setActiveFilters(filters)
-      applyFilters(allAssets, filters)
+  useEffect(() => {
+    setPendingTagRemoval(null)
+    setSingleTagDrafts([])
+  }, [selectedAssets, activeLightboxAsset])
+
+  useEffect(() => {
+    const handleCommandShortcut = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const tagName = target?.tagName?.toLowerCase()
+      const isTypingTarget = tagName === "input" || tagName === "textarea" || target?.isContentEditable
+
+      if (isTypingTarget) return
+
+      if (event.key === "/" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        event.preventDefault()
+        event.stopPropagation()
+        openCommandPalette("")
+      }
+
+      if ((event.key === "k" || event.key === "K") && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault()
+        event.stopPropagation()
+        openCommandPalette("")
+      }
     }
-  }
 
-  const handleOmniTagsChange = (tags: any[]) => {
-    setOmniTags(tags)
-  }
+    window.addEventListener("keydown", handleCommandShortcut)
+    return () => window.removeEventListener("keydown", handleCommandShortcut)
+  }, [openCommandPalette])
 
-  const fetchTeamMembers = async () => {
+  // Apply filters when activeFilters changes
+  useEffect(() => {
+    applyFilters(allAssets, activeFilters)
+  }, [activeFilters, allAssets, applyFilters])
+
+  useEffect(() => {
+    activeFiltersRef.current = activeFilters
+  }, [activeFilters])
+
+  const fetchAssets = useCallback(async () => {
+    try {
+      const response = await fetch("/api/dam/assets")
+      const data = await response.json()
+      const fetchedAssets = data.assets || []
+      setAllAssets(fetchedAssets)
+      const filtered = applyFilters(fetchedAssets, activeFiltersRef.current)
+      setIsLoading(false)
+      return filtered
+    } catch (error) {
+      console.error("Failed to fetch assets:", error)
+      setIsLoading(false)
+      return []
+    }
+  }, [applyFilters])
+
+  const fetchTeamMembers = useCallback(async () => {
     try {
       const response = await fetch("/api/dam/team-members")
       const data = await response.json()
@@ -202,9 +312,9 @@ export default function DAMPage() {
     } catch (error) {
       console.error("Failed to fetch team members:", error)
     }
-  }
+  }, [])
 
-  const fetchTagCategories = async () => {
+  const fetchTagCategories = useCallback(async () => {
     try {
       const response = await fetch("/api/dam/tags")
       const data = await response.json()
@@ -212,7 +322,21 @@ export default function DAMPage() {
     } catch (error) {
       console.error("Failed to fetch tag categories:", error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    fetchAssets()
+    fetchTeamMembers()
+    fetchTagCategories()
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [fetchAssets, fetchTagCategories, fetchTeamMembers])
 
   const handleUploadComplete = (newAssets: Asset[], keepSelected: boolean) => {
     // Refresh the entire asset list to show new uploads
@@ -254,50 +378,12 @@ export default function DAMPage() {
     return tagCounts
   }, [])
 
-  const handleSingleTagsChange = async (tags: any[]) => {
-    if (!activeLightboxAsset) return
-    if (tags.length === 0) {
-      setSingleTagDrafts([])
-      return
-    }
+  const applyTagsToAssetIds = useCallback(async (targetAssetIds: string[], tagsToApply: any[]) => {
+    const normalizedTags = normalizeExclusiveTags(tagsToApply)
+    if (targetAssetIds.length === 0 || normalizedTags.length === 0) return
 
-    try {
-      setSingleTagDrafts(tags)
-      await applyTagsToAssetIds([activeLightboxAsset.id], tags)
-      setSingleTagDrafts([])
-      const updated = await fetchAssets()
-      syncActiveLightboxAsset(updated)
-    } catch (error) {
-      console.error("Failed to add tags:", error)
-      setSingleTagDrafts([])
-    }
-  }
-
-  const requestTagRemoval = (tagId: string, assetIds: string[], label: string, count: number, context: string) => {
-    setPendingTagRemoval({ tagId, assetIds, label, count, context })
-  }
-
-  const cancelTagRemoval = () => setPendingTagRemoval(null)
-
-  const confirmTagRemoval = async () => {
-    if (!pendingTagRemoval) return
-    await handleRemoveTag(pendingTagRemoval.tagId, pendingTagRemoval.count, pendingTagRemoval.assetIds, true)
-    setPendingTagRemoval(null)
-  }
-
-  const syncActiveLightboxAsset = useCallback((updatedAssets?: Asset[]) => {
-    setActiveLightboxAsset((prev) => {
-      if (!prev) return prev
-      const source = updatedAssets || assets
-      return source.find((asset) => asset.id === prev.id) || prev
-    })
-  }, [assets])
-
-  const applyTagsToAssetIds = async (targetAssetIds: string[], tagsToApply: any[]) => {
-    if (targetAssetIds.length === 0 || tagsToApply.length === 0) return
-
-    const teamMemberTags = tagsToApply.filter((tag) => tag.category?.name === "team")
-    const regularTags = tagsToApply.filter((tag) => tag.category?.name !== "team")
+    const teamMemberTags = normalizedTags.filter((tag) => tag.category?.name === "team")
+    const regularTags = normalizedTags.filter((tag) => tag.category?.name !== "team")
 
     if (teamMemberTags.length > 0) {
       const teamMemberId = teamMemberTags[0].id
@@ -334,17 +420,58 @@ export default function DAMPage() {
         throw new Error("Failed to save tags")
       }
     }
+  }, [normalizeExclusiveTags])
+
+  const requestTagRemoval = (tagId: string, assetIds: string[], label: string, count: number, context: string) => {
+    setPendingTagRemoval({ tagId, assetIds, label, count, context })
   }
 
-  const clearSelection = () => {
+  const cancelTagRemoval = () => setPendingTagRemoval(null)
+
+  const confirmTagRemoval = async () => {
+    if (!pendingTagRemoval) return
+    await handleRemoveTag(pendingTagRemoval.tagId, pendingTagRemoval.count, pendingTagRemoval.assetIds, true)
+    setPendingTagRemoval(null)
+  }
+
+  const syncActiveLightboxAsset = useCallback((updatedAssets?: Asset[]) => {
+    setActiveLightboxAsset((prev) => {
+      if (!prev) return prev
+      const source = updatedAssets || assets
+      return source.find((asset) => asset.id === prev.id) || prev
+    })
+  }, [assets])
+
+  const handleSingleTagsChange = useCallback(async (tags: any[]) => {
+    if (!activeLightboxAsset) return
+    const normalized = normalizeExclusiveTags(tags)
+    if (normalized.length === 0) {
+      setSingleTagDrafts([])
+      return
+    }
+
+    try {
+      setSingleTagDrafts(normalized)
+      await applyTagsToAssetIds([activeLightboxAsset.id], normalized)
+      setSingleTagDrafts([])
+      const updated = await fetchAssets()
+      syncActiveLightboxAsset(updated)
+    } catch (error) {
+      console.error("Failed to add tags:", error)
+      setSingleTagDrafts([])
+    }
+  }, [activeLightboxAsset, applyTagsToAssetIds, fetchAssets, normalizeExclusiveTags, syncActiveLightboxAsset])
+
+
+  const clearSelection = useCallback(() => {
     setSelectedAssets([])
     setOmniTags([])
     setExistingTags(new Map())
-  }
+  }, [])
 
-  const toggleGridView = () => {
+  const toggleGridView = useCallback(() => {
     setGridViewMode((prev) => (prev === "square" ? "aspect" : "square"))
-  }
+  }, [])
 
   const handleSelectionChange = (selectedIds: string[]) => {
     setSelectedAssets(selectedIds)
@@ -361,28 +488,27 @@ export default function DAMPage() {
     setPendingTagRemoval(null)
   }
 
-  const handleApplyTags = async () => {
+  const handleApplyTags = useCallback(async () => {
     if (omniTags.length === 0 || selectedAssets.length === 0) return
 
     try {
       await applyTagsToAssetIds(selectedAssets, omniTags)
       await fetchAssets()
-      setSelectedAssets([])
-      setOmniTags([])
-      setExistingTags(new Map())
+      clearSelection()
     } catch (error) {
       console.error("Failed to save tags:", error)
     }
-  }
+  }, [applyTagsToAssetIds, clearSelection, fetchAssets, omniTags, selectedAssets])
 
-  const handleMultiTagSelectorChange = async (tags: any[]) => {
+  const handleMultiTagSelectorChange = useCallback(async (tags: any[]) => {
+    const normalized = normalizeExclusiveTags(tags)
     if (selectedAssets.length === 0) {
-      setOmniTags(tags)
+      setOmniTags(normalized)
       return
     }
 
-    const newlyAdded = tags.filter((tag: any) => !omniTags.some((existing) => existing.id === tag.id))
-    setOmniTags(tags)
+    const newlyAdded = normalized.filter((tag: any) => !omniTags.some((existing) => existing.id === tag.id))
+    setOmniTags(normalized)
 
     if (newlyAdded.length === 0) return
 
@@ -394,7 +520,7 @@ export default function DAMPage() {
     } catch (error) {
       console.error("Failed to add tags instantly:", error)
     }
-  }
+  }, [applyTagsToAssetIds, computeExistingTags, fetchAssets, normalizeExclusiveTags, omniTags, selectedAssets])
 
   const handleRemoveTag = async (tagId: string, count: number, targetAssetIds?: string[], skipPrompt = false) => {
     const isTeamMemberTag = tagId.startsWith('team-')
@@ -454,7 +580,7 @@ export default function DAMPage() {
     }
   }
 
-  const handleDelete = async (assetIds: string[]) => {
+  const handleDelete = useCallback(async (assetIds: string[]) => {
     try {
       const response = await fetch("/api/dam/delete", {
         method: "POST",
@@ -467,14 +593,322 @@ export default function DAMPage() {
       })
 
       if (response.ok) {
-        // Refresh assets
         await fetchAssets()
-        setSelectedAssets([])
+        setSelectedAssets((prev) => prev.filter((id) => !assetIds.includes(id)))
       }
     } catch (error) {
       console.error("Failed to delete assets:", error)
     }
-  }
+  }, [fetchAssets])
+
+  const confirmDeleteAssets = useCallback(async (assetIds: string[], contextLabel: string) => {
+    if (assetIds.length === 0) return
+    const first = window.confirm(`Delete ${contextLabel}?`)
+    if (!first) return
+    const second = window.confirm("This action cannot be undone. Are you absolutely sure?")
+    if (!second) return
+    await handleDelete(assetIds)
+  }, [handleDelete])
+
+  const commandItems = useMemo<CommandItem[]>(() => {
+    const items: CommandItem[] = []
+    const selectionCount = selectedAssets.length
+
+    if (selectionCount > 0) {
+      tagCategories.forEach((category) => {
+        category.tags?.forEach((tag: any) => {
+          items.push({
+            id: `assign-${category.id}-${tag.id}`,
+            group: `Set ${category.displayName}`,
+            label: tag.displayName,
+            description: `Replace ${category.displayName.toLowerCase()} on ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
+            badge: category.displayName,
+            onSelect: () => {
+              const formatted = makeSelectedTag(category, tag)
+              void handleMultiTagSelectorChange([...omniTags, formatted])
+            }
+          })
+        })
+      })
+
+      teamMembers.forEach((member) => {
+        items.push({
+          id: `assign-team-${member.id}`,
+          group: "Set Team Member",
+          label: member.name,
+          description: `Replace assigned artist on ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
+          badge: "Team",
+          avatarUrl: member.imageUrl,
+          onSelect: () => {
+            const teamCategory = {
+              id: "team",
+              name: "team",
+              displayName: "Team",
+              color: "#BCC9C2"
+            }
+            const formatted = makeSelectedTag(teamCategory, {
+              id: member.id,
+              name: member.name,
+              displayName: member.name
+            })
+            void handleMultiTagSelectorChange([...omniTags, formatted])
+          }
+        })
+      })
+
+      items.push({
+        id: "selection-apply",
+        group: "Selection",
+        label: "Apply queued tags now",
+        description: omniTags.length > 0 ? `${omniTags.length} pending selections` : "Add tags to queue for instant apply",
+        disabled: omniTags.length === 0,
+        onSelect: () => {
+          void handleApplyTags()
+        }
+      })
+
+      items.push({
+        id: "selection-clear",
+        group: "Selection",
+        label: "Clear selection",
+        description: `Release ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
+        onSelect: clearSelection
+      })
+
+      items.push({
+        id: "selection-all",
+        group: "Selection",
+        label: "Select all in view",
+        description: `Highlight all ${assets.length} assets currently filtered`,
+        disabled: selectedAssets.length === assets.length,
+        onSelect: () => setSelectedAssets(assets.map((asset) => asset.id))
+      })
+
+      items.push({
+        id: "selection-delete",
+        group: "Selection",
+        label: selectionCount === 1 ? "Delete selected photo" : "Delete selected photos",
+        description: "Double confirmation required",
+        onSelect: () => confirmDeleteAssets(selectedAssets, `${selectionCount} selected photo${selectionCount === 1 ? "" : "s"}`)
+      })
+    } else if (activeLightboxAsset) {
+      const activeAssetSelected = selectedAssets.includes(activeLightboxAsset.id)
+
+      items.push({
+        id: activeAssetSelected ? "single-unselect" : "single-select",
+        group: "Selection",
+        label: activeAssetSelected ? "Remove from selection" : "Add to selection",
+        description: activeAssetSelected
+          ? "Keep editing this photo without bulk state"
+          : "Include this photo in your bulk selection",
+        onSelect: () => {
+          setSelectedAssets((prev) =>
+            activeAssetSelected ? prev.filter((id) => id !== activeLightboxAsset.id) : [...prev, activeLightboxAsset.id]
+          )
+        }
+      })
+
+      items.push({
+        id: "single-select-all",
+        group: "Selection",
+        label: "Select all in view",
+        description: `Highlight all ${assets.length} assets currently filtered`,
+        onSelect: () => setSelectedAssets(assets.map((asset) => asset.id))
+      })
+
+      tagCategories.forEach((category) => {
+        category.tags?.forEach((tag: any) => {
+          items.push({
+            id: `single-${category.id}-${tag.id}`,
+            group: `Tag ${category.displayName}`,
+            label: tag.displayName,
+            description: `Apply to "${activeLightboxAsset.fileName}"`,
+            badge: category.displayName,
+            onSelect: () => {
+              const formatted = makeSelectedTag(category, tag)
+              void handleSingleTagsChange([formatted])
+            }
+          })
+        })
+      })
+
+      teamMembers.forEach((member) => {
+        items.push({
+          id: `single-team-${member.id}`,
+          group: "Set Team Member",
+          label: member.name,
+          description: `Assign to "${activeLightboxAsset.fileName}"`,
+          avatarUrl: member.imageUrl,
+          badge: "Team",
+          onSelect: () => {
+            const teamCategory = {
+              id: "team",
+              name: "team",
+              displayName: "Team",
+              color: "#BCC9C2"
+            }
+            const formatted = makeSelectedTag(teamCategory, {
+              id: member.id,
+              name: member.name,
+              displayName: member.name
+            })
+            void handleSingleTagsChange([formatted])
+          }
+        })
+      })
+
+      items.push({
+        id: "single-delete",
+        group: "Photo Tools",
+        label: "Delete this photo",
+        description: "Double confirmation required",
+        onSelect: () => confirmDeleteAssets([activeLightboxAsset.id], `"${activeLightboxAsset.fileName}"`)
+      })
+
+      if (activeLightboxAsset.teamMemberId) {
+        const member = teamMembers.find((m) => m.id === activeLightboxAsset.teamMemberId)
+        if (member) {
+          items.push({
+            id: `current-team-${member.id}`,
+            group: "Current Tags",
+            label: `Team › ${member.name}`,
+            description: "Remove from this photo",
+            avatarUrl: member.imageUrl,
+            onSelect: () => handleRemoveTag(`team-${member.id}`, 1, [activeLightboxAsset.id])
+          })
+        }
+      }
+
+      activeLightboxAsset.tags?.forEach((tag) => {
+        items.push({
+          id: `current-tag-${tag.id}`,
+          group: "Current Tags",
+          label: `${tag.category.displayName} › ${tag.displayName}`,
+          description: "Remove from this photo",
+          onSelect: () => handleRemoveTag(tag.id, 1, [activeLightboxAsset.id])
+        })
+      })
+    } else {
+      tagCategories.forEach((category) => {
+        category.tags?.forEach((tag: any) => {
+          const isActive = activeFilters.some((filter) => filter.optionId === tag.id)
+          items.push({
+            id: `filter-tag-${tag.id}`,
+            group: "Filter by Tag",
+            label: tag.displayName,
+            description: category.displayName,
+            isActive,
+            badge: isActive ? "Active" : undefined,
+            onSelect: () => handleTagFilterToggle(tag.id)
+          })
+        })
+      })
+
+      teamMembers.forEach((member) => {
+        const isActive = activeFilters.some((filter) =>
+          filter.categoryName === "team" && filter.optionId === member.id
+        )
+        items.push({
+          id: `filter-team-${member.id}`,
+          group: "Filter by Team",
+          label: member.name,
+          description: "Team",
+          isActive,
+          badge: isActive ? "Active" : undefined,
+          avatarUrl: member.imageUrl,
+          onSelect: () => handleTeamFilterToggle(member.id)
+        })
+      })
+
+      items.push({
+        id: "filters-clear",
+        group: "Filters",
+        label: "Clear filters",
+        description: activeFilters.length > 0 ? `${activeFilters.length} active` : "No filters applied",
+        disabled: activeFilters.length === 0,
+        onSelect: handleClearFilters
+      })
+    }
+
+    const groupingSet = new Set(groupByTags)
+    if (groupByTags.length < 2) {
+      if (!groupingSet.has("team") && teamMembers.length > 0) {
+        items.push({
+          id: "group-team",
+          group: "Grouping",
+          label: "Group by Team",
+          description: "Add Team grouping layer",
+          onSelect: () => handleGroupBy("team")
+        })
+      }
+
+      tagCategories.forEach((category) => {
+        if (!groupingSet.has(category.name)) {
+          items.push({
+            id: `group-${category.id}`,
+            group: "Grouping",
+            label: `Group by ${category.displayName}`,
+            description: "Add grouping layer",
+            onSelect: () => handleGroupBy(category.name)
+          })
+        }
+      })
+    }
+
+    groupByTags.forEach((categoryName) => {
+      items.push({
+        id: `remove-group-${categoryName}`,
+        group: "Grouping",
+        label: `Remove ${getCategoryDisplayName(categoryName)}`,
+        description: "Remove grouping layer",
+        onSelect: () => handleRemoveGroupBy(categoryName)
+      })
+    })
+
+    items.push({
+      id: "view-toggle",
+      group: "View",
+      label: gridViewMode === "square" ? "Switch to aspect view" : "Switch to square view",
+      description: "Toggle gallery layout",
+      onSelect: toggleGridView
+    })
+
+    items.push({
+      id: "upload-toggle",
+      group: "Actions",
+      label: isUploadOpen ? "Hide upload panel" : "Show upload panel",
+      description: "Quick upload access",
+      onSelect: toggleUploadPanel
+    })
+
+    return items
+  }, [
+    activeFilters,
+    activeLightboxAsset,
+    clearSelection,
+    getCategoryDisplayName,
+    gridViewMode,
+    groupByTags,
+    handleApplyTags,
+    handleClearFilters,
+    handleGroupBy,
+    handleMultiTagSelectorChange,
+    handleRemoveGroupBy,
+    handleSingleTagsChange,
+    handleTagFilterToggle,
+    handleTeamFilterToggle,
+    isUploadOpen,
+    makeSelectedTag,
+    omniTags,
+    assets,
+    selectedAssets,
+    tagCategories,
+    teamMembers,
+    handleRemoveTag,
+    confirmDeleteAssets,
+    toggleGridView,
+    toggleUploadPanel
+  ])
 
   const renderGroupByChips = () => {
     if (groupByTags.length === 0) return null
@@ -508,10 +942,35 @@ export default function DAMPage() {
   const renderChips = () => {
     // Always show Group By chips first if any
     const groupByContent = renderGroupByChips()
+    const commandLabel = selectedAssets.length > 0
+      ? "Bulk commands"
+      : activeLightboxAsset
+        ? "Action palette"
+        : "Magic search"
+
+    const commandLauncher = (
+      <button
+        key="command-launcher"
+        onClick={() => openCommandPalette("")}
+        className={clsx(
+          "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm border",
+          selectedAssets.length > 0
+            ? "bg-dune text-cream border-dune/40 hover:bg-dune/90"
+            : "bg-cream text-dune border-sage/20 hover:border-dusty-rose/40"
+        )}
+      >
+        <Sparkles className="w-4 h-4 text-dusty-rose" />
+        <span>{commandLabel}</span>
+        <span className="hidden sm:inline-flex items-center text-[11px] uppercase tracking-widest border border-current/40 rounded-full px-2 py-0.5">
+          /
+        </span>
+      </button>
+    )
 
     if (selectedAssets.length > 0) {
       return (
         <>
+          {commandLauncher}
           {groupByContent}
           {/* Selection Mode: Show existing tags with counts */}
           {Array.from(existingTags.entries()).map(([tagId, count]) => {
@@ -690,6 +1149,14 @@ export default function DAMPage() {
           />
         </>
       )
+    } else if (activeLightboxAsset) {
+      return (
+        <>
+          {commandLauncher}
+          {groupByContent}
+          {renderLightboxTags()}
+        </>
+      )
     } else {
       /* Filter Mode */
       // Convert activeFilters to selected IDs format
@@ -702,6 +1169,7 @@ export default function DAMPage() {
 
       return (
         <>
+          {commandLauncher}
           {groupByContent}
           {/* Render active filter chips */}
           {activeFilters.map((filter) => (
@@ -751,58 +1219,9 @@ export default function DAMPage() {
             teamMembers={teamMembers}
             selectedTagIds={selectedTagIds}
             selectedTeamMemberIds={selectedTeamMemberIds}
-            assets={assets}
-            onTagToggle={(tagId) => {
-              // Find the tag and its category
-              const category = tagCategories.find(cat =>
-                cat.tags?.some((tag: any) => tag.id === tagId)
-              )
-              if (category) {
-                const tag = category.tags.find((t: any) => t.id === tagId)
-                if (tag) {
-                  const isSelected = selectedTagIds.includes(tagId)
-                  if (isSelected) {
-                    // Remove filter
-                    setActiveFilters(activeFilters.filter(f => f.optionId !== tagId))
-                  } else {
-                    // Add filter
-                    const newFilter: ActiveFilter = {
-                      categoryId: category.id,
-                      categoryName: category.name,
-                      categoryDisplayName: category.displayName,
-                      categoryColor: category.color,
-                      optionId: tag.id,
-                      optionName: tag.name,
-                      optionDisplayName: tag.displayName
-                    }
-                    setActiveFilters([...activeFilters, newFilter])
-                  }
-                }
-              }
-            }}
-            onTeamMemberToggle={(memberId) => {
-              const isSelected = selectedTeamMemberIds.includes(memberId)
-              if (isSelected) {
-                // Remove filter
-                setActiveFilters(activeFilters.filter(f => f.optionId !== memberId))
-              } else {
-                // Add filter
-                const member = teamMembers.find(m => m.id === memberId)
-                if (member) {
-                  const newFilter: ActiveFilter = {
-                    categoryId: 'team',
-                    categoryName: 'team',
-                    categoryDisplayName: 'Team',
-                    categoryColor: '#BCC9C2',
-                    optionId: member.id,
-                    optionName: member.name,
-                    optionDisplayName: member.name,
-                    imageUrl: member.imageUrl
-                  }
-                  setActiveFilters([...activeFilters, newFilter])
-                }
-              }
-            }}
+            assets={allAssets}
+            onTagToggle={handleTagFilterToggle}
+            onTeamMemberToggle={handleTeamFilterToggle}
             isLightbox={false}
           />
         </>
@@ -826,6 +1245,14 @@ export default function DAMPage() {
       : undefined
 
     const hasTags = Boolean(teamMember) || (activeLightboxAsset.tags && activeLightboxAsset.tags.length > 0)
+
+    if (!hasTags) {
+      return (
+        <span className="text-sm text-cream/70">
+          No tags yet. Use the Action Palette or tag selector to add some magic.
+        </span>
+      )
+    }
 
     return (
       <div className="flex items-center gap-2">
@@ -959,9 +1386,12 @@ export default function DAMPage() {
       selectedAssetIds={selectedAssets}
       onSelectionChange={handleSelectionChange}
       assets={assets}
+      isMobile={isMobile}
+      onOpenCommandPalette={() => openCommandPalette("")}
+      onVisibilityChange={setIsLightboxVisible}
       omniBarProps={{
         mode: "page",  // Use exact same mode as grid view
-        chipsContent: renderChips(),  // Use same chips renderer
+        chipsContent: renderChips(),
         selectedCount: selectedAssets.length,
         assetsCount: assets.length,
         totalAssetsCount: allAssets.length,
@@ -1079,6 +1509,33 @@ export default function DAMPage() {
           )}
         </main>
       </div>
+
+      <OmniCommandPalette
+        open={isCommandOpen}
+        query={commandQuery}
+        onQueryChange={setCommandQuery}
+        onClose={closeCommandPalette}
+        items={commandItems}
+        isMobile={isMobile}
+        contextSummary={{
+          selectionCount: selectedAssets.length,
+          filterCount: activeFilters.length,
+          totalAssets: allAssets.length,
+          activeAssetName: activeLightboxAsset?.fileName
+        }}
+      />
+
+      {isMobile && !isCommandOpen && (
+        <div className="fixed bottom-5 left-0 right-0 z-40 px-6 lg:hidden">
+          <button
+            onClick={() => openCommandPalette("")}
+            className="w-full flex items-center justify-center gap-2 rounded-full bg-dune text-cream py-3 shadow-2xl shadow-dune/40 border border-white/10"
+          >
+            <Sparkles className="w-5 h-5 text-dusty-rose" />
+            <span className="text-sm font-semibold uppercase tracking-wide">Command</span>
+          </button>
+        </div>
+      )}
     </PhotoLightbox>
   )
 }

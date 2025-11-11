@@ -4,7 +4,7 @@ import type { ReactNode, PointerEvent as ReactPointerEvent } from "react"
 import { useCallback, useRef } from "react"
 import { PhotoProvider } from "react-photo-view"
 import "react-photo-view/dist/react-photo-view.css"
-import { CheckCircle, Circle } from "lucide-react"
+import { CheckCircle, Circle, Sparkles } from "lucide-react"
 import { OmniBar, type OmniBarProps } from "./OmniBar"
 
 interface Asset {
@@ -34,6 +34,9 @@ interface PhotoLightboxProps {
   assets?: Asset[]
   omniBarProps?: OmniBarProps
   onActiveAssetChange?: (asset: Asset | null, index: number) => void
+  onOpenCommandPalette?: () => void
+  isMobile?: boolean
+  onVisibilityChange?: (visible: boolean) => void
 }
 
 export function PhotoLightbox({
@@ -42,7 +45,10 @@ export function PhotoLightbox({
   onSelectionChange,
   assets = [],
   omniBarProps,
-  onActiveAssetChange
+  onActiveAssetChange,
+  onOpenCommandPalette,
+  isMobile = false,
+  onVisibilityChange
 }: PhotoLightboxProps) {
   const thumbnailStripRef = useRef<HTMLDivElement | null>(null)
   const currentIndexRef = useRef(0)
@@ -148,6 +154,7 @@ export function PhotoLightbox({
         scrollToIndex(index)
       }}
       onVisibleChange={(visible) => {
+        onVisibilityChange?.(visible)
         if (!visible) {
           notifyActiveAsset(null)
         } else {
@@ -163,7 +170,30 @@ export function PhotoLightbox({
         const isSelected = selectedAssetIds.includes(asset.id)
 
         return (
-          <div className="photo-lightbox-overlay">
+          <div className="photo-lightbox-overlay relative">
+            {onOpenCommandPalette && (
+              <div
+                className="absolute z-50 flex gap-2"
+                style={{
+                  top: isMobile ? undefined : "1.25rem",
+                  right: "1.25rem",
+                  bottom: isMobile ? "1.5rem" : undefined,
+                  left: isMobile ? "50%" : undefined,
+                  transform: isMobile ? "translateX(-50%)" : undefined
+                }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onOpenCommandPalette()
+                  }}
+                  className={`flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-sm font-semibold text-cream shadow-lg transition hover:bg-black/60 ${isMobile ? "backdrop-blur-md" : ""}`}
+                >
+                  <Sparkles className="w-4 h-4 text-dusty-rose" />
+                  <span>Action palette</span>
+                </button>
+              </div>
+            )}
             {omniBarProps && (
               <div
                 className="photo-lightbox-omnibar"
