@@ -8,8 +8,5 @@
       "maxDuration": 300,
       "memory": 3008
     }
-  },
-  "limits": {
-    "maxRequestBodySize": "50mb"
   }
 }
