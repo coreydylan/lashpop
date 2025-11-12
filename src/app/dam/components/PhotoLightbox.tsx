@@ -292,16 +292,12 @@ export function PhotoLightbox({
         }
 
         .PhotoView__PhotoWrap {
-          padding: 240px 0 320px !important;
-          box-sizing: border-box !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
+          padding: 200px 0 280px !important;
         }
 
         .PhotoView__PhotoBox {
-          max-height: min(58vh, 620px) !important;
-          max-width: min(52vw, 900px) !important;
+          max-height: min(50vh, 520px) !important;
+          max-width: min(48vw, 800px) !important;
         }
 
         .PhotoView__Photo {
@@ -316,8 +312,8 @@ export function PhotoLightbox({
           }
 
           .PhotoView__PhotoBox {
-            max-height: min(55vh, 420px) !important;
-            max-width: 86vw !important;
+            max-height: min(48vh, 400px) !important;
+            max-width: 82vw !important;
           }
         }
 
