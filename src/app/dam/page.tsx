@@ -1868,11 +1868,17 @@ export default function DAMPage() {
                 }))
               }
 
+              // IMPORTANT: Send ALL categories, not just the updated one
+              // This prevents the API from deleting other categories
+              const allCategories = tagCategories.map(cat =>
+                cat.isCollection ? updatedCategory : cat
+              )
+
               // Save to database
               const response = await fetch("/api/dam/tags", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ categories: [updatedCategory] })
+                body: JSON.stringify({ categories: allCategories })
               })
 
               if (!response.ok) {
