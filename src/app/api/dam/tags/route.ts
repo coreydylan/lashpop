@@ -70,27 +70,73 @@ export async function POST(request: NextRequest) {
       const isNewCategory = category.id.startsWith('cat-')
 
       if (isNewCategory) {
-        // Insert new category
-        const [newCat] = await db.insert(tagCategories).values({
-          name: category.name,
-          displayName: category.displayName,
-          color: category.color,
-          sortOrder: category.sortOrder ?? 0,
-          isCollection: category.isCollection ?? false,
-          isRating: category.isRating ?? false,
-          description: category.description
-        }).returning()
+        // Check if a category with this name already exists
+        const [existingCategoryByName] = await db
+          .select()
+          .from(tagCategories)
+          .where(eq(tagCategories.name, category.name))
+          .limit(1)
 
-        // Insert new tags for this category
+        let categoryId: string
+
+        if (existingCategoryByName) {
+          // Update existing category instead of creating new one
+          await db.update(tagCategories)
+            .set({
+              displayName: category.displayName,
+              color: category.color,
+              sortOrder: category.sortOrder ?? existingCategoryByName.sortOrder,
+              isCollection: category.isCollection ?? false,
+              isRating: category.isRating ?? false,
+              description: category.description,
+              updatedAt: new Date()
+            })
+            .where(eq(tagCategories.id, existingCategoryByName.id))
+          categoryId = existingCategoryByName.id
+        } else {
+          // Insert new category
+          const [newCat] = await db.insert(tagCategories).values({
+            name: category.name,
+            displayName: category.displayName,
+            color: category.color,
+            sortOrder: category.sortOrder ?? 0,
+            isCollection: category.isCollection ?? false,
+            isRating: category.isRating ?? false,
+            description: category.description
+          }).returning()
+          categoryId = newCat.id
+        }
+
+        // Handle tags for this category
         if (category.tags && category.tags.length > 0) {
           for (let i = 0; i < category.tags.length; i++) {
             const tag = category.tags[i]
-            await db.insert(tags).values({
-              categoryId: newCat.id,
-              name: tag.name,
-              displayName: tag.displayName,
-              sortOrder: tag.sortOrder ?? i
-            })
+
+            // Check if tag already exists
+            const [existingTag] = await db
+              .select()
+              .from(tags)
+              .where(eq(tags.name, tag.name))
+              .limit(1)
+
+            if (existingTag) {
+              // Update existing tag
+              await db.update(tags)
+                .set({
+                  displayName: tag.displayName,
+                  sortOrder: tag.sortOrder ?? i,
+                  updatedAt: new Date()
+                })
+                .where(eq(tags.id, existingTag.id))
+            } else {
+              // Insert new tag
+              await db.insert(tags).values({
+                categoryId,
+                name: tag.name,
+                displayName: tag.displayName,
+                sortOrder: tag.sortOrder ?? i
+              })
+            }
           }
         }
       } else {
