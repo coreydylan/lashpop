@@ -78,41 +78,61 @@ export default function TeamManagementPage() {
       const allUploadedPhotos: TeamMemberPhoto[] = []
       const allErrors: Array<{ fileName: string; error: string }> = []
 
-      // Upload files in batches of 3 to avoid hitting body size limits
-      const BATCH_SIZE = 3
-      for (let i = 0; i < files.length; i += BATCH_SIZE) {
-        const batch = files.slice(i, i + BATCH_SIZE)
-        const formData = new FormData()
-
-        batch.forEach(file => {
-          formData.append("files", file)
-        })
-        formData.append("teamMemberId", selectedMember.id)
-
+      // Upload files directly to S3 (no size limits!)
+      for (const file of files) {
         try {
-          const response = await fetch("/api/dam/team/upload", {
+          // Step 1: Get presigned URL
+          const presignedResponse = await fetch("/api/dam/presigned-url", {
             method: "POST",
-            body: formData
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fileName: file.name,
+              contentType: file.type,
+              teamMemberId: selectedMember.id
+            })
           })
 
-          if (response.ok) {
-            const data = await response.json()
-            if (data.photos && data.photos.length > 0) {
-              allUploadedPhotos.push(...data.photos)
-            }
-            if (data.errors && data.errors.length > 0) {
-              allErrors.push(...data.errors)
-            }
-          } else {
-            const errorData = await response.json().catch(() => ({ error: 'Upload failed' }))
-            batch.forEach(file => {
-              allErrors.push({ fileName: file.name, error: errorData.error || 'Upload failed' })
-            })
+          if (!presignedResponse.ok) {
+            throw new Error("Failed to get upload URL")
           }
-        } catch (batchError) {
-          console.error("Batch upload failed:", batchError)
-          batch.forEach(file => {
-            allErrors.push({ fileName: file.name, error: 'Network error' })
+
+          const { presignedUrl, key, url } = await presignedResponse.json()
+
+          // Step 2: Upload directly to S3
+          const uploadResponse = await fetch(presignedUrl, {
+            method: "PUT",
+            body: file,
+            headers: {
+              "Content-Type": file.type
+            }
+          })
+
+          if (!uploadResponse.ok) {
+            throw new Error("Failed to upload to S3")
+          }
+
+          // Step 3: Save metadata to database
+          const metadataResponse = await fetch("/api/dam/team-members/photos", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              teamMemberId: selectedMember.id,
+              fileName: file.name,
+              filePath: url
+            })
+          })
+
+          if (!metadataResponse.ok) {
+            throw new Error("Failed to save photo metadata")
+          }
+
+          const { photo } = await metadataResponse.json()
+          allUploadedPhotos.push(photo)
+        } catch (fileError) {
+          console.error(`Upload failed for ${file.name}:`, fileError)
+          allErrors.push({
+            fileName: file.name,
+            error: fileError instanceof Error ? fileError.message : 'Upload failed'
           })
         }
       }

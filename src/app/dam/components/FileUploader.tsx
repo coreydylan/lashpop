@@ -211,51 +211,57 @@ export function FileUploader({
         return
       }
 
-      const formData = new FormData()
-      formData.append("files", pendingFile.file)
-      if (teamMemberId) {
-        formData.append("teamMemberId", teamMemberId)
-      }
-
       try {
-        const response = await fetch("/api/dam/upload", {
+        // Step 1: Get presigned URL
+        const presignedResponse = await fetch("/api/dam/presigned-url", {
           method: "POST",
-          body: formData
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: pendingFile.file.name,
+            contentType: pendingFile.file.type,
+            teamMemberId
+          })
         })
-        const payload = (await response.json()) as UploadResponsePayload
 
-        if (!response.ok) {
-          const errorResult = payload.results?.[0]
-          const error = new Error(
-            (errorResult && "message" in errorResult && errorResult.message) || "Upload failed"
-          ) as UploadError
-          if (errorResult && "errorCode" in errorResult) {
-            error.code = errorResult.errorCode
+        if (!presignedResponse.ok) {
+          throw new Error("Failed to get upload URL")
+        }
+
+        const { presignedUrl, key, url } = await presignedResponse.json()
+
+        // Step 2: Upload directly to S3
+        const uploadResponse = await fetch(presignedUrl, {
+          method: "PUT",
+          body: pendingFile.file,
+          headers: {
+            "Content-Type": pendingFile.file.type
           }
-          throw error
+        })
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload to S3")
         }
 
-        const uploadResult = payload.results?.[0]
-        if (!uploadResult || uploadResult.status !== "success") {
-          const error = new Error(
-            uploadResult && "message" in uploadResult && uploadResult.message
-              ? uploadResult.message
-              : "Upload failed"
-          ) as UploadError
-          if (uploadResult && "status" in uploadResult && uploadResult.status === "error") {
-            error.code = uploadResult.errorCode ?? "UPLOAD_FAILED"
-          }
-          throw error
+        // Step 3: Save metadata to database
+        const fileType = pendingFile.file.type.startsWith("video/") ? "video" : "image"
+        const metadataResponse = await fetch("/api/dam/assets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: pendingFile.file.name,
+            filePath: url,
+            fileType,
+            mimeType: pendingFile.file.type,
+            fileSize: pendingFile.file.size,
+            teamMemberId
+          })
+        })
+
+        if (!metadataResponse.ok) {
+          throw new Error("Failed to save asset metadata")
         }
 
-        const asset = uploadResult.asset ?? payload.assets?.[0]
-        if (!asset) {
-          const error = new Error(
-            "Upload completed but asset metadata was not returned."
-          ) as UploadError
-          error.code = "MISSING_ASSET"
-          throw error
-        }
+        const { asset } = await metadataResponse.json()
 
         setFiles((prev) =>
           prev.map((file) =>
