@@ -25,7 +25,7 @@ async function importTeamMemberPhotos() {
   console.log(`Found ${members.length} team members\n`)
 
   for (const member of members) {
-    if (!member.imageUrl || member.imageUrl === '/placeholder-team.jpg') {
+    if (!member.imageUrl || member.imageUrl.includes('placeholder')) {
       console.log(`⏭️  Skipping ${member.name} (no image or placeholder)`)
       continue
     }

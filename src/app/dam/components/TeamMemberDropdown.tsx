@@ -144,12 +144,23 @@ export function TeamMemberDropdown({
               >
                 {/* Member image - zoomed and cropped to show face */}
                 <div className="relative w-10 h-10 arch-full overflow-hidden bg-warm-sand/40 flex-shrink-0 shadow-sm">
-                  <img
-                    src={member.imageUrl}
-                    alt={member.name}
-                    className="absolute inset-0 w-full h-full object-cover scale-150"
-                    style={{ objectPosition: "center 25%" }}
-                  />
+                  {!member.imageUrl.includes('placeholder') ? (
+                    <img
+                      src={member.imageUrl}
+                      alt={member.name}
+                      className="absolute inset-0 w-full h-full object-cover scale-150"
+                      style={{ objectPosition: "center 25%" }}
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder-team.svg'
+                        e.currentTarget.style.objectPosition = 'center'
+                        e.currentTarget.style.transform = 'scale(1)'
+                      }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-sage/40" />
+                    </div>
+                  )}
                 </div>
                 <span className="body text-dune font-medium flex-1 truncate">
                   {member.name}

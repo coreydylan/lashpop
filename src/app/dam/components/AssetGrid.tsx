@@ -269,9 +269,13 @@ export function AssetGrid({
         const teamMember = teamMembers.find(tm => tm.id === id)
         if (teamMember) {
           groupTitle = teamMember.name
-          groupImage = {
-            url: teamMember.imageUrl,
-            crop: teamMember.cropCloseUpCircle || undefined
+          // Only show image if it's not a placeholder
+          const isPlaceholder = teamMember.imageUrl.includes('placeholder')
+          if (!isPlaceholder) {
+            groupImage = {
+              url: teamMember.imageUrl,
+              crop: teamMember.cropCloseUpCircle || undefined
+            }
           }
         } else {
           groupTitle = 'Team Member'

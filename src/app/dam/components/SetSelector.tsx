@@ -105,11 +105,14 @@ export function SetSelector({
                 onClick={() => handleTeamMemberSelect(member)}
                 className="flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-all shadow-sm hover:shadow-md bg-dusty-rose text-cream"
               >
-                {member.imageUrl && (
+                {member.imageUrl && !member.imageUrl.includes('placeholder') && (
                   <img
                     src={member.imageUrl}
                     alt={member.name}
                     className="w-5 h-5 rounded-full object-cover border border-cream/30"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
                   />
                 )}
                 <span className="text-sm whitespace-nowrap">
