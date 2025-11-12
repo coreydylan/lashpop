@@ -10,6 +10,24 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
+  // Increase body size limit for file uploads (500MB)
+  serverRuntimeConfig: {
+    bodySizeLimit: '500mb',
+  },
+  // Configure API routes to handle large uploads
+  async headers() {
+    return [
+      {
+        source: '/api/dam/:path*',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

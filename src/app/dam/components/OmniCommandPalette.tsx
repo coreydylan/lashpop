@@ -335,6 +335,23 @@ export function OmniCommandPalette({
                 <p className="text-xs text-sage/70">Select which tags appear on asset thumbnails</p>
               </div>
 
+              {/* Show All button - only show when some tags are hidden */}
+              {visibleCardTags.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (onVisibleCardTagsChange) {
+                      onVisibleCardTagsChange([]) // Reset to show all
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-2xl border border-dusty-rose/40 bg-dusty-rose/10 px-4 py-2.5 text-left transition hover:bg-dusty-rose/20 hover:shadow-sm"
+                >
+                  <svg className="w-4 h-4 text-dusty-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="text-sm font-semibold text-dusty-rose">Show All Tags (Reset)</span>
+                </button>
+              )}
+
               {/* Team Member option */}
               {(() => {
                 const isVisible = visibleCardTags.length === 0 || visibleCardTags.includes('team')
@@ -353,7 +370,17 @@ export function OmniCommandPalette({
                       } else if (visibleCardTags.includes('team')) {
                         // Remove team member from visible list
                         const newVisible = visibleCardTags.filter(id => id !== 'team')
-                        onVisibleCardTagsChange(newVisible)
+                        // If removing this would leave us with ALL categories selected, reset to show all (empty array)
+                        const allCategoryIds = tagCategories
+                          .filter(cat => cat.isCollection !== true && cat.isRating !== true)
+                          .map(cat => cat.id)
+                        const allPossibleIds = ['team', ...allCategoryIds]
+                        if (newVisible.length === allPossibleIds.length - 1 &&
+                            allPossibleIds.every(id => id === 'team' || newVisible.includes(id))) {
+                          onVisibleCardTagsChange([]) // Reset to show all
+                        } else {
+                          onVisibleCardTagsChange(newVisible)
+                        }
                       } else {
                         // Add team member to visible list
                         onVisibleCardTagsChange([...visibleCardTags, 'team'])
@@ -405,7 +432,17 @@ export function OmniCommandPalette({
                         } else if (visibleCardTags.includes(category.id)) {
                           // Remove this category from visible list
                           const newVisible = visibleCardTags.filter(id => id !== category.id)
-                          onVisibleCardTagsChange(newVisible)
+                          // If removing this would leave us with ALL categories selected, reset to show all (empty array)
+                          const allCategoryIds = tagCategories
+                            .filter(cat => cat.isCollection !== true && cat.isRating !== true)
+                            .map(cat => cat.id)
+                          const allPossibleIds = ['team', ...allCategoryIds]
+                          if (newVisible.length === allPossibleIds.length - 1 &&
+                              allPossibleIds.every(id => id === category.id || newVisible.includes(id))) {
+                            onVisibleCardTagsChange([]) // Reset to show all
+                          } else {
+                            onVisibleCardTagsChange(newVisible)
+                          }
                         } else {
                           // Add this category to visible list
                           onVisibleCardTagsChange([...visibleCardTags, category.id])

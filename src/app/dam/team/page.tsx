@@ -69,30 +69,76 @@ export default function TeamManagementPage() {
   }, [fetchMemberPhotos, selectedMember])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!selectedMember || !event.target.files?.[0]) return
+    if (!selectedMember || !event.target.files || event.target.files.length === 0) return
 
-    const file = event.target.files[0]
+    const files = Array.from(event.target.files)
     setIsUploading(true)
 
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("teamMemberId", selectedMember.id)
+      const allUploadedPhotos: TeamMemberPhoto[] = []
+      const allErrors: Array<{ fileName: string; error: string }> = []
 
-      const response = await fetch("/api/dam/team/upload", {
-        method: "POST",
-        body: formData
-      })
+      // Upload files in batches of 3 to avoid hitting body size limits
+      const BATCH_SIZE = 3
+      for (let i = 0; i < files.length; i += BATCH_SIZE) {
+        const batch = files.slice(i, i + BATCH_SIZE)
+        const formData = new FormData()
 
-      if (response.ok) {
-        const data = await response.json()
-        setMemberPhotos((prev) => [...prev, data.photo])
-        setEditingPhoto(data.photo)
+        batch.forEach(file => {
+          formData.append("files", file)
+        })
+        formData.append("teamMemberId", selectedMember.id)
+
+        try {
+          const response = await fetch("/api/dam/team/upload", {
+            method: "POST",
+            body: formData
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.photos && data.photos.length > 0) {
+              allUploadedPhotos.push(...data.photos)
+            }
+            if (data.errors && data.errors.length > 0) {
+              allErrors.push(...data.errors)
+            }
+          } else {
+            const errorData = await response.json().catch(() => ({ error: 'Upload failed' }))
+            batch.forEach(file => {
+              allErrors.push({ fileName: file.name, error: errorData.error || 'Upload failed' })
+            })
+          }
+        } catch (batchError) {
+          console.error("Batch upload failed:", batchError)
+          batch.forEach(file => {
+            allErrors.push({ fileName: file.name, error: 'Network error' })
+          })
+        }
+      }
+
+      // Update UI with all uploaded photos
+      if (allUploadedPhotos.length > 0) {
+        setMemberPhotos((prev) => [...prev, ...allUploadedPhotos])
+        // Open the first uploaded photo for cropping
+        setEditingPhoto(allUploadedPhotos[0])
+      }
+
+      // Show summary
+      if (allUploadedPhotos.length > 0 && allErrors.length > 0) {
+        alert(`${allUploadedPhotos.length} photo(s) uploaded successfully. ${allErrors.length} failed.`)
+      } else if (allUploadedPhotos.length > 0) {
+        console.log(`Successfully uploaded ${allUploadedPhotos.length} photo(s)`)
+      } else {
+        alert("All uploads failed. Please try again.")
       }
     } catch (error) {
       console.error("Upload failed:", error)
+      alert("Upload failed. Please try again.")
     } finally {
       setIsUploading(false)
+      // Reset the input so the same files can be uploaded again if needed
+      event.target.value = ''
     }
   }
 
@@ -239,10 +285,11 @@ export default function TeamManagementPage() {
 
               <label className="btn btn-primary cursor-pointer">
                 <UploadIcon className="w-5 h-5" />
-                <span>Upload Photo</span>
+                <span>Upload Photos</span>
                 <input
                   type="file"
                   accept="image/*"
+                  multiple
                   onChange={handleFileUpload}
                   className="hidden"
                   disabled={isUploading}
