@@ -348,7 +348,7 @@ export function AssetGrid({
         setBaseSelection([])
       }
     },
-    [isSelectionMode, selectedAssetIds, toggleSelection]
+    [selectedAssetIds]
   )
 
   // Handle drag selection start
@@ -861,8 +861,8 @@ function AssetCard({
               ? asset.tags
               : asset.tags.filter(tag => {
                   // Check if tag has category and category has id
-                  const categoryId = tag.category?.id || tag.categoryId
-                  return visibleCardTags.includes(categoryId)
+                  const categoryId = tag.category?.id
+                  return categoryId ? visibleCardTags.includes(categoryId) : false
                 }))
           : []
 
