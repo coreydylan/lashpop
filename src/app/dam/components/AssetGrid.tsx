@@ -314,21 +314,7 @@ export function AssetGrid({
 
   // Handle drag over asset
   const handleDragOver = useCallback(
-    (assetId: string, event?: React.MouseEvent) => {
-      // Check if we should start dragging based on mouse movement
-      if (!isDragging && potentialDragAssetId && mouseDownPosition && event) {
-        const deltaX = Math.abs(event.clientX - mouseDownPosition.x)
-        const deltaY = Math.abs(event.clientY - mouseDownPosition.y)
-        const DRAG_THRESHOLD = 5 // pixels
-
-        if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
-          // Start drag selection
-          handleDragStart(potentialDragAssetId)
-          setMouseDownPosition(null)
-          setPotentialDragAssetId(null)
-        }
-      }
-
+    (assetId: string) => {
       if (isDragging && !draggedOverAssets.has(assetId)) {
         setDraggedOverAssets(prev => {
           const next = new Set(prev)
@@ -342,7 +328,7 @@ export function AssetGrid({
         }
       }
     },
-    [isDragging, draggedOverAssets, selectedAssetIds, toggleSelection, potentialDragAssetId, mouseDownPosition, handleDragStart]
+    [isDragging, draggedOverAssets, selectedAssetIds, toggleSelection]
   )
 
   // Handle drag end
@@ -354,22 +340,40 @@ export function AssetGrid({
     setPotentialDragAssetId(null)
   }, [])
 
-  // Add global listeners for drag end
+  // Add global listeners for drag start detection and drag end
   useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Check if we should start dragging based on mouse movement
+      if (!isDragging && potentialDragAssetId && mouseDownPosition) {
+        const deltaX = Math.abs(e.clientX - mouseDownPosition.x)
+        const deltaY = Math.abs(e.clientY - mouseDownPosition.y)
+        const DRAG_THRESHOLD = 5 // pixels
+
+        if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
+          // Start drag selection
+          handleDragStart(potentialDragAssetId)
+          setMouseDownPosition(null)
+          setPotentialDragAssetId(null)
+        }
+      }
+    }
+
     const handleGlobalDragEnd = () => {
-      if (isDragging) {
+      if (isDragging || potentialDragAssetId) {
         handleDragEnd()
       }
     }
 
+    window.addEventListener('mousemove', handleGlobalMouseMove)
     window.addEventListener('mouseup', handleGlobalDragEnd)
     window.addEventListener('touchend', handleGlobalDragEnd)
 
     return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove)
       window.removeEventListener('mouseup', handleGlobalDragEnd)
       window.removeEventListener('touchend', handleGlobalDragEnd)
     }
-  }, [isDragging, handleDragEnd])
+  }, [isDragging, potentialDragAssetId, mouseDownPosition, handleDragEnd, handleDragStart])
 
   const findSampleAsset = (bucket: GroupBucket): Asset | undefined => {
     if (bucket.assets.length > 0) {
@@ -477,7 +481,7 @@ export function AssetGrid({
                   onClick={(e) => handleAssetClick(asset, e)}
                   onLongPress={() => handleLongPress(asset.id)}
                   onMouseDown={(e) => handleMouseDown(asset.id, e)}
-                  onDragOver={(e) => handleDragOver(asset.id, e)}
+                  onDragOver={() => handleDragOver(asset.id)}
                   isDragging={isDragging}
                   isDraggedOver={draggedOverAssets.has(asset.id)}
                   visibleCardTags={visibleCardTags}
@@ -531,7 +535,7 @@ export function AssetGrid({
               onClick={(e) => handleAssetClick(asset, e)}
               onLongPress={() => handleLongPress(asset.id)}
               onMouseDown={(e) => handleMouseDown(asset.id, e)}
-              onDragOver={(e) => handleDragOver(asset.id, e)}
+              onDragOver={() => handleDragOver(asset.id)}
               isDragging={isDragging}
               isDraggedOver={draggedOverAssets.has(asset.id)}
               visibleCardTags={visibleCardTags}
@@ -553,7 +557,7 @@ interface AssetCardProps {
   onClick: (event: React.MouseEvent) => void
   onLongPress: () => void
   onMouseDown: (event: React.MouseEvent | React.TouchEvent) => void
-  onDragOver: (event: React.MouseEvent) => void
+  onDragOver: () => void
   isDragging: boolean
   isDraggedOver: boolean
   visibleCardTags?: string[]
@@ -660,18 +664,13 @@ function AssetCard({
           handleTouchStart(e)
         }
       }}
-      onMouseEnter={(e) => onDragOver(e)}
+      onMouseEnter={() => onDragOver()}
       onTouchMove={(e) => {
         // Get the element at the touch point
         const touch = e.touches[0]
         const element = document.elementFromPoint(touch.clientX, touch.clientY)
         if (element && element.closest('.dam-grid > div')) {
-          // Create a synthetic mouse event for consistency
-          const syntheticEvent = {
-            clientX: touch.clientX,
-            clientY: touch.clientY
-          } as React.MouseEvent
-          onDragOver(syntheticEvent)
+          onDragOver()
         }
       }}
       onTouchEnd={handleTouchEnd}
