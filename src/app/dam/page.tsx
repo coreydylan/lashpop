@@ -321,6 +321,29 @@ export default function DAMPage() {
     setSingleTagDrafts([])
   }, [selectedAssets, activeLightboxAsset])
 
+  // Add escape key handler to cancel pending tag removal
+  useEffect(() => {
+    if (!pendingTagRemoval) return
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPendingTagRemoval(null)
+      }
+    }
+
+    // Auto-cancel after 5 seconds
+    const timeout = setTimeout(() => {
+      setPendingTagRemoval(null)
+    }, 5000)
+
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+      clearTimeout(timeout)
+    }
+  }, [pendingTagRemoval])
+
   useEffect(() => {
     const handleCommandShortcut = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -491,7 +514,12 @@ export default function DAMPage() {
   }, [normalizeExclusiveTags])
 
   const requestTagRemoval = (tagId: string, assetIds: string[], label: string, count: number, context: string) => {
-    setPendingTagRemoval({ tagId, assetIds, label, count, context })
+    // If already pending this tag, cancel it
+    if (pendingTagRemoval && pendingTagRemoval.tagId === tagId && pendingTagRemoval.context === context) {
+      setPendingTagRemoval(null)
+    } else {
+      setPendingTagRemoval({ tagId, assetIds, label, count, context })
+    }
   }
 
   const cancelTagRemoval = () => setPendingTagRemoval(null)
@@ -1126,47 +1154,40 @@ export default function DAMPage() {
                     background: getTagColor("#BCC9C2", false)
                   }}
                 >
-                  <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
-                    {isPending ? (
-                      <span className="text-xs font-semibold text-cream">Confirm removal?</span>
-                    ) : (
+                  {isPending ? (
+                    <button
+                      onClick={confirmTagRemoval}
+                      onMouseLeave={cancelTagRemoval}
+                      className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all animate-pulse ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
+                    >
+                      <X className="w-4 h-4 text-cream animate-bounce" />
+                      <span className="text-sm text-cream font-semibold">
+                        Remove team member from {count} {count === 1 ? 'asset' : 'assets'}?
+                      </span>
+                    </button>
+                  ) : (
+                    <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                       <button
                         onClick={() => requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")}
-                        className="flex items-center gap-1 hover:bg-black/10 rounded px-1 transition-colors"
+                        className="flex items-center gap-1 hover:bg-black/10 rounded px-1 -ml-1 transition-colors"
                       >
                         <X className="w-3 h-3 text-cream" />
                         <span className="text-xs font-bold text-cream">{count}</span>
                       </button>
-                    )}
-                    {teamMember.imageUrl && (
-                      <img
-                        src={teamMember.imageUrl}
-                        alt={teamMember.name}
-                        className="w-5 h-5 rounded-full object-cover border border-cream/30"
-                      />
-                    )}
-                    <span className="text-xs font-semibold text-cream uppercase tracking-wide">
-                      Team
-                    </span>
-                    <span className="text-cream/80 text-xs">›</span>
-                    <span className="text-sm text-cream font-medium">
-                      {teamMember.name}
-                    </span>
-                  </div>
-                  {isPending && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10">
-                      <button
-                        onClick={confirmTagRemoval}
-                        className="text-xs font-semibold text-cream bg-black/30 rounded-full px-2 py-0.5"
-                      >
-                        Remove
-                      </button>
-                      <button
-                        onClick={cancelTagRemoval}
-                        className="text-xs font-medium text-cream/80"
-                      >
-                        Cancel
-                      </button>
+                      {teamMember.imageUrl && (
+                        <img
+                          src={teamMember.imageUrl}
+                          alt={teamMember.name}
+                          className="w-5 h-5 rounded-full object-cover border border-cream/30"
+                        />
+                      )}
+                      <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                        Team
+                      </span>
+                      <span className="text-cream/80 text-xs">›</span>
+                      <span className="text-sm text-cream font-medium">
+                        {teamMember.name}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1187,46 +1208,39 @@ export default function DAMPage() {
                   background: getTagColor(tag.category.color, false)
                 }}
               >
-                <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
-                  {isPending ? (
-                    <span className="text-xs font-semibold text-cream">Confirm removal?</span>
-                  ) : (
+                {isPending ? (
+                  <button
+                    onClick={confirmTagRemoval}
+                    onMouseLeave={cancelTagRemoval}
+                    className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all animate-pulse ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
+                  >
+                    <X className="w-4 h-4 text-cream animate-bounce" />
+                    <span className="text-sm text-cream font-semibold">
+                      Remove {tag.category.displayName.toLowerCase()} from {count} {count === 1 ? 'asset' : 'assets'}?
+                    </span>
+                  </button>
+                ) : (
+                  <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                     <button
                       onClick={() => requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")}
-                      className="flex items-center gap-1 hover:bg-black/10 rounded px-1 transition-colors"
+                      className="flex items-center gap-1 hover:bg-black/10 rounded px-1 -ml-1 transition-colors"
                     >
                       <X className="w-3 h-3 text-cream" />
                       <span className="text-xs font-bold text-cream">{count}</span>
                     </button>
-                  )}
-                  <button
-                    onClick={() => handleGroupBy(tag.category.name)}
-                    className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
-                      groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                    disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
-                  >
-                    {tag.category.displayName}
-                  </button>
-                  <span className="text-cream/80 text-xs">›</span>
-                  <span className="text-sm text-cream font-medium">
-                    {tag.displayName}
-                  </span>
-                </div>
-                {isPending && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10">
                     <button
-                      onClick={confirmTagRemoval}
-                      className="text-xs font-semibold text-cream bg-black/30 rounded-full px-2 py-0.5"
+                      onClick={() => handleGroupBy(tag.category.name)}
+                      className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
+                        groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                      }`}
+                      disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
                     >
-                      Remove
+                      {tag.category.displayName}
                     </button>
-                    <button
-                      onClick={cancelTagRemoval}
-                      className="text-xs font-medium text-cream/80"
-                    >
-                      Cancel
-                    </button>
+                    <span className="text-cream/80 text-xs">›</span>
+                    <span className="text-sm text-cream font-medium">
+                      {tag.displayName}
+                    </span>
                   </div>
                 )}
               </div>
