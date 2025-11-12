@@ -9,7 +9,8 @@ import {
   Save,
   X,
   GripVertical,
-  Folder
+  Folder,
+  Palette
 } from "lucide-react"
 
 interface Collection {
@@ -35,8 +36,10 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
   const [editValue, setEditValue] = useState("")
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [newCollectionName, setNewCollectionName] = useState("")
+  const [editingColorId, setEditingColorId] = useState<string | null>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
   const newInputRef = useRef<HTMLInputElement>(null)
+  const colorInputRef = useRef<HTMLInputElement>(null)
 
   // Drag and drop state
   const [draggedId, setDraggedId] = useState<string | null>(null)
@@ -92,6 +95,14 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
     )
     setEditingId(null)
     setEditValue("")
+  }
+
+  const handleColorChange = (id: string, newColor: string) => {
+    setEditedCollections(prev =>
+      prev.map(col =>
+        col.id === id ? { ...col, color: newColor } : col
+      )
+    )
   }
 
   const handleDelete = (id: string) => {
@@ -236,12 +247,26 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
                   />
                 ) : (
                   <div className="flex-1 flex items-center gap-2">
-                    {collection.color && (
-                      <div
-                        className="w-4 h-4 rounded-full border border-sage/20"
-                        style={{ backgroundColor: collection.color }}
+                    <div className="relative">
+                      <button
+                        onClick={() => {
+                          setEditingColorId(collection.id)
+                          setTimeout(() => colorInputRef.current?.click(), 0)
+                        }}
+                        className="w-6 h-6 rounded-full border-2 border-sage/20 hover:border-sage/40 transition-colors flex items-center justify-center group/color"
+                        style={{ backgroundColor: collection.color || "#BD8878" }}
+                        title="Change color"
+                      >
+                        <Palette className="w-3 h-3 text-white/0 group-hover/color:text-white/80 transition-colors" />
+                      </button>
+                      <input
+                        ref={editingColorId === collection.id ? colorInputRef : null}
+                        type="color"
+                        value={collection.color || "#BD8878"}
+                        onChange={(e) => handleColorChange(collection.id, e.target.value)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       />
-                    )}
+                    </div>
                     <span className="body text-dune font-medium">
                       {collection.displayName}
                     </span>

@@ -1850,9 +1850,23 @@ export default function DAMPage() {
           }))}
           onSave={async (updatedCollections) => {
             try {
-              const collectionCategory = tagCategories.find(cat => cat.isCollection)
+              let collectionCategory = tagCategories.find(cat => cat.isCollection)
+
+              // If collection category doesn't exist, create it
               if (!collectionCategory) {
-                throw new Error("Collection category not found")
+                collectionCategory = {
+                  id: `cat-${Date.now()}`,
+                  name: "collections",
+                  displayName: "Collections",
+                  description: "Curated collections of assets",
+                  color: "#BD8878", // terracotta
+                  sortOrder: 999,
+                  isCollection: true,
+                  isRating: false,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  tags: []
+                }
               }
 
               // Update the collection category with new tags
@@ -1870,9 +1884,9 @@ export default function DAMPage() {
 
               // IMPORTANT: Send ALL categories, not just the updated one
               // This prevents the API from deleting other categories
-              const allCategories = tagCategories.map(cat =>
-                cat.isCollection ? updatedCategory : cat
-              )
+              const allCategories = collectionCategory.id.startsWith('cat-')
+                ? [...tagCategories, updatedCategory]
+                : tagCategories.map(cat => cat.isCollection ? updatedCategory : cat)
 
               // Save to database
               const response = await fetch("/api/dam/tags", {
