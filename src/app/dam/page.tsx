@@ -1228,6 +1228,17 @@ export default function DAMPage() {
                           src={teamMember.imageUrl}
                           alt={teamMember.name}
                           className="w-5 h-5 rounded-full object-cover border border-cream/30"
+                          style={
+                            teamMember.cropCloseUpCircle
+                              ? {
+                                  objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
+                                  transform: `scale(${teamMember.cropCloseUpCircle.scale})`
+                                }
+                              : {
+                                  objectPosition: 'center 25%',
+                                  transform: 'scale(2)'
+                                }
+                          }
                         />
                       )}
                       <span className="text-xs font-semibold text-cream uppercase tracking-wide">
@@ -1332,6 +1343,17 @@ export default function DAMPage() {
                       src={teamMember.imageUrl}
                       alt={tag.displayName}
                       className="w-5 h-5 rounded-full object-cover border border-cream/30"
+                      style={
+                        teamMember.cropCloseUpCircle
+                          ? {
+                              objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
+                              transform: `scale(${teamMember.cropCloseUpCircle.scale})`
+                            }
+                          : {
+                              objectPosition: 'center 25%',
+                              transform: 'scale(2)'
+                            }
+                      }
                     />
                   )}
                   <button

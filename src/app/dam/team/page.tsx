@@ -12,6 +12,16 @@ interface TeamMember {
   id: string
   name: string
   imageUrl: string
+  cropSquare?: {
+    x: number
+    y: number
+    scale: number
+  } | null
+  cropCloseUpCircle?: {
+    x: number
+    y: number
+    scale: number
+  } | null
 }
 
 interface TeamMemberPhoto {
@@ -167,8 +177,18 @@ export default function TeamManagementPage() {
                     <img
                       src={member.imageUrl}
                       alt={member.name}
-                      className="w-full h-full object-cover scale-150"
-                      style={{ objectPosition: "center 25%" }}
+                      className="w-full h-full object-cover"
+                      style={
+                        member.cropSquare
+                          ? {
+                              objectPosition: `${member.cropSquare.x}% ${member.cropSquare.y}%`,
+                              transform: `scale(${member.cropSquare.scale})`
+                            }
+                          : {
+                              objectPosition: 'center 25%',
+                              transform: 'scale(1.5)'
+                            }
+                      }
                     />
                   </div>
                   <p className="body text-dune font-medium text-center">

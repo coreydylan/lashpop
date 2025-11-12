@@ -14,7 +14,9 @@ export async function GET() {
         id: teamMembers.id,
         name: teamMembers.name,
         imageUrl: teamMembers.imageUrl,
-        cropCloseUpCircle: teamMemberPhotos.cropCloseUpCircle
+        cropCloseUpCircle: teamMemberPhotos.cropCloseUpCircle,
+        cropSquare: teamMemberPhotos.cropSquare,
+        cropMediumCircle: teamMemberPhotos.cropMediumCircle
       })
       .from(teamMembers)
       .leftJoin(
