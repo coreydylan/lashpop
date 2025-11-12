@@ -321,6 +321,7 @@ export default function DAMPage() {
     // Only clear pending tag removal if selection actually changed to empty
     // Don't clear if we still have selections (which would happen during tag operations)
     if (selectedAssets.length === 0) {
+      console.log('Clearing pendingTagRemoval because selection is empty')
       setPendingTagRemoval(null)
     }
     setSingleTagDrafts([])
@@ -328,16 +329,23 @@ export default function DAMPage() {
 
   // Add escape key handler to cancel pending tag removal
   useEffect(() => {
-    if (!pendingTagRemoval) return
+    if (!pendingTagRemoval) {
+      console.log('pendingTagRemoval is null')
+      return
+    }
+
+    console.log('pendingTagRemoval set:', pendingTagRemoval)
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        console.log('Escape pressed, clearing pendingTagRemoval')
         setPendingTagRemoval(null)
       }
     }
 
     // Auto-cancel after 5 seconds
     const timeout = setTimeout(() => {
+      console.log('Timeout reached, clearing pendingTagRemoval')
       setPendingTagRemoval(null)
     }, 5000)
 
@@ -519,6 +527,7 @@ export default function DAMPage() {
   }, [normalizeExclusiveTags])
 
   const requestTagRemoval = (tagId: string, assetIds: string[], label: string, count: number, context: string) => {
+    console.log('requestTagRemoval called:', { tagId, assetIds, label, count, context })
     // If already pending this tag, cancel it
     if (pendingTagRemoval && pendingTagRemoval.tagId === tagId && pendingTagRemoval.context === context) {
       setPendingTagRemoval(null)
@@ -532,18 +541,21 @@ export default function DAMPage() {
   const confirmTagRemoval = async () => {
     if (!pendingTagRemoval) return
 
+    // Capture values before clearing state
+    const { tagId, count, assetIds } = pendingTagRemoval
+
     // Add tag to dissipating set for animation
-    setDissipatingTags(prev => new Set([...prev, pendingTagRemoval.tagId]))
+    setDissipatingTags(prev => new Set([...prev, tagId]))
     setPendingTagRemoval(null)
 
     // Wait for animation to complete before actually removing
     setTimeout(async () => {
-      await handleRemoveTag(pendingTagRemoval.tagId, pendingTagRemoval.count, pendingTagRemoval.assetIds, true)
+      await handleRemoveTag(tagId, count, assetIds, true)
 
       // Clean up dissipating tag after removal
       setDissipatingTags(prev => {
         const next = new Set(prev)
-        next.delete(pendingTagRemoval.tagId)
+        next.delete(tagId)
         return next
       })
     }, 600) // Match dissipate animation duration
@@ -589,6 +601,7 @@ export default function DAMPage() {
   }, [])
 
   const handleSelectionChange = (selectedIds: string[]) => {
+    console.log('Selection change triggered:', selectedIds, 'Previous:', selectedAssets)
     setSelectedAssets(selectedIds)
 
     if (selectedIds.length === 0) {
@@ -600,7 +613,7 @@ export default function DAMPage() {
       setExistingTags(computeExistingTags(selectedIds, assets))
       setOmniTags([])
     }
-    setPendingTagRemoval(null)
+    // Don't clear pendingTagRemoval here - let useEffect handle it based on selection state
   }
 
   const handleApplyTags = useCallback(async () => {
@@ -1172,6 +1185,10 @@ export default function DAMPage() {
                   style={{
                     background: getTagColor("#BCC9C2", false)
                   }}
+                  onClick={(e) => {
+                    console.log('Chip container clicked, stopping propagation')
+                    e.stopPropagation()
+                  }}
                 >
                   {isPending ? (
                     <button
@@ -1231,6 +1248,10 @@ export default function DAMPage() {
                 className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
                 style={{
                   background: getTagColor(tag.category.color, false)
+                }}
+                onClick={(e) => {
+                  console.log('Tag chip container clicked, stopping propagation')
+                  e.stopPropagation()
                 }}
               >
                 {isPending ? (
