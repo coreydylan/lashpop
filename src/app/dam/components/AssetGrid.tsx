@@ -868,8 +868,24 @@ function AssetCard({
         const displayedTags = asset.tags && asset.tags.length > 0
           ? (visibleCardTags.length === 0
               ? asset.tags
-              : asset.tags.filter(tag => visibleCardTags.includes(tag.category.id)))
+              : asset.tags.filter(tag => {
+                  // Check if tag has category and category has id
+                  const categoryId = tag.category?.id || tag.categoryId
+                  return visibleCardTags.includes(categoryId)
+                }))
           : []
+
+        // Debug logging - more detailed
+        if (isSelectionMode && asset.tags && asset.tags.length > 0) {
+          console.log('Selection mode debug:', {
+            assetId: asset.id,
+            tags: asset.tags,
+            tagCategoryIds: asset.tags.map(t => t.category?.id || t.categoryId),
+            visibleCardTags,
+            displayedTags,
+            displayedCount: displayedTags.length
+          })
+        }
 
         // Don't render anything if nothing to show
         if (!teamMember && displayedTags.length === 0) return null
