@@ -42,27 +42,11 @@ export default function TeamManagementPage() {
     try {
       const response = await fetch(`/api/dam/team/${memberId}/photos`)
       const data = await response.json()
-      let photos = data.photos || []
-
-      // If member has a current photo but it's not in the photos list, create an entry for it
-      const member = teamMembers.find(m => m.id === memberId) || selectedMember
-      if (member?.imageUrl && !photos.some((p: any) => p.filePath === member.imageUrl)) {
-        // Add the current team member photo as a pseudo-photo entry
-        photos = [{
-          id: 'current',
-          teamMemberId: memberId,
-          fileName: 'Current Profile Photo',
-          filePath: member.imageUrl,
-          isPrimary: true,
-          uploadedAt: new Date()
-        }, ...photos]
-      }
-
-      setMemberPhotos(photos)
+      setMemberPhotos(data.photos || [])
     } catch (error) {
       console.error("Failed to fetch photos:", error)
     }
-  }, [selectedMember, teamMembers])
+  }, [])
 
   useEffect(() => {
     void fetchTeamMembers()
@@ -104,12 +88,6 @@ export default function TeamManagementPage() {
 
   const handleSaveCrops = async (crops: any) => {
     if (!editingPhoto) return
-
-    // Prevent saving crops for pseudo 'current' photo
-    if (editingPhoto.id === 'current') {
-      alert('Cannot save crops for the current profile photo. Please upload a new photo first.')
-      return
-    }
 
     try {
       const response = await fetch(`/api/dam/team/photos/${editingPhoto.id}/crops`, {
@@ -284,17 +262,12 @@ export default function TeamManagementPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => setEditingPhoto(photo)}
-                        disabled={photo.id === 'current'}
-                        className={`flex-1 btn py-2 text-sm ${
-                          photo.id === 'current'
-                            ? 'btn-disabled opacity-50 cursor-not-allowed'
-                            : 'btn-secondary'
-                        }`}
-                        title={photo.id === 'current' ? 'Upload a new photo to edit crops' : 'Edit crop settings'}
+                        className="flex-1 btn btn-secondary py-2 text-sm"
+                        title="Edit crop settings"
                       >
-                        {photo.id === 'current' ? 'Upload to Edit Crops' : 'Edit Crops'}
+                        Edit Crops
                       </button>
-                      {!photo.isPrimary && photo.id !== 'current' && (
+                      {!photo.isPrimary && (
                         <button
                           onClick={() => handleSetPrimary(photo.id)}
                           className="flex-1 btn bg-sage/10 text-sage hover:bg-sage hover:text-cream py-2 text-sm transition-all"

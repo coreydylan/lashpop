@@ -42,7 +42,9 @@ export async function POST(request: NextRequest, context: any) {
       .set({ isPrimary: true, updatedAt: new Date() })
       .where(eq(teamMemberPhotos.id, photoId))
 
-    // Update team member's imageUrl to use this photo
+    // SYNC MECHANISM: Update team member's imageUrl to keep it in sync with primary photo
+    // This ensures the team member record always points to the current primary photo
+    // and maintains consistency across the platform
     await db
       .update(teamMembers)
       .set({ imageUrl: photo.filePath, updatedAt: new Date() })
