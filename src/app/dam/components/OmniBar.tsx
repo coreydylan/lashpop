@@ -61,12 +61,12 @@ export function OmniBar({
   const showTotals = totalAssetsCount > assetsCount
 
   return (
-    <div className={containerClass}>
+    <div className={containerClass} data-omni-bar>
       {/* Desktop layout */}
-      <div className="hidden lg:flex items-center gap-4 px-6 py-5">
+      <div className="hidden lg:flex items-start gap-4 px-6 py-5">
         <div className="flex-1 min-w-0">
           <div className={isOverlay && tagSelectorContent ? "space-y-3" : ""}>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-start gap-2">
               {chipsContent ?? null}
             </div>
             {isOverlay && tagSelectorContent && (
@@ -77,7 +77,7 @@ export function OmniBar({
           </div>
         </div>
 
-        <div className="flex-shrink-0 pl-4 flex items-center gap-3">
+        <div className="flex-shrink-0 pl-4 pt-1 flex items-center gap-3">
           {selectedCount > 0 ? (
             <>
               <div className="flex items-center gap-2">

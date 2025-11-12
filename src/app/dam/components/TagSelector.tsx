@@ -144,7 +144,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
     <div className="space-y-3">
       {/* Selected Tags Display */}
       {selectedTags.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-start gap-2">
           <AnimatePresence>
             {selectedTags.map((tag) => (
               <motion.div
@@ -173,7 +173,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
       )}
 
       {/* Tag Picker */}
-      <div className="flex items-center gap-3 overflow-hidden">
+      <div className="flex items-start gap-3 overflow-hidden">
         {/* Add Tag Button */}
         <button
           onClick={() => setIsAdding(!isAdding)}
@@ -196,7 +196,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="flex items-center gap-2 overflow-x-auto flex-nowrap hide-scrollbar"
+            className="flex items-start gap-2 overflow-x-auto flex-nowrap hide-scrollbar"
             style={{ scrollbarWidth: 'thin' }}
           >
             {selectedCategory ? (

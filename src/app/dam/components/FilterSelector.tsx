@@ -229,7 +229,7 @@ export function FilterSelector({
       const isTeamCategory = category.id === 'team'
 
       return (
-        <div className="filter-selector flex flex-wrap items-center gap-2">
+        <div className="filter-selector flex flex-wrap items-start gap-2">
         {/* Navigation buttons */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
@@ -335,7 +335,7 @@ export function FilterSelector({
 
   // Show categories with transforming bullet to plus
   return (
-    <div className="filter-selector flex items-center gap-2">
+    <div className="filter-selector flex items-start gap-2">
       {allCategories.map((category) => {
         const isHovered = hoveredCategory === category.id
 
