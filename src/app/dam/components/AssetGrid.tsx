@@ -271,7 +271,7 @@ export function AssetGrid({
           groupTitle = teamMember.name
           groupImage = {
             url: teamMember.imageUrl,
-            crop: teamMember.cropCloseUpCircle
+            crop: teamMember.cropCloseUpCircle || undefined
           }
         } else {
           groupTitle = 'Team Member'
