@@ -173,13 +173,17 @@ export function AssetGrid({
       if (!onSelectionChange) return
 
       const nextSelection = new Set(selectedAssetIds)
-      if (nextSelection.has(assetId)) {
+      const wasSelected = nextSelection.has(assetId)
+      if (wasSelected) {
+        console.log('Deselecting asset:', assetId)
         nextSelection.delete(assetId)
       } else {
+        console.log('Selecting asset:', assetId)
         nextSelection.add(assetId)
       }
 
       const nextArray = Array.from(nextSelection)
+      console.log('New selection:', nextArray)
       setIsSelectionMode(nextArray.length > 0)
       onSelectionChange(nextArray)
       setLastClickedAssetId(assetId)
@@ -223,8 +227,11 @@ export function AssetGrid({
 
   const handleAssetClick = useCallback(
     (asset: Asset, event: React.MouseEvent) => {
+      console.log('handleAssetClick called', { assetId: asset.id, isDragging, isSelectionMode })
+
       // If we're dragging, don't process clicks
       if (isDragging) {
+        console.log('Click blocked: currently dragging')
         event.preventDefault()
         event.stopPropagation()
         return
@@ -232,6 +239,7 @@ export function AssetGrid({
 
       // Shift + Click: Range selection
       if (!isTouchDevice && event.shiftKey) {
+        console.log('Shift+Click: range selection')
         event.preventDefault()
         event.stopPropagation()
         setIsSelectionMode(true)
@@ -241,6 +249,7 @@ export function AssetGrid({
 
       // Desktop multi-select: Cmd/Ctrl + Click
       if (!isTouchDevice && (event.metaKey || event.ctrlKey)) {
+        console.log('Cmd/Ctrl+Click: toggle selection')
         event.preventDefault()
         event.stopPropagation()
         setIsSelectionMode(true)
@@ -250,10 +259,14 @@ export function AssetGrid({
 
       // If in selection mode, toggle selection
       if (isSelectionMode) {
+        console.log('In selection mode: toggling', asset.id)
         event.preventDefault()
         event.stopPropagation()
         toggleSelection(asset.id)
+        return
       }
+
+      console.log('Not in selection mode, PhotoView will handle')
       // Otherwise, PhotoView will handle opening the viewer
     },
     [isSelectionMode, isTouchDevice, toggleSelection, selectRange, isDragging]
@@ -340,6 +353,7 @@ export function AssetGrid({
 
   // Handle drag end
   const handleDragEnd = useCallback(() => {
+    console.log('handleDragEnd called')
     setIsDragging(false)
     setDragStartAssetId(null)
     setDraggedOverAssets(new Set())
