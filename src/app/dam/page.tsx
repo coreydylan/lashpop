@@ -16,6 +16,7 @@ import { OmniBar } from "./components/OmniBar"
 import { OmniCommandPalette, type CommandItem } from "./components/OmniCommandPalette"
 import { TagEditor } from "./components/TagEditor"
 import { CollectionSelector } from "./components/CollectionSelector"
+import { CollectionManager } from "./components/CollectionManager"
 
 interface Asset {
   id: string
@@ -140,6 +141,7 @@ export default function DAMPage() {
   const [commandQuery, setCommandQuery] = useState("")
   const [commandMode, setCommandMode] = useState<'normal' | 'edit' | 'card-settings'>('normal')
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false)
+  const [isCollectionManagerOpen, setIsCollectionManagerOpen] = useState(false)
 
   // Card display settings
   const [visibleCardTags, setVisibleCardTags] = useState<string[]>(() => {
@@ -1000,6 +1002,20 @@ export default function DAMPage() {
       }
     })
 
+    // Add collection management command
+    items.push({
+      id: "manage-collections",
+      group: "Actions",
+      label: "Manage collections",
+      description: "Create, rename, or reorganize collections",
+      badge: "Admin",
+      onSelect: () => {
+        // Open the collection manager
+        setIsCommandOpen(false)
+        setIsCollectionManagerOpen(true)
+      }
+    })
+
     return items
   }, [
     activeFilters,
@@ -1593,6 +1609,7 @@ export default function DAMPage() {
                   collections={collections}
                   activeCollectionId={activeCollectionId}
                   onSelectCollection={setActiveCollectionId}
+                  onCreateCollection={() => setIsCollectionManagerOpen(true)}
                 />
               </div>
             )}
@@ -1709,6 +1726,62 @@ export default function DAMPage() {
             }
           }}
           onClose={() => setIsTagEditorOpen(false)}
+        />
+      )}
+
+      {isCollectionManagerOpen && (
+        <CollectionManager
+          collections={collections.map(c => ({
+            id: c.id,
+            name: c.name,
+            displayName: c.displayName,
+            description: null,
+            sortOrder: 0,
+            color: c.color || null
+          }))}
+          onSave={async (updatedCollections) => {
+            try {
+              const collectionCategory = tagCategories.find(cat => cat.isCollection)
+              if (!collectionCategory) {
+                throw new Error("Collection category not found")
+              }
+
+              // Update the collection category with new tags
+              const updatedCategory = {
+                ...collectionCategory,
+                tags: updatedCollections.map(col => ({
+                  id: col.id,
+                  categoryId: collectionCategory.id,
+                  name: col.name,
+                  displayName: col.displayName,
+                  description: col.description,
+                  sortOrder: col.sortOrder
+                }))
+              }
+
+              // Save to database
+              const response = await fetch("/api/dam/tags", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ categories: [updatedCategory] })
+              })
+
+              if (!response.ok) {
+                throw new Error("Failed to save collections")
+              }
+
+              // Refresh tag categories from database
+              const refreshResponse = await fetch("/api/dam/tags")
+              const refreshData = await refreshResponse.json()
+              setTagCategories(refreshData.categories || [])
+
+              setIsCollectionManagerOpen(false)
+            } catch (error) {
+              console.error("Error saving collections:", error)
+              alert("Failed to save collections. Please try again.")
+            }
+          }}
+          onClose={() => setIsCollectionManagerOpen(false)}
         />
       )}
 
