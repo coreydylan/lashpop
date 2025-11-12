@@ -104,7 +104,7 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
     if (!newCollectionName.trim()) return
 
     const newCollection: Collection = {
-      id: `new-${Date.now()}`,
+      id: `tag-${Date.now()}`,
       name: newCollectionName.toLowerCase().replace(/\s+/g, '_'),
       displayName: newCollectionName.trim(),
       description: null,
