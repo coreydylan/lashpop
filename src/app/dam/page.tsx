@@ -1005,7 +1005,7 @@ export default function DAMPage() {
           >
             <span className="text-xs font-semibold text-sage uppercase">
               {index > 0 && "→ "}
-              {categoryName}
+              {getCategoryDisplayName(categoryName)}
             </span>
             <button
               onClick={() => handleRemoveGroupBy(categoryName)}

@@ -88,7 +88,7 @@ export function AssetGrid({
         } else {
           const tag = asset.tags?.find(t => t.category.name === categoryName)
           if (tag) {
-            path.push(`${categoryName}_${tag.name}`)
+            path.push(`${categoryName}|${tag.name}`)
             placed = true
           } else if (path.length === 0) {
             // If first level and no tag for this category, skip
@@ -257,7 +257,7 @@ export function AssetGrid({
 
     Object.entries(groups).forEach(([key, value]) => {
       const groupKey = String(key)
-      const [type, id] = groupKey.includes('_') ? groupKey.split('_') : ['', groupKey]
+      const [type, id] = groupKey.includes('|') ? groupKey.split('|') : ['', groupKey]
       const isUngrouped = groupKey === 'ungrouped'
 
       // Get display name and image for the group

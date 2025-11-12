@@ -156,23 +156,14 @@ export function PhotoLightbox({
         scrollToIndex(index)
       }}
       onVisibleChange={(visible) => {
-        // On mobile, delay visibility callback to prevent race conditions
-        if (isMobile && visible) {
-          // Use requestAnimationFrame to ensure DOM is ready
-          requestAnimationFrame(() => {
-            onVisibilityChange?.(visible)
-            notifyActiveAsset(currentIndexRef.current)
-            scrollToIndex(currentIndexRef.current)
-          })
-        } else {
-          onVisibilityChange?.(visible)
-          if (!visible) {
-            notifyActiveAsset(null)
-          } else {
-            notifyActiveAsset(currentIndexRef.current)
-            scrollToIndex(currentIndexRef.current)
-          }
+        onVisibilityChange?.(visible)
+        // Only clear the active asset when closing, don't set it when opening
+        // The onIndexChange callback will handle setting the correct asset
+        if (!visible) {
+          notifyActiveAsset(null)
         }
+        // Note: When opening (visible=true), onIndexChange will be called
+        // immediately after with the correct index, so we don't set it here
       }}
       overlayRender={({ index, onIndexChange, visible }) => {
         if (!visible) return null
