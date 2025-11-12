@@ -566,8 +566,8 @@ export function AssetGrid({
                             transform: `scale(${groupImage.crop.scale})`
                           }
                         : {
-                            objectPosition: 'center 25%',
-                            transform: 'scale(2)'
+                            objectPosition: 'center 34%',
+                            transform: 'scale(0.9)'
                           }
                     }
                   />

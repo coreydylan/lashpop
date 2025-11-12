@@ -75,7 +75,7 @@ const generateSuggestedCrops = (faceCenterX: number, faceCenterY: number, imageA
     const scale = type === 'fullVertical' || type === 'fullHorizontal' ? 0.7 :
                   type === 'mediumCircle' ? 0.8 :
                   type === 'square' ? 1.0 :
-                  1.1 // closeUpCircle
+                  0.9 // closeUpCircle
 
     // Calculate crop frame height to determine offset
     const { heightPercent } = getCropBox(type, { x: 50, y: 50, scale }, imageAspect)
@@ -99,7 +99,7 @@ const DEFAULT_CROPS: Record<CropType, CropData> = {
   fullHorizontal: { x: 54, y: 42, scale: 0.7 },
   square: { x: 50, y: 50, scale: 1.0 },
   mediumCircle: { x: 50, y: 36, scale: 0.8 },
-  closeUpCircle: { x: 50, y: 34, scale: 1.1 }
+  closeUpCircle: { x: 50, y: 34, scale: 0.9 }
 }
 
 const cloneDefaultCrops = (): Record<CropType, CropData> =>

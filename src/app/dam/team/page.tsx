@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
-import { Upload as UploadIcon, Camera, ArrowLeft } from "lucide-react"
+import { Upload as UploadIcon, Camera, ArrowLeft, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { PhotoCropEditor } from "./components/PhotoCropEditor"
 
@@ -29,6 +29,16 @@ interface TeamMemberPhoto {
   fileName: string
   filePath: string
   isPrimary: boolean
+  cropCloseUpCircle?: {
+    x: number
+    y: number
+    scale: number
+  } | null
+  cropSquare?: {
+    x: number
+    y: number
+    scale: number
+  } | null
 }
 
 export default function TeamManagementPage() {
@@ -233,35 +243,48 @@ export default function TeamManagementPage() {
           <div className="space-y-6">
             <h2 className="h3 text-dune">Select Team Member</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {teamMembers.map((member) => (
-                <button
-                  key={member.id}
-                  onClick={() => setSelectedMember(member)}
-                  className="group"
-                >
-                  <div className="aspect-square arch-full overflow-hidden bg-warm-sand/40 mb-3 hover:ring-2 hover:ring-dusty-rose transition-all">
-                    <img
-                      src={member.imageUrl}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                      style={
-                        member.cropSquare
-                          ? {
-                              objectPosition: `${member.cropSquare.x}% ${member.cropSquare.y}%`,
-                              transform: `scale(${member.cropSquare.scale})`
-                            }
-                          : {
-                              objectPosition: 'center 25%',
-                              transform: 'scale(1.5)'
-                            }
-                      }
-                    />
-                  </div>
-                  <p className="body text-dune font-medium text-center">
-                    {member.name}
-                  </p>
-                </button>
-              ))}
+              {teamMembers.map((member) => {
+                const hasCrops = !!(member.cropSquare && member.cropCloseUpCircle)
+                return (
+                  <button
+                    key={member.id}
+                    onClick={() => setSelectedMember(member)}
+                    className="group relative"
+                  >
+                    <div className="aspect-square arch-full overflow-hidden bg-warm-sand/40 mb-3 hover:ring-2 hover:ring-dusty-rose transition-all">
+                      <img
+                        src={member.imageUrl}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                        style={
+                          member.cropSquare
+                            ? {
+                                objectPosition: `${member.cropSquare.x}% ${member.cropSquare.y}%`,
+                                transform: `scale(${member.cropSquare.scale})`
+                              }
+                            : {
+                                objectPosition: 'center 34%',
+                                transform: 'scale(1.0)'
+                              }
+                        }
+                      />
+                    </div>
+                    {hasCrops && (
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-sage rounded-full flex items-center justify-center shadow-md" title="Crops configured">
+                        <CheckCircle2 className="w-4 h-4 text-cream" />
+                      </div>
+                    )}
+                    {!hasCrops && (
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-warm-sand rounded-full flex items-center justify-center shadow-sm border border-sage/20" title="No crops set">
+                        <Camera className="w-3 h-3 text-sage/60" />
+                      </div>
+                    )}
+                    <p className="body text-dune font-medium text-center">
+                      {member.name}
+                    </p>
+                  </button>
+                )
+              })}
             </div>
           </div>
         ) : editingPhoto ? (
@@ -327,44 +350,54 @@ export default function TeamManagementPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {memberPhotos.map((photo) => (
-                  <div
-                    key={photo.id}
-                    className="relative group"
-                  >
-                    <div className="aspect-square arch-full overflow-hidden bg-warm-sand/40 mb-2">
-                      <img
-                        src={photo.filePath}
-                        alt={photo.fileName}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
-                    {photo.isPrimary && (
-                      <div className="absolute top-2 right-2 px-2 py-1 bg-dusty-rose rounded-full">
-                        <span className="text-xs text-cream font-medium">Primary</span>
+                {memberPhotos.map((photo) => {
+                  const hasCrops = !!(photo.cropSquare && photo.cropCloseUpCircle)
+                  return (
+                    <div
+                      key={photo.id}
+                      className="relative group"
+                    >
+                      <div className="aspect-square arch-full overflow-hidden bg-warm-sand/40 mb-2">
+                        <img
+                          src={photo.filePath}
+                          alt={photo.fileName}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    )}
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setEditingPhoto(photo)}
-                        className="flex-1 btn btn-secondary py-2 text-sm"
-                        title="Edit crop settings"
-                      >
-                        Edit Crops
-                      </button>
-                      {!photo.isPrimary && (
+                      <div className="absolute top-2 right-2 flex gap-1.5">
+                        {photo.isPrimary && (
+                          <div className="px-2 py-1 bg-dusty-rose rounded-full">
+                            <span className="text-xs text-cream font-medium">Primary</span>
+                          </div>
+                        )}
+                        {hasCrops && (
+                          <div className="w-6 h-6 bg-sage rounded-full flex items-center justify-center shadow-md" title="Crops configured">
+                            <CheckCircle2 className="w-4 h-4 text-cream" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => handleSetPrimary(photo.id)}
-                          className="flex-1 btn bg-sage/10 text-sage hover:bg-sage hover:text-cream py-2 text-sm transition-all"
+                          onClick={() => setEditingPhoto(photo)}
+                          className="flex-1 btn btn-secondary py-2 text-sm"
+                          title="Edit crop settings"
                         >
-                          Set Primary
+                          {hasCrops ? 'Edit Crops' : 'Set Crops'}
                         </button>
-                      )}
+                        {!photo.isPrimary && (
+                          <button
+                            onClick={() => handleSetPrimary(photo.id)}
+                            className="flex-1 btn bg-sage/10 text-sage hover:bg-sage hover:text-cream py-2 text-sm transition-all"
+                          >
+                            Set Primary
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
