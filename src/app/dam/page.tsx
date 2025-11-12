@@ -545,7 +545,11 @@ export default function DAMPage() {
     const { tagId, count, assetIds } = pendingTagRemoval
 
     // Add tag to dissipating set for animation
-    setDissipatingTags(prev => new Set([...prev, tagId]))
+    setDissipatingTags(prev => {
+      const next = new Set(prev)
+      next.add(tagId)
+      return next
+    })
     setPendingTagRemoval(null)
 
     // Wait for animation to complete before actually removing
