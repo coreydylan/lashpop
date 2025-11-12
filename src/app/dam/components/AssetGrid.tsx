@@ -72,6 +72,7 @@ export function AssetGrid({
   const [currentMousePosition, setCurrentMousePosition] = useState<{ x: number; y: number } | null>(null)
   const [potentialDragAssetId, setPotentialDragAssetId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const assetRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const selectedAssetSet = useMemo(() => new Set(selectedAssetIds), [selectedAssetIds])
 
   // Calculate selection box bounds
@@ -85,6 +86,37 @@ export function AssetGrid({
       height: Math.abs(currentMousePosition.y - mouseDownPosition.y)
     }
   }, [isDragging, mouseDownPosition, currentMousePosition])
+
+  // Check which assets intersect with the selection box
+  useEffect(() => {
+    if (!selectionBox || !isDragging || !onSelectionChange) return
+
+    const intersectingAssets = new Set<string>()
+
+    // Check each asset for intersection
+    assetRefs.current.forEach((element, assetId) => {
+      const rect = element.getBoundingClientRect()
+
+      // Check if the selection box intersects with this asset
+      const intersects = !(
+        rect.right < selectionBox.left ||
+        rect.left > selectionBox.left + selectionBox.width ||
+        rect.bottom < selectionBox.top ||
+        rect.top > selectionBox.top + selectionBox.height
+      )
+
+      if (intersects) {
+        intersectingAssets.add(assetId)
+      }
+    })
+
+    // Update selection
+    const newSelection = Array.from(intersectingAssets)
+    if (newSelection.length !== selectedAssetIds.length ||
+        !newSelection.every(id => selectedAssetIds.includes(id))) {
+      onSelectionChange(newSelection)
+    }
+  }, [selectionBox, isDragging, onSelectionChange, selectedAssetIds])
 
   // Group assets based on groupByCategories
   const groupedAssets = useMemo<Record<string, GroupBucket>>(() => {
@@ -518,6 +550,10 @@ export function AssetGrid({
                   isDraggedOver={draggedOverAssets.has(asset.id)}
                   visibleCardTags={visibleCardTags}
                   teamMembers={teamMembers}
+                  onRef={(el) => {
+                    if (el) assetRefs.current.set(asset.id, el)
+                    else assetRefs.current.delete(asset.id)
+                  }}
                 />
               ))}
             </div>
@@ -539,8 +575,12 @@ export function AssetGrid({
       ref={containerRef}
       className={`w-full relative ${isDragging ? 'dragging-selection' : ''}`}
       onMouseDown={(e) => {
-        // Allow starting drag from empty space
-        if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('dam-grid')) {
+        // Allow starting drag from anywhere in the container
+        // Check if we clicked on an asset card
+        const assetCard = (e.target as HTMLElement).closest('[data-asset-id]')
+
+        if (!assetCard) {
+          // Clicked on empty space
           const clientX = e.clientX
           const clientY = e.clientY
           console.log('Starting drag from empty space', { x: clientX, y: clientY })
@@ -607,6 +647,10 @@ export function AssetGrid({
               isDraggedOver={draggedOverAssets.has(asset.id)}
               visibleCardTags={visibleCardTags}
               teamMembers={teamMembers}
+              onRef={(el) => {
+                if (el) assetRefs.current.set(asset.id, el)
+                else assetRefs.current.delete(asset.id)
+              }}
             />
           ))}
         </div>
@@ -629,6 +673,7 @@ interface AssetCardProps {
   isDraggedOver: boolean
   visibleCardTags?: string[]
   teamMembers?: TeamMember[]
+  onRef?: (el: HTMLDivElement | null) => void
 }
 
 function AssetCard({
@@ -644,7 +689,8 @@ function AssetCard({
   isDragging,
   isDraggedOver,
   visibleCardTags = [],
-  teamMembers = []
+  teamMembers = [],
+  onRef
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
@@ -710,6 +756,8 @@ function AssetCard({
 
   return (
     <div
+      ref={onRef}
+      data-asset-id={asset.id}
       className={`relative arch-full overflow-hidden bg-warm-sand/40 group cursor-pointer touch-manipulation shadow-sm hover:shadow-lg transition-all ${
         gridViewMode === "square" ? "aspect-square" : "break-inside-avoid mb-3 sm:mb-4"
       } ${isSelected ? "ring-4 ring-dusty-rose/80" : ""} ${isDragging ? "pointer-events-none" : ""} ${
