@@ -25,6 +25,17 @@ interface Asset {
   }>
 }
 
+interface TeamMember {
+  id: string
+  name: string
+  imageUrl: string
+  cropCloseUpCircle?: {
+    x: number
+    y: number
+    scale: number
+  }
+}
+
 interface AssetGridProps {
   assets: Asset[]
   selectedAssetIds?: string[]
@@ -32,6 +43,7 @@ interface AssetGridProps {
   onDelete?: (assetIds: string[]) => void
   gridViewMode?: "square" | "aspect"
   groupByCategories?: string[]
+  teamMembers?: TeamMember[]
 }
 
 export function AssetGrid({
@@ -40,7 +52,8 @@ export function AssetGrid({
   onSelectionChange,
   onDelete: _onDelete,
   gridViewMode = "square",
-  groupByCategories = []
+  groupByCategories = [],
+  teamMembers = []
 }: AssetGridProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(selectedAssetIds.length > 0)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
@@ -247,11 +260,22 @@ export function AssetGrid({
       const [type, id] = groupKey.includes('_') ? groupKey.split('_') : ['', groupKey]
       const isUngrouped = groupKey === 'ungrouped'
 
-      // Get display name for the group
+      // Get display name and image for the group
       let groupTitle = isUngrouped ? 'Other' : groupKey
+      let groupImage: { url: string; crop?: { x: number; y: number; scale: number } } | null = null
+
       if (type === 'team') {
-        // TODO: Get team member name from ID
-        groupTitle = 'Team Member'
+        // Look up team member by ID
+        const teamMember = teamMembers.find(tm => tm.id === id)
+        if (teamMember) {
+          groupTitle = teamMember.name
+          groupImage = {
+            url: teamMember.imageUrl,
+            crop: teamMember.cropCloseUpCircle
+          }
+        } else {
+          groupTitle = 'Team Member'
+        }
       } else if (!isUngrouped) {
         // Extract tag display name
         const sampleAsset = Array.isArray(value)
@@ -259,7 +283,7 @@ export function AssetGrid({
           : (Object.values(value as Record<string, Asset[]>)[0]?.[0])
         if (sampleAsset) {
           const tag = sampleAsset.tags?.find((t: any) => t.category.name === type && t.name === id)
-          groupTitle = tag ? `${tag.category.displayName}: ${tag.displayName}` : groupTitle
+          groupTitle = tag ? tag.displayName : groupTitle
         }
       }
 
@@ -269,12 +293,35 @@ export function AssetGrid({
         <div key={key} className="space-y-4">
           {/* Group header */}
           <div className={`${level === 0 ? 'border-b-2 border-sage/20 pb-2' : 'border-b border-sage/10 pb-1 ml-4'}`}>
-            <h3 className={`${level === 0 ? 'h3 text-sage' : 'h4 text-sage/80'}`}>
-              {groupTitle}
-              {groupArray && (
-                <span className="ml-2 text-sm text-sage/60">({groupArray.length})</span>
+            <div className="flex items-center gap-3">
+              {/* Team member headshot */}
+              {groupImage && (
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-sage/20 flex-shrink-0">
+                  <img
+                    src={groupImage.url}
+                    alt={groupTitle}
+                    className="w-full h-full object-cover"
+                    style={
+                      groupImage.crop
+                        ? {
+                            objectPosition: `${groupImage.crop.x}% ${groupImage.crop.y}%`,
+                            transform: `scale(${groupImage.crop.scale})`
+                          }
+                        : {
+                            objectPosition: 'center 25%',
+                            transform: 'scale(2)'
+                          }
+                    }
+                  />
+                </div>
               )}
-            </h3>
+              <h3 className={`${level === 0 ? 'h3 text-sage' : 'h4 text-sage/80'}`}>
+                {groupTitle}
+                {groupArray && (
+                  <span className="ml-2 text-sm text-sage/60">({groupArray.length})</span>
+                )}
+              </h3>
+            </div>
           </div>
 
           {/* Group content */}

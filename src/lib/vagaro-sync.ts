@@ -126,8 +126,8 @@ export async function syncTeamMember(vagaroEmployee: any) {
 
   // Extract key fields from Vagaro
   const employeeId = vagaroEmployee.serviceProviderId || vagaroEmployee.employee_id
-  const firstName = vagaroEmployee.firstName || vagaroEmployee.first_name || ''
-  const lastName = vagaroEmployee.lastName || vagaroEmployee.last_name || ''
+  const firstName = vagaroEmployee.employeeFirstName || vagaroEmployee.firstName || vagaroEmployee.first_name || ''
+  const lastName = vagaroEmployee.employeeLastName || vagaroEmployee.lastName || vagaroEmployee.last_name || ''
   const name = `${firstName} ${lastName}`.trim()
   const email = vagaroEmployee.email || vagaroEmployee.emailId || ''
   const phone = vagaroEmployee.phone || vagaroEmployee.phoneNumber || ''
@@ -194,9 +194,17 @@ export async function syncAllTeamMembers() {
   console.log('🔄 Syncing all team members from Vagaro...')
 
   const client = getVagaroClient()
-  const vagaroEmployees = await client.getEmployees({ status: 'active' })
 
-  console.log(`  Found ${vagaroEmployees?.length || 0} employees in Vagaro`)
+  // Fetch active and inactive employees separately (Vagaro API requires status filter)
+  const activeEmployees = await client.getEmployees({ status: 'active' })
+  const inactiveEmployees = await client.getEmployees({ status: 'inactive' })
+
+  // Combine both lists
+  const vagaroEmployees = [...activeEmployees, ...inactiveEmployees]
+
+  console.log(`  Found ${activeEmployees?.length || 0} active employees in Vagaro`)
+  console.log(`  Found ${inactiveEmployees?.length || 0} inactive employees in Vagaro`)
+  console.log(`  Total: ${vagaroEmployees?.length || 0} employees`)
 
   if (!Array.isArray(vagaroEmployees)) {
     console.error('  ❌ Invalid response from Vagaro API')

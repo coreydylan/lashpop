@@ -40,6 +40,11 @@ interface TeamMember {
   id: string
   name: string
   imageUrl: string
+  cropCloseUpCircle?: {
+    x: number
+    y: number
+    scale: number
+  } | null
 }
 
 interface ActiveFilter {
@@ -1593,6 +1598,7 @@ export default function DAMPage() {
               onDelete={handleDelete}
               gridViewMode={gridViewMode}
               groupByCategories={groupByTags}
+              teamMembers={teamMembers}
             />
           )}
         </main>

@@ -263,7 +263,7 @@ export class VagaroClient {
       '/api/v2/employees',
       {
         businessId: this.businessId,
-        employeeId
+        serviceProviderId: employeeId  // Vagaro API expects 'serviceProviderId' not 'employeeId'
       }
     )
     return response.data

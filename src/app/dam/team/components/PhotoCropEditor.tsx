@@ -43,14 +43,40 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
   })
 
   const containerRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [imageAspect, setImageAspect] = useState(1)
 
   const updateCrop = (type: CropType, updates: Partial<CropData>) => {
+    const newCrop = { ...crops[type], ...updates }
+    const config = CROP_CONFIGS[type]
+
+    // Calculate crop box dimensions
+    const cropWidth = 50 * newCrop.scale * config.aspect
+    const cropHeight = 50 * newCrop.scale
+
+    // Constrain position so crop box doesn't extend beyond image edges
+    const minX = cropWidth / 2
+    const maxX = 100 - cropWidth / 2
+    const minY = cropHeight / 2
+    const maxY = 100 - cropHeight / 2
+
+    // Clamp the position
+    const constrainedX = Math.max(minX, Math.min(maxX, newCrop.x))
+    const constrainedY = Math.max(minY, Math.min(maxY, newCrop.y))
+
     setCrops((prev) => ({
       ...prev,
-      [type]: { ...prev[type], ...updates }
+      [type]: { ...newCrop, x: constrainedX, y: constrainedY }
     }))
+  }
+
+  const handleImageLoad = () => {
+    if (imageRef.current) {
+      const { naturalWidth, naturalHeight } = imageRef.current
+      setImageAspect(naturalWidth / naturalHeight)
+    }
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -69,9 +95,10 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
     const deltaXPercent = (deltaX / rect.width) * 100
     const deltaYPercent = (deltaY / rect.height) * 100
 
+    // updateCrop handles constraining to image bounds
     updateCrop(selectedCrop, {
-      x: Math.max(0, Math.min(100, crops[selectedCrop].x + deltaXPercent)),
-      y: Math.max(0, Math.min(100, crops[selectedCrop].y + deltaYPercent))
+      x: crops[selectedCrop].x + deltaXPercent,
+      y: crops[selectedCrop].y + deltaYPercent
     })
 
     setDragStart({ x: e.clientX, y: e.clientY })
@@ -96,6 +123,11 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
   const cropWidth = 50 * crop.scale * config.aspect // percentage
   const cropHeight = 50 * crop.scale // percentage
 
+  // Calculate maximum scale so crop box doesn't exceed image dimensions
+  const maxScaleWidth = 100 / (50 * config.aspect) // When cropWidth = 100%
+  const maxScaleHeight = 100 / 50 // When cropHeight = 100%
+  const maxScale = Math.min(maxScaleWidth, maxScaleHeight)
+
   return (
     <div className="space-y-6">
       {/* Crop Type Selector */}
@@ -119,18 +151,21 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
       <div className="bg-warm-sand/20 arch-full p-8">
         <div
           ref={containerRef}
-          className={`relative w-full aspect-square max-w-2xl mx-auto bg-dune/5 overflow-hidden arch-full ${
+          className={`relative w-full max-w-2xl mx-auto bg-dune/5 overflow-hidden arch-full ${
             isDragging ? 'cursor-grabbing' : 'cursor-grab'
           }`}
+          style={{ aspectRatio: imageAspect }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
         >
-          {/* Image - fixed in place */}
+          {/* Image - shows full image in native aspect ratio */}
           <img
+            ref={imageRef}
             src={imageUrl}
             alt="Crop preview"
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             draggable={false}
+            onLoad={handleImageLoad}
           />
 
           {/* Darkened overlay with crop cutout */}
@@ -222,9 +257,9 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
             <input
               type="range"
               min="0.5"
-              max="2"
+              max={maxScale}
               step="0.1"
-              value={crop.scale}
+              value={Math.min(crop.scale, maxScale)}
               onChange={(e) =>
                 updateCrop(selectedCrop, { scale: Number(e.target.value) })
               }
@@ -232,7 +267,7 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
             />
             <div className="flex justify-between mt-1">
               <span className="text-xs text-sage">Smaller (fits more)</span>
-              <span className="text-xs text-sage">Larger (zoomed in)</span>
+              <span className="text-xs text-sage">Larger (fills image)</span>
             </div>
           </div>
 
