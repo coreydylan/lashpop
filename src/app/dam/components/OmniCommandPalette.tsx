@@ -381,7 +381,7 @@ export function OmniCommandPalette({
 
               {/* Tag categories */}
               {tagCategories
-                .filter(cat => !cat.isCollection) // Don't show collection in card settings
+                .filter(cat => !cat.isCollection && !cat.isRating) // Don't show collection or rating in card settings
                 .map((category: any) => {
                   const isVisible = visibleCardTags.length === 0 || visibleCardTags.includes(category.id)
                   return (

@@ -18,6 +18,9 @@ export const tagCategories = pgTable("tag_categories", {
   permissions: jsonb("permissions"), // Permission rules per tag value: { "tagName": { viewers: [], editors: [] } }
   defaultViewConfig: jsonb("default_view_config"), // Default view settings per tag value: { "tagName": { groupBy, hideTags, showTags } }
 
+  // Rating-specific fields
+  isRating: boolean("is_rating").notNull().default(false), // Marks this category as a star rating system
+
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()

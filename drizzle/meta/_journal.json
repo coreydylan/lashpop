@@ -71,6 +71,13 @@
       "when": 1762910290342,
       "tag": "0009_familiar_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1762918000000,
+      "tag": "0010_add_rating_field",
+      "breakpoints": true
     }
   ]
 }

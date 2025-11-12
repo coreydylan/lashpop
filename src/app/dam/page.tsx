@@ -1683,7 +1683,7 @@ export default function DAMPage() {
 
       {isTagEditorOpen && (
         <TagEditor
-          categories={tagCategories}
+          categories={tagCategories.filter(cat => !cat.isCollection && !cat.isRating)}
           onSave={async (updatedCategories) => {
             try {
               // Save to database
