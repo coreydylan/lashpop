@@ -117,7 +117,7 @@ export function AssetGrid({
     // Combine with base selection if adding (Cmd/Ctrl held)
     let newSelection: string[]
     if (isAddingToSelection) {
-      const combined = new Set([...baseSelection, ...intersectingAssets])
+      const combined = new Set([...baseSelection, ...Array.from(intersectingAssets)])
       newSelection = Array.from(combined)
     } else {
       newSelection = Array.from(intersectingAssets)
