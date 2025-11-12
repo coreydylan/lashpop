@@ -421,6 +421,21 @@ export function AssetGrid({
       // If we clicked inside the grid, let the grid handle it
       if (isInsideGrid) return
 
+      // Don't clear selection if clicking on UI controls
+      // Check if clicking on omni bar, chips, buttons, or any interactive elements
+      const isUIControl = target.closest('[data-omni-bar]') || // OmniBar container
+                          target.closest('.omni-bar') ||
+                          target.closest('[role="button"]') ||
+                          target.closest('button') ||
+                          target.closest('.arch-full') || // Chips have this class
+                          target.closest('.filter-selector') ||
+                          target.closest('[data-command-palette]')
+
+      if (isUIControl) {
+        console.log('Clicked on UI control, not clearing selection')
+        return
+      }
+
       // Otherwise, start a drag from empty space
       const clientX = e.clientX
       const clientY = e.clientY

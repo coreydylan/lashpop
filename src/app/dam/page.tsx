@@ -1181,7 +1181,7 @@ export default function DAMPage() {
               return (
                 <div
                   key={tagId}
-                  className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
+                  className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''} ${isPending ? 'candy-cane-effect' : ''}`}
                   style={{
                     background: getTagColor("#BCC9C2", false)
                   }}
@@ -1197,7 +1197,7 @@ export default function DAMPage() {
                         confirmTagRemoval()
                       }}
                       onMouseLeave={cancelTagRemoval}
-                      className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all animate-pulse ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
+                      className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
                     >
                       <X className="w-4 h-4 text-cream animate-bounce" />
                       <span className="text-sm text-cream font-semibold">
@@ -1208,8 +1208,15 @@ export default function DAMPage() {
                     <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                       <button
                         onClick={(e) => {
+                          console.log('X button clicked for team member, selectedAssets:', selectedAssets)
                           e.stopPropagation()
+                          e.preventDefault()
                           requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
+                        }}
+                        onMouseDown={(e) => {
+                          // Prevent any default mouse down behavior
+                          e.stopPropagation()
+                          e.preventDefault()
                         }}
                         className="flex items-center gap-1 hover:bg-black/10 rounded px-1 -ml-1 transition-colors"
                       >
@@ -1245,7 +1252,7 @@ export default function DAMPage() {
             return (
               <div
                 key={tagId}
-                className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''}`}
+                className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''} ${isPending ? 'candy-cane-effect' : ''}`}
                 style={{
                   background: getTagColor(tag.category.color, false)
                 }}
@@ -1261,7 +1268,7 @@ export default function DAMPage() {
                       confirmTagRemoval()
                     }}
                     onMouseLeave={cancelTagRemoval}
-                    className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all animate-pulse ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
+                    className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
                   >
                     <X className="w-4 h-4 text-cream animate-bounce" />
                     <span className="text-sm text-cream font-semibold">
@@ -1272,8 +1279,15 @@ export default function DAMPage() {
                   <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                     <button
                       onClick={(e) => {
+                        console.log('X button clicked for tag, selectedAssets:', selectedAssets)
                         e.stopPropagation()
+                        e.preventDefault()
                         requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")
+                      }}
+                      onMouseDown={(e) => {
+                        // Prevent any default mouse down behavior
+                        e.stopPropagation()
+                        e.preventDefault()
                       }}
                       className="flex items-center gap-1 hover:bg-black/10 rounded px-1 -ml-1 transition-colors"
                     >
