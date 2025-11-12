@@ -87,6 +87,10 @@ export function AssetGrid({
     }
   }, [isDragging, mouseDownPosition, currentMousePosition])
 
+  // Track if we're adding to selection (Cmd/Ctrl held)
+  const [isAddingToSelection, setIsAddingToSelection] = useState(false)
+  const [baseSelection, setBaseSelection] = useState<string[]>([])
+
   // Check which assets intersect with the selection box
   useEffect(() => {
     if (!selectionBox || !isDragging || !onSelectionChange) return
@@ -110,13 +114,20 @@ export function AssetGrid({
       }
     })
 
-    // Update selection
-    const newSelection = Array.from(intersectingAssets)
+    // Combine with base selection if adding (Cmd/Ctrl held)
+    let newSelection: string[]
+    if (isAddingToSelection) {
+      const combined = new Set([...baseSelection, ...intersectingAssets])
+      newSelection = Array.from(combined)
+    } else {
+      newSelection = Array.from(intersectingAssets)
+    }
+
     if (newSelection.length !== selectedAssetIds.length ||
         !newSelection.every(id => selectedAssetIds.includes(id))) {
       onSelectionChange(newSelection)
     }
-  }, [selectionBox, isDragging, onSelectionChange, selectedAssetIds])
+  }, [selectionBox, isDragging, onSelectionChange, selectedAssetIds, isAddingToSelection, baseSelection])
 
   // Group assets based on groupByCategories
   const groupedAssets = useMemo<Record<string, GroupBucket>>(() => {
@@ -221,15 +232,12 @@ export function AssetGrid({
       const nextSelection = new Set(selectedAssetIds)
       const wasSelected = nextSelection.has(assetId)
       if (wasSelected) {
-        console.log('Deselecting asset:', assetId)
         nextSelection.delete(assetId)
       } else {
-        console.log('Selecting asset:', assetId)
         nextSelection.add(assetId)
       }
 
       const nextArray = Array.from(nextSelection)
-      console.log('New selection:', nextArray)
       setIsSelectionMode(nextArray.length > 0)
       onSelectionChange(nextArray)
       setLastClickedAssetId(assetId)
@@ -273,11 +281,8 @@ export function AssetGrid({
 
   const handleAssetClick = useCallback(
     (asset: Asset, event: React.MouseEvent) => {
-      console.log('handleAssetClick called', { assetId: asset.id, isDragging, isSelectionMode })
-
       // If we're dragging, don't process clicks
       if (isDragging) {
-        console.log('Click blocked: currently dragging')
         event.preventDefault()
         event.stopPropagation()
         return
@@ -285,7 +290,6 @@ export function AssetGrid({
 
       // Shift + Click: Range selection
       if (!isTouchDevice && event.shiftKey) {
-        console.log('Shift+Click: range selection')
         event.preventDefault()
         event.stopPropagation()
         setIsSelectionMode(true)
@@ -295,7 +299,6 @@ export function AssetGrid({
 
       // Desktop multi-select: Cmd/Ctrl + Click
       if (!isTouchDevice && (event.metaKey || event.ctrlKey)) {
-        console.log('Cmd/Ctrl+Click: toggle selection')
         event.preventDefault()
         event.stopPropagation()
         setIsSelectionMode(true)
@@ -305,14 +308,12 @@ export function AssetGrid({
 
       // If in selection mode, toggle selection
       if (isSelectionMode) {
-        console.log('In selection mode: toggling', asset.id)
         event.preventDefault()
         event.stopPropagation()
         toggleSelection(asset.id)
         return
       }
 
-      console.log('Not in selection mode, PhotoView will handle')
       // Otherwise, PhotoView will handle opening the viewer
     },
     [isSelectionMode, isTouchDevice, toggleSelection, selectRange, isDragging]
@@ -332,14 +333,20 @@ export function AssetGrid({
   // Handle potential drag start (mousedown)
   const handleMouseDown = useCallback(
     (assetId: string, event: React.MouseEvent | React.TouchEvent) => {
-      console.log('handleMouseDown called', { assetId, isSelectionMode })
-
       // Record position for potential drag (for both selection mode and normal mode)
       const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX
       const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
-      console.log('Recording potential drag position', { x: clientX, y: clientY })
       setMouseDownPosition({ x: clientX, y: clientY })
       setPotentialDragAssetId(assetId)
+
+      // Check if Cmd/Ctrl is held to add to selection
+      const isModifierPressed = 'metaKey' in event && (event.metaKey || event.ctrlKey)
+      setIsAddingToSelection(isModifierPressed)
+      if (isModifierPressed) {
+        setBaseSelection([...selectedAssetIds])
+      } else {
+        setBaseSelection([])
+      }
     },
     [isSelectionMode, selectedAssetIds, toggleSelection]
   )
@@ -347,7 +354,6 @@ export function AssetGrid({
   // Handle drag selection start
   const handleDragStart = useCallback(
     (assetId: string) => {
-      console.log('handleDragStart called', assetId)
       setIsDragging(true)
       setIsSelectionMode(true)
       setDragStartAssetId(assetId)
@@ -369,9 +375,7 @@ export function AssetGrid({
   // Handle drag over asset
   const handleDragOver = useCallback(
     (assetId: string) => {
-      console.log('handleDragOver called', { assetId, isDragging })
       if (isDragging && !draggedOverAssets.has(assetId)) {
-        console.log('Adding asset to dragged selection', assetId)
         setDraggedOverAssets(prev => {
           const next = new Set(prev)
           next.add(assetId)
@@ -389,17 +393,46 @@ export function AssetGrid({
 
   // Handle drag end
   const handleDragEnd = useCallback(() => {
-    console.log('handleDragEnd called')
     setIsDragging(false)
     setDragStartAssetId(null)
     setDraggedOverAssets(new Set())
     setMouseDownPosition(null)
     setCurrentMousePosition(null)
     setPotentialDragAssetId(null)
+    setIsAddingToSelection(false)
+    setBaseSelection([])
   }, [])
 
   // Add global listeners for drag start detection and drag end
   useEffect(() => {
+    const handleGlobalMouseDown = (e: MouseEvent) => {
+      // Allow starting drag from anywhere on the page
+      const target = e.target as HTMLElement
+      const isInsideGrid = target.closest('[data-asset-grid]')
+
+      // If we clicked inside the grid, let the grid handle it
+      if (isInsideGrid) return
+
+      // Otherwise, start a drag from empty space
+      const clientX = e.clientX
+      const clientY = e.clientY
+      setMouseDownPosition({ x: clientX, y: clientY })
+      setPotentialDragAssetId('empty')
+
+      // Check if Cmd/Ctrl is held to add to selection
+      setIsAddingToSelection(e.metaKey || e.ctrlKey)
+      if (e.metaKey || e.ctrlKey) {
+        setBaseSelection([...selectedAssetIds])
+      } else {
+        setBaseSelection([])
+        // Clear selection if not holding Cmd/Ctrl
+        if (onSelectionChange) {
+          onSelectionChange([])
+          setIsSelectionMode(false)
+        }
+      }
+    }
+
     const handleGlobalMouseMove = (e: MouseEvent) => {
       // Update current mouse position if we have a potential drag
       if (mouseDownPosition) {
@@ -411,11 +444,8 @@ export function AssetGrid({
         const deltaX = Math.abs(e.clientX - mouseDownPosition.x)
         const deltaY = Math.abs(e.clientY - mouseDownPosition.y)
         const DRAG_THRESHOLD = 5 // pixels
-        console.log('Mouse moved', { deltaX, deltaY, threshold: DRAG_THRESHOLD })
-
         if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
           // Start drag selection
-          console.log('Starting drag from global mousemove')
           handleDragStart(potentialDragAssetId)
           setPotentialDragAssetId(null)
         }
@@ -428,16 +458,18 @@ export function AssetGrid({
       }
     }
 
+    window.addEventListener('mousedown', handleGlobalMouseDown)
     window.addEventListener('mousemove', handleGlobalMouseMove)
     window.addEventListener('mouseup', handleGlobalDragEnd)
     window.addEventListener('touchend', handleGlobalDragEnd)
 
     return () => {
+      window.removeEventListener('mousedown', handleGlobalMouseDown)
       window.removeEventListener('mousemove', handleGlobalMouseMove)
       window.removeEventListener('mouseup', handleGlobalDragEnd)
       window.removeEventListener('touchend', handleGlobalDragEnd)
     }
-  }, [isDragging, potentialDragAssetId, mouseDownPosition, handleDragEnd, handleDragStart])
+  }, [isDragging, potentialDragAssetId, mouseDownPosition, handleDragEnd, handleDragStart, selectedAssetIds, onSelectionChange])
 
   const findSampleAsset = (bucket: GroupBucket): Asset | undefined => {
     if (bucket.assets.length > 0) {
@@ -573,6 +605,7 @@ export function AssetGrid({
   return (
     <div
       ref={containerRef}
+      data-asset-grid="true"
       className={`w-full relative ${isDragging ? 'dragging-selection' : ''}`}
       onMouseDown={(e) => {
         // Allow starting drag from anywhere in the container
@@ -580,18 +613,26 @@ export function AssetGrid({
         const assetCard = (e.target as HTMLElement).closest('[data-asset-id]')
 
         if (!assetCard) {
-          // Clicked on empty space
+          // Clicked on empty space in grid
           const clientX = e.clientX
           const clientY = e.clientY
-          console.log('Starting drag from empty space', { x: clientX, y: clientY })
           setMouseDownPosition({ x: clientX, y: clientY })
           setPotentialDragAssetId('empty')
 
-          // Clear selection if not holding Cmd/Ctrl
-          if (!e.metaKey && !e.ctrlKey && onSelectionChange) {
-            onSelectionChange([])
-            setIsSelectionMode(false)
+          // Check if Cmd/Ctrl is held to add to selection
+          setIsAddingToSelection(e.metaKey || e.ctrlKey)
+          if (e.metaKey || e.ctrlKey) {
+            setBaseSelection([...selectedAssetIds])
+          } else {
+            setBaseSelection([])
+            // Clear selection if not holding Cmd/Ctrl
+            if (onSelectionChange) {
+              onSelectionChange([])
+              setIsSelectionMode(false)
+            }
           }
+
+          e.stopPropagation() // Prevent global handler from also firing
         }
       }}
     >
