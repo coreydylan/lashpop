@@ -67,6 +67,9 @@ export function AssetGrid({
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartAssetId, setDragStartAssetId] = useState<string | null>(null)
   const [draggedOverAssets, setDraggedOverAssets] = useState<Set<string>>(new Set())
+  const [lastClickedAssetId, setLastClickedAssetId] = useState<string | null>(null)
+  const [mouseDownPosition, setMouseDownPosition] = useState<{ x: number; y: number } | null>(null)
+  const [potentialDragAssetId, setPotentialDragAssetId] = useState<string | null>(null)
   const selectedAssetSet = useMemo(() => new Set(selectedAssetIds), [selectedAssetIds])
 
   // Group assets based on groupByCategories
@@ -135,6 +138,27 @@ export function AssetGrid({
     return groups
   }, [assets, groupByCategories])
 
+  // Flatten all assets in display order for range selection
+  const flattenedAssets = useMemo(() => {
+    const flatten = (bucket: GroupBucket): Asset[] => {
+      const result: Asset[] = [...bucket.assets]
+      Object.values(bucket.children).forEach(child => {
+        result.push(...flatten(child))
+      })
+      return result
+    }
+
+    if (groupByCategories.length === 0) {
+      return assets
+    }
+
+    const result: Asset[] = []
+    Object.values(groupedAssets).forEach(bucket => {
+      result.push(...flatten(bucket))
+    })
+    return result
+  }, [assets, groupedAssets, groupByCategories.length])
+
   // Detect touch device
   useEffect(() => {
     setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0)
@@ -158,8 +182,43 @@ export function AssetGrid({
       const nextArray = Array.from(nextSelection)
       setIsSelectionMode(nextArray.length > 0)
       onSelectionChange(nextArray)
+      setLastClickedAssetId(assetId)
     },
     [onSelectionChange, selectedAssetIds]
+  )
+
+  const selectRange = useCallback(
+    (assetId: string) => {
+      if (!onSelectionChange || !lastClickedAssetId) {
+        // No previous selection, just toggle this one
+        toggleSelection(assetId)
+        return
+      }
+
+      // Find indices of both assets in the flattened list
+      const currentIndex = flattenedAssets.findIndex(a => a.id === assetId)
+      const lastIndex = flattenedAssets.findIndex(a => a.id === lastClickedAssetId)
+
+      if (currentIndex === -1 || lastIndex === -1) {
+        toggleSelection(assetId)
+        return
+      }
+
+      // Select all assets between the two indices (inclusive)
+      const startIndex = Math.min(currentIndex, lastIndex)
+      const endIndex = Math.max(currentIndex, lastIndex)
+      const rangeAssetIds = flattenedAssets
+        .slice(startIndex, endIndex + 1)
+        .map(a => a.id)
+
+      // Add range to existing selection
+      const nextSelection = new Set([...selectedAssetIds, ...rangeAssetIds])
+      const nextArray = Array.from(nextSelection)
+      setIsSelectionMode(true)
+      onSelectionChange(nextArray)
+      setLastClickedAssetId(assetId)
+    },
+    [onSelectionChange, lastClickedAssetId, flattenedAssets, selectedAssetIds, toggleSelection]
   )
 
   const handleAssetClick = useCallback(
@@ -168,6 +227,15 @@ export function AssetGrid({
       if (isDragging) {
         event.preventDefault()
         event.stopPropagation()
+        return
+      }
+
+      // Shift + Click: Range selection
+      if (!isTouchDevice && event.shiftKey) {
+        event.preventDefault()
+        event.stopPropagation()
+        setIsSelectionMode(true)
+        selectRange(asset.id)
         return
       }
 
@@ -188,7 +256,7 @@ export function AssetGrid({
       }
       // Otherwise, PhotoView will handle opening the viewer
     },
-    [isSelectionMode, isTouchDevice, toggleSelection, isDragging]
+    [isSelectionMode, isTouchDevice, toggleSelection, selectRange, isDragging]
   )
 
   const handleLongPress = useCallback(
@@ -202,31 +270,65 @@ export function AssetGrid({
     [isTouchDevice, toggleSelection]
   )
 
-  // Handle drag selection start
-  const handleDragStart = useCallback(
+  // Handle potential drag start (mousedown)
+  const handleMouseDown = useCallback(
     (assetId: string, event: React.MouseEvent | React.TouchEvent) => {
-      // Only start drag if in selection mode or holding Shift
+      // If in selection mode or holding shift, start drag immediately
       const isShiftPressed = 'shiftKey' in event && event.shiftKey
-
       if (isSelectionMode || isShiftPressed) {
         event.preventDefault()
         setIsDragging(true)
         setIsSelectionMode(true)
         setDragStartAssetId(assetId)
         setDraggedOverAssets(new Set([assetId]))
-
-        // Add the first asset to selection
         if (!selectedAssetIds.includes(assetId)) {
           toggleSelection(assetId)
         }
+        return
       }
+
+      // Otherwise, record position for potential drag
+      const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX
+      const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
+      setMouseDownPosition({ x: clientX, y: clientY })
+      setPotentialDragAssetId(assetId)
     },
     [isSelectionMode, selectedAssetIds, toggleSelection]
   )
 
+  // Handle drag selection start
+  const handleDragStart = useCallback(
+    (assetId: string) => {
+      setIsDragging(true)
+      setIsSelectionMode(true)
+      setDragStartAssetId(assetId)
+      setDraggedOverAssets(new Set([assetId]))
+
+      // Add the first asset to selection
+      if (!selectedAssetIds.includes(assetId)) {
+        toggleSelection(assetId)
+      }
+    },
+    [selectedAssetIds, toggleSelection]
+  )
+
   // Handle drag over asset
   const handleDragOver = useCallback(
-    (assetId: string) => {
+    (assetId: string, event?: React.MouseEvent) => {
+      // Check if we should start dragging based on mouse movement
+      if (!isDragging && potentialDragAssetId && mouseDownPosition && event) {
+        const deltaX = Math.abs(event.clientX - mouseDownPosition.x)
+        const deltaY = Math.abs(event.clientY - mouseDownPosition.y)
+        const DRAG_THRESHOLD = 5 // pixels
+
+        if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
+          // Start drag selection
+          handleDragStart(potentialDragAssetId)
+          setMouseDownPosition(null)
+          setPotentialDragAssetId(null)
+        }
+      }
+
       if (isDragging && !draggedOverAssets.has(assetId)) {
         setDraggedOverAssets(prev => {
           const next = new Set(prev)
@@ -240,7 +342,7 @@ export function AssetGrid({
         }
       }
     },
-    [isDragging, draggedOverAssets, selectedAssetIds, toggleSelection]
+    [isDragging, draggedOverAssets, selectedAssetIds, toggleSelection, potentialDragAssetId, mouseDownPosition, handleDragStart]
   )
 
   // Handle drag end
@@ -248,6 +350,8 @@ export function AssetGrid({
     setIsDragging(false)
     setDragStartAssetId(null)
     setDraggedOverAssets(new Set())
+    setMouseDownPosition(null)
+    setPotentialDragAssetId(null)
   }, [])
 
   // Add global listeners for drag end
@@ -372,9 +476,10 @@ export function AssetGrid({
                   gridViewMode={gridViewMode}
                   onClick={(e) => handleAssetClick(asset, e)}
                   onLongPress={() => handleLongPress(asset.id)}
-                  onDragStart={(e) => handleDragStart(asset.id, e)}
-                  onDragOver={() => handleDragOver(asset.id)}
+                  onMouseDown={(e) => handleMouseDown(asset.id, e)}
+                  onDragOver={(e) => handleDragOver(asset.id, e)}
                   isDragging={isDragging}
+                  isDraggedOver={draggedOverAssets.has(asset.id)}
                   visibleCardTags={visibleCardTags}
                   teamMembers={teamMembers}
                 />
@@ -399,7 +504,7 @@ export function AssetGrid({
       {!isTouchDevice && !isSelectionMode && assets.length > 0 && (
         <div className="mb-4 text-center">
           <p className="caption text-sage">
-            {navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl'} + Click to select • Shift + Drag to select multiple
+            Click + Drag to select • {navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl'} + Click to toggle • Shift + Click for range
           </p>
         </div>
       )}
@@ -425,9 +530,10 @@ export function AssetGrid({
               gridViewMode={gridViewMode}
               onClick={(e) => handleAssetClick(asset, e)}
               onLongPress={() => handleLongPress(asset.id)}
-              onDragStart={(e) => handleDragStart(asset.id, e)}
-              onDragOver={() => handleDragOver(asset.id)}
+              onMouseDown={(e) => handleMouseDown(asset.id, e)}
+              onDragOver={(e) => handleDragOver(asset.id, e)}
               isDragging={isDragging}
+              isDraggedOver={draggedOverAssets.has(asset.id)}
               visibleCardTags={visibleCardTags}
               teamMembers={teamMembers}
             />
@@ -446,9 +552,10 @@ interface AssetCardProps {
   gridViewMode: "square" | "aspect"
   onClick: (event: React.MouseEvent) => void
   onLongPress: () => void
-  onDragStart: (event: React.MouseEvent | React.TouchEvent) => void
-  onDragOver: () => void
+  onMouseDown: (event: React.MouseEvent | React.TouchEvent) => void
+  onDragOver: (event: React.MouseEvent) => void
   isDragging: boolean
+  isDraggedOver: boolean
   visibleCardTags?: string[]
   teamMembers?: TeamMember[]
 }
@@ -461,9 +568,10 @@ function AssetCard({
   gridViewMode,
   onClick,
   onLongPress,
-  onDragStart,
+  onMouseDown,
   onDragOver,
   isDragging,
+  isDraggedOver,
   visibleCardTags = [],
   teamMembers = []
 }: AssetCardProps) {
@@ -531,9 +639,11 @@ function AssetCard({
 
   return (
     <div
-      className={`relative arch-full overflow-hidden bg-warm-sand/40 group cursor-pointer touch-manipulation shadow-sm hover:shadow-lg transition-shadow ${
+      className={`relative arch-full overflow-hidden bg-warm-sand/40 group cursor-pointer touch-manipulation shadow-sm hover:shadow-lg transition-all ${
         gridViewMode === "square" ? "aspect-square" : "break-inside-avoid mb-3 sm:mb-4"
-      } ${isSelected ? "ring-4 ring-dusty-rose/80" : ""} ${isDragging ? "pointer-events-none" : ""}`}
+      } ${isSelected ? "ring-4 ring-dusty-rose/80" : ""} ${isDragging ? "pointer-events-none" : ""} ${
+        isDraggedOver && !isSelected ? "ring-2 ring-dusty-rose/50 scale-95" : ""
+      }`}
       style={{
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
@@ -541,26 +651,27 @@ function AssetCard({
       }}
       onClick={onClick}
       onMouseDown={(e) => {
-        if (e.shiftKey || isSelectionMode) {
-          onDragStart(e)
-        } else {
-          handleTouchStart(e as any)
-        }
+        onMouseDown(e)
       }}
       onTouchStart={(e) => {
         if (isSelectionMode) {
-          onDragStart(e)
+          onMouseDown(e)
         } else {
           handleTouchStart(e)
         }
       }}
-      onMouseEnter={() => onDragOver()}
+      onMouseEnter={(e) => onDragOver(e)}
       onTouchMove={(e) => {
         // Get the element at the touch point
         const touch = e.touches[0]
         const element = document.elementFromPoint(touch.clientX, touch.clientY)
         if (element && element.closest('.dam-grid > div')) {
-          onDragOver()
+          // Create a synthetic mouse event for consistency
+          const syntheticEvent = {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+          } as React.MouseEvent
+          onDragOver(syntheticEvent)
         }
       }}
       onTouchEnd={handleTouchEnd}
@@ -586,6 +697,10 @@ function AssetCard({
       )}
       {isSelectionMode && isSelected && (
         <div className="absolute inset-0 bg-dusty-rose/15 pointer-events-none" />
+      )}
+      {/* Drag over indicator */}
+      {isDraggedOver && !isSelected && (
+        <div className="absolute inset-0 bg-dusty-rose/25 pointer-events-none animate-pulse" />
       )}
 
       {/* Tags and Team Member badges */}
