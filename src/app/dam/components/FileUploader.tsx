@@ -17,6 +17,11 @@ type FileRejection = "UNSUPPORTED_TYPE" | "FILE_TOO_LARGE"
 
 interface UploadedAsset {
   id: string
+  fileName: string
+  filePath: string
+  fileType: "image" | "video"
+  uploadedAt: Date
+  teamMemberId?: string
   [key: string]: any
 }
 
