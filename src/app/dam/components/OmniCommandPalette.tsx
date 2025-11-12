@@ -344,16 +344,16 @@ export function OmniCommandPalette({
                     onClick={() => {
                       if (!onVisibleCardTagsChange) return
 
-                      if (visibleCardTags.length === 0) {
-                        // If showing all, switch to showing only this one
-                        onVisibleCardTagsChange(['team'])
-                      } else if (isVisible) {
+                      if (isVisible && visibleCardTags.includes('team')) {
                         // Remove team member
                         const newVisible = visibleCardTags.filter(id => id !== 'team')
                         onVisibleCardTagsChange(newVisible)
-                      } else {
+                      } else if (!isVisible) {
                         // Add team member
                         onVisibleCardTagsChange([...visibleCardTags, 'team'])
+                      } else {
+                        // Was showing all (empty array), now show only team
+                        onVisibleCardTagsChange(['team'])
                       }
                     }}
                     className="w-full flex items-center gap-3 rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left transition hover:border-dusty-rose/40 hover:shadow-sm"
@@ -390,16 +390,16 @@ export function OmniCommandPalette({
                       onClick={() => {
                         if (!onVisibleCardTagsChange) return
 
-                        if (visibleCardTags.length === 0) {
-                          // If showing all, switch to showing only this one
-                          onVisibleCardTagsChange([category.id])
-                        } else if (isVisible) {
+                        if (isVisible && visibleCardTags.includes(category.id)) {
                           // Remove this category
                           const newVisible = visibleCardTags.filter(id => id !== category.id)
                           onVisibleCardTagsChange(newVisible)
-                        } else {
+                        } else if (!isVisible) {
                           // Add this category
                           onVisibleCardTagsChange([...visibleCardTags, category.id])
+                        } else {
+                          // Was showing all (empty array), now show only this category
+                          onVisibleCardTagsChange([category.id])
                         }
                       }}
                       className="w-full flex items-center gap-3 rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left transition hover:border-dusty-rose/40 hover:shadow-sm"

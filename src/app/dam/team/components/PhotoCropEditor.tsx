@@ -53,39 +53,45 @@ const MIN_WIDTH_PERCENT: Record<CropType, number> = {
   closeUpCircle: 16
 }
 
+// Face offset from top of crop frame (0 = top, 0.5 = center, 1 = bottom)
+const FACE_OFFSET_FROM_TOP: Record<CropType, number> = {
+  closeUpCircle: 0.5,    // Face at center of circle
+  mediumCircle: 0.33,    // Face in top 1/3 of circle
+  square: 0.33,          // Face in top 1/3 of square
+  fullHorizontal: 0.33,  // Face in top 1/3 of frame
+  fullVertical: 0.33     // Face in top 1/3 of frame
+}
+
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
 
-const generateSuggestedCrops = (faceCenterX: number, faceCenterY: number): Record<CropType, CropData> => {
+const generateSuggestedCrops = (faceCenterX: number, faceCenterY: number, imageAspect: number): Record<CropType, CropData> => {
   const safeFaceX = clamp(faceCenterX, 8, 92)
   const safeFaceY = clamp(faceCenterY, 8, 92)
 
-  return {
-    fullVertical: {
-      x: clamp(safeFaceX * 0.5 + 50 * 0.5, 40, 60),
-      y: 66.67, // Face at 1/3 from bottom (2/3 from top)
-      scale: 0.7
-    },
-    fullHorizontal: {
-      x: clamp(safeFaceX + 4, 30, 70),
-      y: clamp(safeFaceY - 6, 28, 70),
-      scale: 0.7
-    },
-    square: {
+  const crops: Record<CropType, CropData> = {} as Record<CropType, CropData>
+
+  // Generate crops for each type
+  ;(Object.keys(CROP_CONFIGS) as CropType[]).forEach((type) => {
+    const scale = type === 'fullVertical' || type === 'fullHorizontal' ? 0.7 :
+                  type === 'mediumCircle' ? 0.8 :
+                  type === 'square' ? 1.0 :
+                  1.1 // closeUpCircle
+
+    // Calculate crop frame height to determine offset
+    const { heightPercent } = getCropBox(type, { x: 50, y: 50, scale }, imageAspect)
+
+    // Apply face offset: crop.y = faceCenterY + cropHeight * (0.5 - offset)
+    const offset = FACE_OFFSET_FROM_TOP[type]
+    const cropY = safeFaceY + heightPercent * (0.5 - offset)
+
+    crops[type] = {
       x: safeFaceX,
-      y: clamp(safeFaceY - 4, 32, 72),
-      scale: 1.0
-    },
-    mediumCircle: {
-      x: safeFaceX,
-      y: clamp(safeFaceY - 8, 30, 68),
-      scale: 0.8
-    },
-    closeUpCircle: {
-      x: safeFaceX,
-      y: safeFaceY,
-      scale: 1.1
+      y: cropY,
+      scale
     }
-  }
+  })
+
+  return crops
 }
 
 const DEFAULT_CROPS: Record<CropType, CropData> = {
@@ -234,7 +240,7 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
   }
 
   const handleLoadSuggestedCrops = () => {
-    const suggested = generateSuggestedCrops(faceCenterX, faceCenterY)
+    const suggested = generateSuggestedCrops(faceCenterX, faceCenterY, safeAspect)
     setCrops((prev) => {
       const next = { ...prev }
       ;(Object.keys(suggested) as CropType[]).forEach((type) => {
