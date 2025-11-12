@@ -385,6 +385,7 @@ export default function DAMPage() {
     try {
       const response = await fetch("/api/dam/tags")
       const data = await response.json()
+      console.log('Fetched tag categories:', data.categories)
       setTagCategories(data.categories || [])
     } catch (error) {
       console.error("Failed to fetch tag categories:", error)

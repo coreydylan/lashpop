@@ -17,9 +17,11 @@ export async function GET() {
     // Fetch all tags
     const allTags = await db.select().from(tags).orderBy(asc(tags.sortOrder))
 
-    // Group tags by category
+    // Group tags by category, ensuring boolean fields are included
     const categoriesWithTags = categories.map((category) => ({
       ...category,
+      isCollection: category.isCollection || false,
+      isRating: category.isRating || false,
       tags: allTags.filter((tag) => tag.categoryId === category.id)
     }))
 

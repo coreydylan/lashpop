@@ -380,8 +380,10 @@ export function OmniCommandPalette({
               })()}
 
               {/* Tag categories */}
+              {console.log('Card visibility tagCategories:', tagCategories)}
+              {console.log('Filtered categories:', tagCategories.filter(cat => cat.isCollection !== true && cat.isRating !== true))}
               {tagCategories
-                .filter(cat => !cat.isCollection && !cat.isRating) // Don't show collection or rating in card settings
+                .filter(cat => cat.isCollection !== true && cat.isRating !== true) // Don't show collection or rating in card settings
                 .map((category: any) => {
                   const isVisible = visibleCardTags.length === 0 || visibleCardTags.includes(category.id)
                   return (
