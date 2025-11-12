@@ -6,6 +6,10 @@ import { uploadToS3, generateAssetKey } from "@/lib/dam/s3-client"
 // Allow 5 minute execution for large uploads
 export const maxDuration = 300
 
+// Increase body size limit to 50MB for image uploads
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()

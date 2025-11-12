@@ -10,10 +10,7 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
-  // Increase body size limit for file uploads (500MB)
-  serverRuntimeConfig: {
-    bodySizeLimit: '500mb',
-  },
+  // Note: Body size limits are configured in vercel.json for Vercel deployments
   // Configure API routes to handle large uploads
   async headers() {
     return [
