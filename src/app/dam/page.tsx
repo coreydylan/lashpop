@@ -1731,7 +1731,7 @@ export default function DAMPage() {
 
       {isCollectionManagerOpen && (
         <CollectionManager
-          collections={collections.map(c => ({
+          collections={collections.map((c: { id: string; name: string; displayName: string; color?: string }) => ({
             id: c.id,
             name: c.name,
             displayName: c.displayName,
