@@ -341,6 +341,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                       setEditValue(category.displayName)
                     }}
                     className="p-1.5 hover:bg-sage/10 rounded transition"
+                    title="Rename category"
                   >
                     <Edit2 className="w-3.5 h-3.5 text-sage/70" />
                   </button>
@@ -350,8 +351,26 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                       handleAddTag(category.id)
                     }}
                     className="p-1.5 hover:bg-sage/10 rounded transition"
+                    title="Add tag to category"
                   >
                     <Plus className="w-3.5 h-3.5 text-sage/70" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (window.confirm(`Delete category "${category.displayName}" and all its tags?`)) {
+                        setEditedCategories(prev => prev.filter(c => c.id !== category.id))
+                        setSelectedItems(prev => {
+                          const next = new Set(prev)
+                          next.delete(`cat-${category.id}`)
+                          return next
+                        })
+                      }
+                    }}
+                    className="p-1.5 hover:bg-red-50 rounded transition"
+                    title="Delete category"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
                   </button>
                 </div>
               </div>

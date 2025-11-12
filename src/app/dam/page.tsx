@@ -1626,10 +1626,29 @@ export default function DAMPage() {
       {isTagEditorOpen && (
         <TagEditor
           categories={tagCategories}
-          onSave={(updatedCategories) => {
-            setTagCategories(updatedCategories)
-            setIsTagEditorOpen(false)
-            // TODO: Save to database
+          onSave={async (updatedCategories) => {
+            try {
+              // Save to database
+              const response = await fetch("/api/dam/tags", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ categories: updatedCategories })
+              })
+
+              if (!response.ok) {
+                throw new Error("Failed to save tags")
+              }
+
+              // Refresh tag categories from database
+              const refreshResponse = await fetch("/api/dam/tags")
+              const refreshData = await refreshResponse.json()
+              setTagCategories(refreshData.categories || [])
+
+              setIsTagEditorOpen(false)
+            } catch (error) {
+              console.error("Error saving tags:", error)
+              alert("Failed to save tags. Please try again.")
+            }
           }}
           onClose={() => setIsTagEditorOpen(false)}
         />
