@@ -45,6 +45,12 @@ interface AssetGridProps {
   groupByCategories?: string[]
   teamMembers?: TeamMember[]
   visibleCardTags?: string[]
+  pendingTagRemoval?: {
+    tagId: string
+    assetIds: string[]
+    context: string
+  } | null
+  dissipatingTags?: Set<string>
 }
 
 interface GroupBucket {
@@ -60,7 +66,9 @@ export function AssetGrid({
   gridViewMode = "square",
   groupByCategories = [],
   teamMembers = [],
-  visibleCardTags = []
+  visibleCardTags = [],
+  pendingTagRemoval = null,
+  dissipatingTags = new Set()
 }: AssetGridProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(selectedAssetIds.length > 0)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
@@ -582,6 +590,8 @@ export function AssetGrid({
                   isDraggedOver={draggedOverAssets.has(asset.id)}
                   visibleCardTags={visibleCardTags}
                   teamMembers={teamMembers}
+                  pendingTagRemoval={pendingTagRemoval}
+                  dissipatingTags={dissipatingTags}
                   onRef={(el) => {
                     if (el) assetRefs.current.set(asset.id, el)
                     else assetRefs.current.delete(asset.id)
@@ -679,6 +689,8 @@ export function AssetGrid({
               isDraggedOver={draggedOverAssets.has(asset.id)}
               visibleCardTags={visibleCardTags}
               teamMembers={teamMembers}
+              pendingTagRemoval={pendingTagRemoval}
+              dissipatingTags={dissipatingTags}
               onRef={(el) => {
                 if (el) assetRefs.current.set(asset.id, el)
                 else assetRefs.current.delete(asset.id)
@@ -706,6 +718,12 @@ interface AssetCardProps {
   visibleCardTags?: string[]
   teamMembers?: TeamMember[]
   onRef?: (el: HTMLDivElement | null) => void
+  pendingTagRemoval?: {
+    tagId: string
+    assetIds: string[]
+    context: string
+  } | null
+  dissipatingTags?: Set<string>
 }
 
 function AssetCard({
@@ -722,7 +740,9 @@ function AssetCard({
   isDraggedOver,
   visibleCardTags = [],
   teamMembers = [],
-  onRef
+  onRef,
+  pendingTagRemoval = null,
+  dissipatingTags = new Set()
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
@@ -872,29 +892,48 @@ function AssetCard({
         return (
           <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5 z-10">
             {/* Team member badge */}
-            {teamMember && (
-              <span
-                className="px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden"
-                style={{
-                  background: 'linear-gradient(135deg, #C4A587 0%, #C4A587CC 100%)'
-                }}
-              >
-                {teamMember.name}
-              </span>
-            )}
+            {teamMember && (() => {
+              const teamTagId = `team-${asset.teamMemberId}`
+              const isPending = pendingTagRemoval &&
+                pendingTagRemoval.tagId === teamTagId &&
+                pendingTagRemoval.assetIds.includes(asset.id)
+              const isDissipating = dissipatingTags.has(teamTagId)
+
+              return (
+                <span
+                  className={`px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden ${
+                    isPending ? 'candy-cane-effect' : ''
+                  } ${isDissipating ? 'dissipate-effect' : ''}`}
+                  style={{
+                    background: 'linear-gradient(135deg, #C4A587 0%, #C4A587CC 100%)'
+                  }}
+                >
+                  {teamMember.name}
+                </span>
+              )
+            })()}
 
             {/* Tag badges */}
-            {displayedTags.slice(0, teamMember ? 1 : 2).map((tag) => (
-              <span
-                key={tag.id}
-                className="px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${tag.category.color || "#8A7C69"} 0%, ${tag.category.color || "#8A7C69"}CC 100%)`
-                }}
-              >
-                {tag.displayName}
-              </span>
-            ))}
+            {displayedTags.slice(0, teamMember ? 1 : 2).map((tag) => {
+              const isPending = pendingTagRemoval &&
+                pendingTagRemoval.tagId === tag.id &&
+                pendingTagRemoval.assetIds.includes(asset.id)
+              const isDissipating = dissipatingTags.has(tag.id)
+
+              return (
+                <span
+                  key={tag.id}
+                  className={`px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden ${
+                    isPending ? 'candy-cane-effect' : ''
+                  } ${isDissipating ? 'dissipate-effect' : ''}`}
+                  style={{
+                    background: `linear-gradient(135deg, ${tag.category.color || "#8A7C69"} 0%, ${tag.category.color || "#8A7C69"}CC 100%)`
+                  }}
+                >
+                  {tag.displayName}
+                </span>
+              )
+            })}
 
             {/* "+" badge for remaining tags */}
             {displayedTags.length > (teamMember ? 1 : 2) && (

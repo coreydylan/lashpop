@@ -130,6 +130,7 @@ export default function DAMPage() {
     count: number
     context: string
   } | null>(null)
+  const [dissipatingTags, setDissipatingTags] = useState<Set<string>>(new Set())
 
   // Upload panel state
   const [isUploadOpen, setIsUploadOpen] = useState(false)
@@ -317,7 +318,11 @@ export default function DAMPage() {
   }, [])
 
   useEffect(() => {
-    setPendingTagRemoval(null)
+    // Only clear pending tag removal if selection actually changed to empty
+    // Don't clear if we still have selections (which would happen during tag operations)
+    if (selectedAssets.length === 0) {
+      setPendingTagRemoval(null)
+    }
     setSingleTagDrafts([])
   }, [selectedAssets, activeLightboxAsset])
 
@@ -526,8 +531,22 @@ export default function DAMPage() {
 
   const confirmTagRemoval = async () => {
     if (!pendingTagRemoval) return
-    await handleRemoveTag(pendingTagRemoval.tagId, pendingTagRemoval.count, pendingTagRemoval.assetIds, true)
+
+    // Add tag to dissipating set for animation
+    setDissipatingTags(prev => new Set([...prev, pendingTagRemoval.tagId]))
     setPendingTagRemoval(null)
+
+    // Wait for animation to complete before actually removing
+    setTimeout(async () => {
+      await handleRemoveTag(pendingTagRemoval.tagId, pendingTagRemoval.count, pendingTagRemoval.assetIds, true)
+
+      // Clean up dissipating tag after removal
+      setDissipatingTags(prev => {
+        const next = new Set(prev)
+        next.delete(pendingTagRemoval.tagId)
+        return next
+      })
+    }, 600) // Match dissipate animation duration
   }
 
   const syncActiveLightboxAsset = useCallback((updatedAssets?: Asset[]) => {
@@ -1156,7 +1175,10 @@ export default function DAMPage() {
                 >
                   {isPending ? (
                     <button
-                      onClick={confirmTagRemoval}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        confirmTagRemoval()
+                      }}
                       onMouseLeave={cancelTagRemoval}
                       className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all animate-pulse ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
                     >
@@ -1168,7 +1190,10 @@ export default function DAMPage() {
                   ) : (
                     <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                       <button
-                        onClick={() => requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
+                        }}
                         className="flex items-center gap-1 hover:bg-black/10 rounded px-1 -ml-1 transition-colors"
                       >
                         <X className="w-3 h-3 text-cream" />
@@ -1210,7 +1235,10 @@ export default function DAMPage() {
               >
                 {isPending ? (
                   <button
-                    onClick={confirmTagRemoval}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      confirmTagRemoval()
+                    }}
                     onMouseLeave={cancelTagRemoval}
                     className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all animate-pulse ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
                   >
@@ -1222,7 +1250,10 @@ export default function DAMPage() {
                 ) : (
                   <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                     <button
-                      onClick={() => requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")
+                      }}
                       className="flex items-center gap-1 hover:bg-black/10 rounded px-1 -ml-1 transition-colors"
                     >
                       <X className="w-3 h-3 text-cream" />
@@ -1687,6 +1718,8 @@ export default function DAMPage() {
               groupByCategories={groupByTags}
               teamMembers={teamMembers}
               visibleCardTags={visibleCardTags}
+              pendingTagRemoval={pendingTagRemoval}
+              dissipatingTags={dissipatingTags}
             />
           )}
         </main>
