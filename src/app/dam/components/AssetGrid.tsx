@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useCallback, useEffect, useMemo, type ReactElement } from "react"
+import { useState, useCallback, useEffect, useMemo, useRef, type ReactElement } from "react"
 import { PhotoView } from "react-photo-view"
 
 interface Asset {
@@ -69,8 +69,22 @@ export function AssetGrid({
   const [draggedOverAssets, setDraggedOverAssets] = useState<Set<string>>(new Set())
   const [lastClickedAssetId, setLastClickedAssetId] = useState<string | null>(null)
   const [mouseDownPosition, setMouseDownPosition] = useState<{ x: number; y: number } | null>(null)
+  const [currentMousePosition, setCurrentMousePosition] = useState<{ x: number; y: number } | null>(null)
   const [potentialDragAssetId, setPotentialDragAssetId] = useState<string | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const selectedAssetSet = useMemo(() => new Set(selectedAssetIds), [selectedAssetIds])
+
+  // Calculate selection box bounds
+  const selectionBox = useMemo(() => {
+    if (!isDragging || !mouseDownPosition || !currentMousePosition) return null
+
+    return {
+      left: Math.min(mouseDownPosition.x, currentMousePosition.x),
+      top: Math.min(mouseDownPosition.y, currentMousePosition.y),
+      width: Math.abs(currentMousePosition.x - mouseDownPosition.x),
+      height: Math.abs(currentMousePosition.y - mouseDownPosition.y)
+    }
+  }, [isDragging, mouseDownPosition, currentMousePosition])
 
   // Group assets based on groupByCategories
   const groupedAssets = useMemo<Record<string, GroupBucket>>(() => {
@@ -343,12 +357,18 @@ export function AssetGrid({
     setDragStartAssetId(null)
     setDraggedOverAssets(new Set())
     setMouseDownPosition(null)
+    setCurrentMousePosition(null)
     setPotentialDragAssetId(null)
   }, [])
 
   // Add global listeners for drag start detection and drag end
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Update current mouse position if we have a potential drag
+      if (mouseDownPosition) {
+        setCurrentMousePosition({ x: e.clientX, y: e.clientY })
+      }
+
       // Check if we should start dragging based on mouse movement
       if (!isDragging && potentialDragAssetId && mouseDownPosition) {
         const deltaX = Math.abs(e.clientX - mouseDownPosition.x)
@@ -360,7 +380,6 @@ export function AssetGrid({
           // Start drag selection
           console.log('Starting drag from global mousemove')
           handleDragStart(potentialDragAssetId)
-          setMouseDownPosition(null)
           setPotentialDragAssetId(null)
         }
       }
@@ -511,7 +530,23 @@ export function AssetGrid({
   }
 
   return (
-    <div className={`w-full ${isDragging ? 'dragging-selection' : ''}`}>
+    <div ref={containerRef} className={`w-full relative ${isDragging ? 'dragging-selection' : ''}`}>
+      {/* Selection box overlay */}
+      {selectionBox && (
+        <div
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: `${selectionBox.left}px`,
+            top: `${selectionBox.top}px`,
+            width: `${selectionBox.width}px`,
+            height: `${selectionBox.height}px`,
+            border: '2px solid #D4A5A5',
+            backgroundColor: 'rgba(212, 165, 165, 0.1)',
+            borderRadius: '4px'
+          }}
+        />
+      )}
+
       {/* Helper text for desktop */}
       {!isTouchDevice && !isSelectionMode && assets.length > 0 && (
         <div className="mb-4 text-center">
