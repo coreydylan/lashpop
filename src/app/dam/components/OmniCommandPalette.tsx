@@ -334,6 +334,52 @@ export function OmniCommandPalette({
                 <h3 className="text-sm font-semibold text-dune mb-1">Card Tag Visibility</h3>
                 <p className="text-xs text-sage/70">Select which tags appear on asset thumbnails</p>
               </div>
+
+              {/* Team Member option */}
+              {(() => {
+                const isVisible = visibleCardTags.length === 0 || visibleCardTags.includes('team')
+                return (
+                  <button
+                    key="team"
+                    onClick={() => {
+                      if (!onVisibleCardTagsChange) return
+
+                      if (visibleCardTags.length === 0) {
+                        // If showing all, switch to showing only this one
+                        onVisibleCardTagsChange(['team'])
+                      } else if (isVisible) {
+                        // Remove team member
+                        const newVisible = visibleCardTags.filter(id => id !== 'team')
+                        onVisibleCardTagsChange(newVisible)
+                      } else {
+                        // Add team member
+                        onVisibleCardTagsChange([...visibleCardTags, 'team'])
+                      }
+                    }}
+                    className="w-full flex items-center gap-3 rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left transition hover:border-dusty-rose/40 hover:shadow-sm"
+                  >
+                    <div
+                      className="flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition"
+                      style={{
+                        borderColor: isVisible ? '#C4A587' : '#E5E0D8',
+                        backgroundColor: isVisible ? '#C4A587' : 'transparent'
+                      }}
+                    >
+                      {isVisible && (
+                        <svg className="w-3 h-3 text-cream" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-dune">Team Member</div>
+                      <div className="text-xs text-sage/70 mt-0.5">Show artist attribution on cards</div>
+                    </div>
+                  </button>
+                )
+              })()}
+
+              {/* Tag categories */}
               {tagCategories
                 .filter(cat => !cat.isCollection) // Don't show collection in card settings
                 .map((category: any) => {

@@ -376,6 +376,7 @@ export function AssetGrid({
                   onDragOver={() => handleDragOver(asset.id)}
                   isDragging={isDragging}
                   visibleCardTags={visibleCardTags}
+                  teamMembers={teamMembers}
                 />
               ))}
             </div>
@@ -428,6 +429,7 @@ export function AssetGrid({
               onDragOver={() => handleDragOver(asset.id)}
               isDragging={isDragging}
               visibleCardTags={visibleCardTags}
+              teamMembers={teamMembers}
             />
           ))}
         </div>
@@ -448,6 +450,7 @@ interface AssetCardProps {
   onDragOver: () => void
   isDragging: boolean
   visibleCardTags?: string[]
+  teamMembers?: TeamMember[]
 }
 
 function AssetCard({
@@ -461,7 +464,8 @@ function AssetCard({
   onDragStart,
   onDragOver,
   isDragging,
-  visibleCardTags = []
+  visibleCardTags = [],
+  teamMembers = []
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
@@ -584,18 +588,38 @@ function AssetCard({
         <div className="absolute inset-0 bg-dusty-rose/15 pointer-events-none" />
       )}
 
-      {/* Tags badge */}
-      {asset.tags && asset.tags.length > 0 && !isSelectionMode && (() => {
-        // Filter tags based on visibleCardTags setting
-        const displayedTags = visibleCardTags.length === 0
-          ? asset.tags
-          : asset.tags.filter(tag => visibleCardTags.includes(tag.category.id))
+      {/* Tags and Team Member badges */}
+      {!isSelectionMode && (() => {
+        // Check if we should show team member
+        const showTeamMember = (visibleCardTags.length === 0 || visibleCardTags.includes('team')) && asset.teamMemberId
+        const teamMember = showTeamMember ? teamMembers.find(tm => tm.id === asset.teamMemberId) : null
 
-        if (displayedTags.length === 0) return null
+        // Filter tags based on visibleCardTags setting
+        const displayedTags = asset.tags && asset.tags.length > 0
+          ? (visibleCardTags.length === 0
+              ? asset.tags
+              : asset.tags.filter(tag => visibleCardTags.includes(tag.category.id)))
+          : []
+
+        // Don't render anything if nothing to show
+        if (!teamMember && displayedTags.length === 0) return null
 
         return (
           <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5">
-            {displayedTags.slice(0, 2).map((tag) => (
+            {/* Team member badge */}
+            {teamMember && (
+              <span
+                className="px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, #C4A587 0%, #C4A587CC 100%)'
+                }}
+              >
+                {teamMember.name}
+              </span>
+            )}
+
+            {/* Tag badges */}
+            {displayedTags.slice(0, teamMember ? 1 : 2).map((tag) => (
               <span
                 key={tag.id}
                 className="px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden"
@@ -606,9 +630,11 @@ function AssetCard({
                 {tag.displayName}
               </span>
             ))}
-            {displayedTags.length > 2 && (
+
+            {/* "+" badge for remaining tags */}
+            {displayedTags.length > (teamMember ? 1 : 2) && (
               <span className="px-2 py-0.5 bg-dune/80 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium">
-                +{displayedTags.length - 2}
+                +{displayedTags.length - (teamMember ? 1 : 2)}
               </span>
             )}
           </div>
