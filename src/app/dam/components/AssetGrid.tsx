@@ -652,15 +652,6 @@ export function AssetGrid({
         />
       )}
 
-      {/* Helper text for desktop */}
-      {!isTouchDevice && !isSelectionMode && assets.length > 0 && (
-        <div className="mb-4 text-center">
-          <p className="caption text-sage">
-            Click + Drag to select • {navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl'} + Click to toggle • Shift + Click for range
-          </p>
-        </div>
-      )}
-
       {/* Grouped or regular grid */}
       {groupByCategories.length > 0 ? (
         <div className="space-y-8 mt-4">
@@ -874,18 +865,6 @@ function AssetCard({
                   return visibleCardTags.includes(categoryId)
                 }))
           : []
-
-        // Debug logging - more detailed
-        if (isSelectionMode && asset.tags && asset.tags.length > 0) {
-          console.log('Selection mode debug:', {
-            assetId: asset.id,
-            tags: asset.tags,
-            tagCategoryIds: asset.tags.map(t => t.category?.id || t.categoryId),
-            visibleCardTags,
-            displayedTags,
-            displayedCount: displayedTags.length
-          })
-        }
 
         // Don't render anything if nothing to show
         if (!teamMember && displayedTags.length === 0) return null
