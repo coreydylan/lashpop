@@ -174,7 +174,6 @@ export function FilterSelector({
       displayName: 'Team',
       color: '#BCC9C2',
       options: teamMembers
-        .filter(m => getOptionCount('team', m.id) > 0) // Only show team members with assets
         .map(m => ({
           id: m.id,
           name: m.name,
@@ -187,7 +186,6 @@ export function FilterSelector({
     ...categories.map(cat => ({
       ...cat,
       options: (cat.tags || [])
-        .filter(tag => getOptionCount(cat.id, tag.id) > 0) // Only show tags with assets
         .map(tag => ({
           id: tag.id,
           name: tag.name,
@@ -195,7 +193,7 @@ export function FilterSelector({
           count: getOptionCount(cat.id, tag.id)
         }))
     }))
-  ].filter(cat => cat.options && cat.options.length > 0) // Only show categories with options
+  ] // Show all categories and options, even with 0 count
   .map(cat => ({
     ...cat,
     count: cat.options.reduce((sum: number, opt: any) => sum + (opt.count || 0), 0)
