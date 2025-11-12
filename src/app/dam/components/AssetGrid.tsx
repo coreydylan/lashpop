@@ -875,7 +875,7 @@ function AssetCard({
         if (!teamMember && displayedTags.length === 0) return null
 
         return (
-          <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5">
+          <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5 z-10">
             {/* Team member badge */}
             {teamMember && (
               <span
