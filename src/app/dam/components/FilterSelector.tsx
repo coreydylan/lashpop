@@ -29,7 +29,7 @@ interface TeamMember {
     x: number
     y: number
     scale: number
-  }
+  } | null
 }
 
 interface FilterAsset {
