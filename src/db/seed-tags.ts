@@ -194,10 +194,14 @@ export async function seedTags() {
       console.log(`Category "${categoryData.category.displayName}" already exists, skipping...`)
       categoryId = existingCategory.id
     } else {
-      // Insert category
+      // Insert category (with isCollection and isRating defaulting to false)
       const [newCategory] = await db
         .insert(tagCategories)
-        .values(categoryData.category)
+        .values({
+          ...categoryData.category,
+          isCollection: false,
+          isRating: false
+        })
         .returning()
 
       categoryId = newCategory.id
