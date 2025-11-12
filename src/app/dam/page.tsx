@@ -1563,7 +1563,7 @@ export default function DAMPage() {
     >
       <div className="min-h-screen bg-cream">
         {/* Header - not sticky */}
-        <header className="bg-cream">
+        <header className="bg-cream select-none">
           <div className="max-w-7xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between">
               <div>
@@ -1601,7 +1601,7 @@ export default function DAMPage() {
         </header>
 
         {/* Sticky Omni Control Bar */}
-        <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm">
+        <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm select-none">
           <div className="max-w-7xl mx-auto px-6 pt-4">
             {/* Collection Selector */}
             {collections.length > 0 && (
@@ -1638,7 +1638,7 @@ export default function DAMPage() {
         <main className="max-w-7xl mx-auto px-6 py-8">
           {/* Collapsible Upload Section */}
           {isUploadOpen && (
-            <div className="mb-6">
+            <div className="mb-6 select-none">
               <FileUploader
                 onUploadComplete={handleUploadComplete}
                 onUploadingIdsChange={handleUploadingIdsChange}
