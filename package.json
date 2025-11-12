@@ -11,6 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:status": "drizzle-kit status",
+    "db:seed": "tsx src/db/seed-all.ts",
     "db:local": "supabase start",
     "db:stop": "supabase stop"
   },
