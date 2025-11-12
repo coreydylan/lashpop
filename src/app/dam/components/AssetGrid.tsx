@@ -319,11 +319,16 @@ export function AssetGrid({
       setIsDragging(true)
       setIsSelectionMode(true)
       setDragStartAssetId(assetId)
-      setDraggedOverAssets(new Set([assetId]))
 
-      // Add the first asset to selection
-      if (!selectedAssetIds.includes(assetId)) {
-        toggleSelection(assetId)
+      // If starting from an item (not empty space), select it
+      if (assetId !== 'empty') {
+        setDraggedOverAssets(new Set([assetId]))
+        // Add the first asset to selection
+        if (!selectedAssetIds.includes(assetId)) {
+          toggleSelection(assetId)
+        }
+      } else {
+        setDraggedOverAssets(new Set())
       }
     },
     [selectedAssetIds, toggleSelection]
@@ -530,7 +535,26 @@ export function AssetGrid({
   }
 
   return (
-    <div ref={containerRef} className={`w-full relative ${isDragging ? 'dragging-selection' : ''}`}>
+    <div
+      ref={containerRef}
+      className={`w-full relative ${isDragging ? 'dragging-selection' : ''}`}
+      onMouseDown={(e) => {
+        // Allow starting drag from empty space
+        if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('dam-grid')) {
+          const clientX = e.clientX
+          const clientY = e.clientY
+          console.log('Starting drag from empty space', { x: clientX, y: clientY })
+          setMouseDownPosition({ x: clientX, y: clientY })
+          setPotentialDragAssetId('empty')
+
+          // Clear selection if not holding Cmd/Ctrl
+          if (!e.metaKey && !e.ctrlKey && onSelectionChange) {
+            onSelectionChange([])
+            setIsSelectionMode(false)
+          }
+        }
+      }}
+    >
       {/* Selection box overlay */}
       {selectionBox && (
         <div
