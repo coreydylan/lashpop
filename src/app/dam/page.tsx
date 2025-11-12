@@ -1228,22 +1228,24 @@ export default function DAMPage() {
                         <span className="text-xs font-bold text-cream">{count}</span>
                       </button>
                       {teamMember.imageUrl && (
-                        <img
-                          src={teamMember.imageUrl}
-                          alt={teamMember.name}
-                          className="w-5 h-5 rounded-full object-cover border border-cream/30"
-                          style={
-                            teamMember.cropCloseUpCircle
-                              ? {
-                                  objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
-                                  transform: `scale(${teamMember.cropCloseUpCircle.scale})`
-                                }
-                              : {
-                                  objectPosition: 'center 25%',
-                                  transform: 'scale(2)'
-                                }
-                          }
-                        />
+                        <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
+                          <img
+                            src={teamMember.imageUrl}
+                            alt={teamMember.name}
+                            className="w-full h-full object-cover"
+                            style={
+                              teamMember.cropCloseUpCircle
+                                ? {
+                                    objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
+                                    transform: `scale(${teamMember.cropCloseUpCircle.scale})`
+                                  }
+                                : {
+                                    objectPosition: 'center 25%',
+                                    transform: 'scale(2)'
+                                  }
+                            }
+                          />
+                        </div>
                       )}
                       <span className="text-xs font-semibold text-cream uppercase tracking-wide">
                         Team
@@ -1343,22 +1345,24 @@ export default function DAMPage() {
               >
                 <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                   {isTeamTag && teamMember?.imageUrl && (
-                    <img
-                      src={teamMember.imageUrl}
-                      alt={tag.displayName}
-                      className="w-5 h-5 rounded-full object-cover border border-cream/30"
-                      style={
-                        teamMember.cropCloseUpCircle
-                          ? {
-                              objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
-                              transform: `scale(${teamMember.cropCloseUpCircle.scale})`
-                            }
-                          : {
-                              objectPosition: 'center 25%',
-                              transform: 'scale(2)'
-                            }
-                      }
-                    />
+                    <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
+                      <img
+                        src={teamMember.imageUrl}
+                        alt={tag.displayName}
+                        className="w-full h-full object-cover"
+                        style={
+                          teamMember.cropCloseUpCircle
+                            ? {
+                                objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
+                                transform: `scale(${teamMember.cropCloseUpCircle.scale})`
+                              }
+                            : {
+                                objectPosition: 'center 25%',
+                                transform: 'scale(2)'
+                              }
+                        }
+                      />
+                    </div>
                   )}
                   <button
                     onClick={() => handleGroupBy(tag.category.name)}
@@ -1507,11 +1511,24 @@ export default function DAMPage() {
             >
               <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
                 {teamMember.imageUrl && (
-                  <img
-                    src={teamMember.imageUrl}
-                    alt={teamMember.name}
-                    className="w-5 h-5 rounded-full object-cover border border-cream/30"
-                  />
+                  <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
+                    <img
+                      src={teamMember.imageUrl}
+                      alt={teamMember.name}
+                      className="w-full h-full object-cover"
+                      style={
+                        teamMember.cropCloseUpCircle
+                          ? {
+                              objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
+                              transform: `scale(${teamMember.cropCloseUpCircle.scale})`
+                            }
+                          : {
+                              objectPosition: 'center 25%',
+                              transform: 'scale(2)'
+                            }
+                      }
+                    />
+                  </div>
                 )}
                 <button
                   onClick={() => handleGroupBy("team")}
