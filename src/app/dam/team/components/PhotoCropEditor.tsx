@@ -62,38 +62,38 @@ const generateSuggestedCrops = (faceCenterX: number, faceCenterY: number): Recor
   return {
     fullVertical: {
       x: clamp(safeFaceX * 0.5 + 50 * 0.5, 40, 60),
-      y: clamp(safeFaceY - 12, 28, 68),
-      scale: 0.95
+      y: 66.67, // Face at 1/3 from bottom (2/3 from top)
+      scale: 0.7
     },
     fullHorizontal: {
       x: clamp(safeFaceX + 4, 30, 70),
       y: clamp(safeFaceY - 6, 28, 70),
-      scale: 1.15
+      scale: 0.7
     },
     square: {
       x: safeFaceX,
       y: clamp(safeFaceY - 4, 32, 72),
-      scale: 1.35
+      scale: 1.0
     },
     mediumCircle: {
       x: safeFaceX,
       y: clamp(safeFaceY - 8, 30, 68),
-      scale: 1.65
+      scale: 0.8
     },
     closeUpCircle: {
       x: safeFaceX,
       y: safeFaceY,
-      scale: 1.95
+      scale: 1.1
     }
   }
 }
 
 const DEFAULT_CROPS: Record<CropType, CropData> = {
-  fullVertical: { x: 50, y: 34, scale: 1 },
-  fullHorizontal: { x: 54, y: 42, scale: 1.1 },
-  square: { x: 50, y: 50, scale: 1.3 },
-  mediumCircle: { x: 50, y: 36, scale: 1.7 },
-  closeUpCircle: { x: 50, y: 34, scale: 1.9 }
+  fullVertical: { x: 50, y: 66.67, scale: 0.7 },
+  fullHorizontal: { x: 54, y: 42, scale: 0.7 },
+  square: { x: 50, y: 50, scale: 1.0 },
+  mediumCircle: { x: 50, y: 36, scale: 0.8 },
+  closeUpCircle: { x: 50, y: 34, scale: 1.1 }
 }
 
 const cloneDefaultCrops = (): Record<CropType, CropData> =>
