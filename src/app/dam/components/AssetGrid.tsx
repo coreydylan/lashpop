@@ -79,7 +79,7 @@ export function AssetGrid({
       for (const categoryName of groupByCategories) {
         if (categoryName === 'team') {
           if (asset.teamMemberId) {
-            path.push(`team_${asset.teamMemberId}`)
+            path.push(`team|${asset.teamMemberId}`)
             placed = true
           } else if (path.length === 0) {
             // If first level and no team, skip this asset for grouping
