@@ -75,7 +75,10 @@ export async function POST(request: NextRequest) {
           name: category.name,
           displayName: category.displayName,
           color: category.color,
-          sortOrder: 0
+          sortOrder: category.sortOrder ?? 0,
+          isCollection: category.isCollection ?? false,
+          isRating: category.isRating ?? false,
+          description: category.description
         }).returning()
 
         // Insert new tags for this category
