@@ -859,7 +859,7 @@ function AssetCard({
       )}
 
       {/* Tags and Team Member badges */}
-      {!isSelectionMode && (() => {
+      {(() => {
         // Check if we should show team member
         const showTeamMember = (visibleCardTags.length === 0 || visibleCardTags.includes('team')) && asset.teamMemberId
         const teamMember = showTeamMember ? teamMembers.find(tm => tm.id === asset.teamMemberId) : null
