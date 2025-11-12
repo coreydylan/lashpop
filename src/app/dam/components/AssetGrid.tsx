@@ -273,10 +273,13 @@ export function AssetGrid({
   // Handle potential drag start (mousedown)
   const handleMouseDown = useCallback(
     (assetId: string, event: React.MouseEvent | React.TouchEvent) => {
+      console.log('handleMouseDown called', { assetId, isSelectionMode })
+
       // If in selection mode or holding shift, start drag immediately
       const isShiftPressed = 'shiftKey' in event && event.shiftKey
       if (isSelectionMode || isShiftPressed) {
         event.preventDefault()
+        console.log('Starting drag immediately')
         setIsDragging(true)
         setIsSelectionMode(true)
         setDragStartAssetId(assetId)
@@ -290,6 +293,7 @@ export function AssetGrid({
       // Otherwise, record position for potential drag
       const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX
       const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
+      console.log('Recording potential drag position', { x: clientX, y: clientY })
       setMouseDownPosition({ x: clientX, y: clientY })
       setPotentialDragAssetId(assetId)
     },
@@ -299,6 +303,7 @@ export function AssetGrid({
   // Handle drag selection start
   const handleDragStart = useCallback(
     (assetId: string) => {
+      console.log('handleDragStart called', assetId)
       setIsDragging(true)
       setIsSelectionMode(true)
       setDragStartAssetId(assetId)
@@ -315,7 +320,9 @@ export function AssetGrid({
   // Handle drag over asset
   const handleDragOver = useCallback(
     (assetId: string) => {
+      console.log('handleDragOver called', { assetId, isDragging })
       if (isDragging && !draggedOverAssets.has(assetId)) {
+        console.log('Adding asset to dragged selection', assetId)
         setDraggedOverAssets(prev => {
           const next = new Set(prev)
           next.add(assetId)
@@ -348,9 +355,11 @@ export function AssetGrid({
         const deltaX = Math.abs(e.clientX - mouseDownPosition.x)
         const deltaY = Math.abs(e.clientY - mouseDownPosition.y)
         const DRAG_THRESHOLD = 5 // pixels
+        console.log('Mouse moved', { deltaX, deltaY, threshold: DRAG_THRESHOLD })
 
         if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
           // Start drag selection
+          console.log('Starting drag from global mousemove')
           handleDragStart(potentialDragAssetId)
           setMouseDownPosition(null)
           setPotentialDragAssetId(null)
