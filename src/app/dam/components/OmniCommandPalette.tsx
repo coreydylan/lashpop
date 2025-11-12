@@ -344,16 +344,19 @@ export function OmniCommandPalette({
                     onClick={() => {
                       if (!onVisibleCardTagsChange) return
 
-                      if (isVisible && visibleCardTags.includes('team')) {
-                        // Remove team member
+                      if (visibleCardTags.length === 0) {
+                        // Was showing all, now hide team by showing all categories except team
+                        const allCategoryIds = tagCategories
+                          .filter(cat => cat.isCollection !== true && cat.isRating !== true)
+                          .map(cat => cat.id)
+                        onVisibleCardTagsChange(allCategoryIds)
+                      } else if (visibleCardTags.includes('team')) {
+                        // Remove team member from visible list
                         const newVisible = visibleCardTags.filter(id => id !== 'team')
                         onVisibleCardTagsChange(newVisible)
-                      } else if (!isVisible) {
-                        // Add team member
-                        onVisibleCardTagsChange([...visibleCardTags, 'team'])
                       } else {
-                        // Was showing all (empty array), now show only team
-                        onVisibleCardTagsChange(['team'])
+                        // Add team member to visible list
+                        onVisibleCardTagsChange([...visibleCardTags, 'team'])
                       }
                     }}
                     className="w-full flex items-center gap-3 rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left transition hover:border-dusty-rose/40 hover:shadow-sm"
@@ -380,8 +383,6 @@ export function OmniCommandPalette({
               })()}
 
               {/* Tag categories */}
-              {console.log('Card visibility tagCategories:', tagCategories)}
-              {console.log('Filtered categories:', tagCategories.filter(cat => cat.isCollection !== true && cat.isRating !== true))}
               {tagCategories
                 .filter(cat => cat.isCollection !== true && cat.isRating !== true) // Don't show collection or rating in card settings
                 .map((category: any) => {
@@ -392,16 +393,22 @@ export function OmniCommandPalette({
                       onClick={() => {
                         if (!onVisibleCardTagsChange) return
 
-                        if (isVisible && visibleCardTags.includes(category.id)) {
-                          // Remove this category
+                        if (visibleCardTags.length === 0) {
+                          // Was showing all, now hide this category by showing all others (including team)
+                          const allOtherIds = [
+                            'team',
+                            ...tagCategories
+                              .filter(cat => cat.isCollection !== true && cat.isRating !== true && cat.id !== category.id)
+                              .map(cat => cat.id)
+                          ]
+                          onVisibleCardTagsChange(allOtherIds)
+                        } else if (visibleCardTags.includes(category.id)) {
+                          // Remove this category from visible list
                           const newVisible = visibleCardTags.filter(id => id !== category.id)
                           onVisibleCardTagsChange(newVisible)
-                        } else if (!isVisible) {
-                          // Add this category
-                          onVisibleCardTagsChange([...visibleCardTags, category.id])
                         } else {
-                          // Was showing all (empty array), now show only this category
-                          onVisibleCardTagsChange([category.id])
+                          // Add this category to visible list
+                          onVisibleCardTagsChange([...visibleCardTags, category.id])
                         }
                       }}
                       className="w-full flex items-center gap-3 rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left transition hover:border-dusty-rose/40 hover:shadow-sm"
