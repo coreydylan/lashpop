@@ -36,10 +36,12 @@ interface OmniCommandPaletteProps {
   onClose: () => void
   items: CommandItem[]
   isMobile: boolean
-  mode?: 'normal' | 'edit'
-  onModeChange?: (mode: 'normal' | 'edit') => void
+  mode?: 'normal' | 'edit' | 'card-settings'
+  onModeChange?: (mode: 'normal' | 'edit' | 'card-settings') => void
   tagCategories?: any[]
   onTagCategoriesChange?: (categories: any[]) => void
+  visibleCardTags?: string[]
+  onVisibleCardTagsChange?: (tagIds: string[]) => void
   contextSummary?: {
     selectionCount: number
     filterCount: number
@@ -59,6 +61,8 @@ export function OmniCommandPalette({
   onModeChange,
   tagCategories = [],
   onTagCategoriesChange,
+  visibleCardTags = [],
+  onVisibleCardTagsChange,
   contextSummary
 }: OmniCommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -324,13 +328,68 @@ export function OmniCommandPalette({
         </div>
 
         <div className="flex-1 overflow-y-auto px-1 py-3">
-          {flatList.length === 0 && !showCategoryGrid && (
-            <div className="px-6 py-12 text-center text-sm text-sage/70">
-              No matches yet. Try another keyword.
-            </div>
-          )}
+          {mode === 'card-settings' ? (
+            <div className="px-4 space-y-3">
+              <div className="px-2 pb-2">
+                <h3 className="text-sm font-semibold text-dune mb-1">Card Tag Visibility</h3>
+                <p className="text-xs text-sage/70">Select which tags appear on asset thumbnails</p>
+              </div>
+              {tagCategories
+                .filter(cat => !cat.isCollection) // Don't show collection in card settings
+                .map((category: any) => {
+                  const isVisible = visibleCardTags.length === 0 || visibleCardTags.includes(category.id)
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        if (!onVisibleCardTagsChange) return
 
-          {showCategoryGrid ? (
+                        if (visibleCardTags.length === 0) {
+                          // If showing all, switch to showing only this one
+                          onVisibleCardTagsChange([category.id])
+                        } else if (isVisible) {
+                          // Remove this category
+                          const newVisible = visibleCardTags.filter(id => id !== category.id)
+                          onVisibleCardTagsChange(newVisible)
+                        } else {
+                          // Add this category
+                          onVisibleCardTagsChange([...visibleCardTags, category.id])
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left transition hover:border-dusty-rose/40 hover:shadow-sm"
+                    >
+                      <div
+                        className="flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition"
+                        style={{
+                          borderColor: isVisible ? (category.color || '#A19781') : '#E5E0D8',
+                          backgroundColor: isVisible ? (category.color || '#A19781') : 'transparent'
+                        }}
+                      >
+                        {isVisible && (
+                          <svg className="w-3 h-3 text-cream" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-dune">{category.displayName}</div>
+                        {category.description && (
+                          <div className="text-xs text-sage/70 mt-0.5">{category.description}</div>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+            </div>
+          ) : (
+            <>
+              {flatList.length === 0 && !showCategoryGrid && (
+                <div className="px-6 py-12 text-center text-sm text-sage/70">
+                  No matches yet. Try another keyword.
+                </div>
+              )}
+
+              {showCategoryGrid ? (
             <div className="grid gap-3 px-4 pb-6 sm:grid-cols-2">
               {Object.entries(allGroups).map(([groupName, groupItems]) => {
                 const meta = getGroupMeta(groupName)
@@ -422,6 +481,8 @@ export function OmniCommandPalette({
                 </div>
               )
             })
+          )}
+            </>
           )}
         </div>
       </div>

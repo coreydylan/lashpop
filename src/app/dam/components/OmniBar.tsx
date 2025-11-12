@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import clsx from "clsx"
-import { X, Grid3x3, LayoutGrid } from "lucide-react"
+import { X, Grid3x3, LayoutGrid, CreditCard } from "lucide-react"
 
 export interface OmniBarProps {
   mode: "page" | "overlay"
@@ -18,6 +18,7 @@ export interface OmniBarProps {
   onToggleGridView: () => void
   showGridToggle?: boolean
   counterSlot?: ReactNode
+  onOpenCardSettings?: () => void
 }
 
 export function OmniBar({
@@ -33,7 +34,8 @@ export function OmniBar({
   gridViewMode,
   onToggleGridView,
   showGridToggle = true,
-  counterSlot
+  counterSlot,
+  onOpenCardSettings
 }: OmniBarProps) {
   const isOverlay = mode === "overlay"
 
@@ -125,6 +127,15 @@ export function OmniBar({
                   )}
                 </button>
               )}
+              {onOpenCardSettings && (
+                <button
+                  onClick={onOpenCardSettings}
+                  className={clsx("p-2 rounded-full transition-colors", hoverClass)}
+                  title="Customize card display"
+                >
+                  <CreditCard className={clsx("w-4 h-4", iconColor)} />
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -169,19 +180,30 @@ export function OmniBar({
                   </span>
                 )}
               </div>
-              {showGridToggle && (
-                <button
-                  onClick={onToggleGridView}
-                  className={clsx("p-2 rounded-full transition-colors", hoverClass)}
-                  aria-label="Toggle grid view"
-                >
-                  {gridViewMode === "square" ? (
-                    <LayoutGrid className={clsx("w-5 h-5", iconColor)} />
-                  ) : (
-                    <Grid3x3 className={clsx("w-5 h-5", iconColor)} />
-                  )}
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {showGridToggle && (
+                  <button
+                    onClick={onToggleGridView}
+                    className={clsx("p-2 rounded-full transition-colors", hoverClass)}
+                    aria-label="Toggle grid view"
+                  >
+                    {gridViewMode === "square" ? (
+                      <LayoutGrid className={clsx("w-5 h-5", iconColor)} />
+                    ) : (
+                      <Grid3x3 className={clsx("w-5 h-5", iconColor)} />
+                    )}
+                  </button>
+                )}
+                {onOpenCardSettings && (
+                  <button
+                    onClick={onOpenCardSettings}
+                    className={clsx("p-2 rounded-full transition-colors", hoverClass)}
+                    aria-label="Customize card display"
+                  >
+                    <CreditCard className={clsx("w-5 h-5", iconColor)} />
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>

@@ -13,15 +13,14 @@ async function runMigration() {
   console.log('🔄 Running migration...')
 
   const db = getDb()
-  const migration = fs.readFileSync('drizzle/0003_round_stardust.sql', 'utf-8')
+  const migration = fs.readFileSync('drizzle/0009_fix_collections.sql', 'utf-8')
   const statements = migration
-    .split('-->')
+    .split('--> statement-breakpoint')
     .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.startsWith('statement-breakpoint'))
+    .filter(s => s.length > 0 && !s.startsWith('--'))
 
   try {
     for (const statement of statements) {
-      if (statement.startsWith('--') || statement === 'statement-breakpoint') continue // Skip comments
       console.log(`  Executing: ${statement.substring(0, 60)}...`)
       await db.execute(sql.raw(statement))
     }

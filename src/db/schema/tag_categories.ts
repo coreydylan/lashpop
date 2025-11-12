@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core"
 
 export const tagCategories = pgTable("tag_categories", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -12,6 +12,11 @@ export const tagCategories = pgTable("tag_categories", {
   color: text("color"), // Hex color for the category
   icon: text("icon"), // Optional icon identifier
   sortOrder: integer("sort_order").notNull().default(0), // Order in which to display
+
+  // Collection-specific fields
+  isCollection: boolean("is_collection").notNull().default(false), // Marks this category as a collection
+  permissions: jsonb("permissions"), // Permission rules per tag value: { "tagName": { viewers: [], editors: [] } }
+  defaultViewConfig: jsonb("default_view_config"), // Default view settings per tag value: { "tagName": { groupBy, hideTags, showTags } }
 
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),

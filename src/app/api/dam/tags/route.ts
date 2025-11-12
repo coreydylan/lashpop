@@ -78,12 +78,13 @@ export async function POST(request: NextRequest) {
 
         // Insert new tags for this category
         if (category.tags && category.tags.length > 0) {
-          for (const tag of category.tags) {
+          for (let i = 0; i < category.tags.length; i++) {
+            const tag = category.tags[i]
             await db.insert(tags).values({
               categoryId: newCat.id,
               name: tag.name,
               displayName: tag.displayName,
-              sortOrder: 0
+              sortOrder: tag.sortOrder ?? i
             })
           }
         }
@@ -115,7 +116,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Process each tag
-        for (const tag of categoryTags) {
+        for (let i = 0; i < categoryTags.length; i++) {
+          const tag = categoryTags[i]
           const isNewTag = tag.id.startsWith('tag-')
 
           if (isNewTag) {
@@ -124,13 +126,14 @@ export async function POST(request: NextRequest) {
               categoryId: category.id,
               name: tag.name,
               displayName: tag.displayName,
-              sortOrder: 0
+              sortOrder: tag.sortOrder ?? i
             })
           } else {
             // Update existing tag
             await db.update(tags)
               .set({
                 displayName: tag.displayName,
+                sortOrder: tag.sortOrder ?? i,
                 updatedAt: new Date()
               })
               .where(eq(tags.id, tag.id))

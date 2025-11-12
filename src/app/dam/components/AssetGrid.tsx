@@ -44,6 +44,12 @@ interface AssetGridProps {
   gridViewMode?: "square" | "aspect"
   groupByCategories?: string[]
   teamMembers?: TeamMember[]
+  visibleCardTags?: string[]
+}
+
+interface GroupBucket {
+  assets: Asset[]
+  children: Record<string, GroupBucket>
 }
 
 export function AssetGrid({
@@ -53,7 +59,8 @@ export function AssetGrid({
   onDelete: _onDelete,
   gridViewMode = "square",
   groupByCategories = [],
-  teamMembers = []
+  teamMembers = [],
+  visibleCardTags = []
 }: AssetGridProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(selectedAssetIds.length > 0)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
@@ -63,60 +70,69 @@ export function AssetGrid({
   const selectedAssetSet = useMemo(() => new Set(selectedAssetIds), [selectedAssetIds])
 
   // Group assets based on groupByCategories
-  const groupedAssets = useMemo(() => {
+  const groupedAssets = useMemo<Record<string, GroupBucket>>(() => {
     if (groupByCategories.length === 0) {
-      return { ungrouped: assets }
+      return { ungrouped: { assets: assets.slice(), children: {} } }
     }
 
-    const groups: Record<string, any> = {}
+    const groups: Record<string, GroupBucket> = {}
     const ungrouped: Asset[] = []
 
-    assets.forEach(asset => {
-      let placed = false
-      const path: string[] = []
+    const ensureBucket = (level: Record<string, GroupBucket>, key: string) => {
+      if (!level[key]) {
+        level[key] = { assets: [], children: {} }
+      }
+      return level[key]
+    }
 
-      // Check each level of grouping
+    assets.forEach(asset => {
+      const path: string[] = []
+      let shouldPlace = true
+
       for (const categoryName of groupByCategories) {
         if (categoryName === 'team') {
           if (asset.teamMemberId) {
             path.push(`team|${asset.teamMemberId}`)
-            placed = true
           } else if (path.length === 0) {
-            // If first level and no team, skip this asset for grouping
+            shouldPlace = false
+            break
+          } else {
             break
           }
         } else {
           const tag = asset.tags?.find(t => t.category.name === categoryName)
           if (tag) {
-            path.push(`${categoryName}|${tag.name}`)
-            placed = true
+            path.push(`${categoryName}|${tag.id}`)
           } else if (path.length === 0) {
-            // If first level and no tag for this category, skip
+            shouldPlace = false
+            break
+          } else {
             break
           }
         }
       }
 
-      if (placed && path.length > 0) {
-        // Navigate/create nested structure
-        let current = groups
-        for (let i = 0; i < path.length; i++) {
-          const key = path[i]
-          if (!current[key]) {
-            current[key] = i === path.length - 1 ? [] : {}
-          }
-          if (i === path.length - 1) {
-            current[key].push(asset)
-          } else {
-            current = current[key]
-          }
-        }
-      } else {
+      if (!shouldPlace || path.length === 0) {
         ungrouped.push(asset)
+        return
       }
+
+      let currentLevel = groups
+      path.forEach((key, index) => {
+        const bucket = ensureBucket(currentLevel, key)
+        if (index === path.length - 1) {
+          bucket.assets.push(asset)
+        } else {
+          currentLevel = bucket.children
+        }
+      })
     })
 
-    return ungrouped.length > 0 ? { ...groups, ungrouped } : groups
+    if (ungrouped.length > 0) {
+      groups.ungrouped = { assets: ungrouped, children: {} }
+    }
+
+    return groups
   }, [assets, groupByCategories])
 
   // Detect touch device
@@ -251,8 +267,19 @@ export function AssetGrid({
     }
   }, [isDragging, handleDragEnd])
 
+  const findSampleAsset = (bucket: GroupBucket): Asset | undefined => {
+    if (bucket.assets.length > 0) {
+      return bucket.assets[0]
+    }
+    for (const child of Object.values(bucket.children)) {
+      const match = findSampleAsset(child)
+      if (match) return match
+    }
+    return undefined
+  }
+
   // Render grouped assets recursively
-  const renderGroups = (groups: any, level: number): ReactElement[] => {
+  const renderGroups = (groups: Record<string, GroupBucket>, level: number): ReactElement[] => {
     const elements: ReactElement[] = []
 
     Object.entries(groups).forEach(([key, value]) => {
@@ -263,6 +290,7 @@ export function AssetGrid({
       // Get display name and image for the group
       let groupTitle = isUngrouped ? 'Other' : groupKey
       let groupImage: { url: string; crop?: { x: number; y: number; scale: number } } | null = null
+      const bucket = value
 
       if (type === 'team') {
         // Look up team member by ID
@@ -282,16 +310,15 @@ export function AssetGrid({
         }
       } else if (!isUngrouped) {
         // Extract tag display name
-        const sampleAsset = Array.isArray(value)
-          ? value[0]
-          : (Object.values(value as Record<string, Asset[]>)[0]?.[0])
+        const sampleAsset = findSampleAsset(bucket)
         if (sampleAsset) {
-          const tag = sampleAsset.tags?.find((t: any) => t.category.name === type && t.name === id)
+          const tag = sampleAsset.tags?.find((t: any) => t.category.name === type && t.id === id)
           groupTitle = tag ? tag.displayName : groupTitle
         }
       }
 
-      const groupArray = Array.isArray(value) ? (value as Asset[]) : null
+      const groupArray = bucket.assets.length > 0 ? bucket.assets : null
+      const hasChildren = Object.keys(bucket.children).length > 0
 
       elements.push(
         <div key={key} className="space-y-4">
@@ -348,12 +375,14 @@ export function AssetGrid({
                   onDragStart={(e) => handleDragStart(asset.id, e)}
                   onDragOver={() => handleDragOver(asset.id)}
                   isDragging={isDragging}
+                  visibleCardTags={visibleCardTags}
                 />
               ))}
             </div>
-          ) : (
+          ) : null}
+          {hasChildren && (
             <div className={level > 0 ? 'ml-4' : ''}>
-              {renderGroups(value, level + 1)}
+              {renderGroups(bucket.children, level + 1)}
             </div>
           )}
         </div>
@@ -398,6 +427,7 @@ export function AssetGrid({
               onDragStart={(e) => handleDragStart(asset.id, e)}
               onDragOver={() => handleDragOver(asset.id)}
               isDragging={isDragging}
+              visibleCardTags={visibleCardTags}
             />
           ))}
         </div>
@@ -417,6 +447,7 @@ interface AssetCardProps {
   onDragStart: (event: React.MouseEvent | React.TouchEvent) => void
   onDragOver: () => void
   isDragging: boolean
+  visibleCardTags?: string[]
 }
 
 function AssetCard({
@@ -429,7 +460,8 @@ function AssetCard({
   onLongPress,
   onDragStart,
   onDragOver,
-  isDragging
+  isDragging,
+  visibleCardTags = []
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
@@ -553,26 +585,35 @@ function AssetCard({
       )}
 
       {/* Tags badge */}
-      {asset.tags && asset.tags.length > 0 && !isSelectionMode && (
-        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5">
-          {asset.tags.slice(0, 2).map((tag) => (
-            <span
-              key={tag.id}
-              className="px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden"
-              style={{
-                background: `linear-gradient(135deg, ${tag.category.color || "#8A7C69"} 0%, ${tag.category.color || "#8A7C69"}CC 100%)`
-              }}
-            >
-              {tag.displayName}
-            </span>
-          ))}
-          {asset.tags.length > 2 && (
-            <span className="px-2 py-0.5 bg-dune/80 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium">
-              +{asset.tags.length - 2}
-            </span>
-          )}
-        </div>
-      )}
+      {asset.tags && asset.tags.length > 0 && !isSelectionMode && (() => {
+        // Filter tags based on visibleCardTags setting
+        const displayedTags = visibleCardTags.length === 0
+          ? asset.tags
+          : asset.tags.filter(tag => visibleCardTags.includes(tag.category.id))
+
+        if (displayedTags.length === 0) return null
+
+        return (
+          <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5">
+            {displayedTags.slice(0, 2).map((tag) => (
+              <span
+                key={tag.id}
+                className="px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden"
+                style={{
+                  background: `linear-gradient(135deg, ${tag.category.color || "#8A7C69"} 0%, ${tag.category.color || "#8A7C69"}CC 100%)`
+                }}
+              >
+                {tag.displayName}
+              </span>
+            ))}
+            {displayedTags.length > 2 && (
+              <span className="px-2 py-0.5 bg-dune/80 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium">
+                +{displayedTags.length - 2}
+              </span>
+            )}
+          </div>
+        )
+      })()}
 
     </div>
   )

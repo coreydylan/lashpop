@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Check,
   Folder,
-  Tag
+  Tag,
+  GripVertical
 } from "lucide-react"
 
 interface TagCategory {
@@ -23,6 +24,7 @@ interface TagCategory {
     id: string
     name: string
     displayName: string
+    sortOrder?: number
   }>
 }
 
@@ -45,6 +47,11 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const searchInputRef = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
+
+  // Drag and drop state
+  const [draggedTagId, setDraggedTagId] = useState<string | null>(null)
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null)
+  const [dragOverTagId, setDragOverTagId] = useState<string | null>(null)
 
   useEffect(() => {
     searchInputRef.current?.focus()
@@ -202,6 +209,62 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
       }
       return next
     })
+  }
+
+  // Drag and drop handlers
+  const handleDragStart = (tagId: string, categoryId: string) => {
+    setDraggedTagId(tagId)
+    setDraggedCategoryId(categoryId)
+  }
+
+  const handleDragOver = (e: React.DragEvent, tagId: string) => {
+    e.preventDefault()
+    setDragOverTagId(tagId)
+  }
+
+  const handleDrop = (e: React.DragEvent, targetTagId: string, targetCategoryId: string) => {
+    e.preventDefault()
+
+    if (!draggedTagId || !draggedCategoryId || draggedTagId === targetTagId || draggedCategoryId !== targetCategoryId) {
+      setDraggedTagId(null)
+      setDraggedCategoryId(null)
+      setDragOverTagId(null)
+      return
+    }
+
+    setEditedCategories(prev =>
+      prev.map(cat => {
+        if (cat.id !== targetCategoryId) return cat
+
+        const tags = cat.tags || []
+        const draggedIndex = tags.findIndex(t => t.id === draggedTagId)
+        const targetIndex = tags.findIndex(t => t.id === targetTagId)
+
+        if (draggedIndex === -1 || targetIndex === -1) return cat
+
+        const newTags = [...tags]
+        const [removed] = newTags.splice(draggedIndex, 1)
+        newTags.splice(targetIndex, 0, removed)
+
+        // Update sortOrder based on new position
+        const updatedTags = newTags.map((tag, index) => ({
+          ...tag,
+          sortOrder: index
+        }))
+
+        return { ...cat, tags: updatedTags }
+      })
+    )
+
+    setDraggedTagId(null)
+    setDraggedCategoryId(null)
+    setDragOverTagId(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedTagId(null)
+    setDraggedCategoryId(null)
+    setDragOverTagId(null)
   }
 
   const filteredCategories = editedCategories.filter(cat => {
@@ -381,8 +444,16 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                   {category.tags.map((tag) => (
                     <div
                       key={tag.id}
+                      draggable={editingId !== `tag-${tag.id}`}
+                      onDragStart={() => handleDragStart(tag.id, category.id)}
+                      onDragOver={(e) => handleDragOver(e, tag.id)}
+                      onDrop={(e) => handleDrop(e, tag.id, category.id)}
+                      onDragEnd={handleDragEnd}
                       className={clsx(
-                        "group flex items-center gap-3 px-3 py-2 rounded-xl transition cursor-pointer",
+                        "group flex items-center gap-3 px-3 py-2 rounded-xl transition",
+                        editingId === `tag-${tag.id}` ? "cursor-text" : "cursor-move",
+                        draggedTagId === tag.id && "opacity-50",
+                        dragOverTagId === tag.id && draggedTagId !== tag.id && "border-t-2 border-dusty-rose",
                         selectedItems.has(`tag-${tag.id}`)
                           ? "bg-dusty-rose/10 border border-dusty-rose/30"
                           : "hover:bg-sage/5"
@@ -401,7 +472,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                         setEditValue(tag.displayName)
                       }}
                     >
-                      <Tag className="w-3.5 h-3.5 text-sage/50" />
+                      <GripVertical className="w-3.5 h-3.5 text-sage/40" />
 
                       {editingId === `tag-${tag.id}` ? (
                         <input

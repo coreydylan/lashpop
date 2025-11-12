@@ -15,6 +15,7 @@ import { PhotoLightbox } from "./components/PhotoLightbox"
 import { OmniBar } from "./components/OmniBar"
 import { OmniCommandPalette, type CommandItem } from "./components/OmniCommandPalette"
 import { TagEditor } from "./components/TagEditor"
+import { CollectionSelector } from "./components/CollectionSelector"
 
 interface Asset {
   id: string
@@ -68,6 +69,10 @@ export default function DAMPage() {
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
   const activeFiltersRef = useRef<ActiveFilter[]>([])
   const [uploadingAssetIds, setUploadingAssetIds] = useState<string[]>([])
+
+  // Collections state
+  const [activeCollectionId, setActiveCollectionId] = useState<string | undefined>(undefined)
+
   const filterableAssets = useMemo(
     () =>
       allAssets.map((asset) => ({
@@ -82,6 +87,28 @@ export default function DAMPage() {
       })),
     [allAssets]
   )
+
+  // Extract collections from tag categories
+  const collections = useMemo(() => {
+    const collectionCategory = tagCategories.find(cat => cat.isCollection)
+    if (!collectionCategory) return []
+
+    return (collectionCategory.tags || []).map((tag: any) => ({
+      id: tag.id,
+      name: tag.name,
+      displayName: tag.displayName,
+      color: collectionCategory.color
+    }))
+  }, [tagCategories])
+
+  // Filter assets by active collection
+  const collectionFilteredAssets = useMemo(() => {
+    if (!activeCollectionId) return allAssets
+
+    return allAssets.filter(asset =>
+      asset.tags?.some(tag => tag.id === activeCollectionId)
+    )
+  }, [allAssets, activeCollectionId])
 
   // Omni-bar state (used for both filtering and bulk tagging)
   const [omniTeamMemberId, setOmniTeamMemberId] = useState<string | undefined>()
@@ -111,8 +138,14 @@ export default function DAMPage() {
   const [groupByTags, setGroupByTags] = useState<string[]>([])  // Track up to 2 tags for grouping
   const [isCommandOpen, setIsCommandOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState("")
-  const [commandMode, setCommandMode] = useState<'normal' | 'edit'>('normal')
+  const [commandMode, setCommandMode] = useState<'normal' | 'edit' | 'card-settings'>('normal')
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false)
+
+  // Card display settings
+  const [visibleCardTags, setVisibleCardTags] = useState<string[]>(() => {
+    // By default, show all tag categories on cards
+    return []  // Empty array means show all
+  })
 
   // Helper to make colors more vibrant in lightbox mode
   const getTagColor = (color: string | undefined, isLightbox: boolean = false) => {
@@ -138,6 +171,12 @@ export default function DAMPage() {
 
   const openCommandPalette = useCallback((prefill = "") => {
     setCommandQuery(prefill)
+    setIsCommandOpen(true)
+  }, [])
+
+  const openCardSettings = useCallback(() => {
+    setCommandMode('card-settings')
+    setCommandQuery("")
     setIsCommandOpen(true)
   }, [])
 
@@ -305,10 +344,10 @@ export default function DAMPage() {
     return () => window.removeEventListener("keydown", handleCommandShortcut)
   }, [openCommandPalette])
 
-  // Apply filters when activeFilters changes
+  // Apply filters when activeFilters or collection changes
   useEffect(() => {
-    applyFilters(allAssets, activeFilters)
-  }, [activeFilters, allAssets, applyFilters])
+    applyFilters(collectionFilteredAssets, activeFilters)
+  }, [activeFilters, collectionFilteredAssets, applyFilters])
 
   useEffect(() => {
     activeFiltersRef.current = activeFilters
@@ -1493,6 +1532,7 @@ export default function DAMPage() {
         onApplyTags: handleApplyTags,
         gridViewMode,
         onToggleGridView: toggleGridView,
+        onOpenCardSettings: openCardSettings,
         showGridToggle: true,  // Show grid toggle like in main view
         counterSlot:
           assets.length > 0 && activeLightboxIndex >= 0
@@ -1545,19 +1585,34 @@ export default function DAMPage() {
 
         {/* Sticky Omni Control Bar */}
         <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <OmniBar
-              mode="page"
-              chipsContent={renderChips()}
-              selectedCount={selectedAssets.length}
-              assetsCount={assets.length}
-              totalAssetsCount={allAssets.length}
-              canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
-              onClearSelection={clearSelection}
-              onApplyTags={handleApplyTags}
-              gridViewMode={gridViewMode}
-              onToggleGridView={toggleGridView}
-            />
+          <div className="max-w-7xl mx-auto px-6 pt-4">
+            {/* Collection Selector */}
+            {collections.length > 0 && (
+              <div className="mb-4">
+                <CollectionSelector
+                  collections={collections}
+                  activeCollectionId={activeCollectionId}
+                  onSelectCollection={setActiveCollectionId}
+                />
+              </div>
+            )}
+
+            {/* Omni Bar */}
+            <div className="pb-4">
+              <OmniBar
+                mode="page"
+                chipsContent={renderChips()}
+                selectedCount={selectedAssets.length}
+                assetsCount={assets.length}
+                totalAssetsCount={allAssets.length}
+                canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
+                onClearSelection={clearSelection}
+                onApplyTags={handleApplyTags}
+                gridViewMode={gridViewMode}
+                onToggleGridView={toggleGridView}
+                onOpenCardSettings={openCardSettings}
+              />
+            </div>
           </div>
         </div>
 
@@ -1599,6 +1654,7 @@ export default function DAMPage() {
               gridViewMode={gridViewMode}
               groupByCategories={groupByTags}
               teamMembers={teamMembers}
+              visibleCardTags={visibleCardTags}
             />
           )}
         </main>
@@ -1615,6 +1671,8 @@ export default function DAMPage() {
         onModeChange={setCommandMode}
         tagCategories={tagCategories}
         onTagCategoriesChange={setTagCategories}
+        visibleCardTags={visibleCardTags}
+        onVisibleCardTagsChange={setVisibleCardTags}
         contextSummary={{
           selectionCount: selectedAssets.length,
           filterCount: activeFilters.length,
