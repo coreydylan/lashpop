@@ -2,13 +2,13 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useRef, useEffect } from "react"
-import { motion } from "framer-motion"
+import { useState, useRef } from "react"
+import { ZoomIn, ZoomOut } from "lucide-react"
 
 interface CropData {
-  x: number // 0-100 percentage from center
-  y: number // 0-100 percentage from center
-  scale: number // 0.5-2 crop box scale
+  x: number // 0-100 percentage from center (always 50 - centered)
+  y: number // 0-100 percentage from center (always 50 - centered)
+  scale: number // 0.5-3 zoom level
 }
 
 interface PhotoCropEditorProps {
@@ -27,48 +27,31 @@ type CropType = "fullVertical" | "fullHorizontal" | "mediumCircle" | "closeUpCir
 const CROP_CONFIGS = {
   fullVertical: { label: "Full Vertical", aspect: 3 / 4, shape: "rect" as const },
   fullHorizontal: { label: "Full Horizontal", aspect: 16 / 9, shape: "rect" as const },
-  square: { label: "Square", aspect: 1, shape: "rect" as const },
-  mediumCircle: { label: "Medium Circle", aspect: 1, shape: "circle" as const },
-  closeUpCircle: { label: "Close-Up Circle", aspect: 1, shape: "circle" as const }
+  square: { label: "Square", aspect: 1 / 1, shape: "rect" as const },
+  mediumCircle: { label: "Medium Circle", aspect: 1 / 1, shape: "circle" as const },
+  closeUpCircle: { label: "Close-Up Circle", aspect: 1 / 1, shape: "circle" as const }
 }
 
 export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
-  const [selectedCrop, setSelectedCrop] = useState<CropType>("fullVertical")
+  const [selectedCrop, setSelectedCrop] = useState<CropType>("closeUpCircle")
   const [crops, setCrops] = useState<Record<CropType, CropData>>({
     fullVertical: { x: 50, y: 50, scale: 1 },
     fullHorizontal: { x: 50, y: 50, scale: 1 },
-    mediumCircle: { x: 50, y: 50, scale: 1 },
-    closeUpCircle: { x: 50, y: 50, scale: 1.5 },
+    mediumCircle: { x: 50, y: 50, scale: 1.2 },
+    closeUpCircle: { x: 50, y: 50, scale: 2 },
     square: { x: 50, y: 50, scale: 1 }
   })
 
-  const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [imageAspect, setImageAspect] = useState(1)
 
-  const updateCrop = (type: CropType, updates: Partial<CropData>) => {
-    const newCrop = { ...crops[type], ...updates }
-    const config = CROP_CONFIGS[type]
-
-    // Calculate crop box dimensions
-    const cropWidth = 50 * newCrop.scale * config.aspect
-    const cropHeight = 50 * newCrop.scale
-
-    // Constrain position so crop box doesn't extend beyond image edges
-    const minX = cropWidth / 2
-    const maxX = 100 - cropWidth / 2
-    const minY = cropHeight / 2
-    const maxY = 100 - cropHeight / 2
-
-    // Clamp the position
-    const constrainedX = Math.max(minX, Math.min(maxX, newCrop.x))
-    const constrainedY = Math.max(minY, Math.min(maxY, newCrop.y))
+  const updateZoom = (type: CropType, scale: number) => {
+    // Clamp scale to reasonable values
+    const clampedScale = Math.max(0.5, Math.min(3, scale))
 
     setCrops((prev) => ({
       ...prev,
-      [type]: { ...newCrop, x: constrainedX, y: constrainedY }
+      [type]: { x: 50, y: 50, scale: clampedScale } // Always centered
     }))
   }
 
@@ -79,54 +62,39 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
     }
   }
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true)
-    setDragStart({ x: e.clientX, y: e.clientY })
+  const handleZoomIn = () => {
+    updateZoom(selectedCrop, crops[selectedCrop].scale + 0.1)
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !containerRef.current) return
-
-    const rect = containerRef.current.getBoundingClientRect()
-    const deltaX = e.clientX - dragStart.x
-    const deltaY = e.clientY - dragStart.y
-
-    // Convert pixel delta to percentage
-    const deltaXPercent = (deltaX / rect.width) * 100
-    const deltaYPercent = (deltaY / rect.height) * 100
-
-    // updateCrop handles constraining to image bounds
-    updateCrop(selectedCrop, {
-      x: crops[selectedCrop].x + deltaXPercent,
-      y: crops[selectedCrop].y + deltaYPercent
-    })
-
-    setDragStart({ x: e.clientX, y: e.clientY })
+  const handleZoomOut = () => {
+    updateZoom(selectedCrop, crops[selectedCrop].scale - 0.1)
   }
-
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mouseup', handleMouseUp)
-      return () => window.removeEventListener('mouseup', handleMouseUp)
-    }
-  }, [isDragging])
 
   const config = CROP_CONFIGS[selectedCrop]
   const crop = crops[selectedCrop]
 
   // Calculate crop box dimensions based on scale
-  // Scale of 1 = box fills container, scale of 0.5 = box is half size
-  const cropWidth = 50 * crop.scale * config.aspect // percentage
-  const cropHeight = 50 * crop.scale // percentage
+  // For proper square crops, we need to use the smaller dimension of the image container
+  const baseSize = 40 // Base percentage size
 
-  // Calculate maximum scale so crop box doesn't exceed image dimensions
-  const maxScaleWidth = 100 / (50 * config.aspect) // When cropWidth = 100%
-  const maxScaleHeight = 100 / 50 // When cropHeight = 100%
-  const maxScale = Math.min(maxScaleWidth, maxScaleHeight)
+  // Calculate dimensions maintaining aspect ratio
+  let cropWidth: number
+  let cropHeight: number
+
+  if (config.aspect > 1) {
+    // Wider than tall (e.g., 16:9)
+    cropWidth = baseSize * crop.scale
+    cropHeight = (baseSize * crop.scale) / config.aspect
+  } else if (config.aspect < 1) {
+    // Taller than wide (e.g., 3:4)
+    cropWidth = baseSize * crop.scale * config.aspect
+    cropHeight = baseSize * crop.scale
+  } else {
+    // Square (1:1) - needs special handling to be truly square in the display
+    const squareSize = baseSize * crop.scale
+    cropWidth = squareSize
+    cropHeight = squareSize
+  }
 
   return (
     <div className="space-y-6">
@@ -147,16 +115,51 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
         ))}
       </div>
 
+      {/* Zoom Controls */}
+      <div className="bg-warm-sand/20 arch-full p-4">
+        <div className="flex items-center justify-center gap-4 max-w-md mx-auto">
+          <button
+            onClick={handleZoomOut}
+            disabled={crop.scale <= 0.5}
+            className="btn bg-white hover:bg-warm-sand/30 text-dune px-4 py-2 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Zoom Out"
+          >
+            <ZoomOut className="w-5 h-5" />
+          </button>
+
+          <div className="flex-1">
+            <input
+              type="range"
+              min="0.5"
+              max="3"
+              step="0.1"
+              value={crop.scale}
+              onChange={(e) => updateZoom(selectedCrop, Number(e.target.value))}
+              className="w-full accent-dusty-rose h-2 cursor-pointer"
+            />
+            <div className="flex justify-between mt-1">
+              <span className="text-xs text-sage/70">Zoom Out</span>
+              <span className="text-sm font-medium text-dune">{(crop.scale * 100).toFixed(0)}%</span>
+              <span className="text-xs text-sage/70">Zoom In</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleZoomIn}
+            disabled={crop.scale >= 3}
+            className="btn bg-white hover:bg-warm-sand/30 text-dune px-4 py-2 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Zoom In"
+          >
+            <ZoomIn className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
       {/* Preview */}
       <div className="bg-warm-sand/20 arch-full p-8">
         <div
-          ref={containerRef}
-          className={`relative w-full max-w-2xl mx-auto bg-dune/5 overflow-hidden arch-full ${
-            isDragging ? 'cursor-grabbing' : 'cursor-grab'
-          }`}
+          className="relative w-full max-w-2xl mx-auto bg-dune/5 overflow-hidden arch-full"
           style={{ aspectRatio: imageAspect }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
         >
           {/* Image - shows full image in native aspect ratio */}
           <img
@@ -243,67 +246,8 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
         {/* Instructions */}
         <div className="text-center mt-4">
           <p className="caption text-sage">
-            Drag to position • Use slider to adjust crop size
+            Crop is centered • Use zoom controls above to adjust size
           </p>
-        </div>
-
-        {/* Controls */}
-        <div className="mt-6 space-y-4 max-w-md mx-auto">
-          {/* Crop Size Slider */}
-          <div>
-            <label className="caption text-dune block mb-2">
-              Crop Size: {(crop.scale * 100).toFixed(0)}%
-            </label>
-            <input
-              type="range"
-              min="0.5"
-              max={maxScale}
-              step="0.1"
-              value={Math.min(crop.scale, maxScale)}
-              onChange={(e) =>
-                updateCrop(selectedCrop, { scale: Number(e.target.value) })
-              }
-              className="w-full accent-dusty-rose"
-            />
-            <div className="flex justify-between mt-1">
-              <span className="text-xs text-sage">Smaller (fits more)</span>
-              <span className="text-xs text-sage">Larger (fills image)</span>
-            </div>
-          </div>
-
-          {/* Position fine-tune */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="caption text-dune block mb-2">
-                Horizontal: {crop.x.toFixed(0)}%
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={crop.x}
-                onChange={(e) =>
-                  updateCrop(selectedCrop, { x: Number(e.target.value) })
-                }
-                className="w-full accent-dusty-rose"
-              />
-            </div>
-            <div>
-              <label className="caption text-dune block mb-2">
-                Vertical: {crop.y.toFixed(0)}%
-              </label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={crop.y}
-                onChange={(e) =>
-                  updateCrop(selectedCrop, { y: Number(e.target.value) })
-                }
-                className="w-full accent-dusty-rose"
-              />
-            </div>
-          </div>
         </div>
       </div>
 
