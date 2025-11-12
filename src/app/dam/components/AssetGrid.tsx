@@ -288,22 +288,7 @@ export function AssetGrid({
     (assetId: string, event: React.MouseEvent | React.TouchEvent) => {
       console.log('handleMouseDown called', { assetId, isSelectionMode })
 
-      // If in selection mode or holding shift, start drag immediately
-      const isShiftPressed = 'shiftKey' in event && event.shiftKey
-      if (isSelectionMode || isShiftPressed) {
-        event.preventDefault()
-        console.log('Starting drag immediately')
-        setIsDragging(true)
-        setIsSelectionMode(true)
-        setDragStartAssetId(assetId)
-        setDraggedOverAssets(new Set([assetId]))
-        if (!selectedAssetIds.includes(assetId)) {
-          toggleSelection(assetId)
-        }
-        return
-      }
-
-      // Otherwise, record position for potential drag
+      // Record position for potential drag (for both selection mode and normal mode)
       const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX
       const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY
       console.log('Recording potential drag position', { x: clientX, y: clientY })
