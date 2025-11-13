@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
+import { getCategoryColors } from '@/lib/category-colors';
 import type { Panel, CategoryPickerPanelData } from '@/types/panel-stack';
 
 interface CategoryPickerPanelProps {
@@ -16,7 +17,12 @@ interface Category {
   name: string;
   slug: string;
   icon: string;
-  color: string;
+  colors: {
+    primary: string;
+    light: string;
+    medium: string;
+    ring: string;
+  };
   subcategories: {
     id: string;
     name: string;
@@ -24,15 +30,6 @@ interface Category {
   }[];
   serviceCount: number;
 }
-
-// Icon and color mapping for categories
-const CATEGORY_STYLING: Record<string, { icon: string; color: string }> = {
-  lashes: { icon: '✨', color: 'from-dusty-rose/20 to-pink-100' },
-  brows: { icon: '🎀', color: 'from-warm-sand/20 to-amber-100' },
-  waxing: { icon: '💫', color: 'from-sage/20 to-green-100' },
-  facials: { icon: '🌸', color: 'from-ocean-mist/20 to-blue-100' },
-  nails: { icon: '💅', color: 'from-terracotta/20 to-rose-100' },
-};
 
 export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
   const { state, actions } = usePanelStack();
@@ -46,17 +43,19 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
       if (!service.categorySlug || !service.categoryName) return;
 
       if (!categoryMap.has(service.categorySlug)) {
-        const styling = CATEGORY_STYLING[service.categorySlug] || {
-          icon: '✨',
-          color: 'from-sage/20 to-gray-100',
-        };
+        const colors = getCategoryColors(service.categorySlug);
 
         categoryMap.set(service.categorySlug, {
           id: service.categorySlug,
           name: service.categoryName,
           slug: service.categorySlug,
-          icon: styling.icon,
-          color: styling.color,
+          icon: colors.icon,
+          colors: {
+            primary: colors.primary,
+            light: colors.light,
+            medium: colors.medium,
+            ring: colors.ring,
+          },
           subcategories: [],
           serviceCount: 0,
         });
@@ -154,60 +153,85 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
   return (
     <PanelWrapper
       panel={panel}
-      title="Choose Your Services"
-      subtitle="Select one or more categories"
+      title="Choose Services"
+      subtitle={state.categorySelections.length > 0
+        ? `${state.categorySelections.length} selected`
+        : "What can we help you with today?"}
     >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      {/* Category Chips Bar */}
+      <div className="flex flex-wrap gap-2 md:gap-3">
         {categories.map((category, index) => {
           const selected = isSelected(category.id);
 
           return (
             <motion.button
               key={category.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategoryClick(category)}
               className={`
-                relative p-4 md:p-6 rounded-2xl transition-all
+                relative px-4 py-2.5 md:px-5 md:py-3 rounded-full font-medium
+                transition-all duration-200 flex items-center gap-2
                 ${
                   selected
-                    ? 'bg-gradient-to-br from-dusty-rose/30 to-warm-sand/30 ring-2 ring-dusty-rose shadow-lg'
-                    : 'bg-gradient-to-br ' + category.color + ' hover:shadow-md'
+                    ? 'text-white shadow-lg transform scale-105'
+                    : 'border hover:scale-105'
                 }
               `}
+              style={{
+                backgroundColor: selected ? category.colors.primary : category.colors.light,
+                borderColor: selected ? 'transparent' : category.colors.medium,
+                color: selected ? 'white' : category.colors.primary,
+                boxShadow: selected ? `0 4px 20px ${category.colors.ring}` : 'none',
+              }}
             >
-              {selected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-2 right-2 w-5 h-5 md:w-6 md:h-6 rounded-full bg-dusty-rose flex items-center justify-center"
+              {/* Icon */}
+              <span className="text-base md:text-lg">{category.icon}</span>
+
+              {/* Category Name */}
+              <span className="text-sm md:text-base">{category.name}</span>
+
+              {/* Service Count Badge (unselected only) */}
+              {!selected && (
+                <span
+                  className="text-xs px-1.5 py-0.5 rounded-full ml-1"
+                  style={{
+                    backgroundColor: category.colors.medium,
+                    color: category.colors.primary,
+                  }}
                 >
-                  <Check className="w-3 h-3 md:w-4 md:h-4 text-white" />
-                </motion.div>
+                  {category.serviceCount}
+                </span>
               )}
 
-              <div className="text-3xl md:text-4xl mb-2 md:mb-3">{category.icon}</div>
-              <h4 className="font-medium text-dune text-sm md:text-base">{category.name}</h4>
-              <p className="text-xs text-sage mt-1">{category.serviceCount} services</p>
+              {/* Check Icon (selected only) */}
+              {selected && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="ml-1"
+                >
+                  <Check className="w-4 h-4" />
+                </motion.span>
+              )}
             </motion.button>
           );
         })}
       </div>
 
-      {state.categorySelections.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-4 md:mt-6 p-3 md:p-4 rounded-xl bg-sage/10 border border-sage/20"
+      {/* Helper Text */}
+      {state.categorySelections.length === 0 && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="mt-4 text-xs md:text-sm text-sage/70 text-center"
         >
-          <p className="text-xs md:text-sm text-sage">
-            <strong>{state.categorySelections.length}</strong>{' '}
-            {state.categorySelections.length === 1 ? 'category' : 'categories'} selected
-          </p>
-        </motion.div>
+          Select one or more categories to view services
+        </motion.p>
       )}
     </PanelWrapper>
   );

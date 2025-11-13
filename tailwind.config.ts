@@ -9,6 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Primary Palette
         'sage': 'rgb(161, 151, 129)',
         'dusty-rose': 'rgb(205, 168, 158)',
         'warm-sand': 'rgb(235, 224, 203)',
@@ -16,7 +17,14 @@ const config: Config = {
         'terracotta': 'rgb(189, 136, 120)',
         'ocean-mist': 'rgb(188, 201, 194)',
         'cream': 'rgb(250, 247, 241)',
-        'dune': 'rgb(138, 124, 105)'
+        'dune': 'rgb(138, 124, 105)',
+
+        // Category Brand Colors
+        'category-lashes': 'rgb(205, 168, 158)',
+        'category-brows': 'rgb(212, 175, 117)',
+        'category-waxing': 'rgb(161, 151, 129)',
+        'category-facials': 'rgb(188, 201, 194)',
+        'category-nails': 'rgb(189, 136, 120)',
       },
       fontFamily: {
         sans: ['Outfit', 'sans-serif'],
