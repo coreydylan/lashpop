@@ -2,7 +2,7 @@
 
 import React, { useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { getCategoryColors } from '@/lib/category-colors';
 import { getCategoryIcon } from '@/components/icons/CategoryIcons';
@@ -141,9 +141,10 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
 
   return (
     <div className="bg-cream border-b border-sage/10 px-4 py-3 md:px-6 md:py-4">
-      {/* Category Chips Bar */}
-      <div className="flex flex-wrap gap-2 md:gap-3">
-        {categories.map((category, index) => {
+      <div className="flex items-start justify-between gap-4">
+        {/* Category Chips Bar */}
+        <div className="flex flex-wrap gap-2 md:gap-3 flex-1">
+          {categories.map((category, index) => {
           const selected = isSelected(category.id);
           const IconComponent = getCategoryIcon(category.iconName);
 
@@ -203,6 +204,16 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
             </motion.button>
           );
         })}
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={() => actions.closePanel(panel.id)}
+          className="flex-shrink-0 w-6 h-6 md:w-7 md:h-7 rounded-full hover:bg-sage/10 flex items-center justify-center transition-colors group"
+          aria-label="Close category picker"
+        >
+          <X className="w-4 h-4 md:w-5 md:h-5 text-sage group-hover:text-dune transition-colors" />
+        </button>
       </div>
     </div>
   );
