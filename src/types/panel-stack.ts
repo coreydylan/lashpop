@@ -174,7 +174,7 @@ export const PANEL_DOCKED_HEIGHT_DESKTOP = 48;
 export const PANEL_DOCKED_HEIGHT_MOBILE = 32;
 export const PANEL_MAX_HEIGHT_DESKTOP = '60vh';
 export const PANEL_MAX_HEIGHT_MOBILE = '80vh';
-export const HEADER_HEIGHT = 64;
+export const HEADER_HEIGHT = 80; // Match Header.tsx height
 
 // ============================================================================
 // Events
