@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
 import clsx from "clsx"
-import { Upload as UploadIcon, Users, X, Sparkles } from "lucide-react"
+import { Upload as UploadIcon, Users, X, Sparkles, LogOut } from "lucide-react"
 import Link from "next/link"
 import { FileUploader } from "./components/FileUploader"
 import { AssetGrid } from "./components/AssetGrid"
@@ -1718,6 +1718,16 @@ export default function DAMPage() {
                   <Users className="w-5 h-5" />
                   <span className="hidden sm:inline">Team</span>
                 </Link>
+                <button
+                  onClick={async () => {
+                    await fetch("/api/dam/auth/logout", { method: "POST" })
+                    window.location.href = "/dam/login"
+                  }}
+                  className="btn btn-secondary"
+                  title="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
               </div>
             </div>
           </div>

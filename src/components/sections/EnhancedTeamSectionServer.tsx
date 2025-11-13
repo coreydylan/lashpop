@@ -5,8 +5,9 @@ export async function EnhancedTeamSection() {
   const teamMembers = await getTeamMembers()
 
   // Transform database format to component format
-  const formattedTeamMembers = teamMembers.map(member => ({
-    id: Number(member.id), // Convert UUID to number for display (or use index)
+  const formattedTeamMembers = teamMembers.map((member, index) => ({
+    id: index + 1, // Use sequential number IDs instead of UUIDs
+    uuid: member.id, // Keep UUID for API calls
     name: member.name,
     role: member.role,
     type: member.type as 'employee' | 'independent',

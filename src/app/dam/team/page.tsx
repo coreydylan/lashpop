@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
-import { Upload as UploadIcon, Camera, ArrowLeft, CheckCircle2 } from "lucide-react"
+import { Upload as UploadIcon, Camera, ArrowLeft, CheckCircle2, LogOut } from "lucide-react"
 import Link from "next/link"
 import { PhotoCropEditor } from "./components/PhotoCropEditor"
 
@@ -220,19 +220,31 @@ export default function TeamManagementPage() {
       {/* Header */}
       <header className="glass border-b border-sage/20 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dam"
-              className="w-10 h-10 rounded-full hover:bg-warm-sand/30 flex items-center justify-center transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-sage" />
-            </Link>
-            <div>
-              <h1 className="h2 text-dune">Team Management</h1>
-              <p className="caption text-sage mt-2">
-                Manage team member photos and headshots
-              </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/dam"
+                className="w-10 h-10 rounded-full hover:bg-warm-sand/30 flex items-center justify-center transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-sage" />
+              </Link>
+              <div>
+                <h1 className="h2 text-dune">Team Management</h1>
+                <p className="caption text-sage mt-2">
+                  Manage team member photos and headshots
+                </p>
+              </div>
             </div>
+            <button
+              onClick={async () => {
+                await fetch("/api/dam/auth/logout", { method: "POST" })
+                window.location.href = "/dam/login"
+              }}
+              className="w-10 h-10 rounded-full hover:bg-warm-sand/30 flex items-center justify-center transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5 text-sage" />
+            </button>
           </div>
         </div>
       </header>

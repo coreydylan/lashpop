@@ -8,12 +8,19 @@ import { AboutSection } from '@/components/sections/AboutSection'
 import { EnhancedTeamSection } from '@/components/sections/EnhancedTeamSectionServer'
 import { ContactSection } from '@/components/sections/ContactSection'
 import { Footer } from '@/components/sections/Footer'
+import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorContext'
+import { PanelManagerProvider } from '@/components/panels/PanelContext'
+import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView'
+import { PanelRenderer } from '@/components/panels/PanelRenderer'
 
 export default function HomePage() {
   return (
-    <>
-      <Navigation />
-      <main className="overflow-x-hidden">
+    <BookingOrchestratorProvider>
+      <PanelManagerProvider>
+        <Navigation />
+        <TeamPortfolioView />
+        <PanelRenderer />
+        <main className="overflow-x-hidden">
         <HeroSection />
         <PhotoTransition />
         <ServiceDiscoveryQuiz />
@@ -28,6 +35,7 @@ export default function HomePage() {
         <ContactSection />
       </main>
       <Footer />
-    </>
+      </PanelManagerProvider>
+    </BookingOrchestratorProvider>
   )
 }

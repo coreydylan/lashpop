@@ -87,3 +87,4 @@ jspm_packages/
 # Local template clone, not part of repo
 vendor/
 .env*.local
+vercel-dam-env-vars.txt

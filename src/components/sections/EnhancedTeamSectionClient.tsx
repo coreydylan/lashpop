@@ -1,12 +1,14 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Instagram, Phone, Calendar, Star, X, Sparkles } from 'lucide-react'
+import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 
 interface TeamMember {
   id: number
+  uuid?: string // Optional UUID from database
   name: string
   role: string
   type: 'employee' | 'independent'
@@ -30,9 +32,55 @@ interface EnhancedTeamSectionClientProps {
 export function EnhancedTeamSectionClient({ teamMembers }: EnhancedTeamSectionClientProps) {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
+  const sectionRef = useRef<HTMLElement>(null)
+
+  // Get orchestrator - now always available since we wrap at top level
+  const orchestrator = useBookingOrchestrator();
+  const highlights = orchestrator.state.highlights.providers
+
+  // Register section with orchestrator
+  useEffect(() => {
+    if (sectionRef.current) {
+      const unregister = orchestrator.actions.registerSection('team', sectionRef.current)
+      return unregister
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Handle team member click - trigger orchestrator action
+  const handleMemberClick = (member: TeamMember) => {
+    // Convert TeamMember to Provider format for orchestrator
+    const provider = {
+      id: member.id.toString(),
+      name: member.name,
+      role: member.role,
+      imageUrl: member.image,
+      specialties: member.specialties,
+      bio: member.bio,
+      quote: member.quote,
+      funFacts: member.funFact ? [member.funFact] : undefined,
+      type: member.type,
+      availability: member.availability
+    }
+
+    // Select the provider (this stores their full data in orchestrator state)
+    orchestrator.actions.selectProvider(provider as any, { openPortfolio: true, scrollToTeam: false })
+
+    // Emit event that member was clicked
+    orchestrator.eventBus.emit({
+      type: 'TEAM_MEMBER_CLICKED',
+      payload: { memberId: member.id.toString(), action: 'view-portfolio' }
+    })
+  }
+
+  // Check if member is highlighted by orchestrator
+  const isHighlighted = (memberId: number) => highlights.includes(memberId.toString())
 
   return (
-    <section className="py-[var(--space-section)] bg-gradient-to-b from-[rgb(254,254,254)] to-[rgb(255,248,243)]">
+    <section
+      ref={sectionRef}
+      className="py-[var(--space-section)] bg-gradient-to-b from-[rgb(254,254,254)] to-[rgb(255,248,243)]"
+    >
       <div className="max-width-content section-padding">
         {/* Section Header */}
         <motion.div
@@ -56,10 +104,15 @@ export function EnhancedTeamSectionClient({ teamMembers }: EnhancedTeamSectionCl
               whileInView={{ opacity: 1 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.6, delay: index * 0.03 }}
-              className="relative aspect-[3/4] overflow-hidden cursor-pointer group border-[0.5px] border-white/10"
+              className={`relative aspect-[3/4] overflow-hidden cursor-pointer group border-[0.5px] ${
+                isHighlighted(member.id)
+                  ? 'border-dusty-rose ring-2 ring-dusty-rose ring-offset-2'
+                  : 'border-white/10'
+              }`}
               onMouseEnter={() => setHoveredId(member.id)}
               onMouseLeave={() => setHoveredId(null)}
-              onClick={() => setSelectedMember(member)}
+              onClick={() => handleMemberClick(member)}
+              animate={isHighlighted(member.id) ? { scale: [1, 1.02, 1] } : {}}
             >
               {/* Background Image */}
               <Image

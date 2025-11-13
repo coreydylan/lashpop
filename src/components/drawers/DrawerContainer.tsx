@@ -94,6 +94,8 @@ export default function DrawerContainer({
     <AnimatePresence mode="sync">
       <motion.div
         ref={containerRef}
+        data-drawer={name}
+        data-state={currentState}
         className={`fixed left-0 right-0 ${
           currentState === 'expanded'
             ? 'glass shadow-2xl'

@@ -5,7 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronRight, Sparkles, Check } from 'lucide-react';
 import DrawerContainer from './DrawerContainer';
 import { useDrawer } from './DrawerContext';
+import { usePanelManager } from '../panels/PanelContext';
+import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext';
 import { StarIcon, MoonIcon, SunIcon, WaveIcon } from '../icons/DesertIcons';
+import ServiceDetailPanel from '../panels/ServiceDetailPanel';
 
 interface Service {
   id: string;
@@ -54,7 +57,9 @@ const getPriceDisplay = (priceInCents: number) => {
 };
 
 export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
-  const { quizResults } = useDrawer();
+  const { quizResults, expandDrawer, drawerStates } = useDrawer();
+  const { pushPanel } = usePanelManager();
+  const orchestrator = useBookingOrchestrator();
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedSubcategories, setSelectedSubcategories] = useState<Set<string>>(new Set());
   const [hoveredService, setHoveredService] = useState<string | null>(null);
@@ -152,6 +157,8 @@ export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
 
   const toggleCategory = (slug: string) => {
     const newSet = new Set(selectedCategories);
+    const wasEmpty = newSet.size === 0;
+
     if (newSet.has(slug)) {
       newSet.delete(slug);
       // Remove subcategories from this category
@@ -165,6 +172,20 @@ export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
       newSet.add(slug);
     }
     setSelectedCategories(newSet);
+
+    // Expand drawer when a category is selected (if currently docked)
+    console.log('Category clicked:', slug);
+    console.log('Drawer state:', drawerStates.services);
+    console.log('New category set size:', newSet.size);
+    console.log('Filtered services:', filteredServices.length);
+
+    // Use setTimeout to ensure state updates have propagated
+    if (drawerStates.services === 'docked' && (wasEmpty || newSet.size > 0)) {
+      console.log('Expanding drawer...');
+      setTimeout(() => {
+        expandDrawer('services');
+      }, 0);
+    }
   };
 
   const toggleSubcategory = (slug: string) => {
@@ -187,10 +208,7 @@ export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
     <div className="w-full">
       {/* Desktop: Horizontal category pills */}
       <div className="hidden md:flex items-center gap-3 w-full">
-        <div className="flex items-center gap-2 shrink-0">
-          <Sparkles className="w-5 h-5 text-sage" />
-          <span className="text-sm font-medium text-sage">Categories:</span>
-        </div>
+        <Sparkles className="w-5 h-5 text-sage shrink-0" />
 
         <div className="flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
           {categoryHierarchy.map(category => (
@@ -359,8 +377,8 @@ export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
           )}
         </AnimatePresence>
 
-        {/* Services Display */}
-        <div className="space-y-12">
+        {/* Services Display - Horizontal Scroll by Subcategory */}
+        <div className="space-y-8">
           {Object.entries(groupedServices).map(([subcatSlug, subcatServices]) => {
             const subcatName = subcatServices[0]?.subcategoryName || 'Other';
 
@@ -371,77 +389,141 @@ export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
-                  className="flex items-center gap-3 mb-6"
+                  className="flex items-center gap-3 mb-4"
                 >
                   <ChevronRight className="w-5 h-5 text-sage" />
-                  <h3 className="text-2xl font-light text-dune">{subcatName}</h3>
+                  <h3 className="text-xl font-light text-dune">{subcatName}</h3>
                   <div className="flex-1 h-px bg-gradient-to-r from-sage/20 to-transparent" />
+                  <span className="text-sm text-dune/50">{subcatServices.length} services</span>
                 </motion.div>
 
-                {/* Service Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {subcatServices.map((service, index) => (
-                    <motion.div
-                      key={service.slug}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true, amount: 0.2 }}
-                      transition={{ duration: 0.5, delay: index * 0.05 }}
-                      onMouseEnter={() => setHoveredService(service.slug)}
-                      onMouseLeave={() => setHoveredService(null)}
-                      className="group relative"
-                    >
-                      <div className="glass h-full rounded-2xl p-6 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
-                        {/* Icon */}
-                        <motion.div
-                          animate={{
-                            scale: hoveredService === service.slug ? 1.1 : 1,
-                            rotate: hoveredService === service.slug ? 360 : 0
-                          }}
-                          transition={{ duration: 0.6 }}
-                          className={`text-${service.color || 'sage'} mb-4`}
-                        >
-                          {getIconForService(service.slug)}
-                        </motion.div>
+                {/* Horizontal Scrolling Service Cards */}
+                <div className="relative">
+                  <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory">
+                    {subcatServices.map((service, index) => (
+                      <motion.div
+                        key={service.slug}
+                        initial={{ opacity: 0, x: 20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true, margin: "-50px" }}
+                        transition={{ duration: 0.4, delay: index * 0.05 }}
+                        onMouseEnter={() => setHoveredService(service.slug)}
+                        onMouseLeave={() => setHoveredService(null)}
+                        className="group relative shrink-0 w-80 snap-start"
+                      >
+                        <div className="glass h-full rounded-2xl overflow-hidden hover:shadow-2xl transition-all duration-500 hover:-translate-y-1 cursor-pointer">
+                          {/* Top Section - Icon and Quick Info */}
+                          <div className="p-5 bg-gradient-to-br from-cream/50 to-warm-sand/30">
+                            <div className="flex items-start justify-between mb-3">
+                              <motion.div
+                                animate={{
+                                  scale: hoveredService === service.slug ? 1.1 : 1,
+                                  rotate: hoveredService === service.slug ? 360 : 0
+                                }}
+                                transition={{ duration: 0.6 }}
+                                className={`text-${service.color || 'sage'}`}
+                              >
+                                {getIconForService(service.slug)}
+                              </motion.div>
+                              <div className="text-right">
+                                <div className="text-lg font-light text-terracotta">
+                                  {getPriceDisplay(service.priceStarting)}
+                                </div>
+                                <div className="text-xs text-dune/60">{service.durationMinutes} min</div>
+                              </div>
+                            </div>
 
-                        {/* Content */}
-                        <h4 className="text-lg font-medium text-dune mb-2">
-                          {service.name}
-                        </h4>
-                        {service.subtitle && (
-                          <p className="text-sm text-terracotta mb-3 italic">
-                            {service.subtitle}
-                          </p>
-                        )}
-                        <p className="text-sm text-dune/70 mb-4 line-clamp-3">
-                          {service.description}
-                        </p>
-
-                        {/* Details */}
-                        <div className="space-y-2 mb-4 pt-4 border-t border-sage/10">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-dune/60">Duration</span>
-                            <span className="text-sm font-medium">{service.durationMinutes} min</span>
+                            {/* Title */}
+                            <h4 className="text-base font-medium text-dune mb-1 line-clamp-2">
+                              {service.name}
+                            </h4>
+                            {service.subtitle && (
+                              <p className="text-xs text-terracotta italic line-clamp-1">
+                                {service.subtitle}
+                              </p>
+                            )}
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-dune/60">Starting at</span>
-                            <span className="text-lg font-light text-terracotta">
-                              {getPriceDisplay(service.priceStarting)}
-                            </span>
+
+                          {/* Bottom Section - Description and CTA */}
+                          <div className="p-5 pt-4">
+                            <p className="text-sm text-dune/70 mb-4 line-clamp-2">
+                              {service.description}
+                            </p>
+
+                            {/* Quick Actions */}
+                            <div className="flex gap-2">
+                              <motion.button
+                                onClick={() => {
+                                  // Use panel system instead of local state
+                                  pushPanel({
+                                    id: `service-${service.id}`,
+                                    type: 'service-detail',
+                                    data: service,
+                                    entryPoint: 'service-card'
+                                  });
+                                  // Also notify orchestrator (convert to orchestrator Service type)
+                                  orchestrator.actions.selectService({
+                                    id: service.id,
+                                    name: service.name,
+                                    slug: service.slug,
+                                    category: service.categoryName || '',
+                                    subcategory: service.subcategoryName || '',
+                                    description: service.description,
+                                    price: service.priceStarting,
+                                    duration: service.durationMinutes,
+                                  }, { openPanel: true });
+                                }}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="flex-1 px-4 py-2 bg-sage text-cream rounded-full text-sm font-medium hover:bg-sage/90 transition-colors"
+                              >
+                                View Details
+                              </motion.button>
+                              <motion.button
+                                onClick={() => {
+                                  pushPanel({
+                                    id: `service-${service.id}`,
+                                    type: 'service-detail',
+                                    data: service,
+                                    entryPoint: 'service-card'
+                                  });
+                                  orchestrator.actions.selectService({
+                                    id: service.id,
+                                    name: service.name,
+                                    slug: service.slug,
+                                    category: service.categoryName || '',
+                                    subcategory: service.subcategoryName || '',
+                                    description: service.description,
+                                    price: service.priceStarting,
+                                    duration: service.durationMinutes,
+                                  }, { openPanel: true });
+                                }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="px-4 py-2 bg-sage/10 text-sage rounded-full text-sm font-medium hover:bg-sage/20 transition-colors"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </motion.button>
+                            </div>
+
+                            {/* Provider Count */}
+                            <div className="mt-3 pt-3 border-t border-sage/10">
+                              <div className="flex items-center gap-2 text-xs text-dune/50">
+                                <Sparkles className="w-3 h-3" />
+                                <span>3 artists available</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
+                      </motion.div>
+                    ))}
+                  </div>
 
-                        {/* Book Button */}
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className="w-full btn btn-primary"
-                        >
-                          Book Now
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  ))}
+                  {/* Scroll Indicators (Desktop only) */}
+                  <div className="hidden md:flex absolute top-1/2 -translate-y-1/2 left-0 right-0 pointer-events-none justify-between px-2">
+                    <div className="w-8 h-16 bg-gradient-to-r from-cream to-transparent rounded-r-lg" />
+                    <div className="w-8 h-16 bg-gradient-to-l from-cream to-transparent rounded-l-lg" />
+                  </div>
                 </div>
               </div>
             );

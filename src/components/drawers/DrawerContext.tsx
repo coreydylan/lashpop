@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext';
+import type { QuizResults as OrchestratorQuizResults } from '@/types/orchestrator';
 
 // Types for drawer system
 export type DrawerName = 'discover' | 'services';
@@ -41,6 +43,9 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
   const [activeDrawer, setActiveDrawer] = useState<DrawerName | null>(null);
   const [quizResults, setQuizResultsState] = useState<QuizResults | null>(null);
 
+  // Get orchestrator - now always available since we wrap at top level
+  const orchestrator = useBookingOrchestrator();
+
   // Set drawer state
   const setDrawerState = useCallback((drawer: DrawerName, state: DrawerState) => {
     setDrawerStates(prev => ({
@@ -62,7 +67,17 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
     } else if (state === 'invisible' && activeDrawer === drawer) {
       setActiveDrawer(null);
     }
-  }, [drawerStates, activeDrawer]);
+
+    // Emit event to orchestrator
+    if (orchestrator) {
+      orchestrator.eventBus.emit({
+        type: 'DRAWER_STATE_CHANGED',
+        payload: { drawer, state },
+      });
+      // Update viewport dimensions when drawer state changes
+      orchestrator.actions.updateViewportDimensions();
+    }
+  }, [drawerStates, activeDrawer, orchestrator]);
 
   // Toggle drawer between expanded and docked/invisible
   const toggleDrawer = useCallback((drawer: DrawerName) => {
@@ -121,7 +136,12 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
     // When quiz is complete, dock discover and expand services
     setDrawerState('discover', 'docked');
     setDrawerState('services', 'expanded');
-  }, [setDrawerState]);
+
+    // Trigger orchestrated workflow
+    if (orchestrator) {
+      orchestrator.actions.completeQuizWorkflow(results as OrchestratorQuizResults);
+    }
+  }, [setDrawerState, orchestrator]);
 
   // Handle escape key to close drawers
   useEffect(() => {
