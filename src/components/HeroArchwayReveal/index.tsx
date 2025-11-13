@@ -17,6 +17,7 @@ import { useGridImages } from './hooks/useGridImages'
 import { useScrollPhases } from './hooks/useScrollPhases'
 import { useReducedMotion } from './hooks/useReducedMotion'
 import { ImageMosaicJustified } from './ImageMosaicJustified'
+import { ArchwayTransition } from './ArchwayTransition'
 import { HERO_ANIMATION } from './animations'
 
 interface HeroArchwayRevealProps {
@@ -109,9 +110,11 @@ export function HeroArchwayReveal({ heroContent, nextSection }: HeroArchwayRevea
         {heroContent}
       </motion.div>
 
-      {/* Subsurface Layer (z-1) - Image Grid */}
+      {/* Subsurface Layer (z-1) - Image Grid with Archway Transition */}
       {!isLoading && images.length > 0 && (
-        <ImageMosaicJustified images={images} scrollYProgress={scrollYProgress} />
+        <ArchwayTransition scrollYProgress={scrollYProgress}>
+          <ImageMosaicJustified images={images} scrollYProgress={scrollYProgress} />
+        </ArchwayTransition>
       )}
 
       {/* Loading skeleton */}

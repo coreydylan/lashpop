@@ -70,14 +70,13 @@ export function ImageMosaicJustified({
 
   return (
     <motion.div
-      className="fixed inset-0 w-full overflow-hidden"
+      className="w-full h-full overflow-hidden"
       style={{
         opacity: gridOpacity,
-        zIndex: 1,
       }}
     >
       {/* Absolute positioned container for justified layout */}
-      <div className="relative w-full" style={{ height: `${layout.totalHeight}px` }}>
+      <div className="relative w-full h-full" style={{ minHeight: `${layout.totalHeight}px` }}>
         {layout.images.map((layoutImage, index) => (
           <MosaicImage
             key={layoutImage.image.id}
