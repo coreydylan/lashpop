@@ -94,10 +94,17 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [drawerStates, quizResults, setDrawerState]);
 
-  // Expand drawer
+  // Expand drawer (or dock services drawer first if invisible)
   const expandDrawer = useCallback((drawer: DrawerName) => {
-    setDrawerState(drawer, 'expanded');
-  }, [setDrawerState]);
+    const currentState = drawerStates[drawer];
+
+    // For services drawer, dock it first if it's invisible (to show category selector)
+    if (drawer === 'services' && currentState === 'invisible') {
+      setDrawerState(drawer, 'docked');
+    } else {
+      setDrawerState(drawer, 'expanded');
+    }
+  }, [setDrawerState, drawerStates]);
 
   // Close all drawers
   const closeAllDrawers = useCallback(() => {
