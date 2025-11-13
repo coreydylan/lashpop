@@ -58,6 +58,7 @@ export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedSubcategories, setSelectedSubcategories] = useState<Set<string>>(new Set());
   const [hoveredService, setHoveredService] = useState<string | null>(null);
+  const [showMobileCategoryPicker, setShowMobileCategoryPicker] = useState(false);
 
   // Build category hierarchy from services
   const categoryHierarchy = useMemo(() => {
@@ -181,35 +182,87 @@ export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
     setSelectedSubcategories(new Set());
   };
 
-  // Docked content
+  // Docked content with category picker
   const dockedContent = (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex items-center gap-4">
-        <div className="p-2 rounded-full bg-sage/20">
+    <div className="w-full">
+      {/* Desktop: Horizontal category pills */}
+      <div className="hidden md:flex items-center gap-3 w-full">
+        <div className="flex items-center gap-2 shrink-0">
           <Sparkles className="w-5 h-5 text-sage" />
+          <span className="text-sm font-medium text-sage">Categories:</span>
         </div>
-        <div>
-          <p className="text-sm font-medium text-sage">
-            {selectedCategories.size > 0
-              ? `${selectedCategories.size} ${selectedCategories.size === 1 ? 'category' : 'categories'} selected`
-              : 'Browse all services'}
-          </p>
-          <p className="text-lg font-light text-dune">
-            {filteredServices.length} Service{filteredServices.length !== 1 ? 's' : ''}
-          </p>
+
+        <div className="flex items-center gap-2 flex-1 overflow-x-auto scrollbar-hide">
+          {categoryHierarchy.map(category => (
+            <button
+              key={category.slug}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleCategory(category.slug);
+              }}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                selectedCategories.has(category.slug)
+                  ? 'bg-sage text-cream'
+                  : 'bg-sage/10 text-dune hover:bg-sage/20'
+              }`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-sm text-dune/70">
+            {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''}
+          </span>
+          {selectedCategories.size > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                clearAllFilters();
+              }}
+              className="text-xs text-terracotta hover:text-dusty-rose transition-colors"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
-      {selectedCategories.size > 0 && (
+
+      {/* Mobile: Compact dropdown */}
+      <div className="flex md:hidden items-center justify-between w-full">
         <button
           onClick={(e) => {
             e.stopPropagation();
-            clearAllFilters();
+            setShowMobileCategoryPicker(!showMobileCategoryPicker);
           }}
-          className="text-sm text-terracotta hover:text-dusty-rose transition-colors"
+          className="flex items-center gap-3"
         >
-          Clear
+          <Sparkles className="w-5 h-5 text-sage" />
+          <div className="text-left">
+            <p className="text-sm font-medium text-sage">
+              {selectedCategories.size > 0
+                ? `${selectedCategories.size} ${selectedCategories.size === 1 ? 'category' : 'categories'}`
+                : 'All categories'}
+            </p>
+            <p className="text-xs text-dune/70">
+              {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <ChevronRight className={`w-4 h-4 text-sage transition-transform ${showMobileCategoryPicker ? 'rotate-90' : ''}`} />
         </button>
-      )}
+        {selectedCategories.size > 0 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              clearAllFilters();
+            }}
+            className="text-xs text-terracotta"
+          >
+            Clear
+          </button>
+        )}
+      </div>
     </div>
   );
 
@@ -221,98 +274,90 @@ export default function ServicesDrawerV2({ services }: ServicesDrawerV2Props) {
       icon={<Sparkles className="w-5 h-5" />}
     >
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Progressive Filter Panel */}
-        <div className="glass-soft rounded-3xl p-8 space-y-6">
-          {/* Step 1: Categories */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-full bg-sage/20 text-sage flex items-center justify-center text-sm font-medium">
-                1
+        {/* Mobile Category Picker */}
+        <AnimatePresence>
+          {showMobileCategoryPicker && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden glass-soft rounded-3xl p-6 overflow-hidden"
+            >
+              <div className="flex flex-wrap gap-2">
+                {categoryHierarchy.map(category => (
+                  <button
+                    key={category.slug}
+                    onClick={() => {
+                      toggleCategory(category.slug);
+                      setShowMobileCategoryPicker(false);
+                    }}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      selectedCategories.has(category.slug)
+                        ? 'bg-sage text-cream'
+                        : 'bg-sage/10 text-dune'
+                    }`}
+                  >
+                    {category.name} ({category.count})
+                  </button>
+                ))}
               </div>
-              <h3 className="text-lg font-medium text-dune">Choose Categories</h3>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {categoryHierarchy.map(category => (
-                <motion.button
-                  key={category.slug}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => toggleCategory(category.slug)}
-                  className={`group relative px-6 py-3 rounded-full transition-all ${
-                    selectedCategories.has(category.slug)
-                      ? 'bg-gradient-to-r from-sage to-ocean-mist text-cream shadow-lg'
-                      : 'bg-cream/50 text-dune hover:bg-cream hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{category.name}</span>
-                    <span className="text-sm opacity-70">({category.count})</span>
-                    {selectedCategories.has(category.slug) && (
-                      <Check className="w-4 h-4" />
-                    )}
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          {/* Step 2: Subcategories (shown only when categories selected) */}
-          <AnimatePresence>
-            {availableSubcategories.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <div className="border-t border-sage/10 pt-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-8 h-8 rounded-full bg-terracotta/20 text-terracotta flex items-center justify-center text-sm font-medium">
-                      2
-                    </div>
-                    <h3 className="text-lg font-medium text-dune">Refine by Type</h3>
-                    <span className="text-sm text-dune/50 ml-2">(optional)</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {availableSubcategories.map(subcat => (
-                      <motion.button
-                        key={subcat.slug}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => toggleSubcategory(subcat.slug)}
-                        className={`px-4 py-2 rounded-full text-sm transition-all ${
-                          selectedSubcategories.has(subcat.slug)
-                            ? 'bg-terracotta text-cream'
-                            : 'bg-terracotta/10 text-dune hover:bg-terracotta/20'
-                        }`}
-                      >
-                        {subcat.name} ({subcat.count})
-                      </motion.button>
-                    ))}
-                  </div>
+        {/* Subcategory Filter Panel (shown only when categories selected) */}
+        <AnimatePresence>
+          {availableSubcategories.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.4 }}
+              className="glass-soft rounded-3xl p-6"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-terracotta/20 text-terracotta flex items-center justify-center text-sm font-medium">
+                  <Sparkles className="w-4 h-4" />
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Results Summary */}
-          <div className="flex items-center justify-between pt-4 border-t border-sage/10">
-            <p className="text-sm text-dune/70">
-              Showing {filteredServices.length} of {services.length} services
-            </p>
-            {(selectedCategories.size > 0 || selectedSubcategories.size > 0) && (
-              <button
-                onClick={clearAllFilters}
-                className="text-sm font-medium text-terracotta hover:text-dusty-rose transition-colors"
-              >
-                Clear all filters
-              </button>
-            )}
-          </div>
-        </div>
+                <h3 className="text-lg font-medium text-dune">Refine by Type</h3>
+                <span className="text-sm text-dune/50 ml-2">(optional)</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableSubcategories.map(subcat => (
+                  <motion.button
+                    key={subcat.slug}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => toggleSubcategory(subcat.slug)}
+                    className={`px-4 py-2 rounded-full text-sm transition-all ${
+                      selectedSubcategories.has(subcat.slug)
+                        ? 'bg-terracotta text-cream'
+                        : 'bg-terracotta/10 text-dune hover:bg-terracotta/20'
+                    }`}
+                  >
+                    {subcat.name} ({subcat.count})
+                  </motion.button>
+                ))}
+              </div>
+              {selectedSubcategories.size > 0 && (
+                <div className="mt-4 pt-4 border-t border-sage/10 flex justify-between items-center">
+                  <p className="text-sm text-dune/70">
+                    {filteredServices.length} service{filteredServices.length !== 1 ? 's' : ''} match your filters
+                  </p>
+                  <button
+                    onClick={() => setSelectedSubcategories(new Set())}
+                    className="text-sm font-medium text-terracotta hover:text-dusty-rose transition-colors"
+                  >
+                    Clear subcategories
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Services Display */}
         <div className="space-y-12">
