@@ -3,7 +3,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { getCategoryColors } from '@/lib/category-colors';
 import { getCategoryIcon } from '@/components/icons/CategoryIcons';
@@ -83,18 +82,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
     return Array.from(categoryMap.values());
   }, [state.services]);
 
-  // Update panel summary based on selections
-  useEffect(() => {
-    if (state.categorySelections.length === 0) {
-      actions.updatePanelSummary(panel.id, 'Choose services');
-    } else {
-      const names = state.categorySelections.map(c => c.categoryName).join(', ');
-      actions.updatePanelSummary(
-        panel.id,
-        `${state.categorySelections.length} selected · ${names}`
-      );
-    }
-  }, [state.categorySelections, panel.id, actions]);
+  // No need for panel summary updates since this is now a static bar
 
   const handleCategoryClick = (category: Category) => {
     const isSelected = state.categorySelections.some(c => c.categoryId === category.id);
@@ -152,13 +140,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
   };
 
   return (
-    <PanelWrapper
-      panel={panel}
-      title="Choose Services"
-      subtitle={state.categorySelections.length > 0
-        ? `${state.categorySelections.length} selected`
-        : "What can we help you with today?"}
-    >
+    <div className="bg-cream border-b border-sage/10 px-4 py-3 md:px-6 md:py-4">
       {/* Category Chips Bar */}
       <div className="flex flex-wrap gap-2 md:gap-3">
         {categories.map((category, index) => {
@@ -222,18 +204,6 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
           );
         })}
       </div>
-
-      {/* Helper Text */}
-      {state.categorySelections.length === 0 && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-4 text-xs md:text-sm text-sage/70 text-center"
-        >
-          Select one or more categories to view services
-        </motion.p>
-      )}
-    </PanelWrapper>
+    </div>
   );
 }
