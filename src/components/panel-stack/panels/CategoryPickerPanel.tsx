@@ -179,19 +179,6 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
               {/* Category Name */}
               <span className="text-xs md:text-sm">{category.name}</span>
 
-              {/* Service Count Badge (unselected only) */}
-              {!selected && (
-                <span
-                  className="text-[10px] md:text-xs px-1 md:px-1.5 py-0.5 rounded-full"
-                  style={{
-                    backgroundColor: category.colors.medium,
-                    color: category.colors.primary,
-                  }}
-                >
-                  {category.serviceCount}
-                </span>
-              )}
-
               {/* Check Icon (selected only) */}
               {selected && (
                 <motion.span
