@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
+import { UserKnowledgeProvider } from '@/contexts/UserKnowledgeContext'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -47,7 +48,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body className={`${inter.className} antialiased bg-stone-50 text-gray-800`}>
         <AuthProvider>
-          {children}
+          <UserKnowledgeProvider>
+            {children}
+          </UserKnowledgeProvider>
         </AuthProvider>
       </body>
     </html>

@@ -7,6 +7,8 @@ import { useSwipeable } from 'react-swipeable';
 import Image from 'next/image';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
+import { useUserKnowledge } from '@/contexts/UserKnowledgeContext';
+import { PhoneSaveNudge } from '@/components/auth/PhoneSaveNudge';
 import { getAssetsByServiceSlug, type AssetWithTags } from '@/actions/dam';
 import type { Panel, ServicePanelData } from '@/types/panel-stack';
 
@@ -26,6 +28,7 @@ const MOCK_PROVIDERS = [
 
 export function ServicePanel({ panel }: ServicePanelProps) {
   const { state, actions } = usePanelStack();
+  const { trackServiceView, trackServiceSelection, trackProviderSelection, shouldShowSaveNudge } = useUserKnowledge();
   const data = panel.data as ServicePanelData;
 
   // View state
@@ -41,6 +44,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
   const [gallery, setGallery] = useState<AssetWithTags[]>([]);
   const [isLoadingGallery, setIsLoadingGallery] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [showSaveNudge, setShowSaveNudge] = useState(false);
 
   // Filter services by active subcategory
   const filteredServices = useMemo(() => {
@@ -92,6 +96,9 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
   // Navigation handlers
   const handleServiceClick = (service: any) => {
+    // Track service view
+    trackServiceView(service.id, service.name, data.categoryId);
+
     setSelectedService(service);
     setCurrentView('service-detail');
     setNavigationPath([data.categoryName, service.name]);
@@ -107,6 +114,11 @@ export function ServicePanel({ panel }: ServicePanelProps) {
   };
 
   const handleContinueToTimeSelection = () => {
+    // Track service selection
+    if (selectedService) {
+      trackServiceSelection(selectedService.id, selectedService.name, data.categoryId);
+    }
+
     setCurrentView('time-selection');
     setNavigationPath([data.categoryName, selectedService.name, 'Select Time']);
   };
@@ -119,6 +131,10 @@ export function ServicePanel({ panel }: ServicePanelProps) {
         newSet.delete(providerId);
       } else {
         newSet.add(providerId);
+        // Track provider selection
+        if (selectedService) {
+          trackProviderSelection(selectedService.id, providerId);
+        }
       }
       return newSet;
     });
@@ -414,6 +430,20 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                   </motion.div>
                 )}
               </div>
+
+              {/* Phone Save Nudge - appears contextually */}
+              <AnimatePresence>
+                {shouldShowSaveNudge() && selectedProviders.size > 0 && !showSaveNudge && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    onAnimationComplete={() => setShowSaveNudge(true)}
+                  >
+                    <PhoneSaveNudge onClose={() => setShowSaveNudge(false)} context="service-selection" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Continue Button */}
               <div className="pt-3 md:pt-4 border-t border-sage/10">

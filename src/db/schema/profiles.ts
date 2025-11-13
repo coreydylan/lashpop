@@ -4,10 +4,11 @@
  * Extended user profile with preferences, lash history, and loyalty data
  */
 
-import { pgTable, uuid, text, date, boolean, integer, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, date, boolean, integer, timestamp, json } from 'drizzle-orm/pg-core'
 import { user } from './auth_user'
 import { businessLocations } from './business_locations'
 import { teamMembers } from './team_members'
+import type { UserKnowledge } from '@/contexts/UserKnowledgeContext'
 
 export const profiles = pgTable('profiles', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -39,6 +40,9 @@ export const profiles = pgTable('profiles', {
   // Loyalty/tier
   loyaltyPoints: integer('loyalty_points').default(0),
   tier: text('tier').default('standard'), // standard, vip, elite
+
+  // User Knowledge (learned preferences and behavior)
+  knowledgeData: json('knowledge_data').$type<UserKnowledge>(),
 
   // Metadata
   createdAt: timestamp('created_at').defaultNow().notNull(),
