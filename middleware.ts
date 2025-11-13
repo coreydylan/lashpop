@@ -12,7 +12,8 @@ export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
     process.env.DAM_ONLY_DEPLOYMENT === "true"
 
   // DAM authentication is now handled by server-side layouts
-  // No middleware auth check needed to avoid redirect loops
+  // Define route checkers for blocking non-DAM routes
+  const isDAMRoute = pathname.startsWith("/dam") || pathname.startsWith("/api/dam")
 
   // If this is a DAM-only deployment, handle routing
   if (isDamOnlyDeployment) {
@@ -23,7 +24,7 @@ export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
       return NextResponse.redirect(url)
     }
 
-    // Block non-DAM routes (except login and auth API)
+    // Block non-DAM routes (except Next.js internals)
     if (!isDAMRoute && !pathname.startsWith("/_next") && !pathname.startsWith("/api/_")) {
       const url = req.nextUrl.clone()
       url.pathname = "/dam"

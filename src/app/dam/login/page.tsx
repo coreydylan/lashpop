@@ -4,11 +4,6 @@ import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { Lock } from "lucide-react"
 
-// Disable auth check for this page
-export const metadata = {
-  skipAuthCheck: true
-}
-
 export default function DAMLogin() {
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")

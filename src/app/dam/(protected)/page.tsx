@@ -18,8 +18,8 @@ import { PhotoLightbox } from "../components/PhotoLightbox"
 import { OmniBar } from "../components/OmniBar"
 import { OmniCommandPalette, type CommandItem } from "../components/OmniCommandPalette"
 import { TagEditor } from "../components/TagEditor"
-import { CollectionSelector } from "./components/CollectionSelector"
-import { CollectionManager } from "./components/CollectionManager"
+import { CollectionSelector } from "../components/CollectionSelector"
+import { CollectionManager } from "../components/CollectionManager"
 
 interface Asset {
   id: string
