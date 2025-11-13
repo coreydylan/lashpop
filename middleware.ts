@@ -5,8 +5,11 @@ import { features } from "@/config/features"
 export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
   const { pathname } = req.nextUrl
 
-  // Check if this is a DAM-only deployment
-  const isDamOnlyDeployment = process.env.DAM_ONLY_DEPLOYMENT === "true"
+  // Check if this is a DAM-only deployment by hostname or env var
+  const hostname = req.headers.get("host") || ""
+  const isDamOnlyDeployment =
+    hostname.includes("lashpop-dam") ||
+    process.env.DAM_ONLY_DEPLOYMENT === "true"
 
   // DAM authentication check
   const isDAMRoute = pathname.startsWith("/dam") || pathname.startsWith("/api/dam")
