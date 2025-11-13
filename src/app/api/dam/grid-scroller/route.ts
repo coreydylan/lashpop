@@ -9,7 +9,7 @@ import { assets } from '@/db/schema/assets'
 import { assetTags } from '@/db/schema/asset_tags'
 import { tags } from '@/db/schema/tags'
 import { tagCategories } from '@/db/schema/tag_categories'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,20 +71,18 @@ export async function GET(request: NextRequest) {
 
     // Fetch full asset details
     const assetIds = taggedAssets.map((ta) => ta.assetId)
-    const gridAssets = await db
+
+    if (assetIds.length === 0) {
+      return NextResponse.json({
+        images: [],
+        message: 'No assets found with grid-scroller tag',
+      })
+    }
+
+    const filteredAssets = await db
       .select()
       .from(assets)
-      .where(
-        // @ts-ignore - Drizzle types are complex here
-        assetIds.length > 0
-          ? assets.id
-          : undefined
-      )
-
-    // Filter to only include images from assetIds
-    const filteredAssets = gridAssets.filter((asset) =>
-      assetIds.includes(asset.id)
-    )
+      .where(inArray(assets.id, assetIds))
 
     // Fetch all tags for these assets to check for 'key-image' tag
     const allAssetTags = await db
@@ -95,8 +93,7 @@ export async function GET(request: NextRequest) {
       })
       .from(assetTags)
       .leftJoin(tags, eq(assetTags.tagId, tags.id))
-      // @ts-ignore
-      .where(assetIds.length > 0 ? assetTags.assetId : undefined)
+      .where(inArray(assetTags.assetId, assetIds))
 
     // Group tags by asset
     const assetTagsMap = new Map<string, string[]>()
