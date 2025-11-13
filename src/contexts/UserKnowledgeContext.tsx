@@ -197,7 +197,7 @@ function createEmptyKnowledge(): UserKnowledge {
 export function UserKnowledgeProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const [knowledge, setKnowledge] = useState<UserKnowledge>(getInitialKnowledge);
-  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // Auto-save to localStorage with debouncing
   useEffect(() => {
@@ -226,7 +226,7 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
       setKnowledge(prev => ({
         ...prev,
         userId: session.user.id,
-        phoneNumber: session.user.phoneNumber || prev.phoneNumber
+        phoneNumber: (session.user as any).phoneNumber || prev.phoneNumber
       }));
     }
   }, [session]);
@@ -334,7 +334,7 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
       };
 
       const questionsAnswered = completed
-        ? [...new Set([...current.questionsAnswered, questionId])]
+        ? Array.from(new Set([...current.questionsAnswered, questionId]))
         : current.questionsAnswered.filter(q => q !== questionId);
 
       // Assuming 5 total questions per category
@@ -400,7 +400,7 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
     } catch (error) {
       console.error('Failed to sync user knowledge to server:', error);
     }
-  }, [knowledge, session]);
+  }, [session]);
 
   // Get service history
   const getServiceHistory = useCallback((categoryId?: string): ServiceInteraction[] => {
