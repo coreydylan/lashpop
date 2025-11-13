@@ -9,6 +9,7 @@ export type PanelType =
   | 'service-detail'
   | 'provider-detail'
   | 'schedule-comparison'
+  | 'scheduling'
   | 'booking-confirmation';
 
 export type EntryPoint =

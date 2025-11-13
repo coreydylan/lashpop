@@ -6,6 +6,8 @@ import { X, ChevronLeft, Clock, DollarSign, Sparkles, User, Calendar } from 'luc
 import Image from 'next/image';
 import { usePanelManager } from './PanelContext';
 import { getAssetsByServiceSlug, type AssetWithTags } from '@/actions/dam';
+import { getTeamMembersByServiceId } from '@/actions/team';
+import type { SelectTeamMember } from '@/db/schema/team_members';
 
 interface Service {
   id: string;
@@ -21,32 +23,21 @@ interface Service {
   subcategoryName: string | null;
 }
 
-interface Provider {
-  id: string;
-  name: string;
-  imageUrl: string;
-  role: string;
-}
-
 interface ServiceDetailPanelProps {
   service: Service;
   onClose: () => void;
 }
 
-// Mock providers - will be replaced with real data
-const MOCK_PROVIDERS: Provider[] = [
-  { id: '1', name: 'Sarah', imageUrl: '/placeholder-team.jpg', role: 'Lead Lash Artist' },
-  { id: '2', name: 'Maya', imageUrl: '/placeholder-team.jpg', role: 'Lash Specialist' },
-  { id: '3', name: 'Jamie', imageUrl: '/placeholder-team.jpg', role: 'Lash Artist' },
-];
-
 export default function ServiceDetailPanel({ service, onClose }: ServiceDetailPanelProps) {
-  const { context, toggleProvider, selectAllProviders } = usePanelManager();
+  const { context, toggleProvider, selectAllProviders, pushPanel } = usePanelManager();
   const [showSchedule, setShowSchedule] = useState(false);
   const [gallery, setGallery] = useState<AssetWithTags[]>([]);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
+  const [providers, setProviders] = useState<SelectTeamMember[]>([]);
+  const [isLoadingProviders, setIsLoadingProviders] = useState(true);
 
   const selectedProviders = context.selectedProviders;
+  const selectedProviderObjects = providers.filter(p => selectedProviders.includes(p.id));
 
   // Fetch service gallery from DAM
   useEffect(() => {
@@ -65,13 +56,43 @@ export default function ServiceDetailPanel({ service, onClose }: ServiceDetailPa
     fetchGallery();
   }, [service.slug]);
 
+  // Fetch team members who can perform this service
+  useEffect(() => {
+    async function fetchProviders() {
+      setIsLoadingProviders(true);
+      try {
+        const members = await getTeamMembersByServiceId(service.id);
+        setProviders(members);
+      } catch (error) {
+        console.error('Failed to fetch team members:', error);
+      } finally {
+        setIsLoadingProviders(false);
+      }
+    }
+
+    fetchProviders();
+  }, [service.id]);
+
   const handleProviderSelect = (providerId: string) => {
     toggleProvider(providerId);
   };
 
   const handleShowAllSchedules = () => {
-    selectAllProviders(MOCK_PROVIDERS.map(p => p.id));
+    selectAllProviders(providers.map(p => p.id));
     setShowSchedule(true);
+  };
+
+  const handleContinueToScheduling = () => {
+    // Open the scheduling panel with selected service and providers
+    pushPanel({
+      id: `scheduling-${service.id}`,
+      type: 'scheduling',
+      data: {
+        service,
+        selectedProviders: selectedProviderObjects,
+      },
+      entryPoint: 'service-card',
+    });
   };
 
   const priceDisplay = `$${(service.priceStarting / 100).toFixed(0)}+`;
@@ -132,7 +153,9 @@ export default function ServiceDetailPanel({ service, onClose }: ServiceDetailPa
                 </div>
                 <div className="flex items-center gap-2">
                   <User className="w-5 h-5 text-ocean-mist" />
-                  <span className="text-sm text-dune">{MOCK_PROVIDERS.length} artists available</span>
+                  <span className="text-sm text-dune">
+                    {isLoadingProviders ? 'Loading...' : `${providers.length} artist${providers.length !== 1 ? 's' : ''} available`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -187,71 +210,115 @@ export default function ServiceDetailPanel({ service, onClose }: ServiceDetailPa
         <div className="px-6 py-6 border-t border-sage/10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-light text-dune">Choose Your Artist</h2>
-            <button
-              onClick={handleShowAllSchedules}
-              className="text-sm text-sage hover:text-ocean-mist transition-colors font-medium"
-            >
-              Show All Schedules
-            </button>
+            {providers.length > 0 && (
+              <button
+                onClick={handleShowAllSchedules}
+                className="text-sm text-sage hover:text-ocean-mist transition-colors font-medium"
+              >
+                Show All Schedules
+              </button>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {MOCK_PROVIDERS.map((provider) => {
+          {/* Loading State */}
+          {isLoadingProviders && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="relative p-4 rounded-2xl bg-cream/50 animate-pulse"
+                >
+                  <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-sage/20 to-terracotta/20" />
+                  <div className="h-4 bg-sage/10 rounded mx-auto w-3/4 mb-2" />
+                  <div className="h-3 bg-sage/10 rounded mx-auto w-1/2" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Providers Grid */}
+          {!isLoadingProviders && providers.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {providers.map((provider) => {
               const isSelected = selectedProviders.includes(provider.id);
 
-              return (
-                <motion.button
-                  key={provider.id}
-                  onClick={() => handleProviderSelect(provider.id)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`relative p-4 rounded-2xl transition-all ${
-                    isSelected
-                      ? 'glass shadow-lg ring-2 ring-sage'
-                      : 'bg-cream/50 hover:bg-cream'
-                  }`}
-                >
-                  {/* Selection Indicator */}
-                  <AnimatePresence>
-                    {isSelected && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-sage flex items-center justify-center"
-                      >
-                        <svg className="w-4 h-4 text-cream" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Provider Photo */}
-                  <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-gradient-to-br from-sage/20 to-terracotta/20 flex items-center justify-center overflow-hidden">
-                    <User className="w-10 h-10 text-sage/50" />
-                  </div>
-
-                  {/* Provider Info */}
-                  <div className="text-center">
-                    <p className="font-medium text-dune">{provider.name}</p>
-                    <p className="text-xs text-dune/60 mt-1">{provider.role}</p>
-                  </div>
-
-                  {/* Hover State */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                    className="absolute inset-0 bg-sage/5 rounded-2xl flex items-center justify-center pointer-events-none"
+                return (
+                  <motion.button
+                    key={provider.id}
+                    onClick={() => handleProviderSelect(provider.id)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`relative p-4 rounded-2xl transition-all ${
+                      isSelected
+                        ? 'glass shadow-lg ring-2 ring-sage'
+                        : 'bg-cream/50 hover:bg-cream'
+                    }`}
                   >
-                    <span className="text-sm font-medium text-sage">
-                      {isSelected ? 'Selected' : `Book with ${provider.name}`}
-                    </span>
-                  </motion.div>
-                </motion.button>
-              );
-            })}
-          </div>
+                    {/* Selection Indicator */}
+                    <AnimatePresence>
+                      {isSelected && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          exit={{ scale: 0 }}
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-sage flex items-center justify-center"
+                        >
+                          <svg className="w-4 h-4 text-cream" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Provider Photo */}
+                    <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden">
+                      {provider.imageUrl ? (
+                        <Image
+                          src={provider.imageUrl}
+                          alt={provider.name}
+                          width={80}
+                          height={80}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-sage/20 to-terracotta/20 flex items-center justify-center">
+                          <User className="w-10 h-10 text-sage/50" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Provider Info */}
+                    <div className="text-center">
+                      <p className="font-medium text-dune">{provider.name}</p>
+                      <p className="text-xs text-dune/60 mt-1">{provider.role}</p>
+                    </div>
+
+                    {/* Hover State */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1 }}
+                      className="absolute inset-0 bg-sage/5 rounded-2xl flex items-center justify-center pointer-events-none"
+                    >
+                      <span className="text-sm font-medium text-sage">
+                        {isSelected ? 'Selected' : `Book with ${provider.name.split(' ')[0]}`}
+                      </span>
+                    </motion.div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* No Providers State */}
+          {!isLoadingProviders && providers.length === 0 && (
+            <div className="glass rounded-2xl p-8 text-center">
+              <User className="w-12 h-12 text-sage/30 mx-auto mb-3" />
+              <p className="text-dune/60 mb-2">No artists available for this service</p>
+              <p className="text-sm text-dune/40">
+                Please check back later or contact us for assistance
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Schedule Comparison Section */}
@@ -283,6 +350,7 @@ export default function ServiceDetailPanel({ service, onClose }: ServiceDetailPa
         {/* Book Button */}
         <div className="sticky bottom-0 px-6 py-4 bg-cream/95 backdrop-blur-md border-t border-sage/10">
           <motion.button
+            onClick={handleContinueToScheduling}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
             disabled={selectedProviders.length === 0}

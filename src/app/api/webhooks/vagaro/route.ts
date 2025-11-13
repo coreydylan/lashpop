@@ -7,6 +7,7 @@ import {
   syncFormResponse,
   syncTransaction
 } from '@/lib/vagaro-sync-all'
+import { autoLinkAppointmentByPhone } from '@/actions/appointments'
 
 /**
  * Vagaro Webhook Endpoint
@@ -28,6 +29,17 @@ export async function POST(request: NextRequest) {
       case 'appointment':
         console.log('📅 Syncing appointment...')
         await syncAppointment(payload)
+
+        // Auto-link appointment to LashPop user by phone number
+        if (payload.appointmentId) {
+          try {
+            console.log('🔗 Attempting to auto-link appointment to user...')
+            await autoLinkAppointmentByPhone(payload.appointmentId)
+          } catch (error) {
+            console.error('  ⚠️ Failed to auto-link appointment:', error)
+            // Continue even if auto-link fails
+          }
+        }
         break
 
       case 'customer':
