@@ -2,6 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+// Force dynamic rendering so middleware runs on every request
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
 import clsx from "clsx"

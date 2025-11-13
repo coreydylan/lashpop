@@ -1,5 +1,8 @@
 "use client"
 
+// Force dynamic rendering so middleware runs on every request
+export const dynamic = 'force-dynamic'
+
 import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { Lock } from "lucide-react"

@@ -2,6 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+// Force dynamic rendering so middleware runs on every request
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Upload as UploadIcon, Camera, ArrowLeft, CheckCircle2, LogOut } from "lucide-react"
