@@ -3,7 +3,7 @@
 import { getDb } from '@/db'
 import { appointments } from '@/db/schema/appointments'
 import { vagaroCustomers } from '@/db/schema/vagaro_customers'
-import { users } from '@/db/schema/auth'
+import { user as users } from '@/db/schema/auth_user'
 import { eq, and, desc, gte } from 'drizzle-orm'
 import { getVagaroClient } from '@/lib/vagaro-client'
 
@@ -173,7 +173,7 @@ export async function autoLinkAppointmentByPhone(vagaroAppointmentId: string) {
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.phone, normalizedPhone))
+        .where(eq(users.phoneNumber, normalizedPhone))
         .limit(1)
 
       if (user) {

@@ -1,6 +1,6 @@
 import { Navigation } from '@/components/sections/Navigation'
 import { HeroSection } from '@/components/sections/HeroSection'
-import { PhotoTransition } from '@/components/sections/PhotoTransition'
+import { HeroArchwayReveal } from '@/components/HeroArchwayReveal'
 import { ServiceDiscoveryQuiz } from '@/components/sections/ServiceDiscoveryQuiz'
 import { ServicesSection } from '@/components/sections/ServicesSectionServer'
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection'
@@ -21,9 +21,11 @@ export default function HomePage() {
         <TeamPortfolioView />
         <PanelRenderer />
         <main className="overflow-x-hidden">
-        <HeroSection />
-        <PhotoTransition />
-        <ServiceDiscoveryQuiz />
+        {/* Hero with Archway Reveal and Grid Scroller */}
+        <HeroArchwayReveal
+          heroContent={<HeroSection />}
+          nextSection={<ServiceDiscoveryQuiz />}
+        />
         <div id="services">
           <ServicesSection />
         </div>
