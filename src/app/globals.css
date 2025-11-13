@@ -9,7 +9,7 @@
     /* Typography */
     --font-sans: 'Outfit', sans-serif;
     --font-serif: 'Libre Baskerville', serif;
-    
+
     /* Desert Ocean Palette */
     --sage: 161, 151, 129;           /* Soft sage green */
     --dusty-rose: 205, 168, 158;     /* Muted desert rose */
@@ -19,17 +19,23 @@
     --ocean-mist: 188, 201, 194;     /* Pale ocean green */
     --cream: 250, 247, 241;          /* Off-white cream */
     --dune: 138, 124, 105;           /* Deep sand */
-    
+
     /* Spacing */
     --space-xs: clamp(0.75rem, 2vw, 1rem);
     --space-sm: clamp(1.5rem, 4vw, 2rem);
     --space-md: clamp(2.5rem, 6vw, 4rem);
     --space-lg: clamp(4rem, 8vw, 6rem);
     --space-xl: clamp(6rem, 10vw, 8rem);
-    
+
     /* Border Radius */
     --radius-soft: 24px;
     --radius-arch: 50% 50% 0 0;
+
+    /* iOS Safe Area Insets (fallback to 0 for non-iOS) */
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
   }
 
   * {
@@ -53,6 +59,10 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent tap highlight on iOS */
+    -webkit-tap-highlight-color: transparent;
+    /* Enable smooth momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
   }
   
   ::selection {
@@ -113,6 +123,107 @@
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* iOS Safe Area Support */
+.safe-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: var(--safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-x {
+  padding-left: var(--safe-area-inset-left);
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-y {
+  padding-top: var(--safe-area-inset-top);
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-all {
+  padding-top: var(--safe-area-inset-top);
+  padding-right: var(--safe-area-inset-right);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+}
+
+/* iOS Touch Optimization */
+button,
+a,
+[role="button"],
+[role="link"],
+.btn,
+.clickable {
+  /* Prevent 300ms tap delay on iOS */
+  touch-action: manipulation;
+  /* Remove iOS tap highlight */
+  -webkit-tap-highlight-color: transparent;
+  /* Minimum touch target size (44x44pt per iOS HIG) */
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Allow specific touch actions on scrollable containers */
+.scroll-container-x {
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scroll-container-y {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Horizontal scrollable tag container */
+.horizontal-scroll-tags {
+  display: flex;
+  gap: 0.375rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  touch-action: pan-x;
+  /* Snap scrolling for better UX */
+  scroll-snap-type: x proximity;
+}
+
+.horizontal-scroll-tags::-webkit-scrollbar {
+  display: none;
+}
+
+.horizontal-scroll-tags > * {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* Fade gradient for horizontal scroll indication */
+.horizontal-scroll-fade {
+  position: relative;
+}
+
+.horizontal-scroll-fade::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, transparent, currentColor);
+  pointer-events: none;
+  opacity: 0.15;
 }
 
 @layer components {

@@ -20,6 +20,7 @@ import { OmniCommandPalette, type CommandItem } from "../components/OmniCommandP
 import { TagEditor } from "../components/TagEditor"
 import { CollectionSelector } from "../components/CollectionSelector"
 import { CollectionManager } from "../components/CollectionManager"
+import { TutorialIntegration } from "../components/TutorialIntegration"
 
 interface Asset {
   id: string
@@ -73,6 +74,7 @@ export default function DAMPage() {
   const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
   const activeFiltersRef = useRef<ActiveFilter[]>([])
   const [uploadingAssetIds, setUploadingAssetIds] = useState<string[]>([])
+  const [hasInteractedWithGrid, setHasInteractedWithGrid] = useState(false)
 
   // Collections state
   const [activeCollectionId, setActiveCollectionId] = useState<string | undefined>(undefined)
@@ -610,6 +612,11 @@ export default function DAMPage() {
   const handleSelectionChange = (selectedIds: string[]) => {
     console.log('Selection change triggered:', selectedIds, 'Previous:', selectedAssets)
     setSelectedAssets(selectedIds)
+
+    // Track that user has interacted with the grid (for tutorial)
+    if (!hasInteractedWithGrid) {
+      setHasInteractedWithGrid(true)
+    }
 
     if (selectedIds.length === 0) {
       // Clear selection mode
@@ -1945,16 +1952,24 @@ export default function DAMPage() {
       )}
 
       {isMobile && !isCommandOpen && (
-        <div className="fixed bottom-5 left-0 right-0 z-40 px-6 lg:hidden">
+        <div className="fixed bottom-5 left-0 right-0 z-40 px-6 lg:hidden safe-bottom">
           <button
             onClick={() => openCommandPalette("")}
             className="w-full flex items-center justify-center gap-2 rounded-full bg-dune text-cream py-3 shadow-2xl shadow-dune/40 border border-white/10"
+            data-tutorial="command-button"
           >
             <Sparkles className="w-5 h-5 text-dusty-rose" />
             <span className="text-sm font-semibold uppercase tracking-wide">Command</span>
           </button>
         </div>
       )}
+
+      {/* Tutorial System */}
+      <TutorialIntegration
+        selectedAssets={selectedAssets}
+        isCommandOpen={isCommandOpen}
+        hasInteractedWithGrid={hasInteractedWithGrid}
+      />
     </PhotoLightbox>
   )
 }

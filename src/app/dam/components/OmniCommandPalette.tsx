@@ -266,7 +266,7 @@ export function OmniCommandPalette({
     <div
       className={clsx(
         "fixed inset-0 z-[9999] flex bg-black/40 backdrop-blur-sm",
-        isMobile ? "items-end" : "items-start justify-center pt-16"
+        isMobile ? "items-end pb-safe-bottom" : "items-start justify-center pt-16"
       )}
       onClick={onClose}
     >

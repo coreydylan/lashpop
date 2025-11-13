@@ -35,7 +35,25 @@ const config: Config = {
       animation: {
         'fade-in': 'fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',
         'float': 'float 6s cubic-bezier(0.4, 0, 0.2, 1) infinite'
-      }
+      },
+      spacing: {
+        'safe-top': 'var(--safe-area-inset-top)',
+        'safe-bottom': 'var(--safe-area-inset-bottom)',
+        'safe-left': 'var(--safe-area-inset-left)',
+        'safe-right': 'var(--safe-area-inset-right)',
+      },
+      padding: {
+        'safe-top': 'var(--safe-area-inset-top)',
+        'safe-bottom': 'var(--safe-area-inset-bottom)',
+        'safe-left': 'var(--safe-area-inset-left)',
+        'safe-right': 'var(--safe-area-inset-right)',
+      },
+      margin: {
+        'safe-top': 'var(--safe-area-inset-top)',
+        'safe-bottom': 'var(--safe-area-inset-bottom)',
+        'safe-left': 'var(--safe-area-inset-left)',
+        'safe-right': 'var(--safe-area-inset-right)',
+      },
     },
   },
   plugins: [],

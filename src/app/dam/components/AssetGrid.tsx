@@ -905,57 +905,52 @@ function AssetCard({
         if (!teamMember && displayedTags.length === 0) return null
 
         return (
-          <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5 z-10">
-            {/* Team member badge */}
-            {teamMember && (() => {
-              const teamTagId = `team-${asset.teamMemberId}`
-              const isPending = pendingTagRemoval &&
-                pendingTagRemoval.tagId === teamTagId &&
-                pendingTagRemoval.assetIds.includes(asset.id)
-              const isDissipating = dissipatingTags.has(teamTagId)
+          <div className="absolute bottom-3 left-3 right-3 z-10">
+            <div className="horizontal-scroll-tags pr-8">
+              {/* Team member badge */}
+              {teamMember && (() => {
+                const teamTagId = `team-${asset.teamMemberId}`
+                const isPending = pendingTagRemoval &&
+                  pendingTagRemoval.tagId === teamTagId &&
+                  pendingTagRemoval.assetIds.includes(asset.id)
+                const isDissipating = dissipatingTags.has(teamTagId)
 
-              return (
-                <span
-                  className={`px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden ${
-                    isPending ? 'candy-cane-effect' : ''
-                  } ${isDissipating ? 'dissipate-effect' : ''}`}
-                  style={{
-                    background: 'linear-gradient(135deg, #C4A587 0%, #C4A587CC 100%)'
-                  }}
-                >
-                  {teamMember.name}
-                </span>
-              )
-            })()}
+                return (
+                  <span
+                    className={`px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden ${
+                      isPending ? 'candy-cane-effect' : ''
+                    } ${isDissipating ? 'dissipate-effect' : ''}`}
+                    style={{
+                      background: 'linear-gradient(135deg, #C4A587 0%, #C4A587CC 100%)'
+                    }}
+                  >
+                    {teamMember.name}
+                  </span>
+                )
+              })()}
 
-            {/* Tag badges */}
-            {displayedTags.slice(0, teamMember ? 1 : 2).map((tag) => {
-              const isPending = pendingTagRemoval &&
-                pendingTagRemoval.tagId === tag.id &&
-                pendingTagRemoval.assetIds.includes(asset.id)
-              const isDissipating = dissipatingTags.has(tag.id)
+              {/* Tag badges - show all, no truncation */}
+              {displayedTags.map((tag) => {
+                const isPending = pendingTagRemoval &&
+                  pendingTagRemoval.tagId === tag.id &&
+                  pendingTagRemoval.assetIds.includes(asset.id)
+                const isDissipating = dissipatingTags.has(tag.id)
 
-              return (
-                <span
-                  key={tag.id}
-                  className={`px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden ${
-                    isPending ? 'candy-cane-effect' : ''
-                  } ${isDissipating ? 'dissipate-effect' : ''}`}
-                  style={{
-                    background: `linear-gradient(135deg, ${tag.category.color || "#8A7C69"} 0%, ${tag.category.color || "#8A7C69"}CC 100%)`
-                  }}
-                >
-                  {tag.displayName}
-                </span>
-              )
-            })}
-
-            {/* "+" badge for remaining tags */}
-            {displayedTags.length > (teamMember ? 1 : 2) && (
-              <span className="px-2 py-0.5 bg-dune/80 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium">
-                +{displayedTags.length - (teamMember ? 1 : 2)}
-              </span>
-            )}
+                return (
+                  <span
+                    key={tag.id}
+                    className={`px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden ${
+                      isPending ? 'candy-cane-effect' : ''
+                    } ${isDissipating ? 'dissipate-effect' : ''}`}
+                    style={{
+                      background: `linear-gradient(135deg, ${tag.category.color || "#8A7C69"} 0%, ${tag.category.color || "#8A7C69"}CC 100%)`
+                    }}
+                  >
+                    {tag.displayName}
+                  </span>
+                )
+              })}
+            </div>
           </div>
         )
       })()}
