@@ -8,7 +8,7 @@ import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
 import { Navigation } from '@/components/sections/Navigation';
 import HeroSection from '@/components/landing-v2/HeroSection';
-import { PhotoTransition } from '@/components/sections/PhotoTransition';
+import { HeroArchwayReveal } from '@/components/HeroArchwayReveal';
 import AboutSection from '@/components/landing-v2/AboutSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
 import TestimonialsSection from '@/components/landing-v2/TestimonialsSection';
@@ -85,9 +85,11 @@ export default function LandingPageV2Client({ services, teamMembers }: LandingPa
 
               {/* Z-1: Page Surface with dynamic padding for panels */}
               <main className="page-content overflow-x-hidden" style={{ paddingTop: 'var(--panel-stack-height, 0px)' }}>
-                <HeroSection />
-                <PhotoTransition />
-                <AboutSection />
+                {/* Hero with Archway Reveal and Photo Grid Scroller */}
+                <HeroArchwayReveal
+                  heroContent={<HeroSection />}
+                  nextSection={<AboutSection />}
+                />
                 <div id="team">
                   <EnhancedTeamSectionClient teamMembers={teamMembers} />
                 </div>
