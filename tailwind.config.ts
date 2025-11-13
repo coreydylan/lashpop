@@ -22,9 +22,11 @@ const config: Config = {
         // Category Brand Colors
         'category-lashes': 'rgb(205, 168, 158)',
         'category-brows': 'rgb(212, 175, 117)',
-        'category-waxing': 'rgb(161, 151, 129)',
+        'category-permanent-makeup': 'rgb(189, 136, 120)',
         'category-facials': 'rgb(188, 201, 194)',
-        'category-nails': 'rgb(189, 136, 120)',
+        'category-waxing': 'rgb(161, 151, 129)',
+        'category-specialty': 'rgb(212, 175, 117)',
+        'category-bundles': 'rgb(205, 168, 158)',
       },
       fontFamily: {
         sans: ['Outfit', 'sans-serif'],

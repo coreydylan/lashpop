@@ -33,39 +33,53 @@ The LashPop color palette embodies the **Desert Ocean** aesthetic - warm, earthy
 Each service category has a designated brand color for consistency across chips, badges, cards, and sections.
 
 ### Lashes
-- **Primary**: Dusty Rose `#CDA89E`
+- **Primary**: Dusty Rose `#CDA89E` `rgb(205, 168, 158)`
 - **Light**: `rgba(205, 168, 158, 0.15)`
 - **Medium**: `rgba(205, 168, 158, 0.3)`
-- **Usage**: Most popular category, gets the signature dusty rose
-- **Icon**: ✨ Sparkles
+- **Usage**: Most popular category, signature dusty rose for lash extensions
+- **Icon**: 👁️ Eye
 
 ### Brows
-- **Primary**: Golden `#D4AF75`
+- **Primary**: Golden `#D4AF75` `rgb(212, 175, 117)`
 - **Light**: `rgba(212, 175, 117, 0.15)`
 - **Medium**: `rgba(212, 175, 117, 0.3)`
-- **Usage**: Premium feel, complements brow artistry
-- **Icon**: 🎀 Ribbon
+- **Usage**: Premium feel, complements brow artistry and shaping
+- **Icon**: ✨ Sparkles
 
-### Waxing
-- **Primary**: Sage `#A19781`
-- **Light**: `rgba(161, 151, 129, 0.15)`
-- **Medium**: `rgba(161, 151, 129, 0.3)`
-- **Usage**: Natural, earthy, smooth
-- **Icon**: 💫 Dizzy
-
-### Facials
-- **Primary**: Ocean Mist `#BCC9C2`
-- **Light**: `rgba(188, 201, 194, 0.15)`
-- **Medium**: `rgba(188, 201, 194, 0.3)`
-- **Usage**: Cooling, refreshing, calming
-- **Icon**: 🌸 Cherry Blossom
-
-### Nails
-- **Primary**: Terracotta `#BD8878`
+### Permanent Makeup
+- **Primary**: Terracotta `#BD8878` `rgb(189, 136, 120)`
 - **Light**: `rgba(189, 136, 120, 0.15)`
 - **Medium**: `rgba(189, 136, 120, 0.3)`
-- **Usage**: Warm, polished, refined
-- **Icon**: 💅 Nail Polish
+- **Usage**: Warm, artistic, professional for PMU services
+- **Icon**: 💄 Lipstick
+
+### Facials
+- **Primary**: Ocean Mist `#BCC9C2` `rgb(188, 201, 194)`
+- **Light**: `rgba(188, 201, 194, 0.15)`
+- **Medium**: `rgba(188, 201, 194, 0.3)`
+- **Usage**: Cooling, refreshing, calming for facial treatments
+- **Icon**: 🌸 Cherry Blossom
+
+### Waxing
+- **Primary**: Sage `#A19781` `rgb(161, 151, 129)`
+- **Light**: `rgba(161, 151, 129, 0.15)`
+- **Medium**: `rgba(161, 151, 129, 0.3)`
+- **Usage**: Natural, earthy, smooth for waxing services
+- **Icon**: 🪒 Razor
+
+### Specialty
+- **Primary**: Golden `#D4AF75` `rgb(212, 175, 117)`
+- **Light**: `rgba(212, 175, 117, 0.15)`
+- **Medium**: `rgba(212, 175, 117, 0.3)`
+- **Usage**: Premium, unique for specialty services like permanent jewelry
+- **Icon**: 💎 Gem
+
+### Bundles
+- **Primary**: Dusty Rose `#CDA89E` `rgb(205, 168, 158)`
+- **Light**: `rgba(205, 168, 158, 0.15)`
+- **Medium**: `rgba(205, 168, 158, 0.3)`
+- **Usage**: Inviting, value-focused for service packages
+- **Icon**: 🎁 Gift
 
 ---
 
@@ -200,9 +214,11 @@ Add to `globals.css`:
   /* Category Brand Colors */
   --category-lashes: 205, 168, 158;
   --category-brows: 212, 175, 117;
-  --category-waxing: 161, 151, 129;
+  --category-permanent-makeup: 189, 136, 120;
   --category-facials: 188, 201, 194;
-  --category-nails: 189, 136, 120;
+  --category-waxing: 161, 151, 129;
+  --category-specialty: 212, 175, 117;
+  --category-bundles: 205, 168, 158;
 }
 ```
 
@@ -215,9 +231,11 @@ colors: {
   // Existing colors...
   'category-lashes': 'rgb(205, 168, 158)',
   'category-brows': 'rgb(212, 175, 117)',
-  'category-waxing': 'rgb(161, 151, 129)',
+  'category-permanent-makeup': 'rgb(189, 136, 120)',
   'category-facials': 'rgb(188, 201, 194)',
-  'category-nails': 'rgb(189, 136, 120)',
+  'category-waxing': 'rgb(161, 151, 129)',
+  'category-specialty': 'rgb(212, 175, 117)',
+  'category-bundles': 'rgb(205, 168, 158)',
 }
 ```
 
@@ -231,6 +249,8 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(205, 168, 158, 0.3)',
     ring: 'rgba(205, 168, 158, 0.3)',
     tailwind: 'category-lashes',
+    icon: '👁️',
+    name: 'Lashes',
   },
   brows: {
     primary: 'rgb(212, 175, 117)',
@@ -238,13 +258,17 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(212, 175, 117, 0.3)',
     ring: 'rgba(212, 175, 117, 0.3)',
     tailwind: 'category-brows',
+    icon: '✨',
+    name: 'Brows',
   },
-  waxing: {
-    primary: 'rgb(161, 151, 129)',
-    light: 'rgba(161, 151, 129, 0.15)',
-    medium: 'rgba(161, 151, 129, 0.3)',
-    ring: 'rgba(161, 151, 129, 0.3)',
-    tailwind: 'category-waxing',
+  'permanent-makeup': {
+    primary: 'rgb(189, 136, 120)',
+    light: 'rgba(189, 136, 120, 0.15)',
+    medium: 'rgba(189, 136, 120, 0.3)',
+    ring: 'rgba(189, 136, 120, 0.3)',
+    tailwind: 'category-permanent-makeup',
+    icon: '💄',
+    name: 'Permanent Makeup',
   },
   facials: {
     primary: 'rgb(188, 201, 194)',
@@ -252,13 +276,35 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(188, 201, 194, 0.3)',
     ring: 'rgba(188, 201, 194, 0.3)',
     tailwind: 'category-facials',
+    icon: '🌸',
+    name: 'Facials',
   },
-  nails: {
-    primary: 'rgb(189, 136, 120)',
-    light: 'rgba(189, 136, 120, 0.15)',
-    medium: 'rgba(189, 136, 120, 0.3)',
-    ring: 'rgba(189, 136, 120, 0.3)',
-    tailwind: 'category-nails',
+  waxing: {
+    primary: 'rgb(161, 151, 129)',
+    light: 'rgba(161, 151, 129, 0.15)',
+    medium: 'rgba(161, 151, 129, 0.3)',
+    ring: 'rgba(161, 151, 129, 0.3)',
+    tailwind: 'category-waxing',
+    icon: '🪒',
+    name: 'Waxing',
+  },
+  specialty: {
+    primary: 'rgb(212, 175, 117)',
+    light: 'rgba(212, 175, 117, 0.15)',
+    medium: 'rgba(212, 175, 117, 0.3)',
+    ring: 'rgba(212, 175, 117, 0.3)',
+    tailwind: 'category-specialty',
+    icon: '💎',
+    name: 'Specialty',
+  },
+  bundles: {
+    primary: 'rgb(205, 168, 158)',
+    light: 'rgba(205, 168, 158, 0.15)',
+    medium: 'rgba(205, 168, 158, 0.3)',
+    ring: 'rgba(205, 168, 158, 0.3)',
+    tailwind: 'category-bundles',
+    icon: '🎁',
+    name: 'Bundles',
   },
 } as const;
 
