@@ -21,6 +21,9 @@ export const user = pgTable('user', {
   name: text('name'),
   image: text('image'),
 
+  // DAM Access Control
+  damAccess: boolean('dam_access').default(false),
+
   // Timestamps
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
