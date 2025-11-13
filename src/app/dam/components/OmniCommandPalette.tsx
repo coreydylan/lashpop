@@ -411,7 +411,7 @@ export function OmniCommandPalette({
 
               {/* Tag categories */}
               {tagCategories
-                .filter(cat => cat.isCollection !== true && cat.isRating !== true) // Don't show collection or rating in card settings
+                .filter(cat => cat.isCollection !== true && cat.isRating !== true)
                 .map((category: any) => {
                   const isVisible = visibleCardTags.length === 0 || visibleCardTags.includes(category.id)
                   return (
@@ -439,7 +439,7 @@ export function OmniCommandPalette({
                           const allPossibleIds = ['team', ...allCategoryIds]
                           if (newVisible.length === allPossibleIds.length - 1 &&
                               allPossibleIds.every(id => id === category.id || newVisible.includes(id))) {
-                            onVisibleCardTagsChange([]) // Reset to show all
+                            onVisibleCardTagsChange([])
                           } else {
                             onVisibleCardTagsChange(newVisible)
                           }

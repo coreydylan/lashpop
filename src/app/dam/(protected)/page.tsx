@@ -21,6 +21,8 @@ import { TagEditor } from "../components/TagEditor"
 import { CollectionSelector } from "../components/CollectionSelector"
 import { CollectionManager } from "../components/CollectionManager"
 import { TutorialIntegration } from "../components/TutorialIntegration"
+import { useDamSettings } from "@/hooks/useDamSettings"
+import { useDamActions } from "@/hooks/useDamActions"
 
 interface Asset {
   id: string
@@ -65,19 +67,48 @@ interface ActiveFilter {
 }
 
 export default function DAMPage() {
+  // DAM Settings & Actions hooks
+  const {
+    settings,
+    isLoading: isLoadingSettings,
+    updateGridViewMode,
+    updateActiveFilters,
+    updateGroupByCategories,
+    updateVisibleCardTags,
+    updateActiveCollection
+  } = useDamSettings()
+
+  const {
+    logUpload,
+    logTagAdd,
+    logTagRemove,
+    logDelete,
+    logFilterChange,
+    logViewChange,
+    logGroupChange
+  } = useDamActions()
+
   const [assets, setAssets] = useState<Asset[]>([])
   const [allAssets, setAllAssets] = useState<Asset[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [tagCategories, setTagCategories] = useState<any[]>([])
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [activeFilters, setActiveFilters] = useState<ActiveFilter[]>([])
+
+  // Get from settings hook instead of useState
+  const activeFilters = settings.activeFilters
+  const setActiveFilters = (filters: ActiveFilter[]) => {
+    updateActiveFilters(filters)
+    logFilterChange({ filters })
+  }
   const activeFiltersRef = useRef<ActiveFilter[]>([])
+
   const [uploadingAssetIds, setUploadingAssetIds] = useState<string[]>([])
   const [hasInteractedWithGrid, setHasInteractedWithGrid] = useState(false)
 
-  // Collections state
-  const [activeCollectionId, setActiveCollectionId] = useState<string | undefined>(undefined)
+  // Get collection from settings
+  const activeCollectionId = settings.activeCollectionId
+  const setActiveCollectionId = (id: string | undefined) => updateActiveCollection(id)
 
   const filterableAssets = useMemo(
     () =>
@@ -121,8 +152,12 @@ export default function DAMPage() {
   const [omniTags, setOmniTags] = useState<any[]>([])
   const [existingTags, setExistingTags] = useState<Map<string, number>>(new Map())
 
-  // Grid view state
-  const [gridViewMode, setGridViewMode] = useState<"square" | "aspect">("square")
+  // Grid view state from settings
+  const gridViewMode = settings.gridViewMode
+  const setGridViewMode = (mode: "square" | "aspect") => {
+    updateGridViewMode(mode)
+    logViewChange({ viewMode: mode })
+  }
   const [activeLightboxAsset, setActiveLightboxAsset] = useState<Asset | null>(null)
   const [activeLightboxIndex, setActiveLightboxIndex] = useState(-1)
   const [isLightboxVisible, setIsLightboxVisible] = useState(false)
@@ -142,18 +177,23 @@ export default function DAMPage() {
 
   // Fetch initial data
   const [isMobile, setIsMobile] = useState(false)
-  const [groupByTags, setGroupByTags] = useState<string[]>([])  // Track up to 2 tags for grouping
+
+  // Group by settings from hook
+  const groupByTags = settings.groupByCategories
+  const setGroupByTags = (categories: string[]) => {
+    updateGroupByCategories(categories)
+    logGroupChange({ groupBy: categories })
+  }
+
   const [isCommandOpen, setIsCommandOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState("")
   const [commandMode, setCommandMode] = useState<'normal' | 'edit' | 'card-settings'>('normal')
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false)
   const [isCollectionManagerOpen, setIsCollectionManagerOpen] = useState(false)
 
-  // Card display settings
-  const [visibleCardTags, setVisibleCardTags] = useState<string[]>(() => {
-    // By default, show all tag categories on cards
-    return []  // Empty array means show all
-  })
+  // Card display settings from hook
+  const visibleCardTags = settings.visibleCardTags
+  const setVisibleCardTags = (tags: string[]) => updateVisibleCardTags(tags)
 
   // Helper to make colors more vibrant in lightbox mode
   const getTagColor = (color: string | undefined, isLightbox: boolean = false) => {
@@ -448,6 +488,13 @@ export default function DAMPage() {
   }, [fetchAssets, fetchTagCategories, fetchTeamMembers])
 
   const handleUploadComplete = (newAssets: Asset[], keepSelected: boolean) => {
+    // Log upload action
+    logUpload({
+      assetIds: newAssets.map(a => a.id),
+      fileCount: newAssets.length,
+      totalSize: 0 // File size not available in Asset type
+    })
+
     // Refresh the entire asset list to show new uploads
     fetchAssets()
     // Close upload panel after successful upload
@@ -1759,7 +1806,7 @@ export default function DAMPage() {
             )}
 
             {/* Omni Bar */}
-            <div className="pb-4">
+            <div>
               <OmniBar
                 mode="page"
                 chipsContent={renderChips()}
@@ -1778,7 +1825,7 @@ export default function DAMPage() {
         </div>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-6 py-8">
+        <main className="max-w-7xl mx-auto px-6 pt-4 pb-8">
           {/* Collapsible Upload Section */}
           {isUploadOpen && (
             <div className="mb-6 select-none">

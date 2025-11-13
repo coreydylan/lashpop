@@ -18,6 +18,7 @@ import { teamMembers } from "./schema/team_members"
 import { serviceCategories } from "./schema/service_categories"
 import { services } from "./schema/services"
 import { testimonials } from "./schema/testimonials"
+import { reviews } from "./schema/reviews"
 import { teamMemberCategories } from "./schema/team_member_categories"
 import { assets } from "./schema/assets"
 import { assetServices } from "./schema/asset_services"
@@ -27,6 +28,8 @@ import { tags } from "./schema/tags"
 import { assetTags } from "./schema/asset_tags"
 import { sets } from "./schema/sets"
 import { setPhotos } from "./schema/set_photos"
+import { damUserSettings } from "./schema/dam_user_settings"
+import { damUserActions } from "./schema/dam_user_actions"
 
 // Vagaro mirror schemas
 import { appointments } from "./schema/appointments"
@@ -56,6 +59,7 @@ const dbSchema = {
   serviceCategories,
   services,
   testimonials,
+  reviews,
   teamMemberCategories,
   assets,
   assetServices,
@@ -65,6 +69,8 @@ const dbSchema = {
   assetTags,
   sets,
   setPhotos,
+  damUserSettings,
+  damUserActions,
 
   // Vagaro mirror tables
   appointments,

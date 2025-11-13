@@ -432,7 +432,6 @@ export function AssetGrid({
                           target.closest('[data-command-palette]')
 
       if (isUIControl) {
-        console.log('Clicked on UI control, not clearing selection')
         return
       }
 
@@ -891,15 +890,31 @@ function AssetCard({
         const teamMember = showTeamMember ? teamMembers.find(tm => tm.id === asset.teamMemberId) : null
 
         // Filter tags based on visibleCardTags setting
-        const displayedTags = asset.tags && asset.tags.length > 0
-          ? (visibleCardTags.length === 0
-              ? asset.tags
-              : asset.tags.filter(tag => {
-                  // Check if tag has category and category has id
-                  const categoryId = tag.category?.id
-                  return categoryId ? visibleCardTags.includes(categoryId) : false
-                }))
-          : []
+        let displayedTags: typeof asset.tags = []
+        if (asset.tags && asset.tags.length > 0) {
+          if (visibleCardTags.length === 0) {
+            // Show all tags when array is empty
+            displayedTags = asset.tags
+          } else {
+            // Filter tags - show only those whose category ID is in the visible list
+            // IMPORTANT: Always show collection and rating tags regardless of settings
+            displayedTags = asset.tags.filter(tag => {
+              // Check if tag has category and category has id
+              if (!tag.category || !tag.category.id) {
+                return false
+              }
+
+              // Always show collections and ratings - they're not configurable
+              const categoryName = tag.category.name?.toLowerCase() || ''
+              if (categoryName === 'collections' || categoryName === 'rating') {
+                return true
+              }
+
+              // For regular tags, check if their category is in the visible list
+              return visibleCardTags.includes(tag.category.id)
+            })
+          }
+        }
 
         // Don't render anything if nothing to show
         if (!teamMember && displayedTags.length === 0) return null

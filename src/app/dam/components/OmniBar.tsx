@@ -117,7 +117,7 @@ export function OmniBar({
               {showGridToggle && (
                 <button
                   onClick={onToggleGridView}
-                  className={clsx("p-2 rounded-full transition-colors", hoverClass)}
+                  className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
                   title={gridViewMode === "square" ? "Switch to aspect ratio view" : "Switch to square grid view"}
                 >
                   {gridViewMode === "square" ? (
@@ -130,7 +130,7 @@ export function OmniBar({
               {onOpenCardSettings && (
                 <button
                   onClick={onOpenCardSettings}
-                  className={clsx("p-2 rounded-full transition-colors", hoverClass)}
+                  className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
                   title="Customize card display"
                 >
                   <CreditCard className={clsx("w-4 h-4", iconColor)} />
@@ -184,7 +184,7 @@ export function OmniBar({
                 {showGridToggle && (
                   <button
                     onClick={onToggleGridView}
-                    className={clsx("p-2 rounded-full transition-colors", hoverClass)}
+                    className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
                     aria-label="Toggle grid view"
                   >
                     {gridViewMode === "square" ? (
@@ -197,7 +197,7 @@ export function OmniBar({
                 {onOpenCardSettings && (
                   <button
                     onClick={onOpenCardSettings}
-                    className={clsx("p-2 rounded-full transition-colors", hoverClass)}
+                    className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
                     aria-label="Customize card display"
                   >
                     <CreditCard className={clsx("w-5 h-5", iconColor)} />
