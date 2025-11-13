@@ -85,15 +85,15 @@ export function PhoneLoginForm() {
 
   if (step === 'phone') {
     return (
-      <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-2">Sign in to LashPop</h2>
-        <p className="text-gray-600 mb-6">
+      <div className="w-full max-w-md mx-auto p-6 glass rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold mb-2 text-dune">Sign in to LashPop</h2>
+        <p className="text-sage mb-6">
           Enter your phone number to get started
         </p>
 
         <form onSubmit={handleSendOTP}>
           <div className="mb-4">
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="phone" className="block text-sm font-medium text-dune mb-2">
               Phone Number
             </label>
             <input
@@ -105,14 +105,14 @@ export function PhoneLoginForm() {
                 const formatted = formatPhoneNumber(e.target.value)
                 setPhone(formatted)
               }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-warm-sand rounded-xl focus:ring-2 focus:ring-terracotta focus:border-transparent bg-white/80"
               required
               disabled={isLoading}
             />
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
               {error}
             </div>
           )}
@@ -120,13 +120,13 @@ export function PhoneLoginForm() {
           <button
             type="submit"
             disabled={isLoading || !phone}
-            className="w-full bg-pink-600 text-white py-3 rounded-lg font-medium hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full bg-terracotta text-white py-3 rounded-xl font-medium hover:bg-dusty-rose disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? 'Sending...' : 'Send Code'}
           </button>
         </form>
 
-        <p className="mt-4 text-xs text-gray-500 text-center">
+        <p className="mt-4 text-xs text-sage text-center">
           By continuing, you agree to receive SMS messages from LashPop.
           Standard message rates may apply.
         </p>
@@ -135,22 +135,22 @@ export function PhoneLoginForm() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
+    <div className="w-full max-w-md mx-auto p-6 glass rounded-xl shadow-lg">
       <button
         onClick={() => setStep('phone')}
-        className="mb-4 text-sm text-gray-600 hover:text-gray-800 flex items-center"
+        className="mb-4 text-sm text-sage hover:text-dune flex items-center transition-colors"
       >
         ← Change number
       </button>
 
-      <h2 className="text-2xl font-bold mb-2">Enter verification code</h2>
-      <p className="text-gray-600 mb-6">
+      <h2 className="text-2xl font-bold mb-2 text-dune">Enter verification code</h2>
+      <p className="text-sage mb-6">
         We sent a 6-digit code to {phone}
       </p>
 
       <form onSubmit={handleVerifyOTP}>
         <div className="mb-4">
-          <label htmlFor="code" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="code" className="block text-sm font-medium text-dune mb-2">
             Verification Code
           </label>
           <input
@@ -162,7 +162,7 @@ export function PhoneLoginForm() {
             placeholder="000000"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            className="w-full px-4 py-3 border border-warm-sand rounded-xl text-center text-2xl tracking-widest focus:ring-2 focus:ring-terracotta focus:border-transparent bg-white/80"
             required
             disabled={isLoading}
             autoFocus
@@ -170,7 +170,7 @@ export function PhoneLoginForm() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
             {error}
           </div>
         )}
@@ -178,7 +178,7 @@ export function PhoneLoginForm() {
         <button
           type="submit"
           disabled={isLoading || code.length !== 6}
-          className="w-full bg-pink-600 text-white py-3 rounded-lg font-medium hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-terracotta text-white py-3 rounded-xl font-medium hover:bg-dusty-rose disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? 'Verifying...' : 'Verify & Continue'}
         </button>
@@ -187,12 +187,12 @@ export function PhoneLoginForm() {
       <button
         onClick={handleResendOTP}
         disabled={isLoading}
-        className="w-full mt-4 text-sm text-pink-600 hover:text-pink-700 disabled:opacity-50"
+        className="w-full mt-4 text-sm text-terracotta hover:text-dusty-rose disabled:opacity-50 transition-colors"
       >
         Didn&apos;t receive a code? Resend
       </button>
 
-      <p className="mt-4 text-xs text-gray-500 text-center">
+      <p className="mt-4 text-xs text-sage text-center">
         The code expires in 10 minutes
       </p>
     </div>

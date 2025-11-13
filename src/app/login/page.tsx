@@ -13,13 +13,13 @@ export const metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-warm-sand to-cream p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-dune mb-2 font-playfair">
             LashPop
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sage">
             Beautiful lashes, effortless booking
           </p>
         </div>
