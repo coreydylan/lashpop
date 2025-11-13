@@ -11,22 +11,8 @@ export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
     hostname.includes("lashpop-dam") ||
     process.env.DAM_ONLY_DEPLOYMENT === "true"
 
-  // DAM authentication check
-  const isDAMRoute = pathname.startsWith("/dam") || pathname.startsWith("/api/dam")
-  const isDAMLogin = pathname === "/dam/login"
-  const isDAMAuthAPI = pathname.startsWith("/api/dam/auth")
-
-  if (isDAMRoute && !isDAMLogin && !isDAMAuthAPI) {
-    // Check for auth cookie
-    const authCookie = req.cookies.get("dam_auth")
-
-    if (!authCookie || authCookie.value !== "authenticated") {
-      // Redirect to login
-      const url = req.nextUrl.clone()
-      url.pathname = "/dam/login"
-      return NextResponse.redirect(url)
-    }
-  }
+  // DAM authentication is now handled by server-side layouts
+  // No middleware auth check needed to avoid redirect loops
 
   // If this is a DAM-only deployment, handle routing
   if (isDamOnlyDeployment) {
