@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import Image from 'next/image'
 import { useDrawer } from '../drawers/DrawerContext'
-import { useCascadingPanels } from '@/contexts/CascadingPanelContext'
+import { usePanelStack } from '@/contexts/PanelStackContext'
 
 // Import the exact same icons from v1
 function SunIcon({ className = "w-6 h-6" }: { className?: string }) {
@@ -33,7 +33,7 @@ export default function HeroSection() {
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
   const { expandDrawer } = useDrawer()
-  const { actions: panelActions } = useCascadingPanels()
+  const { actions: panelActions } = usePanelStack()
 
   return (
     <section ref={containerRef} className="relative min-h-screen flex items-center">
@@ -116,7 +116,7 @@ export default function HeroSection() {
               A collective of women-owned beauty businesses
             </motion.p>
 
-            {/* CTA Buttons - Book Now opens cascading panels, Discover opens drawer */}
+            {/* CTA Buttons - Book Now opens panel stack, Discover opens drawer */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -124,7 +124,7 @@ export default function HeroSection() {
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <button
-                onClick={() => panelActions.openPanel('book-now', { entryPoint: 'hero' })}
+                onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero' })}
                 className="btn btn-primary"
               >
                 Book Now

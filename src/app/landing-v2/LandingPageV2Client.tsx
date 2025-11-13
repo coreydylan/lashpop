@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorContext';
-import { CascadingPanelProvider } from '@/contexts/CascadingPanelContext';
+import { PanelStackProvider } from '@/contexts/PanelStackContext';
 import { DrawerProvider } from '@/components/drawers/DrawerContext';
 import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
@@ -16,7 +16,7 @@ import { ContactSection } from '@/components/sections/ContactSection';
 import { Footer } from '@/components/sections/Footer';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
-import { CascadingPanelContainer } from '@/components/cascading-panels/CascadingPanelContainer';
+import { PanelStackContainer } from '@/components/panel-stack/PanelStackContainer';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -64,27 +64,27 @@ interface LandingPageV2ClientProps {
 export default function LandingPageV2Client({ services, teamMembers }: LandingPageV2ClientProps) {
   return (
     <BookingOrchestratorProvider>
-      <CascadingPanelProvider services={services}>
+      <PanelStackProvider services={services}>
         <DrawerProvider>
           <PanelManagerProvider>
             <div className="min-h-screen bg-cream relative">
-              {/* Z-3: Fixed Header Layer - Using exact v1 Navigation */}
+              {/* Z-3: Fixed Header Layer */}
               <Navigation />
+
+              {/* Panel Stack System - Fixed at top below header */}
+              <PanelStackContainer />
 
               {/* Z-2: Drawer System Layer */}
               <DrawerSystem services={services} />
 
-              {/* Z-1.5: Portfolio Surface Layer (between page and drawers) */}
+              {/* Z-1.5: Portfolio Surface Layer */}
               <TeamPortfolioView />
 
               {/* Panel System - Renders active panels */}
               <PanelRenderer />
 
-              {/* Cascading Panel System - New booking flow */}
-              <CascadingPanelContainer />
-
-              {/* Z-1: Page Surface */}
-              <main className="page-content overflow-x-hidden">
+              {/* Z-1: Page Surface with dynamic padding for panels */}
+              <main className="page-content overflow-x-hidden" style={{ paddingTop: 'var(--panel-stack-height, 0px)' }}>
                 <HeroSection />
                 <PhotoTransition />
                 <AboutSection />
@@ -98,7 +98,7 @@ export default function LandingPageV2Client({ services, teamMembers }: LandingPa
           </div>
         </PanelManagerProvider>
       </DrawerProvider>
-      </CascadingPanelProvider>
+      </PanelStackProvider>
     </BookingOrchestratorProvider>
   );
 }
