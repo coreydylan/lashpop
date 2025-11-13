@@ -5,10 +5,9 @@ import { AnimatePresence } from 'framer-motion';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { HEADER_HEIGHT } from '@/types/panel-stack';
 
-// Import panel components (will create these next)
+// Import panel components
 import { CategoryPickerPanel } from './panels/CategoryPickerPanel';
 import { ServicePanel } from './panels/ServicePanel';
-import { ServiceDetailPanel } from './panels/ServiceDetailPanel';
 
 export function PanelStackContainer() {
   const { state } = usePanelStack();
@@ -56,7 +55,7 @@ export function PanelStackContainer() {
           <div key={panel.id}>
             {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
             {panel.type === 'service-panel' && <ServicePanel panel={panel} />}
-            {panel.type === 'service-detail' && <ServiceDetailPanel panel={panel} />}
+            {/* ServicePanel now handles service details internally */}
             {/* Schedule panel will be added later */}
           </div>
         ))}
