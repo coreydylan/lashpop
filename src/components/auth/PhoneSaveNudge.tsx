@@ -143,7 +143,7 @@ export function PhoneSaveNudge({ onClose, context = 'inline' }: PhoneSaveNudgePr
           <div>
             <p className="text-sm font-medium text-dune">Save your preferences?</p>
             <p className="text-xs text-sage mt-0.5">
-              We'll remember what you like for next time
+              We&apos;ll remember what you like for next time
             </p>
           </div>
         </div>

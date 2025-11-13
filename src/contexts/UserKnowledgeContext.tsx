@@ -406,7 +406,7 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
   const getServiceHistory = useCallback((categoryId?: string): ServiceInteraction[] => {
     if (!categoryId) return knowledge.serviceInteractions;
     return knowledge.serviceInteractions.filter(si => si.categoryId === categoryId);
-  }, [knowledge]);
+  }, [knowledge.serviceInteractions]);
 
   // Get most viewed category
   const getMostViewedCategory = useCallback((): string | undefined => {
@@ -420,7 +420,7 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
     if (entries.length === 0) return undefined;
 
     return entries.reduce((a, b) => a[1] > b[1] ? a : b)[0];
-  }, [knowledge]);
+  }, [knowledge.serviceInteractions]);
 
   // Get engagement score (0-100)
   const getEngagementScore = useCallback((): number => {
@@ -444,7 +444,7 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
     score += Math.min(avgDiscovery * 0.3, 30);
 
     return Math.min(Math.round(score), 100);
-  }, [knowledge]);
+  }, [knowledge.sessions.length, knowledge.serviceInteractions.length, knowledge.statedPreferences, knowledge.discoveryProgress]);
 
   const value: UserKnowledgeContextValue = {
     knowledge,
