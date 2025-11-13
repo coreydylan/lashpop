@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Clock, DollarSign, User, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, DollarSign, User, Check, Loader2 } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import Image from 'next/image';
 import { PanelWrapper } from '../PanelWrapper';
@@ -10,7 +10,10 @@ import { usePanelStack } from '@/contexts/PanelStackContext';
 import { useUserKnowledge } from '@/contexts/UserKnowledgeContext';
 import { PhoneSaveNudge } from '@/components/auth/PhoneSaveNudge';
 import { getAssetsByServiceSlug, type AssetWithTags } from '@/actions/dam';
+import { getTeamMembersByServiceId } from '@/actions/team';
+import { VagaroBookingWidget } from '@/components/VagaroBookingWidget';
 import type { Panel, ServicePanelData } from '@/types/panel-stack';
+import type { SelectTeamMember } from '@/db/schema/team_members';
 
 interface ServicePanelProps {
   panel: Panel;
@@ -41,10 +44,13 @@ export function ServicePanel({ panel }: ServicePanelProps) {
   // Service detail view state
   const [selectedService, setSelectedService] = useState<any>(null);
   const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
+  const [providers, setProviders] = useState<SelectTeamMember[]>([]);
+  const [isLoadingProviders, setIsLoadingProviders] = useState(false);
   const [gallery, setGallery] = useState<AssetWithTags[]>([]);
   const [isLoadingGallery, setIsLoadingGallery] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showSaveNudge, setShowSaveNudge] = useState(false);
+  const [isWidgetLoaded, setIsWidgetLoaded] = useState(false);
 
   // Filter services by active subcategory
   const filteredServices = useMemo(() => {
@@ -62,7 +68,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
       actions.updatePanelSummary(panel.id, summary);
     } else if (currentView === 'service-detail' && selectedService) {
       const providerNames = Array.from(selectedProviders)
-        .map(id => MOCK_PROVIDERS.find(p => p.id === id)?.name)
+        .map(id => providers.find(p => p.id === id)?.name)
         .filter(Boolean);
 
       const summary = providerNames.length > 0
@@ -71,7 +77,26 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
       actions.updatePanelSummary(panel.id, summary);
     }
-  }, [currentView, activeTab, filteredServices.length, data.subcategories, data.services.length, selectedService, selectedProviders, panel.id, actions]);
+  }, [currentView, activeTab, filteredServices.length, data.subcategories, data.services.length, selectedService, selectedProviders, providers, panel.id, actions]);
+
+  // Fetch team members when service is selected
+  useEffect(() => {
+    async function fetchProviders() {
+      if (!selectedService) return;
+
+      setIsLoadingProviders(true);
+      try {
+        const members = await getTeamMembersByServiceId(selectedService.id);
+        setProviders(members);
+      } catch (error) {
+        console.error('Failed to fetch team members:', error);
+      } finally {
+        setIsLoadingProviders(false);
+      }
+    }
+
+    fetchProviders();
+  }, [selectedService]);
 
   // Fetch gallery when service is selected
   useEffect(() => {
@@ -141,10 +166,10 @@ export function ServicePanel({ panel }: ServicePanelProps) {
   };
 
   const handleSelectAllProviders = () => {
-    if (selectedProviders.size === MOCK_PROVIDERS.length) {
+    if (selectedProviders.size === providers.length) {
       setSelectedProviders(new Set());
     } else {
-      setSelectedProviders(new Set(MOCK_PROVIDERS.map(p => p.id)));
+      setSelectedProviders(new Set(providers.map(p => p.id)));
     }
   };
 
@@ -372,17 +397,42 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               {/* Provider Selection */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-dune text-sm md:text-base">Choose Your Artist</h4>
-                  <button
-                    onClick={handleSelectAllProviders}
-                    className="text-xs md:text-sm text-sage hover:text-dusty-rose transition-colors"
-                  >
-                    {selectedProviders.size === MOCK_PROVIDERS.length ? 'Deselect All' : 'See All Availability'}
-                  </button>
+                  <h4 className="font-medium text-dune text-sm md:text-base">
+                    Choose Your Artist
+                    {isLoadingProviders && (
+                      <span className="ml-2 text-xs text-sage/60">Loading...</span>
+                    )}
+                  </h4>
+                  {providers.length > 0 && (
+                    <button
+                      onClick={handleSelectAllProviders}
+                      className="text-xs md:text-sm text-sage hover:text-dusty-rose transition-colors"
+                    >
+                      {selectedProviders.size === providers.length ? 'Deselect All' : 'See All Availability'}
+                    </button>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                  {MOCK_PROVIDERS.map(provider => {
+                {/* Loading State */}
+                {isLoadingProviders && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                    {[1, 2, 3, 4].map(i => (
+                      <div
+                        key={i}
+                        className="p-2 md:p-3 rounded-xl bg-sage/5 animate-pulse"
+                      >
+                        <div className="aspect-square bg-warm-sand/20 rounded-lg mb-1 md:mb-2" />
+                        <div className="h-3 bg-sage/10 rounded mb-1" />
+                        <div className="h-2 bg-sage/10 rounded w-2/3" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Providers Grid */}
+                {!isLoadingProviders && providers.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                    {providers.map(provider => {
                     const isSelected = selectedProviders.has(provider.id);
 
                     return (
@@ -410,13 +460,36 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                           </motion.div>
                         )}
 
-                        <div className="aspect-square bg-warm-sand/20 rounded-lg mb-1 md:mb-2" />
+                        {provider.imageUrl ? (
+                          <div className="aspect-square rounded-lg mb-1 md:mb-2 overflow-hidden">
+                            <Image
+                              src={provider.imageUrl}
+                              alt={provider.name}
+                              width={100}
+                              height={100}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="aspect-square bg-warm-sand/20 rounded-lg mb-1 md:mb-2 flex items-center justify-center">
+                            <User className="w-6 h-6 text-sage/30" />
+                          </div>
+                        )}
                         <p className="text-xs md:text-sm font-medium text-dune text-center truncate">{provider.name}</p>
                         <p className="text-[10px] md:text-xs text-sage text-center mt-0.5 truncate">{provider.role}</p>
                       </motion.button>
                     );
                   })}
-                </div>
+                  </div>
+                )}
+
+                {/* No Providers State */}
+                {!isLoadingProviders && providers.length === 0 && (
+                  <div className="glass rounded-xl p-6 text-center">
+                    <User className="w-10 h-10 text-sage/30 mx-auto mb-2" />
+                    <p className="text-sm text-dune/60">No artists available for this service</p>
+                  </div>
+                )}
 
                 {selectedProviders.size > 0 && (
                   <motion.div
@@ -471,20 +544,109 @@ export function ServicePanel({ panel }: ServicePanelProps) {
             </motion.div>
           )}
 
-          {/* TIME SELECTION VIEW - Placeholder */}
-          {currentView === 'time-selection' && (
+          {/* TIME SELECTION VIEW - Vagaro Widget */}
+          {currentView === 'time-selection' && selectedService && (
             <motion.div
               key="time-selection"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
-              className="text-center py-12"
+              className="space-y-6"
             >
-              <h3 className="text-lg md:text-xl font-medium text-dune mb-2">Time Selection</h3>
-              <p className="text-sm md:text-base text-sage">
-                Calendar and availability picker coming soon...
-              </p>
+              {/* Booking Summary */}
+              <div className="flex items-center gap-4 py-3 px-4 rounded-xl bg-gradient-to-r from-sage/5 to-ocean-mist/5">
+                <div className="flex-1">
+                  <p className="text-sm text-dune/60">Booking</p>
+                  <p className="font-medium text-dune">{selectedService.name}</p>
+                </div>
+                <div className="flex items-center gap-4 text-sm">
+                  {selectedProviders.size > 0 && (
+                    <div className="flex items-center gap-1.5 text-dune/70">
+                      <User className="w-4 h-4" />
+                      <span>
+                        {Array.from(selectedProviders)
+                          .map(id => providers.find(p => p.id === id)?.name.split(' ')[0])
+                          .filter(Boolean)
+                          .join(', ') || 'Any artist'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5 text-dune/70">
+                    <Clock className="w-4 h-4" />
+                    <span>{selectedService.durationMinutes} min</span>
+                  </div>
+                  <div className="font-medium text-terracotta">
+                    ${(selectedService.priceStarting / 100).toFixed(0)}+
+                  </div>
+                </div>
+              </div>
+
+              {/* Widget Container */}
+              <div className="relative min-h-[600px]">
+                {/* Loading Overlay */}
+                {!isWidgetLoaded && (
+                  <div className="absolute inset-0 z-10 glass rounded-2xl flex items-center justify-center">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 text-sage animate-spin mx-auto mb-3" />
+                      <p className="text-sm text-dune/60">Loading scheduling...</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Vagaro Widget */}
+                <div className="glass rounded-2xl overflow-hidden shadow-lg">
+                  <VagaroBookingWidget
+                    businessId={process.env.NEXT_PUBLIC_VAGARO_BUSINESS_ID}
+                    serviceId={selectedService.vagaroServiceId || undefined}
+                    employeeId={
+                      selectedProviders.size === 1
+                        ? providers.find(p => p.id === Array.from(selectedProviders)[0])?.vagaroEmployeeId || undefined
+                        : undefined
+                    }
+                    className="min-h-[600px]"
+                  />
+                </div>
+              </div>
+
+              {/* Info Cards */}
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="glass rounded-xl p-4 text-center">
+                  <div className="w-10 h-10 rounded-full bg-sage/10 flex items-center justify-center mx-auto mb-2">
+                    <Clock className="w-5 h-5 text-sage" />
+                  </div>
+                  <h3 className="font-medium text-dune text-sm mb-1">
+                    Real-time Availability
+                  </h3>
+                  <p className="text-xs text-dune/60">
+                    See live availability for your selected artist
+                  </p>
+                </div>
+
+                <div className="glass rounded-xl p-4 text-center">
+                  <div className="w-10 h-10 rounded-full bg-ocean-mist/10 flex items-center justify-center mx-auto mb-2">
+                    <Check className="w-5 h-5 text-ocean-mist" />
+                  </div>
+                  <h3 className="font-medium text-dune text-sm mb-1">
+                    Instant Confirmation
+                  </h3>
+                  <p className="text-xs text-dune/60">
+                    Get confirmed immediately upon booking
+                  </p>
+                </div>
+
+                <div className="glass rounded-xl p-4 text-center">
+                  <div className="w-10 h-10 rounded-full bg-terracotta/10 flex items-center justify-center mx-auto mb-2">
+                    <User className="w-5 h-5 text-terracotta" />
+                  </div>
+                  <h3 className="font-medium text-dune text-sm mb-1">
+                    Secure Payment
+                  </h3>
+                  <p className="text-xs text-dune/60">
+                    Safe and encrypted payment processing
+                  </p>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
