@@ -35,7 +35,7 @@ interface LayoutRow {
 }
 
 /**
- * Calculate justified layout for images
+ * Calculate justified layout for images with creative variation
  * @param images - Array of images with aspect ratios
  * @param containerWidth - Width of the container
  * @param targetHeight - Target height for 1vh (e.g., window.innerHeight)
@@ -55,14 +55,17 @@ export function calculateJustifiedLayout(
     return { images: [], totalHeight: 0, rows: 0 }
   }
 
+  // Shuffle images slightly for variety (but keep key image first)
+  const shuffledImages = shuffleWithKeyFirst(images)
+
   const rows: LayoutRow[] = []
   let currentRow: GridImage[] = []
   let currentRowAspectRatios: number[] = []
   let startIndex = 0
 
-  // Step 1: Group images into rows
-  for (let i = 0; i < images.length; i++) {
-    const image = images[i]
+  // Step 1: Group images into rows with variation
+  for (let i = 0; i < shuffledImages.length; i++) {
+    const image = shuffledImages[i]
     currentRow.push(image)
     currentRowAspectRatios.push(image.aspectRatio)
 
@@ -70,10 +73,15 @@ export function calculateJustifiedLayout(
     const totalAspectRatio = currentRowAspectRatios.reduce((sum, ar) => sum + ar, 0)
     const calculatedHeight = containerWidth / totalAspectRatio
 
-    // Check if we should close this row
+    // Add some randomness to row closing decision
+    const randomThreshold = rowHeight + (Math.random() - 0.5) * 100
+    const isLastImage = i === shuffledImages.length - 1
+
+    // Close row if height is good, or randomly sometimes, or last image
     const shouldCloseRow =
-      calculatedHeight <= rowHeight ||
-      i === images.length - 1 // Always close on last image
+      calculatedHeight <= randomThreshold ||
+      (currentRow.length >= 4 && Math.random() > 0.6) || // Sometimes close early
+      isLastImage
 
     if (shouldCloseRow) {
       rows.push({
@@ -87,7 +95,7 @@ export function calculateJustifiedLayout(
     }
   }
 
-  // Step 2: Calculate layout for each row
+  // Step 2: Calculate layout for each row with varied heights
   const layoutImages: LayoutImage[] = []
   let currentY = 0
   let rowIndex = 0
@@ -96,11 +104,14 @@ export function calculateJustifiedLayout(
     const totalAspectRatio = row.aspectRatios.reduce((sum, ar) => sum + ar, 0)
     let rowHeightCalculated = containerWidth / totalAspectRatio
 
-    // Clamp row height
-    rowHeightCalculated = Math.max(
-      minRowHeight,
-      Math.min(maxRowHeight, rowHeightCalculated)
-    )
+    // Add height variation (±15%) for visual interest
+    const heightVariation = 1 + (Math.random() - 0.5) * 0.3
+    rowHeightCalculated *= heightVariation
+
+    // Clamp row height with some randomness
+    const minH = minRowHeight + (Math.random() - 0.5) * 50
+    const maxH = maxRowHeight + (Math.random() - 0.5) * 50
+    rowHeightCalculated = Math.max(minH, Math.min(maxH, rowHeightCalculated))
 
     // For the last row, adjust height to reach exactly targetHeight
     const isLastRow = rowIndex === rows.length - 1
@@ -237,16 +248,44 @@ function determineImageSize(
     return { cols: Math.min(2, totalColumns - currentColumn), rows: 2 }
   }
 
-  // Wide images (landscape)
+  // Add randomness to size selection
+  const random = Math.random()
+
+  // Wide images (landscape) - sometimes make them bigger
   if (image.aspectRatio > 1.5) {
-    return { cols: Math.min(2, totalColumns - currentColumn), rows: 1 }
+    return {
+      cols: random > 0.7 ? Math.min(3, totalColumns - currentColumn) : Math.min(2, totalColumns - currentColumn),
+      rows: 1
+    }
   }
 
-  // Tall images (portrait)
+  // Tall images (portrait) - vary the height
   if (image.aspectRatio < 0.7) {
-    return { cols: 1, rows: 2 }
+    return { cols: 1, rows: random > 0.5 ? 2 : 1 }
+  }
+
+  // Square-ish images - sometimes make them 2x2
+  if (image.aspectRatio >= 0.9 && image.aspectRatio <= 1.1 && random > 0.7) {
+    return { cols: Math.min(2, totalColumns - currentColumn), rows: 2 }
   }
 
   // Default: single square
   return { cols: 1, rows: 1 }
+}
+
+/**
+ * Shuffle array but keep key image first
+ */
+function shuffleWithKeyFirst(images: GridImage[]): GridImage[] {
+  const keyImage = images.find((img) => img.isKeyImage)
+  const otherImages = images.filter((img) => !img.isKeyImage)
+
+  // Shuffle other images
+  for (let i = otherImages.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[otherImages[i], otherImages[j]] = [otherImages[j], otherImages[i]]
+  }
+
+  // Return with key image first (if exists)
+  return keyImage ? [keyImage, ...otherImages] : otherImages
 }
