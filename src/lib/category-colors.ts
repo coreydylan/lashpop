@@ -3,6 +3,9 @@
  *
  * Each service category has a designated brand color for consistency
  * across chips, badges, cards, and sections throughout the site.
+ *
+ * Icons are referenced by name - use getCategoryIcon() from @/components/icons/CategoryIcons
+ * to get the actual SVG component.
  */
 
 export const CATEGORY_COLORS = {
@@ -12,7 +15,7 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(205, 168, 158, 0.3)',
     ring: 'rgba(205, 168, 158, 0.3)',
     tailwind: 'category-lashes',
-    icon: '👁️',
+    iconName: 'lashes',
     name: 'Lashes',
   },
   brows: {
@@ -21,7 +24,7 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(212, 175, 117, 0.3)',
     ring: 'rgba(212, 175, 117, 0.3)',
     tailwind: 'category-brows',
-    icon: '✨',
+    iconName: 'brows',
     name: 'Brows',
   },
   'permanent-makeup': {
@@ -30,7 +33,7 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(189, 136, 120, 0.3)',
     ring: 'rgba(189, 136, 120, 0.3)',
     tailwind: 'category-permanent-makeup',
-    icon: '💄',
+    iconName: 'permanent-makeup',
     name: 'Permanent Makeup',
   },
   facials: {
@@ -39,7 +42,7 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(188, 201, 194, 0.3)',
     ring: 'rgba(188, 201, 194, 0.3)',
     tailwind: 'category-facials',
-    icon: '🌸',
+    iconName: 'facials',
     name: 'Facials',
   },
   waxing: {
@@ -48,7 +51,7 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(161, 151, 129, 0.3)',
     ring: 'rgba(161, 151, 129, 0.3)',
     tailwind: 'category-waxing',
-    icon: '🪒',
+    iconName: 'waxing',
     name: 'Waxing',
   },
   specialty: {
@@ -57,7 +60,7 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(212, 175, 117, 0.3)',
     ring: 'rgba(212, 175, 117, 0.3)',
     tailwind: 'category-specialty',
-    icon: '💎',
+    iconName: 'specialty',
     name: 'Specialty',
   },
   bundles: {
@@ -66,7 +69,7 @@ export const CATEGORY_COLORS = {
     medium: 'rgba(205, 168, 158, 0.3)',
     ring: 'rgba(205, 168, 158, 0.3)',
     tailwind: 'category-bundles',
-    icon: '🎁',
+    iconName: 'bundles',
     name: 'Bundles',
   },
 } as const;

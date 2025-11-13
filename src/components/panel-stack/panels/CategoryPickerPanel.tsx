@@ -6,6 +6,7 @@ import { Check } from 'lucide-react';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { getCategoryColors } from '@/lib/category-colors';
+import { getCategoryIcon } from '@/components/icons/CategoryIcons';
 import type { Panel, CategoryPickerPanelData } from '@/types/panel-stack';
 
 interface CategoryPickerPanelProps {
@@ -16,7 +17,7 @@ interface Category {
   id: string;
   name: string;
   slug: string;
-  icon: string;
+  iconName: string;
   colors: {
     primary: string;
     light: string;
@@ -49,7 +50,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
           id: service.categorySlug,
           name: service.categoryName,
           slug: service.categorySlug,
-          icon: colors.icon,
+          iconName: colors.iconName,
           colors: {
             primary: colors.primary,
             light: colors.light,
@@ -162,6 +163,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
       <div className="flex flex-wrap gap-2 md:gap-3">
         {categories.map((category, index) => {
           const selected = isSelected(category.id);
+          const IconComponent = getCategoryIcon(category.iconName);
 
           return (
             <motion.button
@@ -189,7 +191,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
               }}
             >
               {/* Icon */}
-              <span className="text-base md:text-lg">{category.icon}</span>
+              <IconComponent className="w-4 h-4 md:w-5 md:h-5" />
 
               {/* Category Name */}
               <span className="text-sm md:text-base">{category.name}</span>
