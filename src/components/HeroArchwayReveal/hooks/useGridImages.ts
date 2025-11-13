@@ -134,22 +134,37 @@ export function useGridImages() {
   useEffect(() => {
     async function fetchImages() {
       try {
+        console.log('🖼️  Fetching grid images from DAM...')
+
         // Try to fetch from DAM API
         const response = await fetch('/api/dam/grid-scroller')
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`)
+        }
+
         const data = await response.json()
+
+        console.log('📊 DAM API Response:', {
+          hasImages: !!data.images,
+          count: data.images?.length || 0,
+          message: data.message,
+        })
 
         if (data.images && data.images.length > 0) {
           // Use images from DAM
+          console.log(`✅ Using ${data.images.length} images from DAM`)
+          console.log('First image:', data.images[0])
           setImages(data.images)
         } else {
           // Fall back to mock images if no DAM images yet
-          console.log('Using mock images:', data.message)
+          console.warn('⚠️  No images from DAM, using mock images:', data.message)
           setImages(MOCK_IMAGES)
         }
 
         setIsLoading(false)
       } catch (err) {
-        console.error('Error fetching grid images, using mock data:', err)
+        console.error('❌ Error fetching grid images, using mock data:', err)
         // Fall back to mock images on error
         setImages(MOCK_IMAGES)
         setIsLoading(false)
