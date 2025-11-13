@@ -3,6 +3,7 @@
 import { getDb } from "@/db"
 import { services } from "@/db/schema/services"
 import { serviceCategories } from "@/db/schema/service_categories"
+import { serviceSubcategories } from "@/db/schema/service_subcategories"
 import { and, eq, asc } from "drizzle-orm"
 
 export async function getServices() {
@@ -76,10 +77,14 @@ export async function getAllServices() {
       displayOrder: services.displayOrder,
       categoryId: services.categoryId,
       categoryName: serviceCategories.name,
-      categorySlug: serviceCategories.slug
+      categorySlug: serviceCategories.slug,
+      subcategoryId: services.subcategoryId,
+      subcategoryName: serviceSubcategories.name,
+      subcategorySlug: serviceSubcategories.slug
     })
     .from(services)
     .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))
+    .leftJoin(serviceSubcategories, eq(services.subcategoryId, serviceSubcategories.id))
     .where(eq(services.isActive, true))
     .orderBy(asc(services.displayOrder))
 

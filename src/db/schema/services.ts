@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core"
 import { serviceCategories } from "./service_categories"
+import { serviceSubcategories } from "./service_subcategories"
 
 export const services = pgTable("services", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -12,6 +13,8 @@ export const services = pgTable("services", {
   // Local enrichment fields (not in Vagaro)
   categoryId: uuid("category_id")
     .references(() => serviceCategories.id, { onDelete: "set null" }),
+  subcategoryId: uuid("subcategory_id")
+    .references(() => serviceSubcategories.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   subtitle: text("subtitle"),

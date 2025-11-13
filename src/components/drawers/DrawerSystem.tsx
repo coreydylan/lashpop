@@ -3,29 +3,31 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DiscoverDrawer from './DiscoverDrawer';
-import ServicesDrawer from './ServicesDrawer';
+import ServicesDrawerV2 from './ServicesDrawerV2';
 import { useDrawer } from './DrawerContext';
 
 interface Service {
   id: string;
-  mainCategory: string;
-  subCategory: string;
-  title: string;
-  subtitle: string;
+  name: string;
+  slug: string;
+  subtitle: string | null;
   description: string;
-  duration: string;
-  price: string;
-  image: string;
-  color: string;
+  durationMinutes: number;
+  priceStarting: number;
+  imageUrl: string | null;
+  color: string | null;
   displayOrder: number;
+  categoryName: string | null;
+  categorySlug: string | null;
+  subcategoryName: string | null;
+  subcategorySlug: string | null;
 }
 
 interface DrawerSystemProps {
   services: Service[];
-  mainCategories: string[];
 }
 
-export default function DrawerSystem({ services, mainCategories }: DrawerSystemProps) {
+export default function DrawerSystem({ services }: DrawerSystemProps) {
   const { activeDrawer, drawerStates } = useDrawer();
 
   // Check if any drawer is expanded
@@ -62,7 +64,7 @@ export default function DrawerSystem({ services, mainCategories }: DrawerSystemP
 
       {/* Drawer Components */}
       <DiscoverDrawer />
-      <ServicesDrawer services={services} mainCategories={mainCategories} />
+      <ServicesDrawerV2 services={services} />
     </>
   );
 }

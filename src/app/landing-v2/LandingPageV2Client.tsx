@@ -17,16 +17,19 @@ import '@/app/globals.css';
 
 interface Service {
   id: string;
-  mainCategory: string;
-  subCategory: string;
-  title: string;
-  subtitle: string;
+  name: string;
+  slug: string;
+  subtitle: string | null;
   description: string;
-  duration: string;
-  price: string;
-  image: string;
-  color: string;
+  durationMinutes: number;
+  priceStarting: number;
+  imageUrl: string | null;
+  color: string | null;
   displayOrder: number;
+  categoryName: string | null;
+  categorySlug: string | null;
+  subcategoryName: string | null;
+  subcategorySlug: string | null;
 }
 
 interface TeamMember {
@@ -49,11 +52,10 @@ interface TeamMember {
 
 interface LandingPageV2ClientProps {
   services: Service[];
-  mainCategories: string[];
   teamMembers: TeamMember[];
 }
 
-export default function LandingPageV2Client({ services, mainCategories, teamMembers }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers }: LandingPageV2ClientProps) {
   return (
     <DrawerProvider>
       <div className="min-h-screen bg-cream relative">
@@ -61,7 +63,7 @@ export default function LandingPageV2Client({ services, mainCategories, teamMemb
         <Navigation />
 
         {/* Z-2: Drawer System Layer */}
-        <DrawerSystem services={services} mainCategories={mainCategories} />
+        <DrawerSystem services={services} />
 
         {/* Z-1: Page Surface */}
         <main className="page-content overflow-x-hidden">

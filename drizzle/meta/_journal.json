@@ -78,6 +78,13 @@
       "when": 1762918000000,
       "tag": "0010_add_rating_field",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1762997316747,
+      "tag": "0011_tired_colossus",
+      "breakpoints": true
     }
   ]
 }

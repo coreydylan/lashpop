@@ -6,25 +6,23 @@ export default async function LandingPageV2() {
   // Fetch services from database
   const services = await getAllServices()
 
-  // Transform database format to component format
+  // Format services for the drawer (keep hierarchy structure)
   const formattedServices = services.map(service => ({
     id: service.slug,
-    mainCategory: service.categoryName || "Featured",
-    subCategory: "",
-    title: service.name,
-    fullTitle: service.name,
-    subtitle: service.subtitle || '',
+    name: service.name,
+    slug: service.slug,
+    subtitle: service.subtitle,
     description: service.description,
-    duration: `${service.durationMinutes} min`,
-    price: `$${(service.priceStarting / 100).toFixed(0)}+`,
-    image: service.imageUrl || '',
-    color: service.color || 'sage',
-    displayOrder: service.displayOrder
+    durationMinutes: service.durationMinutes,
+    priceStarting: service.priceStarting,
+    imageUrl: service.imageUrl,
+    color: service.color,
+    displayOrder: service.displayOrder,
+    categoryName: service.categoryName,
+    categorySlug: service.categorySlug,
+    subcategoryName: service.subcategoryName,
+    subcategorySlug: service.subcategorySlug
   }))
-
-  const mainCategories = Array.from(
-    new Set(formattedServices.map(service => service.mainCategory))
-  ).sort()
 
   // Fetch team members from database
   const teamMembers = await getTeamMembers()
@@ -48,5 +46,5 @@ export default async function LandingPageV2() {
     funFact: member.funFact || undefined
   }))
 
-  return <LandingPageV2Client services={formattedServices} mainCategories={mainCategories} teamMembers={formattedTeamMembers} />
+  return <LandingPageV2Client services={formattedServices} teamMembers={formattedTeamMembers} />
 }
