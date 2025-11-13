@@ -175,8 +175,8 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
               whileTap={{ scale: 0.95 }}
               onClick={() => handleCategoryClick(category)}
               className={`
-                relative px-4 py-2.5 md:px-5 md:py-3 rounded-full font-medium
-                transition-all duration-200 flex items-center gap-2
+                relative px-3 py-2 md:px-4 md:py-2.5 rounded-full font-medium
+                transition-all duration-200 flex items-center gap-1.5 md:gap-2
                 ${
                   selected
                     ? 'text-white shadow-lg transform scale-105'
@@ -191,15 +191,15 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
               }}
             >
               {/* Icon */}
-              <IconComponent className="w-4 h-4 md:w-5 md:h-5" />
+              <IconComponent className="w-3.5 h-3.5 md:w-4 md:h-4" />
 
               {/* Category Name */}
-              <span className="text-sm md:text-base">{category.name}</span>
+              <span className="text-xs md:text-sm">{category.name}</span>
 
               {/* Service Count Badge (unselected only) */}
               {!selected && (
                 <span
-                  className="text-xs px-1.5 py-0.5 rounded-full ml-1"
+                  className="text-[10px] md:text-xs px-1 md:px-1.5 py-0.5 rounded-full"
                   style={{
                     backgroundColor: category.colors.medium,
                     color: category.colors.primary,
@@ -214,9 +214,8 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
                 <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="ml-1"
                 >
-                  <Check className="w-4 h-4" />
+                  <Check className="w-3 h-3 md:w-3.5 md:h-3.5" />
                 </motion.span>
               )}
             </motion.button>
