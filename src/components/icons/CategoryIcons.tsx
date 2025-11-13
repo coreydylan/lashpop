@@ -11,12 +11,10 @@ interface IconProps extends SVGProps<SVGSVGElement> {
   className?: string
 }
 
-// Lashes - Eye with lashes radiating outward
+// Lashes - Flowing wave pattern (like lash extensions)
 export const LashesIcon = ({ className = "w-6 h-6", ...props }: IconProps) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-    <ellipse cx="12" cy="12" rx="7" ry="4" />
-    <circle cx="12" cy="12" r="2" fill="currentColor" />
-    <path d="M5 9C5 9 6 7 7.5 7M19 9C19 9 18 7 16.5 7M5 15C5 15 6 17 7.5 17M19 15C19 15 18 17 16.5 17" strokeLinecap="round" />
+    <path d="M3 12c0-1.1.9-2 2-2s2 .9 2 2c0 2 2 2 2 2s2 0 2-2c0-1.1.9-2 2-2s2 .9 2 2c0 2 2 2 2 2s2 0 2-2c0-1.1.9-2 2-2s2 .9 2 2" />
   </svg>
 )
 
