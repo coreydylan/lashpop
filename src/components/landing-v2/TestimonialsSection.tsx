@@ -57,7 +57,7 @@ export default function TestimonialsSection() {
               What Our Clients Say
             </h2>
             <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
-              Don't just take our word for it – hear from our amazing clients
+              Don&apos;t just take our word for it – hear from our amazing clients
               about their LashPop experience.
             </p>
           </motion.div>
@@ -90,7 +90,7 @@ export default function TestimonialsSection() {
 
                   {/* Review */}
                   <p className="text-gray-700 leading-relaxed mb-6 italic">
-                    "{testimonial.review}"
+                    &ldquo;{testimonial.review}&rdquo;
                   </p>
 
                   {/* Service Info */}

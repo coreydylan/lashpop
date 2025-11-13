@@ -6,7 +6,26 @@ import DiscoverDrawer from './DiscoverDrawer';
 import ServicesDrawer from './ServicesDrawer';
 import { useDrawer } from './DrawerContext';
 
-export default function DrawerSystem() {
+interface Service {
+  id: string;
+  mainCategory: string;
+  subCategory: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  duration: string;
+  price: string;
+  image: string;
+  color: string;
+  displayOrder: number;
+}
+
+interface DrawerSystemProps {
+  services: Service[];
+  mainCategories: string[];
+}
+
+export default function DrawerSystem({ services, mainCategories }: DrawerSystemProps) {
   const { activeDrawer, drawerStates } = useDrawer();
 
   // Check if any drawer is expanded
@@ -43,7 +62,7 @@ export default function DrawerSystem() {
 
       {/* Drawer Components */}
       <DiscoverDrawer />
-      <ServicesDrawer />
+      <ServicesDrawer services={services} mainCategories={mainCategories} />
     </>
   );
 }

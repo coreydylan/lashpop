@@ -101,7 +101,7 @@ export default function DrawerContainer({
         } overflow-hidden ${className}`}
         style={{
           zIndex: getZIndex(),
-          top: currentState === 'invisible' ? '-100%' : getTopPosition(),
+          top: getTopPosition(),
           maxHeight: currentState === 'expanded' ? '85vh' : '72px',
           borderRadius: currentState === 'expanded' ? '0 0 24px 24px' : '0',
         }}

@@ -1,39 +1,52 @@
-"use client";
+import { getAllServices } from "@/actions/services"
+import { getTeamMembers } from "@/actions/team"
+import LandingPageV2Client from "./LandingPageV2Client"
 
-import React from 'react';
-import { DrawerProvider } from '@/components/drawers/DrawerContext';
-import DrawerSystem from '@/components/drawers/DrawerSystem';
-import Header from '@/components/landing-v2/Header';
-import HeroSection from '@/components/landing-v2/HeroSection';
-import AboutSection from '@/components/landing-v2/AboutSection';
-import TeamSection from '@/components/landing-v2/TeamSection';
-import TestimonialsSection from '@/components/landing-v2/TestimonialsSection';
-import ContactSection from '@/components/landing-v2/ContactSection';
-import Footer from '@/components/landing-v2/Footer';
+export default async function LandingPageV2() {
+  // Fetch services from database
+  const services = await getAllServices()
 
-// Import global styles to ensure all the beautiful v1 styles are available
-import '@/app/globals.css';
+  // Transform database format to component format
+  const formattedServices = services.map(service => ({
+    id: service.slug,
+    mainCategory: service.categoryName || "Featured",
+    subCategory: "",
+    title: service.name,
+    fullTitle: service.name,
+    subtitle: service.subtitle || '',
+    description: service.description,
+    duration: `${service.durationMinutes} min`,
+    price: `$${(service.priceStarting / 100).toFixed(0)}+`,
+    image: service.imageUrl || '',
+    color: service.color || 'sage',
+    displayOrder: service.displayOrder
+  }))
 
-export default function LandingPageV2() {
-  return (
-    <DrawerProvider>
-      <div className="min-h-screen bg-cream relative">
-        {/* Z-3: Fixed Header Layer */}
-        <Header />
+  const mainCategories = Array.from(
+    new Set(formattedServices.map(service => service.mainCategory))
+  ).sort()
 
-        {/* Z-2: Drawer System Layer */}
-        <DrawerSystem />
+  // Fetch team members from database
+  const teamMembers = await getTeamMembers()
 
-        {/* Z-1: Page Surface */}
-        <main className="page-content overflow-x-hidden">
-          <HeroSection />
-          <AboutSection />
-          <TeamSection />
-          <TestimonialsSection />
-          <ContactSection />
-          <Footer />
-        </main>
-      </div>
-    </DrawerProvider>
-  );
+  // Transform database format to component format
+  const formattedTeamMembers = teamMembers.map((member, index) => ({
+    id: index, // Use index as ID since UUID can't be converted to number
+    name: member.name,
+    role: member.role,
+    type: member.type as 'employee' | 'independent',
+    businessName: member.businessName || undefined,
+    image: member.imageUrl,
+    phone: member.phone,
+    specialties: member.specialties as string[],
+    bio: member.bio || undefined,
+    quote: member.quote || undefined,
+    availability: member.availability || undefined,
+    instagram: member.instagram || undefined,
+    bookingUrl: member.bookingUrl,
+    favoriteServices: member.favoriteServices as string[] | undefined,
+    funFact: member.funFact || undefined
+  }))
+
+  return <LandingPageV2Client services={formattedServices} mainCategories={mainCategories} teamMembers={formattedTeamMembers} />
 }
