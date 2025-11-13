@@ -1,0 +1,24 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/dam",
+      "has": [
+        {
+          "type": "host",
+          "value": "lashpop-dam.vercel.app"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "destination": "/dam",
+      "has": [
+        {
+          "type": "host",
+          "value": "lashpop-dam-*.vercel.app"
+        }
+      ]
+    }
+  ]
+}
