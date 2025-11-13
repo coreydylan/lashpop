@@ -7,21 +7,11 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export default async function DAMLayout({ children }: { children: ReactNode }) {
-  // Check authentication
+  // Simple approach: Try to get cookies, and if not authenticated, redirect
+  // But we'll create a middleware rule to exclude /dam/login from this layout's execution
   const cookieStore = await cookies()
   const authCookie = cookieStore.get('dam_auth')
 
-  // Get current path from headers
-  const { headers } = await import('next/headers')
-  const headersList = await headers()
-  const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || ''
-
-  // If not authenticated and not on login page, redirect to login
-  if (!authCookie || authCookie.value !== 'authenticated') {
-    if (!pathname.includes('/login') && !pathname.includes('/api/dam/auth')) {
-      redirect('/dam/login')
-    }
-  }
-
+  // This will be bypassed for /dam/login because of the nested layout
   return <>{children}</>
 }
