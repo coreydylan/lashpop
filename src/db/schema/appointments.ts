@@ -3,6 +3,12 @@ import { pgTable, text, timestamp, uuid, numeric, boolean } from "drizzle-orm/pg
 export const appointments = pgTable("appointments", {
   id: uuid("id").defaultRandom().primaryKey(),
 
+  // LashPop user linking (NEW - for auth system)
+  userId: text("user_id"), // LashPop user who owns this appointment
+  bookedByUserId: text("booked_by_user_id"), // Who made the booking (could be different for friend bookings)
+  isFriendBooking: boolean("is_friend_booking").default(false),
+  friendBookingRequestId: uuid("friend_booking_request_id"), // Link to friend_booking_requests table
+
   // Vagaro Integration
   vagaroAppointmentId: text("vagaro_appointment_id").unique().notNull(),
   vagaroData: text("vagaro_data"), // Full JSON payload

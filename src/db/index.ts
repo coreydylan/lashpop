@@ -2,6 +2,16 @@ import { config } from "dotenv"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
 import postgres from "postgres"
 
+// Auth schemas (BetterAuth)
+import { user } from "./schema/auth_user"
+import { session } from "./schema/auth_session"
+import { verification } from "./schema/auth_verification"
+
+// User profile schemas
+import { profiles } from "./schema/profiles"
+import { vagaroSyncMappings } from "./schema/vagaro_sync_mappings"
+import { friendBookingRequests } from "./schema/friend_booking_requests"
+
 // Local schemas
 import { customers } from "./schema/customers"
 import { teamMembers } from "./schema/team_members"
@@ -30,6 +40,16 @@ config({ path: ".env.local" })
 const databaseUrl = process.env.DATABASE_URL
 
 const dbSchema = {
+  // Auth tables
+  user,
+  session,
+  verification,
+
+  // Profile tables
+  profiles,
+  vagaroSyncMappings,
+  friendBookingRequests,
+
   // Local tables
   customers,
   teamMembers,
