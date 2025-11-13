@@ -13,6 +13,7 @@ import Image from 'next/image'
 import { useMemo, useState, useEffect } from 'react'
 import type { GridImage } from './types'
 import { calculateJustifiedLayout } from './algorithms/justifiedLayout'
+import { getArchwayCenterPosition, adjustLayoutForArchway } from './algorithms/positionKeyImage'
 import { GRID_ANIMATION } from './animations'
 
 interface ImageMosaicJustifiedProps {
@@ -42,7 +43,7 @@ export function ImageMosaicJustified({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Calculate justified layout
+  // Calculate justified layout with key image positioned at archway
   const layout = useMemo(() => {
     if (images.length === 0) return { images: [], totalHeight: 0, rows: 0 }
 
@@ -51,7 +52,8 @@ export function ImageMosaicJustified({
     const maxRowHeight = containerWidth < 640 ? 300 : containerWidth < 1024 ? 350 : 400
     const minRowHeight = containerWidth < 640 ? 150 : 200
 
-    return calculateJustifiedLayout(
+    // Calculate initial layout
+    const initialLayout = calculateJustifiedLayout(
       images,
       containerWidth,
       targetHeight,
@@ -59,6 +61,21 @@ export function ImageMosaicJustified({
       maxRowHeight,
       minRowHeight
     )
+
+    // Get archway center position
+    const archwayCenter = getArchwayCenterPosition(containerWidth, targetHeight)
+
+    // Adjust layout to position key image at archway
+    const adjustedImages = adjustLayoutForArchway(
+      initialLayout.images,
+      archwayCenter.x,
+      archwayCenter.y
+    )
+
+    return {
+      ...initialLayout,
+      images: adjustedImages,
+    }
   }, [images, containerWidth, targetHeight])
 
   // Grid opacity - fades out during transition phase
