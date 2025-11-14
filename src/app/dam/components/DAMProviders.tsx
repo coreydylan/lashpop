@@ -1,12 +1,15 @@
 "use client"
 
 import { ReactNode } from 'react'
-import { TutorialProvider } from '@/contexts/TutorialContext'
+import { DamTutorialProvider } from '@/contexts/DamTutorialContext'
+import { QueryProvider } from '@/providers/QueryProvider'
 
 export function DAMProviders({ children }: { children: ReactNode }) {
   return (
-    <TutorialProvider>
-      {children}
-    </TutorialProvider>
+    <QueryProvider>
+      <DamTutorialProvider>
+        {children}
+      </DamTutorialProvider>
+    </QueryProvider>
   )
 }
