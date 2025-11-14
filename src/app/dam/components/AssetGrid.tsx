@@ -744,7 +744,7 @@ interface AssetCardProps {
   dissipatingTags?: Set<string>
 }
 
-const AssetCard = memo(function AssetCard({
+const AssetCard = memo<AssetCardProps>(function AssetCard({
   asset,
   isSelected,
   isSelectionMode,
