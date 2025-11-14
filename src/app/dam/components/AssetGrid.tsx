@@ -987,11 +987,13 @@ const AssetCard = memo(function AssetCard({
   )
 }, (prevProps, nextProps) => {
   // Custom comparison function to prevent unnecessary re-renders
-  // Only re-render if these specific props change
-  return !!(
+  // Return true to SKIP re-render, false to re-render
+
+  // Always skip re-render if just selection mode changed (visual appearance doesn't change)
+  // Only re-render if actual visual properties change
+  const shouldSkipRender = (
     prevProps.asset.id === nextProps.asset.id &&
     prevProps.isSelected === nextProps.isSelected &&
-    prevProps.isSelectionMode === nextProps.isSelectionMode &&
     prevProps.gridViewMode === nextProps.gridViewMode &&
     prevProps.isDragging === nextProps.isDragging &&
     prevProps.isDraggedOver === nextProps.isDraggedOver &&
@@ -1000,4 +1002,6 @@ const AssetCard = memo(function AssetCard({
     prevProps.pendingTagRemoval?.tagId === nextProps.pendingTagRemoval?.tagId &&
     prevProps.asset.tags?.length === nextProps.asset.tags?.length
   )
+
+  return shouldSkipRender
 })
