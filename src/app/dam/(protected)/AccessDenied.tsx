@@ -17,7 +17,7 @@ export function AccessDenied() {
         <div>
           <h2 className="h2 text-dune mb-3">Access Denied</h2>
           <p className="body text-dune/60">
-            You don't have permission to access the Digital Asset Manager.
+            You don&apos;t have permission to access the Digital Asset Manager.
           </p>
           <p className="mt-4 text-sm text-dune/50">
             Please contact an administrator to request access.

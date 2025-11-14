@@ -66,6 +66,9 @@ export async function syncService(vagaroService: any) {
     return existing.id
   } else {
     // Insert new service - set defaults for local enrichments
+    // Infer mainCategory from parentTitle or default to "Other Services"
+    const mainCategory = parentTitle || "Other Services"
+
     const [newService] = await db
       .insert(services)
       .values({
@@ -80,6 +83,7 @@ export async function syncService(vagaroService: any) {
         priceStarting: Math.round(priceStarting * 100), // Convert to cents
         displayOrder: 0,
         isActive: true,
+        mainCategory,
         lastSyncedAt: new Date()
       })
       .returning({ id: services.id })

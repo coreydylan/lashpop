@@ -2,8 +2,12 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useCallback, useEffect, useMemo, useRef, type ReactElement } from "react"
+import { useState, useCallback, useEffect, useMemo, useRef, memo, type ReactElement } from "react"
 import { PhotoView } from "react-photo-view"
+import { ImageSkeleton } from "./ImageSkeleton"
+
+// Global cache for loaded images - persists across all re-renders
+const loadedImagesCache = new Set<string>()
 
 interface Asset {
   id: string
@@ -740,7 +744,7 @@ interface AssetCardProps {
   dissipatingTags?: Set<string>
 }
 
-function AssetCard({
+const AssetCard = memo(function AssetCard({
   asset,
   isSelected,
   isSelectionMode,
@@ -759,30 +763,9 @@ function AssetCard({
   dissipatingTags = new Set()
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
-  const [isModifierKeyPressed, setIsModifierKeyPressed] = useState(false)
 
-  // Track modifier keys to prevent PhotoView from opening
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey) {
-        setIsModifierKeyPressed(true)
-      }
-    }
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!e.metaKey && !e.ctrlKey) {
-        setIsModifierKeyPressed(false)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
-  }, [])
+  // Check if image was previously loaded from global cache
+  const wasImageLoaded = loadedImagesCache.has(asset.filePath)
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isTouchDevice) return
@@ -803,21 +786,45 @@ function AssetCard({
     }
   }
 
+  const [imageLoading, setImageLoading] = useState(!wasImageLoaded)
+  const [imageError, setImageError] = useState(false)
+
+  const handleImageLoad = useCallback(() => {
+    loadedImagesCache.add(asset.filePath)
+    setImageLoading(false)
+  }, [asset.filePath])
+
+  const handleImageError = useCallback(() => {
+    setImageLoading(false)
+    setImageError(true)
+  }, [])
+
   const imageContent = (
-    <img
-      src={asset.filePath}
-      alt={asset.fileName}
-      draggable={false}
-      className={`w-full ${
-        gridViewMode === "square" ? "h-full object-cover" : "h-auto"
-      }`}
-      style={{
-        WebkitTouchCallout: 'none',
-        WebkitUserSelect: 'none',
-        userSelect: 'none'
-      }}
-      onContextMenu={(e) => e.preventDefault()}
-    />
+    <div className="relative w-full h-full">
+      {imageLoading && !wasImageLoaded && <ImageSkeleton gridViewMode={gridViewMode} />}
+      <img
+        src={asset.filePath}
+        alt={asset.fileName}
+        draggable={false}
+        loading="lazy"
+        className={`w-full ${
+          gridViewMode === "square" ? "h-full object-cover" : "h-auto"
+        } ${imageLoading && !wasImageLoaded ? "opacity-0" : "opacity-100"} ${!isDragging && !wasImageLoaded ? "transition-opacity duration-200" : ""}`}
+        style={{
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+          userSelect: 'none'
+        }}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        onContextMenu={(e) => e.preventDefault()}
+      />
+      {imageError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-sm">
+          Failed to load
+        </div>
+      )}
+    </div>
   )
 
   return (
@@ -858,14 +865,20 @@ function AssetCard({
       onMouseLeave={handleTouchEnd}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Image - wrapped in PhotoView when not in selection mode and no modifier key pressed */}
-      {isSelectionMode || isModifierKeyPressed ? (
+      {/* Image - wrapped in PhotoView when not in selection mode */}
+      {isSelectionMode ? (
         <div className="w-full h-full">
           {imageContent}
         </div>
       ) : (
         <PhotoView src={asset.filePath}>
-          <div className="w-full h-full">
+          <div className="w-full h-full" onClick={(e) => {
+            // Prevent PhotoView from opening if modifier keys are pressed
+            if (e.metaKey || e.ctrlKey || e.shiftKey) {
+              e.preventDefault()
+              e.stopPropagation()
+            }
+          }}>
             {imageContent}
           </div>
         </PhotoView>
@@ -972,4 +985,19 @@ function AssetCard({
 
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  // Only re-render if these specific props change
+  return !!(
+    prevProps.asset.id === nextProps.asset.id &&
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.isSelectionMode === nextProps.isSelectionMode &&
+    prevProps.gridViewMode === nextProps.gridViewMode &&
+    prevProps.isDragging === nextProps.isDragging &&
+    prevProps.isDraggedOver === nextProps.isDraggedOver &&
+    prevProps.visibleCardTags?.length === nextProps.visibleCardTags?.length &&
+    prevProps.visibleCardTags?.every((tag, i) => tag === nextProps.visibleCardTags?.[i]) &&
+    prevProps.pendingTagRemoval?.tagId === nextProps.pendingTagRemoval?.tagId &&
+    prevProps.asset.tags?.length === nextProps.asset.tags?.length
+  )
+})

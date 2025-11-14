@@ -31,6 +31,24 @@ import { setPhotos } from "./schema/set_photos"
 import { damUserSettings } from "./schema/dam_user_settings"
 import { damUserActions } from "./schema/dam_user_actions"
 
+// Scrollytelling CMS schemas
+import {
+  compositions,
+  layers,
+  tracks,
+  clips,
+  cues,
+  cueActions,
+  triggers,
+  blocks,
+  drawerConfigs,
+  headerConfigs,
+  surfaceSlides,
+  drawerStates,
+  collisionRules,
+  playbackEvents
+} from "./schema/scrollytelling-cms"
+
 // Vagaro mirror schemas
 import { appointments } from "./schema/appointments"
 import { vagaroCustomers } from "./schema/vagaro_customers"
@@ -71,6 +89,22 @@ const dbSchema = {
   setPhotos,
   damUserSettings,
   damUserActions,
+
+  // Scrollytelling CMS tables
+  compositions,
+  layers,
+  tracks,
+  clips,
+  cues,
+  cueActions,
+  triggers,
+  blocks,
+  drawerConfigs,
+  headerConfigs,
+  surfaceSlides,
+  drawerStates,
+  collisionRules,
+  playbackEvents,
 
   // Vagaro mirror tables
   appointments,
@@ -120,4 +154,58 @@ export async function closeDb() {
     clientInstance = null
     dbInstance = null
   }
+}
+
+// Export db getter as default db
+export const db = getDb()
+
+// Re-export schema tables for convenience
+export {
+  // Auth
+  user,
+  session,
+  verification,
+  // Profiles
+  profiles,
+  vagaroSyncMappings,
+  friendBookingRequests,
+  // Local tables
+  customers,
+  teamMembers,
+  serviceCategories,
+  services,
+  testimonials,
+  reviews,
+  teamMemberCategories,
+  assets,
+  assetServices,
+  teamMemberPhotos,
+  tagCategories,
+  tags,
+  assetTags,
+  sets,
+  setPhotos,
+  damUserSettings,
+  damUserActions,
+  // Scrollytelling CMS
+  compositions,
+  layers,
+  tracks,
+  clips,
+  cues,
+  cueActions,
+  triggers,
+  blocks,
+  drawerConfigs,
+  headerConfigs,
+  surfaceSlides,
+  drawerStates,
+  collisionRules,
+  playbackEvents,
+  // Vagaro mirror
+  appointments,
+  vagaroCustomers,
+  businessLocations,
+  formResponses,
+  transactions
 }
