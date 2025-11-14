@@ -20,9 +20,11 @@ import { OmniCommandPalette, type CommandItem } from "../components/OmniCommandP
 import { TagEditor } from "../components/TagEditor"
 import { CollectionSelector } from "../components/CollectionSelector"
 import { CollectionManager } from "../components/CollectionManager"
-import { TutorialIntegration } from "../components/TutorialIntegration"
+import { TutorialWalkthrough } from "../components/TutorialWalkthrough"
 import { useDamSettings } from "@/hooks/useDamSettings"
 import { useDamActions } from "@/hooks/useDamActions"
+import { useDamInitialData } from "@/hooks/useDamData"
+import { useDamTutorial } from "@/contexts/DamTutorialContext"
 
 interface Asset {
   id: string
@@ -87,6 +89,17 @@ export default function DAMPage() {
     logViewChange,
     logGroupChange
   } = useDamActions()
+
+  // Tutorial hook
+  const {
+    startTutorial,
+    restartTutorial,
+    completedDesktop,
+    completedMobile
+  } = useDamTutorial()
+
+  // Fetch initial data using React Query
+  const { data: initialData, isLoading: isLoadingData, error: dataError, refetch: refetchInitialData } = useDamInitialData()
 
   const [assets, setAssets] = useState<Asset[]>([])
   const [allAssets, setAllAssets] = useState<Asset[]>([])
@@ -207,15 +220,13 @@ export default function DAMPage() {
 
   // Handle grouping by tag category
   const handleGroupBy = useCallback((categoryName: string) => {
-    setGroupByTags(prev => {
-      if (prev.includes(categoryName) || prev.length >= 2) return prev
-      return [...prev, categoryName]
-    })
-  }, [])
+    if (groupByTags.includes(categoryName) || groupByTags.length >= 2) return
+    setGroupByTags([...groupByTags, categoryName])
+  }, [groupByTags, setGroupByTags])
 
   const handleRemoveGroupBy = useCallback((categoryName: string) => {
-    setGroupByTags(prev => prev.filter(c => c !== categoryName))
-  }, [])
+    setGroupByTags(groupByTags.filter((c: string) => c !== categoryName))
+  }, [groupByTags, setGroupByTags])
 
   const openCommandPalette = useCallback((prefill = "") => {
     setCommandQuery(prefill)
@@ -260,11 +271,10 @@ export default function DAMPage() {
     const tag = category.tags.find((t: any) => t.id === tagId)
     if (!tag) return
 
-    setActiveFilters(prev => {
-      const exists = prev.some(f => f.optionId === tagId)
-      if (exists) {
-        return prev.filter(f => f.optionId !== tagId)
-      }
+    const exists = activeFilters.some((f: ActiveFilter) => f.optionId === tagId)
+    if (exists) {
+      setActiveFilters(activeFilters.filter((f: ActiveFilter) => f.optionId !== tagId))
+    } else {
       const newFilter: ActiveFilter = {
         categoryId: category.id,
         categoryName: category.name,
@@ -274,20 +284,19 @@ export default function DAMPage() {
         optionName: tag.name,
         optionDisplayName: tag.displayName
       }
-      return [...prev, newFilter]
-    })
-  }, [selectedAssets.length, tagCategories])
+      setActiveFilters([...activeFilters, newFilter])
+    }
+  }, [selectedAssets.length, tagCategories, activeFilters, setActiveFilters])
 
   const handleTeamFilterToggle = useCallback((memberId: string) => {
     if (selectedAssets.length > 0) return
     const member = teamMembers.find(m => m.id === memberId)
     if (!member) return
 
-    setActiveFilters(prev => {
-      const exists = prev.some(f => f.optionId === memberId)
-      if (exists) {
-        return prev.filter(f => f.optionId !== memberId)
-      }
+    const exists = activeFilters.some((f: ActiveFilter) => f.optionId === memberId)
+    if (exists) {
+      setActiveFilters(activeFilters.filter((f: ActiveFilter) => f.optionId !== memberId))
+    } else {
       const newFilter: ActiveFilter = {
         categoryId: 'team',
         categoryName: 'team',
@@ -298,9 +307,9 @@ export default function DAMPage() {
         optionDisplayName: member.name,
         imageUrl: member.imageUrl
       }
-      return [...prev, newFilter]
-    })
-  }, [selectedAssets.length, teamMembers])
+      setActiveFilters([...activeFilters, newFilter])
+    }
+  }, [selectedAssets.length, teamMembers, activeFilters, setActiveFilters])
 
   const handleClearFilters = useCallback(() => {
     setActiveFilters([])
@@ -438,9 +447,9 @@ export default function DAMPage() {
 
   const fetchAssets = useCallback(async () => {
     try {
-      const response = await fetch("/api/dam/assets")
-      const data = await response.json()
-      const fetchedAssets = data.assets || []
+      // Use React Query's refetch instead of manual fetch
+      const { data } = await refetchInitialData()
+      const fetchedAssets = data?.assets || []
       setAllAssets(fetchedAssets)
       const filtered = applyFilters(fetchedAssets, activeFiltersRef.current)
       setIsLoading(false)
@@ -450,7 +459,7 @@ export default function DAMPage() {
       setIsLoading(false)
       return []
     }
-  }, [applyFilters])
+  }, [applyFilters, refetchInitialData])
 
   const fetchTeamMembers = useCallback(async () => {
     try {
@@ -473,6 +482,29 @@ export default function DAMPage() {
     }
   }, [])
 
+  // Populate state from React Query data
+  useEffect(() => {
+    if (initialData) {
+      console.log('React Query initialData:', initialData)
+      setAllAssets(initialData.assets || [])
+      setTeamMembers(initialData.teamMembers || [])
+      setTagCategories(initialData.categories || [])
+      setIsLoading(false)
+    }
+  }, [initialData])
+
+  // Log any errors from React Query
+  useEffect(() => {
+    if (dataError) {
+      console.error('React Query error:', dataError)
+    }
+  }, [dataError])
+
+  // Set loading state from React Query
+  useEffect(() => {
+    setIsLoading(isLoadingData)
+  }, [isLoadingData])
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -480,12 +512,8 @@ export default function DAMPage() {
     checkMobile()
     window.addEventListener('resize', checkMobile)
 
-    fetchAssets()
-    fetchTeamMembers()
-    fetchTagCategories()
-
     return () => window.removeEventListener('resize', checkMobile)
-  }, [fetchAssets, fetchTagCategories, fetchTeamMembers])
+  }, [])
 
   const handleUploadComplete = (newAssets: Asset[], keepSelected: boolean) => {
     // Log upload action
@@ -653,8 +681,8 @@ export default function DAMPage() {
   }, [])
 
   const toggleGridView = useCallback(() => {
-    setGridViewMode((prev) => (prev === "square" ? "aspect" : "square"))
-  }, [])
+    setGridViewMode(gridViewMode === "square" ? "aspect" : "square")
+  }, [gridViewMode, setGridViewMode])
 
   const handleSelectionChange = (selectedIds: string[]) => {
     console.log('Selection change triggered:', selectedIds, 'Previous:', selectedAssets)
@@ -804,6 +832,9 @@ export default function DAMPage() {
     const selectionCount = selectedAssets.length
     const assetCount = assets.length
 
+    // ========================================
+    // SELECTION CATEGORY
+    // ========================================
     items.push({
       id: "selection-all",
       group: "Selection",
@@ -816,13 +847,14 @@ export default function DAMPage() {
     })
 
     if (selectionCount > 0) {
-      // Sort tag categories alphabetically and build items
+      // ========================================
+      // TAGGING CATEGORY (Bulk Apply)
+      // ========================================
       const sortedCategories = [...tagCategories].sort((a, b) =>
         a.displayName.localeCompare(b.displayName)
       )
 
       sortedCategories.forEach((category) => {
-        // Sort tags within each category
         const sortedTags = [...(category.tags || [])].sort((a: any, b: any) =>
           a.displayName.localeCompare(b.displayName)
         )
@@ -830,9 +862,9 @@ export default function DAMPage() {
         sortedTags.forEach((tag: any) => {
           items.push({
             id: `assign-${category.id}-${tag.id}`,
-            group: "Set Tag",
+            group: "Tagging",
             label: `${category.displayName} › ${tag.displayName}`,
-            description: `Replace ${category.displayName.toLowerCase()} on ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
+            description: `Apply to ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
             badge: category.displayName,
             onSelect: () => {
               const formatted = makeSelectedTag(category, tag)
@@ -842,7 +874,9 @@ export default function DAMPage() {
         })
       })
 
-      // Sort team members alphabetically
+      // ========================================
+      // TEAM CATEGORY (Bulk Assign)
+      // ========================================
       const sortedTeamMembers = [...teamMembers].sort((a, b) =>
         a.name.localeCompare(b.name)
       )
@@ -850,9 +884,9 @@ export default function DAMPage() {
       sortedTeamMembers.forEach((member) => {
         items.push({
           id: `assign-team-${member.id}`,
-          group: "Set Team Member",
+          group: "Team",
           label: member.name,
-          description: `Replace assigned artist on ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
+          description: `Assign to ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
           badge: "Team",
           avatarUrl: member.imageUrl,
           onSelect: () => {
@@ -899,6 +933,9 @@ export default function DAMPage() {
         onSelect: () => confirmDeleteAssets(selectedAssets, `${selectionCount} selected photo${selectionCount === 1 ? "" : "s"}`)
       })
     } else if (activeLightboxAsset) {
+      // ========================================
+      // LIGHTBOX MODE - Single Asset Context
+      // ========================================
       const activeAssetSelected = selectedAssets.includes(activeLightboxAsset.id)
 
       items.push({
@@ -915,13 +952,14 @@ export default function DAMPage() {
         }
       })
 
-      // Sort tag categories alphabetically and build items
+      // ========================================
+      // TAGGING CATEGORY (Single Asset)
+      // ========================================
       const sortedCategories = [...tagCategories].sort((a, b) =>
         a.displayName.localeCompare(b.displayName)
       )
 
       sortedCategories.forEach((category) => {
-        // Sort tags within each category
         const sortedTags = [...(category.tags || [])].sort((a: any, b: any) =>
           a.displayName.localeCompare(b.displayName)
         )
@@ -929,7 +967,7 @@ export default function DAMPage() {
         sortedTags.forEach((tag: any) => {
           items.push({
             id: `single-${category.id}-${tag.id}`,
-            group: "Tag",
+            group: "Tagging",
             label: `${category.displayName} › ${tag.displayName}`,
             description: `Apply to "${activeLightboxAsset.fileName}"`,
             badge: category.displayName,
@@ -941,7 +979,9 @@ export default function DAMPage() {
         })
       })
 
-      // Sort team members alphabetically
+      // ========================================
+      // TEAM CATEGORY (Single Asset)
+      // ========================================
       const sortedTeamMembers = [...teamMembers].sort((a, b) =>
         a.name.localeCompare(b.name)
       )
@@ -949,7 +989,7 @@ export default function DAMPage() {
       sortedTeamMembers.forEach((member) => {
         items.push({
           id: `single-team-${member.id}`,
-          group: "Set Team Member",
+          group: "Team",
           label: member.name,
           description: `Assign to "${activeLightboxAsset.fileName}"`,
           avatarUrl: member.imageUrl,
@@ -971,14 +1011,9 @@ export default function DAMPage() {
         })
       })
 
-      items.push({
-        id: "single-delete",
-        group: "Photo Tools",
-        label: "Delete this photo",
-        description: "Double confirmation required",
-        onSelect: () => confirmDeleteAssets([activeLightboxAsset.id], `"${activeLightboxAsset.fileName}"`)
-      })
-
+      // ========================================
+      // CURRENT TAGS (Removal)
+      // ========================================
       if (activeLightboxAsset.teamMemberId) {
         const member = teamMembers.find((m) => m.id === activeLightboxAsset.teamMemberId)
         if (member) {
@@ -1002,14 +1037,26 @@ export default function DAMPage() {
           onSelect: () => handleRemoveTag(tag.id, 1, [activeLightboxAsset.id])
         })
       })
+
+      // ========================================
+      // SELECTION CATEGORY (Delete)
+      // ========================================
+      items.push({
+        id: "single-delete",
+        group: "Selection",
+        label: "Delete this photo",
+        description: "Double confirmation required",
+        onSelect: () => confirmDeleteAssets([activeLightboxAsset.id], `"${activeLightboxAsset.fileName}"`)
+      })
     } else {
-      // Sort tag categories alphabetically and build filter items
+      // ========================================
+      // NO SELECTION MODE - Filtering Focus
+      // ========================================
       const sortedCategories = [...tagCategories].sort((a, b) =>
         a.displayName.localeCompare(b.displayName)
       )
 
       sortedCategories.forEach((category) => {
-        // Sort tags within each category
         const sortedTags = [...(category.tags || [])].sort((a: any, b: any) =>
           a.displayName.localeCompare(b.displayName)
         )
@@ -1018,7 +1065,7 @@ export default function DAMPage() {
           const isActive = activeFilters.some((filter) => filter.optionId === tag.id)
           items.push({
             id: `filter-tag-${tag.id}`,
-            group: "Filter by Tag",
+            group: "Filtering",
             label: `${category.displayName} › ${tag.displayName}`,
             description: isActive ? "Click to remove filter" : "Click to add filter",
             isActive,
@@ -1028,7 +1075,9 @@ export default function DAMPage() {
         })
       })
 
-      // Sort team members alphabetically
+      // ========================================
+      // TEAM FILTERING
+      // ========================================
       const sortedTeamMembers = [...teamMembers].sort((a, b) =>
         a.name.localeCompare(b.name)
       )
@@ -1039,11 +1088,11 @@ export default function DAMPage() {
         )
         items.push({
           id: `filter-team-${member.id}`,
-          group: "Filter by Team",
-          label: member.name,
-          description: "Team",
+          group: "Filtering",
+          label: `Team › ${member.name}`,
+          description: isActive ? "Active filter" : "Filter by this team member",
           isActive,
-          badge: isActive ? "Active" : undefined,
+          badge: isActive ? "Active" : "Team",
           avatarUrl: member.imageUrl,
           onSelect: () => handleTeamFilterToggle(member.id)
         })
@@ -1051,22 +1100,25 @@ export default function DAMPage() {
 
       items.push({
         id: "filters-clear",
-        group: "Filters",
-        label: "Clear filters",
-        description: activeFilters.length > 0 ? `${activeFilters.length} active` : "No filters applied",
+        group: "Filtering",
+        label: "Clear all filters",
+        description: activeFilters.length > 0 ? `Remove ${activeFilters.length} active filter${activeFilters.length === 1 ? '' : 's'}` : "No filters applied",
         disabled: activeFilters.length === 0,
         onSelect: handleClearFilters
       })
     }
 
+    // ========================================
+    // ORGANIZATION CATEGORY
+    // ========================================
     const groupingSet = new Set(groupByTags)
     if (groupByTags.length < 2) {
       if (!groupingSet.has("team") && teamMembers.length > 0) {
         items.push({
           id: "group-team",
-          group: "Grouping",
+          group: "Organization",
           label: "Group by Team",
-          description: "Add Team grouping layer",
+          description: "Organize grid by team members",
           onSelect: () => handleGroupBy("team")
         })
       }
@@ -1075,9 +1127,9 @@ export default function DAMPage() {
         if (!groupingSet.has(category.name)) {
           items.push({
             id: `group-${category.id}`,
-            group: "Grouping",
+            group: "Organization",
             label: `Group by ${category.displayName}`,
-            description: "Add grouping layer",
+            description: `Organize grid by ${category.displayName.toLowerCase()}`,
             onSelect: () => handleGroupBy(category.name)
           })
         }
@@ -1087,54 +1139,163 @@ export default function DAMPage() {
     groupByTags.forEach((categoryName) => {
       items.push({
         id: `remove-group-${categoryName}`,
-        group: "Grouping",
-        label: `Remove ${getCategoryDisplayName(categoryName)}`,
-        description: "Remove grouping layer",
+        group: "Organization",
+        label: `Remove ${getCategoryDisplayName(categoryName)} grouping`,
+        description: "Clear this grouping layer",
         onSelect: () => handleRemoveGroupBy(categoryName)
       })
     })
 
+    // Collections submenu
+    if (collections.length > 0) {
+      collections.forEach((collection: any) => {
+        const isActive = activeCollectionId === collection.id
+        items.push({
+          id: `collection-${collection.id}`,
+          group: "Organization",
+          label: `Collection › ${collection.displayName}`,
+          description: isActive ? "Currently viewing this collection" : "View this collection",
+          isActive,
+          badge: isActive ? "Active" : "Collection",
+          onSelect: () => setActiveCollectionId(isActive ? undefined : collection.id)
+        })
+      })
+
+      if (activeCollectionId) {
+        items.push({
+          id: "collection-clear",
+          group: "Organization",
+          label: "View all assets",
+          description: "Clear collection filter",
+          onSelect: () => setActiveCollectionId(undefined)
+        })
+      }
+    }
+
+    // ========================================
+    // VIEW CATEGORY
+    // ========================================
     items.push({
       id: "view-toggle",
       group: "View",
-      label: gridViewMode === "square" ? "Switch to aspect view" : "Switch to square view",
-      description: "Toggle gallery layout",
+      label: gridViewMode === "square" ? "Switch to aspect ratio view" : "Switch to square grid view",
+      description: "Toggle gallery layout mode",
       onSelect: toggleGridView
     })
 
     items.push({
+      id: "view-card-settings",
+      group: "View",
+      label: "Customize card display",
+      description: "Choose which tags appear on asset cards",
+      onSelect: openCardSettings
+    })
+
+    items.push({
       id: "upload-toggle",
-      group: "Actions",
+      group: "View",
       label: isUploadOpen ? "Hide upload panel" : "Show upload panel",
-      description: "Quick upload access",
+      description: "Toggle quick upload interface",
       onSelect: toggleUploadPanel
     })
 
-    // Add tag management command
+    // ========================================
+    // SETTINGS CATEGORY
+    // ========================================
     items.push({
       id: "manage-tags",
-      group: "Actions",
+      group: "Settings",
       label: "Manage tags & categories",
-      description: "Edit, rename, or reorganize tags",
+      description: "Edit, rename, or reorganize tag system",
       badge: "Admin",
       onSelect: () => {
-        // Open the tag editor
         setIsCommandOpen(false)
         setIsTagEditorOpen(true)
       }
     })
 
-    // Add collection management command
     items.push({
       id: "manage-collections",
-      group: "Actions",
+      group: "Settings",
       label: "Manage collections",
       description: "Create, rename, or reorganize collections",
       badge: "Admin",
       onSelect: () => {
-        // Open the collection manager
         setIsCommandOpen(false)
         setIsCollectionManagerOpen(true)
+      }
+    })
+
+    items.push({
+      id: "settings-team",
+      group: "Settings",
+      label: "Team management",
+      description: "Manage team members and photos",
+      onSelect: () => {
+        window.location.href = "/dam/team"
+      }
+    })
+
+    items.push({
+      id: "settings-logout",
+      group: "Settings",
+      label: "Logout",
+      description: "Sign out of your account",
+      onSelect: async () => {
+        await fetch("/api/dam/auth/logout", { method: "POST" })
+        window.location.href = "/dam/login"
+      }
+    })
+
+    // ========================================
+    // HELP CATEGORY
+    // ========================================
+    items.push({
+      id: "help-tutorial",
+      group: "Help",
+      label: completedDesktop && completedMobile ? "Restart tutorial walkthrough" : "Start tutorial walkthrough",
+      description: isMobile
+        ? completedMobile ? "Review the mobile tutorial" : "Interactive guide for mobile users"
+        : completedDesktop ? "Review the desktop tutorial" : "Interactive guide for first-time users",
+      badge: (completedDesktop && completedMobile) ? "Completed" : undefined,
+      onSelect: () => {
+        setIsCommandOpen(false)
+        setTimeout(() => {
+          startTutorial(isMobile ? 'mobile' : 'desktop')
+        }, 300)
+      }
+    })
+
+    items.push({
+      id: "help-restart-tutorial",
+      group: "Help",
+      label: "Reset tutorial progress",
+      description: "Clear completion and start fresh",
+      disabled: !completedDesktop && !completedMobile,
+      onSelect: () => {
+        if (confirm("Reset your tutorial progress? You can restart it anytime.")) {
+          restartTutorial()
+        }
+      }
+    })
+
+    items.push({
+      id: "help-shortcuts",
+      group: "Help",
+      label: "Keyboard shortcuts",
+      description: "View all available keyboard commands",
+      onSelect: () => {
+        alert("⌨️ Keyboard Shortcuts\n\n/ or ⌘K (Ctrl+K) - Open Command Palette\nEsc - Close Command Palette\n\n⌘+Click - Multi-select items\nClick & Drag - Select range\nShift+Click - Select range\n\nArrow Keys - Navigate Command Palette\nEnter - Execute selected command")
+      }
+    })
+
+    items.push({
+      id: "help-tips",
+      group: "Help",
+      label: "Quick tips & examples",
+      description: "Learn common workflows with examples",
+      onSelect: () => {
+        alert("💡 Quick Tip: Group by Team\n\n1. Open Command Palette (/)\n2. Type 'group'\n3. Select 'Group by Team'\n4. Your grid reorganizes by artist!\n\n---\n\n💡 Quick Tip: Bulk Tagging\n\n1. Select multiple photos (click & drag)\n2. Open Command Palette (/)\n3. Choose tags from Tagging category\n4. Tags apply to all selected items!\n\n---\n\nMore tips available in the tutorial!")
       }
     })
 
@@ -1142,7 +1303,12 @@ export default function DAMPage() {
   }, [
     activeFilters,
     activeLightboxAsset,
+    activeCollectionId,
     clearSelection,
+    collections,
+    completedDesktop,
+    completedMobile,
+    confirmDeleteAssets,
     getCategoryDisplayName,
     gridViewMode,
     groupByTags,
@@ -1154,15 +1320,20 @@ export default function DAMPage() {
     handleSingleTagsChange,
     handleTagFilterToggle,
     handleTeamFilterToggle,
+    isMobile,
     isUploadOpen,
     makeSelectedTag,
     omniTags,
+    openCardSettings,
+    restartTutorial,
     assets,
     selectedAssets,
+    setActiveCollectionId,
+    setIsCommandOpen,
+    startTutorial,
     tagCategories,
     teamMembers,
     handleRemoveTag,
-    confirmDeleteAssets,
     toggleGridView,
     toggleUploadPanel
   ])
@@ -1199,12 +1370,6 @@ export default function DAMPage() {
   const renderChips = (): ReactNode => {
     // Always show Group By chips first if any
     const groupByContent = renderGroupByChips()
-    const commandLabel = selectedAssets.length > 0
-      ? "Bulk commands"
-      : activeLightboxAsset
-        ? "Action palette"
-        : "Magic search"
-
     const commandLauncher = (
       <button
         key="command-launcher"
@@ -1215,9 +1380,10 @@ export default function DAMPage() {
             ? "bg-dune text-cream border-dune/40 hover:bg-dune/90"
             : "bg-cream text-dune border-sage/20 hover:border-dusty-rose/40"
         )}
+        data-tutorial="command-button"
       >
         <Sparkles className="w-4 h-4 text-dusty-rose" />
-        <span>{commandLabel}</span>
+        <span>Command Palette</span>
         <span className="hidden sm:inline-flex items-center text-[11px] uppercase tracking-widest border border-current/40 rounded-full px-2 py-0.5">
           /
         </span>
@@ -1242,77 +1408,74 @@ export default function DAMPage() {
               return (
                 <div
                   key={tagId}
-                  className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''} ${isPending ? 'candy-cane-effect' : ''}`}
+                  className={`flex-shrink-0 flex items-center gap-1 rounded-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''} ${isPending ? 'candy-cane-effect' : ''}`}
                   style={{
-                    background: getTagColor("#BCC9C2", false)
+                    background: getTagColor("#BCC9C2", false),
+                    minHeight: 'auto',
+                    height: 'auto'
                   }}
                   onClick={(e) => {
-                    console.log('Chip container clicked, stopping propagation')
                     e.stopPropagation()
                   }}
                 >
-                  {isPending ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        confirmTagRemoval()
-                      }}
-                      onMouseLeave={cancelTagRemoval}
-                      className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
-                    >
-                      <X className="w-4 h-4 text-cream animate-bounce" />
-                      <span className="text-sm text-cream font-semibold">
-                        Remove team member from {count} {count === 1 ? 'asset' : 'assets'}?
-                      </span>
-                    </button>
-                  ) : (
-                    <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
+                  <div className={`flex items-center gap-1 ${isMobile ? 'px-1 py-px' : 'px-1.5 py-px'}`}>
+                    {isPending ? (
                       <button
                         onClick={(e) => {
-                          console.log('X button clicked for team member, selectedAssets:', selectedAssets)
                           e.stopPropagation()
-                          e.preventDefault()
-                          requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
+                          confirmTagRemoval()
                         }}
-                        onMouseDown={(e) => {
-                          // Prevent any default mouse down behavior
-                          e.stopPropagation()
-                          e.preventDefault()
-                        }}
-                        className="flex items-center gap-1 hover:bg-black/10 rounded px-1 -ml-1 transition-colors"
+                        onMouseLeave={cancelTagRemoval}
+                        className="flex items-center gap-1 bg-black/20 hover:bg-black/30 transition-all w-full"
                       >
-                        <X className="w-3 h-3 text-cream" />
-                        <span className="text-xs font-bold text-cream">{count}</span>
+                        <X className="w-2.5 h-2.5 text-cream animate-bounce" />
+                        <span className="text-[10px] text-cream font-semibold">
+                          Remove team member from {count} {count === 1 ? 'asset' : 'assets'}?
+                        </span>
                       </button>
-                      {teamMember.imageUrl && (
-                        <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
-                          <img
-                            src={teamMember.imageUrl}
-                            alt={teamMember.name}
-                            className="w-full h-full object-cover"
-                            style={
-                              teamMember.cropCloseUpCircle
-                                ? {
-                                    objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
-                                    transform: `scale(${teamMember.cropCloseUpCircle.scale})`
-                                  }
-                                : {
-                                    objectPosition: 'center 25%',
-                                    transform: 'scale(2)'
-                                  }
-                            }
-                          />
-                        </div>
-                      )}
-                      <span className="text-xs font-semibold text-cream uppercase tracking-wide">
-                        Team
-                      </span>
-                      <span className="text-cream/80 text-xs">›</span>
-                      <span className="text-sm text-cream font-medium">
-                        {teamMember.name}
-                      </span>
-                    </div>
-                  )}
+                    ) : (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            e.preventDefault()
+                            requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
+                          }}
+                          className="flex items-center gap-px hover:bg-black/10 rounded px-px transition-colors"
+                        >
+                          <X className="w-2 h-2 text-cream" />
+                          <span className="text-[9px] font-bold text-cream">{count}</span>
+                        </button>
+                        {teamMember.imageUrl && (
+                          <div className="w-3 h-3 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
+                            <img
+                              src={teamMember.imageUrl}
+                              alt={teamMember.name}
+                              className="w-full h-full object-cover"
+                              style={
+                                teamMember.cropCloseUpCircle
+                                  ? {
+                                      objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
+                                      transform: `scale(${teamMember.cropCloseUpCircle.scale})`
+                                    }
+                                  : {
+                                      objectPosition: 'center 25%',
+                                      transform: 'scale(2)'
+                                    }
+                              }
+                            />
+                          </div>
+                        )}
+                        <span className="text-[9px] font-semibold text-cream uppercase">
+                          Team
+                        </span>
+                        <span className="text-cream/80 text-[9px]">›</span>
+                        <span className="text-[10px] text-cream font-medium">
+                          {teamMember.name}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               )
             }
@@ -1326,63 +1489,60 @@ export default function DAMPage() {
             return (
               <div
                 key={tagId}
-                className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''} ${isPending ? 'candy-cane-effect' : ''}`}
+                className={`flex-shrink-0 flex items-center gap-1 rounded-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''} ${isPending ? 'candy-cane-effect' : ''}`}
                 style={{
-                  background: getTagColor(tag.category.color, false)
+                  background: getTagColor(tag.category.color, false),
+                  minHeight: 'auto',
+                  height: 'auto'
                 }}
                 onClick={(e) => {
-                  console.log('Tag chip container clicked, stopping propagation')
                   e.stopPropagation()
                 }}
               >
-                {isPending ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      confirmTagRemoval()
-                    }}
-                    onMouseLeave={cancelTagRemoval}
-                    className={`flex items-center gap-2 bg-black/20 hover:bg-black/30 transition-all ${isMobile ? 'px-3 py-1' : 'px-4 py-1.5'} w-full`}
-                  >
-                    <X className="w-4 h-4 text-cream animate-bounce" />
-                    <span className="text-sm text-cream font-semibold">
-                      Remove {tag.category.displayName.toLowerCase()} from {count} {count === 1 ? 'asset' : 'assets'}?
-                    </span>
-                  </button>
-                ) : (
-                  <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
+                <div className={`flex items-center gap-1 ${isMobile ? 'px-1 py-px' : 'px-1.5 py-px'}`}>
+                  {isPending ? (
                     <button
                       onClick={(e) => {
-                        console.log('X button clicked for tag, selectedAssets:', selectedAssets)
                         e.stopPropagation()
-                        e.preventDefault()
-                        requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")
+                        confirmTagRemoval()
                       }}
-                      onMouseDown={(e) => {
-                        // Prevent any default mouse down behavior
-                        e.stopPropagation()
-                        e.preventDefault()
-                      }}
-                      className="flex items-center gap-1 hover:bg-black/10 rounded px-1 -ml-1 transition-colors"
+                      onMouseLeave={cancelTagRemoval}
+                      className="flex items-center gap-1 bg-black/20 hover:bg-black/30 transition-all w-full"
                     >
-                      <X className="w-3 h-3 text-cream" />
-                      <span className="text-xs font-bold text-cream">{count}</span>
+                      <X className="w-2.5 h-2.5 text-cream animate-bounce" />
+                      <span className="text-[10px] text-cream font-semibold">
+                        Remove {tag.category.displayName.toLowerCase()} from {count} {count === 1 ? 'asset' : 'assets'}?
+                      </span>
                     </button>
-                    <button
-                      onClick={() => handleGroupBy(tag.category.name)}
-                      className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
-                        groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                      }`}
-                      disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
-                    >
-                      {tag.category.displayName}
-                    </button>
-                    <span className="text-cream/80 text-xs">›</span>
-                    <span className="text-sm text-cream font-medium">
-                      {tag.displayName}
-                    </span>
-                  </div>
-                )}
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          e.preventDefault()
+                          requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")
+                        }}
+                        className="flex items-center gap-px hover:bg-black/10 rounded px-px transition-colors"
+                      >
+                        <X className="w-2 h-2 text-cream" />
+                        <span className="text-[9px] font-bold text-cream">{count}</span>
+                      </button>
+                      <button
+                        onClick={() => handleGroupBy(tag.category.name)}
+                        className={`text-[9px] font-semibold text-cream uppercase hover:text-white transition-colors ${
+                          groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        }`}
+                        disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
+                      >
+                        {tag.category.displayName}
+                      </button>
+                      <span className="text-cream/80 text-[9px]">›</span>
+                      <span className="text-[10px] text-cream font-medium">
+                        {tag.displayName}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             )
           })}
@@ -1478,14 +1638,26 @@ export default function DAMPage() {
           {activeFilters.map((filter) => (
             <div
               key={`${filter.categoryId}-${filter.optionId}`}
-              className="flex items-center gap-1 arch-full overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              className={clsx(
+                "flex items-center overflow-hidden transition-all",
+                isMobile
+                  ? "gap-0 rounded-full shadow-none"
+                  : "gap-0 rounded-full shadow-none hover:shadow-sm"
+              )}
               style={{
-                background: `linear-gradient(135deg, ${filter.categoryColor || "#A19781"} 0%, ${filter.categoryColor || "#A19781"}CC 100%)`
+                backgroundColor: `${filter.categoryColor || "#A19781"}`,
+                border: `1px solid ${filter.categoryColor || "#A19781"}`
               }}
             >
-              <div className="flex items-center gap-2 px-3 py-1.5">
+              <div className={clsx(
+                "flex items-center",
+                isMobile ? "gap-1 px-1.5 py-0.5" : "gap-1 px-2 py-0.5"
+              )}>
                 {filter.imageUrl && (
-                  <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
+                  <div className={clsx(
+                    "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
+                    isMobile ? "w-3 h-3" : "w-3.5 h-3.5"
+                  )}>
                     <img
                       src={filter.imageUrl}
                       alt={filter.optionDisplayName}
@@ -1497,11 +1669,20 @@ export default function DAMPage() {
                     />
                   </div>
                 )}
-                <span className="text-xs font-semibold text-cream uppercase tracking-wide">
+                <span className={clsx(
+                  "font-semibold text-cream/90 uppercase",
+                  isMobile ? "text-[9px]" : "text-[10px]"
+                )}>
                   {filter.categoryDisplayName}
                 </span>
-                <span className="text-cream/80 text-xs">›</span>
-                <span className="text-sm text-cream font-medium">
+                <span className={clsx(
+                  "text-cream/60",
+                  isMobile ? "text-[9px]" : "text-[10px]"
+                )}>›</span>
+                <span className={clsx(
+                  "text-cream font-medium",
+                  isMobile ? "text-[10px]" : "text-[11px]"
+                )}>
                   {filter.optionDisplayName}
                 </span>
               </div>
@@ -1511,9 +1692,15 @@ export default function DAMPage() {
                     f => !(f.categoryId === filter.categoryId && f.optionId === filter.optionId)
                   ))
                 }}
-                className="px-2 py-1.5 hover:bg-black/10 transition-colors"
+                className={clsx(
+                  "hover:bg-black/15 transition-colors",
+                  isMobile ? "px-1 py-0.5" : "px-1.5 py-0.5"
+                )}
               >
-                <X className="w-3.5 h-3.5 text-cream" />
+                <X className={clsx(
+                  "text-cream/80 hover:text-cream",
+                  isMobile ? "w-2.5 h-2.5" : "w-2.5 h-2.5"
+                )} />
               </button>
             </div>
           ))}
@@ -2006,17 +2193,13 @@ export default function DAMPage() {
             data-tutorial="command-button"
           >
             <Sparkles className="w-5 h-5 text-dusty-rose" />
-            <span className="text-sm font-semibold uppercase tracking-wide">Command</span>
+            <span className="text-sm font-semibold uppercase tracking-wide">Command Palette</span>
           </button>
         </div>
       )}
 
       {/* Tutorial System */}
-      <TutorialIntegration
-        selectedAssets={selectedAssets}
-        isCommandOpen={isCommandOpen}
-        hasInteractedWithGrid={hasInteractedWithGrid}
-      />
+      <TutorialWalkthrough />
     </PhotoLightbox>
   )
 }
