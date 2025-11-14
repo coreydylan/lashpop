@@ -874,9 +874,9 @@ const AssetCard = memo(function AssetCard({
         <PhotoView src={asset.filePath}>
           <div className="w-full h-full" onClick={(e) => {
             // Prevent PhotoView from opening if modifier keys are pressed
+            // Don't stopPropagation so the click can bubble to parent's onClick handler
             if (e.metaKey || e.ctrlKey || e.shiftKey) {
               e.preventDefault()
-              e.stopPropagation()
             }
           }}>
             {imageContent}
