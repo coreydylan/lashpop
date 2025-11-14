@@ -26,6 +26,11 @@ export const services = pgTable("services", {
   displayOrder: integer("display_order").default(0).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
 
+  // Additional categorization fields (required by database)
+  mainCategory: text("main_category").notNull(), // "Lash Services", "Brow Services", etc.
+  subCategory: text("sub_category"), // "Classic Extensions", "Volume Extensions", etc.
+  displayTitle: text("display_title"), // Short display name like "Fill", "Full Set", etc.
+
   // Metadata
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
