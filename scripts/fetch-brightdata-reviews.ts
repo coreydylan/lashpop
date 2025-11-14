@@ -51,8 +51,7 @@ if (GOOGLE_DATASET_ID && process.env.GOOGLE_MAPS_URL) {
     defaultUrl: process.env.GOOGLE_MAPS_URL,
     requests: [
       {
-        url: process.env.GOOGLE_MAPS_URL,
-        sort_by: 'DATE_DESC'
+        url: process.env.GOOGLE_MAPS_URL
       }
     ]
   })
