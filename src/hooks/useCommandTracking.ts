@@ -15,7 +15,6 @@ interface UseCommandTrackingProps {
 
 interface TrackingContext {
   previousCommandId?: string
-  timeToSelect?: number
   metadata?: Record<string, any>
 }
 
@@ -33,8 +32,7 @@ export function useCommandTracking({
     const updatedPalette = trackUsage(
       {
         commandId,
-        previousCommandId: context?.previousCommandId,
-        timeToSelect: context?.timeToSelect
+        previousCommandId: context?.previousCommandId
       },
       settings.commandPalette
     )
