@@ -86,14 +86,14 @@ export function parseNaturalLanguageQuery(
 
   // Step 3: Extract additional structured data based on intent
   const sort = intentClassification.intent === 'SORT'
-    ? extractSortCriteria(query)
+    ? extractSortCriteria(query) ?? undefined
     : undefined
 
   const group = intentClassification.intent === 'GROUP'
-    ? extractGroupCriteria(query)
+    ? extractGroupCriteria(query) ?? undefined
     : undefined
 
-  const quantity = extractQuantity(query)
+  const quantity = extractQuantity(query) ?? undefined
 
   const negation = hasNegation(query)
 
