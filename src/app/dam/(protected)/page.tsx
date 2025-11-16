@@ -1941,9 +1941,9 @@ export default function DAMPage() {
         {/* Sticky Omni Control Bar */}
         <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm select-none">
           <div className="max-w-7xl mx-auto px-6 pt-4">
-            {/* Collection Selector Row with Command Palette */}
+            {/* Desktop: Collection Selector Row with Command Palette */}
             <div className={clsx(
-              "mb-4 flex items-center gap-4",
+              "hidden lg:flex mb-4 items-center gap-4",
               collections.length > 0 ? "justify-between" : "justify-end"
             )}>
               {/* Collection Selector on the left */}
@@ -2008,6 +2008,15 @@ export default function DAMPage() {
                 onOpenCardSettings={openCardSettings}
                 escConfirmationActive={escConfirmationActive}
                 onEscClick={handleEscPress}
+                collectionSelector={collections.length > 0 ? (
+                  <CollectionSelector
+                    collections={collections}
+                    activeCollectionId={activeCollectionId}
+                    onSelectCollection={setActiveCollectionId}
+                    onCreateCollection={() => setIsCollectionManagerOpen(true)}
+                  />
+                ) : undefined}
+                onOpenCommandPalette={() => openCommandPalette("")}
               />
             </div>
           </div>
@@ -2195,18 +2204,6 @@ export default function DAMPage() {
         </Suspense>
       )}
 
-      {isMobile && !isCommandOpen && (
-        <div className="fixed bottom-5 left-0 right-0 z-40 px-6 lg:hidden safe-bottom">
-          <button
-            onClick={() => openCommandPalette("")}
-            className="w-full flex items-center justify-center gap-2 rounded-full bg-dune text-cream py-3 shadow-2xl shadow-dune/40 border border-white/10"
-            data-tutorial="command-button"
-          >
-            <Sparkles className="w-5 h-5 text-dusty-rose" />
-            <span className="text-sm font-semibold uppercase tracking-wide">Command Palette</span>
-          </button>
-        </div>
-      )}
 
       {/* Tutorial System */}
       <TutorialWalkthrough />

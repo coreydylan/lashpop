@@ -25,6 +25,9 @@ export interface OmniBarProps {
   onOpenCardSettings?: () => void
   escConfirmationActive?: boolean
   onEscClick?: () => void
+  // Mobile-specific props
+  collectionSelector?: ReactNode
+  onOpenCommandPalette?: () => void
 }
 
 export function OmniBar({
@@ -46,7 +49,9 @@ export function OmniBar({
   counterSlot,
   onOpenCardSettings,
   escConfirmationActive = false,
-  onEscClick
+  onEscClick,
+  collectionSelector,
+  onOpenCommandPalette
 }: OmniBarProps) {
   const isOverlay = mode === "overlay"
 
@@ -311,104 +316,110 @@ export function OmniBar({
         </div>
       </div>
 
-      {/* Mobile layout - optimized mobile-first design */}
+      {/* Mobile layout - reimagined comprehensive interface */}
       <div className={clsx("block lg:hidden", isOverlay ? "px-0" : "px-3")}>
-        {/* Compact header row */}
-        <div className={clsx("flex items-center justify-between py-2", isOverlay ? "px-3" : "")}>
-          {selectedCount > 0 ? (
-            <>
-              <div className="flex items-center gap-1.5">
-                <span className={clsx("text-sm font-bold", textPrimary)}>
-                  {selectedCount}
-                </span>
-                {escConfirmationActive ? (
-                  <button
-                    onClick={onEscClick}
-                    className={clsx(
-                      "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all font-medium text-[10px]",
-                      isOverlay
-                        ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
-                        : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
-                    )}
-                    aria-label="Press ESC again to deselect"
-                  >
-                    <span className="inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[9px] font-semibold">
-                      ESC
-                    </span>
-                    <span>again</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={onEscClick || onClearSelection}
-                    className={clsx(
-                      "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full transition-colors",
-                      hoverClass
-                    )}
-                    aria-label="Clear selection"
-                  >
-                    <span className={clsx("inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[9px] font-semibold", textPrimary)}>
-                      ESC
-                    </span>
-                    <X className={clsx("w-3 h-3", textPrimary)} />
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5">
-                {canApplyTags && (
-                  <button
-                    onClick={onApplyTags}
-                    className={clsx("px-3 py-1 rounded-full text-xs font-semibold transition-colors", applyButtonClass)}
-                  >
-                    Apply
-                  </button>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-1.5">
-                <span className={clsx("text-sm font-medium", textMuted)}>
+        {/* Top action bar - collections, stats, quick actions */}
+        {!isOverlay && (
+          <div className="flex items-center justify-between py-2 border-b border-sage/10">
+            {/* Left: Collection selector */}
+            <div className="flex-1 min-w-0 mr-2">
+              {collectionSelector || (
+                <span className={clsx("text-sm font-medium truncate block", textMuted)}>
                   {assetsCount} {assetLabel}
                 </span>
-                {counterSlot && (
-                  <span className="text-[10px] font-bold text-cream bg-dune/30 rounded-full px-2 py-0.5">
-                    {counterSlot}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {showGridToggle && (
-                  <button
-                    onClick={onToggleGridView}
-                    className={clsx("p-1.5 rounded-full transition-colors flex items-center justify-center", hoverClass)}
-                    aria-label="Toggle grid view"
-                  >
-                    {gridViewMode === "square" ? (
-                      <LayoutGrid className={clsx("w-4 h-4", iconColor)} />
-                    ) : (
-                      <Grid3x3 className={clsx("w-4 h-4", iconColor)} />
-                    )}
-                  </button>
-                )}
-                {onOpenCardSettings && (
-                  <button
-                    onClick={onOpenCardSettings}
-                    className={clsx("p-1.5 rounded-full transition-colors flex items-center justify-center", hoverClass)}
-                    aria-label="Card settings"
-                  >
-                    <CreditCard className={clsx("w-4 h-4", iconColor)} />
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+              )}
+            </div>
 
-        {/* Compact filter controls - only show buttons when not in selection mode */}
-        {selectedCount === 0 && (groupByButton || filterButton) && (
-          <div className={clsx("flex items-center gap-1.5 pb-2", isOverlay ? "px-3" : "")}>
-            {groupByButton}
-            {filterButton}
+            {/* Right: Quick actions */}
+            <div className="flex items-center gap-1">
+              {selectedCount === 0 && (
+                <>
+                  {groupByButton}
+                  {filterButton}
+                  {onOpenCommandPalette && (
+                    <button
+                      onClick={onOpenCommandPalette}
+                      className={clsx("p-1.5 rounded-full transition-colors", hoverClass)}
+                      aria-label="More actions"
+                    >
+                      <svg className={clsx("w-4 h-4", iconColor)} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                      </svg>
+                    </button>
+                  )}
+                  {showGridToggle && (
+                    <button
+                      onClick={onToggleGridView}
+                      className={clsx("p-1.5 rounded-full transition-colors", hoverClass)}
+                      aria-label="Toggle grid"
+                    >
+                      {gridViewMode === "square" ? (
+                        <LayoutGrid className={clsx("w-4 h-4", iconColor)} />
+                      ) : (
+                        <Grid3x3 className={clsx("w-4 h-4", iconColor)} />
+                      )}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Selection mode bar */}
+        {selectedCount > 0 && (
+          <div className={clsx("flex items-center justify-between py-2", isOverlay ? "px-3" : "")}>
+            <div className="flex items-center gap-1.5">
+              <span className={clsx("text-sm font-bold", textPrimary)}>
+                {selectedCount}
+              </span>
+              {escConfirmationActive ? (
+                <button
+                  onClick={onEscClick}
+                  className={clsx(
+                    "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all font-medium text-[10px]",
+                    isOverlay
+                      ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
+                      : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
+                  )}
+                  aria-label="Confirm deselect"
+                >
+                  <span className="inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[9px] font-semibold">
+                    ESC
+                  </span>
+                  <span>again</span>
+                </button>
+              ) : (
+                <button
+                  onClick={onEscClick || onClearSelection}
+                  className={clsx(
+                    "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full transition-colors",
+                    hoverClass
+                  )}
+                  aria-label="Clear"
+                >
+                  <X className={clsx("w-3 h-3", textPrimary)} />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              {onOpenCommandPalette && (
+                <button
+                  onClick={onOpenCommandPalette}
+                  className={clsx("px-2 py-1 rounded-full text-xs font-semibold transition-colors", hoverClass)}
+                >
+                  Actions
+                </button>
+              )}
+              {canApplyTags && (
+                <button
+                  onClick={onApplyTags}
+                  className={clsx("px-3 py-1 rounded-full text-xs font-semibold transition-colors", applyButtonClass)}
+                >
+                  Apply
+                </button>
+              )}
+            </div>
           </div>
         )}
 
