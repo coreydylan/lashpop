@@ -87,16 +87,27 @@ export function AssetGrid({
   // Pagination for performance - render assets in chunks
   const ITEMS_PER_PAGE = 100
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
+  const prevAssetsLengthRef = useRef(assets.length)
 
   // Reset visible count when assets array changes (filters applied)
   // But keep the expanded count if we're just loading more
   useEffect(() => {
+    const prevLength = prevAssetsLengthRef.current
+    const currentLength = assets.length
+
+    // If assets significantly changed (not just grew), reset to first page
+    // This happens when filters are applied
+    if (currentLength < prevLength) {
+      setVisibleCount(Math.min(currentLength, ITEMS_PER_PAGE))
+    }
     // If we have fewer assets than what we're showing, adjust down
-    if (assets.length < visibleCount) {
-      setVisibleCount(Math.min(assets.length, ITEMS_PER_PAGE))
+    else if (currentLength < visibleCount) {
+      setVisibleCount(currentLength)
     }
     // Note: We don't reset to ITEMS_PER_PAGE when assets grow,
     // so user's "load more" state is preserved
+
+    prevAssetsLengthRef.current = currentLength
   }, [assets.length, visibleCount, ITEMS_PER_PAGE])
 
   // Limit visible assets to improve performance

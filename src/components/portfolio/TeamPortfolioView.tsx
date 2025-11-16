@@ -27,6 +27,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
   const [photos, setPhotos] = useState<PortfolioPhoto[]>([]);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
   const { portfolio, viewport, selectedProviders } = state;
   const { providerId, state: portfolioState, withBookingPanel } = portfolio;
@@ -43,6 +44,11 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
     }
     return `${viewport.availableHeight}px`;
   }, [portfolioState, viewport.availableHeight]);
+
+  // Handle image load for blur-in effect
+  const handleImageLoad = useCallback((photoId: string) => {
+    setLoadedImages(prev => new Set(prev).add(photoId));
+  }, []);
 
   // Fetch photos from DAM when provider changes
   useEffect(() => {
@@ -156,7 +162,17 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-dusty-rose/30">
-                <Image src={provider.imageUrl} alt={provider.name} fill className="object-cover" />
+                <Image
+                  src={provider.imageUrl}
+                  alt={provider.name}
+                  fill
+                  className={`object-cover transition-all duration-500 ${
+                    loadedImages.has(`provider-${provider.id}`)
+                      ? 'opacity-100 blur-0'
+                      : 'opacity-0 blur-sm'
+                  }`}
+                  onLoad={() => handleImageLoad(`provider-${provider.id}`)}
+                />
               </div>
               <div>
                 <h3 className="font-serif text-xl text-dune">{provider.name}</h3>
@@ -262,12 +278,17 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                           src={photos[currentPhotoIndex].url}
                           alt={photos[currentPhotoIndex].caption || 'Portfolio photo'}
                           fill
-                          className="object-cover transition-opacity duration-300"
+                          className={`object-cover transition-all duration-500 ${
+                            loadedImages.has(photos[currentPhotoIndex].id)
+                              ? 'opacity-100 blur-0'
+                              : 'opacity-0 blur-sm'
+                          }`}
                           style={{
                             objectPosition: photos[currentPhotoIndex].cropData
                               ? `${photos[currentPhotoIndex].cropData!.x}% ${photos[currentPhotoIndex].cropData!.y}%`
                               : 'center',
                           }}
+                          onLoad={() => handleImageLoad(photos[currentPhotoIndex].id)}
                         />
 
                         {/* Navigation Arrows */}
@@ -318,7 +339,15 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <Image src={photo.url} alt={photo.caption || `Photo ${idx + 1}`} fill className="object-cover" />
+                      <Image
+                        src={photo.url}
+                        alt={photo.caption || `Photo ${idx + 1}`}
+                        fill
+                        className={`object-cover transition-all duration-500 ${
+                          loadedImages.has(photo.id) ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'
+                        }`}
+                        onLoad={() => handleImageLoad(photo.id)}
+                      />
                     </motion.button>
                   ))}
                 </div>
