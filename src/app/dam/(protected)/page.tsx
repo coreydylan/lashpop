@@ -2218,7 +2218,7 @@ export default function DAMPage() {
           onCreateCollection={() => setIsCollectionManagerOpen(true)}
           groupCategories={tagCategories}
           hasTeamMembers={teamMembers.length > 0}
-          selectedGroupCategories={groupByCategories}
+          selectedGroupCategories={groupByTags}
           onGroupCategoryToggle={handleGroupByToggle}
           maxGroupSelections={2}
           filterCategories={tagCategories}
