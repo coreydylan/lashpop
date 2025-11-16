@@ -24,12 +24,15 @@ export interface Token {
   metadata?: {
     categoryId?: string
     categoryName?: string
+    categoryDisplayName?: string
+    categoryColor?: string
     tagId?: string
     tagName?: string
-    color?: string
+    tagDisplayName?: string
     teamMemberId?: string
     teamMemberName?: string
     avatarUrl?: string
+    color?: string
   }
 }
 
