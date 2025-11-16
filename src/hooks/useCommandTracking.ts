@@ -58,8 +58,8 @@ export function useCommandTracking({
         ...(settings.commandPalette || {}),
         favorites: newFavorites,
         lastModified: new Date().toISOString()
-      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
-    })
+      }
+    } as Partial<DamSettingsData>)
 
     return !isFavorite
   }, [settings.commandPalette, onSettingsChange])
@@ -80,8 +80,8 @@ export function useCommandTracking({
         ...(settings.commandPalette || {}),
         hidden: newHidden,
         lastModified: new Date().toISOString()
-      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
-    })
+      }
+    } as Partial<DamSettingsData>)
 
     return !isHidden
   }, [settings.commandPalette, onSettingsChange])
@@ -97,8 +97,8 @@ export function useCommandTracking({
         ...(settings.commandPalette || {}),
         ...preferences,
         lastModified: new Date().toISOString()
-      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
-    })
+      }
+    } as Partial<DamSettingsData>)
   }, [settings.commandPalette, onSettingsChange])
 
   /**
@@ -110,8 +110,8 @@ export function useCommandTracking({
         ...(settings.commandPalette || {}),
         groupOrder,
         lastModified: new Date().toISOString()
-      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
-    })
+      }
+    } as Partial<DamSettingsData>)
   }, [settings.commandPalette, onSettingsChange])
 
   /**
@@ -130,8 +130,8 @@ export function useCommandTracking({
         ...(settings.commandPalette || {}),
         collapsedGroups: newCollapsed,
         lastModified: new Date().toISOString()
-      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
-    })
+      }
+    } as Partial<DamSettingsData>)
 
     return !isCollapsed
   }, [settings.commandPalette, onSettingsChange])
@@ -152,8 +152,8 @@ export function useCommandTracking({
         ...(settings.commandPalette || {}),
         hiddenGroups: newHidden,
         lastModified: new Date().toISOString()
-      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
-    })
+      }
+    } as Partial<DamSettingsData>)
 
     return !isHidden
   }, [settings.commandPalette, onSettingsChange])
@@ -168,8 +168,8 @@ export function useCommandTracking({
         commandUsage: {},
         commandPairs: {},
         lastModified: new Date().toISOString()
-      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
-    })
+      }
+    } as Partial<DamSettingsData>)
   }, [settings.commandPalette, onSettingsChange])
 
   /**
