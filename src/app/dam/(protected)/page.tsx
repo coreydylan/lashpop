@@ -84,7 +84,8 @@ export default function DAMPage() {
     updateActiveFilters,
     updateGroupByCategories,
     updateVisibleCardTags,
-    updateActiveCollection
+    updateActiveCollection,
+    updateThumbnailSize
   } = useDamSettings()
 
   const {
@@ -1875,8 +1876,11 @@ export default function DAMPage() {
         onApplyTags: handleApplyTags,
         gridViewMode,
         onToggleGridView: toggleGridView,
+        thumbnailSize: settings.thumbnailSize,
+        onThumbnailSizeChange: updateThumbnailSize,
         onOpenCardSettings: openCardSettings,
         showGridToggle: true,  // Show grid toggle like in main view
+        showThumbnailSlider: false,  // Hide slider in lightbox mode
         escConfirmationActive,
         onEscClick: handleEscPress,
         counterSlot:
@@ -2005,6 +2009,8 @@ export default function DAMPage() {
                 onApplyTags={handleApplyTags}
                 gridViewMode={gridViewMode}
                 onToggleGridView={toggleGridView}
+                thumbnailSize={settings.thumbnailSize}
+                onThumbnailSizeChange={updateThumbnailSize}
                 onOpenCardSettings={openCardSettings}
                 escConfirmationActive={escConfirmationActive}
                 onEscClick={handleEscPress}
@@ -2051,6 +2057,7 @@ export default function DAMPage() {
               onSelectionChange={handleSelectionChange}
               onDelete={handleDelete}
               gridViewMode={gridViewMode}
+              thumbnailSize={settings.thumbnailSize}
               groupByCategories={groupByTags}
               teamMembers={teamMembers}
               visibleCardTags={visibleCardTags}

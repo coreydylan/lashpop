@@ -35,6 +35,7 @@ export type NewDamUserSettings = typeof damUserSettings.$inferInsert
 export interface DamSettingsData {
   // View preferences
   gridViewMode: 'square' | 'aspect'
+  thumbnailSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'  // Thumbnail size preference
 
   // Filter state
   activeFilters: Array<{

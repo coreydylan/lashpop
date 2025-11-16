@@ -6,6 +6,31 @@ import { useState, useCallback, useEffect, useMemo, useRef, type ReactElement } 
 import { PhotoView } from "react-photo-view"
 import { useThrottle } from "@/hooks/useThrottle"
 
+/**
+ * Maps thumbnail size to responsive grid column classes
+ */
+function getGridClasses(size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' = 'md', mode: 'square' | 'aspect' = 'square'): string {
+  const configs = {
+    xs: mode === 'square'
+      ? 'grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 xl:grid-cols-11 gap-2 sm:gap-3'
+      : 'columns-3 sm:columns-5 md:columns-7 lg:columns-9 xl:columns-11 gap-2 sm:gap-3 space-y-2 sm:space-y-3',
+    sm: mode === 'square'
+      ? 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-2 sm:gap-3'
+      : 'columns-3 sm:columns-4 md:columns-6 lg:columns-7 xl:columns-8 gap-2 sm:gap-3 space-y-2 sm:space-y-3',
+    md: mode === 'square'
+      ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4'
+      : 'columns-2 sm:columns-3 md:columns-4 lg:columns-5 xl:columns-6 gap-3 sm:gap-4 space-y-3 sm:space-y-4',
+    lg: mode === 'square'
+      ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4'
+      : 'columns-2 sm:columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4',
+    xl: mode === 'square'
+      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+      : 'columns-1 sm:columns-2 md:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4'
+  }
+
+  return configs[size]
+}
+
 interface Asset {
   id: string
   fileName: string
@@ -43,6 +68,7 @@ interface AssetGridProps {
   onSelectionChange?: (selectedIds: string[]) => void
   onDelete?: (assetIds: string[]) => void
   gridViewMode?: "square" | "aspect"
+  thumbnailSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
   groupByCategories?: string[]
   teamMembers?: TeamMember[]
   visibleCardTags?: string[]
@@ -65,6 +91,7 @@ export function AssetGrid({
   onSelectionChange,
   onDelete: _onDelete,
   gridViewMode = "square",
+  thumbnailSize = "md",
   groupByCategories = [],
   teamMembers = [],
   visibleCardTags = [],
@@ -682,11 +709,7 @@ export function AssetGrid({
 
           {/* Group content */}
           {groupArray ? (
-            <div className={`dam-grid ${level > 0 ? 'ml-4' : ''} ${
-              gridViewMode === "square"
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
-                : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
-            }`}>
+            <div className={`dam-grid ${level > 0 ? 'ml-4' : ''} ${getGridClasses(thumbnailSize, gridViewMode)} transition-all duration-300 ease-out`}>
               {groupArray.map((asset) => (
                 <AssetCard
                   key={asset.id}
@@ -782,11 +805,7 @@ export function AssetGrid({
           {renderGroups(groupedAssets, 0)}
         </div>
       ) : (
-        <div className={`dam-grid mt-4 ${
-          gridViewMode === "square"
-            ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
-            : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
-        }`}>
+        <div className={`dam-grid mt-4 ${getGridClasses(thumbnailSize, gridViewMode)} transition-all duration-300 ease-out`}>
           {visibleAssets.map((asset) => (
             <AssetCard
               key={asset.id}

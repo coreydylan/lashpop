@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import clsx from "clsx"
 import { X, Grid3x3, LayoutGrid, CreditCard } from "lucide-react"
+import ThumbnailSizeSlider from "./ThumbnailSizeSlider"
 
 export interface OmniBarProps {
   mode: "page" | "overlay"
@@ -19,7 +20,10 @@ export interface OmniBarProps {
   onApplyTags: () => void
   gridViewMode: "square" | "aspect"
   onToggleGridView: () => void
+  thumbnailSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  onThumbnailSizeChange?: (size: 'xs' | 'sm' | 'md' | 'lg' | 'xl') => void
   showGridToggle?: boolean
+  showThumbnailSlider?: boolean
   counterSlot?: ReactNode
   onOpenCardSettings?: () => void
   escConfirmationActive?: boolean
@@ -41,7 +45,10 @@ export function OmniBar({
   onApplyTags,
   gridViewMode,
   onToggleGridView,
+  thumbnailSize = 'md',
+  onThumbnailSizeChange,
   showGridToggle = true,
+  showThumbnailSlider = true,
   counterSlot,
   onOpenCardSettings,
   escConfirmationActive = false,
@@ -186,6 +193,14 @@ export function OmniBar({
                   </span>
                 )}
               </div>
+              {showThumbnailSlider && onThumbnailSizeChange && (
+                <div className="flex items-center border-l border-sage/20 pl-3">
+                  <ThumbnailSizeSlider
+                    value={thumbnailSize}
+                    onChange={onThumbnailSizeChange}
+                  />
+                </div>
+              )}
               {showGridToggle && (
                 <button
                   onClick={onToggleGridView}
@@ -303,6 +318,16 @@ export function OmniBar({
             </>
           )}
         </div>
+
+        {/* Thumbnail size slider row (mobile) - only when no selection */}
+        {selectedCount === 0 && showThumbnailSlider && onThumbnailSizeChange && (
+          <div className={clsx("flex justify-center", isOverlay ? "px-3" : "")}>
+            <ThumbnailSizeSlider
+              value={thumbnailSize}
+              onChange={onThumbnailSizeChange}
+            />
+          </div>
+        )}
 
         {/* Group By row (mobile) */}
         {hasGroupBy && (

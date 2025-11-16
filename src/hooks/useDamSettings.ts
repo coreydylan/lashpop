@@ -9,6 +9,7 @@ import type { DamSettingsData } from '@/db/schema/dam_user_settings'
 
 const DEFAULT_SETTINGS: DamSettingsData = {
   gridViewMode: 'square',
+  thumbnailSize: 'md',
   activeFilters: [],
   groupByCategories: [],
   visibleCardTags: [],
@@ -95,6 +96,10 @@ export function useDamSettings() {
     saveSettings({ activeCollectionId: collectionId })
   }, [saveSettings])
 
+  const updateThumbnailSize = useCallback((size: 'xs' | 'sm' | 'md' | 'lg' | 'xl') => {
+    saveSettings({ thumbnailSize: size })
+  }, [saveSettings])
+
   return {
     settings,
     isLoading,
@@ -104,6 +109,7 @@ export function useDamSettings() {
     updateActiveFilters,
     updateGroupByCategories,
     updateVisibleCardTags,
-    updateActiveCollection
+    updateActiveCollection,
+    updateThumbnailSize
   }
 }
