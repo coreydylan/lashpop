@@ -55,10 +55,10 @@ export function useCommandTracking({
 
     await onSettingsChange({
       commandPalette: {
-        ...settings.commandPalette,
+        ...(settings.commandPalette || {}),
         favorites: newFavorites,
         lastModified: new Date().toISOString()
-      }
+      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
     })
 
     return !isFavorite
@@ -77,10 +77,10 @@ export function useCommandTracking({
 
     await onSettingsChange({
       commandPalette: {
-        ...settings.commandPalette,
+        ...(settings.commandPalette || {}),
         hidden: newHidden,
         lastModified: new Date().toISOString()
-      }
+      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
     })
 
     return !isHidden
@@ -94,10 +94,10 @@ export function useCommandTracking({
   ) => {
     await onSettingsChange({
       commandPalette: {
-        ...settings.commandPalette,
+        ...(settings.commandPalette || {}),
         ...preferences,
         lastModified: new Date().toISOString()
-      }
+      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
     })
   }, [settings.commandPalette, onSettingsChange])
 
@@ -107,10 +107,10 @@ export function useCommandTracking({
   const updateGroupOrder = useCallback(async (groupOrder: string[]) => {
     await onSettingsChange({
       commandPalette: {
-        ...settings.commandPalette,
+        ...(settings.commandPalette || {}),
         groupOrder,
         lastModified: new Date().toISOString()
-      }
+      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
     })
   }, [settings.commandPalette, onSettingsChange])
 
@@ -127,10 +127,10 @@ export function useCommandTracking({
 
     await onSettingsChange({
       commandPalette: {
-        ...settings.commandPalette,
+        ...(settings.commandPalette || {}),
         collapsedGroups: newCollapsed,
         lastModified: new Date().toISOString()
-      }
+      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
     })
 
     return !isCollapsed
@@ -149,10 +149,10 @@ export function useCommandTracking({
 
     await onSettingsChange({
       commandPalette: {
-        ...settings.commandPalette,
+        ...(settings.commandPalette || {}),
         hiddenGroups: newHidden,
         lastModified: new Date().toISOString()
-      }
+      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
     })
 
     return !isHidden
@@ -164,11 +164,11 @@ export function useCommandTracking({
   const resetUsageData = useCallback(async () => {
     await onSettingsChange({
       commandPalette: {
-        ...settings.commandPalette,
+        ...(settings.commandPalette || {}),
         commandUsage: {},
         commandPairs: {},
         lastModified: new Date().toISOString()
-      }
+      } as Partial<NonNullable<DamSettingsData['commandPalette']>>
     })
   }, [settings.commandPalette, onSettingsChange])
 
