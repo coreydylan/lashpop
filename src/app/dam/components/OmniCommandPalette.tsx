@@ -305,7 +305,7 @@ export function OmniCommandPalette({
     onSettingsChange({ favorites: newFavorites })
   }
 
-  const renderActionButton = (item: CommandItem, showFavoriteStar = false) => {
+  const renderActionButton = (item: CommandItem) => {
     const index = indexLookup.get(item.id) ?? -1
     const isActive = index === activeIndex
     const isFavorite = userSettings?.favorites?.includes(item.id) || false
