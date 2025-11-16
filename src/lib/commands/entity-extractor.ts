@@ -38,6 +38,9 @@ export interface ExtractedEntities {
     selectNone?: boolean
     selectInverse?: boolean
     additive?: boolean  // Add to existing vs replace
+    selective?: boolean  // Apply to selected items only
+    all?: boolean  // Apply to all items
+    negation?: boolean  // Negated filter
   }
   cleanQuery: string  // Query with extracted entities removed
 }
