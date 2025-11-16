@@ -2222,10 +2222,12 @@ export default function DAMPage() {
           onGroupCategoryToggle={handleGroupBy}
           maxGroupSelections={2}
           filterCategories={tagCategories}
+          teamMembers={teamMembers}
           selectedTagIds={activeFilters.filter(f => f.categoryName !== 'team').map(f => f.optionId)}
           selectedTeamMemberIds={activeFilters.filter(f => f.categoryName === 'team').map(f => f.optionId)}
           onTagToggle={handleTagFilterToggle}
           onTeamMemberToggle={handleTeamFilterToggle}
+          assets={assets}
           onOpenCommandPalette={() => openCommandPalette("")}
           showGridToggle={true}
           gridViewMode={gridViewMode}

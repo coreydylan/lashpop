@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   Folder
 } from "lucide-react"
+import { FilterSelector } from "./FilterSelector"
+import { GroupBySelector } from "./GroupBySelector"
 
 interface Tag {
   id: string
@@ -37,6 +39,28 @@ interface Collection {
   name: string
 }
 
+interface TeamMember {
+  id: string
+  name: string
+  imageUrl?: string
+  cropCloseUpCircle?: {
+    x: number
+    y: number
+    scale: number
+  } | null
+}
+
+interface FilterAsset {
+  id: string
+  teamMemberId?: string
+  tags?: Array<{
+    id: string
+    name: string
+    displayName: string
+    categoryId: string
+  }>
+}
+
 interface ThumbPanelProps {
   // Collections
   collections?: Collection[]
@@ -53,10 +77,12 @@ interface ThumbPanelProps {
 
   // Filters
   filterCategories?: TagCategory[]
+  teamMembers?: TeamMember[]
   selectedTagIds?: string[]
   selectedTeamMemberIds?: string[]
   onTagToggle?: (tagId: string) => void
   onTeamMemberToggle?: (memberId: string) => void
+  assets?: FilterAsset[]
 
   // Actions
   onOpenCommandPalette?: () => void
@@ -85,10 +111,12 @@ export function ThumbPanel({
   onGroupCategoryToggle,
   maxGroupSelections = 2,
   filterCategories = [],
+  teamMembers = [],
   selectedTagIds = [],
   selectedTeamMemberIds = [],
   onTagToggle,
   onTeamMemberToggle,
+  assets = [],
   onOpenCommandPalette,
   showGridToggle = false,
   gridViewMode = "square",
@@ -206,42 +234,37 @@ export function ThumbPanel({
             </button>
           )}
           {allGroupCategories.length > 0 && (
-            <button
-              onClick={() => setCurrentView("groupby")}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-warm-sand/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <FolderTree className="w-5 h-5 text-dune" />
-                <span className="text-sm font-medium text-dune">Group By</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {selectedGroupCategories.length > 0 && (
-                  <span className="text-xs text-dusty-rose font-medium">
-                    {selectedGroupCategories.length}
-                  </span>
-                )}
-                <ChevronRight className="w-4 h-4 text-sage" />
-              </div>
-            </button>
+            <div className="px-4 py-2">
+              <GroupBySelector
+                categories={groupCategories}
+                hasTeamMembers={hasTeamMembers}
+                selectedCategories={selectedGroupCategories}
+                onCategoryToggle={(cat) => {
+                  onGroupCategoryToggle?.(cat)
+                  handleClose()
+                }}
+                maxSelections={maxGroupSelections}
+              />
+            </div>
           )}
           {filterCategories.length > 0 && (
-            <button
-              onClick={() => setCurrentView("filters")}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-warm-sand/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <Filter className="w-5 h-5 text-dune" />
-                <span className="text-sm font-medium text-dune">Filters</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {(selectedTagIds.length + selectedTeamMemberIds.length) > 0 && (
-                  <span className="text-xs text-dusty-rose font-medium">
-                    {selectedTagIds.length + selectedTeamMemberIds.length}
-                  </span>
-                )}
-                <ChevronRight className="w-4 h-4 text-sage" />
-              </div>
-            </button>
+            <div className="px-4 py-2">
+              <FilterSelector
+                categories={filterCategories}
+                teamMembers={teamMembers}
+                selectedTagIds={selectedTagIds}
+                selectedTeamMemberIds={selectedTeamMemberIds}
+                onTagToggle={(tagId) => {
+                  onTagToggle?.(tagId)
+                  handleClose()
+                }}
+                onTeamMemberToggle={(memberId) => {
+                  onTeamMemberToggle?.(memberId)
+                  handleClose()
+                }}
+                assets={assets}
+              />
+            </div>
           )}
           <button
             onClick={() => setCurrentView("actions")}
