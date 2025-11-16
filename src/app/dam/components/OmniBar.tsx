@@ -311,21 +311,21 @@ export function OmniBar({
         </div>
       </div>
 
-      {/* Mobile layout */}
-      <div className={clsx("block lg:hidden py-2 space-y-3", isOverlay ? "px-0" : "px-3")}>
-        {/* Header row */}
-        <div className={clsx("flex items-center justify-between", isOverlay ? "px-3" : "")}>
+      {/* Mobile layout - optimized mobile-first design */}
+      <div className={clsx("block lg:hidden", isOverlay ? "px-0" : "px-3")}>
+        {/* Compact header row */}
+        <div className={clsx("flex items-center justify-between py-2", isOverlay ? "px-3" : "")}>
           {selectedCount > 0 ? (
             <>
-              <div className="flex items-center gap-2">
-                <span className={clsx("text-base font-bold", textPrimary)}>
-                  {selectedCount} selected
+              <div className="flex items-center gap-1.5">
+                <span className={clsx("text-sm font-bold", textPrimary)}>
+                  {selectedCount}
                 </span>
                 {escConfirmationActive ? (
                   <button
                     onClick={onEscClick}
                     className={clsx(
-                      "flex items-center gap-1 px-2 py-1 rounded-full transition-all font-medium text-xs",
+                      "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all font-medium text-[10px]",
                       isOverlay
                         ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
                         : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
@@ -335,66 +335,68 @@ export function OmniBar({
                     <span className="inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[9px] font-semibold">
                       ESC
                     </span>
-                    <span className="text-[11px]">again</span>
+                    <span>again</span>
                   </button>
                 ) : (
                   <button
                     onClick={onEscClick || onClearSelection}
                     className={clsx(
-                      "flex items-center gap-1 px-1.5 py-1 rounded-full transition-colors",
+                      "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full transition-colors",
                       hoverClass
                     )}
-                    aria-label="Clear selection (ESC)"
+                    aria-label="Clear selection"
                   >
                     <span className={clsx("inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[9px] font-semibold", textPrimary)}>
                       ESC
                     </span>
-                    <X className={clsx("w-3.5 h-3.5", textPrimary)} />
+                    <X className={clsx("w-3 h-3", textPrimary)} />
                   </button>
                 )}
               </div>
-              {canApplyTags && (
-                <button
-                  onClick={onApplyTags}
-                  className={clsx("px-4 py-1.5 rounded-full text-sm font-semibold transition-colors", applyButtonClass)}
-                >
-                  Apply
-                </button>
-              )}
+              <div className="flex items-center gap-1.5">
+                {canApplyTags && (
+                  <button
+                    onClick={onApplyTags}
+                    className={clsx("px-3 py-1 rounded-full text-xs font-semibold transition-colors", applyButtonClass)}
+                  >
+                    Apply
+                  </button>
+                )}
+              </div>
             </>
           ) : (
             <>
-              <div className="flex items-center gap-2">
-                <span className={clsx("text-base", textMuted)}>
+              <div className="flex items-center gap-1.5">
+                <span className={clsx("text-sm font-medium", textMuted)}>
                   {assetsCount} {assetLabel}
                 </span>
                 {counterSlot && (
-                  <span className="text-xs font-bold text-cream bg-dune/30 rounded-full px-2.5 py-0.5">
+                  <span className="text-[10px] font-bold text-cream bg-dune/30 rounded-full px-2 py-0.5">
                     {counterSlot}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {showGridToggle && (
                   <button
                     onClick={onToggleGridView}
-                    className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
+                    className={clsx("p-1.5 rounded-full transition-colors flex items-center justify-center", hoverClass)}
                     aria-label="Toggle grid view"
                   >
                     {gridViewMode === "square" ? (
-                      <LayoutGrid className={clsx("w-5 h-5", iconColor)} />
+                      <LayoutGrid className={clsx("w-4 h-4", iconColor)} />
                     ) : (
-                      <Grid3x3 className={clsx("w-5 h-5", iconColor)} />
+                      <Grid3x3 className={clsx("w-4 h-4", iconColor)} />
                     )}
                   </button>
                 )}
                 {onOpenCardSettings && (
                   <button
                     onClick={onOpenCardSettings}
-                    className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
-                    aria-label="Customize card display"
+                    className={clsx("p-1.5 rounded-full transition-colors flex items-center justify-center", hoverClass)}
+                    aria-label="Card settings"
                   >
-                    <CreditCard className={clsx("w-5 h-5", iconColor)} />
+                    <CreditCard className={clsx("w-4 h-4", iconColor)} />
                   </button>
                 )}
               </div>
@@ -402,9 +404,17 @@ export function OmniBar({
           )}
         </div>
 
-        {/* Single horizontal scroll row (or stacked if both group+filter active) */}
+        {/* Compact filter controls - only show buttons when not in selection mode */}
+        {selectedCount === 0 && (groupByButton || filterButton) && (
+          <div className={clsx("flex items-center gap-1.5 pb-2", isOverlay ? "px-3" : "")}>
+            {groupByButton}
+            {filterButton}
+          </div>
+        )}
+
+        {/* Single horizontal scroll row */}
         {(hasGroupBy || hasChips) && (
-          <div className="relative w-full overflow-hidden">
+          <div className="relative w-full overflow-hidden pb-2">
             <div
               className={clsx(
                 "overflow-x-auto scrollbar-hidden",
@@ -419,21 +429,21 @@ export function OmniBar({
             >
               {bothActive ? (
                 // Stack when both active
-                <div className="space-y-2 pb-1">
+                <div className="space-y-1.5 pb-0.5">
                   {hasGroupBy && (
-                    <div className="flex flex-nowrap items-center gap-2 min-w-max">
+                    <div className="flex flex-nowrap items-center gap-1.5 min-w-max">
                       {groupByContent}
                     </div>
                   )}
                   {hasChips && (
-                    <div className="flex flex-nowrap items-center gap-2 min-w-max">
+                    <div className="flex flex-nowrap items-center gap-1.5 min-w-max">
                       {chipsContent}
                     </div>
                   )}
                 </div>
               ) : (
                 // Single row otherwise
-                <div className="flex flex-nowrap items-center gap-2 min-w-max pb-1">
+                <div className="flex flex-nowrap items-center gap-1.5 min-w-max pb-0.5">
                   {groupByContent}
                   {chipsContent}
                 </div>
@@ -442,21 +452,10 @@ export function OmniBar({
           </div>
         )}
 
-        {/* Separate tag selector row for lightbox mode */}
+        {/* Tag selector for lightbox/selection mode */}
         {isOverlay && tagSelectorContent && (
-          <div className="relative w-full overflow-hidden">
-            <div
-              className="overflow-x-auto scrollbar-hidden px-3"
-              style={{
-                WebkitOverflowScrolling: 'touch',
-                overflowX: 'auto',
-                overflowY: 'hidden'
-              }}
-            >
-              <div className="min-w-max pb-1">
-                {tagSelectorContent}
-              </div>
-            </div>
+          <div className={clsx("pb-2", isOverlay ? "px-3" : "")}>
+            {tagSelectorContent}
           </div>
         )}
       </div>

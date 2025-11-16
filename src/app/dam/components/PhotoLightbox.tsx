@@ -292,7 +292,7 @@ export function PhotoLightbox({
         }
 
         .PhotoView__PhotoWrap {
-          padding: 200px 0 280px !important;
+          padding: 80px 0 120px !important;
         }
 
         .PhotoView__PhotoBox {
@@ -308,7 +308,7 @@ export function PhotoLightbox({
 
         @media (max-width: 768px) {
           .PhotoView__PhotoWrap {
-            padding: 140px 0 240px !important;
+            padding: 70px 0 110px !important;
           }
 
           .PhotoView__PhotoBox {

@@ -88,9 +88,10 @@ export function OmniChip({
   useEffect(() => {
     if (showDropdown && chipRef.current) {
       const rect = chipRef.current.getBoundingClientRect()
+      // Use viewport-relative coordinates for fixed positioning (no scroll offset needed)
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 6,
-        left: rect.left + window.scrollX
+        top: rect.bottom + 6,
+        left: rect.left
       })
     }
   }, [showDropdown])
