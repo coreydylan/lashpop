@@ -95,6 +95,10 @@ export function useDamSettings() {
     saveSettings({ activeCollectionId: collectionId })
   }, [saveSettings])
 
+  const updateCollageMode = useCallback((enabled: boolean) => {
+    saveSettings({ collageMode: enabled })
+  }, [saveSettings])
+
   return {
     settings,
     isLoading,
@@ -104,6 +108,7 @@ export function useDamSettings() {
     updateActiveFilters,
     updateGroupByCategories,
     updateVisibleCardTags,
-    updateActiveCollection
+    updateActiveCollection,
+    updateCollageMode
   }
 }

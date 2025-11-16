@@ -57,6 +57,9 @@ export interface DamSettingsData {
   // Active collection
   activeCollectionId?: string
 
+  // Collage mode
+  collageMode?: boolean
+
   // Sort preferences (future)
   sortBy?: 'uploadDate' | 'fileName' | 'modified'
   sortOrder?: 'asc' | 'desc'

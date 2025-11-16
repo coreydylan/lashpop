@@ -84,7 +84,8 @@ export default function DAMPage() {
     updateActiveFilters,
     updateGroupByCategories,
     updateVisibleCardTags,
-    updateActiveCollection
+    updateActiveCollection,
+    updateCollageMode
   } = useDamSettings()
 
   const {
@@ -1005,6 +1006,18 @@ export default function DAMPage() {
         }
       })
 
+      if (selectionCount > 1) {
+        items.push({
+          id: "selection-collage",
+          group: "Photo Tools",
+          label: "Create collage view",
+          description: `Auto-grid ${selectionCount} selected photo${selectionCount === 1 ? "" : "s"}`,
+          onSelect: () => {
+            updateCollageMode(true)
+          }
+        })
+      }
+
       items.push({
         id: "selection-clear",
         group: "Selection",
@@ -1500,7 +1513,8 @@ export default function DAMPage() {
     toggleUploadPanel,
     selectionMode,
     selectAssetsByTag,
-    selectAssetsByTeamMember
+    selectAssetsByTeamMember,
+    updateCollageMode
   ])
 
   const renderGroupByChips = () => {
@@ -1848,6 +1862,8 @@ export default function DAMPage() {
       onSelectionChange={handleSelectionChange}
       assets={assets}
       isMobile={isMobile}
+      collageMode={settings.collageMode ?? false}
+      onCollageModeChange={updateCollageMode}
       onOpenCommandPalette={() => openCommandPalette("")}
       onVisibilityChange={(visible) => {
         if (visible) {

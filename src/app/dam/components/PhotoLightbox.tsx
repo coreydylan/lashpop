@@ -3,11 +3,12 @@
 /* eslint-disable @next/next/no-img-element */
 
 import type { ReactNode, PointerEvent as ReactPointerEvent } from "react"
-import { useCallback, useRef } from "react"
+import { useCallback, useRef, useMemo } from "react"
 import { PhotoProvider } from "react-photo-view"
 import "react-photo-view/dist/react-photo-view.css"
-import { CheckCircle, Circle, Sparkles } from "lucide-react"
+import { CheckCircle, Circle, Sparkles, Grid3x3, Image as ImageIcon } from "lucide-react"
 import { OmniBar, type OmniBarProps } from "./OmniBar"
+import { CollageView } from "./CollageView"
 
 interface Asset {
   id: string
@@ -39,6 +40,8 @@ interface PhotoLightboxProps {
   onOpenCommandPalette?: () => void
   isMobile?: boolean
   onVisibilityChange?: (visible: boolean) => void
+  collageMode?: boolean
+  onCollageModeChange?: (enabled: boolean) => void
 }
 
 export function PhotoLightbox({
@@ -50,7 +53,9 @@ export function PhotoLightbox({
   onActiveAssetChange,
   onOpenCommandPalette,
   isMobile = false,
-  onVisibilityChange
+  onVisibilityChange,
+  collageMode = false,
+  onCollageModeChange
 }: PhotoLightboxProps) {
   const thumbnailStripRef = useRef<HTMLDivElement | null>(null)
   const currentIndexRef = useRef(0)
@@ -140,6 +145,94 @@ export function PhotoLightbox({
     onSelectionChange(nextSelection)
   }
 
+  // Get selected assets for collage mode
+  const selectedAssets = useMemo(() => {
+    if (!collageMode || selectedAssetIds.length === 0) return []
+    return assets.filter(asset => selectedAssetIds.includes(asset.id))
+  }, [collageMode, selectedAssetIds, assets])
+
+  // If in collage mode and have selected assets, show collage view
+  if (collageMode && selectedAssets.length > 0) {
+    return (
+      <>
+        {children}
+        <CollageView
+          assets={selectedAssets}
+          onClose={() => onCollageModeChange?.(false)}
+        />
+        {/* Overlay controls for collage mode */}
+        <div className="collage-overlay-controls">
+          {onOpenCommandPalette && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenCommandPalette()
+              }}
+              className="collage-control-button"
+              style={{
+                position: 'fixed',
+                top: isMobile ? 'auto' : '1.25rem',
+                right: '1.25rem',
+                bottom: isMobile ? '1.5rem' : 'auto',
+                left: isMobile ? '50%' : 'auto',
+                transform: isMobile ? 'translateX(-50%)' : 'none',
+                zIndex: 10002,
+              }}
+            >
+              <Sparkles className="w-4 h-4 text-dusty-rose" />
+              <span>Action palette</span>
+            </button>
+          )}
+          {onCollageModeChange && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onCollageModeChange(false)
+              }}
+              className="collage-control-button"
+              style={{
+                position: 'fixed',
+                top: '1.25rem',
+                left: '1.25rem',
+                zIndex: 10002,
+              }}
+            >
+              <ImageIcon className="w-4 h-4 text-dusty-rose" />
+              <span>Exit Collage</span>
+            </button>
+          )}
+        </div>
+        <style jsx>{`
+          .collage-control-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #F2EDE5;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: background 0.2s;
+            cursor: pointer;
+          }
+
+          .collage-control-button:hover {
+            background: rgba(0, 0, 0, 0.6);
+          }
+
+          @media (max-width: 768px) {
+            .collage-control-button {
+              backdrop-filter: blur(12px);
+            }
+          }
+        `}</style>
+      </>
+    )
+  }
+
   return (
     <PhotoProvider
       speed={() => 300}
@@ -185,6 +278,18 @@ export function PhotoLightbox({
                   transform: isMobile ? "translateX(-50%)" : undefined
                 }}
               >
+                {onCollageModeChange && selectedAssetIds.length > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCollageModeChange(true)
+                    }}
+                    className={`flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-sm font-semibold text-cream shadow-lg transition hover:bg-black/60 ${isMobile ? "backdrop-blur-md" : ""}`}
+                  >
+                    <Grid3x3 className="w-4 h-4 text-dusty-rose" />
+                    <span>Collage</span>
+                  </button>
+                )}
                 <button
                   onClick={(e) => {
                     e.stopPropagation()

@@ -101,7 +101,7 @@ export function OmniCommandPalette({
       case "Actions":
         return { icon: Share2, description: "Open supporting utilities" }
       case "Photo Tools":
-        return { icon: Wand2, description: "Photo management actions" }
+        return { icon: Wand2, description: "Create and manage photo views" }
       case "Current Tags":
         return { icon: Tags, description: "Remove existing tags" }
       default:
