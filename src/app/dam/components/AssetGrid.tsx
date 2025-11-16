@@ -5,6 +5,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef, memo, type ReactElement } from "react"
 import { PhotoView } from "react-photo-view"
 import { ImageSkeleton } from "./ImageSkeleton"
+import { ShareButton } from "./sharing/ShareButton"
+import { PermissionBadge } from "./sharing/PermissionBadge"
+import { Users } from "lucide-react"
 
 // Global cache for loaded images - persists across all re-renders
 const loadedImagesCache = new Set<string>()
@@ -27,6 +30,11 @@ interface Asset {
       color?: string
     }
   }>
+  // Sharing metadata
+  isShared?: boolean
+  sharedWithCount?: number
+  userPermission?: "owner" | "edit" | "view"
+  ownerId?: string
 }
 
 interface TeamMember {
@@ -894,6 +902,38 @@ const AssetCard = memo<AssetCardProps>(function AssetCard({
       {/* Drag over indicator */}
       {isDraggedOver && !isSelected && (
         <div className="absolute inset-0 bg-dusty-rose/25 pointer-events-none animate-pulse" />
+      )}
+
+      {/* Sharing indicators - top overlay */}
+      {!isSelectionMode && (
+        <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-2 pointer-events-none">
+          {/* Permission badge (left) */}
+          {asset.userPermission && asset.userPermission !== "owner" && (
+            <div className="pointer-events-auto">
+              <PermissionBadge level={asset.userPermission} size="sm" />
+            </div>
+          )}
+          {asset.isShared && asset.userPermission === "owner" && asset.sharedWithCount && asset.sharedWithCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm border border-sage/20 shadow-sm pointer-events-auto">
+              <Users className="w-2.5 h-2.5 text-sage" />
+              <span className="text-[9px] font-semibold text-sage">{asset.sharedWithCount}</span>
+            </div>
+          )}
+
+          <div className="flex-1" /> {/* Spacer */}
+
+          {/* Share button (right) - only for owners */}
+          {asset.userPermission === "owner" && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
+              <ShareButton
+                resourceId={asset.id}
+                resourceType="asset"
+                isOwner={true}
+                size="sm"
+              />
+            </div>
+          )}
+        </div>
       )}
 
       {/* Tags and Team Member badges */}

@@ -4,7 +4,8 @@ import { assets } from "@/db/schema/assets"
 import { assetTags } from "@/db/schema/asset_tags"
 import { tags } from "@/db/schema/tags"
 import { tagCategories } from "@/db/schema/tag_categories"
-import { eq, desc } from "drizzle-orm"
+import { eq, desc, inArray } from "drizzle-orm"
+import { getCurrentUserId, getAccessibleResources, checkPermission } from "@/lib/permissions"
 
 export const dynamic = 'force-dynamic'
 
@@ -13,10 +14,27 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const teamMemberId = searchParams.get("teamMemberId")
 
+    // Get current user and their accessible assets
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const accessibleAssetIds = await getAccessibleResources(userId, "asset")
+
+    // If user has no accessible assets, return empty array
+    if (accessibleAssetIds.length === 0) {
+      return NextResponse.json({ assets: [] })
+    }
+
     const db = getDb()
     const allAssets = await db
       .select()
       .from(assets)
+      .where(inArray(assets.id, accessibleAssetIds))
       .orderBy(desc(assets.uploadedAt))
 
     // Fetch all asset tags
@@ -81,6 +99,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get current user
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { fileName, filePath, fileType, mimeType, fileSize, teamMemberId } = body
 
@@ -93,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     const db = getDb()
 
-    // Insert asset metadata
+    // Insert asset metadata with current user as owner
     const [asset] = await db
       .insert(assets)
       .values({
@@ -102,7 +129,8 @@ export async function POST(request: NextRequest) {
         fileType,
         mimeType,
         fileSize,
-        teamMemberId: teamMemberId || null
+        teamMemberId: teamMemberId || null,
+        ownerId: userId, // Set current user as owner
       })
       .returning()
 
@@ -111,6 +139,103 @@ export async function POST(request: NextRequest) {
     console.error("Error saving asset metadata:", error)
     return NextResponse.json(
       { error: "Failed to save asset metadata" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    // Get current user
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { assetId, ...updates } = body
+
+    if (!assetId) {
+      return NextResponse.json(
+        { error: "assetId is required" },
+        { status: 400 }
+      )
+    }
+
+    // Check if user has editor permission
+    const canEdit = await checkPermission(userId, "asset", assetId, "editor")
+    if (!canEdit) {
+      return NextResponse.json(
+        { error: "Forbidden - You don't have permission to edit this asset" },
+        { status: 403 }
+      )
+    }
+
+    const db = getDb()
+
+    // Update the asset
+    const [updatedAsset] = await db
+      .update(assets)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(assets.id, assetId))
+      .returning()
+
+    return NextResponse.json({ asset: updatedAsset })
+  } catch (error) {
+    console.error("Error updating asset:", error)
+    return NextResponse.json(
+      { error: "Failed to update asset" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    // Get current user
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const assetId = searchParams.get("id")
+
+    if (!assetId) {
+      return NextResponse.json(
+        { error: "Asset ID is required" },
+        { status: 400 }
+      )
+    }
+
+    // Check if user is the owner
+    const canDelete = await checkPermission(userId, "asset", assetId, "owner")
+    if (!canDelete) {
+      return NextResponse.json(
+        { error: "Forbidden - Only the owner can delete this asset" },
+        { status: 403 }
+      )
+    }
+
+    const db = getDb()
+
+    // Delete the asset
+    await db.delete(assets).where(eq(assets.id, assetId))
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Error deleting asset:", error)
+    return NextResponse.json(
+      { error: "Failed to delete asset" },
       { status: 500 }
     )
   }

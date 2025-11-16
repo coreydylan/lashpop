@@ -31,6 +31,12 @@ import { setPhotos } from "./schema/set_photos"
 import { damUserSettings } from "./schema/dam_user_settings"
 import { damUserActions } from "./schema/dam_user_actions"
 
+// Sharing schemas
+import { userRoles } from "./schema/user_roles"
+import { sharedResources } from "./schema/shared_resources"
+import { publicShareLinks } from "./schema/public_share_links"
+import { shareActivityLog } from "./schema/share_activity_log"
+
 // Scrollytelling CMS schemas
 import {
   compositions,
@@ -89,6 +95,12 @@ const dbSchema = {
   setPhotos,
   damUserSettings,
   damUserActions,
+
+  // Sharing tables
+  userRoles,
+  sharedResources,
+  publicShareLinks,
+  shareActivityLog,
 
   // Scrollytelling CMS tables
   compositions,
@@ -187,6 +199,11 @@ export {
   setPhotos,
   damUserSettings,
   damUserActions,
+  // Sharing
+  userRoles,
+  sharedResources,
+  publicShareLinks,
+  shareActivityLog,
   // Scrollytelling CMS
   compositions,
   layers,

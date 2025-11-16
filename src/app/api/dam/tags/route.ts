@@ -2,17 +2,32 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { tags } from "@/db/schema/tags"
-import { asc, eq } from "drizzle-orm"
+import { asc, eq, inArray } from "drizzle-orm"
+import { getCurrentUserId, getAccessibleResources, checkPermission } from "@/lib/permissions"
 
 export async function GET() {
   try {
+    // Get current user and their accessible collections
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const accessibleCollectionIds = await getAccessibleResources(userId, "collection")
+
     const db = getDb()
 
-    // Fetch all categories ordered by sortOrder
-    const categories = await db
-      .select()
-      .from(tagCategories)
-      .orderBy(asc(tagCategories.sortOrder))
+    // Fetch accessible categories ordered by sortOrder
+    const categories = accessibleCollectionIds.length > 0
+      ? await db
+          .select()
+          .from(tagCategories)
+          .where(inArray(tagCategories.id, accessibleCollectionIds))
+          .orderBy(asc(tagCategories.sortOrder))
+      : []
 
     // Fetch all tags
     const allTags = await db.select().from(tags).orderBy(asc(tags.sortOrder))
@@ -34,6 +49,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get current user
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { categories: updatedCategories } = body
 
@@ -80,6 +104,15 @@ export async function POST(request: NextRequest) {
         let categoryId: string
 
         if (existingCategoryByName) {
+          // Check if user has permission to edit this existing category
+          const canEdit = await checkPermission(userId, "collection", existingCategoryByName.id, "editor")
+          if (!canEdit) {
+            return NextResponse.json(
+              { error: `Forbidden - You don't have permission to edit category "${category.displayName}"` },
+              { status: 403 }
+            )
+          }
+
           // Update existing category instead of creating new one
           await db.update(tagCategories)
             .set({
@@ -94,7 +127,7 @@ export async function POST(request: NextRequest) {
             .where(eq(tagCategories.id, existingCategoryByName.id))
           categoryId = existingCategoryByName.id
         } else {
-          // Insert new category
+          // Insert new category with current user as owner
           const [newCat] = await db.insert(tagCategories).values({
             name: category.name,
             displayName: category.displayName,
@@ -102,7 +135,8 @@ export async function POST(request: NextRequest) {
             sortOrder: category.sortOrder ?? 0,
             isCollection: category.isCollection ?? false,
             isRating: category.isRating ?? false,
-            description: category.description
+            description: category.description,
+            ownerId: userId, // Set current user as owner
           }).returning()
           categoryId = newCat.id
         }
@@ -140,6 +174,15 @@ export async function POST(request: NextRequest) {
           }
         }
       } else {
+        // Check if user has permission to edit this category
+        const canEdit = await checkPermission(userId, "collection", category.id, "editor")
+        if (!canEdit) {
+          return NextResponse.json(
+            { error: `Forbidden - You don't have permission to edit category "${category.displayName}"` },
+            { status: 403 }
+          )
+        }
+
         // Update existing category
         await db.update(tagCategories)
           .set({

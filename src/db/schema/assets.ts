@@ -1,5 +1,6 @@
-import { pgEnum, pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core"
+import { pgEnum, pgTable, text, timestamp, uuid, integer, boolean } from "drizzle-orm/pg-core"
 import { teamMembers } from "./team_members"
+import { user } from "./auth_user"
 
 export const assetType = pgEnum("asset_type", ["image", "video"])
 export const lashColor = pgEnum("lash_color", ["brown", "black"])
@@ -21,6 +22,12 @@ export const assets = pgTable("assets", {
   // Relationships
   teamMemberId: uuid("team_member_id")
     .references(() => teamMembers.id, { onDelete: "set null" }),
+  ownerId: text("owner_id")
+    .references(() => user.id, { onDelete: "set null" }), // User who owns/created this asset
+
+  // Sharing and visibility
+  isPublic: boolean("is_public").notNull().default(false), // Whether asset is publicly accessible
+  visibility: text("visibility").notNull().default("private"), // 'private', 'shared', 'public'
 
   // Lash characteristics (tagging metadata)
   color: lashColor("color"),

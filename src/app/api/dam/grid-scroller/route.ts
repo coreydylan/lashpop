@@ -10,11 +10,23 @@ import { assetTags } from '@/db/schema/asset_tags'
 import { tags } from '@/db/schema/tags'
 import { tagCategories } from '@/db/schema/tag_categories'
 import { eq, and, inArray } from 'drizzle-orm'
+import { getCurrentUserId, getAccessibleResources } from '@/lib/permissions'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Get current user and their accessible assets
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const accessibleAssetIds = await getAccessibleResources(userId, "asset")
+
     const db = getDb()
 
     // Find the 'website' category
@@ -72,17 +84,20 @@ export async function GET(request: NextRequest) {
     // Fetch full asset details
     const assetIds = taggedAssets.map((ta) => ta.assetId)
 
-    if (assetIds.length === 0) {
+    // Filter by accessible assets
+    const accessibleTaggedAssetIds = assetIds.filter(id => accessibleAssetIds.includes(id))
+
+    if (accessibleTaggedAssetIds.length === 0) {
       return NextResponse.json({
         images: [],
-        message: 'No assets found with grid-scroller tag',
+        message: 'No accessible assets found with grid-scroller tag',
       })
     }
 
     const filteredAssets = await db
       .select()
       .from(assets)
-      .where(inArray(assets.id, assetIds))
+      .where(inArray(assets.id, accessibleTaggedAssetIds))
 
     // Fetch all tags for these assets to check for 'key-image' tag
     const allAssetTags = await db

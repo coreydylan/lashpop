@@ -6,7 +6,8 @@ import { tags } from "@/db/schema/tags"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { teamMembers } from "@/db/schema/team_members"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
-import { eq, desc, and } from "drizzle-orm"
+import { eq, desc, and, inArray } from "drizzle-orm"
+import { getCurrentUserId, getAccessibleResources, getResourceShares } from "@/lib/permissions"
 
 /**
  * Combined initial data endpoint for DAM
@@ -15,15 +16,32 @@ import { eq, desc, and } from "drizzle-orm"
  */
 export async function GET() {
   try {
+    // Get current user and their accessible resources
+    const userId = await getCurrentUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const [accessibleAssetIds, accessibleCollectionIds] = await Promise.all([
+      getAccessibleResources(userId, "asset"),
+      getAccessibleResources(userId, "collection"),
+    ])
+
     const db = getDb()
 
-    // Fetch all three datasets in parallel
+    // Fetch all datasets in parallel, filtered by user access
     const [allAssets, allAssetTags, allTagCategories, allTeamMembers] = await Promise.all([
-      // 1. Fetch assets
-      db
-        .select()
-        .from(assets)
-        .orderBy(desc(assets.uploadedAt)),
+      // 1. Fetch accessible assets
+      accessibleAssetIds.length > 0
+        ? db
+            .select()
+            .from(assets)
+            .where(inArray(assets.id, accessibleAssetIds))
+            .orderBy(desc(assets.uploadedAt))
+        : Promise.resolve([]),
 
       // 2. Fetch asset tags with category info
       db
@@ -41,11 +59,14 @@ export async function GET() {
         .leftJoin(tags, eq(assetTags.tagId, tags.id))
         .leftJoin(tagCategories, eq(tags.categoryId, tagCategories.id)),
 
-      // 3. Fetch tag categories with tags
-      db
-        .select()
-        .from(tagCategories)
-        .orderBy(tagCategories.sortOrder),
+      // 3. Fetch accessible tag categories (collections)
+      accessibleCollectionIds.length > 0
+        ? db
+            .select()
+            .from(tagCategories)
+            .where(inArray(tagCategories.id, accessibleCollectionIds))
+            .orderBy(tagCategories.sortOrder)
+        : Promise.resolve([]),
 
       // 4. Fetch team members with primary photos
       db
@@ -105,10 +126,30 @@ export async function GET() {
       tags: allTags.filter((tag) => tag.categoryId === category.id)
     }))
 
+    // Get sharing metadata for owned resources
+    const [assetShares, collectionShares] = await Promise.all([
+      getResourceShares(userId, "asset", accessibleAssetIds),
+      getResourceShares(userId, "collection", accessibleCollectionIds),
+    ])
+
+    // Attach sharing metadata to assets
+    const assetsWithSharing = assetsWithTags.map((asset) => ({
+      ...asset,
+      shares: assetShares.get(asset.id) || [],
+      isOwner: asset.ownerId === userId,
+    }))
+
+    // Attach sharing metadata to categories
+    const categoriesWithSharing = categoriesWithTags.map((category) => ({
+      ...category,
+      shares: collectionShares.get(category.id) || [],
+      isOwner: category.ownerId === userId,
+    }))
+
     // Return all data in one response
     return NextResponse.json({
-      assets: assetsWithTags,
-      categories: categoriesWithTags,
+      assets: assetsWithSharing,
+      categories: categoriesWithSharing,
       teamMembers: allTeamMembers
     }, {
       headers: {

@@ -10,8 +10,10 @@ import {
   X,
   GripVertical,
   Folder,
-  Palette
+  Palette,
+  Share2
 } from "lucide-react"
+import { ShareButton } from "./sharing/ShareButton"
 
 interface Collection {
   id: string
@@ -275,6 +277,15 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="p-2">
+                    <ShareButton
+                      resourceId={collection.id}
+                      resourceType="collection"
+                      isOwner={true}
+                      size="sm"
+                      variant="icon"
+                    />
+                  </div>
                   <button
                     onClick={() => {
                       setEditingId(collection.id)

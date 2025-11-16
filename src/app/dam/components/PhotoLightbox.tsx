@@ -3,11 +3,13 @@
 /* eslint-disable @next/next/no-img-element */
 
 import type { ReactNode, PointerEvent as ReactPointerEvent } from "react"
-import { useCallback, useRef } from "react"
+import { useCallback, useRef, useState } from "react"
 import { PhotoProvider } from "react-photo-view"
 import "react-photo-view/dist/react-photo-view.css"
 import { CheckCircle, Circle, Sparkles } from "lucide-react"
 import { OmniBar, type OmniBarProps } from "./OmniBar"
+import { ShareButton } from "./sharing/ShareButton"
+import { PermissionBadge, type PermissionLevel } from "./sharing/PermissionBadge"
 
 interface Asset {
   id: string
@@ -27,6 +29,11 @@ interface Asset {
       color?: string
     }
   }>
+  // Sharing metadata
+  isShared?: boolean
+  sharedWithCount?: number
+  userPermission?: PermissionLevel
+  ownerId?: string
 }
 
 interface PhotoLightboxProps {
@@ -174,7 +181,21 @@ export function PhotoLightbox({
 
         return (
           <div className="photo-lightbox-overlay relative">
-            {onOpenCommandPalette && (
+            {/* Permission Badge - Top Left */}
+            {asset.userPermission && asset.userPermission !== "owner" && (
+              <div
+                className="absolute z-50"
+                style={{
+                  top: "1.25rem",
+                  left: "1.25rem"
+                }}
+              >
+                <PermissionBadge level={asset.userPermission} size="md" />
+              </div>
+            )}
+
+            {/* Action buttons - Top Right */}
+            {(onOpenCommandPalette || (asset.userPermission === "owner")) && (
               <div
                 className="absolute z-50 flex gap-2"
                 style={{
@@ -185,16 +206,30 @@ export function PhotoLightbox({
                   transform: isMobile ? "translateX(-50%)" : undefined
                 }}
               >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onOpenCommandPalette()
-                  }}
-                  className={`flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-sm font-semibold text-cream shadow-lg transition hover:bg-black/60 ${isMobile ? "backdrop-blur-md" : ""}`}
-                >
-                  <Sparkles className="w-4 h-4 text-dusty-rose" />
-                  <span>Action palette</span>
-                </button>
+                {asset.userPermission === "owner" && !isMobile && (
+                  <div className="flex items-center justify-center">
+                    <ShareButton
+                      resourceId={asset.id}
+                      resourceType="asset"
+                      isOwner={true}
+                      size="md"
+                      variant="button"
+                      className="border border-white/20 bg-black/40 hover:bg-black/60 shadow-lg"
+                    />
+                  </div>
+                )}
+                {onOpenCommandPalette && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onOpenCommandPalette()
+                    }}
+                    className={`flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-sm font-semibold text-cream shadow-lg transition hover:bg-black/60 ${isMobile ? "backdrop-blur-md" : ""}`}
+                  >
+                    <Sparkles className="w-4 h-4 text-dusty-rose" />
+                    <span>Action palette</span>
+                  </button>
+                )}
               </div>
             )}
             {omniBarProps && (

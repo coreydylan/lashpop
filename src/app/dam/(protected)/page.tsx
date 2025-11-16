@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import type { ReactNode } from "react"
 import clsx from "clsx"
-import { Upload as UploadIcon, Users, X, Sparkles, LogOut } from "lucide-react"
+import { Upload as UploadIcon, Users, X, Sparkles, LogOut, Share2 } from "lucide-react"
 import Link from "next/link"
 import { FileUploader } from "../components/FileUploader"
 import { AssetGrid } from "../components/AssetGrid"
@@ -44,6 +44,11 @@ interface Asset {
       color?: string
     }
   }>
+  // Sharing metadata
+  isShared?: boolean
+  sharedWithCount?: number
+  userPermission?: "owner" | "edit" | "view"
+  ownerId?: string
 }
 
 interface TeamMember {
@@ -1111,6 +1116,21 @@ export default function DAMPage() {
     // ========================================
     // ORGANIZATION CATEGORY
     // ========================================
+
+    // Shared with me filter
+    items.push({
+      id: "view-shared-with-me",
+      group: "Organization",
+      label: "Shared with me",
+      description: "View assets and collections shared by others",
+      badge: "Sharing",
+      onSelect: () => {
+        // TODO: Implement shared with me filter
+        // For now, this would filter assets where userPermission is not 'owner'
+        alert("Shared with me view coming soon! This will show all assets and collections that others have shared with you.")
+      }
+    })
+
     const groupingSet = new Set(groupByTags)
     if (groupByTags.length < 2) {
       if (!groupingSet.has("team") && teamMembers.length > 0) {
@@ -1955,6 +1975,13 @@ export default function DAMPage() {
                   <UploadIcon className="w-5 h-5" />
                   <span className="hidden sm:inline">Upload</span>
                 </button>
+                <Link
+                  href="/dam/shared"
+                  className="btn btn-secondary"
+                >
+                  <Share2 className="w-5 h-5" />
+                  <span className="hidden sm:inline">Shared</span>
+                </Link>
                 <Link
                   href="/dam/team"
                   className="btn btn-secondary"
