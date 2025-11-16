@@ -19,6 +19,7 @@ import { OmniBar } from "../components/OmniBar"
 import { OmniChip } from "../components/OmniChip"
 import { CollectionSelector } from "../components/CollectionSelector"
 import { TutorialWalkthrough } from "../components/TutorialWalkthrough"
+import { ThumbPanel } from "../components/ThumbPanel"
 import { useDamSettings } from "@/hooks/useDamSettings"
 import { useDamActions } from "@/hooks/useDamActions"
 import { useDamInitialData } from "@/hooks/useDamData"
@@ -2207,6 +2208,35 @@ export default function DAMPage() {
 
       {/* Tutorial System */}
       <TutorialWalkthrough />
+
+      {/* Mobile Thumb Panel - only show on mobile */}
+      {isMobile && (
+        <ThumbPanel
+          collections={collections}
+          activeCollectionId={activeCollectionId}
+          onSelectCollection={setActiveCollectionId}
+          onCreateCollection={() => setIsCollectionManagerOpen(true)}
+          groupCategories={tagCategories}
+          hasTeamMembers={teamMembers.length > 0}
+          selectedGroupCategories={groupByCategories}
+          onGroupCategoryToggle={handleGroupByToggle}
+          maxGroupSelections={2}
+          filterCategories={tagCategories}
+          selectedTagIds={selectedTagIds}
+          selectedTeamMemberIds={selectedTeamMemberIds}
+          onTagToggle={handleTagToggle}
+          onTeamMemberToggle={handleTeamMemberToggle}
+          onOpenCommandPalette={() => openCommandPalette("")}
+          showGridToggle={true}
+          gridViewMode={gridViewMode}
+          onToggleGridView={handleToggleGridView}
+          onOpenCardSettings={openCardSettings}
+          selectedCount={selectedAssets.length}
+          onClearSelection={handleClearSelection}
+          canApplyTags={canApplyTags}
+          onApplyTags={handleApplyTags}
+        />
+      )}
     </PhotoLightbox>
   )
 }

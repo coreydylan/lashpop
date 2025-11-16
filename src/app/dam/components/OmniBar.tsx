@@ -316,64 +316,16 @@ export function OmniBar({
         </div>
       </div>
 
-      {/* Mobile layout - reimagined comprehensive interface */}
+      {/* Mobile layout - minimal chips only, all controls in thumb panel */}
       <div className={clsx("block lg:hidden", isOverlay ? "px-0" : "px-3")}>
-        {/* Top action bar - collections, stats, quick actions */}
-        {!isOverlay && (
-          <div className="flex items-center justify-between py-2 border-b border-sage/10">
-            {/* Left: Collection selector */}
-            <div className="flex-1 min-w-0 mr-2">
-              {collectionSelector || (
-                <span className={clsx("text-sm font-medium truncate block", textMuted)}>
-                  {assetsCount} {assetLabel}
-                </span>
-              )}
-            </div>
-
-            {/* Right: Quick actions */}
-            <div className="flex items-center gap-1">
-              {selectedCount === 0 && (
-                <>
-                  {groupByButton}
-                  {filterButton}
-                  {onOpenCommandPalette && (
-                    <button
-                      onClick={onOpenCommandPalette}
-                      className={clsx("p-1.5 rounded-full transition-colors", hoverClass)}
-                      aria-label="More actions"
-                    >
-                      <svg className={clsx("w-4 h-4", iconColor)} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                      </svg>
-                    </button>
-                  )}
-                  {showGridToggle && (
-                    <button
-                      onClick={onToggleGridView}
-                      className={clsx("p-1.5 rounded-full transition-colors", hoverClass)}
-                      aria-label="Toggle grid"
-                    >
-                      {gridViewMode === "square" ? (
-                        <LayoutGrid className={clsx("w-4 h-4", iconColor)} />
-                      ) : (
-                        <Grid3x3 className={clsx("w-4 h-4", iconColor)} />
-                      )}
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Selection mode bar */}
-        {selectedCount > 0 && (
-          <div className={clsx("flex items-center justify-between py-2", isOverlay ? "px-3" : "")}>
+        {/* Just show asset count / selection count */}
+        <div className={clsx("flex items-center justify-between py-2", !isOverlay && "border-b border-sage/10")}>
+          {selectedCount > 0 ? (
             <div className="flex items-center gap-1.5">
               <span className={clsx("text-sm font-bold", textPrimary)}>
-                {selectedCount}
+                {selectedCount} selected
               </span>
-              {escConfirmationActive ? (
+              {escConfirmationActive && (
                 <button
                   onClick={onEscClick}
                   className={clsx(
@@ -389,39 +341,19 @@ export function OmniBar({
                   </span>
                   <span>again</span>
                 </button>
-              ) : (
-                <button
-                  onClick={onEscClick || onClearSelection}
-                  className={clsx(
-                    "flex items-center gap-0.5 px-1.5 py-0.5 rounded-full transition-colors",
-                    hoverClass
-                  )}
-                  aria-label="Clear"
-                >
-                  <X className={clsx("w-3 h-3", textPrimary)} />
-                </button>
               )}
             </div>
-            <div className="flex items-center gap-1">
-              {onOpenCommandPalette && (
-                <button
-                  onClick={onOpenCommandPalette}
-                  className={clsx("px-2 py-1 rounded-full text-xs font-semibold transition-colors", hoverClass)}
-                >
-                  Actions
-                </button>
-              )}
-              {canApplyTags && (
-                <button
-                  onClick={onApplyTags}
-                  className={clsx("px-3 py-1 rounded-full text-xs font-semibold transition-colors", applyButtonClass)}
-                >
-                  Apply
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+          ) : (
+            <span className={clsx("text-sm font-medium", textMuted)}>
+              {assetsCount} {assetLabel}
+            </span>
+          )}
+          {counterSlot && (
+            <span className="text-[10px] font-bold text-cream bg-dune/30 rounded-full px-2 py-0.5">
+              {counterSlot}
+            </span>
+          )}
+        </div>
 
         {/* Single horizontal scroll row */}
         {(hasGroupBy || hasChips) && (
