@@ -12,6 +12,13 @@ import { profiles } from "./schema/profiles"
 import { vagaroSyncMappings } from "./schema/vagaro_sync_mappings"
 import { friendBookingRequests } from "./schema/friend_booking_requests"
 
+// Onboarding schemas
+import { onboardingProgress } from "./schema/onboarding_progress"
+import { onboardingConnectedAccounts } from "./schema/onboarding_connected_accounts"
+import { onboardingBrandData } from "./schema/onboarding_brand_data"
+import { onboardingImportedAssets } from "./schema/onboarding_imported_assets"
+import { onboardingCustomThemes } from "./schema/onboarding_custom_themes"
+
 // Local schemas
 import { customers } from "./schema/customers"
 import { teamMembers } from "./schema/team_members"
@@ -70,6 +77,13 @@ const dbSchema = {
   profiles,
   vagaroSyncMappings,
   friendBookingRequests,
+
+  // Onboarding tables
+  onboardingProgress,
+  onboardingConnectedAccounts,
+  onboardingBrandData,
+  onboardingImportedAssets,
+  onboardingCustomThemes,
 
   // Local tables
   customers,
@@ -169,6 +183,12 @@ export {
   profiles,
   vagaroSyncMappings,
   friendBookingRequests,
+  // Onboarding
+  onboardingProgress,
+  onboardingConnectedAccounts,
+  onboardingBrandData,
+  onboardingImportedAssets,
+  onboardingCustomThemes,
   // Local tables
   customers,
   teamMembers,

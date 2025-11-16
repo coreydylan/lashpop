@@ -56,8 +56,15 @@ export function PhoneLoginForm() {
       })
 
       // Success! User is now signed in
-      // The page will automatically update via useSession
-      window.location.href = '/dashboard' // or wherever you want to redirect
+      // Check if user needs onboarding
+      const profileResponse = await fetch('/api/user/profile')
+      const profileData = await profileResponse.json()
+
+      if (profileData.profile?.onboardingCompleted) {
+        window.location.href = '/dam'
+      } else {
+        window.location.href = '/onboarding'
+      }
     } catch (err: any) {
       setError(err.message || 'Invalid verification code')
     } finally {
