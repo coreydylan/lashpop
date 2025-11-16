@@ -13,7 +13,8 @@ import {
   Eye,
   Share2,
   Wand2,
-  Filter
+  Filter,
+  Smartphone
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -104,6 +105,8 @@ export function OmniCommandPalette({
         return { icon: Wand2, description: "Photo management actions" }
       case "Current Tags":
         return { icon: Tags, description: "Remove existing tags" }
+      case "Social Variants":
+        return { icon: Smartphone, description: "Generate and export social media variants" }
       default:
         return { icon: Tags, description: "Quick DAM action" }
     }
@@ -112,10 +115,34 @@ export function OmniCommandPalette({
   const filteredItems = useMemo(() => {
     const normalized = query.trim().toLowerCase()
     if (!normalized) return items
+
+    // Natural language synonym mapping for better search
+    const synonyms: Record<string, string[]> = {
+      'generate': ['create', 'make', 'build', 'generate'],
+      'export': ['download', 'get', 'save', 'export'],
+      'show': ['display', 'view', 'filter', 'show'],
+      'variants': ['versions', 'sizes', 'formats', 'variants'],
+      'selected': ['current selection', 'these', 'chosen', 'selected'],
+      'instagram': ['ig', 'insta', 'instagram'],
+      'facebook': ['fb', 'facebook'],
+      'twitter': ['tweet', 'twitter', 'x'],
+      'recent': ['last week', 'recent', 'latest', 'new']
+    }
+
+    // Expand query with synonyms
+    const expandedTerms = new Set([normalized])
+    Object.entries(synonyms).forEach(([key, words]) => {
+      if (words.some(word => normalized.includes(word))) {
+        words.forEach(synonym => expandedTerms.add(synonym))
+      }
+    })
+
     return items.filter(item => {
       // Include group name, label, description, and badge in search
       const target = `${item.group} ${item.label} ${item.description ?? ""} ${item.badge ?? ""}`.toLowerCase()
-      return target.includes(normalized)
+
+      // Check if any expanded term matches
+      return Array.from(expandedTerms).some(term => target.includes(term))
     })
   }, [items, query])
   const showCategoryGrid = !trimmedQuery && !activeGroup

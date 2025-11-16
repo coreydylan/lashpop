@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3"
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 
 const sanitizeEnvValue = (value?: string | null) => {
@@ -85,3 +85,92 @@ export function generateAssetKey(fileName: string, teamMemberId?: string): strin
 
   return `uploads/${timestamp}-${randomString}-${sanitizedFileName}`
 }
+
+/**
+ * Download a file from S3 and return as Buffer
+ */
+export async function downloadFromS3(key: string): Promise<Buffer> {
+  const command = new GetObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key
+  })
+
+  const response = await s3Client.send(command)
+
+  if (!response.Body) {
+    throw new Error(`No body returned from S3 for key: ${key}`)
+  }
+
+  // Convert stream to buffer
+  const chunks: Uint8Array[] = []
+  for await (const chunk of response.Body as any) {
+    chunks.push(chunk)
+  }
+
+  return Buffer.concat(chunks)
+}
+
+/**
+ * Upload a buffer to S3
+ */
+export async function uploadBufferToS3(
+  buffer: Buffer,
+  key: string,
+  contentType: string
+): Promise<{ url: string; key: string }> {
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+    Body: buffer,
+    ContentType: contentType
+  })
+
+  await s3Client.send(command)
+
+  return {
+    url: `${BUCKET_URL}/${key}`,
+    key
+  }
+}
+
+/**
+ * Get a presigned download URL for an S3 object
+ */
+export async function getPresignedDownloadUrl(
+  key: string,
+  expiresIn: number = 3600
+): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key
+  })
+
+  return await getSignedUrl(s3Client, command, { expiresIn })
+}
+
+/**
+ * Generate a key for social variant assets
+ */
+export function generateSocialVariantKey(
+  sourceAssetId: string,
+  platform: string,
+  variant: string,
+  extension: string = 'jpg'
+): string {
+  const timestamp = Date.now()
+  const randomString = Math.random().toString(36).substring(7)
+
+  return `social-variants/${sourceAssetId}/${platform}/${variant}/${timestamp}-${randomString}.${extension}`
+}
+
+/**
+ * Generate a key for temporary export files
+ */
+export function generateExportKey(fileName: string): string {
+  const timestamp = Date.now()
+  const randomString = Math.random().toString(36).substring(7)
+
+  return `exports/${timestamp}-${randomString}-${fileName}`
+}
+
+export { BUCKET_NAME, BUCKET_URL, s3Client }

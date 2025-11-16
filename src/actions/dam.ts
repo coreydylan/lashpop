@@ -7,7 +7,8 @@ import { assetServices } from "@/db/schema/asset_services";
 import { assetTags } from "@/db/schema/asset_tags";
 import { tags } from "@/db/schema/tags";
 import { tagCategories } from "@/db/schema/tag_categories";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and, gte, isNotNull } from "drizzle-orm";
+import { SocialPlatform, SocialVariantFilters } from "@/types/social-variants";
 
 export interface AssetWithTags {
   id: string;
@@ -177,6 +178,166 @@ export async function getAssetsByTeamMemberId(teamMemberId: string): Promise<Ass
     return assetsWithTags;
   } catch (error) {
     console.error("Error fetching assets by team member:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch social variant assets by source asset ID
+ */
+export async function getSocialVariantsBySource(sourceAssetId: string) {
+  try {
+    const db = getDb();
+
+    // Fetch all variants for this source asset
+    const variants = await db
+      .select()
+      .from(assets)
+      .where(eq(assets.sourceAssetId, sourceAssetId))
+      .orderBy(desc(assets.uploadedAt));
+
+    return variants;
+  } catch (error) {
+    console.error("Error fetching social variants by source:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch social variant assets by platform with optional filters
+ */
+export async function getSocialVariantsByPlatform(
+  platform: SocialPlatform,
+  filters?: SocialVariantFilters
+) {
+  try {
+    const db = getDb();
+
+    // Build where conditions
+    const conditions = [eq(assets.platform, platform)];
+
+    if (filters?.variant) {
+      if (Array.isArray(filters.variant)) {
+        conditions.push(inArray(assets.variant, filters.variant));
+      } else {
+        conditions.push(eq(assets.variant, filters.variant));
+      }
+    }
+
+    if (filters?.ratio) {
+      if (Array.isArray(filters.ratio)) {
+        conditions.push(inArray(assets.ratio, filters.ratio));
+      } else {
+        conditions.push(eq(assets.ratio, filters.ratio));
+      }
+    }
+
+    if (filters?.cropStrategy) {
+      if (Array.isArray(filters.cropStrategy)) {
+        conditions.push(inArray(assets.cropStrategy, filters.cropStrategy));
+      } else {
+        conditions.push(eq(assets.cropStrategy, filters.cropStrategy));
+      }
+    }
+
+    if (filters?.exported !== undefined) {
+      conditions.push(eq(assets.exported, filters.exported));
+    }
+
+    if (filters?.minValidationScore !== undefined) {
+      conditions.push(gte(assets.validationScore, filters.minValidationScore));
+    }
+
+    if (filters?.sourceAssetId) {
+      if (Array.isArray(filters.sourceAssetId)) {
+        conditions.push(inArray(assets.sourceAssetId, filters.sourceAssetId));
+      } else {
+        conditions.push(eq(assets.sourceAssetId, filters.sourceAssetId));
+      }
+    }
+
+    // Fetch variants with all conditions
+    const variants = await db
+      .select()
+      .from(assets)
+      .where(and(...conditions))
+      .orderBy(desc(assets.uploadedAt));
+
+    return variants;
+  } catch (error) {
+    console.error("Error fetching social variants by platform:", error);
+    return [];
+  }
+}
+
+/**
+ * Fetch all social variant assets (assets with sourceAssetId set)
+ */
+export async function getAllSocialVariants(filters?: SocialVariantFilters) {
+  try {
+    const db = getDb();
+
+    // Build where conditions
+    const conditions = [isNotNull(assets.sourceAssetId)];
+
+    if (filters?.platform) {
+      if (Array.isArray(filters.platform)) {
+        conditions.push(inArray(assets.platform, filters.platform));
+      } else {
+        conditions.push(eq(assets.platform, filters.platform));
+      }
+    }
+
+    if (filters?.variant) {
+      if (Array.isArray(filters.variant)) {
+        conditions.push(inArray(assets.variant, filters.variant));
+      } else {
+        conditions.push(eq(assets.variant, filters.variant));
+      }
+    }
+
+    if (filters?.ratio) {
+      if (Array.isArray(filters.ratio)) {
+        conditions.push(inArray(assets.ratio, filters.ratio));
+      } else {
+        conditions.push(eq(assets.ratio, filters.ratio));
+      }
+    }
+
+    if (filters?.cropStrategy) {
+      if (Array.isArray(filters.cropStrategy)) {
+        conditions.push(inArray(assets.cropStrategy, filters.cropStrategy));
+      } else {
+        conditions.push(eq(assets.cropStrategy, filters.cropStrategy));
+      }
+    }
+
+    if (filters?.exported !== undefined) {
+      conditions.push(eq(assets.exported, filters.exported));
+    }
+
+    if (filters?.minValidationScore !== undefined) {
+      conditions.push(gte(assets.validationScore, filters.minValidationScore));
+    }
+
+    if (filters?.sourceAssetId) {
+      if (Array.isArray(filters.sourceAssetId)) {
+        conditions.push(inArray(assets.sourceAssetId, filters.sourceAssetId));
+      } else {
+        conditions.push(eq(assets.sourceAssetId, filters.sourceAssetId));
+      }
+    }
+
+    // Fetch all social variants with conditions
+    const variants = await db
+      .select()
+      .from(assets)
+      .where(and(...conditions))
+      .orderBy(desc(assets.uploadedAt));
+
+    return variants;
+  } catch (error) {
+    console.error("Error fetching all social variants:", error);
     return [];
   }
 }

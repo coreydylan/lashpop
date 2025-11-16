@@ -23,6 +23,7 @@ import { useDamSettings } from "@/hooks/useDamSettings"
 import { useDamActions } from "@/hooks/useDamActions"
 import { useDamInitialData } from "@/hooks/useDamData"
 import { useDamTutorial } from "@/contexts/DamTutorialContext"
+import { ToastContainer } from "../lib/toast"
 
 // Lazy load heavy components that aren't immediately visible
 const FileUploader = lazy(() => import("../components/FileUploader").then(mod => ({ default: mod.FileUploader })))
@@ -1409,6 +1410,181 @@ export default function DAMPage() {
     })
 
     // ========================================
+    // SOCIAL VARIANTS CATEGORY
+    // ========================================
+
+    // Generation commands
+    items.push({
+      id: 'generate-social-variants',
+      label: 'Generate social variants',
+      group: 'Social Variants',
+      description: selectionCount > 0
+        ? `Create optimized images for all social platforms (${selectionCount} selected)`
+        : 'Create optimized images for all social platforms',
+      disabled: selectionCount === 0,
+      badge: selectionCount > 0 ? `${selectionCount}` : undefined,
+      onSelect: async () => {
+        const { generateSocialVariants } = await import('../lib/social-variant-commands')
+        await generateSocialVariants({ assetIds: selectedAssets })
+      }
+    })
+
+    items.push({
+      id: 'generate-instagram-variants',
+      label: 'Generate Instagram variants',
+      group: 'Social Variants',
+      description: selectionCount > 0
+        ? `Create Instagram square, portrait, and story (${selectionCount} selected)`
+        : 'Create Instagram square, portrait, and story',
+      disabled: selectionCount === 0,
+      badge: selectionCount > 0 ? `${selectionCount}` : undefined,
+      onSelect: async () => {
+        const { generateInstagramVariants } = await import('../lib/social-variant-commands')
+        await generateInstagramVariants({ assetIds: selectedAssets })
+      }
+    })
+
+    items.push({
+      id: 'generate-facebook-variants',
+      label: 'Generate Facebook variants',
+      group: 'Social Variants',
+      description: selectionCount > 0
+        ? `Create Facebook post and story sizes (${selectionCount} selected)`
+        : 'Create Facebook post and story sizes',
+      disabled: selectionCount === 0,
+      badge: selectionCount > 0 ? `${selectionCount}` : undefined,
+      onSelect: async () => {
+        const { generateFacebookVariants } = await import('../lib/social-variant-commands')
+        await generateFacebookVariants({ assetIds: selectedAssets })
+      }
+    })
+
+    items.push({
+      id: 'generate-twitter-variants',
+      label: 'Generate Twitter variants',
+      group: 'Social Variants',
+      description: selectionCount > 0
+        ? `Create Twitter landscape, square, header (${selectionCount} selected)`
+        : 'Create Twitter landscape, square, header',
+      disabled: selectionCount === 0,
+      badge: selectionCount > 0 ? `${selectionCount}` : undefined,
+      onSelect: async () => {
+        const { generateTwitterVariants } = await import('../lib/social-variant-commands')
+        await generateTwitterVariants({ assetIds: selectedAssets })
+      }
+    })
+
+    // Export commands
+    items.push({
+      id: 'export-all-instagram',
+      label: 'Export all Instagram variants',
+      group: 'Social Variants',
+      description: 'Download all Instagram images as ZIP',
+      onSelect: async () => {
+        const { exportAllInstagramVariants } = await import('../lib/social-variant-commands')
+        await exportAllInstagramVariants()
+      }
+    })
+
+    items.push({
+      id: 'export-recent-instagram',
+      label: 'Export Instagram variants from last 7 days',
+      group: 'Social Variants',
+      description: 'Download recent Instagram images',
+      onSelect: async () => {
+        const { exportInstagramVariantsRecent } = await import('../lib/social-variant-commands')
+        await exportInstagramVariantsRecent(7)
+      }
+    })
+
+    items.push({
+      id: 'export-all-social-variants',
+      label: 'Export all social variants',
+      group: 'Social Variants',
+      description: 'Download all generated variants across platforms',
+      onSelect: async () => {
+        const { exportAllSocialVariants } = await import('../lib/social-variant-commands')
+        await exportAllSocialVariants()
+      }
+    })
+
+    items.push({
+      id: 'export-selected-variants',
+      label: 'Export selected variants',
+      group: 'Social Variants',
+      badge: selectionCount > 0 ? `${selectionCount}` : undefined,
+      disabled: selectionCount === 0,
+      description: selectionCount > 0
+        ? 'Download selected social media images'
+        : 'No variants selected',
+      onSelect: async () => {
+        const { exportSelectedVariants } = await import('../lib/social-variant-commands')
+        await exportSelectedVariants(selectedAssets)
+      }
+    })
+
+    // View/Filter commands
+    items.push({
+      id: 'show-social-variants',
+      label: 'Show all social variants',
+      group: 'Social Variants',
+      description: 'Filter to show only social media variants',
+      onSelect: () => {
+        const { filterSocialVariantsOnly } = require('../lib/social-variant-commands')
+        filterSocialVariantsOnly()
+      }
+    })
+
+    items.push({
+      id: 'show-unexported-variants',
+      label: 'Show unexported variants',
+      group: 'Social Variants',
+      description: 'Show variants ready for export',
+      onSelect: () => {
+        const { filterUnexportedVariants } = require('../lib/social-variant-commands')
+        filterUnexportedVariants()
+      }
+    })
+
+    items.push({
+      id: 'show-variants-needing-adjustment',
+      label: 'Show variants with warnings',
+      group: 'Social Variants',
+      description: 'Show variants that need manual adjustment',
+      onSelect: () => {
+        const { filterVariantsWithWarnings } = require('../lib/social-variant-commands')
+        filterVariantsWithWarnings()
+      }
+    })
+
+    // Batch operations
+    items.push({
+      id: 'batch-generate-variants',
+      label: 'Generate variants for selected',
+      group: 'Social Variants',
+      badge: selectionCount > 0 ? `${selectionCount}` : undefined,
+      disabled: selectionCount === 0,
+      description: selectionCount > 0
+        ? 'Create social variants for all selected images'
+        : 'No assets selected',
+      onSelect: async () => {
+        const { batchGenerateVariants } = await import('../lib/social-variant-commands')
+        await batchGenerateVariants({ assetIds: selectedAssets })
+      }
+    })
+
+    items.push({
+      id: 'regenerate-all-variants',
+      label: 'Regenerate all variants from source',
+      group: 'Social Variants',
+      description: 'Update all variants with new crop algorithm',
+      onSelect: async () => {
+        const { regenerateAllVariants } = await import('../lib/social-variant-commands')
+        await regenerateAllVariants()
+      }
+    })
+
+    // ========================================
     // HELP CATEGORY
     // ========================================
     items.push({
@@ -2210,6 +2386,9 @@ export default function DAMPage() {
 
       {/* Tutorial System */}
       <TutorialWalkthrough />
+
+      {/* Toast Notifications */}
+      <ToastContainer />
     </PhotoLightbox>
   )
 }
