@@ -278,7 +278,7 @@ export function createTagActionState(
     previousState: previousTags,
     newState: assetIds.reduce((acc, assetId) => {
       const prev = previousTags[assetId] || []
-      acc[assetId] = [...new Set([...prev, ...tagIds])]
+      acc[assetId] = Array.from(new Set([...prev, ...tagIds]))
       return acc
     }, {} as Record<string, string[]>)
   }
