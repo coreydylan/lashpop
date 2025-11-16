@@ -2,9 +2,10 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { createPortal } from "react-dom"
 import clsx from "clsx"
-import { Plus, Check, X } from "lucide-react"
+import { Plus, Filter } from "lucide-react"
 
 interface Tag {
   id: string
@@ -66,91 +67,47 @@ export function FilterSelector({
 }: FilterSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null)
-  const [isTouchDevice, setIsTouchDevice] = useState(false)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Detect touch device
+  // Update dropdown position when opened (below button)
   useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0)
-  }, [])
-
-  // Handle hover for desktop
-  const handleMouseEnter = useCallback((categoryId: string) => {
-    if (!isTouchDevice) {
-      setHoveredCategory(categoryId)
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 6,
+        left: rect.left + window.scrollX
+      })
     }
-  }, [isTouchDevice])
+  }, [isOpen, expandedCategory])
 
-  const handleMouseLeave = useCallback(() => {
-    if (!isTouchDevice) {
-      setHoveredCategory(null)
-    }
-  }, [isTouchDevice])
-
-  // Handle click on category
-  const handleCategoryClick = useCallback((categoryId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setExpandedCategory(categoryId)
-  }, [])
-
-  const handleTagClick = useCallback((tagId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    onTagToggle(tagId)
-    // Stay in the same category to allow multiple selections
-  }, [onTagToggle])
-
-  const handleTeamMemberClick = useCallback((memberId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (onTeamMemberToggle) {
-      onTeamMemberToggle(memberId)
-    }
-    // Stay in the same category to allow multiple selections
-  }, [onTeamMemberToggle])
-
-  // Close menu when clicking outside
+  // Close dropdown when clicking outside
   useEffect(() => {
     if (!isOpen) return
 
-    const handleBodyClick = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as HTMLElement
-      // Don't close if clicking on filter elements
-      if (!target.closest('.filter-selector')) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setIsOpen(false)
         setExpandedCategory(null)
       }
     }
 
-    // Add event listener after a delay to prevent immediate trigger
-    const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleBodyClick)
-      document.addEventListener('touchstart', handleBodyClick)
-    }, 10)
-
-    return () => {
-      clearTimeout(timeoutId)
-      document.removeEventListener('mousedown', handleBodyClick)
-      document.removeEventListener('touchstart', handleBodyClick)
-    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
-  const baseTextColor = isLightbox ? "text-cream" : "text-sage"
-  const hoverBg = isLightbox ? "hover:bg-white/10" : "hover:bg-sage/10"
-  const activeBg = isLightbox ? "bg-white/15" : "bg-sage/15"
-  const plusBg = isLightbox ? "bg-dusty-rose/80" : "bg-dusty-rose"
-
-  // Memoized count calculations for better performance
+  // Memoized count calculations
   const optionCounts = useMemo(() => {
     const counts = new Map<string, number>()
 
-    // Calculate all counts in a single pass through assets
     assets.forEach(asset => {
-      // Count team members
       if (asset.teamMemberId) {
         const key = `team-${asset.teamMemberId}`
         counts.set(key, (counts.get(key) || 0) + 1)
       }
 
-      // Count tags
       asset.tags?.forEach(tag => {
         const key = `tag-${tag.id}`
         counts.set(key, (counts.get(key) || 0) + 1)
@@ -160,7 +117,6 @@ export function FilterSelector({
     return counts
   }, [assets])
 
-  // Get option count from memoized calculations
   const getOptionCount = useCallback((categoryId: string, optionId: string) => {
     const key = categoryId === 'team' ? `team-${optionId}` : `tag-${optionId}`
     return optionCounts.get(key) || 0
@@ -173,226 +129,178 @@ export function FilterSelector({
       name: 'team',
       displayName: 'Team',
       color: '#BCC9C2',
-      options: teamMembers
-        .map(m => ({
-          id: m.id,
-          name: m.name,
-          displayName: m.name,
-          imageUrl: m.imageUrl,
-          cropCloseUpCircle: m.cropCloseUpCircle,
-          count: getOptionCount('team', m.id)
-        }))
+      options: teamMembers.map(m => ({
+        id: m.id,
+        name: m.name,
+        displayName: m.name,
+        imageUrl: m.imageUrl,
+        cropCloseUpCircle: m.cropCloseUpCircle,
+        count: getOptionCount('team', m.id)
+      }))
     }] : []),
     ...categories.map(cat => ({
       ...cat,
-      options: (cat.tags || [])
-        .map(tag => ({
-          id: tag.id,
-          name: tag.name,
-          displayName: tag.displayName,
-          count: getOptionCount(cat.id, tag.id)
-        }))
+      options: (cat.tags || []).map(tag => ({
+        id: tag.id,
+        name: tag.name,
+        displayName: tag.displayName,
+        count: getOptionCount(cat.id, tag.id)
+      }))
     }))
-  ] // Show all categories and options, even with 0 count
-  .map(cat => ({
+  ].map(cat => ({
     ...cat,
     count: cat.options.reduce((sum: number, opt: any) => sum + (opt.count || 0), 0)
   })), [categories, getOptionCount, teamMembers])
 
-  // Show + Filters button first
-  if (!isOpen) {
-    return (
-      <div className="filter-selector">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsOpen(true)
-          }}
-          className={clsx(
-            "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
-            baseTextColor, hoverBg,
-            "border",
-            isLightbox ? "border-white/20" : "border-sage/20"
-          )}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Filters</span>
-        </button>
-      </div>
-    )
-  }
+  const handleCategoryClick = useCallback((categoryId: string) => {
+    setExpandedCategory(categoryId)
+  }, [])
 
-  // If a category is expanded, show its options
-  if (expandedCategory) {
-    const category = allCategories.find(c => c.id === expandedCategory)
-    if (category && category.options && category.options.length > 0) {
-      const isTeamCategory = category.id === 'team'
-
-      return (
-        <div className="filter-selector flex flex-wrap items-start gap-2">
-        {/* Navigation buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              setExpandedCategory(null)
-            }}
-            className={clsx(
-              "flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
-              baseTextColor, hoverBg,
-              "border",
-              isLightbox ? "border-white/20" : "border-sage/20"
-            )}
-          >
-            ← Back
-          </button>
-
-          <span className={clsx("px-2 text-sm font-semibold", baseTextColor)}>
-            {category.displayName}
-          </span>
-
-          <span className={clsx("text-xs", isLightbox ? "text-cream/60" : "text-sage/60")}>
-            (select multiple)
-          </span>
-        </div>
-
-        {/* Divider */}
-        <div className={clsx("h-6 w-px", isLightbox ? "bg-white/20" : "bg-sage/20")} />
-
-        {category.options.map((option: any) => {
-          const isSelected = isTeamCategory
-            ? selectedTeamMemberIds.includes(option.id)
-            : selectedTagIds.includes(option.id)
-
-          return (
-            <button
-              key={option.id}
-              onClick={(e) => isTeamCategory
-                ? handleTeamMemberClick(option.id, e)
-                : handleTagClick(option.id, e)}
-              className={clsx(
-                "flex items-center gap-2 pr-2 pl-3 py-1.5 rounded-full text-sm font-medium transition-all min-w-[100px]",
-                isSelected ? "bg-dusty-rose text-cream" : clsx(baseTextColor, hoverBg),
-                "border",
-                isSelected
-                  ? "border-dusty-rose"
-                  : isLightbox ? "border-white/20" : "border-sage/20"
-              )}
-            >
-              {isTeamCategory && option.imageUrl && (
-                <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
-                  <img
-                    src={option.imageUrl}
-                    alt={option.displayName}
-                    className="w-full h-full object-cover"
-                    style={
-                      option.cropCloseUpCircle
-                        ? {
-                            objectPosition: `${option.cropCloseUpCircle.x}% ${option.cropCloseUpCircle.y}%`,
-                            transform: `scale(${option.cropCloseUpCircle.scale})`
-                          }
-                        : {
-                            objectPosition: 'center 25%',
-                            transform: 'scale(2)'
-                          }
-                    }
-                  />
-                </div>
-              )}
-              <span>{option.displayName}</span>
-              {/* Show check icon if selected, count otherwise */}
-              {isSelected ? (
-                <div
-                  className="ml-auto w-6 h-6 rounded-full flex items-center justify-center transition-all"
-                  style={{
-                    backgroundColor: '#CDA89E',
-                    border: '2px solid #CDA89E',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
-                  }}
-                >
-                  <Check className="w-3.5 h-3.5 text-cream" strokeWidth={3} />
-                </div>
-              ) : (
-                <div
-                  className="ml-auto w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                  style={{
-                    backgroundColor: isLightbox ? 'rgba(255, 255, 255, 0.1)' : 'rgba(138, 124, 105, 0.1)',
-                    border: `2px solid ${isLightbox ? '#F2EDE5' : '#8A7C69'}`,
-                    color: isLightbox ? '#F2EDE5' : '#8A7C69'
-                  }}
-                >
-                  {option.count || 0}
-                </div>
-              )}
-            </button>
-          )
-        })}
-      </div>
-    )
+  const handleOptionClick = useCallback((categoryId: string, optionId: string) => {
+    if (categoryId === 'team' && onTeamMemberToggle) {
+      onTeamMemberToggle(optionId)
+    } else {
+      onTagToggle(optionId)
     }
-    // If no valid category found, just fall through to show categories
+    // Auto-collapse after selection
+    setIsOpen(false)
+    setExpandedCategory(null)
+  }, [onTagToggle, onTeamMemberToggle])
+
+  // Dropdown menu
+  const DropdownMenu = () => {
+    if (!isOpen || typeof window === 'undefined') return null
+
+    const category = expandedCategory ? allCategories.find(c => c.id === expandedCategory) : null
+    const isTeamCategory = category?.id === 'team'
+
+    const dropdown = (
+      <div
+        ref={dropdownRef}
+        className="fixed min-w-[240px] max-w-[400px] rounded-2xl shadow-lg overflow-hidden z-[100] backdrop-blur-md"
+        style={{
+          top: `${dropdownPosition.top}px`,
+          left: `${dropdownPosition.left}px`,
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 248, 246, 0.95) 100%)',
+          border: '1px solid rgba(161, 151, 129, 0.2)'
+        }}
+      >
+        {/* Category list view */}
+        {!expandedCategory && (
+          <div className="py-1">
+            {allCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryClick(cat.id)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: cat.color || "#A19781" }}
+                  />
+                  <span className="text-sm font-medium text-dune">{cat.displayName}</span>
+                </div>
+                <span className="text-xs text-sage/60">{cat.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Options view */}
+        {expandedCategory && category && (
+          <div className="py-1">
+            {/* Back button */}
+            <button
+              onClick={() => setExpandedCategory(null)}
+              className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors border-b border-sage/10"
+            >
+              <span className="text-sm text-sage">←</span>
+              <span className="text-sm font-semibold text-dune">{category.displayName}</span>
+            </button>
+
+            {/* Options list */}
+            {category.options.map((option: any) => {
+              const isSelected = isTeamCategory
+                ? selectedTeamMemberIds.includes(option.id)
+                : selectedTagIds.includes(option.id)
+
+              return (
+                <button
+                  key={option.id}
+                  onClick={() => handleOptionClick(category.id, option.id)}
+                  className={clsx(
+                    "w-full flex items-center gap-2 px-4 py-2 text-left transition-colors",
+                    isSelected ? "bg-dusty-rose/10" : "hover:bg-warm-sand/50"
+                  )}
+                >
+                  {/* Avatar for team members */}
+                  {isTeamCategory && option.imageUrl && (
+                    <div className="w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
+                      <img
+                        src={option.imageUrl}
+                        alt={option.displayName}
+                        className="w-full h-full object-cover"
+                        style={
+                          option.cropCloseUpCircle
+                            ? {
+                                objectPosition: `${option.cropCloseUpCircle.x}% ${option.cropCloseUpCircle.y}%`,
+                                transform: `scale(${option.cropCloseUpCircle.scale})`
+                              }
+                            : {
+                                objectPosition: 'center 25%',
+                                transform: 'scale(2)'
+                              }
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* Name */}
+                  <span className={clsx(
+                    "text-sm flex-1",
+                    isSelected ? "text-dusty-rose font-medium" : "text-dune"
+                  )}>
+                    {option.displayName}
+                  </span>
+
+                  {/* Count */}
+                  <span className="text-xs text-sage/60">{option.count}</span>
+
+                  {/* Selected indicator */}
+                  {isSelected && (
+                    <div className="w-2 h-2 rounded-full bg-dusty-rose flex-shrink-0" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+
+    return createPortal(dropdown, document.body)
   }
 
-  // Show categories with transforming bullet to plus
   return (
-    <div className="filter-selector flex items-start gap-2">
-      {allCategories.map((category) => {
-        const isHovered = hoveredCategory === category.id
-
-        return (
-          <button
-            key={category.id}
-            className={clsx(
-              "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
-              baseTextColor,
-              isHovered && !isTouchDevice ? activeBg : "transparent",
-              "border",
-              isLightbox ? "border-white/20" : "border-sage/20"
-            )}
-            onMouseEnter={() => handleMouseEnter(category.id)}
-            onMouseLeave={handleMouseLeave}
-            onClick={(e) => handleCategoryClick(category.id, e)}
-          >
-            {/* Count badge - enhanced visual style */}
-            <div
-              className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-              style={{
-                backgroundColor: isHovered
-                  ? (category.color || "#A19781")
-                  : isLightbox ? 'rgba(255, 255, 255, 0.1)' : 'rgba(138, 124, 105, 0.05)',
-                border: `2px solid ${category.color || "#A19781"}`,
-                color: isHovered
-                  ? '#F2EDE5'
-                  : (isLightbox ? '#F2EDE5' : (category.color || "#A19781")),
-                boxShadow: isHovered ? '0 2px 4px rgba(0,0,0,0.15)' : 'none',
-                transform: isHovered ? 'scale(1.1)' : 'scale(1)'
-              }}
-            >
-              {category.count || 0}
-            </div>
-            <span>{category.displayName}</span>
-          </button>
-        )
-      })}
-
-      {/* Close button */}
+    <>
       <button
-        onClick={(e) => {
-          e.stopPropagation()
-          setIsOpen(false)
-          setExpandedCategory(null)
-        }}
+        ref={buttonRef}
+        onClick={() => setIsOpen(!isOpen)}
         className={clsx(
-          "p-1.5 rounded-full transition-all",
-          baseTextColor,
-          hoverBg,
-          "border",
-          isLightbox ? "border-white/20" : "border-sage/20"
+          "flex items-center rounded-full transition-all",
+          "gap-1 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide leading-none",
+          "h-[26px]", // Match chip height
+          isLightbox
+            ? "bg-sage/20 text-cream border border-sage/30"
+            : "bg-sage/20 text-sage border border-sage/30 hover:bg-sage/30"
         )}
-        aria-label="Close filters"
+        style={{ minHeight: '26px', maxHeight: '26px' }}
       >
-        <X className="w-4 h-4" />
+        <Plus className="w-3 h-3 flex-shrink-0" />
+        <span className="whitespace-nowrap">Filter</span>
       </button>
-    </div>
+      <DropdownMenu />
+    </>
   )
 }

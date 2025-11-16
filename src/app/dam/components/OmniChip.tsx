@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { X, Sparkles, Layers, MousePointer, Trash2 } from "lucide-react"
+import { X, Sparkles, Layers, MousePointer, Trash2, Filter } from "lucide-react"
 import clsx from "clsx"
 
 export type ChipVariant =
@@ -82,6 +82,7 @@ export function OmniChip({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const chipRef = useRef<HTMLDivElement>(null)
   const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Update dropdown position when chip position changes
   useEffect(() => {
@@ -110,21 +111,41 @@ export function OmniChip({
     }
   }, [showDropdown])
 
-  // Cleanup pending timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (pendingTimeoutRef.current) {
         clearTimeout(pendingTimeoutRef.current)
       }
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current)
+      }
     }
   }, [])
+
+  // Helper functions for delayed dropdown close
+  const scheduleClose = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      setShowDropdown(false)
+    }, 150) // 150ms delay gives user time to move mouse to dropdown
+  }
+
+  const cancelClose = () => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+  }
 
   // Build default actions based on chip type
   const getDefaultActions = (): ChipAction[] => {
     const defaultActions: ChipAction[] = []
 
-    // Group By first
-    if (onCategoryClick && categoryName) {
+    // Group By action (for tag chips)
+    if (onCategoryClick && categoryName && variant !== "group-by") {
       defaultActions.push({
         label: `Group by ${categoryDisplayName}`,
         icon: <Layers className="w-3.5 h-3.5" />,
@@ -132,7 +153,7 @@ export function OmniChip({
       })
     }
 
-    // Unselect second
+    // Unselect action (for tag-existing chips)
     if (onUnselectAssets) {
       defaultActions.push({
         label: "Unselect these assets",
@@ -141,13 +162,25 @@ export function OmniChip({
       })
     }
 
-    // Remove last (danger action)
-    if (variant === "tag-existing" && onRemove) {
+    // Remove action (context-dependent)
+    if (onRemove) {
+      let removeLabel = "Remove"
+
+      if (variant === "tag-existing" && count) {
+        removeLabel = `Remove from ${count} ${count === 1 ? 'asset' : 'assets'}`
+      } else if (variant === "filter") {
+        removeLabel = "Remove filter"
+      } else if (variant === "group-by") {
+        removeLabel = "Remove grouping"
+      } else if (variant === "tag-new") {
+        removeLabel = "Remove tag"
+      }
+
       defaultActions.push({
-        label: `Remove from ${count} ${count === 1 ? 'asset' : 'assets'}`,
+        label: removeLabel,
         icon: <Trash2 className="w-3.5 h-3.5" />,
         onClick: onRemove,
-        variant: "danger"
+        variant: variant === "tag-existing" ? "danger" : "default"
       })
     }
 
@@ -157,7 +190,7 @@ export function OmniChip({
   const allActions = actions || getDefaultActions()
   const hasActions = allActions.length > 0
 
-  // Command Launcher variant
+  // Command Launcher variant - unique design, no dropdown
   if (variant === "command-launcher") {
     return (
       <button
@@ -180,33 +213,6 @@ export function OmniChip({
     )
   }
 
-  // Group By variant
-  if (variant === "group-by") {
-    return (
-      <div className={clsx(
-        "flex items-center gap-1.5 rounded-full transition-all",
-        isMobile ? "px-2.5 py-1" : "px-3 py-1.5",
-        isSelected ? "bg-sage/30" : "bg-sage/20"
-      )}>
-        <span className={clsx(
-          "font-semibold uppercase",
-          isMobile ? "text-[10px]" : "text-xs",
-          isSelected ? "text-dune" : "text-sage"
-        )}>
-          {categoryDisplayName}
-        </span>
-        {onRemove && (
-          <button
-            onClick={onRemove}
-            className="p-0.5 hover:bg-sage/20 rounded-full transition-colors"
-          >
-            <X className={clsx("text-sage", isMobile ? "w-2.5 h-2.5" : "w-3 h-3")} />
-          </button>
-        )}
-      </div>
-    )
-  }
-
   // Dropdown Menu Component
   const DropdownMenu = () => {
     if (!hasActions || !showDropdown || typeof window === 'undefined') return null
@@ -221,8 +227,8 @@ export function OmniChip({
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 248, 246, 0.95) 100%)',
           border: '1px solid rgba(161, 151, 129, 0.2)'
         }}
-        onMouseEnter={() => !isMobile && setShowDropdown(true)}
-        onMouseLeave={() => !isMobile && setShowDropdown(false)}
+        onMouseEnter={() => !isMobile && cancelClose()}
+        onMouseLeave={() => !isMobile && scheduleClose()}
         onClick={(e) => e.stopPropagation()}
       >
         {allActions.map((action, index) => {
@@ -277,17 +283,12 @@ export function OmniChip({
               } : undefined}
             >
               {action.icon && (
-                <span className={clsx(
-                  "flex-shrink-0 transition-transform group-hover:scale-110",
-                  isPendingThis
-                    ? "text-cream"
-                    : isDanger ? "text-dusty-rose" : "text-sage/70"
-                )}>
+                <span className="flex-shrink-0">
                   {action.icon}
                 </span>
               )}
-              <span className="whitespace-nowrap">
-                {isPendingThis ? `Confirm ${action.label.toLowerCase()}?` : action.label}
+              <span className="flex-1">
+                {isPendingThis ? "Confirm..." : action.label}
               </span>
             </button>
           )
@@ -298,228 +299,146 @@ export function OmniChip({
     return createPortal(dropdown, document.body)
   }
 
-  // Tag Existing variant (with count)
-  if (variant === "tag-existing") {
-    return (
-      <>
+  // UNIFIED CHIP DESIGN - All variants use this base structure
+  // Differences are only in visual styling (border, background intensity, etc.)
+
+  const getChipStyles = () => {
+    switch (variant) {
+      case "group-by":
+        return {
+          wrapper: "bg-sage/20 border border-sage/30",
+          showCount: false,
+          showBorder: false
+        }
+      case "tag-new":
+        return {
+          wrapper: "border-2 border-cream/40 shadow-md",
+          showCount: false,
+          showBorder: false
+        }
+      case "filter":
+        return {
+          wrapper: "border border-cream/20 shadow-sm hover:shadow-md",
+          showCount: false,
+          showBorder: false
+        }
+      case "tag-existing":
+      default:
+        return {
+          wrapper: "shadow-sm",
+          showCount: true,
+          showBorder: false
+        }
+    }
+  }
+
+  const styles = getChipStyles()
+
+  return (
+    <>
+      <div
+        ref={chipRef}
+        className="relative"
+        onMouseEnter={() => {
+          if (!isMobile && hasActions) {
+            cancelClose()
+            setShowDropdown(true)
+          }
+        }}
+        onMouseLeave={() => !isMobile && scheduleClose()}
+        onClick={() => {
+          if (onClick) {
+            onClick()
+          } else if (isMobile && hasActions) {
+            setShowDropdown(!showDropdown)
+          }
+        }}
+      >
         <div
-          ref={chipRef}
-          className="relative"
-          onMouseEnter={() => !isMobile && hasActions && setShowDropdown(true)}
-          onMouseLeave={() => !isMobile && setShowDropdown(false)}
-          onClick={() => isMobile && hasActions && setShowDropdown(!showDropdown)}
+          className={clsx(
+            "flex items-center gap-0 rounded-full overflow-hidden transition-all",
+            isPending && "candy-cane-effect",
+            hasActions && "cursor-pointer",
+            styles.wrapper
+          )}
+          style={{
+            background: variant === "group-by" ? undefined : color,
+            minHeight: 'auto',
+            height: 'auto'
+          }}
         >
-          <div
-            className={clsx(
-              "flex items-center gap-0 rounded-full overflow-hidden shadow-sm transition-all",
-              isPending && "candy-cane-effect",
-              hasActions && "cursor-pointer"
+          <div className={clsx(
+            "flex items-center",
+            isMobile ? "gap-1 px-2 py-1" : "gap-1.5 px-2.5 py-1"
+          )}>
+            {/* Count badge (for tag-existing) */}
+            {styles.showCount && count !== undefined && (
+              <div className="flex items-center gap-0.5 px-1 py-0.5">
+                <span className="text-[10px] font-bold text-cream">{count}</span>
+              </div>
             )}
-            style={{
-              background: color,
-              minHeight: 'auto',
-              height: 'auto'
-            }}
-            onClick={(e) => !hasActions && e.stopPropagation()}
-          >
-        <div className={clsx(
-          "flex items-center",
-          isMobile ? "gap-1 px-2 py-1" : "gap-1.5 px-2.5 py-1"
-        )}>
-          <div className="flex items-center gap-0.5 px-1 py-0.5">
-            <span className="text-[10px] font-bold text-cream">{count}</span>
+
+            {/* Avatar/Image */}
+            {imageUrl && (
+              <div className={clsx(
+                "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
+                isMobile ? "w-4 h-4" : "w-5 h-5"
+              )}>
+                <img
+                  src={imageUrl}
+                  alt={optionDisplayName}
+                  className="w-full h-full object-cover"
+                  style={
+                    imageCrop
+                      ? {
+                          objectPosition: `${imageCrop.x}% ${imageCrop.y}%`,
+                          transform: `scale(${imageCrop.scale})`
+                        }
+                      : {
+                          objectPosition: 'center 25%',
+                          transform: 'scale(2)'
+                        }
+                  }
+                />
+              </div>
+            )}
+
+            {/* Category (clickable for group-by if enabled) */}
+            {categoryDisplayName && (
+              <>
+                <span className={clsx(
+                  "font-semibold uppercase",
+                  variant === "group-by" ? "text-sage" : "text-cream",
+                  isMobile ? "text-[10px]" : "text-xs"
+                )}>
+                  {categoryDisplayName}
+                </span>
+
+                {optionDisplayName && (
+                  <>
+                    <span className={clsx(
+                      variant === "group-by" ? "text-sage/60" : "text-cream/60",
+                      isMobile ? "text-[10px]" : "text-xs"
+                    )}>›</span>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* Option/Value */}
+            {optionDisplayName && (
+              <span className={clsx(
+                "font-medium",
+                variant === "group-by" ? "text-dune" : "text-cream",
+                isMobile ? "text-xs" : "text-sm"
+              )}>
+                {optionDisplayName}
+              </span>
+            )}
           </div>
-
-          {imageUrl && (
-            <div className={clsx(
-              "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
-              isMobile ? "w-4 h-4" : "w-5 h-5"
-            )}>
-              <img
-                src={imageUrl}
-                alt={optionDisplayName}
-                className="w-full h-full object-cover"
-                style={
-                  imageCrop
-                    ? {
-                        objectPosition: `${imageCrop.x}% ${imageCrop.y}%`,
-                        transform: `scale(${imageCrop.scale})`
-                      }
-                    : {
-                        objectPosition: 'center 25%',
-                        transform: 'scale(2)'
-                      }
-                }
-              />
-            </div>
-          )}
-
-          <span className={clsx(
-            "font-semibold text-cream uppercase",
-            isMobile ? "text-[10px]" : "text-xs"
-          )}>
-            {categoryDisplayName}
-          </span>
-
-          <span className={clsx("text-cream/60", isMobile ? "text-[10px]" : "text-xs")}>›</span>
-          <span className={clsx("text-cream font-medium", isMobile ? "text-xs" : "text-sm")}>
-            {optionDisplayName}
-          </span>
         </div>
-        </div>
-        </div>
-        <DropdownMenu />
-      </>
-    )
-  }
-
-  // Tag New variant (to be applied)
-  if (variant === "tag-new") {
-    return (
-      <div
-        className={clsx(
-          "flex items-center gap-0 rounded-full overflow-hidden shadow-md border-2 border-cream/40 transition-all",
-          isMobile ? "" : ""
-        )}
-        style={{
-          background: color
-        }}
-      >
-        <div className={clsx(
-          "flex items-center",
-          isMobile ? "gap-1.5 px-2.5 py-1" : "gap-2 px-3 py-1.5"
-        )}>
-          {imageUrl && (
-            <div className={clsx(
-              "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
-              isMobile ? "w-4 h-4" : "w-5 h-5"
-            )}>
-              <img
-                src={imageUrl}
-                alt={optionDisplayName}
-                className="w-full h-full object-cover"
-                style={
-                  imageCrop
-                    ? {
-                        objectPosition: `${imageCrop.x}% ${imageCrop.y}%`,
-                        transform: `scale(${imageCrop.scale})`
-                      }
-                    : {
-                        objectPosition: 'center 25%',
-                        transform: 'scale(2)'
-                      }
-                }
-              />
-            </div>
-          )}
-
-          {onCategoryClick ? (
-            <button
-              onClick={onCategoryClick}
-              disabled={isDisabled}
-              className={clsx(
-                "font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors",
-                isMobile ? "text-[10px]" : "text-xs",
-                isDisabled && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              {categoryDisplayName}
-            </button>
-          ) : (
-            <span className={clsx(
-              "font-semibold text-cream uppercase tracking-wide",
-              isMobile ? "text-[10px]" : "text-xs"
-            )}>
-              {categoryDisplayName}
-            </span>
-          )}
-
-          <span className={clsx("text-cream/70", isMobile ? "text-[10px]" : "text-xs")}>›</span>
-          <span className={clsx("text-cream font-medium", isMobile ? "text-xs" : "text-sm")}>
-            {optionDisplayName}
-          </span>
-        </div>
-        {onRemove && (
-          <button
-            onClick={onRemove}
-            className={clsx(
-              "hover:bg-black/10 transition-colors",
-              isMobile ? "px-2 py-1" : "px-2.5 py-1.5"
-            )}
-          >
-            <X className={clsx("text-cream", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
-          </button>
-        )}
       </div>
-    )
-  }
-
-  // Filter variant
-  if (variant === "filter") {
-    return (
-      <div
-        className={clsx(
-          "flex items-center gap-0 overflow-hidden transition-all rounded-full shadow-sm hover:shadow-md",
-          isMobile ? "" : ""
-        )}
-        style={{
-          backgroundColor: color,
-          border: `1px solid ${color}`
-        }}
-      >
-        <div className={clsx(
-          "flex items-center",
-          isMobile ? "gap-1 px-2 py-1" : "gap-1.5 px-2.5 py-1"
-        )}>
-          {imageUrl && (
-            <div className={clsx(
-              "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
-              isMobile ? "w-4 h-4" : "w-5 h-5"
-            )}>
-              <img
-                src={imageUrl}
-                alt={optionDisplayName}
-                className="w-full h-full object-cover"
-                style={
-                  imageCrop
-                    ? {
-                        objectPosition: `${imageCrop.x}% ${imageCrop.y}%`,
-                        transform: `scale(${imageCrop.scale})`
-                      }
-                    : {
-                        objectPosition: 'center 25%',
-                        transform: 'scale(2)'
-                      }
-                }
-              />
-            </div>
-          )}
-          <span className={clsx(
-            "font-semibold text-cream/90 uppercase",
-            isMobile ? "text-[10px]" : "text-xs"
-          )}>
-            {categoryDisplayName}
-          </span>
-          <span className={clsx("text-cream/60", isMobile ? "text-[10px]" : "text-xs")}>›</span>
-          <span className={clsx("text-cream font-medium", isMobile ? "text-xs" : "text-sm")}>
-            {optionDisplayName}
-          </span>
-        </div>
-        {onRemove && (
-          <button
-            onClick={onRemove}
-            className={clsx(
-              "hover:bg-black/15 transition-colors",
-              isMobile ? "px-1.5 py-1" : "px-2 py-1"
-            )}
-          >
-            <X className={clsx("text-cream/80 hover:text-cream", isMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
-          </button>
-        )}
-      </div>
-    )
-  }
-
-  // Fallback for custom content
-  return <div onClick={onClick}>{children}</div>
+      <DropdownMenu />
+    </>
+  )
 }

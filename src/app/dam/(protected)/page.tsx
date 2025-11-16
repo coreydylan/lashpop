@@ -12,6 +12,7 @@ import { Upload as UploadIcon, Users, X, Sparkles, LogOut } from "lucide-react"
 import Link from "next/link"
 import { AssetGrid } from "../components/AssetGrid"
 import { FilterSelector } from "../components/FilterSelector"
+import { GroupBySelector } from "../components/GroupBySelector"
 import { TagSelector } from "../components/TagSelector"
 import { PhotoLightbox } from "../components/PhotoLightbox"
 import { OmniBar } from "../components/OmniBar"
@@ -111,6 +112,7 @@ export default function DAMPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [tagCategories, setTagCategories] = useState<any[]>([])
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
+  const [escConfirmationActive, setEscConfirmationActive] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   // Get from settings hook instead of useState
@@ -169,12 +171,6 @@ export default function DAMPage() {
   // Omni-bar state (used for both filtering and bulk tagging)
   const [omniTeamMemberId, setOmniTeamMemberId] = useState<string | undefined>()
   const [omniTags, setOmniTags] = useState<any[]>([])
-
-  // Compute existing tags automatically whenever selectedAssets or assets change
-  const existingTags = useMemo(() => {
-    if (selectedAssets.length === 0) return new Map()
-    return computeExistingTags(selectedAssets, assets)
-  }, [selectedAssets, assets, computeExistingTags])
 
   // Grid view state from settings
   const gridViewMode = settings.gridViewMode
@@ -576,6 +572,12 @@ export default function DAMPage() {
     return tagCounts
   }, [])
 
+  // Compute existing tags automatically whenever selectedAssets or assets change
+  const existingTags = useMemo(() => {
+    if (selectedAssets.length === 0) return new Map()
+    return computeExistingTags(selectedAssets, assets)
+  }, [selectedAssets, assets, computeExistingTags])
+
   const applyTagsToAssetIds = useCallback(async (targetAssetIds: string[], tagsToApply: any[]) => {
     const normalizedTags = normalizeExclusiveTags(tagsToApply)
     if (targetAssetIds.length === 0 || normalizedTags.length === 0) return
@@ -691,7 +693,52 @@ export default function DAMPage() {
   const clearSelection = useCallback(() => {
     setSelectedAssets([])
     setOmniTags([])
+    setEscConfirmationActive(false)
   }, [])
+
+  // ESC key handler for clearing selection
+  const handleEscPress = useCallback(() => {
+    if (selectedAssets.length === 0) return
+
+    if (escConfirmationActive) {
+      // Second press - clear selection
+      clearSelection()
+    } else {
+      // First press - show confirmation
+      setEscConfirmationActive(true)
+
+      // Auto-cancel confirmation after 3 seconds
+      setTimeout(() => {
+        setEscConfirmationActive(false)
+      }, 3000)
+    }
+  }, [selectedAssets.length, escConfirmationActive, clearSelection])
+
+  // Reset ESC confirmation when selection changes
+  useEffect(() => {
+    if (selectedAssets.length === 0) {
+      setEscConfirmationActive(false)
+    }
+  }, [selectedAssets.length])
+
+  // Listen for ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedAssets.length > 0) {
+        // Don't trigger if user is typing in an input
+        if (document.activeElement?.tagName === 'INPUT' ||
+            document.activeElement?.tagName === 'TEXTAREA') {
+          return
+        }
+
+        e.preventDefault()
+        handleEscPress()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedAssets.length, handleEscPress])
 
   const toggleGridView = useCallback(() => {
     setGridViewMode(gridViewMode === "square" ? "aspect" : "square")
@@ -1461,9 +1508,6 @@ export default function DAMPage() {
 
     return (
       <div className="flex items-center gap-2">
-        <span className={`text-xs font-bold ${selectedAssets.length > 0 ? 'text-cream' : 'text-sage'} uppercase`}>
-          Group By:
-        </span>
         {groupByTags.map((categoryName, index) => (
           <OmniChip
             key={categoryName}
@@ -1479,24 +1523,9 @@ export default function DAMPage() {
   }
 
   const renderChips = (): ReactNode => {
-    // Always show Group By chips first if any
-    const groupByContent = renderGroupByChips()
-    const commandLauncher = (
-      <div key="command-launcher" data-tutorial="command-button">
-        <OmniChip
-          variant="command-launcher"
-          isSelected={selectedAssets.length > 0}
-          isMobile={isMobile}
-          onClick={() => openCommandPalette("")}
-        />
-      </div>
-    )
-
     if (selectedAssets.length > 0) {
       return (
         <>
-          {commandLauncher}
-          {groupByContent}
           {/* Selection Mode: Show existing tags with counts */}
           {Array.from(existingTags.entries()).map(([tagId, count]) => {
             const isTeamMemberTag = tagId.startsWith('team-')
@@ -1609,13 +1638,7 @@ export default function DAMPage() {
         </>
       )
     } else if (activeLightboxAsset) {
-      return (
-        <>
-          {commandLauncher}
-          {groupByContent}
-          {renderLightboxTags()}
-        </>
-      )
+      return renderLightboxTags()
     } else {
       /* Filter Mode */
       // Convert activeFilters to selected IDs format
@@ -1628,35 +1651,27 @@ export default function DAMPage() {
 
       return (
         <>
-          {commandLauncher}
-          {groupByContent}
           {/* Render active filter chips */}
           {activeFilters.map((filter) => (
             <OmniChip
               key={`${filter.categoryId}-${filter.optionId}`}
               variant="filter"
+              categoryName={filter.categoryName}
               categoryDisplayName={filter.categoryDisplayName}
               optionDisplayName={filter.optionDisplayName}
               color={filter.categoryColor || "#A19781"}
               imageUrl={filter.imageUrl}
+              imageCrop={filter.categoryName === 'team' ? teamMembers.find(m => m.id === filter.optionId)?.cropCloseUpCircle : undefined}
               isMobile={isMobile}
               onRemove={() => {
                 setActiveFilters(activeFilters.filter(
                   f => !(f.categoryId === filter.categoryId && f.optionId === filter.optionId)
                 ))
               }}
+              onCategoryClick={() => handleGroupBy(filter.categoryName)}
+              isDisabled={groupByTags.includes(filter.categoryName) || groupByTags.length >= 2}
             />
           ))}
-          <FilterSelector
-            categories={tagCategories}
-            teamMembers={teamMembers}
-            selectedTagIds={selectedTagIds}
-            selectedTeamMemberIds={selectedTeamMemberIds}
-            assets={filterableAssets}
-            onTagToggle={handleTagFilterToggle}
-            onTeamMemberToggle={handleTeamFilterToggle}
-            isLightbox={false}
-          />
         </>
       )
     }
@@ -1850,6 +1865,7 @@ export default function DAMPage() {
       }}
       omniBarProps={{
         mode: "page",  // Use exact same mode as grid view
+        groupByContent: renderGroupByChips(),
         chipsContent: renderChips(),
         selectedCount: selectedAssets.length,
         assetsCount: assets.length,
@@ -1861,6 +1877,8 @@ export default function DAMPage() {
         onToggleGridView: toggleGridView,
         onOpenCardSettings: openCardSettings,
         showGridToggle: true,  // Show grid toggle like in main view
+        escConfirmationActive,
+        onEscClick: handleEscPress,
         counterSlot:
           assets.length > 0 && activeLightboxIndex >= 0
             ? `${Math.min(activeLightboxIndex + 1, assets.length)} / ${assets.length}`
@@ -1923,22 +1941,61 @@ export default function DAMPage() {
         {/* Sticky Omni Control Bar */}
         <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm select-none">
           <div className="max-w-7xl mx-auto px-6 pt-4">
-            {/* Collection Selector */}
-            {collections.length > 0 && (
-              <div className="mb-4">
-                <CollectionSelector
-                  collections={collections}
-                  activeCollectionId={activeCollectionId}
-                  onSelectCollection={setActiveCollectionId}
-                  onCreateCollection={() => setIsCollectionManagerOpen(true)}
+            {/* Collection Selector Row with Command Palette */}
+            <div className={clsx(
+              "mb-4 flex items-center gap-4",
+              collections.length > 0 ? "justify-between" : "justify-end"
+            )}>
+              {/* Collection Selector on the left */}
+              {collections.length > 0 && (
+                <div className="flex-1">
+                  <CollectionSelector
+                    collections={collections}
+                    activeCollectionId={activeCollectionId}
+                    onSelectCollection={setActiveCollectionId}
+                    onCreateCollection={() => setIsCollectionManagerOpen(true)}
+                  />
+                </div>
+              )}
+
+              {/* Command Palette Button on the right */}
+              <div data-tutorial="command-button" className="flex-shrink-0">
+                <OmniChip
+                  variant="command-launcher"
+                  isSelected={selectedAssets.length > 0}
+                  isMobile={isMobile}
+                  onClick={() => openCommandPalette("")}
                 />
               </div>
-            )}
+            </div>
 
             {/* Omni Bar */}
             <div>
               <OmniBar
                 mode="page"
+                groupByButton={selectedAssets.length === 0 ? (
+                  <GroupBySelector
+                    categories={tagCategories}
+                    hasTeamMembers={teamMembers.length > 0}
+                    selectedCategories={groupByTags}
+                    onCategoryToggle={handleGroupBy}
+                    isLightbox={false}
+                    maxSelections={2}
+                  />
+                ) : undefined}
+                filterButton={selectedAssets.length === 0 ? (
+                  <FilterSelector
+                    categories={tagCategories}
+                    teamMembers={teamMembers}
+                    selectedTagIds={activeFilters.filter(f => f.categoryName !== 'team').map(f => f.optionId)}
+                    selectedTeamMemberIds={activeFilters.filter(f => f.categoryName === 'team').map(f => f.optionId)}
+                    assets={filterableAssets}
+                    onTagToggle={handleTagFilterToggle}
+                    onTeamMemberToggle={handleTeamFilterToggle}
+                    isLightbox={false}
+                  />
+                ) : undefined}
+                groupByContent={renderGroupByChips()}
                 chipsContent={renderChips()}
                 selectedCount={selectedAssets.length}
                 assetsCount={assets.length}
@@ -1949,6 +2006,8 @@ export default function DAMPage() {
                 gridViewMode={gridViewMode}
                 onToggleGridView={toggleGridView}
                 onOpenCardSettings={openCardSettings}
+                escConfirmationActive={escConfirmationActive}
+                onEscClick={handleEscPress}
               />
             </div>
           </div>

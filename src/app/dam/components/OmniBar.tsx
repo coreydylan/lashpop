@@ -6,7 +6,10 @@ import { X, Grid3x3, LayoutGrid, CreditCard } from "lucide-react"
 
 export interface OmniBarProps {
   mode: "page" | "overlay"
-  chipsContent?: ReactNode
+  groupByButton?: ReactNode   // Group By button (left side)
+  filterButton?: ReactNode    // Filter button (left side)
+  groupByContent?: ReactNode  // Group By chips (top row)
+  chipsContent?: ReactNode    // Filter/Tag chips (second row)
   tagSelectorContent?: ReactNode  // Separate content for tag selector
   selectedCount: number
   assetsCount: number
@@ -19,10 +22,15 @@ export interface OmniBarProps {
   showGridToggle?: boolean
   counterSlot?: ReactNode
   onOpenCardSettings?: () => void
+  escConfirmationActive?: boolean
+  onEscClick?: () => void
 }
 
 export function OmniBar({
   mode,
+  groupByButton,
+  filterButton,
+  groupByContent,
   chipsContent,
   tagSelectorContent,
   selectedCount,
@@ -35,7 +43,9 @@ export function OmniBar({
   onToggleGridView,
   showGridToggle = true,
   counterSlot,
-  onOpenCardSettings
+  onOpenCardSettings,
+  escConfirmationActive = false,
+  onEscClick
 }: OmniBarProps) {
   const isOverlay = mode === "overlay"
 
@@ -60,18 +70,55 @@ export function OmniBar({
   const assetLabel = `asset${assetsCount !== 1 ? "s" : ""}`
   const showTotals = totalAssetsCount > assetsCount
 
+  const hasGroupBy = Boolean(groupByContent)
+  const hasChips = Boolean(chipsContent)
+  const bothActive = hasGroupBy && hasChips
+
   return (
     <div className={containerClass} data-omni-bar>
       {/* Desktop layout */}
-      <div className="hidden lg:flex items-start gap-4 px-6 py-5">
-        <div className="flex-1 min-w-0">
-          <div className={isOverlay && tagSelectorContent ? "space-y-3" : ""}>
-            <div className="flex flex-wrap items-start gap-2">
-              {chipsContent ?? null}
-            </div>
-            {isOverlay && tagSelectorContent && (
-              <div className="flex items-center gap-2">
-                {tagSelectorContent}
+      <div className="hidden lg:flex gap-4 px-6 py-5" style={{ minHeight: '60px' }}>
+        {/* Left side buttons */}
+        {(groupByButton || filterButton) && (
+          <div className={clsx(
+            "flex gap-2 flex-shrink-0",
+            bothActive ? "flex-col justify-start" : "flex-row items-center justify-center"
+          )}>
+            {groupByButton}
+            {filterButton}
+          </div>
+        )}
+
+        <div className={clsx(
+          "flex-1 min-w-0 flex",
+          bothActive ? "items-start" : "items-center"  // Vertically center if only one row active
+        )}>
+          {/* Two-row layout when both group-by and chips are active, single row otherwise */}
+          <div className={clsx(
+            "w-full",
+            bothActive && "space-y-2"
+          )}>
+            {/* Group By row (top) */}
+            {hasGroupBy && (
+              <div className="flex flex-wrap items-center gap-2">
+                {groupByContent}
+              </div>
+            )}
+
+            {/* Filter/Tag chips row (bottom) */}
+            {hasChips && (
+              <div className={clsx(
+                "flex flex-wrap gap-2",
+                isOverlay && tagSelectorContent ? "items-start" : "items-center"
+              )}>
+                <div className="flex flex-wrap items-center gap-2">
+                  {chipsContent}
+                </div>
+                {isOverlay && tagSelectorContent && (
+                  <div className="flex items-center gap-2">
+                    {tagSelectorContent}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -84,13 +131,38 @@ export function OmniBar({
                 <span className={clsx("body whitespace-nowrap font-semibold", textPrimary)}>
                   {selectedCount} selected
                 </span>
-                <button
-                  onClick={onClearSelection}
-                  className={clsx("p-1 rounded-full transition-colors", hoverClass)}
-                  aria-label="Clear selection"
-                >
-                  <X className={clsx("w-4 h-4", textPrimary)} />
-                </button>
+                {escConfirmationActive ? (
+                  <button
+                    onClick={onEscClick}
+                    className={clsx(
+                      "flex items-center gap-1.5 px-3 py-1 rounded-full transition-all font-medium text-xs",
+                      isOverlay
+                        ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
+                        : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
+                    )}
+                    aria-label="Press ESC again to deselect"
+                  >
+                    <span>Press</span>
+                    <span className="inline-flex items-center border border-current/40 rounded px-1.5 py-0.5 text-[10px] font-semibold">
+                      ESC
+                    </span>
+                    <span>again to deselect {selectedCount}</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={onEscClick || onClearSelection}
+                    className={clsx(
+                      "flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors",
+                      hoverClass
+                    )}
+                    aria-label="Clear selection (ESC)"
+                  >
+                    <span className={clsx("inline-flex items-center border border-current/40 rounded px-1.5 py-0.5 text-[10px] font-semibold", textPrimary)}>
+                      ESC
+                    </span>
+                    <X className={clsx("w-3.5 h-3.5", textPrimary)} />
+                  </button>
+                )}
               </div>
               {canApplyTags && (
                 <button
@@ -147,17 +219,41 @@ export function OmniBar({
         <div className={clsx("flex items-center justify-between", isOverlay ? "px-3" : "")}>
           {selectedCount > 0 ? (
             <>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className={clsx("text-base font-bold", textPrimary)}>
                   {selectedCount} selected
                 </span>
-                <button
-                  onClick={onClearSelection}
-                  className={clsx("p-1.5 rounded-full transition-colors", hoverClass)}
-                  aria-label="Clear selection"
-                >
-                  <X className={clsx("w-4 h-4", textPrimary)} />
-                </button>
+                {escConfirmationActive ? (
+                  <button
+                    onClick={onEscClick}
+                    className={clsx(
+                      "flex items-center gap-1 px-2 py-1 rounded-full transition-all font-medium text-xs",
+                      isOverlay
+                        ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
+                        : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
+                    )}
+                    aria-label="Press ESC again to deselect"
+                  >
+                    <span className="inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[9px] font-semibold">
+                      ESC
+                    </span>
+                    <span className="text-[11px]">again</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={onEscClick || onClearSelection}
+                    className={clsx(
+                      "flex items-center gap-1 px-1.5 py-1 rounded-full transition-colors",
+                      hoverClass
+                    )}
+                    aria-label="Clear selection (ESC)"
+                  >
+                    <span className={clsx("inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[9px] font-semibold", textPrimary)}>
+                      ESC
+                    </span>
+                    <X className={clsx("w-3.5 h-3.5", textPrimary)} />
+                  </button>
+                )}
               </div>
               {canApplyTags && (
                 <button
@@ -208,8 +304,19 @@ export function OmniBar({
           )}
         </div>
 
+        {/* Group By row (mobile) */}
+        {hasGroupBy && (
+          <div className="relative w-full overflow-hidden">
+            <div className={clsx("overflow-x-auto scrollbar-hidden", isOverlay ? "px-3" : "-mx-3 px-3")}>
+              <div className="flex flex-nowrap items-center gap-2 min-w-max pb-1">
+                {groupByContent}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Chips/Filters area - always scroll in overlay mode, wrap in normal mode */}
-        {chipsContent && (
+        {hasChips && (
           <div className="relative w-full overflow-hidden">
             {/* In overlay (lightbox), always use horizontal scroll. In normal mode, wrap if many selected */}
             {isOverlay || selectedCount <= 3 ? (

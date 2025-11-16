@@ -703,6 +703,7 @@ export function AssetGrid({
                   isDraggedOver={draggedOverAssets.has(asset.id)}
                   visibleCardTags={visibleCardTags}
                   teamMembers={teamMembers}
+                  groupByCategories={groupByCategories}
                   pendingTagRemoval={pendingTagRemoval}
                   dissipatingTags={dissipatingTags}
                   onRef={(el) => {
@@ -802,6 +803,7 @@ export function AssetGrid({
               isDraggedOver={draggedOverAssets.has(asset.id)}
               visibleCardTags={visibleCardTags}
               teamMembers={teamMembers}
+              groupByCategories={groupByCategories}
               pendingTagRemoval={pendingTagRemoval}
               dissipatingTags={dissipatingTags}
               onRef={(el) => {
@@ -840,6 +842,7 @@ interface AssetCardProps {
   isDraggedOver: boolean
   visibleCardTags?: string[]
   teamMembers?: TeamMember[]
+  groupByCategories?: string[]
   onRef?: (el: HTMLDivElement | null) => void
   pendingTagRemoval?: {
     tagId: string
@@ -863,6 +866,7 @@ function AssetCard({
   isDraggedOver,
   visibleCardTags = [],
   teamMembers = [],
+  groupByCategories = [],
   onRef,
   pendingTagRemoval = null,
   dissipatingTags = new Set()
@@ -984,21 +988,31 @@ function AssetCard({
       {/* Tags and Team Member badges */}
       {(() => {
         // Check if we should show team member
-        const showTeamMember = (visibleCardTags.length === 0 || visibleCardTags.includes('team')) && asset.teamMemberId
+        // Hide team member if we're grouping by team
+        const isGroupingByTeam = groupByCategories.includes('team')
+        const showTeamMember = !isGroupingByTeam && (visibleCardTags.length === 0 || visibleCardTags.includes('team')) && asset.teamMemberId
         const teamMember = showTeamMember ? teamMembers.find(tm => tm.id === asset.teamMemberId) : null
 
         // Filter tags based on visibleCardTags setting
         let displayedTags: typeof asset.tags = []
         if (asset.tags && asset.tags.length > 0) {
           if (visibleCardTags.length === 0) {
-            // Show all tags when array is empty
-            displayedTags = asset.tags
+            // Show all tags when array is empty, but exclude tags from grouping categories
+            displayedTags = asset.tags.filter(tag => {
+              // Hide tags that belong to categories we're grouping by
+              return !groupByCategories.includes(tag.category.name)
+            })
           } else {
             // Filter tags - show only those whose category ID is in the visible list
             // IMPORTANT: Always show collection and rating tags regardless of settings
             displayedTags = asset.tags.filter(tag => {
               // Check if tag has category and category has id
               if (!tag.category || !tag.category.id) {
+                return false
+              }
+
+              // Hide tags that belong to categories we're grouping by
+              if (groupByCategories.includes(tag.category.name)) {
                 return false
               }
 
