@@ -69,7 +69,7 @@ export function classifyIntent(query: string): IntentClassification {
 
   for (const classifier of classifiers) {
     const result = classifier(q)
-    if (result && result.confidence > 0.5) {
+    if (result && result.intentConfidence > 0.5) {
       return result
     }
   }
