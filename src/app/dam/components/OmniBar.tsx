@@ -193,36 +193,36 @@ export function OmniBar({
                   </span>
                 )}
               </div>
-              {showThumbnailSlider && onThumbnailSizeChange && (
-                <div className="flex items-center border-l border-sage/20 pl-3">
+              <div className="flex items-center gap-2">
+                {showThumbnailSlider && onThumbnailSizeChange && (
                   <ThumbnailSizeSlider
                     value={thumbnailSize}
                     onChange={onThumbnailSizeChange}
                   />
-                </div>
-              )}
-              {showGridToggle && (
-                <button
-                  onClick={onToggleGridView}
-                  className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
-                  title={gridViewMode === "square" ? "Switch to aspect ratio view" : "Switch to square grid view"}
-                >
-                  {gridViewMode === "square" ? (
-                    <LayoutGrid className={clsx("w-4 h-4", iconColor)} />
-                  ) : (
-                    <Grid3x3 className={clsx("w-4 h-4", iconColor)} />
-                  )}
-                </button>
-              )}
-              {onOpenCardSettings && (
-                <button
-                  onClick={onOpenCardSettings}
-                  className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
-                  title="Customize card display"
-                >
-                  <CreditCard className={clsx("w-4 h-4", iconColor)} />
-                </button>
-              )}
+                )}
+                {showGridToggle && (
+                  <button
+                    onClick={onToggleGridView}
+                    className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
+                    title={gridViewMode === "square" ? "Switch to aspect ratio view" : "Switch to square grid view"}
+                  >
+                    {gridViewMode === "square" ? (
+                      <LayoutGrid className={clsx("w-4 h-4", iconColor)} />
+                    ) : (
+                      <Grid3x3 className={clsx("w-4 h-4", iconColor)} />
+                    )}
+                  </button>
+                )}
+                {onOpenCardSettings && (
+                  <button
+                    onClick={onOpenCardSettings}
+                    className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
+                    title="Customize card display"
+                  >
+                    <CreditCard className={clsx("w-4 h-4", iconColor)} />
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -292,6 +292,12 @@ export function OmniBar({
                 )}
               </div>
               <div className="flex items-center gap-2">
+                {showThumbnailSlider && onThumbnailSizeChange && (
+                  <ThumbnailSizeSlider
+                    value={thumbnailSize}
+                    onChange={onThumbnailSizeChange}
+                  />
+                )}
                 {showGridToggle && (
                   <button
                     onClick={onToggleGridView}
@@ -318,16 +324,6 @@ export function OmniBar({
             </>
           )}
         </div>
-
-        {/* Thumbnail size slider row (mobile) - only when no selection */}
-        {selectedCount === 0 && showThumbnailSlider && onThumbnailSizeChange && (
-          <div className={clsx("flex justify-center", isOverlay ? "px-3" : "")}>
-            <ThumbnailSizeSlider
-              value={thumbnailSize}
-              onChange={onThumbnailSizeChange}
-            />
-          </div>
-        )}
 
         {/* Group By row (mobile) */}
         {hasGroupBy && (
