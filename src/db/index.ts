@@ -31,6 +31,11 @@ import { setPhotos } from "./schema/set_photos"
 import { damUserSettings } from "./schema/dam_user_settings"
 import { damUserActions } from "./schema/dam_user_actions"
 
+// Campaign schemas
+import { campaigns } from "./schema/campaigns"
+import { campaignAssets } from "./schema/campaign_assets"
+import { campaignTemplates } from "./schema/campaign_templates"
+
 // Scrollytelling CMS schemas
 import {
   compositions,
@@ -89,6 +94,11 @@ const dbSchema = {
   setPhotos,
   damUserSettings,
   damUserActions,
+
+  // Campaign tables
+  campaigns,
+  campaignAssets,
+  campaignTemplates,
 
   // Scrollytelling CMS tables
   compositions,
@@ -187,6 +197,10 @@ export {
   setPhotos,
   damUserSettings,
   damUserActions,
+  // Campaign tables
+  campaigns,
+  campaignAssets,
+  campaignTemplates,
   // Scrollytelling CMS
   compositions,
   layers,
