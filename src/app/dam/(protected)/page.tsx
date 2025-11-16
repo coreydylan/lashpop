@@ -23,6 +23,7 @@ import { useDamSettings } from "@/hooks/useDamSettings"
 import { useDamActions } from "@/hooks/useDamActions"
 import { useDamInitialData } from "@/hooks/useDamData"
 import { useDamTutorial } from "@/contexts/DamTutorialContext"
+import { usePermissions } from "@/contexts/PermissionsContext"
 
 // Lazy load heavy components that aren't immediately visible
 const FileUploader = lazy(() => import("../components/FileUploader").then(mod => ({ default: mod.FileUploader })))
@@ -76,6 +77,9 @@ interface ActiveFilter {
 }
 
 export default function DAMPage() {
+  // Permissions hook
+  const { canUpload, canDelete, canManageCollections, hasRole } = usePermissions()
+
   // DAM Settings & Actions hooks
   const {
     settings,
@@ -1013,13 +1017,16 @@ export default function DAMPage() {
         onSelect: clearSelection
       })
 
-      items.push({
-        id: "selection-delete",
-        group: "Selection",
-        label: selectionCount === 1 ? "Delete selected photo" : "Delete selected photos",
-        description: "Double confirmation required",
-        onSelect: () => confirmDeleteAssets(selectedAssets, `${selectionCount} selected photo${selectionCount === 1 ? "" : "s"}`)
-      })
+      // Only show delete option if user has delete permission
+      if (canDelete()) {
+        items.push({
+          id: "selection-delete",
+          group: "Selection",
+          label: selectionCount === 1 ? "Delete selected photo" : "Delete selected photos",
+          description: "Double confirmation required",
+          onSelect: () => confirmDeleteAssets(selectedAssets, `${selectionCount} selected photo${selectionCount === 1 ? "" : "s"}`)
+        })
+      }
     } else if (activeLightboxAsset) {
       // ========================================
       // LIGHTBOX MODE - Single Asset Context
@@ -1129,13 +1136,16 @@ export default function DAMPage() {
       // ========================================
       // SELECTION CATEGORY (Delete)
       // ========================================
-      items.push({
-        id: "single-delete",
-        group: "Selection",
-        label: "Delete this photo",
-        description: "Double confirmation required",
-        onSelect: () => confirmDeleteAssets([activeLightboxAsset.id], `"${activeLightboxAsset.fileName}"`)
-      })
+      // Only show delete option if user has delete permission
+      if (canDelete()) {
+        items.push({
+          id: "single-delete",
+          group: "Selection",
+          label: "Delete this photo",
+          description: "Double confirmation required",
+          onSelect: () => confirmDeleteAssets([activeLightboxAsset.id], `"${activeLightboxAsset.fileName}"`)
+        })
+      }
     } else {
       // ========================================
       // NO SELECTION MODE - Filtering Focus
@@ -1363,39 +1373,42 @@ export default function DAMPage() {
     // ========================================
     // SETTINGS CATEGORY
     // ========================================
-    items.push({
-      id: "manage-tags",
-      group: "Settings",
-      label: "Manage tags & categories",
-      description: "Edit, rename, or reorganize tag system",
-      badge: "Admin",
-      onSelect: () => {
-        setIsCommandOpen(false)
-        setIsTagEditorOpen(true)
-      }
-    })
+    // Only show admin commands if user has admin role
+    if (hasRole('admin')) {
+      items.push({
+        id: "manage-tags",
+        group: "Settings",
+        label: "Manage tags & categories",
+        description: "Edit, rename, or reorganize tag system",
+        badge: "Admin",
+        onSelect: () => {
+          setIsCommandOpen(false)
+          setIsTagEditorOpen(true)
+        }
+      })
 
-    items.push({
-      id: "manage-collections",
-      group: "Settings",
-      label: "Manage collections",
-      description: "Create, rename, or reorganize collections",
-      badge: "Admin",
-      onSelect: () => {
-        setIsCommandOpen(false)
-        setIsCollectionManagerOpen(true)
-      }
-    })
+      items.push({
+        id: "manage-collections",
+        group: "Settings",
+        label: "Manage collections",
+        description: "Create, rename, or reorganize collections",
+        badge: "Admin",
+        onSelect: () => {
+          setIsCommandOpen(false)
+          setIsCollectionManagerOpen(true)
+        }
+      })
 
-    items.push({
-      id: "settings-team",
-      group: "Settings",
-      label: "Team management",
-      description: "Manage team members and photos",
-      onSelect: () => {
-        window.location.href = "/dam/team"
-      }
-    })
+      items.push({
+        id: "settings-team",
+        group: "Settings",
+        label: "Team management",
+        description: "Manage team members and photos",
+        onSelect: () => {
+          window.location.href = "/dam/team"
+        }
+      })
+    }
 
     items.push({
       id: "settings-logout",
@@ -1500,7 +1513,9 @@ export default function DAMPage() {
     toggleUploadPanel,
     selectionMode,
     selectAssetsByTag,
-    selectAssetsByTeamMember
+    selectAssetsByTeamMember,
+    canDelete,
+    hasRole
   ])
 
   const renderGroupByChips = () => {
@@ -1909,20 +1924,24 @@ export default function DAMPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setIsUploadOpen(!isUploadOpen)}
-                  className={`btn ${isUploadOpen ? 'btn-primary' : 'btn-secondary'}`}
-                >
-                  <UploadIcon className="w-5 h-5" />
-                  <span className="hidden sm:inline">Upload</span>
-                </button>
-                <Link
-                  href="/dam/team"
-                  className="btn btn-secondary"
-                >
-                  <Users className="w-5 h-5" />
-                  <span className="hidden sm:inline">Team</span>
-                </Link>
+                {canUpload() && (
+                  <button
+                    onClick={() => setIsUploadOpen(!isUploadOpen)}
+                    className={`btn ${isUploadOpen ? 'btn-primary' : 'btn-secondary'}`}
+                  >
+                    <UploadIcon className="w-5 h-5" />
+                    <span className="hidden sm:inline">Upload</span>
+                  </button>
+                )}
+                {hasRole('admin') && (
+                  <Link
+                    href="/dam/team"
+                    className="btn btn-secondary"
+                  >
+                    <Users className="w-5 h-5" />
+                    <span className="hidden sm:inline">Team</span>
+                  </Link>
+                )}
                 <button
                   onClick={async () => {
                     await fetch("/api/dam/auth/logout", { method: "POST" })

@@ -1,5 +1,6 @@
 import { pgEnum, pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core"
 import { teamMembers } from "./team_members"
+import { user } from "./auth_user"
 
 export const assetType = pgEnum("asset_type", ["image", "video"])
 export const lashColor = pgEnum("lash_color", ["brown", "black"])
@@ -30,6 +31,11 @@ export const assets = pgTable("assets", {
   // Additional metadata
   altText: text("alt_text"), // Accessibility description
   caption: text("caption"), // Optional caption/notes
+
+  // Audit tracking
+  uploadedBy: text("uploaded_by").references(() => user.id, { onDelete: "set null" }),
+  modifiedBy: text("modified_by").references(() => user.id, { onDelete: "set null" }),
+  modifiedAt: timestamp("modified_at"),
 
   // Timestamps
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),

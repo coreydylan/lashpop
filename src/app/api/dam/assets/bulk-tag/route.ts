@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { assetTags } from "@/db/schema/asset_tags"
+import { assets } from "@/db/schema/assets"
 import { tags } from "@/db/schema/tags"
-import { and, inArray } from "drizzle-orm"
+import { and, inArray, eq } from "drizzle-orm"
+import { requireAuth, requireCollectionAccess, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 // Update tags for multiple assets at once
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const user = await requireAuth()
+
     const body = await request.json()
     const { assetIds, tagIds, additive = false } = body // Arrays of asset IDs and tag IDs
 
@@ -18,6 +23,30 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb()
+
+    // Validate collection access for the tags being applied
+    if (tagIds && tagIds.length > 0) {
+      const tagMeta = await db
+        .select({
+          id: tags.id,
+          categoryId: tags.categoryId
+        })
+        .from(tags)
+        .where(inArray(tags.id, tagIds))
+
+      const categoryIds = Array.from(
+        new Set(
+          tagMeta
+            .map((tag) => tag.categoryId)
+            .filter((categoryId): categoryId is string => Boolean(categoryId))
+        )
+      )
+
+      // Check if user has edit access to all affected collections
+      for (const categoryId of categoryIds) {
+        await requireCollectionAccess(categoryId, 'edit')
+      }
+    }
 
     // If not additive, delete existing tags for these assets
     if (!additive) {
@@ -76,8 +105,26 @@ export async function POST(request: NextRequest) {
       await db.insert(assetTags).values(values).onConflictDoNothing()
     }
 
+    // Update modifiedBy and modifiedAt for all affected assets
+    const now = new Date()
+    for (const assetId of assetIds) {
+      await db
+        .update(assets)
+        .set({
+          modifiedBy: user.id,
+          modifiedAt: now
+        })
+        .where(eq(assets.id, assetId))
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Error bulk updating tags:", error)
     return NextResponse.json(
       { error: "Failed to update tags" },

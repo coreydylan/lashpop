@@ -7,6 +7,7 @@ import { getDb } from '@/db'
 import { user as userSchema } from '@/db/schema/auth_user'
 import { session as sessionSchema } from '@/db/schema/auth_session'
 import { eq, and, gt } from 'drizzle-orm'
+import type { Role } from '@/types/permissions'
 
 // This layout protects all DAM routes except login
 export default async function ProtectedLayout({ children }: { children: ReactNode }) {
@@ -24,7 +25,9 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
   const result = await db
     .select({
       userId: userSchema.id,
-      damAccess: userSchema.damAccess,
+      role: userSchema.role,
+      isActive: userSchema.isActive,
+      damAccess: userSchema.damAccess, // Legacy field for backward compatibility
       sessionExpires: sessionSchema.expiresAt
     })
     .from(sessionSchema)
@@ -44,9 +47,19 @@ export default async function ProtectedLayout({ children }: { children: ReactNod
     redirect('/dam/login')
   }
 
-  // If user doesn't have DAM access, show access denied
-  if (!session.damAccess) {
-    return <AccessDenied />
+  // Check if user account is inactive
+  if (!session.isActive) {
+    return <AccessDenied reason="inactive" />
+  }
+
+  // Check DAM access using role-based system with backward compatibility
+  // Allow access if user has a role (new system) OR has damAccess=true (legacy system)
+  const hasRole = session.role !== null && session.role !== undefined
+  const hasLegacyAccess = session.damAccess === true
+  const hasMinimumRole = hasRole && ['viewer', 'editor', 'admin', 'super_admin'].includes(session.role as string)
+
+  if (!hasMinimumRole && !hasLegacyAccess) {
+    return <AccessDenied reason="no-access" />
   }
 
   return <DAMProviders>{children}</DAMProviders>

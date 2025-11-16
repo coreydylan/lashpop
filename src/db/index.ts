@@ -6,6 +6,7 @@ import postgres from "postgres"
 import { user } from "./schema/auth_user"
 import { session } from "./schema/auth_session"
 import { verification } from "./schema/auth_verification"
+import { permissionAudit } from "./schema/permission_audit"
 
 // User profile schemas
 import { profiles } from "./schema/profiles"
@@ -65,6 +66,7 @@ const dbSchema = {
   user,
   session,
   verification,
+  permissionAudit,
 
   // Profile tables
   profiles,
@@ -165,6 +167,7 @@ export {
   user,
   session,
   verification,
+  permissionAudit,
   // Profiles
   profiles,
   vagaroSyncMappings,

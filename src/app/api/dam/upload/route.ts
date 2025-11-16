@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
 import { uploadToS3, generateAssetKey } from "@/lib/dam/s3-client"
+import { requireAuth, requirePermission, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024 // 200MB
 const ALLOWED_MIME_PREFIXES = ["image/", "video/"]
@@ -23,6 +24,10 @@ type UploadResult = UploadSuccess | UploadFailure
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication and upload permission
+    const user = await requireAuth()
+    await requirePermission('canUpload')
+
     const formData = await request.formData()
     const files = formData.getAll("files") as File[]
     const teamMemberId = formData.get("teamMemberId") as string | null
@@ -93,7 +98,8 @@ export async function POST(request: NextRequest) {
               fileSize: file.size,
               width,
               height,
-              teamMemberId: teamMemberId || undefined
+              teamMemberId: teamMemberId || undefined,
+              uploadedBy: user.id
             })
             .returning()
 
@@ -141,6 +147,12 @@ export async function POST(request: NextRequest) {
       { status }
     )
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Upload error:", error)
     return NextResponse.json(
       { error: "Failed to upload files" },

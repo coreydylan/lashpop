@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Upload, X, CheckCircle, AlertCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { TagSelector } from "./TagSelector"
+import { usePermissions } from "@/contexts/PermissionsContext"
 
 const MAX_CONCURRENT_UPLOADS = 3
 const MAX_RETRIES = 2
@@ -116,6 +117,7 @@ export function FileUploader({
   onUploadComplete,
   onUploadingIdsChange
 }: FileUploaderProps) {
+  const { canUpload } = usePermissions()
   const [files, setFiles] = useState<FileWithPreview[]>([])
   const [uploadedAssets, setUploadedAssets] = useState<UploadedAsset[]>([])
   const [batchTags, setBatchTags] = useState<any[]>([])
@@ -550,6 +552,23 @@ export function FileUploader({
     : `Uploading ${totalFiles} Photo${totalFiles === 1 ? "" : "s"} • ${
         uploadStats.uploading
       } in progress${uploadStats.pending ? ` · ${uploadStats.pending} queued` : ""}`
+
+  // Permission check
+  if (!canUpload()) {
+    return (
+      <div className="relative border-2 border-dashed arch-full overflow-hidden bg-warm-sand/10 border-sage/30 p-8">
+        <div className="flex items-center justify-center gap-4 py-2">
+          <div className="w-12 h-12 rounded-full bg-sage/20 flex items-center justify-center flex-shrink-0">
+            <Upload className="w-6 h-6 text-sage/50" />
+          </div>
+          <div>
+            <p className="body text-sage font-medium">Upload Restricted</p>
+            <p className="caption text-sage/70">You need upload permission to add files</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>

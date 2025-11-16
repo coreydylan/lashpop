@@ -3,9 +3,13 @@ import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
 import { assetServices } from "@/db/schema/asset_services"
 import { eq, inArray } from "drizzle-orm"
+import { requireAuth, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const user = await requireAuth()
+
     const body = await request.json()
     const { assetIds, tags } = body
 
@@ -19,7 +23,11 @@ export async function POST(request: NextRequest) {
     const db = getDb()
 
     // Update asset metadata (color, length, curl, team member)
-    const updateData: any = {}
+    const updateData: any = {
+      modifiedBy: user.id,
+      modifiedAt: new Date(),
+      updatedAt: new Date()
+    }
 
     if (tags.teamMemberId) {
       updateData.teamMemberId = tags.teamMemberId
@@ -41,7 +49,7 @@ export async function POST(request: NextRequest) {
     for (const assetId of assetIds) {
       await db
         .update(assets)
-        .set({ ...updateData, updatedAt: new Date() })
+        .set(updateData)
         .where(eq(assets.id, assetId))
 
       // Handle service tags (many-to-many)
@@ -68,6 +76,12 @@ export async function POST(request: NextRequest) {
       message: `Tagged ${assetIds.length} asset(s)`
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Tagging error:", error)
     return NextResponse.json(
       { error: "Failed to tag assets" },

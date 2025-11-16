@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { uploadToS3, generateAssetKey } from "@/lib/dam/s3-client"
+import { requireAuth, requirePermission, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 // Allow 5 minute execution for large uploads
 export const maxDuration = 300
@@ -12,6 +13,10 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication and upload permission
+    await requireAuth()
+    await requirePermission('canUpload')
+
     const formData = await request.formData()
     const files = formData.getAll("files") as File[]
     const teamMemberId = formData.get("teamMemberId") as string
@@ -73,6 +78,12 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Upload error:", error)
     return NextResponse.json(
       { error: "Failed to upload photos" },

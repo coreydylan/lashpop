@@ -10,11 +10,15 @@ import { assetTags } from '@/db/schema/asset_tags'
 import { tags } from '@/db/schema/tags'
 import { tagCategories } from '@/db/schema/tag_categories'
 import { eq, and, inArray } from 'drizzle-orm'
+import { requireAuth, UnauthorizedError, ForbiddenError } from '@/lib/server/dam-auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication to access DAM assets
+    await requireAuth()
+
     const db = getDb()
 
     // Find the 'website' category
@@ -132,6 +136,12 @@ export async function GET(request: NextRequest) {
       keyImage: images.find((img) => img.isKeyImage),
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error('Error fetching grid-scroller images:', error)
     return NextResponse.json(
       { error: 'Failed to fetch grid-scroller images' },

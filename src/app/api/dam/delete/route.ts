@@ -4,9 +4,14 @@ import { assets } from "@/db/schema/assets"
 import { assetServices } from "@/db/schema/asset_services"
 import { eq, inArray } from "drizzle-orm"
 import { deleteFromS3 } from "@/lib/dam/s3-client"
+import { requireAuth, requirePermission, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication and delete permission
+    const user = await requireAuth()
+    await requirePermission('canDelete')
+
     const body = await request.json()
     const { assetIds } = body
 
@@ -24,6 +29,17 @@ export async function POST(request: NextRequest) {
       .select()
       .from(assets)
       .where(inArray(assets.id, assetIds))
+
+    // Log deletion to audit trail
+    console.log('Asset deletion audit:', {
+      deletedBy: user.id,
+      deletedByEmail: user.email,
+      deletedByName: user.name,
+      assetIds,
+      assetCount: assetsToDelete.length,
+      timestamp: new Date().toISOString(),
+      assets: assetsToDelete.map(a => ({ id: a.id, fileName: a.fileName, filePath: a.filePath }))
+    })
 
     // Delete from S3
     for (const asset of assetsToDelete) {
@@ -53,6 +69,12 @@ export async function POST(request: NextRequest) {
       message: `Deleted ${assetIds.length} asset(s)`
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Delete error:", error)
     return NextResponse.json(
       { error: "Failed to delete assets" },

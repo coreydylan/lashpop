@@ -4,7 +4,10 @@
  * Core authentication table managed by BetterAuth
  */
 
-import { pgTable, text, boolean, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, pgEnum, text, boolean, timestamp, jsonb, uuid } from 'drizzle-orm/pg-core'
+import { teamMembers } from './team_members'
+
+export const userRole = pgEnum('user_role', ['super_admin', 'admin', 'editor', 'viewer'])
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -21,8 +24,14 @@ export const user = pgTable('user', {
   name: text('name'),
   image: text('image'),
 
-  // DAM Access Control
+  // DAM Access Control (Legacy - kept for backward compatibility)
   damAccess: boolean('dam_access').default(false),
+
+  // Staff Permissions System
+  role: userRole('role').default('viewer'),
+  permissions: jsonb('permissions').default('{}').notNull().$type<Record<string, any>>(),
+  teamMemberId: uuid('team_member_id').references(() => teamMembers.id, { onDelete: 'set null' }),
+  isActive: boolean('is_active').default(true).notNull(),
 
   // Timestamps
   createdAt: timestamp('created_at').defaultNow().notNull(),

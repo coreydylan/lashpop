@@ -3,9 +3,13 @@ import { getDb } from "@/db"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { tags } from "@/db/schema/tags"
 import { asc, eq } from "drizzle-orm"
+import { requireAuth, requireRole, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 export async function GET() {
   try {
+    // Require authentication to view tags
+    await requireAuth()
+
     const db = getDb()
 
     // Fetch all categories ordered by sortOrder
@@ -27,6 +31,12 @@ export async function GET() {
 
     return NextResponse.json({ categories: categoriesWithTags })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Error fetching tags:", error)
     return NextResponse.json({ error: "Failed to fetch tags" }, { status: 500 })
   }
@@ -34,6 +44,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Require admin role to manage tag categories/structure
+    await requireRole('admin')
+
     const body = await request.json()
     const { categories: updatedCategories } = body
 
@@ -198,6 +211,12 @@ export async function POST(request: NextRequest) {
       message: "Categories and tags saved successfully"
     })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Error saving tags:", error)
     return NextResponse.json(
       { error: "Failed to save tags" },

@@ -4,12 +4,16 @@ import { assets } from "@/db/schema/assets"
 import { assetTags } from "@/db/schema/asset_tags"
 import { tags } from "@/db/schema/tags"
 import { tagCategories } from "@/db/schema/tag_categories"
-import { eq, desc } from "drizzle-orm"
+import { eq, desc, inArray } from "drizzle-orm"
+import { requireAuth, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Require authentication
+    const user = await requireAuth()
+
     const { searchParams } = new URL(request.url)
     const teamMemberId = searchParams.get("teamMemberId")
 
@@ -63,6 +67,21 @@ export async function GET(request: NextRequest) {
     // Apply filters
     let filteredAssets = assetsWithTags
 
+    // Filter by allowed collections if user is not admin
+    if (user.role !== 'admin' && user.role !== 'super_admin') {
+      const allowedCollections = user.permissions.allowedCollections
+
+      if (allowedCollections && allowedCollections.length > 0 && allowedCollections[0] !== 'all') {
+        // Filter assets to only those with tags in allowed collections
+        filteredAssets = filteredAssets.filter((asset) => {
+          if (asset.tags.length === 0) return false
+          return asset.tags.some((tag: any) =>
+            allowedCollections.includes(tag.category.id)
+          )
+        })
+      }
+    }
+
     if (teamMemberId) {
       filteredAssets = filteredAssets.filter(
         (asset) => asset.teamMemberId === teamMemberId
@@ -71,6 +90,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ assets: filteredAssets })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Error fetching assets:", error)
     return NextResponse.json(
       { error: "Failed to fetch assets" },
@@ -81,6 +106,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication and upload permission
+    const user = await requireAuth()
+    await requirePermission('canUpload')
+
     const body = await request.json()
     const { fileName, filePath, fileType, mimeType, fileSize, teamMemberId } = body
 
@@ -93,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     const db = getDb()
 
-    // Insert asset metadata
+    // Insert asset metadata with uploadedBy tracking
     const [asset] = await db
       .insert(assets)
       .values({
@@ -102,12 +131,19 @@ export async function POST(request: NextRequest) {
         fileType,
         mimeType,
         fileSize,
-        teamMemberId: teamMemberId || null
+        teamMemberId: teamMemberId || null,
+        uploadedBy: user.id
       })
       .returning()
 
     return NextResponse.json({ asset })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Error saving asset metadata:", error)
     return NextResponse.json(
       { error: "Failed to save asset metadata" },

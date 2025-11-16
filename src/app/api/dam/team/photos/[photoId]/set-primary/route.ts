@@ -4,9 +4,13 @@ import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { teamMembers } from "@/db/schema/team_members"
 import { eq } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
+import { requireAuth, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 export async function POST(request: NextRequest, context: any) {
   try {
+    // Require authentication
+    await requireAuth()
+
     const body = await request.json()
     const { teamMemberId } = body
     const photoId = await getRouteParam(context, "photoId")
@@ -52,6 +56,12 @@ export async function POST(request: NextRequest, context: any) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Error setting primary:", error)
     return NextResponse.json(
       { error: "Failed to set primary photo" },

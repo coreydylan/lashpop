@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { setPhotos } from "@/db/schema/set_photos"
 import { and, eq } from "drizzle-orm"
+import { requireAuth, UnauthorizedError, ForbiddenError } from "@/lib/server/dam-auth"
 
 // Add or update a photo to a set stage
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    await requireAuth()
+
     const body = await request.json()
     const { setId, assetId, stage } = body
 
@@ -58,6 +62,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (error instanceof UnauthorizedError) {
+      return NextResponse.json({ error: error.message }, { status: 401 })
+    }
+    if (error instanceof ForbiddenError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error("Error adding photo to set:", error)
     return NextResponse.json(
       { error: "Failed to add photo to set" },
