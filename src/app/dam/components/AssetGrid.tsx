@@ -84,10 +84,13 @@ export function AssetGrid({
   const assetRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const selectedAssetSet = useMemo(() => new Set(selectedAssetIds), [selectedAssetIds])
 
-  // Pagination for performance - render assets in chunks
-  const ITEMS_PER_PAGE = 100
+  // Smart infinite scroll - render assets in chunks
+  const ITEMS_PER_PAGE = 75
+  const PRELOAD_CHUNK = 25 // Additional items to preload in background
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
   const prevAssetsLengthRef = useRef(assets.length)
+  const loadingMoreRef = useRef(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Reset visible count when assets array changes (filters applied)
   // But keep the expanded count if we're just loading more
@@ -117,9 +120,62 @@ export function AssetGrid({
 
   const hasMore = assets.length > visibleCount
 
+  // Load more items (called by intersection observer)
   const loadMore = useCallback(() => {
-    setVisibleCount(prev => Math.min(prev + ITEMS_PER_PAGE, assets.length))
-  }, [assets.length])
+    if (loadingMoreRef.current || !hasMore) return
+    loadingMoreRef.current = true
+
+    // Load next chunk
+    setVisibleCount(prev => {
+      const next = Math.min(prev + ITEMS_PER_PAGE, assets.length)
+      loadingMoreRef.current = false
+      return next
+    })
+  }, [assets.length, hasMore, ITEMS_PER_PAGE])
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || !hasMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore()
+        }
+      },
+      { rootMargin: '400px' } // Start loading 400px before reaching bottom
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [hasMore, loadMore])
+
+  // Background preloading - drizzle in images when idle
+  useEffect(() => {
+    if (!hasMore || visibleCount >= assets.length) return
+
+    // Use requestIdleCallback to preload during browser idle time
+    const preloadImages = () => {
+      const nextBatch = assets.slice(visibleCount, visibleCount + PRELOAD_CHUNK)
+      nextBatch.forEach(asset => {
+        const img = new Image()
+        img.src = asset.filePath
+      })
+    }
+
+    // Wait a bit after initial render, then preload during idle time
+    const timeoutId = setTimeout(() => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(preloadImages, { timeout: 2000 })
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(preloadImages, 1000)
+      }
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [assets, visibleCount, hasMore, PRELOAD_CHUNK])
 
   // Calculate selection box bounds
   const selectionBox = useMemo(() => {
@@ -757,15 +813,13 @@ export function AssetGrid({
         </div>
       )}
 
-      {/* Load More Button */}
+      {/* Infinite Scroll Sentinel - invisible trigger for loading more */}
       {hasMore && (
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={loadMore}
-            className="px-6 py-3 bg-dusty-rose text-white arch-full hover:bg-dusty-rose/90 transition-colors shadow-sm hover:shadow-md"
-          >
-            Load More ({assets.length - visibleCount} remaining)
-          </button>
+        <div
+          ref={sentinelRef}
+          className="h-20 flex items-center justify-center text-sage/40 text-sm"
+        >
+          Loading more...
         </div>
       )}
     </div>
@@ -915,12 +969,12 @@ function AssetCard({
         </PhotoView>
       )}
 
-      {/* Selection outline */}
+      {/* Selection outline and overlay */}
       {isSelected && (
-        <div className="absolute inset-0 rounded-[28px] ring-2 ring-dusty-rose pointer-events-none" />
-      )}
-      {isSelectionMode && isSelected && (
-        <div className="absolute inset-0 bg-dusty-rose/15 pointer-events-none" />
+        <>
+          <div className="absolute inset-0 rounded-[28px] ring-4 ring-dusty-rose pointer-events-none" />
+          <div className="absolute inset-0 bg-dusty-rose/30 pointer-events-none rounded-[28px]" />
+        </>
       )}
       {/* Drag over indicator */}
       {isDraggedOver && !isSelected && (
