@@ -15,6 +15,7 @@ import { FilterSelector } from "../components/FilterSelector"
 import { TagSelector } from "../components/TagSelector"
 import { PhotoLightbox } from "../components/PhotoLightbox"
 import { OmniBar } from "../components/OmniBar"
+import { OmniChip } from "../components/OmniChip"
 import { CollectionSelector } from "../components/CollectionSelector"
 import { TutorialWalkthrough } from "../components/TutorialWalkthrough"
 import { useDamSettings } from "@/hooks/useDamSettings"
@@ -208,6 +209,7 @@ export default function DAMPage() {
   const [commandMode, setCommandMode] = useState<'normal' | 'edit' | 'card-settings'>('normal')
   const [isTagEditorOpen, setIsTagEditorOpen] = useState(false)
   const [isCollectionManagerOpen, setIsCollectionManagerOpen] = useState(false)
+  const [selectionMode, setSelectionMode] = useState<'replace' | 'add'>('replace')
 
   // Card display settings from hook
   const visibleCardTags = settings.visibleCardTags
@@ -836,6 +838,37 @@ export default function DAMPage() {
     await handleDelete(assetIds)
   }, [handleDelete])
 
+  // Helper functions for filter-based selection
+  const selectAssetsByTag = useCallback((tagId: string, mode: 'replace' | 'add') => {
+    const matchingAssets = assets.filter(asset =>
+      asset.tags?.some(tag => tag.id === tagId)
+    )
+    const matchingIds = matchingAssets.map(a => a.id)
+
+    if (mode === 'replace') {
+      setSelectedAssets(matchingIds)
+    } else {
+      setSelectedAssets(prev => {
+        const combined = new Set([...prev, ...matchingIds])
+        return Array.from(combined)
+      })
+    }
+  }, [assets])
+
+  const selectAssetsByTeamMember = useCallback((memberId: string, mode: 'replace' | 'add') => {
+    const matchingAssets = assets.filter(asset => asset.teamMemberId === memberId)
+    const matchingIds = matchingAssets.map(a => a.id)
+
+    if (mode === 'replace') {
+      setSelectedAssets(matchingIds)
+    } else {
+      setSelectedAssets(prev => {
+        const combined = new Set([...prev, ...matchingIds])
+        return Array.from(combined)
+      })
+    }
+  }, [assets])
+
   const commandItems = useMemo<CommandItem[]>(() => {
     // Only compute items when command palette is actually open for performance
     if (!isCommandOpen) return []
@@ -1121,6 +1154,79 @@ export default function DAMPage() {
     }
 
     // ========================================
+    // SELECT BY FILTER CATEGORY
+    // ========================================
+    // Add toggle for selection mode
+    items.push({
+      id: "selection-mode-toggle",
+      group: "Select by Filter",
+      label: selectionMode === 'replace' ? "Mode: Replace Selection" : "Mode: Add to Selection",
+      description: selectionMode === 'replace'
+        ? "Click to switch to additive mode"
+        : "Click to switch to replace mode",
+      isActive: selectionMode === 'add',
+      badge: selectionMode === 'replace' ? "Replace" : "Add",
+      onSelect: () => setSelectionMode(mode => mode === 'replace' ? 'add' : 'replace')
+    })
+
+    // Add commands for selecting by tags
+    const sortedCategoriesForSelect = [...tagCategories].sort((a, b) =>
+      a.displayName.localeCompare(b.displayName)
+    )
+
+    sortedCategoriesForSelect.forEach((category) => {
+      const sortedTags = [...(category.tags || [])].sort((a: any, b: any) =>
+        a.displayName.localeCompare(b.displayName)
+      )
+
+      sortedTags.forEach((tag: any) => {
+        const matchingCount = assets.filter(asset =>
+          asset.tags?.some(t => t.id === tag.id)
+        ).length
+
+        items.push({
+          id: `select-tag-${tag.id}`,
+          group: "Select by Filter",
+          label: `${category.displayName} › ${tag.displayName}`,
+          description: selectionMode === 'replace'
+            ? `Select ${matchingCount} asset${matchingCount === 1 ? '' : 's'}`
+            : `Add ${matchingCount} asset${matchingCount === 1 ? '' : 's'} to selection`,
+          badge: category.displayName,
+          disabled: matchingCount === 0,
+          onSelect: () => {
+            selectAssetsByTag(tag.id, selectionMode)
+            setIsCommandOpen(false)
+          }
+        })
+      })
+    })
+
+    // Add commands for selecting by team member
+    const sortedTeamMembersForSelect = [...teamMembers].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    )
+
+    sortedTeamMembersForSelect.forEach((member) => {
+      const matchingCount = assets.filter(asset => asset.teamMemberId === member.id).length
+
+      items.push({
+        id: `select-team-${member.id}`,
+        group: "Select by Filter",
+        label: `Team › ${member.name}`,
+        description: selectionMode === 'replace'
+          ? `Select ${matchingCount} asset${matchingCount === 1 ? '' : 's'}`
+          : `Add ${matchingCount} asset${matchingCount === 1 ? '' : 's'} to selection`,
+        badge: "Team",
+        avatarUrl: member.imageUrl,
+        disabled: matchingCount === 0,
+        onSelect: () => {
+          selectAssetsByTeamMember(member.id, selectionMode)
+          setIsCommandOpen(false)
+        }
+      })
+    })
+
+    // ========================================
     // ORGANIZATION CATEGORY
     // ========================================
     const groupingSet = new Set(groupByTags)
@@ -1348,7 +1454,10 @@ export default function DAMPage() {
     teamMembers,
     handleRemoveTag,
     toggleGridView,
-    toggleUploadPanel
+    toggleUploadPanel,
+    selectionMode,
+    selectAssetsByTag,
+    selectAssetsByTeamMember
   ])
 
   const renderGroupByChips = () => {
@@ -1360,21 +1469,14 @@ export default function DAMPage() {
           Group By:
         </span>
         {groupByTags.map((categoryName, index) => (
-          <div
+          <OmniChip
             key={categoryName}
-            className="flex items-center gap-1 px-3 py-1 bg-sage/20 rounded-full"
-          >
-            <span className="text-xs font-semibold text-sage uppercase">
-              {index > 0 && "→ "}
-              {getCategoryDisplayName(categoryName)}
-            </span>
-            <button
-              onClick={() => handleRemoveGroupBy(categoryName)}
-              className="p-0.5 hover:bg-sage/20 rounded-full transition-colors"
-            >
-              <X className="w-3 h-3 text-sage" />
-            </button>
-          </div>
+            variant="group-by"
+            categoryDisplayName={`${index > 0 ? "→ " : ""}${getCategoryDisplayName(categoryName)}`}
+            isSelected={selectedAssets.length > 0}
+            isMobile={isMobile}
+            onRemove={() => handleRemoveGroupBy(categoryName)}
+          />
         ))}
       </div>
     )
@@ -1384,23 +1486,14 @@ export default function DAMPage() {
     // Always show Group By chips first if any
     const groupByContent = renderGroupByChips()
     const commandLauncher = (
-      <button
-        key="command-launcher"
-        onClick={() => openCommandPalette("")}
-        className={clsx(
-          "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold transition-all shadow-sm border",
-          selectedAssets.length > 0
-            ? "bg-dune text-cream border-dune/40 hover:bg-dune/90"
-            : "bg-cream text-dune border-sage/20 hover:border-dusty-rose/40"
-        )}
-        data-tutorial="command-button"
-      >
-        <Sparkles className="w-4 h-4 text-dusty-rose" />
-        <span>Command Palette</span>
-        <span className="hidden sm:inline-flex items-center text-[11px] uppercase tracking-widest border border-current/40 rounded-full px-2 py-0.5">
-          /
-        </span>
-      </button>
+      <div key="command-launcher" data-tutorial="command-button">
+        <OmniChip
+          variant="command-launcher"
+          isSelected={selectedAssets.length > 0}
+          isMobile={isMobile}
+          onClick={() => openCommandPalette("")}
+        />
+      </div>
     )
 
     if (selectedAssets.length > 0) {
@@ -1419,77 +1512,27 @@ export default function DAMPage() {
               if (!teamMember) return null
 
               return (
-                <div
+                <OmniChip
                   key={tagId}
-                  className={`flex-shrink-0 flex items-center gap-1 rounded-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''} ${isPending ? 'candy-cane-effect' : ''}`}
-                  style={{
-                    background: getTagColor("#BCC9C2", false),
-                    minHeight: 'auto',
-                    height: 'auto'
+                  variant="tag-existing"
+                  categoryDisplayName="Team"
+                  optionDisplayName={teamMember.name}
+                  count={count}
+                  color={getTagColor("#BCC9C2", false)}
+                  imageUrl={teamMember.imageUrl}
+                  imageCrop={teamMember.cropCloseUpCircle}
+                  isPending={isPending}
+                  isMobile={isMobile}
+                  onRemove={() => {
+                    if (isPending) {
+                      confirmTagRemoval()
+                    } else {
+                      requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
+                    }
                   }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                  }}
-                >
-                  <div className={`flex items-center gap-1 ${isMobile ? 'px-1 py-px' : 'px-1.5 py-px'}`}>
-                    {isPending ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          confirmTagRemoval()
-                        }}
-                        onMouseLeave={cancelTagRemoval}
-                        className="flex items-center gap-1 bg-black/20 hover:bg-black/30 transition-all w-full"
-                      >
-                        <X className="w-2.5 h-2.5 text-cream animate-bounce" />
-                        <span className="text-[10px] text-cream font-semibold">
-                          Remove team member from {count} {count === 1 ? 'asset' : 'assets'}?
-                        </span>
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            e.preventDefault()
-                            requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
-                          }}
-                          className="flex items-center gap-px hover:bg-black/10 rounded px-px transition-colors"
-                        >
-                          <X className="w-2 h-2 text-cream" />
-                          <span className="text-[9px] font-bold text-cream">{count}</span>
-                        </button>
-                        {teamMember.imageUrl && (
-                          <div className="w-3 h-3 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
-                            <img
-                              src={teamMember.imageUrl}
-                              alt={teamMember.name}
-                              className="w-full h-full object-cover"
-                              style={
-                                teamMember.cropCloseUpCircle
-                                  ? {
-                                      objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
-                                      transform: `scale(${teamMember.cropCloseUpCircle.scale})`
-                                    }
-                                  : {
-                                      objectPosition: 'center 25%',
-                                      transform: 'scale(2)'
-                                    }
-                              }
-                            />
-                          </div>
-                        )}
-                        <span className="text-[9px] font-semibold text-cream uppercase">
-                          Team
-                        </span>
-                        <span className="text-cream/80 text-[9px]">›</span>
-                        <span className="text-[10px] text-cream font-medium">
-                          {teamMember.name}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
+                  onCategoryClick={() => handleGroupBy("team")}
+                  isDisabled={groupByTags.includes("team") || groupByTags.length >= 2}
+                />
               )
             }
 
@@ -1500,63 +1543,25 @@ export default function DAMPage() {
             if (!tag) return null
 
             return (
-              <div
+              <OmniChip
                 key={tagId}
-                className={`flex-shrink-0 flex items-center gap-1 rounded-full overflow-hidden shadow-sm ${isMobile ? 'text-xs' : ''} ${isPending ? 'candy-cane-effect' : ''}`}
-                style={{
-                  background: getTagColor(tag.category.color, false),
-                  minHeight: 'auto',
-                  height: 'auto'
+                variant="tag-existing"
+                categoryDisplayName={tag.category.displayName}
+                optionDisplayName={tag.displayName}
+                count={count}
+                color={getTagColor(tag.category.color, false)}
+                isPending={isPending}
+                isMobile={isMobile}
+                onRemove={() => {
+                  if (isPending) {
+                    confirmTagRemoval()
+                  } else {
+                    requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")
+                  }
                 }}
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-              >
-                <div className={`flex items-center gap-1 ${isMobile ? 'px-1 py-px' : 'px-1.5 py-px'}`}>
-                  {isPending ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        confirmTagRemoval()
-                      }}
-                      onMouseLeave={cancelTagRemoval}
-                      className="flex items-center gap-1 bg-black/20 hover:bg-black/30 transition-all w-full"
-                    >
-                      <X className="w-2.5 h-2.5 text-cream animate-bounce" />
-                      <span className="text-[10px] text-cream font-semibold">
-                        Remove {tag.category.displayName.toLowerCase()} from {count} {count === 1 ? 'asset' : 'assets'}?
-                      </span>
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          e.preventDefault()
-                          requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")
-                        }}
-                        className="flex items-center gap-px hover:bg-black/10 rounded px-px transition-colors"
-                      >
-                        <X className="w-2 h-2 text-cream" />
-                        <span className="text-[9px] font-bold text-cream">{count}</span>
-                      </button>
-                      <button
-                        onClick={() => handleGroupBy(tag.category.name)}
-                        className={`text-[9px] font-semibold text-cream uppercase hover:text-white transition-colors ${
-                          groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                        }`}
-                        disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
-                      >
-                        {tag.category.displayName}
-                      </button>
-                      <span className="text-cream/80 text-[9px]">›</span>
-                      <span className="text-[10px] text-cream font-medium">
-                        {tag.displayName}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
+                onCategoryClick={() => handleGroupBy(tag.category.name)}
+                isDisabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
+              />
             )
           })}
 
@@ -1566,55 +1571,19 @@ export default function DAMPage() {
             const teamMember = isTeamTag ? teamMembers.find(m => m.id === tag.id) : null
 
             return (
-              <div
+              <OmniChip
                 key={`new-${tag.id}`}
-                className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm border-2 border-cream/40 ${isMobile ? 'text-xs' : ''}`}
-                style={{
-                  background: getTagColor(tag.category.color, false)
-                }}
-              >
-                <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
-                  {isTeamTag && teamMember?.imageUrl && (
-                    <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
-                      <img
-                        src={teamMember.imageUrl}
-                        alt={tag.displayName}
-                        className="w-full h-full object-cover"
-                        style={
-                          teamMember.cropCloseUpCircle
-                            ? {
-                                objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
-                                transform: `scale(${teamMember.cropCloseUpCircle.scale})`
-                              }
-                            : {
-                                objectPosition: 'center 25%',
-                                transform: 'scale(2)'
-                              }
-                        }
-                      />
-                    </div>
-                  )}
-                  <button
-                    onClick={() => handleGroupBy(tag.category.name)}
-                    className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
-                      groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                    disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
-                  >
-                    {tag.category.displayName}
-                  </button>
-                  <span className="text-cream/80 text-xs">›</span>
-                  <span className="text-sm text-cream font-medium">
-                    {tag.displayName}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setOmniTags(omniTags.filter(t => t.id !== tag.id))}
-                  className="px-2 py-1.5 hover:bg-black/10 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5 text-cream" />
-                </button>
-              </div>
+                variant="tag-new"
+                categoryDisplayName={tag.category.displayName}
+                optionDisplayName={tag.displayName}
+                color={getTagColor(tag.category.color, false)}
+                imageUrl={isTeamTag ? teamMember?.imageUrl : undefined}
+                imageCrop={teamMember?.cropCloseUpCircle}
+                isMobile={isMobile}
+                onRemove={() => setOmniTags(omniTags.filter(t => t.id !== tag.id))}
+                onCategoryClick={() => handleGroupBy(tag.category.name)}
+                isDisabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
+              />
             )
           })}
 
@@ -1649,73 +1618,20 @@ export default function DAMPage() {
           {groupByContent}
           {/* Render active filter chips */}
           {activeFilters.map((filter) => (
-            <div
+            <OmniChip
               key={`${filter.categoryId}-${filter.optionId}`}
-              className={clsx(
-                "flex items-center overflow-hidden transition-all",
-                isMobile
-                  ? "gap-0 rounded-full shadow-none"
-                  : "gap-0 rounded-full shadow-none hover:shadow-sm"
-              )}
-              style={{
-                backgroundColor: `${filter.categoryColor || "#A19781"}`,
-                border: `1px solid ${filter.categoryColor || "#A19781"}`
+              variant="filter"
+              categoryDisplayName={filter.categoryDisplayName}
+              optionDisplayName={filter.optionDisplayName}
+              color={filter.categoryColor || "#A19781"}
+              imageUrl={filter.imageUrl}
+              isMobile={isMobile}
+              onRemove={() => {
+                setActiveFilters(activeFilters.filter(
+                  f => !(f.categoryId === filter.categoryId && f.optionId === filter.optionId)
+                ))
               }}
-            >
-              <div className={clsx(
-                "flex items-center",
-                isMobile ? "gap-1 px-1.5 py-0.5" : "gap-1 px-2 py-0.5"
-              )}>
-                {filter.imageUrl && (
-                  <div className={clsx(
-                    "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
-                    isMobile ? "w-3 h-3" : "w-3.5 h-3.5"
-                  )}>
-                    <img
-                      src={filter.imageUrl}
-                      alt={filter.optionDisplayName}
-                      className="w-full h-full object-cover"
-                      style={{
-                        objectPosition: 'center 25%',
-                        transform: 'scale(2)'
-                      }}
-                    />
-                  </div>
-                )}
-                <span className={clsx(
-                  "font-semibold text-cream/90 uppercase",
-                  isMobile ? "text-[9px]" : "text-[10px]"
-                )}>
-                  {filter.categoryDisplayName}
-                </span>
-                <span className={clsx(
-                  "text-cream/60",
-                  isMobile ? "text-[9px]" : "text-[10px]"
-                )}>›</span>
-                <span className={clsx(
-                  "text-cream font-medium",
-                  isMobile ? "text-[10px]" : "text-[11px]"
-                )}>
-                  {filter.optionDisplayName}
-                </span>
-              </div>
-              <button
-                onClick={() => {
-                  setActiveFilters(activeFilters.filter(
-                    f => !(f.categoryId === filter.categoryId && f.optionId === filter.optionId)
-                  ))
-                }}
-                className={clsx(
-                  "hover:bg-black/15 transition-colors",
-                  isMobile ? "px-1 py-0.5" : "px-1.5 py-0.5"
-                )}
-              >
-                <X className={clsx(
-                  "text-cream/80 hover:text-cream",
-                  isMobile ? "w-2.5 h-2.5" : "w-2.5 h-2.5"
-                )} />
-              </button>
-            </div>
+            />
           ))}
           <FilterSelector
             categories={tagCategories}

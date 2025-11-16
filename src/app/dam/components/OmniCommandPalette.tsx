@@ -90,6 +90,8 @@ export function OmniCommandPalette({
         return { icon: Users2, description: "Filter by team member" }
       case "Selection":
         return { icon: Wand2, description: "Manage photo selections" }
+      case "Select by Filter":
+        return { icon: Wand2, description: "Build selections based on tags and team" }
       case "Filters":
         return { icon: Filter, description: "Reset or tweak active filters" }
       case "Grouping":
