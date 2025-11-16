@@ -1515,6 +1515,7 @@ export default function DAMPage() {
                 <OmniChip
                   key={tagId}
                   variant="tag-existing"
+                  categoryName="team"
                   categoryDisplayName="Team"
                   optionDisplayName={teamMember.name}
                   count={count}
@@ -1532,6 +1533,14 @@ export default function DAMPage() {
                   }}
                   onCategoryClick={() => handleGroupBy("team")}
                   isDisabled={groupByTags.includes("team") || groupByTags.length >= 2}
+                  onUnselectAssets={() => {
+                    // Find all assets with this team member and unselect them
+                    const assetsToUnselect = selectedAssets.filter(assetId => {
+                      const asset = assets.find(a => a.id === assetId)
+                      return asset?.teamMemberId === teamMemberId
+                    })
+                    setSelectedAssets(selectedAssets.filter(id => !assetsToUnselect.includes(id)))
+                  }}
                 />
               )
             }
@@ -1546,6 +1555,7 @@ export default function DAMPage() {
               <OmniChip
                 key={tagId}
                 variant="tag-existing"
+                categoryName={tag.category.name}
                 categoryDisplayName={tag.category.displayName}
                 optionDisplayName={tag.displayName}
                 count={count}
@@ -1561,6 +1571,14 @@ export default function DAMPage() {
                 }}
                 onCategoryClick={() => handleGroupBy(tag.category.name)}
                 isDisabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
+                onUnselectAssets={() => {
+                  // Find all assets with this tag and unselect them
+                  const assetsToUnselect = selectedAssets.filter(assetId => {
+                    const asset = assets.find(a => a.id === assetId)
+                    return asset?.tags?.some(t => t.id === tagId)
+                  })
+                  setSelectedAssets(selectedAssets.filter(id => !assetsToUnselect.includes(id)))
+                }}
               />
             )
           })}

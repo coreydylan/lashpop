@@ -1,7 +1,7 @@
 "use client"
 
-import { ReactNode } from "react"
-import { X, Sparkles } from "lucide-react"
+import { ReactNode, useState, useRef, useEffect } from "react"
+import { X, Sparkles, Layers, MousePointer, Trash2 } from "lucide-react"
 import clsx from "clsx"
 
 export type ChipVariant =
@@ -10,6 +10,13 @@ export type ChipVariant =
   | "tag-existing"       // Existing tag on selected assets (with count)
   | "tag-new"            // New tag to be applied (with border)
   | "filter"             // Active filter chip
+
+export interface ChipAction {
+  label: string
+  icon?: ReactNode
+  onClick: () => void
+  variant?: "default" | "danger"
+}
 
 export interface OmniChipProps {
   variant: ChipVariant
@@ -40,6 +47,10 @@ export interface OmniChipProps {
   onRemove?: () => void
   onCategoryClick?: () => void
 
+  // Dropdown actions
+  actions?: ChipAction[]
+  onUnselectAssets?: () => void  // Unselect assets with this tag
+
   // Custom content
   children?: ReactNode
 }
@@ -60,14 +71,70 @@ export function OmniChip({
   onClick,
   onRemove,
   onCategoryClick,
+  actions,
+  onUnselectAssets,
   children
 }: OmniChipProps) {
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const chipRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          chipRef.current && !chipRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showDropdown])
+
+  // Build default actions based on chip type
+  const getDefaultActions = (): ChipAction[] => {
+    const defaultActions: ChipAction[] = []
+
+    if (variant === "tag-existing" && onRemove) {
+      defaultActions.push({
+        label: `Remove from ${count} ${count === 1 ? 'asset' : 'assets'}`,
+        icon: <Trash2 className="w-3.5 h-3.5" />,
+        onClick: onRemove,
+        variant: "danger"
+      })
+    }
+
+    if (onCategoryClick && categoryName) {
+      defaultActions.push({
+        label: `Group by ${categoryDisplayName}`,
+        icon: <Layers className="w-3.5 h-3.5" />,
+        onClick: onCategoryClick,
+      })
+    }
+
+    if (onUnselectAssets) {
+      defaultActions.push({
+        label: "Unselect these assets",
+        icon: <MousePointer className="w-3.5 h-3.5" />,
+        onClick: onUnselectAssets,
+      })
+    }
+
+    return defaultActions
+  }
+
+  const allActions = actions || getDefaultActions()
+  const hasActions = allActions.length > 0
 
   // Command Launcher variant
   if (variant === "command-launcher") {
     return (
       <button
         onClick={onClick}
+        data-chip-version="v2"
         className={clsx(
           "flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition-all shadow-sm border",
           isSelected
@@ -112,32 +179,72 @@ export function OmniChip({
     )
   }
 
+  // Dropdown Menu Component
+  const DropdownMenu = () => {
+    if (!hasActions || !showDropdown) return null
+
+    return (
+      <div
+        ref={dropdownRef}
+        className="absolute top-full left-0 mt-1 min-w-[200px] bg-white rounded-lg shadow-lg border border-sage/20 overflow-hidden z-50"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {allActions.map((action, index) => (
+          <button
+            key={index}
+            onClick={() => {
+              action.onClick()
+              setShowDropdown(false)
+            }}
+            className={clsx(
+              "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors text-left",
+              action.variant === "danger"
+                ? "text-red-600 hover:bg-red-50"
+                : "text-dune hover:bg-warm-sand/30"
+            )}
+          >
+            {action.icon && <span className="flex-shrink-0">{action.icon}</span>}
+            <span>{action.label}</span>
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   // Tag Existing variant (with count)
   if (variant === "tag-existing") {
     return (
       <div
-        className={clsx(
-          "flex items-center gap-0 rounded-full overflow-hidden shadow-sm transition-all",
-          isPending && "candy-cane-effect"
-        )}
-        style={{
-          background: color,
-          minHeight: 'auto',
-          height: 'auto'
-        }}
-        onClick={(e) => e.stopPropagation()}
+        ref={chipRef}
+        className="relative"
+        onMouseEnter={() => !isMobile && hasActions && setShowDropdown(true)}
+        onMouseLeave={() => !isMobile && setShowDropdown(false)}
+        onClick={() => isMobile && hasActions && setShowDropdown(!showDropdown)}
       >
+        <div
+          className={clsx(
+            "flex items-center gap-0 rounded-full overflow-hidden shadow-sm transition-all",
+            isPending && "candy-cane-effect",
+            hasActions && "cursor-pointer"
+          )}
+          style={{
+            background: color,
+            minHeight: 'auto',
+            height: 'auto'
+          }}
+          onClick={(e) => !hasActions && e.stopPropagation()}
+        >
         <div className={clsx(
           "flex items-center",
-          isMobile ? "gap-1 px-1.5 py-0.5" : "gap-1 px-2 py-1"
+          isMobile ? "gap-1 px-2 py-1" : "gap-1.5 px-2.5 py-1"
         )}>
           {isPending ? (
             <button
               onClick={onRemove}
-              className="flex items-center gap-1 bg-black/20 hover:bg-black/30 transition-all w-full px-1 rounded-full"
+              className="flex items-center gap-1 bg-black/20 hover:bg-black/30 transition-all w-full px-1.5 rounded-full"
             >
               <X className="w-3 h-3 text-cream animate-bounce" />
-              <span className={clsx("text-cream font-semibold", isMobile ? "text-[9px]" : "text-[10px]")}>
+              <span className={clsx("text-cream font-semibold", isMobile ? "text-[10px]" : "text-xs")}>
                 Remove from {count} {count === 1 ? 'asset' : 'assets'}?
               </span>
             </button>
@@ -147,14 +254,14 @@ export function OmniChip({
                 onClick={onRemove}
                 className="flex items-center gap-0.5 hover:bg-black/10 rounded-full transition-colors px-1 py-0.5"
               >
-                <X className="w-2.5 h-2.5 text-cream" />
-                <span className="text-[9px] font-bold text-cream">{count}</span>
+                <X className="w-3 h-3 text-cream" />
+                <span className="text-[10px] font-bold text-cream">{count}</span>
               </button>
 
               {imageUrl && (
                 <div className={clsx(
                   "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
-                  isMobile ? "w-3.5 h-3.5" : "w-4 h-4"
+                  isMobile ? "w-4 h-4" : "w-5 h-5"
                 )}>
                   <img
                     src={imageUrl}
@@ -181,7 +288,7 @@ export function OmniChip({
                   disabled={isDisabled}
                   className={clsx(
                     "font-semibold text-cream uppercase hover:text-white transition-colors",
-                    isMobile ? "text-[9px]" : "text-[10px]",
+                    isMobile ? "text-[10px]" : "text-xs",
                     isDisabled && "opacity-50 cursor-not-allowed"
                   )}
                 >
@@ -190,19 +297,21 @@ export function OmniChip({
               ) : (
                 <span className={clsx(
                   "font-semibold text-cream uppercase",
-                  isMobile ? "text-[9px]" : "text-[10px]"
+                  isMobile ? "text-[10px]" : "text-xs"
                 )}>
                   {categoryDisplayName}
                 </span>
               )}
 
-              <span className={clsx("text-cream/60", isMobile ? "text-[9px]" : "text-[10px]")}>›</span>
-              <span className={clsx("text-cream font-medium", isMobile ? "text-[10px]" : "text-[11px]")}>
+              <span className={clsx("text-cream/60", isMobile ? "text-[10px]" : "text-xs")}>›</span>
+              <span className={clsx("text-cream font-medium", isMobile ? "text-xs" : "text-sm")}>
                 {optionDisplayName}
               </span>
             </>
           )}
         </div>
+        </div>
+        <DropdownMenu />
       </div>
     )
   }
@@ -212,7 +321,7 @@ export function OmniChip({
     return (
       <div
         className={clsx(
-          "flex items-center gap-0 rounded-full overflow-hidden shadow-sm border-2 border-cream/40 transition-all",
+          "flex items-center gap-0 rounded-full overflow-hidden shadow-md border-2 border-cream/40 transition-all",
           isMobile ? "" : ""
         )}
         style={{
@@ -269,7 +378,7 @@ export function OmniChip({
           )}
 
           <span className={clsx("text-cream/70", isMobile ? "text-[10px]" : "text-xs")}>›</span>
-          <span className={clsx("text-cream font-medium", isMobile ? "text-[11px]" : "text-sm")}>
+          <span className={clsx("text-cream font-medium", isMobile ? "text-xs" : "text-sm")}>
             {optionDisplayName}
           </span>
         </div>
@@ -278,10 +387,10 @@ export function OmniChip({
             onClick={onRemove}
             className={clsx(
               "hover:bg-black/10 transition-colors",
-              isMobile ? "px-1.5 py-1" : "px-2 py-1.5"
+              isMobile ? "px-2 py-1" : "px-2.5 py-1.5"
             )}
           >
-            <X className={clsx("text-cream", isMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
+            <X className={clsx("text-cream", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
           </button>
         )}
       </div>
@@ -303,12 +412,12 @@ export function OmniChip({
       >
         <div className={clsx(
           "flex items-center",
-          isMobile ? "gap-1 px-2 py-0.5" : "gap-1.5 px-2.5 py-1"
+          isMobile ? "gap-1 px-2 py-1" : "gap-1.5 px-2.5 py-1"
         )}>
           {imageUrl && (
             <div className={clsx(
               "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
-              isMobile ? "w-3.5 h-3.5" : "w-4 h-4"
+              isMobile ? "w-4 h-4" : "w-5 h-5"
             )}>
               <img
                 src={imageUrl}
@@ -330,12 +439,12 @@ export function OmniChip({
           )}
           <span className={clsx(
             "font-semibold text-cream/90 uppercase",
-            isMobile ? "text-[10px]" : "text-[10px]"
+            isMobile ? "text-[10px]" : "text-xs"
           )}>
             {categoryDisplayName}
           </span>
-          <span className={clsx("text-cream/60", isMobile ? "text-[10px]" : "text-[10px]")}>›</span>
-          <span className={clsx("text-cream font-medium", isMobile ? "text-[11px]" : "text-xs")}>
+          <span className={clsx("text-cream/60", isMobile ? "text-[10px]" : "text-xs")}>›</span>
+          <span className={clsx("text-cream font-medium", isMobile ? "text-xs" : "text-sm")}>
             {optionDisplayName}
           </span>
         </div>
@@ -344,7 +453,7 @@ export function OmniChip({
             onClick={onRemove}
             className={clsx(
               "hover:bg-black/15 transition-colors",
-              isMobile ? "px-1.5 py-0.5" : "px-2 py-1"
+              isMobile ? "px-1.5 py-1" : "px-2 py-1"
             )}
           >
             <X className={clsx("text-cream/80 hover:text-cream", isMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
