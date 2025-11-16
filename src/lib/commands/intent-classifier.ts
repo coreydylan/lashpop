@@ -23,7 +23,7 @@ export type Intent =
 
 export interface IntentClassification {
   intent: Intent
-  confidence: number
+  intentConfidence: number
   modifiers: {
     additive?: boolean      // Add to existing (vs replace)
     selective?: boolean     // Apply to selection only
@@ -44,7 +44,7 @@ export function classifyIntent(query: string): IntentClassification {
   if (!q) {
     return {
       intent: 'UNKNOWN',
-      confidence: 0,
+      intentConfidence: 0,
       modifiers: {},
     }
   }
@@ -77,7 +77,7 @@ export function classifyIntent(query: string): IntentClassification {
   // Default to SEARCH intent for any query
   return {
     intent: 'SEARCH',
-    confidence: 0.3,
+    intentConfidence: 0.3,
     modifiers: {},
   }
 }
@@ -127,7 +127,7 @@ function classifySelect(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'SELECT',
-        confidence: 0.9,
+        intentConfidence: 0.9,
         modifiers: extractModifiers(query),
       }
     }
@@ -137,7 +137,7 @@ function classifySelect(query: string): IntentClassification | null {
   if (/^(what|which|where)\b/.test(query)) {
     return {
       intent: 'SELECT',
-      confidence: 0.6,
+      intentConfidence: 0.6,
       modifiers: extractModifiers(query),
     }
   }
@@ -162,7 +162,7 @@ function classifyFilter(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'FILTER',
-        confidence: 0.9,
+        intentConfidence: 0.9,
         modifiers: extractModifiers(query),
       }
     }
@@ -188,7 +188,7 @@ function classifyTag(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'TAG',
-        confidence: 0.95,
+        intentConfidence: 0.95,
         modifiers: extractModifiers(query),
       }
     }
@@ -214,7 +214,7 @@ function classifyUntag(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'UNTAG',
-        confidence: 0.95,
+        intentConfidence: 0.95,
         modifiers: extractModifiers(query),
       }
     }
@@ -238,7 +238,7 @@ function classifySetTag(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'SET_TAG',
-        confidence: 0.95,
+        intentConfidence: 0.95,
         modifiers: extractModifiers(query),
       }
     }
@@ -265,7 +265,7 @@ function classifyAssignTeam(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'ASSIGN_TEAM',
-        confidence: 0.9,
+        intentConfidence: 0.9,
         modifiers: extractModifiers(query),
       }
     }
@@ -289,7 +289,7 @@ function classifyRemoveTeam(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'REMOVE_TEAM',
-        confidence: 0.95,
+        intentConfidence: 0.95,
         modifiers: extractModifiers(query),
       }
     }
@@ -314,7 +314,7 @@ function classifyCollection(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'COLLECTION',
-        confidence: 0.95,
+        intentConfidence: 0.95,
         modifiers: extractModifiers(query),
       }
     }
@@ -339,7 +339,7 @@ function classifyView(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'VIEW',
-        confidence: 0.9,
+        intentConfidence: 0.9,
         modifiers: extractModifiers(query),
       }
     }
@@ -364,7 +364,7 @@ function classifySort(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'SORT',
-        confidence: 0.9,
+        intentConfidence: 0.9,
         modifiers: extractModifiers(query),
       }
     }
@@ -389,7 +389,7 @@ function classifyGroup(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'GROUP',
-        confidence: 0.9,
+        intentConfidence: 0.9,
         modifiers: extractModifiers(query),
       }
     }
@@ -414,7 +414,7 @@ function classifyClear(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'CLEAR',
-        confidence: 0.95,
+        intentConfidence: 0.95,
         modifiers: extractModifiers(query),
       }
     }
@@ -438,7 +438,7 @@ function classifyDownload(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'DOWNLOAD',
-        confidence: 0.95,
+        intentConfidence: 0.95,
         modifiers: extractModifiers(query),
       }
     }
@@ -462,7 +462,7 @@ function classifyDelete(query: string): IntentClassification | null {
     if (pattern.test(query)) {
       return {
         intent: 'DELETE',
-        confidence: 0.9,
+        intentConfidence: 0.9,
         modifiers: extractModifiers(query),
       }
     }

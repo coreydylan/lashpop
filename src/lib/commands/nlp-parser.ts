@@ -149,7 +149,7 @@ function calculateOverallConfidence(
   sort?: any,
   group?: any
 ): number {
-  let confidence = intent.confidence * 0.5 // Intent is 50% of confidence
+  let confidence = intent.intentConfidence * 0.5 // Intent is 50% of confidence
 
   // Add entity confidence (30% of total)
   const entityScores = [
@@ -200,7 +200,7 @@ function generateSuggestions(
   const suggestions: string[] = []
 
   // If intent is unclear
-  if (intent.confidence < 0.6) {
+  if (intent.intentConfidence < 0.6) {
     suggestions.push('Try starting with a clear action word like "show", "filter", "tag", or "assign"')
   }
 
@@ -310,11 +310,11 @@ export function quickParse(query: string): {
 
   // Determine if we need full parsing
   const needsFullParse = intentRequiresEntities(intent.intent) ||
-                         intent.confidence < 0.8
+                         intent.intentConfidence < 0.8
 
   return {
     intent: intent.intent,
-    confidence: intent.confidence,
+    confidence: intent.intentConfidence,
     needsFullParse,
   }
 }
