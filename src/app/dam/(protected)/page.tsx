@@ -2222,8 +2222,8 @@ export default function DAMPage() {
           onGroupCategoryToggle={handleGroupBy}
           maxGroupSelections={2}
           filterCategories={tagCategories}
-          selectedTagIds={selectedTagIds}
-          selectedTeamMemberIds={selectedTeamMemberIds}
+          selectedTagIds={activeFilters.filter(f => f.categoryName !== 'team').map(f => f.optionId)}
+          selectedTeamMemberIds={activeFilters.filter(f => f.categoryName === 'team').map(f => f.optionId)}
           onTagToggle={handleTagFilterToggle}
           onTeamMemberToggle={handleTeamFilterToggle}
           onOpenCommandPalette={() => openCommandPalette("")}
@@ -2233,7 +2233,7 @@ export default function DAMPage() {
           onOpenCardSettings={openCardSettings}
           selectedCount={selectedAssets.length}
           onClearSelection={clearSelection}
-          canApplyTags={canApplyTags}
+          canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
           onApplyTags={handleApplyTags}
         />
       )}
