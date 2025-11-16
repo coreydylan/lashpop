@@ -169,7 +169,12 @@ export default function DAMPage() {
   // Omni-bar state (used for both filtering and bulk tagging)
   const [omniTeamMemberId, setOmniTeamMemberId] = useState<string | undefined>()
   const [omniTags, setOmniTags] = useState<any[]>([])
-  const [existingTags, setExistingTags] = useState<Map<string, number>>(new Map())
+
+  // Compute existing tags automatically whenever selectedAssets or assets change
+  const existingTags = useMemo(() => {
+    if (selectedAssets.length === 0) return new Map()
+    return computeExistingTags(selectedAssets, assets)
+  }, [selectedAssets, assets, computeExistingTags])
 
   // Grid view state from settings
   const gridViewMode = settings.gridViewMode
@@ -544,7 +549,6 @@ export default function DAMPage() {
       setSelectedAssets([])
       setUploadingAssetIds([])
       setOmniTags([])
-      setExistingTags(new Map())
     }
   }
 
@@ -552,7 +556,6 @@ export default function DAMPage() {
     setUploadingAssetIds(assetIds)
     setSelectedAssets(assetIds)
     setOmniTags([])
-    setExistingTags(new Map())
   }
 
   const computeExistingTags = useCallback((assetIds: string[], sourceAssets: Asset[]) => {
@@ -688,7 +691,6 @@ export default function DAMPage() {
   const clearSelection = useCallback(() => {
     setSelectedAssets([])
     setOmniTags([])
-    setExistingTags(new Map())
   }, [])
 
   const toggleGridView = useCallback(() => {
@@ -708,9 +710,7 @@ export default function DAMPage() {
       // Clear selection mode
       setOmniTeamMemberId(undefined)
       setOmniTags([])
-      setExistingTags(new Map())
     } else {
-      setExistingTags(computeExistingTags(selectedIds, assetsRef.current))
       setOmniTags([])
     }
     // Don't clear pendingTagRemoval here - let useEffect handle it based on selection state
@@ -742,8 +742,7 @@ export default function DAMPage() {
 
     try {
       await applyTagsToAssetIds(selectedAssets, newlyAdded)
-      const updated = await fetchAssets()
-      setExistingTags(computeExistingTags(selectedAssets, updated))
+      await fetchAssets()
       setOmniTags([])
     } catch (error) {
       console.error("Failed to add tags instantly:", error)
@@ -797,16 +796,13 @@ export default function DAMPage() {
 
       if (targetAssetIds) {
         syncActiveLightboxAsset(updated)
-      } else {
-        const newExistingTags = new Map(existingTags)
-        newExistingTags.delete(tagId)
-        setExistingTags(newExistingTags)
       }
+      // existingTags will automatically update via useMemo
       setPendingTagRemoval(null)
     } catch (error) {
       console.error("Failed to remove tag:", error)
     }
-  }, [existingTags, fetchAssets, selectedAssets, syncActiveLightboxAsset])
+  }, [fetchAssets, selectedAssets, syncActiveLightboxAsset])
 
   const handleDelete = useCallback(async (assetIds: string[]) => {
     try {

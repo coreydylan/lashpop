@@ -40,12 +40,12 @@ export function OmniBar({
   const isOverlay = mode === "overlay"
 
   const containerClass = clsx(
-    "arch-full transition-colors",
+    "arch-full transition-colors overflow-visible",
     isOverlay
-      ? "bg-black/25 backdrop-blur-md lg:bg-black/15 lg:backdrop-blur-sm overflow-visible"
+      ? "bg-black/25 backdrop-blur-md lg:bg-black/15 lg:backdrop-blur-sm"
       : selectedCount > 0
-      ? "bg-dusty-rose/30 overflow-hidden"
-      : "bg-warm-sand/30 overflow-hidden"
+      ? "bg-dusty-rose/30"
+      : "bg-warm-sand/30"
   )
 
   const textPrimary = isOverlay ? "text-cream" : "text-dune"
