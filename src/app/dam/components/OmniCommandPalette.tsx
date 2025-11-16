@@ -13,9 +13,17 @@ import {
   Eye,
   Share2,
   Wand2,
-  Filter
+  Filter,
+  Settings,
+  Star,
+  TrendingUp,
+  Lightbulb
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
+import { scoreAndRankCommands, createScoringContext } from "@/lib/commands/scoring-algorithm"
+import type { ScoredCommand } from "@/lib/commands/scoring-algorithm"
+import { CommandSettings } from "./CommandSettings"
+import type { DamSettingsData } from "@/db/schema/dam_user_settings"
 
 export interface CommandItem {
   id: string
@@ -48,6 +56,12 @@ interface OmniCommandPaletteProps {
     totalAssets: number
     activeAssetName?: string
   }
+  // New intelligence props
+  userSettings?: DamSettingsData['commandPalette']
+  onSettingsChange?: (settings: Partial<DamSettingsData['commandPalette']>) => void
+  onCommandExecute?: (commandId: string) => void
+  lightboxOpen?: boolean
+  lastCommandId?: string
 }
 
 export function OmniCommandPalette({
@@ -63,11 +77,17 @@ export function OmniCommandPalette({
   onTagCategoriesChange,
   visibleCardTags = [],
   onVisibleCardTagsChange,
-  contextSummary
+  contextSummary,
+  userSettings,
+  onSettingsChange,
+  onCommandExecute,
+  lightboxOpen = false,
+  lastCommandId
 }: OmniCommandPaletteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const trimmedQuery = query.trim()
 
   // Edit mode state
@@ -107,15 +127,34 @@ export function OmniCommandPalette({
     }
   }
 
+  // Score and rank commands using intelligence system
+  const scoredCommands = useMemo(() => {
+    if (!contextSummary) return items as ScoredCommand[]
+
+    const context = createScoringContext({
+      selectionCount: contextSummary.selectionCount,
+      lightboxOpen: lightboxOpen,
+      activeAssetName: contextSummary.activeAssetName,
+      activeFilterCount: contextSummary.filterCount,
+      totalAssets: contextSummary.totalAssets,
+      searchQuery: query,
+      lastCommandId: lastCommandId
+    })
+
+    return scoreAndRankCommands(items, context, userSettings, {
+      includeBreakdown: false
+    })
+  }, [items, query, contextSummary, lightboxOpen, lastCommandId, userSettings])
+
   const filteredItems = useMemo(() => {
     const normalized = query.trim().toLowerCase()
-    if (!normalized) return items
-    return items.filter(item => {
+    if (!normalized) return scoredCommands
+    return scoredCommands.filter(item => {
       // Include group name, label, description, and badge in search
       const target = `${item.group} ${item.label} ${item.description ?? ""} ${item.badge ?? ""}`.toLowerCase()
       return target.includes(normalized)
     })
-  }, [items, query])
+  }, [scoredCommands, query])
   const showCategoryGrid = !trimmedQuery && !activeGroup
 
   const scopedItems = useMemo(() => {
@@ -143,6 +182,42 @@ export function OmniCommandPalette({
       return acc
     }, {})
   }, [items])
+
+  // Adaptive sections
+  const pinnedCommands = useMemo(() => {
+    if (!userSettings?.favorites || userSettings.favorites.length === 0) return []
+    return scoredCommands.filter(cmd => userSettings.favorites.includes(cmd.id))
+  }, [scoredCommands, userSettings?.favorites])
+
+  const frequentlyUsedCommands = useMemo(() => {
+    if (!userSettings?.showFrequentlyUsed || !userSettings?.commandUsage) return []
+    const limit = userSettings.frequentlyUsedLimit || 5
+
+    return scoredCommands
+      .filter(cmd => {
+        const usage = userSettings.commandUsage?.[cmd.id]
+        return usage && usage.count > 0 && !userSettings.favorites?.includes(cmd.id)
+      })
+      .slice(0, limit)
+  }, [scoredCommands, userSettings])
+
+  const suggestedCommands = useMemo(() => {
+    if (!userSettings?.showSuggestions) return []
+    const limit = userSettings.suggestionCount || 3
+
+    // Get high-scoring commands that aren't pinned or in frequently used
+    const pinnedIds = new Set(pinnedCommands.map(cmd => cmd.id))
+    const frequentIds = new Set(frequentlyUsedCommands.map(cmd => cmd.id))
+
+    return scoredCommands
+      .filter(cmd => {
+        // Must have a positive score from context or other factors
+        const hasContextScore = cmd.score && cmd.score > 0
+        const notInOtherSections = !pinnedIds.has(cmd.id) && !frequentIds.has(cmd.id)
+        return hasContextScore && notInOtherSections
+      })
+      .slice(0, limit)
+  }, [scoredCommands, pinnedCommands, frequentlyUsedCommands, userSettings])
 
   const flatList = scopedItems
   const indexLookup = useMemo(() => {
@@ -218,9 +293,24 @@ export function OmniCommandPalette({
       })()
     : undefined
 
-  const renderActionButton = (item: CommandItem) => {
+  const handleToggleFavorite = (commandId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!onSettingsChange) return
+
+    const favorites = userSettings?.favorites || []
+    const newFavorites = favorites.includes(commandId)
+      ? favorites.filter(id => id !== commandId)
+      : [...favorites, commandId]
+
+    onSettingsChange({ favorites: newFavorites })
+  }
+
+  const renderActionButton = (item: CommandItem, showFavoriteStar = false) => {
     const index = indexLookup.get(item.id) ?? -1
     const isActive = index === activeIndex
+    const isFavorite = userSettings?.favorites?.includes(item.id) || false
+    const usageCount = userSettings?.commandUsage?.[item.id]?.count || 0
+
     return (
       <button
         key={item.id}
@@ -228,10 +318,17 @@ export function OmniCommandPalette({
         onClick={() => {
           if (item.disabled) return
           item.onSelect()
+          if (onCommandExecute) {
+            onCommandExecute(item.id)
+          }
           onClose()
         }}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          handleToggleFavorite(item.id, e)
+        }}
         className={clsx(
-          "flex items-center gap-3 rounded-2xl border px-4 py-2 text-left transition shadow-sm min-w-[210px]",
+          "group relative flex items-center gap-3 rounded-2xl border px-4 py-2 text-left transition shadow-sm min-w-[210px]",
           isActive ? "border-dusty-rose/60 bg-dusty-rose/10" : "border-sage/15 bg-white/90",
           item.disabled ? "opacity-40 cursor-not-allowed" : "hover:border-dusty-rose/50 hover:bg-dusty-rose/5"
         )}
@@ -247,10 +344,18 @@ export function OmniCommandPalette({
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 text-sm font-semibold text-dune">
+            {isFavorite && (
+              <Star className="w-3 h-3 text-dusty-rose fill-dusty-rose flex-shrink-0" />
+            )}
             <span className="truncate">{item.label}</span>
             {item.badge && (
               <span className="text-[10px] uppercase tracking-widest text-sage/70 bg-sage/10 rounded-full px-2 py-0.5">
                 {item.badge}
+              </span>
+            )}
+            {usageCount > 0 && !isFavorite && (
+              <span className="text-[10px] font-bold text-dusty-rose/70 bg-dusty-rose/10 rounded-full px-1.5 py-0.5">
+                {usageCount}
               </span>
             )}
           </div>
@@ -258,6 +363,22 @@ export function OmniCommandPalette({
             <p className="text-xs text-sage/70 mt-0.5 truncate">{item.description}</p>
           )}
         </div>
+
+        {/* Quick favorite toggle button - shown on hover */}
+        {onSettingsChange && (
+          <button
+            onClick={(e) => handleToggleFavorite(item.id, e)}
+            className={clsx(
+              "w-7 h-7 rounded-full flex items-center justify-center transition flex-shrink-0",
+              isFavorite
+                ? "bg-dusty-rose/10 text-dusty-rose opacity-100"
+                : "bg-sage/5 text-sage/40 opacity-0 group-hover:opacity-100"
+            )}
+            title={isFavorite ? "Unpin command" : "Pin command"}
+          >
+            <Star className={clsx("w-3.5 h-3.5", isFavorite && "fill-dusty-rose")} />
+          </button>
+        )}
       </button>
     )
   }
@@ -300,6 +421,15 @@ export function OmniCommandPalette({
                   className="text-xs font-semibold text-dusty-rose bg-dusty-rose/10 border border-dusty-rose/20 rounded-full px-3 py-1 transition hover:bg-dusty-rose/15"
                 >
                   All actions
+                </button>
+              )}
+              {onSettingsChange && (
+                <button
+                  onClick={() => setSettingsOpen(true)}
+                  className="w-8 h-8 rounded-full bg-sage/10 hover:bg-sage/15 flex items-center justify-center transition"
+                  title="Command Palette Settings"
+                >
+                  <Settings className="w-4 h-4 text-sage/70" />
                 </button>
               )}
               <div className="hidden sm:flex items-center gap-1 text-xs text-sage/80 border border-sage/30 rounded-full px-2 py-1">
@@ -481,6 +611,59 @@ export function OmniCommandPalette({
                 </div>
               )}
 
+              {/* Adaptive Sections - shown when not searching and not in a specific group */}
+              {!trimmedQuery && !activeGroup && (
+                <>
+                  {/* Pinned Commands Section */}
+                  {pinnedCommands.length > 0 && (
+                    <div className="px-4 pb-4">
+                      <div className="rounded-3xl border border-sage/20 bg-white/85 shadow-sm p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Star className="w-4 h-4 text-dusty-rose fill-dusty-rose" />
+                          <p className="text-sm font-semibold text-dune">Pinned Commands</p>
+                          <span className="text-xs text-sage/60">({pinnedCommands.length})</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {pinnedCommands.map(renderActionButton)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Frequently Used Section */}
+                  {frequentlyUsedCommands.length > 0 && (
+                    <div className="px-4 pb-4">
+                      <div className="rounded-3xl border border-sage/20 bg-white/85 shadow-sm p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-dusty-rose" />
+                          <p className="text-sm font-semibold text-dune">Frequently Used</p>
+                          <span className="text-xs text-sage/60">({frequentlyUsedCommands.length})</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {frequentlyUsedCommands.map(renderActionButton)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Smart Suggestions Section */}
+                  {suggestedCommands.length > 0 && (
+                    <div className="px-4 pb-4">
+                      <div className="rounded-3xl border border-sage/20 bg-white/85 shadow-sm p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Lightbulb className="w-4 h-4 text-dusty-rose" />
+                          <p className="text-sm font-semibold text-dune">Suggested for You</p>
+                          <span className="text-xs text-sage/60">Based on context</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {suggestedCommands.map(renderActionButton)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
               {showCategoryGrid ? (
             <div className="grid gap-3 px-4 pb-6 sm:grid-cols-2">
               {Object.entries(allGroups).map(([groupName, groupItems]) => {
@@ -512,7 +695,9 @@ export function OmniCommandPalette({
               })}
             </div>
           ) : (
-            Object.entries(grouped).map(([groupName, groupItems]) => {
+            Object.entries(grouped)
+              .filter(([groupName]) => !userSettings?.hiddenGroups?.includes(groupName))
+              .map(([groupName, groupItems]) => {
               const meta = getGroupMeta(groupName)
 
               // Group items by category prefix for better organization
@@ -578,6 +763,17 @@ export function OmniCommandPalette({
           )}
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {onSettingsChange && userSettings && (
+        <CommandSettings
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          settings={userSettings}
+          onSettingsChange={onSettingsChange}
+          commands={items}
+        />
+      )}
     </div>
   )
 }
