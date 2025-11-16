@@ -27,6 +27,9 @@ export interface Token {
     tagId?: string
     tagName?: string
     color?: string
+    teamMemberId?: string
+    teamMemberName?: string
+    avatarUrl?: string
   }
 }
 
