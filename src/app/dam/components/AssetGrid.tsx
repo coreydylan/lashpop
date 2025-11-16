@@ -2,12 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useCallback, useEffect, useMemo, useRef, memo, type ReactElement } from "react"
+import { useState, useCallback, useEffect, useMemo, useRef, type ReactElement } from "react"
 import { PhotoView } from "react-photo-view"
-import { ImageSkeleton } from "./ImageSkeleton"
-
-// Global cache for loaded images - persists across all re-renders
-const loadedImagesCache = new Set<string>()
+import { useThrottle } from "@/hooks/useThrottle"
 
 interface Asset {
   id: string
@@ -87,6 +84,32 @@ export function AssetGrid({
   const assetRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const selectedAssetSet = useMemo(() => new Set(selectedAssetIds), [selectedAssetIds])
 
+  // Pagination for performance - render assets in chunks
+  const ITEMS_PER_PAGE = 100
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE)
+
+  // Reset visible count when assets array changes (filters applied)
+  // But keep the expanded count if we're just loading more
+  useEffect(() => {
+    // If we have fewer assets than what we're showing, adjust down
+    if (assets.length < visibleCount) {
+      setVisibleCount(Math.min(assets.length, ITEMS_PER_PAGE))
+    }
+    // Note: We don't reset to ITEMS_PER_PAGE when assets grow,
+    // so user's "load more" state is preserved
+  }, [assets.length, visibleCount, ITEMS_PER_PAGE])
+
+  // Limit visible assets to improve performance
+  const visibleAssets = useMemo(() => {
+    return assets.slice(0, visibleCount)
+  }, [assets, visibleCount])
+
+  const hasMore = assets.length > visibleCount
+
+  const loadMore = useCallback(() => {
+    setVisibleCount(prev => Math.min(prev + ITEMS_PER_PAGE, assets.length))
+  }, [assets.length])
+
   // Calculate selection box bounds
   const selectionBox = useMemo(() => {
     if (!isDragging || !mouseDownPosition || !currentMousePosition) return null
@@ -144,7 +167,7 @@ export function AssetGrid({
   // Group assets based on groupByCategories
   const groupedAssets = useMemo<Record<string, GroupBucket>>(() => {
     if (groupByCategories.length === 0) {
-      return { ungrouped: { assets: assets.slice(), children: {} } }
+      return { ungrouped: { assets: visibleAssets.slice(), children: {} } }
     }
 
     const groups: Record<string, GroupBucket> = {}
@@ -157,7 +180,7 @@ export function AssetGrid({
       return level[key]
     }
 
-    assets.forEach(asset => {
+    visibleAssets.forEach(asset => {
       const path: string[] = []
       let shouldPlace = true
 
@@ -205,7 +228,7 @@ export function AssetGrid({
     }
 
     return groups
-  }, [assets, groupByCategories])
+  }, [visibleAssets, groupByCategories])
 
   // Flatten all assets in display order for range selection
   const flattenedAssets = useMemo(() => {
@@ -226,7 +249,7 @@ export function AssetGrid({
       result.push(...flatten(bucket))
     })
     return result
-  }, [assets, groupedAssets, groupByCategories.length])
+  }, [visibleAssets, groupedAssets, groupByCategories.length])
 
   // Detect touch device
   useEffect(() => {
@@ -415,6 +438,11 @@ export function AssetGrid({
     setBaseSelection([])
   }, [])
 
+  // Throttle mouse move updates to 60fps for better performance
+  const throttledSetCurrentPosition = useThrottle((x: number, y: number) => {
+    setCurrentMousePosition({ x, y })
+  }, 16) // ~60fps
+
   // Add global listeners for drag start detection and drag end
   useEffect(() => {
     const handleGlobalMouseDown = (e: MouseEvent) => {
@@ -451,8 +479,8 @@ export function AssetGrid({
         setBaseSelection([...selectedAssetIds])
       } else {
         setBaseSelection([])
-        // Clear selection if not holding Cmd/Ctrl
-        if (onSelectionChange) {
+        // Clear selection if not holding Cmd/Ctrl - only if selection is not already empty
+        if (onSelectionChange && selectedAssetIds.length > 0) {
           onSelectionChange([])
           setIsSelectionMode(false)
         }
@@ -460,9 +488,9 @@ export function AssetGrid({
     }
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
-      // Update current mouse position if we have a potential drag
+      // Update current mouse position if we have a potential drag (throttled)
       if (mouseDownPosition) {
-        setCurrentMousePosition({ x: e.clientX, y: e.clientY })
+        throttledSetCurrentPosition(e.clientX, e.clientY)
       }
 
       // Check if we should start dragging based on mouse movement
@@ -485,7 +513,7 @@ export function AssetGrid({
     }
 
     window.addEventListener('mousedown', handleGlobalMouseDown)
-    window.addEventListener('mousemove', handleGlobalMouseMove)
+    window.addEventListener('mousemove', handleGlobalMouseMove, { passive: true })
     window.addEventListener('mouseup', handleGlobalDragEnd)
     window.addEventListener('touchend', handleGlobalDragEnd)
 
@@ -495,7 +523,7 @@ export function AssetGrid({
       window.removeEventListener('mouseup', handleGlobalDragEnd)
       window.removeEventListener('touchend', handleGlobalDragEnd)
     }
-  }, [isDragging, potentialDragAssetId, mouseDownPosition, handleDragEnd, handleDragStart, selectedAssetIds, onSelectionChange])
+  }, [isDragging, potentialDragAssetId, mouseDownPosition, handleDragEnd, handleDragStart, selectedAssetIds, onSelectionChange, throttledSetCurrentPosition])
 
   const findSampleAsset = (bucket: GroupBucket): Asset | undefined => {
     if (bucket.assets.length > 0) {
@@ -653,8 +681,8 @@ export function AssetGrid({
             setBaseSelection([...selectedAssetIds])
           } else {
             setBaseSelection([])
-            // Clear selection if not holding Cmd/Ctrl
-            if (onSelectionChange) {
+            // Clear selection if not holding Cmd/Ctrl - only if selection is not already empty
+            if (onSelectionChange && selectedAssetIds.length > 0) {
               onSelectionChange([])
               setIsSelectionMode(false)
             }
@@ -691,7 +719,7 @@ export function AssetGrid({
             ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
             : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
         }`}>
-          {assets.map((asset) => (
+          {visibleAssets.map((asset) => (
             <AssetCard
               key={asset.id}
               asset={asset}
@@ -715,6 +743,18 @@ export function AssetGrid({
               }}
             />
           ))}
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={loadMore}
+            className="px-6 py-3 bg-dusty-rose text-white arch-full hover:bg-dusty-rose/90 transition-colors shadow-sm hover:shadow-md"
+          >
+            Load More ({assets.length - visibleCount} remaining)
+          </button>
         </div>
       )}
     </div>
@@ -744,7 +784,7 @@ interface AssetCardProps {
   dissipatingTags?: Set<string>
 }
 
-const AssetCard = memo<AssetCardProps>(function AssetCard({
+function AssetCard({
   asset,
   isSelected,
   isSelectionMode,
@@ -763,9 +803,7 @@ const AssetCard = memo<AssetCardProps>(function AssetCard({
   dissipatingTags = new Set()
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
-
-  // Check if image was previously loaded from global cache
-  const wasImageLoaded = loadedImagesCache.has(asset.filePath)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isTouchDevice) return
@@ -786,45 +824,25 @@ const AssetCard = memo<AssetCardProps>(function AssetCard({
     }
   }
 
-  const [imageLoading, setImageLoading] = useState(!wasImageLoaded)
-  const [imageError, setImageError] = useState(false)
-
-  const handleImageLoad = useCallback(() => {
-    loadedImagesCache.add(asset.filePath)
-    setImageLoading(false)
-  }, [asset.filePath])
-
-  const handleImageError = useCallback(() => {
-    setImageLoading(false)
-    setImageError(true)
-  }, [])
-
   const imageContent = (
-    <div className="relative w-full h-full">
-      {imageLoading && !wasImageLoaded && <ImageSkeleton gridViewMode={gridViewMode} />}
-      <img
-        src={asset.filePath}
-        alt={asset.fileName}
-        draggable={false}
-        loading="lazy"
-        className={`w-full ${
-          gridViewMode === "square" ? "h-full object-cover" : "h-auto"
-        } ${imageLoading && !wasImageLoaded ? "opacity-0" : "opacity-100"} ${!isDragging && !wasImageLoaded ? "transition-opacity duration-200" : ""}`}
-        style={{
-          WebkitTouchCallout: 'none',
-          WebkitUserSelect: 'none',
-          userSelect: 'none'
-        }}
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-        onContextMenu={(e) => e.preventDefault()}
-      />
-      {imageError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400 text-sm">
-          Failed to load
-        </div>
-      )}
-    </div>
+    <img
+      src={asset.filePath}
+      alt={asset.fileName}
+      draggable={false}
+      decoding="async"
+      onLoad={() => setImageLoaded(true)}
+      className={`w-full ${
+        gridViewMode === "square" ? "h-full object-cover" : "h-auto"
+      } transition-all duration-500 ${
+        imageLoaded ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'
+      }`}
+      style={{
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
+      }}
+      onContextMenu={(e) => e.preventDefault()}
+    />
   )
 
   return (
@@ -839,7 +857,8 @@ const AssetCard = memo<AssetCardProps>(function AssetCard({
       style={{
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
-        userSelect: 'none'
+        userSelect: 'none',
+        willChange: isDragging || isDraggedOver ? 'transform' : 'auto'
       }}
       onClick={onClick}
       onMouseDown={(e) => {
@@ -874,9 +893,10 @@ const AssetCard = memo<AssetCardProps>(function AssetCard({
         <PhotoView src={asset.filePath}>
           <div className="w-full h-full" onClick={(e) => {
             // Prevent PhotoView from opening if modifier keys are pressed
-            // Don't stopPropagation so the click can bubble to parent's onClick handler
+            // Stop propagation AND prevent default to let parent handler work
             if (e.metaKey || e.ctrlKey || e.shiftKey) {
               e.preventDefault()
+              e.stopPropagation()
             }
           }}>
             {imageContent}
@@ -985,26 +1005,4 @@ const AssetCard = memo<AssetCardProps>(function AssetCard({
 
     </div>
   )
-}, (prevProps, nextProps) => {
-  // Custom comparison function to prevent unnecessary re-renders
-  // Return true to SKIP re-render, false to re-render
-
-  // Check if visible card tags changed
-  const visibleTagsEqual =
-    prevProps.visibleCardTags?.length === nextProps.visibleCardTags?.length &&
-    (prevProps.visibleCardTags?.every((tag, i) => tag === nextProps.visibleCardTags?.[i]) ?? true)
-
-  // Always skip re-render if just selection mode changed (visual appearance doesn't change)
-  // Only re-render if actual visual properties change
-  const shouldSkipRender =
-    prevProps.asset.id === nextProps.asset.id &&
-    prevProps.isSelected === nextProps.isSelected &&
-    prevProps.gridViewMode === nextProps.gridViewMode &&
-    prevProps.isDragging === nextProps.isDragging &&
-    prevProps.isDraggedOver === nextProps.isDraggedOver &&
-    visibleTagsEqual &&
-    prevProps.pendingTagRemoval?.tagId === nextProps.pendingTagRemoval?.tagId &&
-    prevProps.asset.tags?.length === nextProps.asset.tags?.length
-
-  return shouldSkipRender
-})
+}

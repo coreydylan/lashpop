@@ -5,26 +5,31 @@
 // Force dynamic rendering so middleware runs on every request
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react"
 import type { ReactNode } from "react"
 import clsx from "clsx"
 import { Upload as UploadIcon, Users, X, Sparkles, LogOut } from "lucide-react"
 import Link from "next/link"
-import { FileUploader } from "../components/FileUploader"
 import { AssetGrid } from "../components/AssetGrid"
 import { FilterSelector } from "../components/FilterSelector"
 import { TagSelector } from "../components/TagSelector"
 import { PhotoLightbox } from "../components/PhotoLightbox"
 import { OmniBar } from "../components/OmniBar"
-import { OmniCommandPalette, type CommandItem } from "../components/OmniCommandPalette"
-import { TagEditor } from "../components/TagEditor"
 import { CollectionSelector } from "../components/CollectionSelector"
-import { CollectionManager } from "../components/CollectionManager"
 import { TutorialWalkthrough } from "../components/TutorialWalkthrough"
 import { useDamSettings } from "@/hooks/useDamSettings"
 import { useDamActions } from "@/hooks/useDamActions"
 import { useDamInitialData } from "@/hooks/useDamData"
 import { useDamTutorial } from "@/contexts/DamTutorialContext"
+
+// Lazy load heavy components that aren't immediately visible
+const FileUploader = lazy(() => import("../components/FileUploader").then(mod => ({ default: mod.FileUploader })))
+const OmniCommandPalette = lazy(() => import("../components/OmniCommandPalette").then(mod => ({ default: mod.OmniCommandPalette })))
+const TagEditor = lazy(() => import("../components/TagEditor").then(mod => ({ default: mod.TagEditor })))
+const CollectionManager = lazy(() => import("../components/CollectionManager").then(mod => ({ default: mod.CollectionManager })))
+
+// Import type for CommandItem
+import type { CommandItem } from "../components/OmniCommandPalette"
 
 interface Asset {
   id: string
@@ -101,7 +106,6 @@ export default function DAMPage() {
   // Fetch initial data using React Query
   const { data: initialData, isLoading: isLoadingData, error: dataError, refetch: refetchInitialData } = useDamInitialData()
 
-  const [assets, setAssets] = useState<Asset[]>([])
   const [allAssets, setAllAssets] = useState<Asset[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [tagCategories, setTagCategories] = useState<any[]>([])
@@ -117,7 +121,8 @@ export default function DAMPage() {
   const activeFiltersRef = useRef<ActiveFilter[]>([])
 
   const [uploadingAssetIds, setUploadingAssetIds] = useState<string[]>([])
-  const [hasInteractedWithGrid, setHasInteractedWithGrid] = useState(false)
+  const hasInteractedWithGridRef = useRef(false)
+  const assetsRef = useRef<Asset[]>([])
 
   // Get collection from settings
   const activeCollectionId = settings.activeCollectionId
@@ -335,7 +340,6 @@ export default function DAMPage() {
 
   const applyFilters = useCallback((assetsToFilter: Asset[], filters: ActiveFilter[]) => {
     if (filters.length === 0) {
-      setAssets(assetsToFilter)
       return assetsToFilter
     }
 
@@ -367,9 +371,18 @@ export default function DAMPage() {
       }
     })
 
-    setAssets(filtered)
     return filtered
   }, [])
+
+  // Memoize filtered assets to prevent unnecessary re-renders
+  const assets = useMemo(() => {
+    return applyFilters(collectionFilteredAssets, activeFilters)
+  }, [collectionFilteredAssets, activeFilters, applyFilters])
+
+  // Keep ref updated for stable callback access
+  useEffect(() => {
+    assetsRef.current = assets
+  }, [assets])
 
   useEffect(() => {
     // Only clear pending tag removal if selection actually changed to empty
@@ -436,11 +449,7 @@ export default function DAMPage() {
     return () => window.removeEventListener("keydown", handleCommandShortcut)
   }, [openCommandPalette])
 
-  // Apply filters when activeFilters or collection changes
-  useEffect(() => {
-    applyFilters(collectionFilteredAssets, activeFilters)
-  }, [activeFilters, collectionFilteredAssets, applyFilters])
-
+  // Keep ref updated for fetchAssets callback
   useEffect(() => {
     activeFiltersRef.current = activeFilters
   }, [activeFilters])
@@ -451,15 +460,15 @@ export default function DAMPage() {
       const { data } = await refetchInitialData()
       const fetchedAssets = data?.assets || []
       setAllAssets(fetchedAssets)
-      const filtered = applyFilters(fetchedAssets, activeFiltersRef.current)
       setIsLoading(false)
-      return filtered
+      // Filters will be applied automatically via useMemo
+      return fetchedAssets
     } catch (error) {
       console.error("Failed to fetch assets:", error)
       setIsLoading(false)
       return []
     }
-  }, [applyFilters, refetchInitialData])
+  }, [refetchInitialData])
 
   const fetchTeamMembers = useCallback(async () => {
     try {
@@ -684,13 +693,13 @@ export default function DAMPage() {
     setGridViewMode(gridViewMode === "square" ? "aspect" : "square")
   }, [gridViewMode, setGridViewMode])
 
-  const handleSelectionChange = (selectedIds: string[]) => {
-    console.log('Selection change triggered:', selectedIds, 'Previous:', selectedAssets)
+  const handleSelectionChange = useCallback((selectedIds: string[]) => {
+    console.log('Selection change triggered:', selectedIds)
     setSelectedAssets(selectedIds)
 
     // Track that user has interacted with the grid (for tutorial)
-    if (!hasInteractedWithGrid) {
-      setHasInteractedWithGrid(true)
+    if (!hasInteractedWithGridRef.current) {
+      hasInteractedWithGridRef.current = true
     }
 
     if (selectedIds.length === 0) {
@@ -699,11 +708,11 @@ export default function DAMPage() {
       setOmniTags([])
       setExistingTags(new Map())
     } else {
-      setExistingTags(computeExistingTags(selectedIds, assets))
+      setExistingTags(computeExistingTags(selectedIds, assetsRef.current))
       setOmniTags([])
     }
     // Don't clear pendingTagRemoval here - let useEffect handle it based on selection state
-  }
+  }, [computeExistingTags])
 
   const handleApplyTags = useCallback(async () => {
     if (omniTags.length === 0 || selectedAssets.length === 0) return
@@ -828,6 +837,9 @@ export default function DAMPage() {
   }, [handleDelete])
 
   const commandItems = useMemo<CommandItem[]>(() => {
+    // Only compute items when command palette is actually open for performance
+    if (!isCommandOpen) return []
+
     const items: CommandItem[] = []
     const selectionCount = selectedAssets.length
     const assetCount = assets.length
@@ -1309,6 +1321,7 @@ export default function DAMPage() {
     completedDesktop,
     completedMobile,
     confirmDeleteAssets,
+    isCommandOpen, // Added to dependencies for optimization
     getCategoryDisplayName,
     gridViewMode,
     groupByTags,
@@ -2016,10 +2029,12 @@ export default function DAMPage() {
           {/* Collapsible Upload Section */}
           {isUploadOpen && (
             <div className="mb-6 select-none">
-              <FileUploader
-                onUploadComplete={handleUploadComplete}
-                onUploadingIdsChange={handleUploadingIdsChange}
-              />
+              <Suspense fallback={<div className="py-8 text-center text-sage">Loading uploader...</div>}>
+                <FileUploader
+                  onUploadComplete={handleUploadComplete}
+                  onUploadingIdsChange={handleUploadingIdsChange}
+                />
+              </Suspense>
             </div>
           )}
 
@@ -2057,60 +2072,65 @@ export default function DAMPage() {
         </main>
       </div>
 
-      <OmniCommandPalette
-        open={isCommandOpen}
-        query={commandQuery}
-        onQueryChange={setCommandQuery}
-        onClose={closeCommandPalette}
-        items={commandItems}
-        isMobile={isMobile}
-        mode={commandMode}
-        onModeChange={setCommandMode}
-        tagCategories={tagCategories}
-        onTagCategoriesChange={setTagCategories}
-        visibleCardTags={visibleCardTags}
-        onVisibleCardTagsChange={setVisibleCardTags}
-        contextSummary={{
-          selectionCount: selectedAssets.length,
-          filterCount: activeFilters.length,
-          totalAssets: allAssets.length,
-          activeAssetName: activeLightboxAsset?.fileName
-        }}
-      />
+      <Suspense fallback={null}>
+        <OmniCommandPalette
+          open={isCommandOpen}
+          query={commandQuery}
+          onQueryChange={setCommandQuery}
+          onClose={closeCommandPalette}
+          items={commandItems}
+          isMobile={isMobile}
+          mode={commandMode}
+          onModeChange={setCommandMode}
+          tagCategories={tagCategories}
+          onTagCategoriesChange={setTagCategories}
+          visibleCardTags={visibleCardTags}
+          onVisibleCardTagsChange={setVisibleCardTags}
+          contextSummary={{
+            selectionCount: selectedAssets.length,
+            filterCount: activeFilters.length,
+            totalAssets: allAssets.length,
+            activeAssetName: activeLightboxAsset?.fileName
+          }}
+        />
+      </Suspense>
 
       {isTagEditorOpen && (
-        <TagEditor
-          categories={tagCategories.filter(cat => !cat.isCollection && !cat.isRating)}
-          onSave={async (updatedCategories) => {
-            try {
-              // Save to database
-              const response = await fetch("/api/dam/tags", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ categories: updatedCategories })
-              })
+        <Suspense fallback={null}>
+          <TagEditor
+            categories={tagCategories.filter(cat => !cat.isCollection && !cat.isRating)}
+            onSave={async (updatedCategories) => {
+              try {
+                // Save to database
+                const response = await fetch("/api/dam/tags", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ categories: updatedCategories })
+                })
 
-              if (!response.ok) {
-                throw new Error("Failed to save tags")
+                if (!response.ok) {
+                  throw new Error("Failed to save tags")
+                }
+
+                // Refresh tag categories from database
+                const refreshResponse = await fetch("/api/dam/tags")
+                const refreshData = await refreshResponse.json()
+                setTagCategories(refreshData.categories || [])
+
+                setIsTagEditorOpen(false)
+              } catch (error) {
+                console.error("Error saving tags:", error)
+                alert("Failed to save tags. Please try again.")
               }
-
-              // Refresh tag categories from database
-              const refreshResponse = await fetch("/api/dam/tags")
-              const refreshData = await refreshResponse.json()
-              setTagCategories(refreshData.categories || [])
-
-              setIsTagEditorOpen(false)
-            } catch (error) {
-              console.error("Error saving tags:", error)
-              alert("Failed to save tags. Please try again.")
-            }
-          }}
-          onClose={() => setIsTagEditorOpen(false)}
-        />
+            }}
+            onClose={() => setIsTagEditorOpen(false)}
+          />
+        </Suspense>
       )}
 
       {isCollectionManagerOpen && (
-        <CollectionManager
+        <Suspense fallback={null}>
+          <CollectionManager
           collections={collections.map((c: { id: string; name: string; displayName: string; color?: string }) => ({
             id: c.id,
             name: c.name,
@@ -2183,6 +2203,7 @@ export default function DAMPage() {
           }}
           onClose={() => setIsCollectionManagerOpen(false)}
         />
+        </Suspense>
       )}
 
       {isMobile && !isCommandOpen && (
