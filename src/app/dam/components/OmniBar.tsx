@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { useRef, useEffect, useState } from "react"
 import clsx from "clsx"
 import { X, Grid3x3, LayoutGrid, CreditCard } from "lucide-react"
 
@@ -74,6 +75,56 @@ export function OmniBar({
   const hasChips = Boolean(chipsContent)
   const bothActive = hasGroupBy && hasChips
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [showLeftScroll, setShowLeftScroll] = useState(false)
+  const [showRightScroll, setShowRightScroll] = useState(false)
+  const scrollIntervalRef = useRef<number | null>(null)
+
+  // Check scroll position to show/hide scroll indicators
+  const checkScroll = () => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    const { scrollLeft, scrollWidth, clientWidth } = container
+    setShowLeftScroll(scrollLeft > 0)
+    setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 1)
+  }
+
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    checkScroll()
+    container.addEventListener('scroll', checkScroll)
+    window.addEventListener('resize', checkScroll)
+
+    return () => {
+      container.removeEventListener('scroll', checkScroll)
+      window.removeEventListener('resize', checkScroll)
+    }
+  }, [hasGroupBy, hasChips])
+
+  const startAutoScroll = (direction: 'left' | 'right') => {
+    if (scrollIntervalRef.current) return
+
+    const scroll = () => {
+      const container = scrollContainerRef.current
+      if (!container) return
+
+      const scrollAmount = direction === 'left' ? -8 : 8
+      container.scrollLeft += scrollAmount
+    }
+
+    scrollIntervalRef.current = window.setInterval(scroll, 16)
+  }
+
+  const stopAutoScroll = () => {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current)
+      scrollIntervalRef.current = null
+    }
+  }
+
   return (
     <div className={containerClass} data-omni-bar>
       {/* Desktop layout */}
@@ -89,32 +140,79 @@ export function OmniBar({
           </div>
         )}
 
+        {/* Horizontal scroll container */}
         <div className={clsx(
-          "flex-1 min-w-0 flex",
-          bothActive ? "items-start" : "items-center"  // Vertically center if only one row active
+          "flex-1 min-w-0 relative",
+          !bothActive && "flex items-center"
         )}>
-          {/* Two-row layout when both group-by and chips are active, single row otherwise */}
-          <div className={clsx(
-            "w-full",
-            bothActive && "space-y-2"
-          )}>
-            {/* Group By row (top) */}
-            {hasGroupBy && (
-              <div className="flex flex-wrap items-center gap-2">
-                {groupByContent}
-              </div>
-            )}
+          {/* Left scroll indicator */}
+          {showLeftScroll && (
+            <div
+              className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-current to-transparent opacity-10 pointer-events-none z-10"
+              style={{ color: isOverlay ? '#F5EFE6' : '#C9BBAA' }}
+            />
+          )}
 
-            {/* Filter/Tag chips row (bottom) */}
-            {hasChips && (
-              <div className={clsx(
-                "flex flex-wrap gap-2",
-                isOverlay && tagSelectorContent ? "items-start" : "items-center"
-              )}>
-                <div className="flex flex-wrap items-center gap-2">
-                  {chipsContent}
-                </div>
-                {isOverlay && tagSelectorContent && (
+          {/* Scroll trigger zones */}
+          {showLeftScroll && (
+            <div
+              className="absolute left-0 top-0 bottom-0 w-16 z-20 cursor-w-resize"
+              onMouseEnter={() => startAutoScroll('left')}
+              onMouseLeave={stopAutoScroll}
+            />
+          )}
+          {showRightScroll && (
+            <div
+              className="absolute right-0 top-0 bottom-0 w-16 z-20 cursor-e-resize"
+              onMouseEnter={() => startAutoScroll('right')}
+              onMouseLeave={stopAutoScroll}
+            />
+          )}
+
+          {/* Right scroll indicator */}
+          {showRightScroll && (
+            <div
+              className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-current to-transparent opacity-10 pointer-events-none z-10"
+              style={{ color: isOverlay ? '#F5EFE6' : '#C9BBAA' }}
+            />
+          )}
+
+          {/* Scrollable content */}
+          <div
+            ref={scrollContainerRef}
+            className={clsx(
+              "overflow-x-auto overflow-y-hidden scrollbar-hidden",
+              bothActive ? "py-0.5" : "flex items-center h-full"
+            )}
+            style={{
+              scrollBehavior: 'smooth'
+            }}
+          >
+            {bothActive ? (
+              // Stack vertically when both group-by and filter are active
+              <div className="space-y-2 min-w-max">
+                {hasGroupBy && (
+                  <div className="flex items-center gap-2">
+                    {groupByContent}
+                  </div>
+                )}
+                {hasChips && (
+                  <div className="flex items-center gap-2">
+                    {chipsContent}
+                    {isOverlay && tagSelectorContent && (
+                      <div className="flex items-center gap-2">
+                        {tagSelectorContent}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              // Single horizontal row - vertically centered
+              <div className="flex items-center gap-2 min-w-max h-full">
+                {groupByContent}
+                {chipsContent}
+                {isOverlay && tagSelectorContent && !hasChips && (
                   <div className="flex items-center gap-2">
                     {tagSelectorContent}
                   </div>
@@ -304,42 +402,43 @@ export function OmniBar({
           )}
         </div>
 
-        {/* Group By row (mobile) */}
-        {hasGroupBy && (
+        {/* Single horizontal scroll row (or stacked if both group+filter active) */}
+        {(hasGroupBy || hasChips) && (
           <div className="relative w-full overflow-hidden">
-            <div className={clsx("overflow-x-auto scrollbar-hidden", isOverlay ? "px-3" : "-mx-3 px-3")}>
-              <div className="flex flex-nowrap items-center gap-2 min-w-max pb-1">
-                {groupByContent}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Chips/Filters area - always scroll in overlay mode, wrap in normal mode */}
-        {hasChips && (
-          <div className="relative w-full overflow-hidden">
-            {/* In overlay (lightbox), always use horizontal scroll. In normal mode, wrap if many selected */}
-            {isOverlay || selectedCount <= 3 ? (
-              <div
-                className={clsx(
-                  "overflow-x-auto scrollbar-hidden",
-                  isOverlay ? "mx-0 px-3" : "-mx-3 px-3"
-                )}
-                style={isOverlay ? {
-                  WebkitOverflowScrolling: 'touch',
-                  overflowX: 'auto',
-                  overflowY: 'hidden'
-                } : undefined}
-              >
+            <div
+              className={clsx(
+                "overflow-x-auto scrollbar-hidden",
+                isOverlay ? "px-3" : "-mx-3 px-3"
+              )}
+              style={{
+                WebkitOverflowScrolling: 'touch',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                scrollSnapType: 'x proximity'
+              }}
+            >
+              {bothActive ? (
+                // Stack when both active
+                <div className="space-y-2 pb-1">
+                  {hasGroupBy && (
+                    <div className="flex flex-nowrap items-center gap-2 min-w-max">
+                      {groupByContent}
+                    </div>
+                  )}
+                  {hasChips && (
+                    <div className="flex flex-nowrap items-center gap-2 min-w-max">
+                      {chipsContent}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Single row otherwise
                 <div className="flex flex-nowrap items-center gap-2 min-w-max pb-1">
+                  {groupByContent}
                   {chipsContent}
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {chipsContent}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 
