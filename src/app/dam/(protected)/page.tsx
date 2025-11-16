@@ -2219,20 +2219,20 @@ export default function DAMPage() {
           groupCategories={tagCategories}
           hasTeamMembers={teamMembers.length > 0}
           selectedGroupCategories={groupByTags}
-          onGroupCategoryToggle={handleGroupByToggle}
+          onGroupCategoryToggle={handleGroupBy}
           maxGroupSelections={2}
           filterCategories={tagCategories}
           selectedTagIds={selectedTagIds}
           selectedTeamMemberIds={selectedTeamMemberIds}
-          onTagToggle={handleTagToggle}
-          onTeamMemberToggle={handleTeamMemberToggle}
+          onTagToggle={handleTagFilterToggle}
+          onTeamMemberToggle={handleTeamFilterToggle}
           onOpenCommandPalette={() => openCommandPalette("")}
           showGridToggle={true}
           gridViewMode={gridViewMode}
-          onToggleGridView={handleToggleGridView}
+          onToggleGridView={toggleGridView}
           onOpenCardSettings={openCardSettings}
           selectedCount={selectedAssets.length}
-          onClearSelection={handleClearSelection}
+          onClearSelection={clearSelection}
           canApplyTags={canApplyTags}
           onApplyTags={handleApplyTags}
         />
