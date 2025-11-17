@@ -1168,32 +1168,33 @@ function AssetCard({
         if (!teamMember && displayedTags.length === 0) return null
 
         return (
-          <div className="absolute bottom-3 left-3 right-3 z-10 relative">
-            {/* Left scroll zone */}
-            {showLeftTagScroll && (
-              <div
-                className="absolute left-0 top-0 bottom-0 w-12 z-20 cursor-w-resize"
-                onMouseEnter={() => startTagScroll('left')}
-                onMouseLeave={stopTagScroll}
-              />
-            )}
+          <div className="absolute bottom-3 left-3 right-3 z-10">
+            <div className="relative">
+              {/* Left scroll zone */}
+              {showLeftTagScroll && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-12 z-20 cursor-w-resize"
+                  onMouseEnter={() => startTagScroll('left')}
+                  onMouseLeave={stopTagScroll}
+                />
+              )}
 
-            {/* Right scroll zone */}
-            {showRightTagScroll && (
-              <div
-                className="absolute right-0 top-0 bottom-0 w-12 z-20 cursor-e-resize"
-                onMouseEnter={() => startTagScroll('right')}
-                onMouseLeave={stopTagScroll}
-              />
-            )}
+              {/* Right scroll zone */}
+              {showRightTagScroll && (
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-12 z-20 cursor-e-resize"
+                  onMouseEnter={() => startTagScroll('right')}
+                  onMouseLeave={stopTagScroll}
+                />
+              )}
 
-            <div
-              ref={tagScrollRef}
-              className="horizontal-scroll-tags pr-8 w-full"
-              style={{
-                scrollBehavior: 'auto' // Override smooth scrolling for programmatic control
-              }}
-            >
+              <div
+                ref={tagScrollRef}
+                className="horizontal-scroll-tags pr-8 w-full"
+                style={{
+                  scrollBehavior: 'auto' // Override smooth scrolling for programmatic control
+                }}
+              >
               {/* Team member badge */}
               {teamMember && (() => {
                 const teamTagId = `team-${asset.teamMemberId}`
@@ -1237,6 +1238,7 @@ function AssetCard({
                   </span>
                 )
               })}
+              </div>
             </div>
           </div>
         )
