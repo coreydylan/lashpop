@@ -2,9 +2,11 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { createPortal } from "react-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, ChevronLeft, X } from "lucide-react"
+import { Plus, X } from "lucide-react"
+import clsx from "clsx"
 
 interface Tag {
   id: string
@@ -37,13 +39,67 @@ interface TagSelectorProps {
 export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
   const [categories, setCategories] = useState<TagCategory[]>([])
   const [teamMembers, setTeamMembers] = useState<any[]>([])
-  const [isAdding, setIsAdding] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState<TagCategory | null>(null)
+  const [isOpen, setIsOpen] = useState(false)
+  const [expandedCategory, setExpandedCategory] = useState<TagCategory | null>(null)
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchCategories()
     fetchTeamMembers()
   }, [])
+
+  // Update dropdown position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 6,
+        left: rect.left
+      })
+    }
+  }, [isOpen, expandedCategory])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+        setExpandedCategory(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
+
+  // Lock body scroll when dropdown is open on mobile
+  useEffect(() => {
+    if (!isOpen) return
+
+    // Only lock scroll on mobile (width < 1024px which is lg breakpoint)
+    const isMobile = window.innerWidth < 1024
+    if (!isMobile) return
+
+    const originalStyle = window.getComputedStyle(document.body).overflow
+    const originalPosition = window.getComputedStyle(document.body).position
+
+    // Lock scroll
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+
+    return () => {
+      // Restore scroll
+      document.body.style.overflow = originalStyle
+      document.body.style.position = originalPosition
+      document.body.style.width = ''
+    }
+  }, [isOpen])
 
   const fetchCategories = async () => {
     try {
@@ -65,7 +121,11 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
     }
   }
 
-  const handleAddTag = (category: TagCategory, tag: Tag) => {
+  const handleCategoryClick = useCallback((category: TagCategory) => {
+    setExpandedCategory(category)
+  }, [])
+
+  const handleAddTag = useCallback((category: TagCategory, tag: Tag) => {
     // Check if tag is already selected
     const isAlreadySelected = selectedTags.some((t) => t.id === tag.id)
     if (isAlreadySelected) return
@@ -81,24 +141,12 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
     }
 
     onTagsChange([...selectedTags, newTag])
-    // Go back to category view but keep selector open
-    setSelectedCategory(null)
-  }
+    // Close dropdown after adding
+    setIsOpen(false)
+    setExpandedCategory(null)
+  }, [selectedTags, onTagsChange])
 
-  const handleCategoryClick = (category: TagCategory) => {
-    setSelectedCategory(category)
-  }
-
-  const handleBackToCategories = () => {
-    setSelectedCategory(null)
-  }
-
-  const handleCancel = () => {
-    setSelectedCategory(null)
-    setIsAdding(false)
-  }
-
-  const handleAddTeamMember = (member: any) => {
+  const handleAddTeamMember = useCallback((member: any) => {
     const isAlreadySelected = selectedTags.some((t) => t.id === member.id)
     if (isAlreadySelected) return
 
@@ -115,9 +163,10 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
     }
 
     onTagsChange([...selectedTags, newTag])
-    // Go back to category view but keep selector open
-    setSelectedCategory(null)
-  }
+    // Close dropdown after adding
+    setIsOpen(false)
+    setExpandedCategory(null)
+  }, [selectedTags, onTagsChange])
 
   const handleRemoveTag = (tagId: string) => {
     onTagsChange(selectedTags.filter(t => t.id !== tagId))
@@ -134,11 +183,147 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
         id: m.id,
         name: m.name,
         displayName: m.name,
-        imageUrl: m.imageUrl
+        imageUrl: m.imageUrl,
+        cropCloseUpCircle: m.cropCloseUpCircle
       }))
     },
     ...categories
   ]
+
+  const isTeamCategory = expandedCategory?.id === 'team'
+
+  const renderDropdown = () => {
+    if (!isOpen || typeof window === 'undefined') return null
+
+    const dropdown = (
+      <div
+        ref={dropdownRef}
+        className="fixed min-w-[240px] max-w-[400px] max-h-[60vh] rounded-2xl shadow-lg overflow-y-auto z-[100] backdrop-blur-md touch-pan-y"
+        style={{
+          top: `${dropdownPosition.top}px`,
+          left: `${dropdownPosition.left}px`,
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 248, 246, 0.95) 100%)',
+          border: '1px solid rgba(161, 151, 129, 0.2)',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain'
+        }}
+        onTouchMove={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
+      >
+        {/* Category list view */}
+        {!expandedCategory && (
+          <div className="py-1">
+            {allCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryClick(cat)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: cat.color || "#A19781" }}
+                  />
+                  <span className="text-sm font-medium text-dune">{cat.displayName}</span>
+                </div>
+                <span className="text-xs text-sage/60">{cat.tags.length}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Tags view */}
+        {expandedCategory && (
+          <div className="py-1">
+            {/* Back button */}
+            <button
+              onClick={() => setExpandedCategory(null)}
+              className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors border-b border-sage/10"
+            >
+              <span className="text-sm text-sage">←</span>
+              <span className="text-sm font-semibold text-dune">{expandedCategory.displayName}</span>
+            </button>
+
+            {/* Tags list */}
+            {expandedCategory.tags.map((tag: any) => {
+              const isSelected = selectedTags.some((t) => t.id === tag.id)
+
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() => isTeamCategory ? handleAddTeamMember(tag) : handleAddTag(expandedCategory, tag)}
+                  disabled={isSelected}
+                  className={clsx(
+                    "w-full flex items-center gap-2 px-4 py-2 text-left transition-colors",
+                    isSelected ? "bg-dusty-rose/10 cursor-not-allowed" : "hover:bg-warm-sand/50"
+                  )}
+                >
+                  {/* Avatar for team members */}
+                  {isTeamCategory && (
+                    <div className="relative w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
+                      {!tag.imageUrl || tag.imageUrl.includes('placeholder') ? (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <svg className="w-4 h-4 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                          </svg>
+                        </div>
+                      ) : (
+                        <img
+                          src={tag.imageUrl}
+                          alt={tag.displayName}
+                          className="absolute"
+                          style={
+                            tag.cropCloseUpCircle
+                              ? {
+                                  width: `${tag.cropCloseUpCircle.scale * 100}%`,
+                                  height: `${tag.cropCloseUpCircle.scale * 100}%`,
+                                  left: `${50 - (tag.cropCloseUpCircle.x * tag.cropCloseUpCircle.scale)}%`,
+                                  top: `${50 - (tag.cropCloseUpCircle.y * tag.cropCloseUpCircle.scale)}%`,
+                                  objectFit: 'cover'
+                                }
+                              : {
+                                  width: '200%',
+                                  height: '200%',
+                                  left: '-50%',
+                                  top: '-25%',
+                                  objectFit: 'cover'
+                                }
+                          }
+                          onError={(e) => {
+                            const target = e.currentTarget
+                            target.style.display = 'none'
+                            const parent = target.parentElement
+                            if (parent) {
+                              parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-4 h-4 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
+                            }
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Name */}
+                  <span className={clsx(
+                    "text-sm flex-1",
+                    isSelected ? "text-dusty-rose/60 font-medium" : "text-dune"
+                  )}>
+                    {tag.displayName}
+                  </span>
+
+                  {/* Selected indicator */}
+                  {isSelected && (
+                    <span className="text-xs text-dusty-rose/60">✓ Added</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+
+    return createPortal(dropdown, document.body)
+  }
 
   return (
     <div className="space-y-3">
@@ -172,160 +357,24 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
         </div>
       )}
 
-      {/* Tag Picker */}
-      <div className="flex items-start gap-3 overflow-hidden">
-        {/* Add Tag Button */}
+      {/* Add Tag Button with Dropdown */}
+      <div className="flex items-start gap-3">
         <button
-          onClick={() => setIsAdding(!isAdding)}
-          className={`flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors border ${
-            isAdding
+          ref={buttonRef}
+          onClick={() => setIsOpen(!isOpen)}
+          className={clsx(
+            "flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors border",
+            isOpen
               ? "bg-sage text-cream border-sage"
               : "bg-sage/10 hover:bg-sage/20 text-sage border-sage/30"
-          }`}
+          )}
         >
           <Plus className="w-4 h-4" />
           <span className="text-sm font-medium">Add Tag</span>
         </button>
-
-      {/* Category/Tag Selector - Horizontal scrolling flow */}
-      <AnimatePresence mode="wait">
-        {isAdding && (
-          <motion.div
-            key={selectedCategory ? "tags" : "categories"}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-start gap-2 overflow-x-auto flex-nowrap hide-scrollbar"
-            style={{ scrollbarWidth: 'thin' }}
-          >
-            {selectedCategory ? (
-              <>
-                {/* Back button */}
-                <button
-                  onClick={handleBackToCategories}
-                  className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full bg-warm-sand/50 hover:bg-warm-sand text-dune transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="text-sm font-medium">Back</span>
-                </button>
-
-                {/* Tags or Team Members */}
-                {selectedCategory.tags.map((tag: any) => {
-                  const isSelected = selectedTags.some((t) => t.id === tag.id)
-                  const isTeamCategory = selectedCategory.id === "team"
-
-                  return (
-                    <motion.button
-                      key={tag.id}
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ duration: 0.15 }}
-                      onClick={() => isTeamCategory ? handleAddTeamMember(tag) : handleAddTag(selectedCategory, tag)}
-                      disabled={isSelected}
-                      className={`flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full font-medium transition-all shadow-sm ${
-                        isSelected
-                          ? "bg-sage/20 text-sage/60 cursor-not-allowed"
-                          : "hover:shadow-md"
-                      }`}
-                      style={{
-                        background: isSelected
-                          ? undefined
-                          : `linear-gradient(135deg, ${selectedCategory.color || "#A19781"} 0%, ${selectedCategory.color || "#A19781"}CC 100%)`,
-                        color: isSelected ? undefined : "#FAF7F1"
-                      }}
-                    >
-                      {isTeamCategory && (
-                        <div className="relative w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
-                          {!tag.imageUrl || tag.imageUrl.includes('placeholder') ? (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <svg className="w-3 h-3 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                              </svg>
-                            </div>
-                          ) : (
-                            <img
-                              src={tag.imageUrl}
-                              alt={tag.displayName}
-                              className="absolute"
-                              style={
-                                tag.cropCloseUpCircle
-                                  ? {
-                                      width: `${tag.cropCloseUpCircle.scale * 100}%`,
-                                      height: `${tag.cropCloseUpCircle.scale * 100}%`,
-                                      left: `${50 - (tag.cropCloseUpCircle.x * tag.cropCloseUpCircle.scale)}%`,
-                                      top: `${50 - (tag.cropCloseUpCircle.y * tag.cropCloseUpCircle.scale)}%`,
-                                      objectFit: 'cover'
-                                    }
-                                  : {
-                                      width: '200%',
-                                      height: '200%',
-                                      left: '-50%',
-                                      top: '-25%',
-                                      objectFit: 'cover'
-                                    }
-                              }
-                              onError={(e) => {
-                                const target = e.currentTarget
-                                target.style.display = 'none'
-                                const parent = target.parentElement
-                                if (parent) {
-                                  parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-3 h-3 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
-                                }
-                              }}
-                            />
-                          )}
-                        </div>
-                      )}
-                      <span className="text-sm whitespace-nowrap">
-                        {tag.displayName}
-                        {isSelected && " ✓"}
-                      </span>
-                    </motion.button>
-                  )
-                })}
-              </>
-            ) : (
-              <>
-                {/* Categories */}
-                {allCategories.map((category, index) => (
-                  <motion.button
-                    key={category.id}
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.15, delay: index * 0.03 }}
-                    onClick={() => handleCategoryClick(category)}
-                    className="flex-shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-full bg-warm-sand/50 hover:bg-warm-sand text-dune transition-all shadow-sm hover:shadow-md"
-                  >
-                    <div
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: category.color || "#A19781" }}
-                    />
-                    <span className="text-sm font-medium whitespace-nowrap">
-                      {category.displayName}
-                    </span>
-                  </motion.button>
-                ))}
-
-                {/* Done/Cancel button */}
-                <button
-                  onClick={handleCancel}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full transition-colors ${
-                    selectedTags.length > 0
-                      ? "bg-sage text-cream hover:bg-sage/90"
-                      : "bg-terracotta/20 hover:bg-terracotta/30 text-terracotta"
-                  }`}
-                >
-                  <span className="text-sm font-medium whitespace-nowrap">
-                    {selectedTags.length > 0 ? "Done" : "Cancel"}
-                  </span>
-                </button>
-              </>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
       </div>
+
+      {renderDropdown()}
     </div>
   )
 }
