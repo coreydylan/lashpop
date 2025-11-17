@@ -71,11 +71,10 @@ export function FilterSelector({
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Update dropdown position when opened (below button)
+  // Update dropdown position when opened
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect()
-      // Use viewport-relative coordinates for fixed positioning (no scroll offset needed)
       setDropdownPosition({
         top: rect.bottom + 6,
         left: rect.left
@@ -97,6 +96,30 @@ export function FilterSelector({
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen])
+
+  // Lock body scroll when dropdown is open on mobile
+  useEffect(() => {
+    if (!isOpen) return
+
+    // Only lock scroll on mobile (width < 1024px which is lg breakpoint)
+    const isMobile = window.innerWidth < 1024
+    if (!isMobile) return
+
+    const originalStyle = window.getComputedStyle(document.body).overflow
+    const originalPosition = window.getComputedStyle(document.body).position
+
+    // Lock scroll
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+
+    return () => {
+      // Restore scroll
+      document.body.style.overflow = originalStyle
+      document.body.style.position = originalPosition
+      document.body.style.width = ''
+    }
   }, [isOpen])
 
   // Memoized count calculations
@@ -125,7 +148,7 @@ export function FilterSelector({
 
   // Create combined categories including Team
   const allCategories = useMemo(() => [
-    ...(teamMembers.length > 0 ? [{
+    ...((teamMembers && teamMembers.length > 0) ? [{
       id: 'team',
       name: 'team',
       displayName: 'Team',
@@ -139,7 +162,7 @@ export function FilterSelector({
         count: getOptionCount('team', m.id)
       }))
     }] : []),
-    ...categories.map(cat => ({
+    ...(categories || []).map(cat => ({
       ...cat,
       options: (cat.tags || []).map(tag => ({
         id: tag.id,
@@ -168,115 +191,134 @@ export function FilterSelector({
     setExpandedCategory(null)
   }, [onTagToggle, onTeamMemberToggle])
 
-  // Dropdown menu
-  const DropdownMenu = () => {
-    if (!isOpen || typeof window === 'undefined') return null
+  const category = expandedCategory ? allCategories.find(c => c.id === expandedCategory) : null
+  const isTeamCategory = category?.id === 'team'
 
-    const category = expandedCategory ? allCategories.find(c => c.id === expandedCategory) : null
-    const isTeamCategory = category?.id === 'team'
+  const renderDropdown = () => {
+    if (!isOpen || typeof window === 'undefined') return null
 
     const dropdown = (
       <div
         ref={dropdownRef}
-        className="fixed min-w-[240px] max-w-[400px] rounded-2xl shadow-lg overflow-hidden z-[100] backdrop-blur-md"
+        className="fixed min-w-[240px] max-w-[400px] max-h-[60vh] rounded-2xl shadow-lg overflow-y-auto z-[100] backdrop-blur-md touch-pan-y"
         style={{
           top: `${dropdownPosition.top}px`,
           left: `${dropdownPosition.left}px`,
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 248, 246, 0.95) 100%)',
-          border: '1px solid rgba(161, 151, 129, 0.2)'
+          border: '1px solid rgba(161, 151, 129, 0.2)',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain'
         }}
+        onTouchMove={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
       >
-        {/* Category list view */}
-        {!expandedCategory && (
-          <div className="py-1">
-            {allCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => handleCategoryClick(cat.id)}
-                className="w-full flex items-center justify-between gap-3 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: cat.color || "#A19781" }}
-                  />
-                  <span className="text-sm font-medium text-dune">{cat.displayName}</span>
-                </div>
-                <span className="text-xs text-sage/60">{cat.count}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Options view */}
-        {expandedCategory && category && (
-          <div className="py-1">
-            {/* Back button */}
-            <button
-              onClick={() => setExpandedCategory(null)}
-              className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors border-b border-sage/10"
-            >
-              <span className="text-sm text-sage">←</span>
-              <span className="text-sm font-semibold text-dune">{category.displayName}</span>
-            </button>
-
-            {/* Options list */}
-            {category.options.map((option: any) => {
-              const isSelected = isTeamCategory
-                ? selectedTeamMemberIds.includes(option.id)
-                : selectedTagIds.includes(option.id)
-
-              return (
+          {/* Category list view */}
+          {!expandedCategory && (
+            <div className="py-1">
+              {allCategories.map((cat) => (
                 <button
-                  key={option.id}
-                  onClick={() => handleOptionClick(category.id, option.id)}
-                  className={clsx(
-                    "w-full flex items-center gap-2 px-4 py-2 text-left transition-colors",
-                    isSelected ? "bg-dusty-rose/10" : "hover:bg-warm-sand/50"
-                  )}
+                  key={cat.id}
+                  onClick={() => handleCategoryClick(cat.id)}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors"
                 >
-                  {/* Avatar for team members */}
-                  {isTeamCategory && option.imageUrl && (
-                    <div className="w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
-                      <img
-                        src={option.imageUrl}
-                        alt={option.displayName}
-                        className="w-full h-full object-cover"
-                        style={
-                          option.cropCloseUpCircle
-                            ? {
-                                objectPosition: `${option.cropCloseUpCircle.x}% ${option.cropCloseUpCircle.y}%`,
-                                transform: `scale(${option.cropCloseUpCircle.scale})`
-                              }
-                            : {
-                                objectPosition: 'center 25%',
-                                transform: 'scale(2)'
-                              }
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {/* Name */}
-                  <span className={clsx(
-                    "text-sm flex-1",
-                    isSelected ? "text-dusty-rose font-medium" : "text-dune"
-                  )}>
-                    {option.displayName}
-                  </span>
-
-                  {/* Count */}
-                  <span className="text-xs text-sage/60">{option.count}</span>
-
-                  {/* Selected indicator */}
-                  {isSelected && (
-                    <div className="w-2 h-2 rounded-full bg-dusty-rose flex-shrink-0" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: cat.color || "#A19781" }}
+                    />
+                    <span className="text-sm font-medium text-dune">{cat.displayName}</span>
+                  </div>
+                  <span className="text-xs text-sage/60">{cat.count}</span>
                 </button>
-              )
-            })}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+
+          {/* Options view */}
+          {expandedCategory && category && (
+            <div className="py-1">
+              {/* Back button */}
+              <button
+                onClick={() => setExpandedCategory(null)}
+                className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors border-b border-sage/10"
+              >
+                <span className="text-sm text-sage">←</span>
+                <span className="text-sm font-semibold text-dune">{category.displayName}</span>
+              </button>
+
+              {/* Options list */}
+              {category.options.map((option: any) => {
+                const isSelected = isTeamCategory
+                  ? selectedTeamMemberIds.includes(option.id)
+                  : selectedTagIds.includes(option.id)
+
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => handleOptionClick(category.id, option.id)}
+                    className={clsx(
+                      "w-full flex items-center gap-2 px-4 py-2 text-left transition-colors",
+                      isSelected ? "bg-dusty-rose/10" : "hover:bg-warm-sand/50"
+                    )}
+                  >
+                    {/* Avatar for team members */}
+                    {isTeamCategory && (
+                      <div className="w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
+                        {!option.imageUrl || option.imageUrl.includes('placeholder') ? (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                          </div>
+                        ) : (
+                          <img
+                            src={option.imageUrl}
+                            alt={option.displayName}
+                            className="w-full h-full object-cover"
+                            style={
+                              option.cropCloseUpCircle
+                                ? {
+                                    objectPosition: `${option.cropCloseUpCircle.x}% ${option.cropCloseUpCircle.y}%`,
+                                    transform: `scale(${option.cropCloseUpCircle.scale})`
+                                  }
+                                : {
+                                    objectPosition: 'center 25%',
+                                    transform: 'scale(2)'
+                                  }
+                            }
+                            onError={(e) => {
+                              const target = e.currentTarget
+                              target.style.display = 'none'
+                              const parent = target.parentElement
+                              if (parent) {
+                                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-4 h-4 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
+                              }
+                            }}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Name */}
+                    <span className={clsx(
+                      "text-sm flex-1",
+                      isSelected ? "text-dusty-rose font-medium" : "text-dune"
+                    )}>
+                      {option.displayName}
+                    </span>
+
+                    {/* Count */}
+                    <span className="text-xs text-sage/60">{option.count}</span>
+
+                    {/* Selected indicator */}
+                    {isSelected && (
+                      <div className="w-2 h-2 rounded-full bg-dusty-rose flex-shrink-0" />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
       </div>
     )
 
@@ -301,7 +343,7 @@ export function FilterSelector({
         <Plus className="w-3 h-3 flex-shrink-0" />
         <span className="whitespace-nowrap">Filter</span>
       </button>
-      <DropdownMenu />
+      {renderDropdown()}
     </>
   )
 }

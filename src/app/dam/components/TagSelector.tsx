@@ -235,24 +235,40 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
                         color: isSelected ? undefined : "#FAF7F1"
                       }}
                     >
-                      {isTeamCategory && tag.imageUrl && (
-                        <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
-                          <img
-                            src={tag.imageUrl}
-                            alt={tag.displayName}
-                            className="w-full h-full object-cover"
-                            style={
-                              tag.cropCloseUpCircle
-                                ? {
-                                    objectPosition: `${tag.cropCloseUpCircle.x}% ${tag.cropCloseUpCircle.y}%`,
-                                    transform: `scale(${tag.cropCloseUpCircle.scale})`
-                                  }
-                                : {
-                                    objectPosition: 'center 25%',
-                                    transform: 'scale(2)'
-                                  }
-                            }
-                          />
+                      {isTeamCategory && (
+                        <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
+                          {!tag.imageUrl || tag.imageUrl.includes('placeholder') ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <svg className="w-3 h-3 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                              </svg>
+                            </div>
+                          ) : (
+                            <img
+                              src={tag.imageUrl}
+                              alt={tag.displayName}
+                              className="w-full h-full object-cover"
+                              style={
+                                tag.cropCloseUpCircle
+                                  ? {
+                                      objectPosition: `${tag.cropCloseUpCircle.x}% ${tag.cropCloseUpCircle.y}%`,
+                                      transform: `scale(${tag.cropCloseUpCircle.scale})`
+                                    }
+                                  : {
+                                      objectPosition: 'center 25%',
+                                      transform: 'scale(2)'
+                                    }
+                              }
+                              onError={(e) => {
+                                const target = e.currentTarget
+                                target.style.display = 'none'
+                                const parent = target.parentElement
+                                if (parent) {
+                                  parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-3 h-3 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
+                                }
+                              }}
+                            />
+                          )}
                         </div>
                       )}
                       <span className="text-sm whitespace-nowrap">

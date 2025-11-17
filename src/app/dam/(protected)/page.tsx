@@ -20,6 +20,8 @@ import { OmniChip } from "../components/OmniChip"
 import { CollectionSelector } from "../components/CollectionSelector"
 import { TutorialWalkthrough } from "../components/TutorialWalkthrough"
 import { ThumbPanel } from "../components/ThumbPanel"
+import { InlineChipBar, ChipBarToggleButton } from "../components/InlineChipBar"
+import { ViewportSensor } from "../components/ViewportSensor"
 import { useDamSettings } from "@/hooks/useDamSettings"
 import { useDamActions } from "@/hooks/useDamActions"
 import { useDamInitialData } from "@/hooks/useDamData"
@@ -127,6 +129,16 @@ export default function DAMPage() {
   const [uploadingAssetIds, setUploadingAssetIds] = useState<string[]>([])
   const hasInteractedWithGridRef = useRef(false)
   const assetsRef = useRef<Asset[]>([])
+
+  // Inline chip bar state
+  const [chipBarInsertIndex, setChipBarInsertIndex] = useState<number | null>(null)
+  const [chipBarScrollToView, setChipBarScrollToView] = useState(false)
+  const [visibleAssetIds, setVisibleAssetIds] = useState<string[]>([])
+
+  // Handle assets detected by viewport sensor
+  const handleAssetsDetected = useCallback((assetIds: string[]) => {
+    setVisibleAssetIds(assetIds)
+  }, [])
 
   // Get collection from settings
   const activeCollectionId = settings.activeCollectionId
@@ -387,6 +399,48 @@ export default function DAMPage() {
   useEffect(() => {
     assetsRef.current = assets
   }, [assets])
+
+  // Handle chip bar activation (defined after assets is available)
+  const handleChipBarActivate = useCallback(() => {
+    console.log('Chip bar activate called', { chipBarInsertIndex, visibleAssetIds })
+
+    // If no assets, always show at index 0 (top)
+    if (assets.length === 0) {
+      setChipBarInsertIndex(0)
+      setChipBarScrollToView(true)
+      setTimeout(() => setChipBarScrollToView(false), 1000)
+      return
+    }
+
+    // Always recalculate position based on current viewport
+    if (visibleAssetIds.length > 0) {
+      // Find the index of the first visible asset
+      const firstVisibleAssetId = visibleAssetIds[0]
+      const assetIndex = assets.findIndex(a => a.id === firstVisibleAssetId)
+
+      console.log('Using sensor data:', { firstVisibleAssetId, assetIndex, totalAssets: assets.length })
+
+      if (assetIndex !== -1) {
+        // Insert chip bar right before this asset
+        setChipBarInsertIndex(assetIndex)
+        setChipBarScrollToView(true)
+        setTimeout(() => setChipBarScrollToView(false), 1000)
+      }
+    } else {
+      // Fallback: estimate based on scroll position
+      const viewportHeight = window.innerHeight
+      const scrollY = window.scrollY
+      const middleY = scrollY + (viewportHeight / 2)
+      const estimatedRow = Math.floor(middleY / 300)
+      const estimatedIndex = Math.max(0, Math.min(estimatedRow * 3, assets.length))
+
+      console.log('Using scroll estimate:', { viewportHeight, scrollY, estimatedRow, estimatedIndex, totalAssets: assets.length })
+
+      setChipBarInsertIndex(estimatedIndex)
+      setChipBarScrollToView(true)
+      setTimeout(() => setChipBarScrollToView(false), 1000)
+    }
+  }, [chipBarInsertIndex, visibleAssetIds, assets])
 
   useEffect(() => {
     // Only clear pending tag removal if selection actually changed to empty
@@ -920,6 +974,27 @@ export default function DAMPage() {
     const items: CommandItem[] = []
     const selectionCount = selectedAssets.length
     const assetCount = assets.length
+    const hasFiltersOrGroups = activeFilters.length > 0 || groupByTags.length > 0
+
+    // ========================================
+    // CLEAR ALL (appears at top when filters/groups active)
+    // ========================================
+    if (hasFiltersOrGroups) {
+      const clearText = []
+      if (activeFilters.length > 0) clearText.push(`${activeFilters.length} filter${activeFilters.length === 1 ? '' : 's'}`)
+      if (groupByTags.length > 0) clearText.push(`${groupByTags.length} group${groupByTags.length === 1 ? '' : 's'}`)
+
+      items.push({
+        id: "clear-all-filters-groups",
+        group: "Quick Actions",
+        label: "✕ Clear all filters & groups",
+        description: `Remove ${clearText.join(' and ')}`,
+        onSelect: () => {
+          handleClearFilters()
+          setGroupByTags([])
+        }
+      })
+    }
 
     // ========================================
     // SELECTION CATEGORY
@@ -1528,7 +1603,7 @@ export default function DAMPage() {
       return (
         <>
           {/* Selection Mode: Show existing tags with counts */}
-          {Array.from(existingTags.entries()).map(([tagId, count]) => {
+          {existingTags && Array.from(existingTags.entries()).map(([tagId, count]) => {
             const isTeamMemberTag = tagId.startsWith('team-')
             const isPending = pendingTagRemoval && pendingTagRemoval.tagId === tagId && pendingTagRemoval.context === "multi"
 
@@ -1893,35 +1968,35 @@ export default function DAMPage() {
       <div className="min-h-screen bg-cream">
         {/* Header - not sticky */}
         <header className="bg-cream select-none">
-          <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="max-w-7xl mx-auto px-3 py-3 lg:px-6 lg:py-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-shrink-0">
                 <img
                   src="/lashpop-images/branding/logo.png"
                   alt="LashPop Studios"
-                  className="h-10 w-auto mb-2"
+                  className="h-7 lg:h-10 w-auto mb-1 lg:mb-2"
                   style={{
                     filter: 'brightness(0) saturate(100%) invert(72%) sepia(12%) saturate(635%) hue-rotate(316deg) brightness(95%) contrast(88%)'
                   }}
                 />
-                <h1 className="text-xs font-semibold text-dune uppercase tracking-wider">
+                <h1 className="text-[10px] lg:text-xs font-semibold text-dune uppercase tracking-wider">
                   Digital Asset Management
                 </h1>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 lg:gap-3">
                 <button
                   onClick={() => setIsUploadOpen(!isUploadOpen)}
                   className={`btn ${isUploadOpen ? 'btn-primary' : 'btn-secondary'}`}
                 >
-                  <UploadIcon className="w-5 h-5" />
+                  <UploadIcon className="w-4 h-4 lg:w-5 lg:h-5" />
                   <span className="hidden sm:inline">Upload</span>
                 </button>
                 <Link
                   href="/dam/team"
                   className="btn btn-secondary"
                 >
-                  <Users className="w-5 h-5" />
+                  <Users className="w-4 h-4 lg:w-5 lg:h-5" />
                   <span className="hidden sm:inline">Team</span>
                 </Link>
                 <button
@@ -1932,7 +2007,7 @@ export default function DAMPage() {
                   className="btn btn-secondary"
                   title="Logout"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
                 </button>
               </div>
             </div>
@@ -2066,6 +2141,8 @@ export default function DAMPage() {
               visibleCardTags={visibleCardTags}
               pendingTagRemoval={pendingTagRemoval}
               dissipatingTags={dissipatingTags}
+              mobileChipBar={undefined} // Commented out InlineChipBar - filters now in OmniBar mobile layout
+              chipBarInsertIndex={chipBarInsertIndex}
             />
           )}
         </main>
@@ -2211,31 +2288,52 @@ export default function DAMPage() {
 
       {/* Mobile Thumb Panel - only show on mobile */}
       {isMobile && (
-        <ThumbPanel
-          collections={collections}
-          activeCollectionId={activeCollectionId}
-          onSelectCollection={setActiveCollectionId}
-          onCreateCollection={() => setIsCollectionManagerOpen(true)}
-          groupCategories={tagCategories}
-          hasTeamMembers={teamMembers.length > 0}
-          selectedGroupCategories={groupByTags}
-          onGroupCategoryToggle={handleGroupBy}
-          maxGroupSelections={2}
-          filterCategories={tagCategories}
-          selectedTagIds={activeFilters.filter(f => f.categoryName !== 'team').map(f => f.optionId)}
-          selectedTeamMemberIds={activeFilters.filter(f => f.categoryName === 'team').map(f => f.optionId)}
-          onTagToggle={handleTagFilterToggle}
-          onTeamMemberToggle={handleTeamFilterToggle}
-          onOpenCommandPalette={() => openCommandPalette("")}
-          showGridToggle={true}
-          gridViewMode={gridViewMode}
-          onToggleGridView={toggleGridView}
-          onOpenCardSettings={openCardSettings}
-          selectedCount={selectedAssets.length}
-          onClearSelection={clearSelection}
-          canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
-          onApplyTags={handleApplyTags}
-        />
+        <>
+          <ThumbPanel
+            collections={collections}
+            activeCollectionId={activeCollectionId}
+            onSelectCollection={setActiveCollectionId}
+            onCreateCollection={() => setIsCollectionManagerOpen(true)}
+            groupCategories={tagCategories}
+            hasTeamMembers={teamMembers.length > 0}
+            selectedGroupCategories={groupByTags}
+            onGroupCategoryToggle={handleGroupBy}
+            maxGroupSelections={2}
+            filterCategories={tagCategories}
+            teamMembers={teamMembers}
+            selectedTagIds={activeFilters.filter(f => f.categoryName !== 'team').map(f => f.optionId)}
+            selectedTeamMemberIds={activeFilters.filter(f => f.categoryName === 'team').map(f => f.optionId)}
+            onTagToggle={handleTagFilterToggle}
+            onTeamMemberToggle={handleTeamFilterToggle}
+            onClearFiltersAndGroups={() => {
+              handleClearFilters()
+              setGroupByTags([])
+            }}
+            onOpenCommandPalette={() => openCommandPalette("")}
+            showGridToggle={true}
+            gridViewMode={gridViewMode}
+            onToggleGridView={toggleGridView}
+            onOpenCardSettings={openCardSettings}
+            selectedCount={selectedAssets.length}
+            onClearSelection={clearSelection}
+            canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
+            onApplyTags={handleApplyTags}
+          />
+
+          {/* Chip bar toggle button - Commented out, using ThumbPanel action button instead */}
+          {/* <ChipBarToggleButton
+            isActive={chipBarInsertIndex !== null}
+            onActivate={handleChipBarActivate}
+            hasContent={Boolean(renderGroupByChips() || renderChips())}
+          /> */}
+
+          {/* Viewport sensor - invisible line that detects which assets are visible */}
+          <ViewportSensor
+            position={45}  // 45% from top - matches button position
+            onAssetsDetected={handleAssetsDetected}
+            debug={false}  // Set to true to see the sensor line
+          />
+        </>
       )}
     </PhotoLightbox>
   )

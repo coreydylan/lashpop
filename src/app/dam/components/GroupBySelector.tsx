@@ -34,11 +34,10 @@ export function GroupBySelector({
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Update dropdown position when opened (below button)
+  // Update dropdown position when opened
   useEffect(() => {
     if (isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect()
-      // Use viewport-relative coordinates for fixed positioning (no scroll offset needed)
       setDropdownPosition({
         top: rect.bottom + 6,
         left: rect.left
@@ -61,6 +60,30 @@ export function GroupBySelector({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
+  // Lock body scroll when dropdown is open on mobile
+  useEffect(() => {
+    if (!isOpen) return
+
+    // Only lock scroll on mobile (width < 1024px which is lg breakpoint)
+    const isMobile = window.innerWidth < 1024
+    if (!isMobile) return
+
+    const originalStyle = window.getComputedStyle(document.body).overflow
+    const originalPosition = window.getComputedStyle(document.body).position
+
+    // Lock scroll
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
+
+    return () => {
+      // Restore scroll
+      document.body.style.overflow = originalStyle
+      document.body.style.position = originalPosition
+      document.body.style.width = ''
+    }
+  }, [isOpen])
+
   const handleCategoryClick = useCallback((categoryName: string) => {
     onCategoryToggle(categoryName)
     // Auto-collapse after selection
@@ -75,71 +98,74 @@ export function GroupBySelector({
       displayName: 'Team',
       color: '#BCC9C2'
     }] : []),
-    ...categories
+    ...(categories || [])
   ]
 
-  // Dropdown menu
-  const DropdownMenu = () => {
+  const renderDropdown = () => {
     if (!isOpen || typeof window === 'undefined') return null
 
     const dropdown = (
       <div
         ref={dropdownRef}
-        className="fixed min-w-[200px] rounded-2xl shadow-lg overflow-hidden z-[100] backdrop-blur-md"
+        className="fixed min-w-[200px] max-h-[60vh] rounded-2xl shadow-lg overflow-y-auto z-[100] backdrop-blur-md touch-pan-y"
         style={{
           top: `${dropdownPosition.top}px`,
           left: `${dropdownPosition.left}px`,
           background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 248, 246, 0.95) 100%)',
-          border: '1px solid rgba(161, 151, 129, 0.2)'
+          border: '1px solid rgba(161, 151, 129, 0.2)',
+          touchAction: 'pan-y',
+          overscrollBehavior: 'contain'
         }}
+        onTouchMove={(e) => e.stopPropagation()}
+        onWheel={(e) => e.stopPropagation()}
       >
-        <div className="py-1">
-          {allCategories.map((cat) => {
-            const isSelected = selectedCategories.includes(cat.name)
-            const isDisabled = !isSelected && selectedCategories.length >= maxSelections
+          <div className="py-1">
+            {allCategories.map((cat) => {
+              const isSelected = selectedCategories.includes(cat.name)
+              const isDisabled = !isSelected && selectedCategories.length >= maxSelections
 
-            return (
-              <button
-                key={cat.id}
-                onClick={() => !isDisabled && handleCategoryClick(cat.name)}
-                disabled={isDisabled}
-                className={clsx(
-                  "w-full flex items-center justify-between gap-3 px-4 py-2 text-left transition-colors",
-                  isSelected && "bg-dusty-rose/10",
-                  !isDisabled && "hover:bg-warm-sand/50",
-                  isDisabled && "opacity-40 cursor-not-allowed"
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: cat.color || "#A19781" }}
-                  />
-                  <span className={clsx(
-                    "text-sm font-medium",
-                    isSelected ? "text-dusty-rose" : "text-dune"
-                  )}>
-                    {cat.displayName}
-                  </span>
-                </div>
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => !isDisabled && handleCategoryClick(cat.name)}
+                  disabled={isDisabled}
+                  className={clsx(
+                    "w-full flex items-center justify-between gap-3 px-4 py-2 text-left transition-colors",
+                    isSelected && "bg-dusty-rose/10",
+                    !isDisabled && "hover:bg-warm-sand/50",
+                    isDisabled && "opacity-40 cursor-not-allowed"
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: cat.color || "#A19781" }}
+                    />
+                    <span className={clsx(
+                      "text-sm font-medium",
+                      isSelected ? "text-dusty-rose" : "text-dune"
+                    )}>
+                      {cat.displayName}
+                    </span>
+                  </div>
 
-                {/* Selected indicator */}
-                {isSelected && (
-                  <div className="w-2 h-2 rounded-full bg-dusty-rose flex-shrink-0" />
-                )}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Footer hint */}
-        {selectedCategories.length < maxSelections && (
-          <div className="px-4 py-2 border-t border-sage/10">
-            <p className="text-xs text-sage/60">
-              Select up to {maxSelections} categories
-            </p>
+                  {/* Selected indicator */}
+                  {isSelected && (
+                    <div className="w-2 h-2 rounded-full bg-dusty-rose flex-shrink-0" />
+                  )}
+                </button>
+              )
+            })}
           </div>
-        )}
+
+          {/* Footer hint */}
+          {selectedCategories.length < maxSelections && (
+            <div className="px-4 py-2 border-t border-sage/10">
+              <p className="text-xs text-sage/60">
+                Select up to {maxSelections} categories
+              </p>
+            </div>
+          )}
       </div>
     )
 
@@ -164,7 +190,7 @@ export function GroupBySelector({
         <FolderTree className="w-3 h-3 flex-shrink-0" />
         <span className="whitespace-nowrap">Group By</span>
       </button>
-      <DropdownMenu />
+      {renderDropdown()}
     </>
   )
 }

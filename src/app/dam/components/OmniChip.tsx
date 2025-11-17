@@ -382,25 +382,42 @@ export function OmniChip({
             {/* Avatar/Image */}
             {imageUrl && (
               <div className={clsx(
-                "rounded-full overflow-hidden border border-cream/30 flex-shrink-0",
+                "rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40",
                 isMobile ? "w-4 h-4" : "w-5 h-5"
               )}>
-                <img
-                  src={imageUrl}
-                  alt={optionDisplayName}
-                  className="w-full h-full object-cover"
-                  style={
-                    imageCrop
-                      ? {
-                          objectPosition: `${imageCrop.x}% ${imageCrop.y}%`,
-                          transform: `scale(${imageCrop.scale})`
-                        }
-                      : {
-                          objectPosition: 'center 25%',
-                          transform: 'scale(2)'
-                        }
-                  }
-                />
+                {imageUrl.includes('placeholder') ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <svg className={clsx("text-cream/60", isMobile ? "w-2.5 h-2.5" : "w-3 h-3")} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                  </div>
+                ) : (
+                  <img
+                    src={imageUrl}
+                    alt={optionDisplayName}
+                    className="w-full h-full object-cover"
+                    style={
+                      imageCrop
+                        ? {
+                            objectPosition: `${imageCrop.x}% ${imageCrop.y}%`,
+                            transform: `scale(${imageCrop.scale})`
+                          }
+                        : {
+                            objectPosition: 'center 25%',
+                            transform: 'scale(2)'
+                          }
+                    }
+                    onError={(e) => {
+                      const target = e.currentTarget
+                      target.style.display = 'none'
+                      const parent = target.parentElement
+                      if (parent) {
+                        const size = isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'
+                        parent.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg class="${size} text-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>`
+                      }
+                    }}
+                  />
+                )}
               </div>
             )}
 

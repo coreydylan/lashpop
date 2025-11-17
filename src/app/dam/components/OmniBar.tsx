@@ -2,8 +2,10 @@
 
 import type { ReactNode } from "react"
 import { useRef, useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import clsx from "clsx"
 import { X, Grid3x3, LayoutGrid, CreditCard } from "lucide-react"
+
 
 export interface OmniBarProps {
   mode: "page" | "overlay"
@@ -60,7 +62,7 @@ export function OmniBar({
     isOverlay
       ? "bg-black/25 backdrop-blur-md lg:bg-black/15 lg:backdrop-blur-sm"
       : selectedCount > 0
-      ? "bg-dusty-rose/30"
+      ? "lg:bg-dusty-rose/30"  // Only apply background on desktop
       : "bg-warm-sand/30"
   )
 
@@ -145,7 +147,7 @@ export function OmniBar({
           </div>
         )}
 
-        {/* Horizontal scroll container */}
+        {/* Horizontal scroll container for chips */}
         <div className={clsx(
           "flex-1 min-w-0 relative",
           !bothActive && "flex items-center"
@@ -227,13 +229,15 @@ export function OmniBar({
           </div>
         </div>
 
-        <div className="flex-shrink-0 pl-4 pt-1 flex items-center gap-3">
+        <div className="flex-shrink-0 ml-auto pl-4 pt-1 flex items-center gap-3">
           {selectedCount > 0 ? (
             <>
               <div className="flex items-center gap-2">
-                <span className={clsx("body whitespace-nowrap font-semibold", textPrimary)}>
-                  {selectedCount} selected
-                </span>
+                {!escConfirmationActive && (
+                  <span className={clsx("body whitespace-nowrap font-semibold", textPrimary)}>
+                    {selectedCount} selected
+                  </span>
+                )}
                 {escConfirmationActive ? (
                   <button
                     onClick={onEscClick}
@@ -316,10 +320,13 @@ export function OmniBar({
         </div>
       </div>
 
-      {/* Mobile layout - minimal chips only, all controls in thumb panel */}
-      <div className={clsx("block lg:hidden", isOverlay ? "px-0" : "px-3")}>
-        {/* Just show asset count / selection count */}
-        <div className={clsx("flex items-center justify-between py-2", !isOverlay && "border-b border-sage/10")}>
+      {/* Mobile layout - show asset count and active chips */}
+      <div className="block lg:hidden">
+        {/* Asset count / selection count row */}
+        <div className={clsx(
+          "flex items-center justify-between py-2.5",
+          isOverlay ? "px-0" : "px-3"
+        )}>
           {selectedCount > 0 ? (
             <div className="flex items-center gap-1.5">
               <span className={clsx("text-sm font-bold", textPrimary)}>
@@ -349,56 +356,22 @@ export function OmniBar({
             </span>
           )}
           {counterSlot && (
-            <span className="text-[10px] font-bold text-cream bg-dune/30 rounded-full px-2 py-0.5">
+            <span className="text-[10px] font-bold text-sage">
               {counterSlot}
             </span>
           )}
         </div>
 
-        {/* Single horizontal scroll row */}
+        {/* Active filter/group chips - always show when there are chips */}
         {(hasGroupBy || hasChips) && (
-          <div className="relative w-full overflow-hidden pb-2">
-            <div
-              className={clsx(
-                "overflow-x-auto scrollbar-hidden",
-                isOverlay ? "px-3" : "-mx-3 px-3"
-              )}
-              style={{
-                WebkitOverflowScrolling: 'touch',
-                overflowX: 'auto',
-                overflowY: 'hidden',
-                scrollSnapType: 'x proximity'
-              }}
-            >
-              {bothActive ? (
-                // Stack when both active
-                <div className="space-y-1.5 pb-0.5">
-                  {hasGroupBy && (
-                    <div className="flex flex-nowrap items-center gap-1.5 min-w-max">
-                      {groupByContent}
-                    </div>
-                  )}
-                  {hasChips && (
-                    <div className="flex flex-nowrap items-center gap-1.5 min-w-max">
-                      {chipsContent}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // Single row otherwise
-                <div className="flex flex-nowrap items-center gap-1.5 min-w-max pb-0.5">
-                  {groupByContent}
-                  {chipsContent}
-                </div>
-              )}
+          <div className={clsx(
+            "pb-2.5 pt-1.5 overflow-x-auto scrollbar-hidden",
+            isOverlay ? "px-0" : "px-3"
+          )}>
+            <div className="flex items-center gap-1.5 min-w-max">
+              {groupByContent}
+              {chipsContent}
             </div>
-          </div>
-        )}
-
-        {/* Tag selector for lightbox/selection mode */}
-        {isOverlay && tagSelectorContent && (
-          <div className={clsx("pb-2", isOverlay ? "px-3" : "")}>
-            {tagSelectorContent}
           </div>
         )}
       </div>

@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState, useCallback, useEffect, useMemo, useRef, type ReactElement } from "react"
+import React from "react"
 import { PhotoView } from "react-photo-view"
 import { useThrottle } from "@/hooks/useThrottle"
 
@@ -52,6 +53,8 @@ interface AssetGridProps {
     context: string
   } | null
   dissipatingTags?: Set<string>
+  mobileChipBar?: ReactElement
+  chipBarInsertIndex?: number | null
 }
 
 interface GroupBucket {
@@ -69,7 +72,9 @@ export function AssetGrid({
   teamMembers = [],
   visibleCardTags = [],
   pendingTagRemoval = null,
-  dissipatingTags = new Set()
+  dissipatingTags = new Set(),
+  mobileChipBar,
+  chipBarInsertIndex
 }: AssetGridProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(selectedAssetIds.length > 0)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
@@ -651,24 +656,40 @@ export function AssetGrid({
           <div className={`${level === 0 ? 'border-b-2 border-sage/20 pb-2' : 'border-b border-sage/10 pb-1 ml-4'}`}>
             <div className="flex items-center gap-3">
               {/* Team member headshot */}
-              {groupImage && (
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-sage/20 flex-shrink-0">
-                  <img
-                    src={groupImage.url}
-                    alt={groupTitle}
-                    className="w-full h-full object-cover"
-                    style={
-                      groupImage.crop
-                        ? {
-                            objectPosition: `${groupImage.crop.x}% ${groupImage.crop.y}%`,
-                            transform: `scale(${groupImage.crop.scale})`
-                          }
-                        : {
-                            objectPosition: 'center 34%',
-                            transform: 'scale(0.9)'
-                          }
-                    }
-                  />
+              {type === 'team' && (
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-sage/20 flex-shrink-0 bg-warm-sand/40">
+                  {!groupImage ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                      </svg>
+                    </div>
+                  ) : (
+                    <img
+                      src={groupImage.url}
+                      alt={groupTitle}
+                      className="w-full h-full object-cover"
+                      style={
+                        groupImage.crop
+                          ? {
+                              objectPosition: `${groupImage.crop.x}% ${groupImage.crop.y}%`,
+                              transform: `scale(${groupImage.crop.scale})`
+                            }
+                          : {
+                              objectPosition: 'center 34%',
+                              transform: 'scale(0.9)'
+                            }
+                      }
+                      onError={(e) => {
+                        const target = e.currentTarget
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent) {
+                          parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
+                        }
+                      }}
+                    />
+                  )}
                 </div>
               )}
               <h3 className={`${level === 0 ? 'h3 text-sage' : 'h4 text-sage/80'}`}>
@@ -787,30 +808,53 @@ export function AssetGrid({
             ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4"
             : "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-3 sm:gap-4 space-y-3 sm:space-y-4"
         }`}>
-          {visibleAssets.map((asset) => (
-            <AssetCard
-              key={asset.id}
-              asset={asset}
-              isSelected={selectedAssetSet.has(asset.id)}
-              isSelectionMode={isSelectionMode}
-              isTouchDevice={isTouchDevice}
-              gridViewMode={gridViewMode}
-              onClick={(e) => handleAssetClick(asset, e)}
-              onLongPress={() => handleLongPress(asset.id)}
-              onMouseDown={(e) => handleMouseDown(asset.id, e)}
-              onDragOver={() => handleDragOver(asset.id)}
-              isDragging={isDragging}
-              isDraggedOver={draggedOverAssets.has(asset.id)}
-              visibleCardTags={visibleCardTags}
-              teamMembers={teamMembers}
-              groupByCategories={groupByCategories}
-              pendingTagRemoval={pendingTagRemoval}
-              dissipatingTags={dissipatingTags}
-              onRef={(el) => {
-                if (el) assetRefs.current.set(asset.id, el)
-                else assetRefs.current.delete(asset.id)
-              }}
-            />
+          {visibleAssets.map((asset, index) => (
+            <React.Fragment key={asset.id}>
+              {/* Insert chip bar at specified index */}
+              {chipBarInsertIndex !== null && index === chipBarInsertIndex && mobileChipBar && (
+                <div
+                  key="mobile-chip-bar"
+                  className={
+                    gridViewMode === "square"
+                      ? "col-span-full"
+                      : "w-full break-before-column break-after-column mb-4"
+                  }
+                  style={
+                    gridViewMode === "square"
+                      ? undefined
+                      : {
+                          columnSpan: 'all',
+                          WebkitColumnSpan: 'all'
+                        } as React.CSSProperties
+                  }
+                >
+                  {mobileChipBar}
+                </div>
+              )}
+              {/* Render asset card */}
+              <AssetCard
+                asset={asset}
+                isSelected={selectedAssetSet.has(asset.id)}
+                isSelectionMode={isSelectionMode}
+                isTouchDevice={isTouchDevice}
+                gridViewMode={gridViewMode}
+                onClick={(e) => handleAssetClick(asset, e)}
+                onLongPress={() => handleLongPress(asset.id)}
+                onMouseDown={(e) => handleMouseDown(asset.id, e)}
+                onDragOver={() => handleDragOver(asset.id)}
+                isDragging={isDragging}
+                isDraggedOver={draggedOverAssets.has(asset.id)}
+                visibleCardTags={visibleCardTags}
+                teamMembers={teamMembers}
+                groupByCategories={groupByCategories}
+                pendingTagRemoval={pendingTagRemoval}
+                dissipatingTags={dissipatingTags}
+                onRef={(el) => {
+                  if (el) assetRefs.current.set(asset.id, el)
+                  else assetRefs.current.delete(asset.id)
+                }}
+              />
+            </React.Fragment>
           ))}
         </div>
       )}
@@ -873,6 +917,7 @@ function AssetCard({
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [longPressTriggered, setLongPressTriggered] = useState(false)
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isTouchDevice) return
@@ -880,7 +925,11 @@ function AssetCard({
     // Prevent iOS context menu
     e.preventDefault()
 
+    // Reset long press flag
+    setLongPressTriggered(false)
+
     const timer = setTimeout(() => {
+      setLongPressTriggered(true)
       onLongPress()
     }, 500)
     setPressTimer(timer)
@@ -891,6 +940,17 @@ function AssetCard({
       clearTimeout(pressTimer)
       setPressTimer(null)
     }
+  }
+
+  const handleClick = (e: React.MouseEvent) => {
+    // If a long press was just triggered, prevent the click from toggling selection again
+    if (longPressTriggered) {
+      e.preventDefault()
+      e.stopPropagation()
+      setLongPressTriggered(false)
+      return
+    }
+    onClick(e)
   }
 
   const imageContent = (
@@ -929,7 +989,7 @@ function AssetCard({
         userSelect: 'none',
         willChange: isDragging || isDraggedOver ? 'transform' : 'auto'
       }}
-      onClick={onClick}
+      onClick={handleClick}
       onMouseDown={(e) => {
         onMouseDown(e)
       }}
