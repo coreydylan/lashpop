@@ -117,13 +117,9 @@ export function OmniBar({
 
     const scroll = () => {
       const container = scrollContainerRef.current
-      if (!container) {
-        console.log('OmniBar: No container ref')
-        return
-      }
+      if (!container) return
 
       const scrollAmount = direction === 'left' ? -8 : 8
-      console.log('OmniBar Scrolling:', direction, 'current scrollLeft:', container.scrollLeft, 'scrollWidth:', container.scrollWidth, 'clientWidth:', container.clientWidth)
       container.scrollLeft += scrollAmount
     }
 
@@ -196,11 +192,11 @@ export function OmniBar({
           <div
             ref={scrollContainerRef}
             className={clsx(
-              "overflow-x-auto overflow-y-hidden scrollbar-hidden",
+              "overflow-x-auto overflow-y-hidden scrollbar-hidden w-full",
               bothActive ? "py-0.5" : "flex items-center h-full"
             )}
             style={{
-              scrollBehavior: 'smooth'
+              scrollBehavior: 'auto'
             }}
           >
             {bothActive ? (
