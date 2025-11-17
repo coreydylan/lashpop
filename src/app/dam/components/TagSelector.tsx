@@ -4,8 +4,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { createPortal } from "react-dom"
-import { motion, AnimatePresence } from "framer-motion"
-import { Plus, X } from "lucide-react"
+import { Plus } from "lucide-react"
 import clsx from "clsx"
 
 interface Tag {
@@ -168,10 +167,6 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
     setExpandedCategory(null)
   }, [selectedTags, onTagsChange])
 
-  const handleRemoveTag = (tagId: string) => {
-    onTagsChange(selectedTags.filter(t => t.id !== tagId))
-  }
-
   // Combine team category with tag categories
   const allCategories = [
     {
@@ -326,55 +321,23 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
   }
 
   return (
-    <div className="space-y-3">
-      {/* Selected Tags Display */}
-      {selectedTags.length > 0 && (
-        <div className="flex flex-wrap items-start gap-2">
-          <AnimatePresence>
-            {selectedTags.map((tag) => (
-              <motion.div
-                key={tag.id}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm"
-                style={{
-                  background: `linear-gradient(135deg, ${tag.category.color || "#A19781"} 0%, ${tag.category.color || "#A19781"}CC 100%)`,
-                  color: "#FAF7F1"
-                }}
-              >
-                <span className="text-sm font-medium">{tag.displayName}</span>
-                <button
-                  onClick={() => handleRemoveTag(tag.id)}
-                  className="w-4 h-4 rounded-full hover:bg-white/20 flex items-center justify-center transition-colors"
-                  aria-label={`Remove ${tag.displayName}`}
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
+    <>
       {/* Add Tag Button with Dropdown */}
-      <div className="flex items-start gap-3">
-        <button
-          ref={buttonRef}
-          onClick={() => setIsOpen(!isOpen)}
-          className={clsx(
-            "flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors border",
-            isOpen
-              ? "bg-sage text-cream border-sage"
-              : "bg-sage/10 hover:bg-sage/20 text-sage border-sage/30"
-          )}
-        >
-          <Plus className="w-4 h-4" />
-          <span className="text-sm font-medium">Add Tag</span>
-        </button>
-      </div>
+      <button
+        ref={buttonRef}
+        onClick={() => setIsOpen(!isOpen)}
+        className={clsx(
+          "flex-shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors border",
+          isOpen
+            ? "bg-sage text-cream border-sage"
+            : "bg-sage/10 hover:bg-sage/20 text-sage border-sage/30"
+        )}
+      >
+        <Plus className="w-4 h-4" />
+        <span className="text-sm font-medium">Add Tag</span>
+      </button>
 
       {renderDropdown()}
-    </div>
+    </>
   )
 }
