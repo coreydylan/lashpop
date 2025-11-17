@@ -40,6 +40,7 @@ export interface OmniChipProps {
   // State
   isSelected?: boolean
   isPending?: boolean | null
+  isDissipating?: boolean
   isDisabled?: boolean
   isMobile?: boolean
 
@@ -67,6 +68,7 @@ export function OmniChip({
   imageCrop,
   isSelected = false,
   isPending = false,
+  isDissipating = false,
   isDisabled = false,
   isMobile = false,
   onClick,
@@ -240,13 +242,25 @@ export function OmniChip({
             <button
               key={index}
               onClick={() => {
-                // Always execute the action directly - no dropdown confirmation
-                // The parent component handles its own confirmation logic via isPending state
-                action.onClick()
-                setShowDropdown(false)
-                setPendingAction(null)
-                if (pendingTimeoutRef.current) {
-                  clearTimeout(pendingTimeoutRef.current)
+                // For danger actions, show confirmation unless already confirming
+                if (isDanger && !isPendingThis) {
+                  // First click - show confirmation
+                  setPendingAction(index)
+                  // Auto-cancel after 3 seconds
+                  if (pendingTimeoutRef.current) {
+                    clearTimeout(pendingTimeoutRef.current)
+                  }
+                  pendingTimeoutRef.current = setTimeout(() => {
+                    setPendingAction(null)
+                  }, 3000)
+                } else {
+                  // Second click or non-danger - execute action
+                  action.onClick()
+                  setShowDropdown(false)
+                  setPendingAction(null)
+                  if (pendingTimeoutRef.current) {
+                    clearTimeout(pendingTimeoutRef.current)
+                  }
                 }
               }}
               onMouseLeave={() => {
@@ -347,7 +361,7 @@ export function OmniChip({
         <div
           className={clsx(
             "flex items-center gap-0 rounded-full overflow-hidden transition-all",
-            isPending && "candy-cane-effect",
+            isDissipating && "dissipate-effect",
             hasActions && "cursor-pointer",
             styles.wrapper
           )}

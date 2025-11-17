@@ -263,7 +263,7 @@ export function FilterSelector({
                   >
                     {/* Avatar for team members */}
                     {isTeamCategory && (
-                      <div className="w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
+                      <div className="relative w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
                         {!option.imageUrl || option.imageUrl.includes('placeholder') ? (
                           <div className="w-full h-full flex items-center justify-center">
                             <svg className="w-4 h-4 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,16 +274,22 @@ export function FilterSelector({
                           <img
                             src={option.imageUrl}
                             alt={option.displayName}
-                            className="w-full h-full object-cover"
+                            className="absolute"
                             style={
                               option.cropCloseUpCircle
                                 ? {
-                                    objectPosition: `${option.cropCloseUpCircle.x}% ${option.cropCloseUpCircle.y}%`,
-                                    transform: `scale(${option.cropCloseUpCircle.scale})`
+                                    width: `${option.cropCloseUpCircle.scale * 100}%`,
+                                    height: `${option.cropCloseUpCircle.scale * 100}%`,
+                                    left: `${50 - (option.cropCloseUpCircle.x * option.cropCloseUpCircle.scale)}%`,
+                                    top: `${50 - (option.cropCloseUpCircle.y * option.cropCloseUpCircle.scale)}%`,
+                                    objectFit: 'cover'
                                   }
                                 : {
-                                    objectPosition: 'center 25%',
-                                    transform: 'scale(2)'
+                                    width: '200%',
+                                    height: '200%',
+                                    left: '-50%',
+                                    top: '-25%',
+                                    objectFit: 'cover'
                                   }
                             }
                             onError={(e) => {

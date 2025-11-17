@@ -1022,10 +1022,10 @@ function AssetCard({
         <PhotoView src={asset.filePath}>
           <div className="w-full h-full" onClick={(e) => {
             // Prevent PhotoView from opening if modifier keys are pressed
-            // Stop propagation AND prevent default to let parent handler work
+            // Only prevent default - let event bubble up to parent handler
             if (e.metaKey || e.ctrlKey || e.shiftKey) {
               e.preventDefault()
-              e.stopPropagation()
+              // Don't stopPropagation - let parent onClick handle the selection
             }
           }}>
             {imageContent}

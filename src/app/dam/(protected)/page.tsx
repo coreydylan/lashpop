@@ -695,14 +695,34 @@ export default function DAMPage() {
     // Capture values before clearing state
     const { tagId, count, assetIds } = pendingTagRemoval
 
-    // Clear pending state immediately
+    // Add to dissipating set for dissolve animation
+    setDissipatingTags(prev => {
+      const next = new Set(prev)
+      next.add(tagId)
+      return next
+    })
+
+    // Clear pending state immediately - no more candycane
     setPendingTagRemoval(null)
 
-    // Remove tag immediately without animation delay
+    // Remove tag from database while animation plays
     try {
       await handleRemoveTag(tagId, count, assetIds, true)
+
+      // Clean up dissipating tag after removal completes
+      setDissipatingTags(prev => {
+        const next = new Set(prev)
+        next.delete(tagId)
+        return next
+      })
     } catch (error) {
       console.error("Failed to remove tag:", error)
+      // Remove from dissipating even on error
+      setDissipatingTags(prev => {
+        const next = new Set(prev)
+        next.delete(tagId)
+        return next
+      })
       // Re-fetch to ensure UI is in sync
       await fetchAssets()
     }
@@ -1600,6 +1620,7 @@ export default function DAMPage() {
           {existingTags && Array.from(existingTags.entries()).map(([tagId, count]) => {
             const isTeamMemberTag = tagId.startsWith('team-')
             const isPending = pendingTagRemoval && pendingTagRemoval.tagId === tagId && pendingTagRemoval.context === "multi"
+            const isDissipating = dissipatingTags.has(tagId)
 
             if (isTeamMemberTag) {
               const teamMemberId = tagId.replace('team-', '')
@@ -1618,12 +1639,13 @@ export default function DAMPage() {
                   imageUrl={teamMember.imageUrl}
                   imageCrop={teamMember.cropCloseUpCircle}
                   isPending={isPending}
+                  isDissipating={isDissipating}
                   isMobile={isMobile}
                   onRemove={() => {
-                    console.log('onRemove called, isPending:', isPending)
+                    console.log('onRemove called, isPending:', isPending, 'tagId:', tagId)
                     if (isPending) {
                       console.log('Calling confirmTagRemoval')
-                      confirmTagRemoval()
+                      void confirmTagRemoval()
                     } else {
                       console.log('Calling requestTagRemoval')
                       requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
@@ -1659,11 +1681,15 @@ export default function DAMPage() {
                 count={count}
                 color={getTagColor(tag.category.color, false)}
                 isPending={isPending}
+                isDissipating={isDissipating}
                 isMobile={isMobile}
                 onRemove={() => {
+                  console.log('onRemove called, isPending:', isPending, 'tagId:', tagId)
                   if (isPending) {
-                    confirmTagRemoval()
+                    console.log('Calling confirmTagRemoval')
+                    void confirmTagRemoval()
                   } else {
+                    console.log('Calling requestTagRemoval')
                     requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")
                   }
                 }}
