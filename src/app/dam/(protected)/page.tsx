@@ -695,25 +695,17 @@ export default function DAMPage() {
     // Capture values before clearing state
     const { tagId, count, assetIds } = pendingTagRemoval
 
-    // Add tag to dissipating set for animation
-    setDissipatingTags(prev => {
-      const next = new Set(prev)
-      next.add(tagId)
-      return next
-    })
+    // Clear pending state immediately
     setPendingTagRemoval(null)
 
-    // Wait for animation to complete before actually removing
-    setTimeout(async () => {
+    // Remove tag immediately without animation delay
+    try {
       await handleRemoveTag(tagId, count, assetIds, true)
-
-      // Clean up dissipating tag after removal
-      setDissipatingTags(prev => {
-        const next = new Set(prev)
-        next.delete(tagId)
-        return next
-      })
-    }, 600) // Match dissipate animation duration
+    } catch (error) {
+      console.error("Failed to remove tag:", error)
+      // Re-fetch to ensure UI is in sync
+      await fetchAssets()
+    }
   }
 
   const syncActiveLightboxAsset = useCallback((updatedAssets?: Asset[]) => {
@@ -895,14 +887,16 @@ export default function DAMPage() {
       }
 
       const updated = await fetchAssets()
+      console.log('Tag removed successfully, fetched updated assets:', updated?.length)
 
       if (targetAssetIds) {
         syncActiveLightboxAsset(updated)
       }
-      // existingTags will automatically update via useMemo
-      setPendingTagRemoval(null)
+      // existingTags will automatically update via useMemo when assets change
     } catch (error) {
       console.error("Failed to remove tag:", error)
+      // Re-fetch even on error to ensure UI is in sync
+      await fetchAssets()
     }
   }, [fetchAssets, selectedAssets, syncActiveLightboxAsset])
 
@@ -1626,9 +1620,12 @@ export default function DAMPage() {
                   isPending={isPending}
                   isMobile={isMobile}
                   onRemove={() => {
+                    console.log('onRemove called, isPending:', isPending)
                     if (isPending) {
+                      console.log('Calling confirmTagRemoval')
                       confirmTagRemoval()
                     } else {
+                      console.log('Calling requestTagRemoval')
                       requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
                     }
                   }}
@@ -1706,11 +1703,13 @@ export default function DAMPage() {
             )
           })}
 
-          {/* Add Tag button */}
-          <TagSelector
-            selectedTags={omniTags}
-            onTagsChange={handleMultiTagSelectorChange}
-          />
+          {/* Add Tag button - hidden on mobile */}
+          <div className="hidden lg:block">
+            <TagSelector
+              selectedTags={omniTags}
+              onTagsChange={handleMultiTagSelectorChange}
+            />
+          </div>
         </>
       )
     } else if (activeLightboxAsset) {
@@ -1965,7 +1964,7 @@ export default function DAMPage() {
         setActiveLightboxIndex(index)
       }}
     >
-      <div className="min-h-screen bg-cream">
+      <div className="min-h-screen bg-cream no-horizontal-scroll">
         {/* Header - not sticky */}
         <header className="bg-cream select-none">
           <div className="max-w-7xl mx-auto px-3 py-3 lg:px-6 lg:py-6">
@@ -2015,8 +2014,8 @@ export default function DAMPage() {
         </header>
 
         {/* Sticky Omni Control Bar */}
-        <div className="sticky top-0 z-30 bg-cream/95 backdrop-blur-sm select-none">
-          <div className="max-w-7xl mx-auto px-6 pt-4">
+        <div className="sticky top-0 z-30 bg-cream backdrop-blur-sm select-none lg:bg-cream/95">
+          <div className="max-w-7xl mx-auto px-3 pt-2 lg:px-6 lg:pt-4">
             {/* Desktop: Collection Selector Row with Command Palette */}
             <div className={clsx(
               "hidden lg:flex mb-4 items-center gap-4",
@@ -2046,7 +2045,7 @@ export default function DAMPage() {
             </div>
 
             {/* Omni Bar */}
-            <div>
+            <div className="lg:pb-0">
               <OmniBar
                 mode="page"
                 groupByButton={selectedAssets.length === 0 ? (

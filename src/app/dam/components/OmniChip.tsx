@@ -240,24 +240,13 @@ export function OmniChip({
             <button
               key={index}
               onClick={() => {
-                if (isDanger && !isPendingThis) {
-                  // First click on danger action - show confirmation
-                  setPendingAction(index)
-                  // Auto-cancel after 3 seconds
-                  if (pendingTimeoutRef.current) {
-                    clearTimeout(pendingTimeoutRef.current)
-                  }
-                  pendingTimeoutRef.current = setTimeout(() => {
-                    setPendingAction(null)
-                  }, 3000)
-                } else {
-                  // Either non-danger action or confirming danger action
-                  action.onClick()
-                  setShowDropdown(false)
-                  setPendingAction(null)
-                  if (pendingTimeoutRef.current) {
-                    clearTimeout(pendingTimeoutRef.current)
-                  }
+                // Always execute the action directly - no dropdown confirmation
+                // The parent component handles its own confirmation logic via isPending state
+                action.onClick()
+                setShowDropdown(false)
+                setPendingAction(null)
+                if (pendingTimeoutRef.current) {
+                  clearTimeout(pendingTimeoutRef.current)
                 }
               }}
               onMouseLeave={() => {

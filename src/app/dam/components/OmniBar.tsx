@@ -58,12 +58,13 @@ export function OmniBar({
   const isOverlay = mode === "overlay"
 
   const containerClass = clsx(
-    "arch-full transition-colors overflow-visible",
+    "transition-colors overflow-visible",
+    "lg:arch-full",  // Rounded corners only on desktop
     isOverlay
       ? "bg-black/25 backdrop-blur-md lg:bg-black/15 lg:backdrop-blur-sm"
       : selectedCount > 0
-      ? "lg:bg-dusty-rose/30"  // Only apply background on desktop
-      : "bg-warm-sand/30"
+      ? "lg:bg-dusty-rose/30"  // Only apply background on desktop when selected
+      : "lg:bg-warm-sand/30"  // Subtle background only on desktop
   )
 
   const textPrimary = isOverlay ? "text-cream" : "text-dune"
@@ -324,26 +325,26 @@ export function OmniBar({
       <div className="block lg:hidden">
         {/* Asset count / selection count row */}
         <div className={clsx(
-          "flex items-center justify-between py-2.5",
+          "flex items-center justify-between py-2",
           isOverlay ? "px-0" : "px-3"
         )}>
           {selectedCount > 0 ? (
             <div className="flex items-center gap-1.5">
-              <span className={clsx("text-sm font-bold", textPrimary)}>
+              <span className={clsx("text-xs font-bold", textPrimary)}>
                 {selectedCount} selected
               </span>
               {escConfirmationActive && (
                 <button
                   onClick={onEscClick}
                   className={clsx(
-                    "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all font-medium text-[10px]",
+                    "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all font-medium text-[9px]",
                     isOverlay
                       ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
                       : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
                   )}
                   aria-label="Confirm deselect"
                 >
-                  <span className="inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[9px] font-semibold">
+                  <span className="inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[8px] font-semibold">
                     ESC
                   </span>
                   <span>again</span>
@@ -351,12 +352,12 @@ export function OmniBar({
               )}
             </div>
           ) : (
-            <span className={clsx("text-sm font-medium", textMuted)}>
+            <span className={clsx("text-xs font-medium", textMuted)}>
               {assetsCount} {assetLabel}
             </span>
           )}
           {counterSlot && (
-            <span className="text-[10px] font-bold text-sage">
+            <span className="text-[9px] font-bold text-sage">
               {counterSlot}
             </span>
           )}
@@ -365,7 +366,7 @@ export function OmniBar({
         {/* Active filter/group chips - always show when there are chips */}
         {(hasGroupBy || hasChips) && (
           <div className={clsx(
-            "pb-2.5 pt-1.5 overflow-x-auto scrollbar-hidden",
+            "pb-2 pt-1 overflow-x-auto scrollbar-hidden",
             isOverlay ? "px-0" : "px-3"
           )}>
             <div className="flex items-center gap-1.5 min-w-max">

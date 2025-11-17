@@ -125,14 +125,16 @@ export function ThumbPanel({
 
     const handleClickOutside = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        event.preventDefault()
+        event.stopPropagation()
         setIsOpen(false)
         setCurrentView("main")
         setExpandedCategory(null)
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside, true)
+    return () => document.removeEventListener("mousedown", handleClickOutside, true)
   }, [isOpen])
 
   // Build all available group categories
