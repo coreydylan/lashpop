@@ -227,7 +227,7 @@ export function OmniBar({
           <div
             ref={scrollContainerRef}
             className={clsx(
-              "overflow-x-auto overflow-y-hidden scrollbar-hidden w-full",
+              "overflow-x-auto overflow-y-hidden scrollbar-hidden w-full max-w-full",
               bothActive ? "py-0.5" : "flex items-center h-full"
             )}
             style={{
