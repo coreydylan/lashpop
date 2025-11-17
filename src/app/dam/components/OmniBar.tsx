@@ -117,11 +117,18 @@ export function OmniBar({
 
     const scroll = () => {
       const container = scrollContainerRef.current
-      if (!container) return
+      if (!container) {
+        console.log('OmniBar: No container ref')
+        return
+      }
 
       const scrollAmount = direction === 'left' ? -8 : 8
+      console.log('OmniBar Scrolling:', direction, 'current scrollLeft:', container.scrollLeft, 'scrollWidth:', container.scrollWidth, 'clientWidth:', container.clientWidth)
       container.scrollLeft += scrollAmount
     }
+
+    // Start scrolling immediately
+    scroll()
 
     scrollIntervalRef.current = window.setInterval(scroll, 16)
   }
