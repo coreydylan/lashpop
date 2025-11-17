@@ -94,6 +94,7 @@ export function OmniBar({
     if (!container) return
 
     const { scrollLeft, scrollWidth, clientWidth } = container
+    console.log('OmniBar checkScroll:', { scrollLeft, scrollWidth, clientWidth, hasOverflow: scrollWidth > clientWidth })
     setShowLeftScroll(scrollLeft > 0)
     setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 1)
   }
@@ -117,10 +118,15 @@ export function OmniBar({
 
     const scroll = () => {
       const container = scrollContainerRef.current
-      if (!container) return
+      if (!container) {
+        console.log('OmniBar: No container ref')
+        return
+      }
 
       const scrollAmount = direction === 'left' ? -8 : 8
+      console.log('OmniBar scrolling:', direction, 'scrollLeft before:', container.scrollLeft, 'scrollWidth:', container.scrollWidth, 'clientWidth:', container.clientWidth)
       container.scrollLeft += scrollAmount
+      console.log('OmniBar scrollLeft after:', container.scrollLeft)
     }
 
     // Start scrolling immediately
