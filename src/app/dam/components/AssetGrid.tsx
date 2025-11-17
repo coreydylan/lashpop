@@ -962,19 +962,13 @@ function AssetCard({
   }, [isTouchDevice])
 
   const startTagScroll = (direction: 'left' | 'right') => {
-    console.log('startTagScroll called:', direction, 'isTouchDevice:', isTouchDevice, 'hasInterval:', !!tagScrollIntervalRef.current)
-
     if (tagScrollIntervalRef.current || isTouchDevice) return
 
     const scroll = () => {
       const container = tagScrollRef.current
-      if (!container) {
-        console.log('No container ref')
-        return
-      }
+      if (!container) return
 
       const scrollAmount = direction === 'left' ? -5 : 5
-      console.log('Scrolling:', direction, 'current scrollLeft:', container.scrollLeft, 'scrollAmount:', scrollAmount)
       container.scrollLeft += scrollAmount
     }
 
@@ -1174,7 +1168,7 @@ function AssetCard({
         if (!teamMember && displayedTags.length === 0) return null
 
         return (
-          <div className="absolute bottom-3 left-3 right-3 z-10">
+          <div className="absolute bottom-3 left-3 right-3 z-10 relative">
             {/* Left scroll zone */}
             {showLeftTagScroll && (
               <div
@@ -1195,7 +1189,7 @@ function AssetCard({
 
             <div
               ref={tagScrollRef}
-              className="horizontal-scroll-tags pr-8"
+              className="horizontal-scroll-tags pr-8 w-full"
               style={{
                 scrollBehavior: 'auto' // Override smooth scrolling for programmatic control
               }}
