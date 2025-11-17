@@ -142,7 +142,7 @@ export default function DAMPage() {
 
   // Get collection from settings
   const activeCollectionId = settings.activeCollectionId
-  const setActiveCollectionId = (id: string | undefined) => updateActiveCollection(id)
+  const setActiveCollectionId = (id: string | null | undefined) => updateActiveCollection(id ?? undefined)
 
   const filterableAssets = useMemo(
     () =>
@@ -187,7 +187,7 @@ export default function DAMPage() {
 
   // Grid view state from settings
   const gridViewMode = settings.gridViewMode
-  const setGridViewMode = (mode: "square" | "aspect") => {
+  const setGridViewMode = (mode: "square" | "aspect" | "masonry") => {
     updateGridViewMode(mode)
     logViewChange({ viewMode: mode })
   }

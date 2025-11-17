@@ -43,7 +43,7 @@ interface AssetGridProps {
   selectedAssetIds?: string[]
   onSelectionChange?: (selectedIds: string[]) => void
   onDelete?: (assetIds: string[]) => void
-  gridViewMode?: "square" | "aspect"
+  gridViewMode?: "square" | "aspect" | "masonry"
   groupByCategories?: string[]
   teamMembers?: TeamMember[]
   visibleCardTags?: string[]
@@ -883,7 +883,7 @@ interface AssetCardProps {
   isSelected: boolean
   isSelectionMode: boolean
   isTouchDevice: boolean
-  gridViewMode: "square" | "aspect"
+  gridViewMode: "square" | "aspect" | "masonry"
   onClick: (event: React.MouseEvent) => void
   onLongPress: () => void
   onMouseDown: (event: React.MouseEvent | React.TouchEvent) => void

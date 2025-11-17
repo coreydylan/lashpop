@@ -2,9 +2,10 @@
  * React Hook for DAM User Settings
  *
  * Manages loading, updating, and persisting user settings for the DAM
+ * Settings saves are debounced to reduce database writes
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { DamSettingsData } from '@/db/schema/dam_user_settings'
 
 const DEFAULT_SETTINGS: DamSettingsData = {
@@ -17,10 +18,14 @@ const DEFAULT_SETTINGS: DamSettingsData = {
   sortOrder: 'desc'
 }
 
+const DEBOUNCE_DELAY = 500 // 500ms debounce
+
 export function useDamSettings() {
   const [settings, setSettings] = useState<DamSettingsData>(DEFAULT_SETTINGS)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const pendingSettingsRef = useRef<DamSettingsData | null>(null)
 
   // Load settings on mount
   useEffect(() => {
@@ -48,10 +53,8 @@ export function useDamSettings() {
     loadSettings()
   }, [])
 
-  // Save settings to database
-  const saveSettings = useCallback(async (newSettings: Partial<DamSettingsData>) => {
-    const updatedSettings = { ...settings, ...newSettings }
-    setSettings(updatedSettings)
+  // Debounced save to database
+  const saveToDatabase = useCallback(async (settingsToSave: DamSettingsData) => {
     setIsSaving(true)
 
     try {
@@ -59,7 +62,7 @@ export function useDamSettings() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ settings: updatedSettings })
+        body: JSON.stringify({ settings: settingsToSave })
       })
 
       if (!response.ok) {
@@ -67,15 +70,48 @@ export function useDamSettings() {
       }
     } catch (error) {
       console.error('Failed to save DAM settings:', error)
-      // Revert on error
-      setSettings(settings)
     } finally {
       setIsSaving(false)
+      pendingSettingsRef.current = null
     }
-  }, [settings])
+  }, [])
+
+  // Save settings with debouncing
+  const saveSettings = useCallback((newSettings: Partial<DamSettingsData>) => {
+    const updatedSettings = { ...settings, ...newSettings }
+
+    // Update UI immediately (optimistic update)
+    setSettings(updatedSettings)
+    pendingSettingsRef.current = updatedSettings
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    // Debounce the actual save
+    saveTimeoutRef.current = setTimeout(() => {
+      if (pendingSettingsRef.current) {
+        saveToDatabase(pendingSettingsRef.current)
+      }
+    }, DEBOUNCE_DELAY)
+  }, [settings, saveToDatabase])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+      // Save any pending changes immediately on unmount
+      if (pendingSettingsRef.current) {
+        saveToDatabase(pendingSettingsRef.current)
+      }
+    }
+  }, [saveToDatabase])
 
   // Helper functions for common operations
-  const updateGridViewMode = useCallback((mode: 'square' | 'aspect') => {
+  const updateGridViewMode = useCallback((mode: 'square' | 'aspect' | 'masonry') => {
     saveSettings({ gridViewMode: mode })
   }, [saveSettings])
 

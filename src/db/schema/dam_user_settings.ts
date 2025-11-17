@@ -34,7 +34,7 @@ export type NewDamUserSettings = typeof damUserSettings.$inferInsert
  */
 export interface DamSettingsData {
   // View preferences
-  gridViewMode: 'square' | 'aspect'
+  gridViewMode: 'square' | 'aspect' | 'masonry'
 
   // Filter state
   activeFilters: Array<{

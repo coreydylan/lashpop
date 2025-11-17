@@ -20,7 +20,7 @@ export interface OmniBarProps {
   canApplyTags: boolean
   onClearSelection: () => void
   onApplyTags: () => void
-  gridViewMode: "square" | "aspect"
+  gridViewMode: "square" | "aspect" | "masonry"
   onToggleGridView: () => void
   showGridToggle?: boolean
   counterSlot?: ReactNode

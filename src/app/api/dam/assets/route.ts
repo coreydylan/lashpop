@@ -69,7 +69,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ assets: filteredAssets })
+    return NextResponse.json({ assets: filteredAssets }, {
+      headers: {
+        'Cache-Control': 's-maxage=30, stale-while-revalidate=60'
+      }
+    })
   } catch (error) {
     console.error("Error fetching assets:", error)
     return NextResponse.json(

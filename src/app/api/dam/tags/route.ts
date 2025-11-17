@@ -25,7 +25,11 @@ export async function GET() {
       tags: allTags.filter((tag) => tag.categoryId === category.id)
     }))
 
-    return NextResponse.json({ categories: categoriesWithTags })
+    return NextResponse.json({ categories: categoriesWithTags }, {
+      headers: {
+        'Cache-Control': 's-maxage=30, stale-while-revalidate=60'
+      }
+    })
   } catch (error) {
     console.error("Error fetching tags:", error)
     return NextResponse.json({ error: "Failed to fetch tags" }, { status: 500 })

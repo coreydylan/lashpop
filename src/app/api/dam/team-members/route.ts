@@ -29,7 +29,11 @@ export async function GET() {
       .where(eq(teamMembers.isActive, true))
       .orderBy(teamMembers.displayOrder)
 
-    return NextResponse.json({ teamMembers: members })
+    return NextResponse.json({ teamMembers: members }, {
+      headers: {
+        'Cache-Control': 's-maxage=30, stale-while-revalidate=60'
+      }
+    })
   } catch (error) {
     console.error("Error fetching team members:", error)
     return NextResponse.json(

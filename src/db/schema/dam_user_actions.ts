@@ -79,7 +79,7 @@ export interface CollectionActionData {
 }
 
 export interface ViewChangeActionData {
-  viewMode: 'square' | 'aspect'
+  viewMode: 'square' | 'aspect' | 'masonry'
 }
 
 export interface GroupChangeActionData {

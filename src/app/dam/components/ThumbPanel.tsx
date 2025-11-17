@@ -74,7 +74,7 @@ interface ThumbPanelProps {
   // Actions
   onOpenCommandPalette?: () => void
   showGridToggle?: boolean
-  gridViewMode?: "square" | "masonry"
+  gridViewMode?: "square" | "aspect" | "masonry"
   onToggleGridView?: () => void
   onOpenCardSettings?: () => void
 
