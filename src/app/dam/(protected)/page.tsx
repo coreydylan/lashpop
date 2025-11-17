@@ -728,6 +728,38 @@ export default function DAMPage() {
     }
   }
 
+  // Direct removal with dissipate effect (bypasses pendingTagRemoval state)
+  const removeTagDirectly = async (tagId: string, assetIds: string[], count: number) => {
+    // Add to dissipating set for dissolve animation
+    setDissipatingTags(prev => {
+      const next = new Set(prev)
+      next.add(tagId)
+      return next
+    })
+
+    // Remove tag from database while animation plays
+    try {
+      await handleRemoveTag(tagId, count, assetIds, true)
+
+      // Clean up dissipating tag after removal completes
+      setDissipatingTags(prev => {
+        const next = new Set(prev)
+        next.delete(tagId)
+        return next
+      })
+    } catch (error) {
+      console.error("Failed to remove tag:", error)
+      // Remove from dissipating even on error
+      setDissipatingTags(prev => {
+        const next = new Set(prev)
+        next.delete(tagId)
+        return next
+      })
+      // Re-fetch to ensure UI is in sync
+      await fetchAssets()
+    }
+  }
+
   const syncActiveLightboxAsset = useCallback((updatedAssets?: Asset[]) => {
     setActiveLightboxAsset((prev) => {
       if (!prev) return prev
@@ -1642,14 +1674,8 @@ export default function DAMPage() {
                   isDissipating={isDissipating}
                   isMobile={isMobile}
                   onRemove={() => {
-                    console.log('onRemove called, isPending:', isPending, 'tagId:', tagId)
-                    if (isPending) {
-                      console.log('Calling confirmTagRemoval')
-                      void confirmTagRemoval()
-                    } else {
-                      console.log('Calling requestTagRemoval')
-                      requestTagRemoval(tagId, selectedAssets, "team member", count, "multi")
-                    }
+                    // Direct removal with dissipate effect - dropdown handles confirmation
+                    void removeTagDirectly(tagId, selectedAssets, count)
                   }}
                   onCategoryClick={() => handleGroupBy("team")}
                   isDisabled={groupByTags.includes("team") || groupByTags.length >= 2}
@@ -1684,14 +1710,8 @@ export default function DAMPage() {
                 isDissipating={isDissipating}
                 isMobile={isMobile}
                 onRemove={() => {
-                  console.log('onRemove called, isPending:', isPending, 'tagId:', tagId)
-                  if (isPending) {
-                    console.log('Calling confirmTagRemoval')
-                    void confirmTagRemoval()
-                  } else {
-                    console.log('Calling requestTagRemoval')
-                    requestTagRemoval(tagId, selectedAssets, "tag", count, "multi")
-                  }
+                  // Direct removal with dissipate effect - dropdown handles confirmation
+                  void removeTagDirectly(tagId, selectedAssets, count)
                 }}
                 onCategoryClick={() => handleGroupBy(tag.category.name)}
                 isDisabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}

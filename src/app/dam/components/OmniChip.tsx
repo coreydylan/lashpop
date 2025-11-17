@@ -385,7 +385,7 @@ export function OmniChip({
             {/* Avatar/Image */}
             {imageUrl && (
               <div className={clsx(
-                "rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40",
+                "relative rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40",
                 isMobile ? "w-4 h-4" : "w-5 h-5"
               )}>
                 {imageUrl.includes('placeholder') ? (
@@ -398,16 +398,22 @@ export function OmniChip({
                   <img
                     src={imageUrl}
                     alt={optionDisplayName}
-                    className="w-full h-full object-cover"
+                    className="absolute"
                     style={
                       imageCrop
                         ? {
-                            objectPosition: `${imageCrop.x}% ${imageCrop.y}%`,
-                            transform: `scale(${imageCrop.scale})`
+                            width: `${imageCrop.scale * 100}%`,
+                            height: `${imageCrop.scale * 100}%`,
+                            left: `${50 - (imageCrop.x * imageCrop.scale)}%`,
+                            top: `${50 - (imageCrop.y * imageCrop.scale)}%`,
+                            objectFit: 'cover'
                           }
                         : {
-                            objectPosition: 'center 25%',
-                            transform: 'scale(2)'
+                            width: '200%',
+                            height: '200%',
+                            left: '-50%',
+                            top: '-25%',
+                            objectFit: 'cover'
                           }
                     }
                     onError={(e) => {

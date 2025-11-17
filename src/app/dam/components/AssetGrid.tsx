@@ -657,7 +657,7 @@ export function AssetGrid({
             <div className="flex items-center gap-3">
               {/* Team member headshot */}
               {type === 'team' && (
-                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-sage/20 flex-shrink-0 bg-warm-sand/40">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-sage/20 flex-shrink-0 bg-warm-sand/40">
                   {!groupImage ? (
                     <div className="w-full h-full flex items-center justify-center">
                       <svg className="w-6 h-6 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -668,16 +668,22 @@ export function AssetGrid({
                     <img
                       src={groupImage.url}
                       alt={groupTitle}
-                      className="w-full h-full object-cover"
+                      className="absolute"
                       style={
                         groupImage.crop
                           ? {
-                              objectPosition: `${groupImage.crop.x}% ${groupImage.crop.y}%`,
-                              transform: `scale(${groupImage.crop.scale})`
+                              width: `${groupImage.crop.scale * 100}%`,
+                              height: `${groupImage.crop.scale * 100}%`,
+                              left: `${50 - (groupImage.crop.x * groupImage.crop.scale)}%`,
+                              top: `${50 - (groupImage.crop.y * groupImage.crop.scale)}%`,
+                              objectFit: 'cover'
                             }
                           : {
-                              objectPosition: 'center 34%',
-                              transform: 'scale(0.9)'
+                              width: '90%',
+                              height: '90%',
+                              left: '5%',
+                              top: '-16%',
+                              objectFit: 'cover'
                             }
                       }
                       onError={(e) => {

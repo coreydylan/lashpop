@@ -236,7 +236,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
                       }}
                     >
                       {isTeamCategory && (
-                        <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
+                        <div className="relative w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
                           {!tag.imageUrl || tag.imageUrl.includes('placeholder') ? (
                             <div className="w-full h-full flex items-center justify-center">
                               <svg className="w-3 h-3 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,16 +247,22 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
                             <img
                               src={tag.imageUrl}
                               alt={tag.displayName}
-                              className="w-full h-full object-cover"
+                              className="absolute"
                               style={
                                 tag.cropCloseUpCircle
                                   ? {
-                                      objectPosition: `${tag.cropCloseUpCircle.x}% ${tag.cropCloseUpCircle.y}%`,
-                                      transform: `scale(${tag.cropCloseUpCircle.scale})`
+                                      width: `${tag.cropCloseUpCircle.scale * 100}%`,
+                                      height: `${tag.cropCloseUpCircle.scale * 100}%`,
+                                      left: `${50 - (tag.cropCloseUpCircle.x * tag.cropCloseUpCircle.scale)}%`,
+                                      top: `${50 - (tag.cropCloseUpCircle.y * tag.cropCloseUpCircle.scale)}%`,
+                                      objectFit: 'cover'
                                     }
                                   : {
-                                      objectPosition: 'center 25%',
-                                      transform: 'scale(2)'
+                                      width: '200%',
+                                      height: '200%',
+                                      left: '-50%',
+                                      top: '-25%',
+                                      objectFit: 'cover'
                                     }
                               }
                               onError={(e) => {

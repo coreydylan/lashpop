@@ -82,8 +82,14 @@ export function TeamMemberDropdown({
                   <img
                     src={selectedMember.imageUrl}
                     alt={selectedMember.name}
-                    className="absolute inset-0 w-full h-full object-cover scale-150"
-                    style={{ objectPosition: "center 25%" }}
+                    className="absolute"
+                    style={{
+                      width: '200%',
+                      height: '200%',
+                      left: '-50%',
+                      top: '-25%',
+                      objectFit: 'cover'
+                    }}
                     onError={(e) => {
                       const target = e.currentTarget
                       target.style.display = 'none'
@@ -158,22 +164,31 @@ export function TeamMemberDropdown({
               >
                 {/* Member image - zoomed and cropped to show face */}
                 <div className="relative w-10 h-10 arch-full overflow-hidden bg-warm-sand/40 flex-shrink-0 shadow-sm">
-                  {!member.imageUrl.includes('placeholder') ? (
-                    <img
-                      src={member.imageUrl}
-                      alt={member.name}
-                      className="absolute inset-0 w-full h-full object-cover scale-150"
-                      style={{ objectPosition: "center 25%" }}
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder-team.svg'
-                        e.currentTarget.style.objectPosition = 'center'
-                        e.currentTarget.style.transform = 'scale(1)'
-                      }}
-                    />
-                  ) : (
+                  {!member.imageUrl || member.imageUrl.includes('placeholder') ? (
                     <div className="absolute inset-0 w-full h-full flex items-center justify-center">
                       <User className="w-6 h-6 text-sage/40" />
                     </div>
+                  ) : (
+                    <img
+                      src={member.imageUrl}
+                      alt={member.name}
+                      className="absolute"
+                      style={{
+                        width: '200%',
+                        height: '200%',
+                        left: '-50%',
+                        top: '-25%',
+                        objectFit: 'cover'
+                      }}
+                      onError={(e) => {
+                        const target = e.currentTarget
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent) {
+                          parent.innerHTML = '<div class="absolute inset-0 w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
+                        }
+                      }}
+                    />
                   )}
                 </div>
                 <span className="body text-dune font-medium flex-1 truncate">
