@@ -305,7 +305,7 @@ function removeModifierKeywords(query: string): string {
  * Extract sorting criteria from query
  */
 export function extractSortCriteria(query: string): {
-  field: 'date' | 'name' | 'size' | 'team' | null
+  field: 'date' | 'name' | 'size' | 'team'
   direction: 'asc' | 'desc'
   confidence: number
 } | null {
@@ -341,7 +341,7 @@ export function extractSortCriteria(query: string): {
  * Extract grouping criteria from query
  */
 export function extractGroupCriteria(query: string): {
-  field: 'date' | 'tag' | 'team' | 'collection' | null
+  field: 'date' | 'tag' | 'team' | 'collection'
   confidence: number
 } | null {
   const q = query.toLowerCase()
