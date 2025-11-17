@@ -941,7 +941,6 @@ function AssetCard({
       }
 
       const { scrollLeft, scrollWidth, clientWidth } = container
-      console.log('AssetGrid checkTagScroll:', { scrollLeft, scrollWidth, clientWidth, hasOverflow: scrollWidth > clientWidth })
       setShowLeftTagScroll(scrollLeft > 5)
       setShowRightTagScroll(scrollLeft < scrollWidth - clientWidth - 5)
     }
@@ -967,15 +966,10 @@ function AssetCard({
 
     const scroll = () => {
       const container = tagScrollRef.current
-      if (!container) {
-        console.log('AssetGrid: No container ref')
-        return
-      }
+      if (!container) return
 
       const scrollAmount = direction === 'left' ? -5 : 5
-      console.log('AssetGrid scrolling:', direction, 'scrollLeft before:', container.scrollLeft, 'scrollWidth:', container.scrollWidth, 'clientWidth:', container.clientWidth)
       container.scrollLeft += scrollAmount
-      console.log('AssetGrid scrollLeft after:', container.scrollLeft)
     }
 
     // Start scrolling immediately
