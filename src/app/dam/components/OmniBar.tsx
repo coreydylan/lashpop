@@ -88,6 +88,8 @@ export function OmniBar({
   const [showRightScroll, setShowRightScroll] = useState(false)
   const scrollIntervalRef = useRef<number | null>(null)
 
+  console.log('OmniBar render:', { showLeftScroll, showRightScroll, hasGroupBy, hasChips })
+
   // Check scroll position to show/hide scroll indicators
   const checkScroll = () => {
     const container = scrollContainerRef.current
@@ -178,14 +180,20 @@ export function OmniBar({
           {showLeftScroll && (
             <div
               className="absolute left-0 top-0 bottom-0 w-16 z-20 cursor-w-resize"
-              onMouseEnter={() => startAutoScroll('left')}
+              onMouseEnter={() => {
+                console.log('OmniBar: Left zone entered')
+                startAutoScroll('left')
+              }}
               onMouseLeave={stopAutoScroll}
             />
           )}
           {showRightScroll && (
             <div
               className="absolute right-0 top-0 bottom-0 w-16 z-20 cursor-e-resize"
-              onMouseEnter={() => startAutoScroll('right')}
+              onMouseEnter={() => {
+                console.log('OmniBar: Right zone entered')
+                startAutoScroll('right')
+              }}
               onMouseLeave={stopAutoScroll}
             />
           )}
