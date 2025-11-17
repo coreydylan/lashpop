@@ -6,6 +6,7 @@ import { useState, useCallback, useEffect, useMemo, useRef, type ReactElement } 
 import React from "react"
 import { PhotoView } from "react-photo-view"
 import { useThrottle } from "@/hooks/useThrottle"
+import { useHoverScroll } from "@/hooks/useHoverScroll"
 
 interface Asset {
   id: string
@@ -924,77 +925,13 @@ function AssetCard({
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [longPressTriggered, setLongPressTriggered] = useState(false)
-  const tagScrollRef = useRef<HTMLDivElement>(null)
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Hover-to-scroll handlers for tag container on desktop
-  const handleTagContainerMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isTouchDevice) return
-
-    const container = tagScrollRef.current
-    if (!container) return
-
-    // Check if container has overflow (scrollable content)
-    const hasOverflow = container.scrollWidth > container.clientWidth
-    if (!hasOverflow) {
-      // Stop any existing scroll
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current)
-        scrollIntervalRef.current = null
-      }
-      return
-    }
-
-    const rect = container.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const edgeThreshold = 60 // pixels from edge to trigger scroll
-    const scrollSpeed = 3 // pixels per frame
-
-    // Clear existing interval
-    if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current)
-      scrollIntervalRef.current = null
-    }
-
-    // Check if hovering near left edge
-    if (x < edgeThreshold && container.scrollLeft > 0) {
-      scrollIntervalRef.current = setInterval(() => {
-        if (container.scrollLeft > 0) {
-          container.scrollLeft -= scrollSpeed
-        } else if (scrollIntervalRef.current) {
-          clearInterval(scrollIntervalRef.current)
-          scrollIntervalRef.current = null
-        }
-      }, 16) // ~60fps
-    }
-    // Check if hovering near right edge
-    else if (x > rect.width - edgeThreshold && container.scrollLeft < container.scrollWidth - container.clientWidth) {
-      scrollIntervalRef.current = setInterval(() => {
-        if (container.scrollLeft < container.scrollWidth - container.clientWidth) {
-          container.scrollLeft += scrollSpeed
-        } else if (scrollIntervalRef.current) {
-          clearInterval(scrollIntervalRef.current)
-          scrollIntervalRef.current = null
-        }
-      }, 16) // ~60fps
-    }
-  }
-
-  const handleTagContainerMouseLeave = () => {
-    if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current)
-      scrollIntervalRef.current = null
-    }
-  }
-
-  // Cleanup scroll interval on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current)
-      }
-    }
-  }, [])
+  // Hover-to-scroll for tag container on desktop
+  const { containerRef: tagScrollRef, handleMouseMove: handleTagMouseMove, handleMouseLeave: handleTagMouseLeave } = useHoverScroll({
+    enabled: !isTouchDevice,
+    edgeThreshold: 60,
+    scrollSpeed: 3
+  })
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isTouchDevice) return
@@ -1169,12 +1106,12 @@ function AssetCard({
         if (!teamMember && displayedTags.length === 0) return null
 
         return (
-          <div className="absolute bottom-3 left-3 right-3 z-10">
+          <div className="absolute bottom-3 left-3 right-3 z-10 pointer-events-none">
             <div
               ref={tagScrollRef}
-              className="horizontal-scroll-tags pr-8"
-              onMouseMove={handleTagContainerMouseMove}
-              onMouseLeave={handleTagContainerMouseLeave}
+              className="horizontal-scroll-tags pr-8 pointer-events-auto"
+              onMouseMove={handleTagMouseMove}
+              onMouseLeave={handleTagMouseLeave}
             >
               {/* Team member badge */}
               {teamMember && (() => {

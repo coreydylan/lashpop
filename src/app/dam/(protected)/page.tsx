@@ -876,22 +876,29 @@ export default function DAMPage() {
 
   const handleMultiTagSelectorChange = useCallback(async (tags: any[]) => {
     const normalized = normalizeExclusiveTags(tags)
+
+    // Update UI immediately with new tags
+    setOmniTags(normalized)
+
+    // If no assets selected, just update the tag list for future application
     if (selectedAssets.length === 0) {
-      setOmniTags(normalized)
       return
     }
 
+    // Find newly added tags to apply to selected assets
     const newlyAdded = normalized.filter((tag: any) => !omniTags.some((existing) => existing.id === tag.id))
-    setOmniTags(normalized)
 
     if (newlyAdded.length === 0) return
 
+    // Apply tags to assets in background, but keep UI showing the tags
     try {
       await applyTagsToAssetIds(selectedAssets, newlyAdded)
       await fetchAssets()
-      setOmniTags([])
+      // Don't clear omniTags here - let user manage them
     } catch (error) {
       console.error("Failed to add tags instantly:", error)
+      // On error, remove the failed tags from UI
+      setOmniTags(omniTags)
     }
   }, [applyTagsToAssetIds, computeExistingTags, fetchAssets, normalizeExclusiveTags, omniTags, selectedAssets])
 
