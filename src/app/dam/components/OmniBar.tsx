@@ -109,7 +109,7 @@ export function OmniBar({
   }
 
   useEffect(() => {
-    console.log('OmniBar useEffect running, hasGroupBy:', hasGroupBy, 'hasChips:', hasChips)
+    console.log('OmniBar useEffect running, hasGroupBy:', hasGroupBy, 'hasChips:', hasChips, 'chipsContent:', chipsContent, 'groupByContent:', groupByContent)
     const container = scrollContainerRef.current
     if (!container) {
       console.log('OmniBar useEffect: no container ref')
@@ -130,7 +130,7 @@ export function OmniBar({
       container.removeEventListener('scroll', checkScroll)
       window.removeEventListener('resize', checkScroll)
     }
-  }, [hasGroupBy, hasChips])
+  }, [hasGroupBy, hasChips, chipsContent, groupByContent])
 
   const startAutoScroll = (direction: 'left' | 'right') => {
     // Clear any existing scroll interval first to allow direction change
