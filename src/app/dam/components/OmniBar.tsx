@@ -114,7 +114,11 @@ export function OmniBar({
   }, [hasGroupBy, hasChips])
 
   const startAutoScroll = (direction: 'left' | 'right') => {
-    if (scrollIntervalRef.current) return
+    // Clear any existing scroll interval first to allow direction change
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current)
+      scrollIntervalRef.current = null
+    }
 
     const scroll = () => {
       const container = scrollContainerRef.current

@@ -962,7 +962,13 @@ function AssetCard({
   }, [isTouchDevice])
 
   const startTagScroll = (direction: 'left' | 'right') => {
-    if (tagScrollIntervalRef.current || isTouchDevice) return
+    if (isTouchDevice) return
+
+    // Clear any existing scroll interval first
+    if (tagScrollIntervalRef.current) {
+      clearInterval(tagScrollIntervalRef.current)
+      tagScrollIntervalRef.current = null
+    }
 
     const scroll = () => {
       const container = tagScrollRef.current
