@@ -925,13 +925,71 @@ function AssetCard({
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [longPressTriggered, setLongPressTriggered] = useState(false)
+  const tagScrollRef = useRef<HTMLDivElement>(null)
+  const tagScrollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [showLeftTagScroll, setShowLeftTagScroll] = useState(false)
+  const [showRightTagScroll, setShowRightTagScroll] = useState(false)
 
-  // Hover-to-scroll for tag container on desktop
-  const { containerRef: tagScrollRef, handleMouseMove: handleTagMouseMove, handleMouseLeave: handleTagMouseLeave } = useHoverScroll({
-    enabled: !isTouchDevice,
-    edgeThreshold: 60,
-    scrollSpeed: 3
-  })
+  // Check if tags overflow and show scroll indicators
+  useEffect(() => {
+    const checkTagScroll = () => {
+      const container = tagScrollRef.current
+      if (!container || isTouchDevice) {
+        setShowLeftTagScroll(false)
+        setShowRightTagScroll(false)
+        return
+      }
+
+      const { scrollLeft, scrollWidth, clientWidth } = container
+      setShowLeftTagScroll(scrollLeft > 5)
+      setShowRightTagScroll(scrollLeft < scrollWidth - clientWidth - 5)
+    }
+
+    checkTagScroll()
+    const container = tagScrollRef.current
+    if (container) {
+      container.addEventListener('scroll', checkTagScroll)
+      window.addEventListener('resize', checkTagScroll)
+
+      // Initial check after a small delay to ensure rendering is complete
+      setTimeout(checkTagScroll, 100)
+
+      return () => {
+        container.removeEventListener('scroll', checkTagScroll)
+        window.removeEventListener('resize', checkTagScroll)
+      }
+    }
+  }, [isTouchDevice])
+
+  const startTagScroll = (direction: 'left' | 'right') => {
+    if (tagScrollIntervalRef.current || isTouchDevice) return
+
+    const scroll = () => {
+      const container = tagScrollRef.current
+      if (!container) return
+
+      const scrollAmount = direction === 'left' ? -5 : 5
+      container.scrollLeft += scrollAmount
+    }
+
+    tagScrollIntervalRef.current = setInterval(scroll, 16)
+  }
+
+  const stopTagScroll = () => {
+    if (tagScrollIntervalRef.current) {
+      clearInterval(tagScrollIntervalRef.current)
+      tagScrollIntervalRef.current = null
+    }
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (tagScrollIntervalRef.current) {
+        clearInterval(tagScrollIntervalRef.current)
+      }
+    }
+  }, [])
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (!isTouchDevice) return
@@ -1106,12 +1164,28 @@ function AssetCard({
         if (!teamMember && displayedTags.length === 0) return null
 
         return (
-          <div className="absolute bottom-3 left-3 right-3 z-10 pointer-events-none">
+          <div className="absolute bottom-3 left-3 right-3 z-10">
+            {/* Left scroll zone */}
+            {showLeftTagScroll && (
+              <div
+                className="absolute left-0 top-0 bottom-0 w-12 z-20 cursor-w-resize"
+                onMouseEnter={() => startTagScroll('left')}
+                onMouseLeave={stopTagScroll}
+              />
+            )}
+
+            {/* Right scroll zone */}
+            {showRightTagScroll && (
+              <div
+                className="absolute right-0 top-0 bottom-0 w-12 z-20 cursor-e-resize"
+                onMouseEnter={() => startTagScroll('right')}
+                onMouseLeave={stopTagScroll}
+              />
+            )}
+
             <div
               ref={tagScrollRef}
-              className="horizontal-scroll-tags pr-8 pointer-events-auto"
-              onMouseMove={handleTagMouseMove}
-              onMouseLeave={handleTagMouseLeave}
+              className="horizontal-scroll-tags pr-8"
             >
               {/* Team member badge */}
               {teamMember && (() => {
