@@ -93,23 +93,40 @@ export function OmniBar({
   // Check scroll position to show/hide scroll indicators
   const checkScroll = () => {
     const container = scrollContainerRef.current
-    if (!container) return
+    console.log('OmniBar checkScroll called, container:', container)
+    if (!container) {
+      console.log('OmniBar checkScroll: no container ref yet')
+      return
+    }
 
     const { scrollLeft, scrollWidth, clientWidth } = container
     console.log('OmniBar checkScroll:', { scrollLeft, scrollWidth, clientWidth, hasOverflow: scrollWidth > clientWidth })
-    setShowLeftScroll(scrollLeft > 0)
-    setShowRightScroll(scrollLeft < scrollWidth - clientWidth - 1)
+    const shouldShowLeft = scrollLeft > 0
+    const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 1
+    console.log('OmniBar checkScroll setting:', { shouldShowLeft, shouldShowRight })
+    setShowLeftScroll(shouldShowLeft)
+    setShowRightScroll(shouldShowRight)
   }
 
   useEffect(() => {
+    console.log('OmniBar useEffect running, hasGroupBy:', hasGroupBy, 'hasChips:', hasChips)
     const container = scrollContainerRef.current
-    if (!container) return
+    if (!container) {
+      console.log('OmniBar useEffect: no container ref')
+      return
+    }
 
+    console.log('OmniBar useEffect: calling checkScroll and setting up listeners')
     checkScroll()
     container.addEventListener('scroll', checkScroll)
     window.addEventListener('resize', checkScroll)
 
+    // Also check after a delay to ensure rendering is complete
+    setTimeout(checkScroll, 100)
+    setTimeout(checkScroll, 500)
+
     return () => {
+      console.log('OmniBar useEffect cleanup')
       container.removeEventListener('scroll', checkScroll)
       window.removeEventListener('resize', checkScroll)
     }
