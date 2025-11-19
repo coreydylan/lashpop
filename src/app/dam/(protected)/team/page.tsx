@@ -10,6 +10,7 @@ import { motion } from "framer-motion"
 import { Upload as UploadIcon, Camera, ArrowLeft, CheckCircle2, LogOut } from "lucide-react"
 import Link from "next/link"
 import { PhotoCropEditor } from "./components/PhotoCropEditor"
+import { saveTeamPhotoCrops } from "@/actions/team-photos"
 
 interface TeamMember {
   id: string
@@ -25,6 +26,8 @@ interface TeamMember {
     y: number
     scale: number
   } | null
+  cropSquareUrl?: string | null
+  cropCloseUpCircleUrl?: string | null
 }
 
 interface TeamMemberPhoto {
@@ -179,20 +182,13 @@ export default function TeamManagementPage() {
     if (!editingPhoto) return
 
     try {
-      const response = await fetch(`/api/dam/team/photos/${editingPhoto.id}/crops`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ crops })
+      await saveTeamPhotoCrops({
+        photoId: editingPhoto.id,
+        crops
       })
 
-      if (response.ok) {
-        setEditingPhoto(null)
-        void fetchMemberPhotos(selectedMember!.id)
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        alert(`Failed to save crop settings: ${errorData.error || 'Unknown error'}`)
-        console.error("Failed to save crops:", errorData)
-      }
+      setEditingPhoto(null)
+      void fetchMemberPhotos(selectedMember!.id)
     } catch (error) {
       console.error("Failed to save crops:", error)
       alert('Failed to save crop settings. Please try again.')
@@ -268,11 +264,13 @@ export default function TeamManagementPage() {
                   >
                     <div className="aspect-square arch-full overflow-hidden bg-warm-sand/40 mb-3 hover:ring-2 hover:ring-dusty-rose transition-all">
                       <img
-                        src={member.imageUrl}
+                        src={member.cropSquareUrl || member.imageUrl}
                         alt={member.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover block"
                         style={
-                          member.cropSquare
+                          member.cropSquareUrl
+                            ? undefined
+                            : member.cropSquare
                             ? {
                                 objectPosition: `${member.cropSquare.x}% ${member.cropSquare.y}%`,
                                 transform: `scale(${member.cropSquare.scale})`

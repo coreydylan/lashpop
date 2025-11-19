@@ -65,6 +65,7 @@ interface TeamMember {
     y: number
     scale: number
   } | null
+  cropCloseUpCircleUrl?: string | null
 }
 
 interface ActiveFilter {
@@ -77,6 +78,8 @@ interface ActiveFilter {
   optionDisplayName: string
   imageUrl?: string
 }
+
+import { GroupedChipList } from "../components/GroupedChipList"
 
 export default function DAMPage() {
   // DAM Settings & Actions hooks
@@ -171,6 +174,12 @@ export default function DAMPage() {
       color: collectionCategory.color
     }))
   }, [tagCategories])
+
+  // Get active collection info for mobile display
+  const activeCollection = useMemo(() => {
+    if (!activeCollectionId) return null
+    return collections.find((c: any) => c.id === activeCollectionId)
+  }, [activeCollectionId, collections])
 
   // Filter assets by active collection
   const collectionFilteredAssets = useMemo(() => {
@@ -1105,7 +1114,7 @@ export default function DAMPage() {
           label: member.name,
           description: `Assign to ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
           badge: "Team",
-          avatarUrl: member.imageUrl,
+          avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
           onSelect: () => {
             const teamCategory = {
               id: "team",
@@ -1209,7 +1218,7 @@ export default function DAMPage() {
           group: "Team",
           label: member.name,
           description: `Assign to "${activeLightboxAsset.fileName}"`,
-          avatarUrl: member.imageUrl,
+          avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
           badge: "Team",
           onSelect: () => {
             const teamCategory = {
@@ -1239,7 +1248,7 @@ export default function DAMPage() {
             group: "Current Tags",
             label: `Team › ${member.name}`,
             description: "Remove from this photo",
-            avatarUrl: member.imageUrl,
+            avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
             onSelect: () => handleRemoveTag(`team-${member.id}`, 1, [activeLightboxAsset.id])
           })
         }
@@ -1310,7 +1319,7 @@ export default function DAMPage() {
           description: isActive ? "Active filter" : "Filter by this team member",
           isActive,
           badge: isActive ? "Active" : "Team",
-          avatarUrl: member.imageUrl,
+          avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
           onSelect: () => handleTeamFilterToggle(member.id)
         })
       })
@@ -1652,157 +1661,41 @@ export default function DAMPage() {
   }
 
   const renderChips = (): ReactNode => {
-    if (selectedAssets.length > 0) {
+    if (selectedAssets.length > 0 || activeFilters.length > 0) {
       return (
-        <>
-          {/* Selection Mode: Show existing tags with counts */}
-          {existingTags && Array.from(existingTags.entries()).map(([tagId, count]) => {
-            const isTeamMemberTag = tagId.startsWith('team-')
-            const isPending = pendingTagRemoval && pendingTagRemoval.tagId === tagId && pendingTagRemoval.context === "multi"
-            const isDissipating = dissipatingTags.has(tagId)
-
-            if (isTeamMemberTag) {
-              const teamMemberId = tagId.replace('team-', '')
-              const teamMember = teamMembers.find(m => m.id === teamMemberId)
-              if (!teamMember) return null
-
-              return (
-                <OmniChip
-                  key={tagId}
-                  variant="tag-existing"
-                  categoryName="team"
-                  categoryDisplayName="Team"
-                  optionDisplayName={teamMember.name}
-                  count={count}
-                  color={getTagColor("#BCC9C2", false)}
-                  imageUrl={teamMember.imageUrl}
-                  imageCrop={teamMember.cropCloseUpCircle}
-                  isPending={isPending}
-                  isDissipating={isDissipating}
-                  isMobile={isMobile}
-                  onRemove={() => {
-                    // Direct removal with dissipate effect - dropdown handles confirmation
-                    void removeTagDirectly(tagId, selectedAssets, count)
-                  }}
-                  onCategoryClick={() => handleGroupBy("team")}
-                  isDisabled={groupByTags.includes("team") || groupByTags.length >= 2}
-                  onUnselectAssets={() => {
-                    // Find all assets with this team member and unselect them
-                    const assetsToUnselect = selectedAssets.filter(assetId => {
-                      const asset = assets.find(a => a.id === assetId)
-                      return asset?.teamMemberId === teamMemberId
-                    })
-                    setSelectedAssets(selectedAssets.filter(id => !assetsToUnselect.includes(id)))
-                  }}
-                />
-              )
-            }
-
-            // Regular tag
-            const tag = assets
-              .flatMap(a => a.tags || [])
-              .find(t => t.id === tagId)
-            if (!tag) return null
-
-            return (
-              <OmniChip
-                key={tagId}
-                variant="tag-existing"
-                categoryName={tag.category.name}
-                categoryDisplayName={tag.category.displayName}
-                optionDisplayName={tag.displayName}
-                count={count}
-                color={getTagColor(tag.category.color, false)}
-                isPending={isPending}
-                isDissipating={isDissipating}
-                isMobile={isMobile}
-                onRemove={() => {
-                  // Direct removal with dissipate effect - dropdown handles confirmation
-                  void removeTagDirectly(tagId, selectedAssets, count)
-                }}
-                onCategoryClick={() => handleGroupBy(tag.category.name)}
-                isDisabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
-                onUnselectAssets={() => {
-                  // Find all assets with this tag and unselect them
-                  const assetsToUnselect = selectedAssets.filter(assetId => {
-                    const asset = assets.find(a => a.id === assetId)
-                    return asset?.tags?.some(t => t.id === tagId)
-                  })
-                  setSelectedAssets(selectedAssets.filter(id => !assetsToUnselect.includes(id)))
-                }}
-              />
-            )
-          })}
-
-          {/* New tags to add */}
-          {omniTags.map((tag) => {
-            const isTeamTag = tag.category.name === "team"
-            const teamMember = isTeamTag ? teamMembers.find(m => m.id === tag.id) : null
-
-            return (
-              <OmniChip
-                key={`new-${tag.id}`}
-                variant="tag-new"
-                categoryDisplayName={tag.category.displayName}
-                optionDisplayName={tag.displayName}
-                color={getTagColor(tag.category.color, false)}
-                imageUrl={isTeamTag ? teamMember?.imageUrl : undefined}
-                imageCrop={teamMember?.cropCloseUpCircle}
-                isMobile={isMobile}
-                onRemove={() => setOmniTags(omniTags.filter(t => t.id !== tag.id))}
-                onCategoryClick={() => handleGroupBy(tag.category.name)}
-                isDisabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
-              />
-            )
-          })}
-
-          {/* Add Tag button - hidden on mobile */}
-          <div className="hidden lg:block">
-            <TagSelector
-              selectedTags={omniTags}
-              onTagsChange={handleMultiTagSelectorChange}
-            />
-          </div>
-        </>
+        <GroupedChipList
+          selectedAssetIds={selectedAssets}
+          assets={assets}
+          teamMembers={teamMembers}
+          activeFilters={activeFilters}
+          omniTags={omniTags}
+          tagCategories={tagCategories}
+          isMobile={isMobile}
+          groupByTags={groupByTags}
+          onRemoveTag={(tagId, count, assetIds) => {
+            // Direct removal with dissipate effect
+            void removeTagDirectly(tagId, assetIds, count)
+          }}
+          onGroupBy={handleGroupBy}
+          onUnselectAssets={(assetsToUnselect) => {
+            const idsToRemove = assetsToUnselect.map((a: any) => typeof a === 'string' ? a : a.id)
+            setSelectedAssets(prev => prev.filter(id => !idsToRemove.includes(id)))
+          }}
+          onRemoveFilter={(filter) => {
+            setActiveFilters(activeFilters.filter(
+              f => !(f.categoryId === filter.categoryId && f.optionId === filter.optionId)
+            ))
+          }}
+          onRemoveOmniTag={(tagId) => setOmniTags(omniTags.filter(t => t.id !== tagId))}
+          onMultiTagSelectorChange={handleMultiTagSelectorChange}
+          pendingTagRemoval={pendingTagRemoval}
+          dissipatingTags={dissipatingTags}
+        />
       )
     } else if (activeLightboxAsset) {
       return renderLightboxTags()
-    } else {
-      /* Filter Mode */
-      // Convert activeFilters to selected IDs format
-      const selectedTagIds = activeFilters
-        .filter(f => f.categoryName !== 'team')
-        .map(f => f.optionId)
-      const selectedTeamMemberIds = activeFilters
-        .filter(f => f.categoryName === 'team')
-        .map(f => f.optionId)
-
-      return (
-        <>
-          {/* Render active filter chips */}
-          {activeFilters.map((filter) => (
-            <OmniChip
-              key={`${filter.categoryId}-${filter.optionId}`}
-              variant="filter"
-              categoryName={filter.categoryName}
-              categoryDisplayName={filter.categoryDisplayName}
-              optionDisplayName={filter.optionDisplayName}
-              color={filter.categoryColor || "#A19781"}
-              imageUrl={filter.imageUrl}
-              imageCrop={filter.categoryName === 'team' ? teamMembers.find(m => m.id === filter.optionId)?.cropCloseUpCircle : undefined}
-              isMobile={isMobile}
-              onRemove={() => {
-                setActiveFilters(activeFilters.filter(
-                  f => !(f.categoryId === filter.categoryId && f.optionId === filter.optionId)
-                ))
-              }}
-              onCategoryClick={() => handleGroupBy(filter.categoryName)}
-              isDisabled={groupByTags.includes(filter.categoryName) || groupByTags.length >= 2}
-            />
-          ))}
-        </>
-      )
     }
+    return null
   }
 
   const renderLightboxTags = () => {
@@ -1833,119 +1726,37 @@ export default function DAMPage() {
     return (
       <div className="flex items-center gap-2">
           {teamMember && (
-            <div
-              className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm border border-white/20 ${isMobile ? 'text-xs' : ''}`}
-              style={{
-                background: getTagColor("#BCC9C2", true)
-              }}
-            >
-              <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
-                {teamMember.imageUrl && (
-                  <div className="w-5 h-5 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
-                    <img
-                      src={teamMember.imageUrl}
-                      alt={teamMember.name}
-                      className="w-full h-full object-cover"
-                      style={
-                        teamMember.cropCloseUpCircle
-                          ? {
-                              objectPosition: `${teamMember.cropCloseUpCircle.x}% ${teamMember.cropCloseUpCircle.y}%`,
-                              transform: `scale(${teamMember.cropCloseUpCircle.scale})`
-                            }
-                          : {
-                              objectPosition: 'center 25%',
-                              transform: 'scale(2)'
-                            }
-                      }
-                    />
-                  </div>
-                )}
-                <button
-                  onClick={() => handleGroupBy("team")}
-                  className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
-                    groupByTags.includes("team") ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                  }`}
-                  disabled={groupByTags.includes("team") || groupByTags.length >= 2}
-                >
-                  Team
-                </button>
-                <span className="text-cream/80 text-xs">›</span>
-                <span className="text-sm text-cream font-medium">
-                  {teamMember.name}
-                </span>
-              </div>
-              {pendingTagRemoval && pendingTagRemoval.tagId === `team-${teamMember.id}` && pendingTagRemoval.context === `single-${activeLightboxAsset.id}` ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10">
-                  <button
-                    onClick={confirmTagRemoval}
-                    className="text-xs font-semibold text-cream bg-black/30 rounded-full px-2 py-0.5"
-                  >
-                    Remove
-                  </button>
-                  <button
-                    onClick={cancelTagRemoval}
-                    className="text-xs font-medium text-cream/80"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => requestTagRemoval(`team-${teamMember.id}`, [activeLightboxAsset.id], "team member", 1, `single-${activeLightboxAsset.id}`)}
-                  className="px-2 py-1.5 hover:bg-black/10 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5 text-cream" />
-                </button>
-              )}
-            </div>
+            <OmniChip
+              variant="tag-existing"
+              categoryName="team"
+              categoryDisplayName="Team"
+              optionDisplayName={teamMember.name}
+              color={getTagColor("#BCC9C2", true)}
+              imageUrl={teamMember.cropCloseUpCircleUrl || teamMember.imageUrl}
+              imageCrop={teamMember.cropCloseUpCircleUrl ? undefined : teamMember.cropCloseUpCircle}
+              isStaticImage={!!teamMember.cropCloseUpCircleUrl}
+              isPending={pendingTagRemoval?.tagId === `team-${teamMember.id}` && pendingTagRemoval?.context === `single-${activeLightboxAsset.id}`}
+              isMobile={isMobile}
+              onRemove={() => requestTagRemoval(`team-${teamMember.id}`, [activeLightboxAsset.id], "team member", 1, `single-${activeLightboxAsset.id}`)}
+              onCategoryClick={() => handleGroupBy("team")}
+              isDisabled={groupByTags.includes("team") || groupByTags.length >= 2}
+            />
           )}
 
           {activeLightboxAsset.tags?.map((tag) => (
-            <div
+            <OmniChip
               key={tag.id}
-              className={`flex-shrink-0 flex items-center gap-1 arch-full overflow-hidden shadow-sm border border-white/20 ${isMobile ? 'text-xs' : ''}`}
-              style={{
-                background: getTagColor(tag.category.color, true)
-              }}>
-                <div className={`flex items-center gap-2 ${isMobile ? 'px-2 py-1' : 'px-3 py-1.5'}`}>
-                  <button
-                    onClick={() => handleGroupBy(tag.category.name)}
-                    className={`text-xs font-semibold text-cream uppercase tracking-wide hover:text-white transition-colors ${
-                      groupByTags.includes(tag.category.name) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                    }`}
-                    disabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
-                  >
-                    {tag.category.displayName}
-                  </button>
-                  <span className="text-cream/80 text-xs">›</span>
-                  <span className="text-sm text-cream font-medium">
-                    {tag.displayName}
-                  </span>
-                </div>
-              {pendingTagRemoval && pendingTagRemoval.tagId === tag.id && pendingTagRemoval.context === `single-${activeLightboxAsset.id}` ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-black/10">
-                  <button
-                    onClick={confirmTagRemoval}
-                    className="text-xs font-semibold text-cream bg-black/30 rounded-full px-2 py-0.5"
-                  >
-                    Remove
-                  </button>
-                  <button
-                    onClick={cancelTagRemoval}
-                    className="text-xs font-medium text-cream/80"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => requestTagRemoval(tag.id, [activeLightboxAsset.id], "tag", 1, `single-${activeLightboxAsset.id}`)}
-                  className="px-2 py-1.5 hover:bg-black/10 transition-colors"
-                >
-                  <X className="w-3.5 h-3.5 text-cream" />
-                </button>
-              )}
-            </div>
+              variant="tag-existing"
+              categoryName={tag.category.name}
+              categoryDisplayName={tag.category.displayName}
+              optionDisplayName={tag.displayName}
+              color={getTagColor(tag.category.color, true)}
+              isPending={pendingTagRemoval?.tagId === tag.id && pendingTagRemoval?.context === `single-${activeLightboxAsset.id}`}
+              isMobile={isMobile}
+              onRemove={() => requestTagRemoval(tag.id, [activeLightboxAsset.id], "tag", 1, `single-${activeLightboxAsset.id}`)}
+              onCategoryClick={() => handleGroupBy(tag.category.name)}
+              isDisabled={groupByTags.includes(tag.category.name) || groupByTags.length >= 2}
+            />
           ))}
 
         {!hasTags && (
@@ -2007,6 +1818,9 @@ export default function DAMPage() {
         showGridToggle: true,  // Show grid toggle like in main view
         escConfirmationActive,
         onEscClick: handleEscPress,
+        onOpenCommandPalette: () => openCommandPalette(""),
+        activeCollectionName: activeCollection?.displayName,
+        activeCollectionColor: activeCollection?.color,
         counterSlot:
           assets.length > 0 && activeLightboxIndex >= 0
             ? `${Math.min(activeLightboxIndex + 1, assets.length)} / ${assets.length}`
@@ -2020,46 +1834,46 @@ export default function DAMPage() {
       <div className="min-h-screen bg-cream no-horizontal-scroll">
         {/* Header - not sticky */}
         <header className="bg-cream select-none">
-          <div className="max-w-7xl mx-auto px-3 py-3 lg:px-6 lg:py-6">
+          <div className="max-w-7xl mx-auto px-3 py-4 lg:px-6 lg:py-6">
             <div className="flex items-center justify-between">
               <div className="flex-shrink-0">
                 <img
                   src="/lashpop-images/branding/logo.png"
                   alt="LashPop Studios"
-                  className="h-7 lg:h-10 w-auto mb-1 lg:mb-2"
+                  className="h-8 lg:h-10 w-auto mb-1 lg:mb-2"
                   style={{
                     filter: 'brightness(0) saturate(100%) invert(72%) sepia(12%) saturate(635%) hue-rotate(316deg) brightness(95%) contrast(88%)'
                   }}
                 />
-                <h1 className="text-[10px] lg:text-xs font-semibold text-dune uppercase tracking-wider">
+                <h1 className="hidden sm:block text-[10px] lg:text-xs font-semibold text-dune uppercase tracking-wider">
                   Digital Asset Management
                 </h1>
               </div>
 
-              <div className="flex items-center gap-2 lg:gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
                 <button
                   onClick={() => setIsUploadOpen(!isUploadOpen)}
-                  className={`btn ${isUploadOpen ? 'btn-primary' : 'btn-secondary'}`}
+                  className={`btn ${isUploadOpen ? 'btn-primary' : 'btn-secondary'} px-2.5 py-2 sm:px-3 sm:py-2`}
                 >
-                  <UploadIcon className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span className="hidden sm:inline">Upload</span>
+                  <UploadIcon className="w-5 h-5 lg:w-5 lg:h-5" />
+                  <span className="hidden md:inline">Upload</span>
                 </button>
                 <Link
                   href="/dam/team"
-                  className="btn btn-secondary"
+                  className="btn btn-secondary px-2.5 py-2 sm:px-3 sm:py-2"
                 >
-                  <Users className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span className="hidden sm:inline">Team</span>
+                  <Users className="w-5 h-5 lg:w-5 lg:h-5" />
+                  <span className="hidden md:inline">Team</span>
                 </Link>
                 <button
                   onClick={async () => {
                     await fetch("/api/dam/auth/logout", { method: "POST" })
                     window.location.href = "/dam/login"
                   }}
-                  className="btn btn-secondary"
+                  className="btn btn-secondary px-2.5 py-2 sm:px-3 sm:py-2"
                   title="Logout"
                 >
-                  <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
+                  <LogOut className="w-5 h-5 lg:w-5 lg:h-5" />
                 </button>
               </div>
             </div>
@@ -2145,6 +1959,8 @@ export default function DAMPage() {
                   />
                 ) : undefined}
                 onOpenCommandPalette={() => openCommandPalette("")}
+                activeCollectionName={activeCollection?.displayName}
+                activeCollectionColor={activeCollection?.color}
               />
             </div>
           </div>

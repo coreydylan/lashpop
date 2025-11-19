@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { X, Sparkles, Layers, MousePointer, Trash2, Filter } from "lucide-react"
+import { X, Sparkles, Layers, MousePointer, Trash2, Filter, ChevronRight } from "lucide-react"
 import clsx from "clsx"
 
 export type ChipVariant =
@@ -11,6 +11,7 @@ export type ChipVariant =
   | "tag-existing"       // Existing tag on selected assets (with count)
   | "tag-new"            // New tag to be applied (with border)
   | "filter"             // Active filter chip
+  | "stack"              // Stack of multiple chips
 
 export interface ChipAction {
   label: string
@@ -27,7 +28,7 @@ export interface OmniChipProps {
   categoryDisplayName?: string
   optionDisplayName?: string
   count?: number
-
+  
   // Styling
   color?: string
   imageUrl?: string
@@ -36,6 +37,7 @@ export interface OmniChipProps {
     y: number
     scale: number
   } | null
+  isStaticImage?: boolean
 
   // State
   isSelected?: boolean
@@ -48,7 +50,7 @@ export interface OmniChipProps {
   onClick?: () => void
   onRemove?: () => void
   onCategoryClick?: () => void
-
+  
   // Dropdown actions
   actions?: ChipAction[]
   onUnselectAssets?: () => void  // Unselect assets with this tag
@@ -66,6 +68,7 @@ export function OmniChip({
   color = "#A19781",
   imageUrl,
   imageCrop,
+  isStaticImage = false,
   isSelected = false,
   isPending = false,
   isDissipating = false,
@@ -79,12 +82,14 @@ export function OmniChip({
   children
 }: OmniChipProps) {
   const [showDropdown, setShowDropdown] = useState(false)
+  const [isDropdownFading, setIsDropdownFading] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const [pendingAction, setPendingAction] = useState<number | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const chipRef = useRef<HTMLDivElement>(null)
   const pendingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Update dropdown position when chip position changes
   useEffect(() => {
@@ -114,6 +119,31 @@ export function OmniChip({
     }
   }, [showDropdown])
 
+  // Close dropdown when scrolling on mobile
+  useEffect(() => {
+    const handleScroll = () => {
+      if (showDropdown && !isDropdownFading) {
+        // Start fade out animation
+        setIsDropdownFading(true)
+        
+        // Clear any existing fade timeout
+        if (fadeTimeoutRef.current) {
+          clearTimeout(fadeTimeoutRef.current)
+        }
+
+        // Actually close after fade animation completes
+        fadeTimeoutRef.current = setTimeout(() => {
+          setShowDropdown(false)
+          setIsDropdownFading(false)
+          setPendingAction(null)
+        }, 200) // Match CSS transition duration
+      }
+    }
+
+    window.addEventListener('omnibar-scroll', handleScroll)
+    return () => window.removeEventListener('omnibar-scroll', handleScroll)
+  }, [showDropdown, isDropdownFading])
+
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
@@ -122,6 +152,9 @@ export function OmniChip({
       }
       if (closeTimeoutRef.current) {
         clearTimeout(closeTimeoutRef.current)
+      }
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current)
       }
     }
   }, [])
@@ -168,7 +201,7 @@ export function OmniChip({
     // Remove action (context-dependent)
     if (onRemove) {
       let removeLabel = "Remove"
-
+      
       if (variant === "tag-existing" && count) {
         removeLabel = `Remove from ${count} ${count === 1 ? 'asset' : 'assets'}`
       } else if (variant === "filter") {
@@ -177,6 +210,8 @@ export function OmniChip({
         removeLabel = "Remove grouping"
       } else if (variant === "tag-new") {
         removeLabel = "Remove tag"
+      } else if (variant === "stack") {
+        removeLabel = "Clear group"
       }
 
       defaultActions.push({
@@ -223,7 +258,10 @@ export function OmniChip({
     const dropdown = (
       <div
         ref={dropdownRef}
-        className="fixed min-w-[180px] rounded-2xl shadow-lg overflow-hidden z-[100] backdrop-blur-md"
+        className={clsx(
+          "fixed min-w-[180px] rounded-2xl shadow-lg overflow-hidden z-[100] backdrop-blur-md transition-opacity duration-200",
+          isDropdownFading ? "opacity-0" : "opacity-100"
+        )}
         style={{
           top: `${dropdownPosition.top}px`,
           left: `${dropdownPosition.left}px`,
@@ -237,7 +275,7 @@ export function OmniChip({
         {allActions.map((action, index) => {
           const isPendingThis = pendingAction === index
           const isDanger = action.variant === "danger"
-
+          
           return (
             <button
               key={index}
@@ -274,9 +312,9 @@ export function OmniChip({
               }}
               className={clsx(
                 "w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-all text-left group relative overflow-hidden",
-                isDanger
-                  ? isPendingThis
-                    ? "text-cream bg-dusty-rose"
+                isDanger 
+                  ? isPendingThis 
+                    ? "text-cream bg-dusty-rose" 
                     : "text-dusty-rose hover:bg-dusty-rose/10"
                   : "text-sage hover:bg-warm-sand/50",
                 index < allActions.length - 1 && "border-b border-sage/10"
@@ -305,12 +343,12 @@ export function OmniChip({
 
   // UNIFIED CHIP DESIGN - All variants use this base structure
   // Differences are only in visual styling (border, background intensity, etc.)
-
+  
   const getChipStyles = () => {
     switch (variant) {
       case "group-by":
         return {
-          wrapper: "bg-sage/20 border border-sage/30",
+          wrapper: "bg-sage/20 border border-sage/30 shadow-sm",
           showCount: false,
           showBorder: false
         }
@@ -326,6 +364,12 @@ export function OmniChip({
           showCount: false,
           showBorder: false
         }
+      case "stack":
+        return {
+          wrapper: "shadow-md border-b-2 border-r-2 border-black/20",
+          showCount: false,
+          showBorder: true
+        }
       case "tag-existing":
       default:
         return {
@@ -340,11 +384,11 @@ export function OmniChip({
 
   return (
     <>
-      <div
+      <div 
         ref={chipRef}
         className="relative"
         onMouseEnter={() => {
-          if (!isMobile && hasActions) {
+          if (!isMobile && hasActions && variant !== "stack") {
             cancelClose()
             setShowDropdown(true)
           }
@@ -353,22 +397,26 @@ export function OmniChip({
         onClick={() => {
           if (onClick) {
             onClick()
-          } else if (isMobile && hasActions) {
+          } else if (isMobile && hasActions && variant !== "stack") {
             setShowDropdown(!showDropdown)
           }
         }}
       >
-        <div
+        <div 
           className={clsx(
             "flex items-center gap-0 rounded-full overflow-hidden transition-all",
             isDissipating && "dissipate-effect",
-            hasActions && "cursor-pointer",
+            (hasActions || onClick) && "cursor-pointer",
             styles.wrapper
           )}
           style={{
             background: variant === "group-by" ? undefined : color,
             minHeight: 'auto',
-            height: 'auto'
+            height: 'auto',
+            ...(variant === "group-by" && {
+              background: 'linear-gradient(135deg, rgba(161, 151, 129, 0.35) 0%, rgba(161, 151, 129, 0.25) 100%)',
+              filter: 'saturate(1.3) brightness(1.05)'
+            })
           }}
         >
           <div className={clsx(
@@ -394,28 +442,54 @@ export function OmniChip({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
                   </div>
-                ) : (
+                ) : isStaticImage ? (
+                  // Use pre-cropped image (cropCloseUpCircleUrl)
                   <img
                     src={imageUrl}
                     alt={optionDisplayName}
-                    className="absolute"
-                    style={
-                      imageCrop
-                        ? {
-                            width: `${imageCrop.scale * 100}%`,
-                            height: `${imageCrop.scale * 100}%`,
-                            left: `${50 - (imageCrop.x * imageCrop.scale)}%`,
-                            top: `${50 - (imageCrop.y * imageCrop.scale)}%`,
-                            objectFit: 'cover'
-                          }
-                        : {
-                            width: '200%',
-                            height: '200%',
-                            left: '-50%',
-                            top: '-25%',
-                            objectFit: 'cover'
-                          }
-                    }
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget
+                      target.style.display = 'none'
+                      const parent = target.parentElement
+                      if (parent) {
+                        const size = isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'
+                        parent.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg class="${size} text-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>`
+                      }
+                    }}
+                  />
+                ) : imageCrop ? (
+                  // Apply crop positioning if crop data exists
+                  <img
+                    src={imageUrl}
+                    alt={optionDisplayName}
+                    className="absolute inset-0"
+                    style={{
+                      width: `${imageCrop.scale * 100}%`,
+                      height: `${imageCrop.scale * 100}%`,
+                      left: `${50 - (imageCrop.x * imageCrop.scale)}%`,
+                      top: `${50 - (imageCrop.y * imageCrop.scale)}%`,
+                      objectFit: 'cover'
+                    }}
+                    onError={(e) => {
+                      const target = e.currentTarget
+                      target.style.display = 'none'
+                      const parent = target.parentElement
+                      if (parent) {
+                        const size = isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'
+                        parent.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg class="${size} text-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>`
+                      }
+                    }}
+                  />
+                ) : (
+                  // Fallback to object-fit: cover
+                  <img
+                    src={imageUrl}
+                    alt={optionDisplayName}
+                    className="w-full h-full object-cover"
+                    style={{
+                      objectPosition: 'center 30%'
+                    }}
                     onError={(e) => {
                       const target = e.currentTarget
                       target.style.display = 'none'
@@ -429,7 +503,7 @@ export function OmniChip({
                 )}
               </div>
             )}
-
+            
             {/* Category (clickable for group-by if enabled) */}
             {categoryDisplayName && (
               <>
@@ -440,8 +514,8 @@ export function OmniChip({
                 )}>
                   {categoryDisplayName}
                 </span>
-
-                {optionDisplayName && (
+                
+                {(optionDisplayName || count !== undefined) && (
                   <>
                     <span className={clsx(
                       variant === "group-by" ? "text-sage/60" : "text-cream/60",
@@ -461,6 +535,24 @@ export function OmniChip({
               )}>
                 {optionDisplayName}
               </span>
+            )}
+            
+            {/* Count only for Stack variant */}
+            {variant === "stack" && count !== undefined && (
+              <span className={clsx(
+                "font-bold bg-black/20 px-1.5 py-0.5 rounded-full ml-0.5",
+                isMobile ? "text-[10px]" : "text-xs text-cream"
+              )}>
+                {count}
+              </span>
+            )}
+            
+            {/* Expand icon for stack */}
+            {variant === "stack" && (
+               <ChevronRight className={clsx(
+                 "opacity-60",
+                 isMobile ? "w-3 h-3" : "w-3.5 h-3.5"
+               )} />
             )}
           </div>
         </div>

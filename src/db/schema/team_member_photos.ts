@@ -43,6 +43,13 @@ export const teamMemberPhotos = pgTable("team_member_photos", {
     scale: number
   }>(),
 
+  // Static cropped image URLs
+  cropFullVerticalUrl: text("crop_full_vertical_url"),
+  cropFullHorizontalUrl: text("crop_full_horizontal_url"),
+  cropMediumCircleUrl: text("crop_medium_circle_url"),
+  cropCloseUpCircleUrl: text("crop_close_up_circle_url"),
+  cropSquareUrl: text("crop_square_url"),
+
   // Timestamps
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()

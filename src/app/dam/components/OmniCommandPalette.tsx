@@ -68,6 +68,7 @@ export function OmniCommandPalette({
   const inputRef = useRef<HTMLInputElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
+  const [isSearchActive, setIsSearchActive] = useState(false)
   const trimmedQuery = query.trim()
 
   // Edit mode state
@@ -156,10 +157,16 @@ export function OmniCommandPalette({
   useEffect(() => {
     if (open) {
       setActiveIndex(0)
-      const id = requestAnimationFrame(() => inputRef.current?.focus())
-      return () => cancelAnimationFrame(id)
+      // Only auto-focus on desktop - on mobile, user must tap to search
+      if (!isMobile) {
+        const id = requestAnimationFrame(() => inputRef.current?.focus())
+        return () => cancelAnimationFrame(id)
+      }
+    } else {
+      // Reset search state when closing
+      setIsSearchActive(false)
     }
-  }, [open])
+  }, [open, isMobile])
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -233,9 +240,11 @@ export function OmniCommandPalette({
           onClose()
         }}
         className={clsx(
-          "flex items-center gap-3 rounded-2xl border px-4 py-2 text-left transition shadow-sm min-w-[210px]",
+          "flex items-center gap-3 rounded-2xl border text-left transition shadow-sm min-w-[210px]",
+          // Better touch targets on mobile
+          isMobile ? "px-4 py-3" : "px-4 py-2",
           isActive ? "border-dusty-rose/60 bg-dusty-rose/10" : "border-sage/15 bg-white/90",
-          item.disabled ? "opacity-40 cursor-not-allowed" : "hover:border-dusty-rose/50 hover:bg-dusty-rose/5"
+          item.disabled ? "opacity-40 cursor-not-allowed" : "hover:border-dusty-rose/50 hover:bg-dusty-rose/5 active:scale-[0.98]"
         )}
       >
         {item.avatarUrl && (
@@ -243,7 +252,7 @@ export function OmniCommandPalette({
             <img
               src={item.avatarUrl}
               alt={item.label}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover block"
             />
           </div>
         )}
@@ -268,7 +277,7 @@ export function OmniCommandPalette({
     <div
       className={clsx(
         "fixed inset-0 z-[9999] flex bg-black/40 backdrop-blur-sm",
-        isMobile ? "items-end pb-safe-bottom" : "items-start justify-center pt-16"
+        isMobile ? "items-end" : "items-start justify-center pt-16"
       )}
       onClick={onClose}
     >
@@ -276,12 +285,16 @@ export function OmniCommandPalette({
         className={clsx(
           "bg-cream text-dune shadow-2xl border border-sage/15 flex flex-col",
           isMobile
-            ? "w-full rounded-t-[28px] max-h-[80vh]"
-            : "w-full max-w-2xl rounded-[32px] max-h-[80vh]"
+            ? "w-full rounded-t-[28px] pb-safe-bottom"
+            : "w-full max-w-2xl rounded-[32px]",
+          // Dynamic height based on search state on mobile
+          isMobile && isSearchActive
+            ? "max-h-[50vh]" // Smaller when keyboard is up
+            : "max-h-[80vh]"  // Larger when keyboard is down
         )}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="px-5 pt-5 pb-4 border-b border-sage/10">
+        <div className="px-5 pt-5 pb-4 border-b border-sage/10" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-sage/70">
@@ -295,7 +308,8 @@ export function OmniCommandPalette({
             <div className="flex items-center gap-2">
               {activeGroup && (
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     setActiveGroup(null)
                     setActiveIndex(0)
                   }}
@@ -309,23 +323,62 @@ export function OmniCommandPalette({
               </div>
             </div>
           </div>
-          <div className="mt-4 flex items-center gap-3 rounded-[20px] border border-sage/20 bg-cream/80 px-4 py-2.5 shadow-inner">
-            <Search className="w-4 h-4 text-sage/70" />
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={(event) => {
-                setActiveIndex(0)
-                onQueryChange(event.target.value)
-              }}
-              placeholder="Search tags, team, actions…"
-              className="flex-1 bg-transparent outline-none text-sm placeholder:text-sage/60"
-            />
-            <div className="hidden sm:flex items-center gap-1 text-[11px] uppercase tracking-wider text-sage/60">
-              <span>/</span>
-              <span>cmd</span>
-              <span>k</span>
+          <div
+            className={clsx(
+              "mt-4 flex items-center gap-3 rounded-[20px] border bg-cream/80 shadow-inner transition-all",
+              isMobile && !isSearchActive
+                ? "border-sage/20 cursor-pointer hover:border-sage/30"
+                : "border-sage/20"
+            )}
+            onClick={(e) => {
+              e.stopPropagation() // Prevent closing the palette
+              if (isMobile && !isSearchActive) {
+                setIsSearchActive(true)
+                // Small delay to ensure state updates before focusing
+                setTimeout(() => inputRef.current?.focus(), 100)
+              }
+            }}
+          >
+            <div className="flex items-center gap-3 flex-1 px-4 py-2.5">
+              <Search className="w-4 h-4 text-sage/70 flex-shrink-0" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(event) => {
+                  setActiveIndex(0)
+                  onQueryChange(event.target.value)
+                }}
+                onClick={(e) => {
+                  e.stopPropagation() // Prevent closing palette on input click
+                }}
+                onFocus={(e) => {
+                  e.stopPropagation() // Prevent closing palette on focus
+                  if (isMobile) setIsSearchActive(true)
+                }}
+                placeholder={isMobile && !isSearchActive ? "Tap to search…" : "Search tags, team, actions…"}
+                className="flex-1 bg-transparent outline-none text-sm placeholder:text-sage/60"
+                readOnly={isMobile && !isSearchActive}
+              />
             </div>
+            {isMobile && isSearchActive ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  inputRef.current?.blur()
+                  setIsSearchActive(false)
+                  onQueryChange("")
+                }}
+                className="px-4 py-2.5 text-sm font-semibold text-dusty-rose hover:text-dusty-rose/80 transition-colors flex-shrink-0"
+              >
+                Done
+              </button>
+            ) : (
+              <div className="hidden sm:flex items-center gap-1 text-[11px] uppercase tracking-wider text-sage/60 pr-4">
+                <span>/</span>
+                <span>cmd</span>
+                <span>k</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -495,7 +548,10 @@ export function OmniCommandPalette({
                       setActiveGroup(groupName)
                       setActiveIndex(0)
                     }}
-                    className="flex items-center justify-between rounded-3xl border border-sage/20 bg-white/70 px-5 py-4 text-left shadow-sm transition hover:border-dusty-rose/40 hover:shadow"
+                    className={clsx(
+                      "flex items-center justify-between rounded-3xl border border-sage/20 bg-white/70 text-left shadow-sm transition hover:border-dusty-rose/40 hover:shadow active:scale-[0.98]",
+                      isMobile ? "px-5 py-5" : "px-5 py-4"
+                    )}
                   >
                     <div>
                       <div className="flex items-center gap-2 text-sm font-semibold text-dune">

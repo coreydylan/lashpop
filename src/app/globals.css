@@ -113,15 +113,24 @@
   display: none;
 }
 
-/* Prevent iOS image context menu in DAM */
-.dam-grid img,
-.photo-lightbox-thumb img,
-.photo-lightbox-overlay img {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-  pointer-events: none;
-}
+  /* Prevent iOS image context menu in DAM */
+  .dam-grid img,
+  .photo-lightbox-thumb img,
+  .photo-lightbox-overlay img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: none;
+    /* Ensure images respect container sizing */
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Override for static cropped images that need to fill container */
+  img.object-cover {
+    height: 100% !important;
+    max-width: none !important;
+  }
 
 /* Ensure touch manipulation on containers */
 .dam-grid > div,
@@ -129,6 +138,17 @@
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Photo lightbox OmniBar - ensure it matches grid view exactly */
+.photo-lightbox-omnibar {
+  /* Position at top of lightbox, not overlaying the image */
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  pointer-events: auto;
 }
 
 /* iOS Safe Area Support */
@@ -546,5 +566,18 @@ a,
 
   .no-horizontal-scroll * {
     max-width: 100%;
+  }
+
+  /* Filter utilities for tag colorization */
+  .brightness-110 {
+    filter: brightness(1.15);
+  }
+
+  .saturate-130 {
+    filter: saturate(1.4);
+  }
+
+  .brightness-110.saturate-130 {
+    filter: brightness(1.15) saturate(1.4);
   }
 }

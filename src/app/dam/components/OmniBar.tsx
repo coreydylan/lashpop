@@ -30,6 +30,9 @@ export interface OmniBarProps {
   // Mobile-specific props
   collectionSelector?: ReactNode
   onOpenCommandPalette?: () => void
+  // Collection info for mobile indicator
+  activeCollectionName?: string
+  activeCollectionColor?: string
 }
 
 export function OmniBar({
@@ -53,7 +56,9 @@ export function OmniBar({
   escConfirmationActive = false,
   onEscClick,
   collectionSelector,
-  onOpenCommandPalette
+  onOpenCommandPalette,
+  activeCollectionName,
+  activeCollectionColor
 }: OmniBarProps) {
   const isOverlay = mode === "overlay"
 
@@ -84,55 +89,159 @@ export function OmniBar({
   const bothActive = hasGroupBy && hasChips
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const mobileChipsContainerRef = useRef<HTMLDivElement>(null)
   const [showLeftScroll, setShowLeftScroll] = useState(false)
   const [showRightScroll, setShowRightScroll] = useState(false)
   const scrollIntervalRef = useRef<number | null>(null)
-
-  console.log('OmniBar render:', { showLeftScroll, showRightScroll, hasGroupBy, hasChips })
+  
+  // Smooth scrolling refs
+  const scrollTarget = useRef<number | null>(null)
+  const scrollAnimationFrame = useRef<number | null>(null)
 
   // Check scroll position to show/hide scroll indicators
   const checkScroll = () => {
     const container = scrollContainerRef.current
-    console.log('OmniBar checkScroll called, container:', container)
-    if (!container) {
-      console.log('OmniBar checkScroll: no container ref yet')
+    if (!container) return
+
+    const { scrollLeft, scrollWidth, clientWidth } = container
+    // Use a small tolerance (1px) for float arithmetic
+    const shouldShowLeft = scrollLeft > 1
+    const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 1
+    
+    if (shouldShowLeft !== showLeftScroll) setShowLeftScroll(shouldShowLeft)
+    if (shouldShowRight !== showRightScroll) setShowRightScroll(shouldShowRight)
+  }
+
+  // Handle mouse wheel for horizontal scrolling
+  const handleWheel = (e: React.WheelEvent) => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    // If we're already at the edge, let the parent handle the scroll (vertical page scroll)
+    const { scrollLeft, scrollWidth, clientWidth } = container
+    const isAtLeft = scrollLeft <= 0
+    const isAtRight = scrollLeft >= scrollWidth - clientWidth - 1
+
+    // If deltaX is dominant, it's a horizontal scroll (trackpad/horizontal mouse) - let it happen naturally
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      // Cancel any ongoing smooth scroll if user switches to trackpad/native
+      scrollTarget.current = null
+      if (scrollAnimationFrame.current) {
+        cancelAnimationFrame(scrollAnimationFrame.current)
+        scrollAnimationFrame.current = null
+      }
       return
     }
 
-    const { scrollLeft, scrollWidth, clientWidth } = container
-    console.log('OmniBar checkScroll:', { scrollLeft, scrollWidth, clientWidth, hasOverflow: scrollWidth > clientWidth })
-    const shouldShowLeft = scrollLeft > 0
-    const shouldShowRight = scrollLeft < scrollWidth - clientWidth - 1
-    console.log('OmniBar checkScroll setting:', { shouldShowLeft, shouldShowRight })
-    setShowLeftScroll(shouldShowLeft)
-    setShowRightScroll(shouldShowRight)
+    // If deltaY is dominant, convert to horizontal scroll
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      // Check if we can scroll in the requested direction
+      if ((e.deltaY < 0 && isAtLeft) || (e.deltaY > 0 && isAtRight)) return
+
+      e.preventDefault()
+
+      // Smooth scroll logic
+      const currentScroll = container.scrollLeft
+      // Use existing target if we're already animating, otherwise current scroll
+      const startPoint = scrollTarget.current !== null ? scrollTarget.current : currentScroll
+      
+      // Adjust sensitivity factor (0.7 feels good)
+      const delta = e.deltaY * 0.7
+      
+      // Update target (clamped)
+      scrollTarget.current = Math.max(0, Math.min(scrollWidth - clientWidth, startPoint + delta))
+
+      // Start animation loop if not running
+      if (!scrollAnimationFrame.current) {
+        const animateScroll = () => {
+          if (!container || scrollTarget.current === null) {
+            scrollAnimationFrame.current = null
+            return
+          }
+
+          const current = container.scrollLeft
+          const target = scrollTarget.current
+          const diff = target - current
+
+          // Snap when close enough
+          if (Math.abs(diff) < 1) {
+            container.scrollLeft = target
+            scrollTarget.current = null
+            scrollAnimationFrame.current = null
+            return
+          }
+
+          // Lerp for smoothness (0.15 is a good balance between smooth and responsive)
+          container.scrollLeft = current + diff * 0.15
+          scrollAnimationFrame.current = requestAnimationFrame(animateScroll)
+        }
+        scrollAnimationFrame.current = requestAnimationFrame(animateScroll)
+      }
+    }
   }
 
   useEffect(() => {
-    console.log('OmniBar useEffect running, hasGroupBy:', hasGroupBy, 'hasChips:', hasChips, 'chipsContent:', chipsContent, 'groupByContent:', groupByContent)
     const container = scrollContainerRef.current
-    if (!container) {
-      console.log('OmniBar useEffect: no container ref')
-      return
-    }
+    if (!container) return
 
-    console.log('OmniBar useEffect: calling checkScroll and setting up listeners')
-    checkScroll()
+    // Use ResizeObserver to detect content/container size changes robustly
+    const resizeObserver = new ResizeObserver(() => {
+      checkScroll()
+    })
+    
+    resizeObserver.observe(container)
+    resizeObserver.observe(container.firstElementChild as Element || container) // Observe content wrapper too
+    
+    // Listen for scroll events
     container.addEventListener('scroll', checkScroll)
-    window.addEventListener('resize', checkScroll)
-
-    // Also check after a delay to ensure rendering is complete
-    setTimeout(checkScroll, 100)
-    setTimeout(checkScroll, 500)
+    
+    // Initial check
+    checkScroll()
+    
+    // Also check periodically to handle image loads or animations
+    const interval = setInterval(checkScroll, 500)
 
     return () => {
-      console.log('OmniBar useEffect cleanup')
+      resizeObserver.disconnect()
       container.removeEventListener('scroll', checkScroll)
-      window.removeEventListener('resize', checkScroll)
+      clearInterval(interval)
+      stopAutoScroll() // Ensure scrolling stops on unmount
     }
-  }, [hasGroupBy, hasChips, chipsContent, groupByContent])
+  }, [showLeftScroll, showRightScroll]) // Re-bind if state changes (though logic inside doesn't depend on closure state much)
+
+  // Handle mobile chips scroll to close dropdowns
+  useEffect(() => {
+    const mobileContainer = mobileChipsContainerRef.current
+    if (!mobileContainer) return
+
+    const handleMobileScroll = () => {
+      // Dispatch custom event to close all chip dropdowns
+      window.dispatchEvent(new CustomEvent('omnibar-scroll'))
+    }
+
+    mobileContainer.addEventListener('scroll', handleMobileScroll)
+    return () => {
+      mobileContainer.removeEventListener('scroll', handleMobileScroll)
+    }
+  }, [])
+
+  // Cleanup smooth scroll animation on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollAnimationFrame.current) {
+        cancelAnimationFrame(scrollAnimationFrame.current)
+      }
+    }
+  }, [])
 
   const startAutoScroll = (direction: 'left' | 'right') => {
+    // Cancel any smooth scrolling from mouse wheel
+    if (scrollAnimationFrame.current) {
+      cancelAnimationFrame(scrollAnimationFrame.current)
+      scrollAnimationFrame.current = null
+      scrollTarget.current = null
+    }
+
     // Clear any existing scroll interval first to allow direction change
     if (scrollIntervalRef.current) {
       clearInterval(scrollIntervalRef.current)
@@ -146,10 +255,19 @@ export function OmniBar({
         return
       }
 
+      // Check bounds to stop auto-scrolling if we hit the edge
+      const { scrollLeft, scrollWidth, clientWidth } = container
+      if (direction === 'left' && scrollLeft <= 0) {
+        stopAutoScroll()
+        return
+      }
+      if (direction === 'right' && scrollLeft >= scrollWidth - clientWidth - 1) {
+        stopAutoScroll()
+        return
+      }
+
       const scrollAmount = direction === 'left' ? -8 : 8
-      console.log('OmniBar scrolling:', direction, 'scrollLeft before:', container.scrollLeft, 'scrollWidth:', container.scrollWidth, 'clientWidth:', container.clientWidth)
       container.scrollLeft += scrollAmount
-      console.log('OmniBar scrollLeft after:', container.scrollLeft)
     }
 
     // Start scrolling immediately
@@ -168,107 +286,53 @@ export function OmniBar({
   return (
     <div className={containerClass} data-omni-bar>
       {/* Desktop layout */}
-      <div className="hidden lg:flex gap-4 px-6 py-5" style={{ minHeight: '60px' }}>
-        {/* Left side buttons */}
+      <div className="hidden lg:flex gap-4 px-4 py-3 items-center" style={{ minHeight: '52px' }}>
+        {/* Left side buttons - always horizontal */}
         {(groupByButton || filterButton) && (
-          <div className={clsx(
-            "flex gap-2 flex-shrink-0",
-            bothActive ? "flex-col justify-start" : "flex-row items-center justify-center"
-          )}>
+          <div className="flex gap-2 flex-shrink-0 items-center">
             {groupByButton}
             {filterButton}
           </div>
         )}
 
         {/* Horizontal scroll container for chips */}
-        <div className={clsx(
-          "flex-1 min-w-0 relative",
-          !bothActive && "flex items-center"
-        )}>
-          {/* Left scroll indicator */}
+        <div className="flex-1 min-w-0 relative flex items-center">
+          {/* Scroll trigger zones - High z-index to overlay chips */}
           {showLeftScroll && (
             <div
-              className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-current to-transparent opacity-10 pointer-events-none z-10"
-              style={{ color: isOverlay ? '#F5EFE6' : '#C9BBAA' }}
-            />
-          )}
-
-          {/* Scroll trigger zones */}
-          {showLeftScroll && (
-            <div
-              className="absolute left-0 top-0 bottom-0 w-16 z-20 cursor-w-resize"
-              onMouseEnter={() => {
-                console.log('OmniBar: Left zone entered')
-                startAutoScroll('left')
-              }}
+              className="absolute left-0 top-0 bottom-0 w-16 z-[60] cursor-w-resize"
+              style={{ background: 'rgba(0,0,0,0)', touchAction: 'none' }}
+              onMouseEnter={() => startAutoScroll('left')}
               onMouseLeave={stopAutoScroll}
             />
           )}
           {showRightScroll && (
             <div
-              className="absolute right-0 top-0 bottom-0 w-16 z-20 cursor-e-resize"
-              onMouseEnter={() => {
-                console.log('OmniBar: Right zone entered')
-                startAutoScroll('right')
-              }}
+              className="absolute right-0 top-0 bottom-0 w-16 z-[60] cursor-e-resize"
+              style={{ background: 'rgba(0,0,0,0)', touchAction: 'none' }}
+              onMouseEnter={() => startAutoScroll('right')}
               onMouseLeave={stopAutoScroll}
             />
           )}
 
-          {/* Right scroll indicator */}
-          {showRightScroll && (
-            <div
-              className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-current to-transparent opacity-10 pointer-events-none z-10"
-              style={{ color: isOverlay ? '#F5EFE6' : '#C9BBAA' }}
-            />
-          )}
-
-          {/* Scrollable content */}
+          {/* Scrollable content - always single horizontal row */}
           <div
             ref={scrollContainerRef}
-            className={clsx(
-              "overflow-x-auto overflow-y-hidden scrollbar-hidden w-full max-w-full",
-              bothActive ? "py-0.5" : "flex items-center h-full"
-            )}
+            onWheel={handleWheel}
+            className="overflow-x-auto overflow-y-hidden scrollbar-hidden w-full max-w-full flex items-center h-full"
             style={{
               scrollBehavior: 'auto'
             }}
           >
-            {bothActive ? (
-              // Stack vertically when both group-by and filter are active
-              <div className="space-y-2 min-w-max">
-                {hasGroupBy && (
-                  <div className="flex items-center gap-2">
-                    {groupByContent}
-                  </div>
-                )}
-                {hasChips && (
-                  <div className="flex items-center gap-2">
-                    {chipsContent}
-                    {isOverlay && tagSelectorContent && (
-                      <div className="flex items-center gap-2">
-                        {tagSelectorContent}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              // Single horizontal row - vertically centered
-              <div className="flex items-center gap-2 min-w-max h-full">
-                {groupByContent}
-                {chipsContent}
-                {isOverlay && tagSelectorContent && !hasChips && (
-                  <div className="flex items-center gap-2">
-                    {tagSelectorContent}
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-2 min-w-max">
+              {groupByContent}
+              {chipsContent}
+              {isOverlay && tagSelectorContent}
+            </div>
           </div>
         </div>
 
-        <div className="flex-shrink-0 ml-auto pl-4 pt-1 flex items-center gap-3">
+        <div className="flex-shrink-0 ml-auto pl-4 flex items-center gap-3">
           {selectedCount > 0 ? (
             <>
               <div className="flex items-center gap-2">
@@ -363,39 +427,70 @@ export function OmniBar({
       <div className="block lg:hidden">
         {/* Asset count / selection count row */}
         <div className={clsx(
-          "flex items-center justify-between py-2",
+          "flex items-center justify-between py-1.5",
           isOverlay ? "px-0" : "px-3"
         )}>
-          {selectedCount > 0 ? (
-            <div className="flex items-center gap-1.5">
-              <span className={clsx("text-xs font-bold", textPrimary)}>
-                {selectedCount} selected
-              </span>
-              {escConfirmationActive && (
-                <button
-                  onClick={onEscClick}
-                  className={clsx(
-                    "flex items-center gap-1 px-2 py-0.5 rounded-full transition-all font-medium text-[9px]",
-                    isOverlay
-                      ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
-                      : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
-                  )}
-                  aria-label="Confirm deselect"
-                >
-                  <span className="inline-flex items-center border border-current/40 rounded px-1 py-0.5 text-[8px] font-semibold">
-                    ESC
-                  </span>
-                  <span>again</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <span className={clsx("text-xs font-medium", textMuted)}>
-              {assetsCount} {assetLabel}
-            </span>
-          )}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {selectedCount > 0 ? (
+              <div className="flex items-center gap-1.5">
+                <span className={clsx("text-xs font-bold", textPrimary)}>
+                  {selectedCount} selected
+                </span>
+                {!escConfirmationActive && (
+                  <button
+                    onClick={onEscClick || onClearSelection}
+                    className={clsx(
+                      "flex items-center justify-center rounded-full transition-colors",
+                      hoverClass,
+                      "w-5 h-5"
+                    )}
+                    aria-label="Clear selection"
+                  >
+                    <X className={clsx("w-3.5 h-3.5", textPrimary)} />
+                  </button>
+                )}
+                {escConfirmationActive && (
+                  <button
+                    onClick={onEscClick}
+                    className={clsx(
+                      "flex items-center px-2 py-0.5 rounded-full transition-all font-medium text-[10px]",
+                      isOverlay
+                        ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
+                        : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
+                    )}
+                    aria-label="Confirm deselect"
+                  >
+                    <span>Unselect {selectedCount} items?</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
+                <span className={clsx("text-xs font-medium", textMuted)}>
+                  {assetsCount} {assetLabel}
+                </span>
+                {/* Collection indicator on mobile */}
+                {activeCollectionName && (
+                  <>
+                    <span className={clsx("text-xs", textMuted)}>·</span>
+                    <button
+                      onClick={onOpenCommandPalette}
+                      className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold transition-all"
+                      style={{
+                        backgroundColor: activeCollectionColor ? `${activeCollectionColor}20` : undefined,
+                        color: activeCollectionColor || '#A19781',
+                        border: `1px solid ${activeCollectionColor ? `${activeCollectionColor}40` : '#A1978140'}`
+                      }}
+                    >
+                      <span className="truncate max-w-[120px]">{activeCollectionName}</span>
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </div>
           {counterSlot && (
-            <span className="text-[9px] font-bold text-sage">
+            <span className="text-[9px] font-bold text-sage flex-shrink-0">
               {counterSlot}
             </span>
           )}
@@ -403,10 +498,13 @@ export function OmniBar({
 
         {/* Active filter/group chips - always show when there are chips */}
         {(hasGroupBy || hasChips) && (
-          <div className={clsx(
-            "pb-2 pt-1 overflow-x-auto scrollbar-hidden",
-            isOverlay ? "px-0" : "px-3"
-          )}>
+          <div
+            ref={mobileChipsContainerRef}
+            className={clsx(
+              "pb-2 pt-0.5 overflow-x-auto scrollbar-hidden",
+              isOverlay ? "px-0" : "px-3"
+            )}
+          >
             <div className="flex items-center gap-1.5 min-w-max">
               {groupByContent}
               {chipsContent}

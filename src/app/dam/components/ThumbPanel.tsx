@@ -35,6 +35,8 @@ interface TagCategory {
 interface Collection {
   id: string
   name: string
+  displayName?: string
+  color?: string
 }
 
 interface TeamMember {
@@ -46,6 +48,7 @@ interface TeamMember {
     y: number
     scale: number
   } | null
+  cropCloseUpCircleUrl?: string | null
 }
 
 interface ThumbPanelProps {
@@ -377,7 +380,7 @@ export function ThumbPanel({
             "text-sm",
             activeCollectionId === collection.id ? "text-dusty-rose font-medium" : "text-dune"
           )}>
-            {collection.name}
+            {collection.displayName || collection.name}
           </span>
           {activeCollectionId === collection.id && (
             <div className="w-2 h-2 rounded-full bg-dusty-rose" />
@@ -488,22 +491,21 @@ export function ThumbPanel({
               >
                 {member.imageUrl && !member.imageUrl.includes('placeholder') ? (
                   <div className="w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
-                    <img
-                      src={member.imageUrl}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                      style={
-                        member.cropCloseUpCircle
-                          ? {
-                              objectPosition: `${member.cropCloseUpCircle.x}% ${member.cropCloseUpCircle.y}%`,
-                              transform: `scale(${member.cropCloseUpCircle.scale})`
-                            }
-                          : {
-                              objectPosition: 'center 25%',
-                              transform: 'scale(2)'
-                            }
-                      }
-                    />
+                    {member.cropCloseUpCircleUrl ? (
+                      // Use pre-cropped image if available
+                      <img
+                        src={member.cropCloseUpCircleUrl}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      // Use original image with object-fit
+                      <img
+                        src={member.imageUrl}
+                        alt={member.name}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-warm-sand/40 border border-cream/30 flex items-center justify-center flex-shrink-0">

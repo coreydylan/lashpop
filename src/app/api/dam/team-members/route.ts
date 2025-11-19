@@ -16,7 +16,12 @@ export async function GET() {
         imageUrl: teamMembers.imageUrl,
         cropCloseUpCircle: teamMemberPhotos.cropCloseUpCircle,
         cropSquare: teamMemberPhotos.cropSquare,
-        cropMediumCircle: teamMemberPhotos.cropMediumCircle
+        cropMediumCircle: teamMemberPhotos.cropMediumCircle,
+        cropFullVerticalUrl: teamMemberPhotos.cropFullVerticalUrl,
+        cropFullHorizontalUrl: teamMemberPhotos.cropFullHorizontalUrl,
+        cropMediumCircleUrl: teamMemberPhotos.cropMediumCircleUrl,
+        cropCloseUpCircleUrl: teamMemberPhotos.cropCloseUpCircleUrl,
+        cropSquareUrl: teamMemberPhotos.cropSquareUrl
       })
       .from(teamMembers)
       .leftJoin(

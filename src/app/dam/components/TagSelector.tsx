@@ -266,24 +266,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
                         <img
                           src={tag.imageUrl}
                           alt={tag.displayName}
-                          className="absolute"
-                          style={
-                            tag.cropCloseUpCircle
-                              ? {
-                                  width: `${tag.cropCloseUpCircle.scale * 100}%`,
-                                  height: `${tag.cropCloseUpCircle.scale * 100}%`,
-                                  left: `${50 - (tag.cropCloseUpCircle.x * tag.cropCloseUpCircle.scale)}%`,
-                                  top: `${50 - (tag.cropCloseUpCircle.y * tag.cropCloseUpCircle.scale)}%`,
-                                  objectFit: 'cover'
-                                }
-                              : {
-                                  width: '200%',
-                                  height: '200%',
-                                  left: '-50%',
-                                  top: '-25%',
-                                  objectFit: 'cover'
-                                }
-                          }
+                          className="w-full h-full object-cover"
                           onError={(e) => {
                             const target = e.currentTarget
                             target.style.display = 'none'

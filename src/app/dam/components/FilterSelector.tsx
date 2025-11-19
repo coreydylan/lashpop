@@ -31,6 +31,7 @@ interface TeamMember {
     y: number
     scale: number
   } | null
+  cropCloseUpCircleUrl?: string | null
 }
 
 interface FilterAsset {
@@ -159,6 +160,7 @@ export function FilterSelector({
         displayName: m.name,
         imageUrl: m.imageUrl,
         cropCloseUpCircle: m.cropCloseUpCircle,
+        cropCloseUpCircleUrl: m.cropCloseUpCircleUrl,
         count: getOptionCount('team', m.id)
       }))
     }] : []),
@@ -270,28 +272,30 @@ export function FilterSelector({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                             </svg>
                           </div>
+                        ) : option.cropCloseUpCircleUrl ? (
+                          // Use pre-cropped image if available
+                          <img
+                            src={option.cropCloseUpCircleUrl}
+                            alt={option.displayName}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget
+                              target.style.display = 'none'
+                              const parent = target.parentElement
+                              if (parent) {
+                                parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-4 h-4 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
+                              }
+                            }}
+                          />
                         ) : (
+                          // Fallback to object-fit: cover
                           <img
                             src={option.imageUrl}
                             alt={option.displayName}
-                            className="absolute"
-                            style={
-                              option.cropCloseUpCircle
-                                ? {
-                                    width: `${option.cropCloseUpCircle.scale * 100}%`,
-                                    height: `${option.cropCloseUpCircle.scale * 100}%`,
-                                    left: `${50 - (option.cropCloseUpCircle.x * option.cropCloseUpCircle.scale)}%`,
-                                    top: `${50 - (option.cropCloseUpCircle.y * option.cropCloseUpCircle.scale)}%`,
-                                    objectFit: 'cover'
-                                  }
-                                : {
-                                    width: '200%',
-                                    height: '200%',
-                                    left: '-50%',
-                                    top: '-25%',
-                                    objectFit: 'cover'
-                                  }
-                            }
+                            className="w-full h-full object-cover"
+                            style={{
+                              objectPosition: 'center 30%'
+                            }}
                             onError={(e) => {
                               const target = e.currentTarget
                               target.style.display = 'none'

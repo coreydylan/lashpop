@@ -37,6 +37,7 @@ interface TeamMember {
     y: number
     scale: number
   } | null
+  cropCloseUpCircleUrl?: string | null
 }
 
 interface AssetGridProps {
@@ -632,8 +633,8 @@ export function AssetGrid({
           const isPlaceholder = teamMember.imageUrl.includes('placeholder')
           if (!isPlaceholder) {
             groupImage = {
-              url: teamMember.imageUrl,
-              crop: teamMember.cropCloseUpCircle || undefined
+              url: teamMember.cropCloseUpCircleUrl || teamMember.imageUrl,
+              crop: teamMember.cropCloseUpCircleUrl ? undefined : (teamMember.cropCloseUpCircle || undefined)
             }
           }
         } else {
@@ -665,28 +666,34 @@ export function AssetGrid({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                       </svg>
                     </div>
-                  ) : (
+                  ) : groupImage.crop ? (
+                    // Apply crop positioning if crop data exists
                     <img
                       src={groupImage.url}
                       alt={groupTitle}
-                      className="absolute"
-                      style={
-                        groupImage.crop
-                          ? {
-                              width: `${groupImage.crop.scale * 100}%`,
-                              height: `${groupImage.crop.scale * 100}%`,
-                              left: `${50 - (groupImage.crop.x * groupImage.crop.scale)}%`,
-                              top: `${50 - (groupImage.crop.y * groupImage.crop.scale)}%`,
-                              objectFit: 'cover'
-                            }
-                          : {
-                              width: '90%',
-                              height: '90%',
-                              left: '5%',
-                              top: '-16%',
-                              objectFit: 'cover'
-                            }
-                      }
+                      className="absolute inset-0"
+                      style={{
+                        width: `${groupImage.crop.scale * 100}%`,
+                        height: `${groupImage.crop.scale * 100}%`,
+                        left: `${50 - (groupImage.crop.x * groupImage.crop.scale)}%`,
+                        top: `${50 - (groupImage.crop.y * groupImage.crop.scale)}%`,
+                        objectFit: 'cover'
+                      }}
+                      onError={(e) => {
+                        const target = e.currentTarget
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent) {
+                          parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
+                        }
+                      }}
+                    />
+                  ) : (
+                    // Use pre-cropped image or fallback
+                    <img
+                      src={groupImage.url}
+                      alt={groupTitle}
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         const target = e.currentTarget
                         target.style.display = 'none'
@@ -1035,7 +1042,7 @@ function AssetCard({
     onClick(e)
   }
 
-  const imageContent = (
+  const imageContent = useMemo(() => (
     <img
       src={asset.filePath}
       alt={asset.fileName}
@@ -1054,7 +1061,7 @@ function AssetCard({
       }}
       onContextMenu={(e) => e.preventDefault()}
     />
-  )
+  ), [asset.filePath, asset.fileName, gridViewMode, imageLoaded])
 
   return (
     <div
@@ -1068,8 +1075,8 @@ function AssetCard({
       style={{
         WebkitTouchCallout: 'none',
         WebkitUserSelect: 'none',
-        userSelect: 'none',
-        willChange: isDragging || isDraggedOver ? 'transform' : 'auto'
+        userSelect: 'none'
+        // Removed dynamic will-change to prevent masonry blinking issues
       }}
       onClick={handleClick}
       onMouseDown={(e) => {
@@ -1095,25 +1102,21 @@ function AssetCard({
       onMouseLeave={handleTouchEnd}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Image - wrapped in PhotoView when not in selection mode */}
-      {isSelectionMode ? (
-        <div className="w-full h-full">
+      {/* Image - wrapped in PhotoView to maintain DOM structure and prevent blinking */}
+      <PhotoView src={asset.filePath}>
+        <div 
+          className="w-full h-full" 
+          onClick={(e) => {
+            // Prevent PhotoView from opening if in selection mode or modifier keys are pressed
+            // We only prevent default to stop PhotoView, but let it bubble to parent for selection handling
+            if (isSelectionMode || e.metaKey || e.ctrlKey || e.shiftKey) {
+              e.preventDefault()
+            }
+          }}
+        >
           {imageContent}
         </div>
-      ) : (
-        <PhotoView src={asset.filePath}>
-          <div className="w-full h-full" onClick={(e) => {
-            // Prevent PhotoView from opening if modifier keys are pressed
-            // Only prevent default - let event bubble up to parent handler
-            if (e.metaKey || e.ctrlKey || e.shiftKey) {
-              e.preventDefault()
-              // Don't stopPropagation - let parent onClick handle the selection
-            }
-          }}>
-            {imageContent}
-          </div>
-        </PhotoView>
-      )}
+      </PhotoView>
 
       {/* Selection outline and overlay */}
       {isSelected && (

@@ -10,6 +10,7 @@ interface TeamMember {
   id: string
   name: string
   imageUrl: string
+  cropCloseUpCircleUrl?: string | null
 }
 
 interface TeamMemberDropdownProps {
@@ -72,24 +73,33 @@ export function TeamMemberDropdown({
         <div className="flex items-center gap-3 flex-1 min-w-0">
           {selectedMember ? (
             <>
-              {/* Selected member image - zoomed and cropped */}
-              <div className="relative w-10 h-10 arch-full overflow-hidden bg-warm-sand/40 flex-shrink-0">
+              {/* Selected member image */}
+              <div className="relative w-10 h-10 rounded-full overflow-hidden bg-warm-sand/40 flex-shrink-0">
                 {!selectedMember.imageUrl || selectedMember.imageUrl.includes('placeholder') ? (
                   <div className="absolute inset-0 w-full h-full flex items-center justify-center">
                     <User className="w-6 h-6 text-sage/40" />
                   </div>
+                ) : selectedMember.cropCloseUpCircleUrl ? (
+                  // Use pre-cropped image if available
+                  <img
+                    src={selectedMember.cropCloseUpCircleUrl}
+                    alt={selectedMember.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget
+                      target.style.display = 'none'
+                      const parent = target.parentElement
+                      if (parent) {
+                        parent.innerHTML = '<svg class="w-6 h-6 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>'
+                      }
+                    }}
+                  />
                 ) : (
+                  // Use original image with object-fit
                   <img
                     src={selectedMember.imageUrl}
                     alt={selectedMember.name}
-                    className="absolute"
-                    style={{
-                      width: '200%',
-                      height: '200%',
-                      left: '-50%',
-                      top: '-25%',
-                      objectFit: 'cover'
-                    }}
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.currentTarget
                       target.style.display = 'none'
@@ -108,7 +118,7 @@ export function TeamMemberDropdown({
           ) : (
             <>
               {/* Placeholder */}
-              <div className="w-10 h-10 arch-full bg-sage/10 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-sage/10 flex items-center justify-center flex-shrink-0">
                 <User className="w-5 h-5 text-sage" />
               </div>
               <span className="body text-sage">Select team member</span>
@@ -142,7 +152,7 @@ export function TeamMemberDropdown({
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/30 transition-colors text-left"
                 >
-                  <div className="w-10 h-10 arch-full bg-sage/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-sage/10 flex items-center justify-center flex-shrink-0">
                     <User className="w-5 h-5 text-sage" />
                   </div>
                   <span className="body text-sage flex-1">Clear selection</span>
@@ -162,24 +172,33 @@ export function TeamMemberDropdown({
                     : "hover:bg-warm-sand/30"
                 }`}
               >
-                {/* Member image - zoomed and cropped to show face */}
-                <div className="relative w-10 h-10 arch-full overflow-hidden bg-warm-sand/40 flex-shrink-0 shadow-sm">
+                {/* Member image */}
+                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-warm-sand/40 flex-shrink-0 shadow-sm">
                   {!member.imageUrl || member.imageUrl.includes('placeholder') ? (
                     <div className="absolute inset-0 w-full h-full flex items-center justify-center">
                       <User className="w-6 h-6 text-sage/40" />
                     </div>
+                  ) : member.cropCloseUpCircleUrl ? (
+                    // Use pre-cropped image if available
+                    <img
+                      src={member.cropCloseUpCircleUrl}
+                      alt={member.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget
+                        target.style.display = 'none'
+                        const parent = target.parentElement
+                        if (parent) {
+                          parent.innerHTML = '<div class="absolute inset-0 w-full h-full flex items-center justify-center"><svg class="w-6 h-6 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>'
+                        }
+                      }}
+                    />
                   ) : (
+                    // Use original image with object-fit
                     <img
                       src={member.imageUrl}
                       alt={member.name}
-                      className="absolute"
-                      style={{
-                        width: '200%',
-                        height: '200%',
-                        left: '-50%',
-                        top: '-25%',
-                        objectFit: 'cover'
-                      }}
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         const target = e.currentTarget
                         target.style.display = 'none'
