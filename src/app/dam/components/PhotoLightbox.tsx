@@ -7,6 +7,7 @@ import { useCallback, useRef } from "react"
 import { PhotoProvider } from "react-photo-view"
 import "react-photo-view/dist/react-photo-view.css"
 import { CheckCircle, Circle, Sparkles } from "lucide-react"
+import clsx from "clsx"
 import { OmniBar, type OmniBarProps } from "./OmniBar"
 
 interface Asset {
@@ -174,26 +175,33 @@ export function PhotoLightbox({
 
         return (
           <div className="photo-lightbox-overlay relative">
+            {/* Action palette button - on right side for both mobile and desktop */}
             {onOpenCommandPalette && (
               <div
-                className="absolute z-50 flex gap-2"
-                style={{
-                  top: isMobile ? undefined : "1.25rem",
-                  right: "1.25rem",
-                  bottom: isMobile ? "1.5rem" : undefined,
-                  left: isMobile ? "50%" : undefined,
-                  transform: isMobile ? "translateX(-50%)" : undefined
-                }}
+                className={clsx(
+                  "z-50 flex gap-2 pointer-events-auto",
+                  isMobile ? "absolute bottom-1/2 translate-y-1/2 right-6" : "absolute top-5 right-5"
+                )}
               >
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     onOpenCommandPalette()
                   }}
-                  className={`flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-4 py-2 text-sm font-semibold text-cream shadow-lg transition hover:bg-black/60 ${isMobile ? "backdrop-blur-md" : ""}`}
+                  className={clsx(
+                    "transition-all duration-300 flex items-center justify-center",
+                    isMobile 
+                      ? "w-14 h-14 shadow-2xl bg-gradient-to-br from-dusty-rose to-dusty-rose/90 border border-cream/20 hover:scale-110 active:scale-95" 
+                      : "gap-2 rounded-full border border-white/20 bg-black/40 shadow-lg hover:bg-black/60 px-4 py-2"
+                  )}
+                  style={isMobile ? {
+                    borderRadius: '20px',
+                    boxShadow: '0 8px 32px rgba(194, 158, 148, 0.4)',
+                    WebkitTapHighlightColor: 'transparent'
+                  } : undefined}
                 >
-                  <Sparkles className="w-4 h-4 text-dusty-rose" />
-                  <span>Action palette</span>
+                  <Sparkles className={clsx(isMobile ? "w-6 h-6 text-cream" : "w-4 h-4 text-dusty-rose")} />
+                  {!isMobile && <span className="text-sm font-semibold text-cream">Action palette</span>}
                 </button>
               </div>
             )}
@@ -210,6 +218,8 @@ export function PhotoLightbox({
                 <OmniBar
                   {...omniBarProps}
                   counterSlot={`${index + 1} / ${assets.length}`}
+                  showGridToggle={false}
+                  onOpenCardSettings={undefined}
                 />
               </div>
             )}
@@ -292,28 +302,60 @@ export function PhotoLightbox({
         }
 
         .PhotoView__PhotoWrap {
-          padding: 80px 0 120px !important;
+          z-index: 10 !important;
         }
 
+        /* Force Box to fill screen and reset positioning */
         .PhotoView__PhotoBox {
-          max-height: min(50vh, 520px) !important;
-          max-width: min(48vw, 800px) !important;
+          width: 100% !important;
+          height: 100% !important;
+          left: 0 !important;
+          top: 0 !important;
+          transform: none !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
         }
 
         .PhotoView__Photo {
-          border-radius: 24px !important;
-          box-shadow: 0 35px 90px rgba(0, 0, 0, 0.55) !important;
-          background: #0f0d0b !important;
+          /* Use transparent borders to create safe zones while keeping the box size correct for the library's positioning math */
+          box-sizing: border-box !important;
+          border-top: 120px solid transparent !important;
+          border-bottom: 160px solid transparent !important;
+          border-left: 40px solid transparent !important;
+          border-right: 40px solid transparent !important;
+          
+          /* Ensure the image scales within the remaining content box */
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: contain !important;
+          
+          /* Override library positioning to ensure centering and safe zones */
+          position: relative !important;
+          inset: auto !important;
+          transform: none !important;
+          
+          /* Reset specific positioning */
+          left: auto !important;
+          top: auto !important;
+          margin: 0 !important;
+          max-width: none !important;
+          max-height: none !important;
+          
+          /* Visuals */
+          border-radius: 16px !important;
+          background: transparent !important;
+          box-shadow: none !important;
+          filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.5));
         }
 
         @media (max-width: 768px) {
-          .PhotoView__PhotoWrap {
-            padding: 70px 0 110px !important;
-          }
-
-          .PhotoView__PhotoBox {
-            max-height: min(48vh, 400px) !important;
-            max-width: 82vw !important;
+          .PhotoView__Photo {
+            border-top: 80px solid transparent !important;
+            border-bottom: 120px solid transparent !important;
+            border-left: 0 solid transparent !important;
+            border-right: 0 solid transparent !important;
+            border-radius: 0 !important;
           }
         }
 
