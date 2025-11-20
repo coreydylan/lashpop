@@ -159,6 +159,7 @@ export function FileUploader({
       fileArray.forEach((file) => {
         const rejection = validateFile(file)
         if (rejection) {
+          console.warn("[Upload] File rejected:", file.name, rejection)
           rejected.push(rejection)
           return
         }
@@ -173,8 +174,14 @@ export function FileUploader({
         })
       })
 
+      console.log("[Upload] Accepted:", accepted.length, "Rejected:", rejected.length)
+
       if (accepted.length) {
-        setFiles((prev) => [...prev, ...accepted])
+        setFiles((prev) => {
+          const newFiles = [...prev, ...accepted]
+          console.log("[Upload] Updating files state. New count:", newFiles.length)
+          return newFiles
+        })
         onUploadStart?.(accepted.map((file) => file.id))
       }
 
@@ -190,6 +197,7 @@ export function FileUploader({
 
   const uploadFile = useCallback(
     async (fileId: string) => {
+      console.log(`[Upload] uploadFile triggered for ${fileId}`)
       let pendingFile: FileWithPreview | undefined
 
       setFiles((prev) =>
@@ -318,13 +326,18 @@ export function FileUploader({
   )
 
   useEffect(() => {
+    console.log("[Upload] Queue effect running. Files:", files.length)
     const uploadingCount = files.filter((file) => file.status === "uploading").length
     const availableSlots = MAX_CONCURRENT_UPLOADS - uploadingCount
+    console.log(`[Upload] Stats: Uploading=${uploadingCount}, Available=${availableSlots}`)
+    
     if (availableSlots <= 0) return
 
     const nextBatch = files
       .filter((file) => file.status === "pending")
       .slice(0, availableSlots)
+    
+    console.log(`[Upload] Starting batch of ${nextBatch.length} files`)
 
     nextBatch.forEach((file) => {
       void uploadFile(file.id)
