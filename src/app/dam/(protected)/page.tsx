@@ -118,6 +118,8 @@ export default function DAMPage() {
     completedMobile,
     currentStep,
     isWaitingForAction,
+    currentSubAction,
+    updateSubAction,
     completeAction
   } = useDamTutorial()
 
@@ -273,7 +275,13 @@ export default function DAMPage() {
   const openCommandPalette = useCallback((prefill = "") => {
     setCommandQuery(prefill)
     setIsCommandOpen(true)
-  }, [])
+
+    // For mobile tutorial: detect Command Palette opened from Action Button
+    if (isWaitingForAction && isMobile && currentStep === 'command-palette-intro' && currentSubAction === 'command-palette') {
+      // User clicked Command Palette in Action Button menu
+      completeAction()
+    }
+  }, [isWaitingForAction, isMobile, currentStep, currentSubAction, completeAction])
 
   const openCardSettings = useCallback(() => {
     setCommandMode('card-settings')
@@ -531,38 +539,57 @@ export default function DAMPage() {
   // Tutorial action watchers
   useEffect(() => {
     if (isWaitingForAction && currentStep) {
-      // Desktop: Watch for command palette opening
-      if (currentStep === 'command-palette-intro' && isCommandOpen) {
-        completeAction()
-      }
+      // Desktop flows
+      if (!isMobile) {
+        // Desktop: Watch for command palette opening
+        if (currentStep === 'command-palette-intro' && isCommandOpen) {
+          completeAction()
+        }
 
-      // Mobile: Watch for command palette opening (filtering-demo is when they tap Command Palette)
-      if (currentStep === 'filtering-demo' && isMobile && isCommandOpen) {
-        completeAction()
-      }
+        // Desktop: Watch for filtering action
+        if (currentStep === 'filtering-demo' && activeFilters.length > 0) {
+          completeAction()
+        }
 
-      // Desktop: Watch for filtering action
-      if (currentStep === 'filtering-demo' && !isMobile && activeFilters.length > 0) {
-        completeAction()
-      }
+        // Desktop: Watch for selection
+        if (currentStep === 'selection-demo' && selectedAssets.length > 0) {
+          completeAction()
+        }
 
-      // Watch for selection (desktop and mobile)
-      if (currentStep === 'selection-demo' && selectedAssets.length > 0) {
-        completeAction()
+        // Desktop: Watch for group by
+        if (currentStep === 'bulk-tagging-demo' && groupByTags.length > 0) {
+          completeAction()
+        }
       }
+      // Mobile flows
+      else {
+        // Mobile Step 2: Action Button opened (handled by onOpen callback in ThumbPanel)
+        // This is handled separately in the ThumbPanel onOpen callback
 
-      // Watch for group by being applied (desktop)
-      if (currentStep === 'bulk-tagging-demo' && groupByTags.length > 0) {
-        completeAction()
-      }
+        // Mobile Step 3: Command Palette opened from Action Button menu
+        if (currentStep === 'command-palette-intro' && isCommandOpen) {
+          completeAction()
+        }
 
-      // Mobile: Watch for bulk actions (when selection + action button opened)
-      if (currentStep === 'bulk-actions' && selectedAssets.length > 0) {
-        // Just having selection is enough, they'll learn to use the action button
-        completeAction()
+        // Mobile Step 4: Command Palette explore - no action needed, just Next
+        // User explores on their own
+
+        // Mobile Step 5: Selection - need at least 3 photos
+        if (currentStep === 'selection-demo') {
+          if (selectedAssets.length === 1) {
+            // User selected first photo
+            updateSubAction('select-more')
+          } else if (selectedAssets.length >= 3) {
+            // User selected enough photos
+            completeAction()
+          }
+        }
+
+        // Mobile Step 6: Bulk actions - handled by onOpen callback
+        // This is handled in ThumbPanel onOpen when photos are selected
       }
     }
-  }, [isWaitingForAction, currentStep, isCommandOpen, selectedAssets.length, activeFilters.length, groupByTags.length, isMobile, completeAction])
+  }, [isWaitingForAction, currentStep, currentSubAction, isCommandOpen, selectedAssets.length, activeFilters.length, groupByTags.length, isMobile, updateSubAction, completeAction])
 
   // Keep ref updated for fetchAssets callback
   useEffect(() => {
@@ -2433,8 +2460,17 @@ export default function DAMPage() {
             totalAssetsCount={assets.length}
             onOpen={() => {
               // For mobile tutorial: detect when Action Button is opened
-              if (isWaitingForAction && currentStep === 'command-button-intro') {
-                completeAction()
+              if (isWaitingForAction) {
+                // Step 2: Action Button intro - first time opening
+                if (currentStep === 'action-button-intro') {
+                  // User opened Action Button, now guide them to Command Palette
+                  updateSubAction('command-palette')
+                }
+                // Step 6: Bulk actions - opening with selection
+                else if (currentStep === 'bulk-actions' && selectedAssets.length > 0) {
+                  // Show them the Tag & Organize option
+                  updateSubAction('tag-organize')
+                }
               }
             }}
             onClearSelection={clearSelection}

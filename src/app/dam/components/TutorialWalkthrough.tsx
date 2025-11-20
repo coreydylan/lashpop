@@ -87,57 +87,57 @@ const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
     description: "Let's take a quick tour of the mobile interface! You'll learn how to organize, tag, and find your photos on the go.",
     skipable: true
   },
-  'command-button-intro': {
-    title: 'Action Button',
-    description: 'This button on the right gives you quick access to everything. Tap it to open the menu.',
+  'action-button-intro': {
+    title: 'Your Action Button',
+    description: 'See that sparkle button on the right? It gives you quick access to everything. Let\'s try it!',
     highlight: 'action-button',
     action: {
-      label: 'Tap to open',
-      description: 'Tap the sparkle button on the right side',
+      label: 'Try it',
+      description: 'Tap the sparkle button on the right',
       coachingHint: 'Tap here to open menu',
       coachingTarget: '[data-tutorial="action-button"]'
     }
   },
-  'filtering-demo': {
-    title: 'Command Palette',
-    description: 'The Command Palette is your control center. Tap it first in the menu to search and access all features - filtering, grouping, tagging, and more.',
+  'command-palette-intro': {
+    title: 'Great! Now Find Command Palette',
+    description: 'The menu is open! The Command Palette at the top is your control center for everything.',
     highlight: 'action-button-command-palette',
     action: {
-      label: 'Try it',
-      description: 'Open Action Button → Tap Command Palette',
-      coachingHint: 'Now tap Command Palette',
+      label: 'Open Command Palette',
+      description: 'Tap "Command Palette" at the top of the menu',
+      coachingHint: 'Tap Command Palette here',
       coachingTarget: '[data-tutorial="action-button-command-palette"]'
     }
   },
+  'command-palette-explore': {
+    title: 'Explore Your Control Center',
+    description: 'Excellent! This is where you can search for anything - filters, tags, team members, and more. Try typing something or explore the options.',
+    skipable: false
+  },
   'selection-demo': {
-    title: 'Select Photos',
-    description: 'Long-press any photo to start selecting. Then tap more photos to add them to your selection.',
+    title: 'Selecting Multiple Photos',
+    description: 'Now let\'s select some photos. Long-press any photo to start, then tap others to add them.',
     highlight: 'dam-grid',
     action: {
       label: 'Try selecting',
-      description: 'Long-press a photo, then tap others',
-      coachingHint: 'Long-press any photo to select',
+      description: 'Long-press a photo, then tap 2 more',
+      coachingHint: 'Long-press any photo to start',
       coachingTarget: '.dam-grid'
     }
   },
   'bulk-actions': {
-    title: 'Tag & Organize',
-    description: 'With photos selected, open the Action Button and tap "Tag & Organize" to apply tags or assign team members to multiple photos at once.',
+    title: 'Organize Your Selection',
+    description: 'Perfect! You have photos selected. Now open the Action Button to see what you can do with them.',
     action: {
-      label: 'Try bulk tagging',
-      description: 'Select photos → Action Button → Tag & Organize',
-      coachingHint: 'Tap Action Button for tagging options',
+      label: 'Open Action Button',
+      description: 'Tap the Action Button to see options',
+      coachingHint: 'Open Action Button for options',
       coachingTarget: '[data-tutorial="action-button"]'
     }
   },
-  'lightbox-swipe': {
-    title: 'Lightbox View',
-    description: 'Tap any photo to view it full-screen. Swipe left/right to navigate. Use the Action Button to tag individual photos.',
-    skipable: true
-  },
   'completion': {
-    title: "You're Ready! 🎉",
-    description: 'Great job! Tap the Action Button anytime to access Command Palette and quick shortcuts. Check Help in Command Palette for more tips.',
+    title: "You're All Set! 🎉",
+    description: 'Excellent work! You now know the essentials. The Action Button is always there when you need it. Tap anytime to filter, tag, or organize your photos.',
     skipable: false
   }
 }
@@ -154,6 +154,7 @@ export function TutorialWalkthrough() {
     showPromptDialog,
     isMinimized,
     isWaitingForAction,
+    currentSubAction,
     nextStep,
     previousStep,
     skipTutorial,
@@ -164,6 +165,7 @@ export function TutorialWalkthrough() {
     minimizeTutorial,
     maximizeTutorial,
     startWaitingForAction,
+    updateSubAction,
     completeAction
   } = useDamTutorial()
 
@@ -367,12 +369,35 @@ export function TutorialWalkthrough() {
       )}
 
       {/* Coaching tooltips when waiting for action */}
-      {isWaitingForAction && stepContent?.action?.coachingHint && (
-        <CoachingTooltip
-          message={stepContent.action.coachingHint}
-          targetSelector={stepContent.action.coachingTarget}
-          position="auto"
-        />
+      {isWaitingForAction && (
+        <>
+          {/* Show coaching hint based on current sub-action or default */}
+          {currentSubAction === 'command-palette' ? (
+            <CoachingTooltip
+              message="Perfect! Now tap Command Palette"
+              targetSelector="[data-tutorial='action-button-command-palette']"
+              position="auto"
+            />
+          ) : currentSubAction === 'select-more' ? (
+            <CoachingTooltip
+              message="Great! Now tap 2 more photos"
+              targetSelector=".dam-grid"
+              position="auto"
+            />
+          ) : currentSubAction === 'tag-organize' ? (
+            <CoachingTooltip
+              message="Tap 'Tag & Organize' to continue"
+              targetSelector="[data-tutorial='action-button-command-palette']"
+              position="auto"
+            />
+          ) : stepContent?.action?.coachingHint ? (
+            <CoachingTooltip
+              message={stepContent.action.coachingHint}
+              targetSelector={stepContent.action.coachingTarget}
+              position="auto"
+            />
+          ) : null}
+        </>
       )}
 
       {/* Tutorial card - hidden when minimized */}

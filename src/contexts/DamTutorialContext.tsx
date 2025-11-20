@@ -14,11 +14,11 @@ export type DesktopTutorialStep =
 
 export type MobileTutorialStep =
   | 'welcome'
-  | 'command-button-intro'
-  | 'filtering-demo'
+  | 'action-button-intro'
+  | 'command-palette-intro'
+  | 'command-palette-explore'
   | 'selection-demo'
   | 'bulk-actions'
-  | 'lightbox-swipe'
   | 'completion'
 
 export type TutorialStep = DesktopTutorialStep | MobileTutorialStep
@@ -47,6 +47,7 @@ interface TutorialState {
   showPromptDialog: boolean
   isMinimized: boolean
   isWaitingForAction: boolean
+  currentSubAction?: string  // Track multi-part actions within a step
 
   // Auto-open command palette for demos
   shouldOpenCommandPalette: boolean
@@ -73,7 +74,8 @@ interface TutorialContextType extends TutorialState {
   // Interactive tutorial
   minimizeTutorial: () => void
   maximizeTutorial: () => void
-  startWaitingForAction: () => void
+  startWaitingForAction: (subAction?: string) => void
+  updateSubAction: (subAction: string) => void
   completeAction: () => void
 
   // Helpers
@@ -96,11 +98,11 @@ const DESKTOP_STEPS: DesktopTutorialStep[] = [
 
 const MOBILE_STEPS: MobileTutorialStep[] = [
   'welcome',
-  'command-button-intro',
-  'filtering-demo',
+  'action-button-intro',
+  'command-palette-intro',
+  'command-palette-explore',
   'selection-demo',
   'bulk-actions',
-  'lightbox-swipe',
   'completion'
 ]
 
@@ -122,6 +124,7 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     showPromptDialog: false,
     isMinimized: false,
     isWaitingForAction: false,
+    currentSubAction: undefined,
     shouldOpenCommandPalette: false,
     commandPaletteQuery: ''
   })
@@ -401,19 +404,28 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
-  const startWaitingForAction = useCallback(() => {
+  const startWaitingForAction = useCallback((subAction?: string) => {
     setState(prev => ({
       ...prev,
       isWaitingForAction: true,
       isMinimized: true,
-      showOverlay: false
+      showOverlay: false,
+      currentSubAction: subAction
+    }))
+  }, [])
+
+  const updateSubAction = useCallback((subAction: string) => {
+    setState(prev => ({
+      ...prev,
+      currentSubAction: subAction
     }))
   }, [])
 
   const completeAction = useCallback(() => {
     setState(prev => ({
       ...prev,
-      isWaitingForAction: false
+      isWaitingForAction: false,
+      currentSubAction: undefined
     }))
     // Auto-advance after a short delay, then reopen tutorial
     setTimeout(() => {
@@ -469,6 +481,7 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
         minimizeTutorial,
         maximizeTutorial,
         startWaitingForAction,
+        updateSubAction,
         completeAction,
         openCommandPaletteForDemo,
         closeCommandPaletteForDemo,
