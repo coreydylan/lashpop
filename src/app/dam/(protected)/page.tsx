@@ -6,6 +6,11 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from "react"
+
+// Mobile debugging console - only in development
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  import('eruda').then(eruda => eruda.default.init())
+}
 import type { ReactNode } from "react"
 import clsx from "clsx"
 import { Upload as UploadIcon, Users, X, Sparkles, LogOut } from "lucide-react"

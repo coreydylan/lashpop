@@ -57,6 +57,7 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.1",
+    "eruda": "^3.4.3",
     "supabase": "^2.54.11"
   }
 }
