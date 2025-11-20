@@ -600,7 +600,7 @@ export default function DAMPage() {
       totalSize: 0 // File size not available in Asset type
     })
 
-    // Update the assets list directly with the new assets
+    // Update the assets list directly with the new assets - PREPENDING so they show at top
     setAllAssets(prev => [...newAssets, ...prev])
 
     // Refresh the entire asset list to ensure sync with server
