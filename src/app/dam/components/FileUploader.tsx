@@ -149,6 +149,7 @@ export function FileUploader({
 
   const handleFiles = useCallback(
     (incoming: FileList | File[]) => {
+      console.log("[Upload] handleFiles called with", incoming.length, "files")
       const fileArray = Array.from(incoming)
       if (fileArray.length === 0) return
 
