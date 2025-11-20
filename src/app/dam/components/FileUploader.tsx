@@ -212,7 +212,10 @@ export function FileUploader({
       }
 
       try {
+        console.log(`[Upload] Starting upload for ${pendingFile.file.name} (${pendingFile.file.type})`)
+
         // Step 1: Get presigned URL
+        console.log("[Upload] Requesting presigned URL...")
         const presignedResponse = await fetch("/api/dam/presigned-url", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -224,10 +227,13 @@ export function FileUploader({
         })
 
         if (!presignedResponse.ok) {
-          throw new Error("Failed to get upload URL")
+          const errorText = await presignedResponse.text()
+          console.error("[Upload] Presigned URL request failed:", presignedResponse.status, errorText)
+          throw new Error(`Failed to get upload URL: ${presignedResponse.status}`)
         }
 
         const { presignedUrl, key, url } = await presignedResponse.json()
+        console.log("[Upload] Got presigned URL, uploading to S3...", { key })
 
         // Step 2: Upload directly to S3
         const uploadResponse = await fetch(presignedUrl, {
@@ -239,8 +245,11 @@ export function FileUploader({
         })
 
         if (!uploadResponse.ok) {
-          throw new Error("Failed to upload to S3")
+          console.error("[Upload] S3 upload failed:", uploadResponse.status, uploadResponse.statusText)
+          throw new Error(`Failed to upload to S3: ${uploadResponse.status}`)
         }
+        
+        console.log("[Upload] S3 upload complete. Saving metadata...")
 
         // Step 3: Save metadata to database
         const fileType = pendingFile.file.type.startsWith("video/") ? "video" : "image"
@@ -258,10 +267,13 @@ export function FileUploader({
         })
 
         if (!metadataResponse.ok) {
+          const errorText = await metadataResponse.text()
+          console.error("[Upload] Metadata save failed:", metadataResponse.status, errorText)
           throw new Error("Failed to save asset metadata")
         }
 
         const { asset } = await metadataResponse.json()
+        console.log("[Upload] Success!", asset)
 
         setFiles((prev) =>
           prev.map((file) =>
