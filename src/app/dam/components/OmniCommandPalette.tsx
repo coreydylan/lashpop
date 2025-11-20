@@ -350,6 +350,9 @@ export function OmniCommandPalette({
                 }}
                 onClick={(e) => {
                   e.stopPropagation() // Prevent closing palette on input click
+                  if (isMobile && !isSearchActive) {
+                    setIsSearchActive(true)
+                  }
                 }}
                 onFocus={(e) => {
                   e.stopPropagation() // Prevent closing palette on focus

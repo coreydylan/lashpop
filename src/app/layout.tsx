@@ -22,16 +22,16 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover', // iOS safe area support
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FAF7F1' }, // cream color
+    { media: '(prefers-color-scheme: dark)', color: '#1C1917' }, // stone-900
+  ],
 }
 
 export const metadata: Metadata = {
   title: 'LashPop Studios | Award-Winning Lash Extensions & Beauty Services',
   description: 'Experience the art of natural beauty enhancement at LashPop Studios. Award-winning lash extensions, lifts, brow services, and advanced skincare treatments.',
   keywords: 'lash extensions, volume lashes, classic lashes, lash lift, brow services, beauty salon, skincare',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FAF7F1' }, // cream color
-    { media: '(prefers-color-scheme: dark)', color: '#1C1917' }, // stone-900
-  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
