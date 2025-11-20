@@ -136,8 +136,8 @@ export function getDb() {
       max: 1, 
       idle_timeout: 15, // Close idle connections after 15 seconds
       max_lifetime: 60 * 5, // Close connections after 5 minutes
-      connect_timeout: 30, // Aggressive timeout to allow for retries/cold starts
-      keep_alive: 20, // Send keep-alive every 20s to prevent drops
+      connect_timeout: 40, // Increased timeout further for high latency cold starts
+      keep_alive: 30, // Send keep-alive every 30s to prevent drops
       
       // Supabase pooler works best with minimal connections
       ...(process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
