@@ -481,16 +481,29 @@ export function FileUploader({
     }
   }, [queuedAction, allUploadsComplete, handleConfirmBatch])
 
+  // Use a ref to track the last notified IDs to prevent infinite loops
+  const lastNotifiedIdsRef = useRef<string[]>([])
+
   useEffect(() => {
     if (!onUploadingIdsChange) return
-    const ids = Array.from(
+    
+    const currentIds = Array.from(
       new Set(
         files
           .filter((file) => file.assetId)
           .map((file) => file.assetId as string)
       )
     )
-    onUploadingIdsChange(ids)
+    
+    const lastIds = lastNotifiedIdsRef.current
+    const hasChanged = 
+      currentIds.length !== lastIds.length || 
+      !currentIds.every((id) => lastIds.includes(id))
+
+    if (hasChanged) {
+      lastNotifiedIdsRef.current = currentIds
+      onUploadingIdsChange(currentIds)
+    }
   }, [files, onUploadingIdsChange])
 
   useEffect(() => {
