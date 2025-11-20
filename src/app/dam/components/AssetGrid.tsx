@@ -1108,9 +1108,10 @@ function AssetCard({
           className="w-full h-full" 
           onClick={(e) => {
             // Prevent PhotoView from opening if in selection mode or modifier keys are pressed
-            // We only prevent default to stop PhotoView, but let it bubble to parent for selection handling
             if (isSelectionMode || e.metaKey || e.ctrlKey || e.shiftKey) {
               e.preventDefault()
+              e.stopPropagation()
+              handleClick(e)
             }
           }}
         >
