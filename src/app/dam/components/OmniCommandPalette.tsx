@@ -314,12 +314,8 @@ export function OmniCommandPalette({
         className={clsx(
           "bg-cream text-dune shadow-2xl border border-sage/15 flex flex-col",
           isMobile
-            ? "w-full rounded-t-[28px] pb-safe-bottom"
-            : "w-full max-w-2xl rounded-[32px]",
-          // Dynamic height based on search state on mobile
-          isMobile && isSearchActive
-            ? "max-h-[50vh]" // Smaller when keyboard is up
-            : "max-h-[80vh]"  // Larger when keyboard is down
+            ? "w-full rounded-t-[28px] pb-safe-bottom max-h-[80vh]"
+            : "w-full max-w-2xl rounded-[32px] max-h-[80vh]"
         )}
         onTouchStart={(e) => e.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
@@ -369,11 +365,11 @@ export function OmniCommandPalette({
                 console.log('Touch activating search...')
                 isActivatingSearchRef.current = true
                 setIsSearchActive(true)
-                // Clear the flag after animation completes
+                // Clear the flag and focus after a brief moment
                 setTimeout(() => {
                   isActivatingSearchRef.current = false
                   inputRef.current?.focus()
-                }, 400) // Wait for resize animation
+                }, 100)
               }
             }}
             onClick={(e) => {
@@ -400,11 +396,11 @@ export function OmniCommandPalette({
                     console.log('Input touch activating search...')
                     isActivatingSearchRef.current = true
                     setIsSearchActive(true)
-                    // Clear the flag after animation completes
+                    // Clear the flag and focus after a brief moment
                     setTimeout(() => {
                       isActivatingSearchRef.current = false
                       inputRef.current?.focus()
-                    }, 400) // Wait for resize animation
+                    }, 100)
                   }
                 }}
                 onClick={(e) => {
