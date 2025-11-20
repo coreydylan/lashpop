@@ -601,10 +601,19 @@ export default function DAMPage() {
     })
 
     // Update the assets list directly with the new assets - PREPENDING so they show at top
-    setAllAssets(prev => [...newAssets, ...prev])
+    // We also filter out duplicates just in case
+    setAllAssets(prev => {
+      const newIds = new Set(newAssets.map(a => a.id))
+      const filteredPrev = prev.filter(p => !newIds.has(p.id))
+      return [...newAssets, ...filteredPrev]
+    })
 
-    // Refresh the entire asset list to ensure sync with server
-    fetchAssets()
+    // DELAY the server fetch to allow DB replication/consistency to catch up
+    // This prevents the "stale read" from clobbering our optimistic update immediately
+    setTimeout(() => {
+      fetchAssets()
+    }, 2000)
+    
     // Close upload panel after successful upload
     setIsUploadOpen(false)
 
