@@ -4,6 +4,7 @@ import { useEffect, useCallback } from 'react'
 import { X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react'
 import { useDamTutorial } from '@/contexts/DamTutorialContext'
 import type { DesktopTutorialStep, MobileTutorialStep } from '@/contexts/DamTutorialContext'
+import { CoachingTooltip } from './CoachingTooltip'
 import clsx from 'clsx'
 
 interface TutorialStepContent {
@@ -13,6 +14,8 @@ interface TutorialStepContent {
   action?: {
     label: string
     description: string
+    coachingHint?: string
+    coachingTarget?: string
   }
   autoAdvance?: boolean
   skipable?: boolean
@@ -30,7 +33,9 @@ const DESKTOP_STEP_CONTENT: Record<DesktopTutorialStep, TutorialStepContent> = {
     highlight: 'command-button',
     action: {
       label: 'Try it now',
-      description: 'Press / or click the Command Palette button'
+      description: 'Press / or click the Command Palette button',
+      coachingHint: 'Press / or ⌘K to open',
+      coachingTarget: 'body'
     }
   },
   'filtering-demo': {
@@ -38,7 +43,9 @@ const DESKTOP_STEP_CONTENT: Record<DesktopTutorialStep, TutorialStepContent> = {
     description: "Let's filter your photos. Type 'style' in the Command Palette to see filtering options.",
     action: {
       label: 'Try filtering',
-      description: 'Open Command Palette → Type "style" → Pick any style'
+      description: 'Open Command Palette → Type "style" → Pick any style',
+      coachingHint: 'Type "style" to see filters',
+      coachingTarget: '[data-omnisearch="input"]'
     }
   },
   'selection-demo': {
@@ -47,7 +54,9 @@ const DESKTOP_STEP_CONTENT: Record<DesktopTutorialStep, TutorialStepContent> = {
     highlight: 'dam-grid',
     action: {
       label: 'Try selecting',
-      description: 'Click and drag on the grid to select photos'
+      description: 'Click and drag on the grid to select photos',
+      coachingHint: 'Click and drag to select multiple',
+      coachingTarget: '.dam-grid'
     }
   },
   'bulk-tagging-demo': {
@@ -55,7 +64,9 @@ const DESKTOP_STEP_CONTENT: Record<DesktopTutorialStep, TutorialStepContent> = {
     description: 'With the Command Palette, type "group" to organize your grid by categories like Team or Style.',
     action: {
       label: 'Try grouping',
-      description: 'Open Command Palette → Type "group" → Select "Group by Team"'
+      description: 'Open Command Palette → Type "group" → Select "Group by Team"',
+      coachingHint: 'Type "group" to organize',
+      coachingTarget: '[data-omnisearch="input"]'
     }
   },
   'collections-organization': {
@@ -82,7 +93,9 @@ const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
     highlight: 'action-button',
     action: {
       label: 'Tap to open',
-      description: 'Tap the sparkle button on the right side'
+      description: 'Tap the sparkle button on the right side',
+      coachingHint: 'Tap here to open menu',
+      coachingTarget: '[data-tutorial="action-button"]'
     }
   },
   'filtering-demo': {
@@ -91,7 +104,9 @@ const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
     highlight: 'action-button-command-palette',
     action: {
       label: 'Try it',
-      description: 'Open Action Button → Tap Command Palette'
+      description: 'Open Action Button → Tap Command Palette',
+      coachingHint: 'Now tap Command Palette',
+      coachingTarget: '[data-tutorial="action-button-command-palette"]'
     }
   },
   'selection-demo': {
@@ -100,7 +115,9 @@ const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
     highlight: 'dam-grid',
     action: {
       label: 'Try selecting',
-      description: 'Long-press a photo, then tap others'
+      description: 'Long-press a photo, then tap others',
+      coachingHint: 'Long-press any photo to select',
+      coachingTarget: '.dam-grid'
     }
   },
   'bulk-actions': {
@@ -108,7 +125,9 @@ const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
     description: 'With photos selected, open the Action Button and tap "Tag & Organize" to apply tags or assign team members to multiple photos at once.',
     action: {
       label: 'Try bulk tagging',
-      description: 'Select photos → Action Button → Tag & Organize'
+      description: 'Select photos → Action Button → Tag & Organize',
+      coachingHint: 'Tap Action Button for tagging options',
+      coachingTarget: '[data-tutorial="action-button"]'
     }
   },
   'lightbox-swipe': {
@@ -341,10 +360,19 @@ export function TutorialWalkthrough() {
           <div className="flex items-center gap-3">
             <Sparkles className="w-4 h-4 text-dusty-rose animate-pulse" />
             <span className="text-xs font-medium text-dune">
-              {isWaitingForAction ? 'Try it now...' : `Step ${currentStepIndex + 1}/${totalSteps}`}
+              {isWaitingForAction ? 'Following along...' : `Step ${currentStepIndex + 1}/${totalSteps}`}
             </span>
           </div>
         </div>
+      )}
+
+      {/* Coaching tooltips when waiting for action */}
+      {isWaitingForAction && stepContent?.action?.coachingHint && (
+        <CoachingTooltip
+          message={stepContent.action.coachingHint}
+          targetSelector={stepContent.action.coachingTarget}
+          position="auto"
+        />
       )}
 
       {/* Tutorial card - hidden when minimized */}

@@ -413,14 +413,20 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
   const completeAction = useCallback(() => {
     setState(prev => ({
       ...prev,
-      isWaitingForAction: false,
-      isMinimized: false,
-      showOverlay: prev.isMobile
+      isWaitingForAction: false
     }))
-    // Auto-advance after a short delay
+    // Auto-advance after a short delay, then reopen tutorial
     setTimeout(() => {
       nextStep()
-    }, 500)
+      // Wait for step transition, then show tutorial card again
+      setTimeout(() => {
+        setState(prev => ({
+          ...prev,
+          isMinimized: false,
+          showOverlay: prev.isMobile
+        }))
+      }, 300)
+    }, 800)
   }, [nextStep])
 
   // Check if we should show the prompt on mount
