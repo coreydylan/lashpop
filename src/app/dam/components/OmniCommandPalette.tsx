@@ -13,7 +13,8 @@ import {
   Eye,
   Share2,
   Wand2,
-  Filter
+  Filter,
+  ChevronLeft
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -68,6 +69,7 @@ export function OmniCommandPalette({
   const inputRef = useRef<HTMLInputElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
+  const [activeCategory, setActiveCategory] = useState<string | null>(null) // For two-level navigation
   const [isSearchActive, setIsSearchActive] = useState(false)
   const trimmedQuery = query.trim()
 
@@ -135,10 +137,22 @@ export function OmniCommandPalette({
       return []
     }
     if (activeGroup) {
-      return filteredItems.filter(item => item.group === activeGroup)
+      const groupItems = filteredItems.filter(item => item.group === activeGroup)
+      // If we have an active category (for two-level navigation), filter further
+      if (activeCategory) {
+        return groupItems.filter(item => {
+          // Check if the item belongs to the active category
+          if (item.label.includes(' › ')) {
+            const [category] = item.label.split(' › ')
+            return category === activeCategory
+          }
+          return item.badge === activeCategory || (!item.badge && activeCategory === 'Other')
+        })
+      }
+      return groupItems
     }
     return filteredItems
-  }, [filteredItems, activeGroup, showCategoryGrid])
+  }, [filteredItems, activeGroup, activeCategory, showCategoryGrid])
 
   const grouped = useMemo(() => {
     return scopedItems.reduce<Record<string, CommandItem[]>>((acc, item) => {
@@ -236,9 +250,33 @@ export function OmniCommandPalette({
       })()
     : undefined
 
+  // Function to get unique categories from items in a group
+  const getCategoriesForGroup = (groupName: string) => {
+    const groupItems = filteredItems.filter(item => item.group === groupName)
+    const categories = new Set<string>()
+
+    groupItems.forEach(item => {
+      if (item.label.includes(' › ')) {
+        const [category] = item.label.split(' › ')
+        categories.add(category)
+      } else if (item.badge) {
+        categories.add(item.badge)
+      } else {
+        categories.add('Other')
+      }
+    })
+
+    return Array.from(categories).sort()
+  }
+
   const renderActionButton = (item: CommandItem) => {
     const index = indexLookup.get(item.id) ?? -1
     const isActive = index === activeIndex
+    // Strip category prefix for cleaner display in two-level nav
+    const displayLabel = activeCategory && item.label.includes(' › ')
+      ? item.label.split(' › ')[1]
+      : item.label
+
     return (
       <button
         key={item.id}
@@ -249,27 +287,36 @@ export function OmniCommandPalette({
           handleClose()
         }}
         className={clsx(
-          "flex items-center gap-3 rounded-2xl border text-left transition shadow-sm min-w-[210px]",
-          // Better touch targets on mobile
-          isMobile ? "px-4 py-3" : "px-4 py-2",
+          "flex items-center gap-3 rounded-2xl border text-left transition shadow-sm",
+          // Mobile-optimized sizing
+          isMobile ? "px-3 py-2 min-w-[140px]" : "px-4 py-2 min-w-[210px]",
           isActive ? "border-dusty-rose/60 bg-dusty-rose/10" : "border-sage/15 bg-white/90",
           item.disabled ? "opacity-40 cursor-not-allowed" : "hover:border-dusty-rose/50 hover:bg-dusty-rose/5 active:scale-[0.98]"
         )}
       >
         {item.avatarUrl && (
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-cream/60 flex-shrink-0">
+          <div className={clsx(
+            "rounded-full overflow-hidden border border-cream/60 flex-shrink-0",
+            isMobile ? "w-6 h-6" : "w-8 h-8"
+          )}>
             <img
               src={item.avatarUrl}
-              alt={item.label}
+              alt={displayLabel}
               className="w-full h-full object-cover block"
             />
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-sm font-semibold text-dune">
-            <span className="truncate">{item.label}</span>
-            {item.badge && (
-              <span className="text-[10px] uppercase tracking-widest text-sage/70 bg-sage/10 rounded-full px-2 py-0.5">
+          <div className={clsx(
+            "flex items-center gap-2 font-semibold text-dune",
+            isMobile ? "text-xs" : "text-sm"
+          )}>
+            <span className="truncate">{displayLabel}</span>
+            {!activeCategory && item.badge && (
+              <span className={clsx(
+                "uppercase tracking-widest text-sage/70 bg-sage/10 rounded-full px-2 py-0.5",
+                isMobile ? "text-[9px]" : "text-[10px]"
+              )}>
                 {item.badge}
               </span>
             )}
@@ -315,14 +362,20 @@ export function OmniCommandPalette({
         onTouchStart={(e) => e.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="px-5 pt-5 pb-4 border-b border-sage/10" onClick={(e) => e.stopPropagation()}>
+        <div className={clsx(
+          "border-b border-sage/10",
+          isMobile ? "px-4 pt-3 pb-2.5" : "px-5 pt-5 pb-4"
+        )} onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between">
             <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-sage/70">
-                <Sparkles className="w-3.5 h-3.5" />
+              <div className={clsx(
+                "flex items-center gap-2 font-semibold uppercase text-sage/70",
+                isMobile ? "text-[10px] tracking-[0.2em]" : "text-xs tracking-[0.28em]"
+              )}>
+                <Sparkles className={isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} />
                 Command
               </div>
-              {contextLabel && (
+              {contextLabel && !isMobile && (
                 <p className="text-sm text-dune/70 mt-1">{contextLabel}</p>
               )}
             </div>
@@ -332,21 +385,28 @@ export function OmniCommandPalette({
                   onClick={(e) => {
                     e.stopPropagation()
                     setActiveGroup(null)
+                    setActiveCategory(null)
                     setActiveIndex(0)
                   }}
-                  className="text-xs font-semibold text-dusty-rose bg-dusty-rose/10 border border-dusty-rose/20 rounded-full px-3 py-1 transition hover:bg-dusty-rose/15"
+                  className={clsx(
+                    "font-semibold text-dusty-rose bg-dusty-rose/10 border border-dusty-rose/20 rounded-full transition hover:bg-dusty-rose/15",
+                    isMobile ? "text-[10px] px-2 py-0.5" : "text-xs px-3 py-1"
+                  )}
                 >
-                  All actions
+                  All
                 </button>
               )}
-              <div className="hidden sm:flex items-center gap-1 text-xs text-sage/80 border border-sage/30 rounded-full px-2 py-1">
-                esc
-              </div>
+              {!isMobile && (
+                <div className="flex items-center gap-1 text-xs text-sage/80 border border-sage/30 rounded-full px-2 py-1">
+                  esc
+                </div>
+              )}
             </div>
           </div>
           <div
             className={clsx(
-              "mt-4 flex items-center gap-3 rounded-[20px] border bg-cream/80 shadow-inner transition-all",
+              "flex items-center gap-3 rounded-[20px] border bg-cream/80 shadow-inner transition-all",
+              isMobile ? "mt-2.5" : "mt-4",
               isMobile && !isSearchActive
                 ? "border-sage/20 cursor-pointer hover:border-sage/30"
                 : "border-sage/20"
@@ -363,8 +423,14 @@ export function OmniCommandPalette({
               }
             }}
           >
-            <div className="flex items-center gap-3 flex-1 px-4 py-2.5">
-              <Search className="w-4 h-4 text-sage/70 flex-shrink-0" />
+            <div className={clsx(
+              "flex items-center gap-3 flex-1",
+              isMobile ? "px-3 py-2" : "px-4 py-2.5"
+            )}>
+              <Search className={clsx(
+                "text-sage/70 flex-shrink-0",
+                isMobile ? "w-3.5 h-3.5" : "w-4 h-4"
+              )} />
               <input
                 ref={inputRef}
                 value={query}
@@ -601,31 +667,126 @@ export function OmniCommandPalette({
               })}
             </div>
           ) : (
-            Object.entries(grouped).map(([groupName, groupItems]) => {
-              const meta = getGroupMeta(groupName)
+            (() => {
+              // Check if we need to show category selection first (two-level navigation)
+              if (activeGroup && !activeCategory) {
+                const categories = getCategoriesForGroup(activeGroup)
+                // If only one category or no categories, skip category selection
+                if (categories.length <= 1) {
+                  setActiveCategory(categories[0] || null)
+                  return null
+                }
 
-              // Group items by category prefix for better organization
-              const categorizedItems = groupItems.reduce<Record<string, CommandItem[]>>((acc, item) => {
-                // Extract category from label if it contains a separator
-                const category = item.label.includes(' › ')
-                  ? item.label.split(' › ')[0]
-                  : item.badge || 'Other'
-                if (!acc[category]) acc[category] = []
-                acc[category].push(item)
-                return acc
-              }, {})
-
-              const hasMultipleCategories = Object.keys(categorizedItems).length > 1
-
-              return (
-                <div key={groupName} className="px-4 pb-4">
-                  <div className="rounded-3xl border border-sage/20 bg-white/85 shadow-sm p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
+                // Show category selection for this group
+                return (
+                  <div className="px-4 pb-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <button
+                        onClick={() => {
+                          setActiveGroup(null)
+                          setActiveCategory(null)
+                        }}
+                        className="p-1 hover:bg-sage/10 rounded-full transition"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-sage" />
+                      </button>
                       <div>
-                        <p className="text-sm font-semibold text-dune">{groupName}</p>
-                        <p className="text-xs text-sage/70 mt-0.5">{meta.description}</p>
+                        <p className="text-sm font-semibold text-dune">{activeGroup}</p>
+                        <p className="text-xs text-sage/70">Select category</p>
                       </div>
-                      {(!activeGroup || activeGroup !== groupName) && groupItems.length > 3 && (
+                    </div>
+                    {isMobile ? (
+                      // Mobile: Horizontal scrolling grid
+                      <div className="overflow-x-auto -mx-4 px-4">
+                        <div className="flex gap-2 pb-2">
+                          {categories.map(category => (
+                            <button
+                              key={category}
+                              onClick={() => setActiveCategory(category)}
+                              className="flex-shrink-0 rounded-2xl border border-sage/20 bg-white/70 px-4 py-2.5 hover:border-dusty-rose/40 transition"
+                            >
+                              <span className="text-sm font-medium text-dune whitespace-nowrap">{category}</span>
+                              <span className="text-xs text-sage/60 ml-2">
+                                {filteredItems.filter(item => {
+                                  if (item.group !== activeGroup) return false
+                                  if (item.label.includes(' › ')) {
+                                    const [cat] = item.label.split(' › ')
+                                    return cat === category
+                                  }
+                                  return item.badge === category || (!item.badge && category === 'Other')
+                                }).length}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      // Desktop: Vertical grid
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {categories.map(category => (
+                          <button
+                            key={category}
+                            onClick={() => setActiveCategory(category)}
+                            className="rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left hover:border-dusty-rose/40 transition"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-dune">{category}</span>
+                              <span className="text-xs font-bold text-sage/60 bg-sage/10 rounded-full px-2 py-0.5">
+                                {filteredItems.filter(item => {
+                                  if (item.group !== activeGroup) return false
+                                  if (item.label.includes(' › ')) {
+                                    const [cat] = item.label.split(' › ')
+                                    return cat === category
+                                  }
+                                  return item.badge === category || (!item.badge && category === 'Other')
+                                }).length}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
+              // Show items within selected category
+              if (activeGroup && activeCategory) {
+                return (
+                  <div className="px-4 pb-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <button
+                        onClick={() => setActiveCategory(null)}
+                        className="p-1 hover:bg-sage/10 rounded-full transition"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-sage" />
+                      </button>
+                      <div>
+                        <p className="text-sm font-semibold text-dune">{activeGroup} › {activeCategory}</p>
+                        <p className="text-xs text-sage/70">Select option</p>
+                      </div>
+                    </div>
+                    <div className={clsx(
+                      "flex flex-wrap",
+                      isMobile ? "gap-1.5" : "gap-2"
+                    )}>
+                      {scopedItems.map(renderActionButton)}
+                    </div>
+                  </div>
+                )
+              }
+
+              // Default rendering for non-active groups
+              return Object.entries(grouped).map(([groupName, groupItems]) => {
+                const meta = getGroupMeta(groupName)
+                return (
+                  <div key={groupName} className="px-4 pb-4">
+                    <div className="rounded-3xl border border-sage/20 bg-white/85 shadow-sm p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-dune">{groupName}</p>
+                          <p className="text-xs text-sage/70 mt-0.5">{meta.description}</p>
+                        </div>
                         <button
                           onClick={() => {
                             setActiveGroup(groupName)
@@ -633,35 +794,14 @@ export function OmniCommandPalette({
                           }}
                           className="text-xs font-semibold text-dusty-rose border border-dusty-rose/30 rounded-full px-3 py-1 hover:bg-dusty-rose/10 transition"
                         >
-                          Focus
+                          Open
                         </button>
-                      )}
+                      </div>
                     </div>
-                    {hasMultipleCategories ? (
-                      <div className="space-y-3">
-                        {Object.entries(categorizedItems)
-                          .sort(([a], [b]) => a.localeCompare(b))
-                          .map(([category, items], index) => (
-                            <div key={category}>
-                              {index > 0 && <div className="border-t border-sage/10 pt-2 mb-2" />}
-                              <div className="text-[10px] uppercase tracking-widest text-sage/60 mb-1.5 px-1">
-                                {category}
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {items.map(renderActionButton)}
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {groupItems.map(renderActionButton)}
-                      </div>
-                    )}
                   </div>
-                </div>
-              )
-            })
+                )
+              })
+            })()
           )}
             </>
           )}
