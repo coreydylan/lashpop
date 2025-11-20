@@ -132,13 +132,16 @@ export function getDb() {
     clientInstance = postgres(connectionUrl, {
       prepare: false,
       // Limit connections for Supabase pooler
-      max: 10, // Maximum number of connections in the pool
-      idle_timeout: 10, // Close idle connections after 10 seconds
-      max_lifetime: 60 * 2, // Close connections after 2 minutes
-      connect_timeout: 30, // Connection timeout in seconds
+      // Vercel Edge/Serverless functions should use 1 connection max to avoid exhausting the pool
+      max: 1, 
+      idle_timeout: 15, // Close idle connections after 15 seconds
+      max_lifetime: 60 * 5, // Close connections after 5 minutes
+      connect_timeout: 30, // Aggressive timeout to allow for retries/cold starts
+      keep_alive: 20, // Send keep-alive every 20s to prevent drops
+      
       // Supabase pooler works best with minimal connections
       ...(process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
-        ? { max: 3 }
+        ? { max: 1 }
         : {}
       )
     })
