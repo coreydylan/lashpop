@@ -628,7 +628,7 @@ export function FileUploader({
               ? "border-dusty-rose bg-dusty-rose/10"
               : "border-sage/30 hover:border-sage/50 bg-warm-sand/10"
           }
-          ${files.length > 0 ? "p-4" : "p-8"}
+          ${files.length > 0 ? "p-3 sm:p-4" : "p-4 sm:p-8"}
         `}
       >
         <input
@@ -643,26 +643,26 @@ export function FileUploader({
         {files.length === 0 ? (
           <div
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-4 cursor-pointer py-2"
+            className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 cursor-pointer py-2 sm:py-4 text-center sm:text-left"
           >
-            <div className="w-12 h-12 rounded-full bg-ocean-mist/30 flex items-center justify-center flex-shrink-0">
-              <Upload className="w-6 h-6 text-sage" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-ocean-mist/30 flex items-center justify-center flex-shrink-0">
+              <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-sage" />
             </div>
             <div>
-              <p className="body text-dune font-medium">Drop files here or tap to browse</p>
-              <p className="caption text-sage">Upload images or videos (max 200MB)</p>
+              <p className="body text-dune font-medium text-sm sm:text-base">Drop files here or tap to browse</p>
+              <p className="caption text-sage text-xs sm:text-sm">Upload images or videos (max 200MB)</p>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <p className="caption text-dune font-semibold uppercase tracking-wide">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3">
+              <p className="caption text-dune font-semibold uppercase tracking-wide text-xs sm:text-sm">
                 {statusLabel}
               </p>
               {!allUploadsComplete && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="caption text-sage hover:text-dune transition-colors"
+                  className="caption text-sage hover:text-dune transition-colors text-xs sm:text-sm px-3 py-1 bg-cream/50 rounded-full"
                 >
                   + Add more
                 </button>
@@ -671,7 +671,7 @@ export function FileUploader({
 
             {notice && (
               <div
-                className={`flex items-center justify-between gap-3 text-sm rounded-2xl px-3 py-2 ${
+                className={`flex items-center justify-between gap-3 text-xs sm:text-sm rounded-xl px-3 py-2 ${
                   notice.type === "error"
                     ? "bg-terracotta/10 text-terracotta"
                     : "bg-sage/10 text-sage"
@@ -689,60 +689,60 @@ export function FileUploader({
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2 text-xs text-sage">
-              <span className="px-3 py-1 bg-cream/70 rounded-full">
+            <div className="flex flex-wrap gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-sage">
+              <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-cream/70 rounded-full">
                 Ready: {uploadStats.success}
               </span>
-              <span className="px-3 py-1 bg-cream/70 rounded-full">
+              <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-cream/70 rounded-full">
                 Uploading: {uploadStats.uploading}
               </span>
-              <span className="px-3 py-1 bg-cream/70 rounded-full">
+              <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-cream/70 rounded-full">
                 Queued: {uploadStats.pending}
               </span>
-              <span className="px-3 py-1 bg-cream/70 rounded-full">
-                Failed: {uploadStats.error}
-              </span>
+              {uploadStats.error > 0 && (
+                <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-cream/70 rounded-full text-terracotta">
+                  Failed: {uploadStats.error}
+                </span>
+              )}
             </div>
 
-            <div className="border border-sage/20 rounded-2xl p-4 space-y-3 bg-cream/70">
+            <div className="border border-sage/20 rounded-xl p-3 sm:p-4 space-y-3 bg-cream/70">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="body text-dune font-semibold">Batch tags</p>
-                  <p className="text-xs text-sage">Applied to every photo in this upload</p>
+                  <p className="body text-dune font-semibold text-sm">Batch tags</p>
+                  <p className="text-[10px] sm:text-xs text-sage">Applied to all photos</p>
                 </div>
                 {queuedAction && (
-                  <span className="text-xs font-semibold text-dusty-rose bg-dusty-rose/10 rounded-full px-3 py-1">
-                    {queuedAction === "apply"
-                      ? "Will apply once uploads finish"
-                      : "Will skip tagging when uploads finish"}
+                  <span className="text-[10px] font-semibold text-dusty-rose bg-dusty-rose/10 rounded-full px-2 py-0.5">
+                    {queuedAction === "apply" ? "Auto-save pending" : "Skip tagging pending"}
                   </span>
                 )}
               </div>
               <TagSelector selectedTags={batchTags} onTagsChange={setBatchTags} />
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => handleBatchAction("apply")}
                   disabled={batchTags.length === 0}
-                  className={`flex-1 min-w-[180px] py-2.5 px-4 arch-full text-sm font-semibold transition-colors ${
+                  className={`flex-1 py-2 sm:py-2.5 px-4 arch-full text-sm font-semibold transition-colors ${
                     batchTags.length === 0
                       ? "bg-sage/15 text-sage/50 cursor-not-allowed"
                       : "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
                   }`}
                 >
                   {allUploadsComplete
-                    ? "Apply tags & add to library"
-                    : "Apply when uploads finish"}
+                    ? "Save & Add"
+                    : "Auto-save when done"}
                 </button>
                 <button
                   onClick={() => handleBatchAction("skip")}
-                  className="min-w-[140px] py-2.5 px-4 arch-full border border-sage/30 text-sm font-semibold text-sage hover:bg-sage/10 transition-colors"
+                  className="py-2 sm:py-2.5 px-4 arch-full border border-sage/30 text-sm font-semibold text-sage hover:bg-sage/10 transition-colors"
                 >
-                  Skip tagging
+                  Skip
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 max-h-[30vh] overflow-y-auto pr-1">
               <AnimatePresence>
                 {files.map((fileWithPreview) => (
                   <motion.div
@@ -751,7 +751,7 @@ export function FileUploader({
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
-                    className="relative aspect-square arch-full overflow-hidden bg-warm-sand/40 shadow-sm"
+                    className="relative aspect-square arch-full overflow-hidden bg-warm-sand/40 shadow-sm group"
                   >
                     <img
                       src={fileWithPreview.preview}
@@ -763,16 +763,14 @@ export function FileUploader({
                       type="button"
                       aria-label="Remove file from upload"
                       onClick={() => removeFile(fileWithPreview.id)}
-                      className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-dune/50 text-cream flex items-center justify-center backdrop-blur-sm hover:bg-dune/70 transition-colors"
+                      className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 z-10 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-dune/50 text-cream flex items-center justify-center backdrop-blur-sm hover:bg-dune/70 transition-colors"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
 
+                    {/* Only show loading spinner on larger items or if it's the only indicator */}
                     {fileWithPreview.status === "uploading" && (
                       <>
-                        <div className="absolute top-2 right-2">
-                          <div className="w-6 h-6 border-2 border-cream border-t-transparent rounded-full animate-spin" />
-                        </div>
                         <div className="absolute bottom-0 left-0 right-0 h-1 bg-dune/30">
                           <motion.div
                             initial={{ width: "0%" }}
@@ -785,35 +783,27 @@ export function FileUploader({
                     )}
 
                     {fileWithPreview.status === "success" && (
-                      <div className="absolute top-2 right-2">
-                        <div className="w-7 h-7 rounded-full bg-sage flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-cream" />
+                      <div className="absolute top-1 left-1 sm:top-1.5 sm:left-1.5">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-sage flex items-center justify-center">
+                          <CheckCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cream" />
                         </div>
                       </div>
                     )}
 
                     {fileWithPreview.status === "error" && (
-                      <div className="absolute inset-0 bg-terracotta/75 backdrop-blur-sm flex items-center justify-center px-3 text-center">
-                        <div className="space-y-2 text-cream">
-                          <AlertCircle className="w-8 h-8 mx-auto" />
-                          <p className="text-sm font-semibold leading-tight">
-                            {fileWithPreview.errorMessage ?? "Upload failed"}
-                          </p>
-                          <div className="flex flex-wrap gap-2 justify-center text-xs font-semibold">
-                            {fileWithPreview.retryCount < MAX_RETRIES && (
+                      <div className="absolute inset-0 bg-terracotta/75 backdrop-blur-sm flex items-center justify-center px-1 text-center">
+                        <div className="space-y-1 text-cream w-full">
+                          <AlertCircle className="w-5 h-5 mx-auto" />
+                          <div className="flex justify-center gap-1 mt-1">
+                             {fileWithPreview.retryCount < MAX_RETRIES && (
                               <button
-                                className="px-3 py-1 border border-cream/70 rounded-full hover:bg-cream/10 transition-colors"
+                                className="p-1 bg-cream/20 rounded-full hover:bg-cream/30"
                                 onClick={() => handleRetry(fileWithPreview.id)}
+                                title="Retry"
                               >
-                                Retry
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
                               </button>
                             )}
-                            <button
-                              className="px-3 py-1 border border-cream/70 rounded-full hover:bg-cream/10 transition-colors"
-                              onClick={() => removeFile(fileWithPreview.id)}
-                            >
-                              Remove
-                            </button>
                           </div>
                         </div>
                       </div>
