@@ -279,6 +279,12 @@ export function OmniCommandPalette({
         "fixed inset-0 z-[9999] flex bg-black/40 backdrop-blur-sm",
         isMobile ? "items-end" : "items-start justify-center pt-16"
       )}
+      onTouchStart={(e) => {
+        // Only close if touching the backdrop itself, not children
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
       onClick={onClose}
     >
       <div
@@ -292,6 +298,7 @@ export function OmniCommandPalette({
             ? "max-h-[50vh]" // Smaller when keyboard is up
             : "max-h-[80vh]"  // Larger when keyboard is down
         )}
+        onTouchStart={(e) => e.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="px-5 pt-5 pb-4 border-b border-sage/10" onClick={(e) => e.stopPropagation()}>
@@ -330,6 +337,9 @@ export function OmniCommandPalette({
                 ? "border-sage/20 cursor-pointer hover:border-sage/30"
                 : "border-sage/20"
             )}
+            onTouchStart={(e) => {
+              e.stopPropagation() // Prevent touch from bubbling
+            }}
             onClick={(e) => {
               e.stopPropagation() // Prevent closing the palette
               if (isMobile && !isSearchActive) {
@@ -347,6 +357,9 @@ export function OmniCommandPalette({
                 onChange={(event) => {
                   setActiveIndex(0)
                   onQueryChange(event.target.value)
+                }}
+                onTouchStart={(e) => {
+                  e.stopPropagation() // Prevent touch from bubbling
                 }}
                 onClick={(e) => {
                   e.stopPropagation() // Prevent closing palette on input click
