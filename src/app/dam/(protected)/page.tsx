@@ -2194,7 +2194,10 @@ export default function DAMPage() {
             onToggleGridView={toggleGridView}
             onOpenCardSettings={openCardSettings}
             selectedCount={selectedAssets.length}
+            totalAssetsCount={assets.length}
             onClearSelection={clearSelection}
+            onSelectAll={() => setSelectedAssets(assets.map(a => a.id))}
+            onDeleteSelected={() => confirmDeleteAssets(selectedAssets, `${selectedAssets.length} selected photo${selectedAssets.length === 1 ? '' : 's'}`)}
             canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
             onApplyTags={handleApplyTags}
           />

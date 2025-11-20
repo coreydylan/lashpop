@@ -14,7 +14,9 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
-  Folder
+  Folder,
+  Trash2,
+  CheckSquare
 } from "lucide-react"
 
 interface Tag {
@@ -83,7 +85,10 @@ interface ThumbPanelProps {
 
   // Selection mode
   selectedCount?: number
+  totalAssetsCount?: number
   onClearSelection?: () => void
+  onSelectAll?: () => void
+  onDeleteSelected?: () => void
   canApplyTags?: boolean
   onApplyTags?: () => void
 }
@@ -113,7 +118,10 @@ export function ThumbPanel({
   onToggleGridView,
   onOpenCardSettings,
   selectedCount = 0,
+  totalAssetsCount = 0,
   onClearSelection,
+  onSelectAll,
+  onDeleteSelected,
   canApplyTags = false,
   onApplyTags
 }: ThumbPanelProps) {
@@ -223,7 +231,7 @@ export function ThumbPanel({
       {selectedCount > 0 ? (
         <>
           {/* Selection mode */}
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 border-b border-sage/10">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-dune">{selectedCount} selected</span>
               <button
@@ -237,31 +245,57 @@ export function ThumbPanel({
               </button>
             </div>
           </div>
+
+          {/* Quick Actions for Selection */}
+          {onSelectAll && selectedCount < totalAssetsCount && (
+            <button
+              onClick={() => {
+                onSelectAll()
+                handleClose()
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
+            >
+              <CheckSquare className="w-5 h-5 text-dune" />
+              <span className="text-sm font-medium text-dune">Select All ({totalAssetsCount})</span>
+            </button>
+          )}
+
           {canApplyTags && (
             <button
               onClick={() => {
                 onApplyTags?.()
                 handleClose()
               }}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-warm-sand/50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
             >
-              <span className="text-sm font-semibold text-dusty-rose">Apply Tags</span>
-              <ChevronRight className="w-4 h-4 text-dusty-rose" />
+              <Sparkles className="w-5 h-5 text-dusty-rose" />
+              <span className="text-sm font-medium text-dune">Apply Tags</span>
             </button>
           )}
+
           {onOpenCommandPalette && (
             <button
               onClick={() => {
                 onOpenCommandPalette()
                 handleClose()
               }}
-              className="w-full flex items-center justify-between px-4 py-3 hover:bg-warm-sand/50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
             >
-              <div className="flex items-center gap-3">
-                <Sparkles className="w-5 h-5 text-dusty-rose" />
-                <span className="text-sm font-medium text-dune">Actions</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-sage" />
+              <Sparkles className="w-5 h-5 text-dusty-rose" />
+              <span className="text-sm font-medium text-dune">More Actions</span>
+            </button>
+          )}
+
+          {onDeleteSelected && (
+            <button
+              onClick={() => {
+                onDeleteSelected()
+                handleClose()
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors border-t border-sage/10"
+            >
+              <Trash2 className="w-5 h-5 text-dusty-rose" />
+              <span className="text-sm font-medium text-dusty-rose">Delete Selected</span>
             </button>
           )}
         </>
