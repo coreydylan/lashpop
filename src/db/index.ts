@@ -132,13 +132,13 @@ export function getDb() {
     clientInstance = postgres(connectionUrl, {
       prepare: false,
       // Limit connections for Supabase pooler
-      max: 3, // Maximum number of connections in the pool (very conservative for Supabase)
+      max: 10, // Maximum number of connections in the pool
       idle_timeout: 10, // Close idle connections after 10 seconds
-      max_lifetime: 60 * 2, // Close connections after 2 minutes (very aggressive for pooler)
-      connect_timeout: 10, // Connection timeout in seconds
+      max_lifetime: 60 * 2, // Close connections after 2 minutes
+      connect_timeout: 30, // Connection timeout in seconds
       // Supabase pooler works best with minimal connections
       ...(process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
-        ? { max: 1 }
+        ? { max: 3 }
         : {}
       )
     })
