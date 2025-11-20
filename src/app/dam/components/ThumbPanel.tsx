@@ -217,20 +217,9 @@ export function ThumbPanel({
   // Render different menu views
   const renderMainMenu = () => (
     <div className="space-y-1">
-      {/* Clear button - appears at top when filters/groups active */}
-      {hasFiltersOrGroups && !selectedCount && (
-        <>
-          <button
-            onClick={() => setCurrentView('clear')}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors border-b border-sage/10"
-          >
-            <span className="text-sm font-semibold text-dusty-rose">Clear</span>
-          </button>
-        </>
-      )}
       {selectedCount > 0 ? (
         <>
-          {/* Selection mode */}
+          {/* Selection mode - Simplified contextual menu */}
           <div className="px-4 py-3 border-b border-sage/10">
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-dune">{selectedCount} selected</span>
@@ -279,10 +268,11 @@ export function ThumbPanel({
                 onOpenCommandPalette()
                 handleClose()
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
+              data-tutorial="action-button-command-palette"
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-warm-sand/50 transition-colors bg-dusty-rose/5 border-b border-sage/10"
             >
               <Sparkles className="w-5 h-5 text-dusty-rose" />
-              <span className="text-sm font-medium text-dune">More Actions</span>
+              <span className="text-sm font-semibold text-dusty-rose">Tag & Organize</span>
             </button>
           )}
 
@@ -298,10 +288,34 @@ export function ThumbPanel({
               <span className="text-sm font-medium text-dusty-rose">Delete Selected</span>
             </button>
           )}
+          <button
+            onClick={() => {
+              onClearSelection?.()
+              handleClose()
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
+          >
+            <span className="text-sm font-medium text-sage">Clear Selection</span>
+          </button>
         </>
       ) : (
         <>
-          {/* Normal mode */}
+          {/* Normal mode - Progressive disclosure */}
+          {onOpenCommandPalette && (
+            <button
+              onClick={() => {
+                onOpenCommandPalette()
+                handleClose()
+              }}
+              data-tutorial="action-button-command-palette"
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-warm-sand/50 transition-colors bg-dusty-rose/5 border-b border-sage/10"
+            >
+              <Sparkles className="w-5 h-5 text-dusty-rose" />
+              <span className="text-sm font-semibold text-dusty-rose">Command Palette</span>
+            </button>
+          )}
+
+          {/* Quick Access Section */}
           {collections.length > 0 && (
             <button
               onClick={() => setCurrentView("collections")}
@@ -311,7 +325,12 @@ export function ThumbPanel({
                 <Folder className="w-5 h-5 text-dune" />
                 <span className="text-sm font-medium text-dune">Collections</span>
               </div>
-              <ChevronRight className="w-4 h-4 text-sage" />
+              <div className="flex items-center gap-2">
+                {activeCollectionId && (
+                  <div className="w-2 h-2 rounded-full bg-dusty-rose" />
+                )}
+                <ChevronRight className="w-4 h-4 text-sage" />
+              </div>
             </button>
           )}
           {allGroupCategories.length > 0 && (
@@ -352,16 +371,20 @@ export function ThumbPanel({
               </div>
             </button>
           )}
-          <button
-            onClick={() => setCurrentView("actions")}
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-warm-sand/50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-dusty-rose" />
-              <span className="text-sm font-medium text-dune">Quick Actions</span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-sage" />
-          </button>
+
+          {/* View & Settings submenu */}
+          {(showGridToggle || onOpenCardSettings || hasFiltersOrGroups) && (
+            <button
+              onClick={() => setCurrentView("actions")}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-warm-sand/50 transition-colors border-t border-sage/10"
+            >
+              <div className="flex items-center gap-3">
+                <LayoutGrid className="w-5 h-5 text-sage" />
+                <span className="text-sm font-medium text-dune">View & Settings</span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-sage" />
+            </button>
+          )}
         </>
       )}
     </div>
@@ -666,20 +689,8 @@ export function ThumbPanel({
         >
           <ChevronLeft className="w-4 h-4 text-sage" />
         </button>
-        <span className="text-sm font-semibold text-dune">Quick Actions</span>
+        <span className="text-sm font-semibold text-dune">View & Settings</span>
       </div>
-      {onOpenCommandPalette && (
-        <button
-          onClick={() => {
-            onOpenCommandPalette()
-            handleClose()
-          }}
-          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
-        >
-          <Sparkles className="w-5 h-5 text-dusty-rose" />
-          <span className="text-sm font-medium text-dune">Command Palette</span>
-        </button>
-      )}
       {showGridToggle && (
         <button
           onClick={() => {
@@ -711,6 +722,18 @@ export function ThumbPanel({
         >
           <CreditCard className="w-5 h-5 text-dune" />
           <span className="text-sm font-medium text-dune">Card Settings</span>
+        </button>
+      )}
+      {hasFiltersOrGroups && (
+        <button
+          onClick={() => {
+            onClearFiltersAndGroups?.()
+            handleClose()
+          }}
+          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors border-t border-sage/10"
+        >
+          <X className="w-5 h-5 text-dusty-rose" />
+          <span className="text-sm font-medium text-dusty-rose">Clear All Filters & Groups</span>
         </button>
       )}
     </div>
@@ -794,6 +817,7 @@ export function ThumbPanel({
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        data-tutorial="action-button"
         className={clsx(
           "fixed bottom-1/2 translate-y-1/2 right-6 z-50 w-14 h-14 shadow-2xl transition-all duration-300",
           "flex items-center justify-center",

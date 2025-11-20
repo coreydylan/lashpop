@@ -1108,40 +1108,26 @@ function AssetCard({
       onMouseLeave={handleTouchEnd}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Image - conditionally wrapped in PhotoView */}
-      {isSelectionMode ? (
-        <div 
+      {/* Image - wrapped in PhotoView to maintain DOM structure and prevent blinking */}
+      <PhotoView src={asset.filePath}>
+        <div
           className="w-full h-full"
-          onClick={handleClick}
+          style={{
+            // Disable PhotoView interaction when in selection mode
+            pointerEvents: isSelectionMode ? 'none' : 'auto'
+          }}
+          onClick={(e) => {
+            // Prevent PhotoView from opening if modifier keys are pressed
+            // This allows cmd/ctrl+click and shift+click to work for selection
+            if (e.metaKey || e.ctrlKey || e.shiftKey) {
+              e.preventDefault()
+              e.stopPropagation()
+            }
+          }}
         >
           {imageContent}
         </div>
-      ) : (
-        <PhotoView src={asset.filePath}>
-          <div 
-            className="w-full h-full" 
-            onClick={(e) => {
-              // If modifier keys are pressed, we're starting selection mode
-              // Stop propagation immediately to prevent Lightbox from opening
-              if (e.metaKey || e.ctrlKey || e.shiftKey) {
-                e.preventDefault()
-                e.stopPropagation()
-                handleClick(e)
-              }
-            }}
-            onClickCapture={(e) => {
-              // Capture phase interception for extra safety against Lightbox
-              if (e.metaKey || e.ctrlKey || e.shiftKey) {
-                e.preventDefault()
-                e.stopPropagation()
-                handleClick(e)
-              }
-            }}
-          >
-            {imageContent}
-          </div>
-        </PhotoView>
-      )}
+      </PhotoView>
 
       {/* Selection outline and overlay */}
       {isSelected && (

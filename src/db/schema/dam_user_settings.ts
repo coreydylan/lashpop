@@ -60,4 +60,17 @@ export interface DamSettingsData {
   // Sort preferences (future)
   sortBy?: 'uploadDate' | 'fileName' | 'modified'
   sortOrder?: 'asc' | 'desc'
+
+  // Tutorial state
+  tutorial?: {
+    completed: boolean
+    dismissed: boolean
+    completedDesktop: boolean
+    completedMobile: boolean
+    promptedDesktop: boolean  // Has user been prompted on desktop?
+    promptedMobile: boolean   // Has user been prompted on mobile?
+    currentStep: number
+    completedSteps: string[]
+    lastStepAt: string
+  }
 }

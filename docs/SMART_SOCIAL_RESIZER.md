@@ -27,6 +27,7 @@ Creating social media content is a nightmare:
 **Upload one hero image → AI automatically creates perfect variants for every platform**
 
 ```
+
 Original Image (2400×1600)
          ↓
     [AI Analysis]

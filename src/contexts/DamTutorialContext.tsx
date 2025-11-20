@@ -38,10 +38,13 @@ interface TutorialState {
   completedDesktop: boolean
   completedMobile: boolean
   dismissed: boolean
+  promptedDesktop: boolean
+  promptedMobile: boolean
 
   // UI state
   showOverlay: boolean
   highlightElement: string | null
+  showPromptDialog: boolean
 
   // Auto-open command palette for demos
   shouldOpenCommandPalette: boolean
@@ -60,6 +63,10 @@ interface TutorialContextType extends TutorialState {
   // Step management
   goToStep: (step: TutorialStep) => void
   markStepComplete: (step: TutorialStep) => void
+
+  // Prompt management
+  dismissPrompt: () => void
+  acceptPrompt: () => void
 
   // Helpers
   openCommandPaletteForDemo: (query?: string) => void
@@ -100,8 +107,11 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     completedDesktop: false,
     completedMobile: false,
     dismissed: false,
+    promptedDesktop: false,
+    promptedMobile: false,
     showOverlay: false,
     highlightElement: null,
+    showPromptDialog: false,
     shouldOpenCommandPalette: false,
     commandPaletteQuery: ''
   })
@@ -121,7 +131,9 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
               completedSteps: new Set(tutorial.completedSteps || []),
               completedDesktop: tutorial.completedDesktop || false,
               completedMobile: tutorial.completedMobile || false,
-              dismissed: tutorial.dismissed || false
+              dismissed: tutorial.dismissed || false,
+              promptedDesktop: tutorial.promptedDesktop || false,
+              promptedMobile: tutorial.promptedMobile || false
             }))
           }
         }
@@ -141,6 +153,8 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
         dismissed: updates.dismissed ?? state.dismissed,
         completedDesktop: updates.completedDesktop ?? state.completedDesktop,
         completedMobile: updates.completedMobile ?? state.completedMobile,
+        promptedDesktop: updates.promptedDesktop ?? state.promptedDesktop,
+        promptedMobile: updates.promptedMobile ?? state.promptedMobile,
         currentStep: updates.currentStepIndex ?? state.currentStepIndex,
         completedSteps: Array.from(updates.completedSteps ?? state.completedSteps),
         lastStepAt: new Date().toISOString()
@@ -263,16 +277,50 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
       completedSteps: new Set(),
       completedDesktop: false,
       completedMobile: false,
-      dismissed: false
+      dismissed: false,
+      promptedDesktop: false,
+      promptedMobile: false
     }))
 
     saveTutorialState({
       completedSteps: new Set(),
       completedDesktop: false,
       completedMobile: false,
-      dismissed: false
+      dismissed: false,
+      promptedDesktop: false,
+      promptedMobile: false
     })
   }, [saveTutorialState])
+
+  const dismissPrompt = useCallback(() => {
+    setState(prev => {
+      const newState = {
+        ...prev,
+        showPromptDialog: false,
+        promptedDesktop: prev.isMobile ? prev.promptedDesktop : true,
+        promptedMobile: prev.isMobile ? true : prev.promptedMobile
+      }
+      saveTutorialState(newState)
+      return newState
+    })
+  }, [saveTutorialState])
+
+  const acceptPrompt = useCallback(() => {
+    setState(prev => {
+      const newState = {
+        ...prev,
+        showPromptDialog: false,
+        promptedDesktop: prev.isMobile ? prev.promptedDesktop : true,
+        promptedMobile: prev.isMobile ? true : prev.promptedMobile
+      }
+      saveTutorialState(newState)
+      return newState
+    })
+    // Start tutorial after accepting
+    setTimeout(() => {
+      startTutorial(state.isMobile ? 'mobile' : 'desktop')
+    }, 100)
+  }, [saveTutorialState, startTutorial, state.isMobile])
 
   const goToStep = useCallback((step: TutorialStep) => {
     setState(prev => {
@@ -327,6 +375,29 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  // Check if we should show the prompt on mount
+  useEffect(() => {
+    // Detect device type
+    const isMobileDevice = window.innerWidth < 768
+
+    // Check if we should show prompt for current device (only check once on mount)
+    const shouldPrompt = isMobileDevice
+      ? !state.promptedMobile && !state.completedMobile && !state.dismissed
+      : !state.promptedDesktop && !state.completedDesktop && !state.dismissed
+
+    if (shouldPrompt) {
+      setState(prev => ({ ...prev, isMobile: isMobileDevice }))
+      // Small delay to let the page load first
+      setTimeout(() => {
+        setState(prev => ({ ...prev, showPromptDialog: true }))
+      }, 1000)
+    } else {
+      setState(prev => ({ ...prev, isMobile: isMobileDevice }))
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run once on mount
+
   return (
     <TutorialContext.Provider
       value={{
@@ -339,6 +410,8 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
         restartTutorial,
         goToStep,
         markStepComplete,
+        dismissPrompt,
+        acceptPrompt,
         openCommandPaletteForDemo,
         closeCommandPaletteForDemo,
         highlightElementById

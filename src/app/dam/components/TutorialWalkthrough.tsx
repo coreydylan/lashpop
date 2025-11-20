@@ -73,24 +73,25 @@ const DESKTOP_STEP_CONTENT: Record<DesktopTutorialStep, TutorialStepContent> = {
 const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
   'welcome': {
     title: 'Welcome to LashPop DAM',
-    description: "Let's take a quick tour! You'll learn how to organize and tag your photos on mobile.",
+    description: "Let's take a quick tour of the mobile interface! You'll learn how to organize, tag, and find your photos on the go.",
     skipable: true
   },
   'command-button-intro': {
-    title: 'Command Palette Button',
-    description: 'Tap this button at the bottom to access all features - filtering, tagging, organizing, and more.',
-    highlight: 'command-button',
+    title: 'Action Button',
+    description: 'This button on the right gives you quick access to everything. Tap it to open the menu.',
+    highlight: 'action-button',
     action: {
       label: 'Tap to open',
-      description: 'Tap the Command Palette button'
+      description: 'Tap the sparkle button on the right side'
     }
   },
   'filtering-demo': {
-    title: 'Filter Your Photos',
-    description: 'In the Command Palette, tap "Filtering" then select a tag to narrow your view.',
+    title: 'Command Palette',
+    description: 'The Command Palette is your control center. Tap it first in the menu to search and access all features - filtering, grouping, tagging, and more.',
+    highlight: 'action-button-command-palette',
     action: {
-      label: 'Try filtering',
-      description: 'Open Command Palette → Filtering → Pick any tag'
+      label: 'Try it',
+      description: 'Open Action Button → Tap Command Palette'
     }
   },
   'selection-demo': {
@@ -103,21 +104,21 @@ const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
     }
   },
   'bulk-actions': {
-    title: 'Bulk Tag & Organize',
-    description: 'With photos selected, open the Command Palette to apply tags or assign team members to multiple photos at once.',
+    title: 'Tag & Organize',
+    description: 'With photos selected, open the Action Button and tap "Tag & Organize" to apply tags or assign team members to multiple photos at once.',
     action: {
       label: 'Try bulk tagging',
-      description: 'Select photos → Open Command Palette → Apply tags'
+      description: 'Select photos → Action Button → Tag & Organize'
     }
   },
   'lightbox-swipe': {
     title: 'Lightbox View',
-    description: 'Tap any photo to view it full-screen. Swipe left/right to navigate. Use Command Palette to tag individual photos.',
+    description: 'Tap any photo to view it full-screen. Swipe left/right to navigate. Use the Action Button to tag individual photos.',
     skipable: true
   },
   'completion': {
     title: "You're Ready! 🎉",
-    description: 'Nice work! Tap the Command Palette button anytime to access all features. Check Help for more tips.',
+    description: 'Great job! Tap the Action Button anytime to access Command Palette and quick shortcuts. Check Help in Command Palette for more tips.',
     skipable: false
   }
 }
@@ -131,11 +132,14 @@ export function TutorialWalkthrough() {
     totalSteps,
     showOverlay,
     highlightElement,
+    showPromptDialog,
     nextStep,
     previousStep,
     skipTutorial,
     completeTutorial,
-    highlightElementById
+    highlightElementById,
+    dismissPrompt,
+    acceptPrompt
   } = useDamTutorial()
 
   const stepContent = isMobile
@@ -178,6 +182,100 @@ export function TutorialWalkthrough() {
       nextStep()
     }
   }, [currentStep, completeTutorial, nextStep])
+
+  // Show prompt dialog if needed (takes precedence over tutorial)
+  if (showPromptDialog) {
+    return (
+      <>
+        {/* Overlay backdrop */}
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000]" />
+
+        {/* Prompt Dialog */}
+        <div
+          className={clsx(
+            'bg-cream border-2 border-dusty-rose shadow-2xl',
+            isMobile
+              ? 'fixed bottom-0 left-0 right-0 z-[10002] rounded-t-3xl'
+              : 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10002] rounded-3xl w-full max-w-xl'
+          )}
+        >
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 border-b border-sage/20">
+            <div className="flex items-center gap-3 mb-2">
+              <Sparkles className="w-6 h-6 text-dusty-rose" />
+              <h2 className="text-2xl font-bold text-dune">
+                Welcome to LashPop DAM
+              </h2>
+            </div>
+            <p className="text-sm text-sage">
+              {isMobile ? 'Mobile Version' : 'Desktop Version'}
+            </p>
+          </div>
+
+          {/* Content */}
+          <div className="px-6 py-6">
+            <p className="text-base text-sage leading-relaxed mb-4">
+              {isMobile
+                ? "Would you like a quick tour of the mobile interface? We'll show you how to use the Action Button, Command Palette, and organize your photos on the go."
+                : "Would you like a quick 2-minute tour? We'll show you how to organize, tag, and find your photos effortlessly."}
+            </p>
+            <div className="bg-warm-sand/30 rounded-2xl p-4 border border-sage/10">
+              <ul className="space-y-2 text-sm text-sage">
+                {isMobile ? (
+                  <>
+                    <li className="flex items-start gap-2">
+                      <span className="text-dusty-rose font-bold">•</span>
+                      <span>Discover the Action Button & Command Palette</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-dusty-rose font-bold">•</span>
+                      <span>Learn quick access shortcuts</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-dusty-rose font-bold">•</span>
+                      <span>Master mobile selection & tagging</span>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li className="flex items-start gap-2">
+                      <span className="text-dusty-rose font-bold">•</span>
+                      <span>Learn the command palette shortcuts</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-dusty-rose font-bold">•</span>
+                      <span>Discover filtering and grouping</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-dusty-rose font-bold">•</span>
+                      <span>Master bulk tagging workflows</span>
+                    </li>
+                  </>
+                )}
+              </ul>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-sage/20 flex items-center justify-between gap-3">
+            <button
+              onClick={dismissPrompt}
+              className="flex-1 px-6 py-3 rounded-full border-2 border-sage/30 text-sage hover:bg-sage/10 transition-colors font-semibold"
+            >
+              Not now
+            </button>
+            <button
+              onClick={acceptPrompt}
+              className="flex-1 px-6 py-3 rounded-full bg-dusty-rose text-cream hover:bg-dusty-rose/90 transition-colors font-semibold flex items-center justify-center gap-2"
+            >
+              Start Tour
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   if (!isActive || !currentStep || !stepContent) return null
 
