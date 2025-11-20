@@ -531,8 +531,18 @@ export default function DAMPage() {
   // Tutorial action watchers
   useEffect(() => {
     if (isWaitingForAction && currentStep) {
-      // Watch for command palette opening (desktop and mobile)
-      if ((currentStep === 'command-palette-intro' || currentStep === 'command-button-intro' || currentStep === 'filtering-demo') && isCommandOpen) {
+      // Desktop: Watch for command palette opening
+      if (currentStep === 'command-palette-intro' && isCommandOpen) {
+        completeAction()
+      }
+
+      // Mobile: Watch for command palette opening (filtering-demo is when they tap Command Palette)
+      if (currentStep === 'filtering-demo' && isMobile && isCommandOpen) {
+        completeAction()
+      }
+
+      // Desktop: Watch for filtering action
+      if (currentStep === 'filtering-demo' && !isMobile && activeFilters.length > 0) {
         completeAction()
       }
 
@@ -541,17 +551,18 @@ export default function DAMPage() {
         completeAction()
       }
 
-      // Watch for filters being applied
-      if ((currentStep === 'filtering-demo' || currentStep === 'bulk-tagging-demo') && activeFilters.length > 0) {
-        completeAction()
-      }
-
-      // Watch for group by being applied
+      // Watch for group by being applied (desktop)
       if (currentStep === 'bulk-tagging-demo' && groupByTags.length > 0) {
         completeAction()
       }
+
+      // Mobile: Watch for bulk actions (when selection + action button opened)
+      if (currentStep === 'bulk-actions' && selectedAssets.length > 0) {
+        // Just having selection is enough, they'll learn to use the action button
+        completeAction()
+      }
     }
-  }, [isWaitingForAction, currentStep, isCommandOpen, selectedAssets.length, activeFilters.length, groupByTags.length, completeAction])
+  }, [isWaitingForAction, currentStep, isCommandOpen, selectedAssets.length, activeFilters.length, groupByTags.length, isMobile, completeAction])
 
   // Keep ref updated for fetchAssets callback
   useEffect(() => {
@@ -2420,6 +2431,12 @@ export default function DAMPage() {
             onOpenCardSettings={openCardSettings}
             selectedCount={selectedAssets.length}
             totalAssetsCount={assets.length}
+            onOpen={() => {
+              // For mobile tutorial: detect when Action Button is opened
+              if (isWaitingForAction && currentStep === 'command-button-intro') {
+                completeAction()
+              }
+            }}
             onClearSelection={clearSelection}
             onSelectAll={() => setSelectedAssets(assets.map(a => a.id))}
             onDeleteSelected={() => confirmDeleteAssets(selectedAssets, `${selectedAssets.length} selected photo${selectedAssets.length === 1 ? '' : 's'}`)}

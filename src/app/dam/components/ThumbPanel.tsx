@@ -91,6 +91,9 @@ interface ThumbPanelProps {
   onDeleteSelected?: () => void
   canApplyTags?: boolean
   onApplyTags?: () => void
+
+  // Events
+  onOpen?: () => void
 }
 
 type MenuView = "main" | "collections" | "groupby" | "filters" | "actions" | "clear"
@@ -123,7 +126,8 @@ export function ThumbPanel({
   onSelectAll,
   onDeleteSelected,
   canApplyTags = false,
-  onApplyTags
+  onApplyTags,
+  onOpen
 }: ThumbPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentView, setCurrentView] = useState<MenuView>("main")
@@ -816,7 +820,13 @@ export function ThumbPanel({
     <>
       {/* Floating Action Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          const newState = !isOpen
+          setIsOpen(newState)
+          if (newState && onOpen) {
+            onOpen()
+          }
+        }}
         data-tutorial="action-button"
         className={clsx(
           "fixed bottom-1/2 translate-y-1/2 right-6 z-50 w-14 h-14 shadow-2xl transition-all duration-300",

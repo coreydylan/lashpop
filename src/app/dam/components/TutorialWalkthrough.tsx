@@ -184,13 +184,11 @@ export function TutorialWalkthrough() {
   const handleNext = useCallback(() => {
     if (currentStep === 'completion') {
       completeTutorial()
-    } else if (stepContent?.action) {
-      // If this step has an action, minimize and wait for user to complete it
-      startWaitingForAction()
     } else {
+      // Just go to next step, don't minimize on Next button
       nextStep()
     }
-  }, [currentStep, completeTutorial, nextStep, stepContent, startWaitingForAction])
+  }, [currentStep, completeTutorial, nextStep])
 
   // Handle action button click
   const handleTryAction = useCallback(() => {
