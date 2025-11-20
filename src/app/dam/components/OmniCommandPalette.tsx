@@ -69,7 +69,6 @@ export function OmniCommandPalette({
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const [isSearchActive, setIsSearchActive] = useState(false)
-  const isActivatingSearchRef = useRef(false) // Prevent backdrop clicks during search activation
   const trimmedQuery = query.trim()
 
   console.log('OmniCommandPalette render', { open, isMobile, isSearchActive })
@@ -290,23 +289,19 @@ export function OmniCommandPalette({
         isMobile ? "items-end" : "items-start justify-center pt-16"
       )}
       onTouchStart={(e) => {
-        console.log('Backdrop onTouchStart', { target: e.target, currentTarget: e.currentTarget, isBackdrop: e.target === e.currentTarget, isActivatingSearch: isActivatingSearchRef.current })
-        // Only close if touching the backdrop itself, not children, and not during search activation
-        if (e.target === e.currentTarget && !isActivatingSearchRef.current) {
+        console.log('Backdrop onTouchStart', { target: e.target, currentTarget: e.currentTarget, isBackdrop: e.target === e.currentTarget })
+        // Only close if touching the backdrop itself, not children
+        if (e.target === e.currentTarget) {
           console.log('Closing from backdrop touch')
           handleClose()
-        } else if (isActivatingSearchRef.current) {
-          console.log('Ignoring backdrop touch - search is being activated')
         }
       }}
       onClick={(e) => {
-        console.log('Backdrop onClick', { target: e.target, currentTarget: e.currentTarget, isBackdrop: e.target === e.currentTarget, isActivatingSearch: isActivatingSearchRef.current })
-        // Only close if clicking the backdrop itself, not children, and not during search activation
-        if (e.target === e.currentTarget && !isActivatingSearchRef.current) {
+        console.log('Backdrop onClick', { target: e.target, currentTarget: e.currentTarget, isBackdrop: e.target === e.currentTarget })
+        // Only close if clicking the backdrop itself, not children
+        if (e.target === e.currentTarget) {
           console.log('Closing from backdrop click')
           handleClose()
-        } else if (isActivatingSearchRef.current) {
-          console.log('Ignoring backdrop click - search is being activated')
         }
       }}
     >
@@ -356,26 +351,16 @@ export function OmniCommandPalette({
                 ? "border-sage/20 cursor-pointer hover:border-sage/30"
                 : "border-sage/20"
             )}
-            onTouchStart={(e) => {
-              console.log('Search wrapper onTouchStart', { target: e.target, currentTarget: e.currentTarget })
-              e.preventDefault() // Prevent default touch behavior
-              e.stopPropagation() // Prevent touch from bubbling
-
-              if (isMobile && !isSearchActive) {
-                console.log('Touch activating search...')
-                isActivatingSearchRef.current = true
-                setIsSearchActive(true)
-                // Clear the flag and focus after a brief moment
-                setTimeout(() => {
-                  isActivatingSearchRef.current = false
-                  inputRef.current?.focus()
-                }, 100)
-              }
-            }}
             onClick={(e) => {
               console.log('Search wrapper onClick', { target: e.target, currentTarget: e.currentTarget, isMobile, isSearchActive })
-              e.preventDefault() // Prevent default click behavior
               e.stopPropagation() // Prevent closing the palette
+
+              if (isMobile && !isSearchActive) {
+                console.log('Activating search...')
+                setIsSearchActive(true)
+                // Focus after state updates
+                setTimeout(() => inputRef.current?.focus(), 50)
+              }
             }}
           >
             <div className="flex items-center gap-3 flex-1 px-4 py-2.5">
@@ -387,26 +372,14 @@ export function OmniCommandPalette({
                   setActiveIndex(0)
                   onQueryChange(event.target.value)
                 }}
-                onTouchStart={(e) => {
-                  console.log('Input onTouchStart', { target: e.target, currentTarget: e.currentTarget })
-                  e.preventDefault() // Prevent default touch behavior
-                  e.stopPropagation() // Prevent touch from bubbling
-
-                  if (isMobile && !isSearchActive) {
-                    console.log('Input touch activating search...')
-                    isActivatingSearchRef.current = true
-                    setIsSearchActive(true)
-                    // Clear the flag and focus after a brief moment
-                    setTimeout(() => {
-                      isActivatingSearchRef.current = false
-                      inputRef.current?.focus()
-                    }, 100)
-                  }
-                }}
                 onClick={(e) => {
                   console.log('Input onClick', { target: e.target, currentTarget: e.currentTarget, isMobile, isSearchActive })
-                  e.preventDefault() // Prevent default click behavior
                   e.stopPropagation() // Prevent closing palette on input click
+
+                  if (isMobile && !isSearchActive) {
+                    console.log('Input activating search...')
+                    setIsSearchActive(true)
+                  }
                 }}
                 onFocus={(e) => {
                   console.log('Input onFocus', { isMobile, isSearchActive })
