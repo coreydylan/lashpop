@@ -1800,6 +1800,7 @@ export default function DAMPage() {
       onSelectionChange={handleSelectionChange}
       assets={assets}
       isMobile={isMobile}
+      isModalOpen={isCommandOpen}
       onOpenCommandPalette={() => openCommandPalette("")}
       onVisibilityChange={(visible) => {
         if (visible) {

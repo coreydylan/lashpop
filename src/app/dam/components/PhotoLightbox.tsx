@@ -40,6 +40,7 @@ interface PhotoLightboxProps {
   onOpenCommandPalette?: () => void
   isMobile?: boolean
   onVisibilityChange?: (visible: boolean) => void
+  isModalOpen?: boolean // Disable PhotoProvider interactions when a modal is open
 }
 
 export function PhotoLightbox({
@@ -51,7 +52,8 @@ export function PhotoLightbox({
   onActiveAssetChange,
   onOpenCommandPalette,
   isMobile = false,
-  onVisibilityChange
+  onVisibilityChange,
+  isModalOpen = false
 }: PhotoLightboxProps) {
   const thumbnailStripRef = useRef<HTMLDivElement | null>(null)
   const currentIndexRef = useRef(0)
@@ -148,8 +150,8 @@ export function PhotoLightbox({
         type === 2 ? "cubic-bezier(0.36, 0, 0.66, -0.56)" : "cubic-bezier(0.34, 1.56, 0.64, 1)"
       }
       maskOpacity={0.98}
-      photoClosable
-      pullClosable
+      photoClosable={!isModalOpen} // Disable closing when modal is open
+      pullClosable={!isModalOpen} // Disable pull-to-close when modal is open
       bannerVisible={false}
       onIndexChange={(index) => {
         currentIndexRef.current = index
