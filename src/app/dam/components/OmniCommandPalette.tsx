@@ -357,10 +357,12 @@ export function OmniCommandPalette({
             )}
             onTouchStart={(e) => {
               console.log('Search wrapper onTouchStart', { target: e.target, currentTarget: e.currentTarget })
+              e.preventDefault() // Prevent default touch behavior
               e.stopPropagation() // Prevent touch from bubbling
             }}
             onClick={(e) => {
               console.log('Search wrapper onClick', { target: e.target, currentTarget: e.currentTarget, isMobile, isSearchActive })
+              e.preventDefault() // Prevent default click behavior
               e.stopPropagation() // Prevent closing the palette
               if (isMobile && !isSearchActive) {
                 console.log('Activating search...')
@@ -381,13 +383,21 @@ export function OmniCommandPalette({
                 }}
                 onTouchStart={(e) => {
                   console.log('Input onTouchStart', { target: e.target, currentTarget: e.currentTarget })
+                  e.preventDefault() // Prevent default touch behavior
                   e.stopPropagation() // Prevent touch from bubbling
+                  if (isMobile && !isSearchActive) {
+                    console.log('Input touch activating search...')
+                    setIsSearchActive(true)
+                    // Small delay to ensure state updates before focusing
+                    setTimeout(() => inputRef.current?.focus(), 100)
+                  }
                 }}
                 onClick={(e) => {
                   console.log('Input onClick', { target: e.target, currentTarget: e.currentTarget, isMobile, isSearchActive })
+                  e.preventDefault() // Prevent default click behavior
                   e.stopPropagation() // Prevent closing palette on input click
                   if (isMobile && !isSearchActive) {
-                    console.log('Input activating search...')
+                    console.log('Input click activating search...')
                     setIsSearchActive(true)
                   }
                 }}
