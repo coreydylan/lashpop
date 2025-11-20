@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react"
+import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from "react"
 import clsx from "clsx"
 import {
   Search,
@@ -70,6 +70,15 @@ export function OmniCommandPalette({
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const [isSearchActive, setIsSearchActive] = useState(false)
   const trimmedQuery = query.trim()
+
+  console.log('OmniCommandPalette render', { open, isMobile, isSearchActive })
+
+  // Wrap onClose to log when it's called
+  const handleClose = useCallback(() => {
+    console.log('onClose called - command palette closing')
+    console.trace('onClose call stack')
+    onClose()
+  }, [onClose])
 
   // Edit mode state
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
@@ -173,7 +182,7 @@ export function OmniCommandPalette({
       if (!open) return
       if (event.key === "Escape") {
         event.preventDefault()
-        onClose()
+        handleClose()
       }
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         event.preventDefault()
@@ -190,14 +199,14 @@ export function OmniCommandPalette({
         const item = flatList[activeIndex]
         if (item && !item.disabled) {
           item.onSelect()
-          onClose()
+          handleClose()
         }
       }
     }
 
     window.addEventListener("keydown", handleKey)
     return () => window.removeEventListener("keydown", handleKey)
-  }, [open, flatList, activeIndex, onClose])
+  }, [open, flatList, activeIndex, handleClose])
 
   useEffect(() => {
     if (!open) {
@@ -237,7 +246,7 @@ export function OmniCommandPalette({
         onClick={() => {
           if (item.disabled) return
           item.onSelect()
-          onClose()
+          handleClose()
         }}
         className={clsx(
           "flex items-center gap-3 rounded-2xl border text-left transition shadow-sm min-w-[210px]",
@@ -284,7 +293,7 @@ export function OmniCommandPalette({
         // Only close if touching the backdrop itself, not children
         if (e.target === e.currentTarget) {
           console.log('Closing from backdrop touch')
-          onClose()
+          handleClose()
         }
       }}
       onClick={(e) => {
@@ -292,7 +301,7 @@ export function OmniCommandPalette({
         // Only close if clicking the backdrop itself, not children
         if (e.target === e.currentTarget) {
           console.log('Closing from backdrop click')
-          onClose()
+          handleClose()
         }
       }}
     >
