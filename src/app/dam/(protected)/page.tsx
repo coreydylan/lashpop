@@ -11,6 +11,7 @@ import clsx from "clsx"
 import { Upload as UploadIcon, Users, X, Sparkles, LogOut } from "lucide-react"
 import Link from "next/link"
 import { AssetGrid } from "../components/AssetGrid"
+import { AssetGridSkeleton } from "../components/AssetGridSkeleton"
 import { FilterSelector } from "../components/FilterSelector"
 import { GroupBySelector } from "../components/GroupBySelector"
 import { TagSelector } from "../components/TagSelector"
@@ -1982,9 +1983,7 @@ export default function DAMPage() {
 
           {/* Gallery */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin w-12 h-12 border-4 border-dusty-rose border-t-transparent rounded-full" />
-            </div>
+            <AssetGridSkeleton gridViewMode={gridViewMode} />
           ) : assets.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-20 h-20 bg-warm-sand/50 arch-full flex items-center justify-center mx-auto mb-6">
