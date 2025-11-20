@@ -600,7 +600,10 @@ export default function DAMPage() {
       totalSize: 0 // File size not available in Asset type
     })
 
-    // Refresh the entire asset list to show new uploads
+    // Update the assets list directly with the new assets
+    setAllAssets(prev => [...newAssets, ...prev])
+
+    // Refresh the entire asset list to ensure sync with server
     fetchAssets()
     // Close upload panel after successful upload
     setIsUploadOpen(false)
