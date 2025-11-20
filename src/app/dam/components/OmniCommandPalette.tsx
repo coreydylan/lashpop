@@ -280,14 +280,18 @@ export function OmniCommandPalette({
         isMobile ? "items-end" : "items-start justify-center pt-16"
       )}
       onTouchStart={(e) => {
+        console.log('Backdrop onTouchStart', { target: e.target, currentTarget: e.currentTarget, isBackdrop: e.target === e.currentTarget })
         // Only close if touching the backdrop itself, not children
         if (e.target === e.currentTarget) {
+          console.log('Closing from backdrop touch')
           onClose()
         }
       }}
       onClick={(e) => {
+        console.log('Backdrop onClick', { target: e.target, currentTarget: e.currentTarget, isBackdrop: e.target === e.currentTarget })
         // Only close if clicking the backdrop itself, not children
         if (e.target === e.currentTarget) {
+          console.log('Closing from backdrop click')
           onClose()
         }
       }}
@@ -343,11 +347,14 @@ export function OmniCommandPalette({
                 : "border-sage/20"
             )}
             onTouchStart={(e) => {
+              console.log('Search wrapper onTouchStart', { target: e.target, currentTarget: e.currentTarget })
               e.stopPropagation() // Prevent touch from bubbling
             }}
             onClick={(e) => {
+              console.log('Search wrapper onClick', { target: e.target, currentTarget: e.currentTarget, isMobile, isSearchActive })
               e.stopPropagation() // Prevent closing the palette
               if (isMobile && !isSearchActive) {
+                console.log('Activating search...')
                 setIsSearchActive(true)
                 // Small delay to ensure state updates before focusing
                 setTimeout(() => inputRef.current?.focus(), 100)
@@ -364,15 +371,19 @@ export function OmniCommandPalette({
                   onQueryChange(event.target.value)
                 }}
                 onTouchStart={(e) => {
+                  console.log('Input onTouchStart', { target: e.target, currentTarget: e.currentTarget })
                   e.stopPropagation() // Prevent touch from bubbling
                 }}
                 onClick={(e) => {
+                  console.log('Input onClick', { target: e.target, currentTarget: e.currentTarget, isMobile, isSearchActive })
                   e.stopPropagation() // Prevent closing palette on input click
                   if (isMobile && !isSearchActive) {
+                    console.log('Input activating search...')
                     setIsSearchActive(true)
                   }
                 }}
                 onFocus={(e) => {
+                  console.log('Input onFocus', { isMobile, isSearchActive })
                   e.stopPropagation() // Prevent closing palette on focus
                   if (isMobile) setIsSearchActive(true)
                 }}
