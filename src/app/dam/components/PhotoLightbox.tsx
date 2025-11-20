@@ -150,7 +150,8 @@ export function PhotoLightbox({
         type === 2 ? "cubic-bezier(0.36, 0, 0.66, -0.56)" : "cubic-bezier(0.34, 1.56, 0.64, 1)"
       }
       maskOpacity={0.98}
-      photoClosable={!isModalOpen} // Disable closing when modal is open
+      photoClosable={!isModalOpen} // Disable photo click to close when modal is open
+      maskClosable={!isModalOpen} // Disable backdrop click to close when modal is open
       pullClosable={!isModalOpen} // Disable pull-to-close when modal is open
       bannerVisible={false}
       onIndexChange={(index) => {
