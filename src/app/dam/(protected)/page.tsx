@@ -115,12 +115,7 @@ export default function DAMPage() {
     startTutorial,
     restartTutorial,
     completedDesktop,
-    completedMobile,
-    currentStep,
-    isWaitingForAction,
-    currentSubAction,
-    updateSubAction,
-    completeAction
+    completedMobile
   } = useDamTutorial()
 
   // Fetch initial data using React Query
@@ -133,6 +128,7 @@ export default function DAMPage() {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
   const [escConfirmationActive, setEscConfirmationActive] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
 
   // Get from settings hook instead of useState
   const activeFilters = settings.activeFilters
@@ -275,13 +271,7 @@ export default function DAMPage() {
   const openCommandPalette = useCallback((prefill = "") => {
     setCommandQuery(prefill)
     setIsCommandOpen(true)
-
-    // For mobile tutorial: detect Command Palette opened from Action Button
-    if (isWaitingForAction && isMobile && currentStep === 'command-palette-intro' && currentSubAction === 'command-palette') {
-      // User clicked Command Palette in Action Button menu
-      completeAction()
-    }
-  }, [isWaitingForAction, isMobile, currentStep, currentSubAction, completeAction])
+  }, [])
 
   const openCardSettings = useCallback(() => {
     setCommandMode('card-settings')
@@ -536,60 +526,6 @@ export default function DAMPage() {
     return () => window.removeEventListener("keydown", handleCommandShortcut)
   }, [openCommandPalette])
 
-  // Tutorial action watchers
-  useEffect(() => {
-    if (isWaitingForAction && currentStep) {
-      // Desktop flows
-      if (!isMobile) {
-        // Desktop: Watch for command palette opening
-        if (currentStep === 'command-palette-intro' && isCommandOpen) {
-          completeAction()
-        }
-
-        // Desktop: Watch for filtering action
-        if (currentStep === 'filtering-demo' && activeFilters.length > 0) {
-          completeAction()
-        }
-
-        // Desktop: Watch for selection
-        if (currentStep === 'selection-demo' && selectedAssets.length > 0) {
-          completeAction()
-        }
-
-        // Desktop: Watch for group by
-        if (currentStep === 'bulk-tagging-demo' && groupByTags.length > 0) {
-          completeAction()
-        }
-      }
-      // Mobile flows
-      else {
-        // Mobile Step 2: Action Button opened (handled by onOpen callback in ThumbPanel)
-        // This is handled separately in the ThumbPanel onOpen callback
-
-        // Mobile Step 3: Command Palette opened from Action Button menu
-        if (currentStep === 'command-palette-intro' && isCommandOpen) {
-          completeAction()
-        }
-
-        // Mobile Step 4: Command Palette explore - no action needed, just Next
-        // User explores on their own
-
-        // Mobile Step 5: Selection - need at least 3 photos
-        if (currentStep === 'selection-demo') {
-          if (selectedAssets.length === 1) {
-            // User selected first photo
-            updateSubAction('select-more')
-          } else if (selectedAssets.length >= 3) {
-            // User selected enough photos
-            completeAction()
-          }
-        }
-
-        // Mobile Step 6: Bulk actions - handled by onOpen callback
-        // This is handled in ThumbPanel onOpen when photos are selected
-      }
-    }
-  }, [isWaitingForAction, currentStep, currentSubAction, isCommandOpen, selectedAssets.length, activeFilters.length, groupByTags.length, isMobile, updateSubAction, completeAction])
 
   // Keep ref updated for fetchAssets callback
   useEffect(() => {
@@ -2458,21 +2394,6 @@ export default function DAMPage() {
             onOpenCardSettings={openCardSettings}
             selectedCount={selectedAssets.length}
             totalAssetsCount={assets.length}
-            onOpen={() => {
-              // For mobile tutorial: detect when Action Button is opened
-              if (isWaitingForAction) {
-                // Step 2: Action Button intro - first time opening
-                if (currentStep === 'action-button-intro') {
-                  // User opened Action Button, now guide them to Command Palette
-                  updateSubAction('command-palette')
-                }
-                // Step 6: Bulk actions - opening with selection
-                else if (currentStep === 'bulk-actions' && selectedAssets.length > 0) {
-                  // Show them the Tag & Organize option
-                  updateSubAction('tag-organize')
-                }
-              }
-            }}
             onClearSelection={clearSelection}
             onSelectAll={() => setSelectedAssets(assets.map(a => a.id))}
             onDeleteSelected={() => confirmDeleteAssets(selectedAssets, `${selectedAssets.length} selected photo${selectedAssets.length === 1 ? '' : 's'}`)}

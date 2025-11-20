@@ -45,13 +45,6 @@ interface TutorialState {
   showOverlay: boolean
   highlightElement: string | null
   showPromptDialog: boolean
-  isMinimized: boolean
-  isWaitingForAction: boolean
-  currentSubAction?: string  // Track multi-part actions within a step
-
-  // Auto-open command palette for demos
-  shouldOpenCommandPalette: boolean
-  commandPaletteQuery: string
 }
 
 interface TutorialContextType extends TutorialState {
@@ -71,16 +64,7 @@ interface TutorialContextType extends TutorialState {
   dismissPrompt: () => void
   acceptPrompt: () => void
 
-  // Interactive tutorial
-  minimizeTutorial: () => void
-  maximizeTutorial: () => void
-  startWaitingForAction: (subAction?: string) => void
-  updateSubAction: (subAction: string) => void
-  completeAction: () => void
-
   // Helpers
-  openCommandPaletteForDemo: (query?: string) => void
-  closeCommandPaletteForDemo: () => void
   highlightElementById: (elementId: string | null) => void
 }
 
@@ -121,12 +105,7 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     promptedMobile: false,
     showOverlay: false,
     highlightElement: null,
-    showPromptDialog: false,
-    isMinimized: false,
-    isWaitingForAction: false,
-    currentSubAction: undefined,
-    shouldOpenCommandPalette: false,
-    commandPaletteQuery: ''
+    showPromptDialog: false
   })
 
   // Load tutorial state from database on mount
@@ -365,81 +344,12 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     })
   }, [saveTutorialState])
 
-  const openCommandPaletteForDemo = useCallback((query = '') => {
-    setState(prev => ({
-      ...prev,
-      shouldOpenCommandPalette: true,
-      commandPaletteQuery: query
-    }))
-  }, [])
-
-  const closeCommandPaletteForDemo = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      shouldOpenCommandPalette: false,
-      commandPaletteQuery: ''
-    }))
-  }, [])
-
   const highlightElementById = useCallback((elementId: string | null) => {
     setState(prev => ({
       ...prev,
       highlightElement: elementId
     }))
   }, [])
-
-  const minimizeTutorial = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      isMinimized: true,
-      showOverlay: false
-    }))
-  }, [])
-
-  const maximizeTutorial = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      isMinimized: false,
-      showOverlay: prev.isMobile // Mobile always has overlay
-    }))
-  }, [])
-
-  const startWaitingForAction = useCallback((subAction?: string) => {
-    setState(prev => ({
-      ...prev,
-      isWaitingForAction: true,
-      isMinimized: true,
-      showOverlay: false,
-      currentSubAction: subAction
-    }))
-  }, [])
-
-  const updateSubAction = useCallback((subAction: string) => {
-    setState(prev => ({
-      ...prev,
-      currentSubAction: subAction
-    }))
-  }, [])
-
-  const completeAction = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      isWaitingForAction: false,
-      currentSubAction: undefined
-    }))
-    // Auto-advance after a short delay, then reopen tutorial
-    setTimeout(() => {
-      nextStep()
-      // Wait for step transition, then show tutorial card again
-      setTimeout(() => {
-        setState(prev => ({
-          ...prev,
-          isMinimized: false,
-          showOverlay: prev.isMobile
-        }))
-      }, 300)
-    }, 800)
-  }, [nextStep])
 
   // Check if we should show the prompt on mount
   useEffect(() => {
@@ -478,13 +388,6 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
         markStepComplete,
         dismissPrompt,
         acceptPrompt,
-        minimizeTutorial,
-        maximizeTutorial,
-        startWaitingForAction,
-        updateSubAction,
-        completeAction,
-        openCommandPaletteForDemo,
-        closeCommandPaletteForDemo,
         highlightElementById
       }}
     >

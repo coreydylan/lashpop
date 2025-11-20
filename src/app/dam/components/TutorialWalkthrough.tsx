@@ -4,79 +4,51 @@ import { useEffect, useCallback } from 'react'
 import { X, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react'
 import { useDamTutorial } from '@/contexts/DamTutorialContext'
 import type { DesktopTutorialStep, MobileTutorialStep } from '@/contexts/DamTutorialContext'
-import { CoachingTooltip } from './CoachingTooltip'
 import clsx from 'clsx'
 
 interface TutorialStepContent {
   title: string
   description: string
   highlight?: string
-  action?: {
-    label: string
-    description: string
-    coachingHint?: string
-    coachingTarget?: string
-  }
-  autoAdvance?: boolean
   skipable?: boolean
 }
 
 const DESKTOP_STEP_CONTENT: Record<DesktopTutorialStep, TutorialStepContent> = {
   'welcome': {
     title: 'Welcome to LashPop DAM',
-    description: "Let's take a quick 2-minute tour to help you get started with your digital asset management system. You'll learn how to organize, tag, and find your photos effortlessly.",
+    description: "Let's take a quick tour to help you get started with your digital asset management system. You'll learn how to organize, tag, and find your photos effortlessly.",
     skipable: true
   },
   'command-palette-intro': {
-    title: 'Meet the Command Palette',
-    description: 'This is your control center for everything in the DAM. Press / or ⌘K anytime to open it.',
+    title: 'The Command Palette',
+    description: 'The Command Palette is your control center for everything in the DAM. You can open it anytime by pressing the / key or ⌘K. It gives you instant access to all features, filters, and actions.',
     highlight: 'command-button',
-    action: {
-      label: 'Try it now',
-      description: 'Press / or click the Command Palette button',
-      coachingHint: 'Press / or ⌘K to open',
-      coachingTarget: 'body'
-    }
+    skipable: false
   },
   'filtering-demo': {
-    title: 'Filter Your Assets',
-    description: "Let's filter your photos. Type 'style' in the Command Palette to see filtering options.",
-    action: {
-      label: 'Try filtering',
-      description: 'Open Command Palette → Type "style" → Pick any style',
-      coachingHint: 'Type "style" to see filters',
-      coachingTarget: '[data-omnisearch="input"]'
-    }
+    title: 'Filtering Your Assets',
+    description: 'Use the Command Palette to filter your photos by style, team member, or any tag. Simply type what you\'re looking for - like "natural" or "team" - and select from the suggestions that appear.',
+    skipable: false
   },
   'selection-demo': {
-    title: 'Select Multiple Assets',
-    description: 'Click and drag to select multiple photos at once. Hold ⌘ (Cmd) to select non-adjacent items.',
+    title: 'Selecting Multiple Assets',
+    description: 'Select multiple photos at once by clicking and dragging across the grid. You can also hold ⌘ (Cmd) to select non-adjacent items, or use Shift to select a range.',
     highlight: 'dam-grid',
-    action: {
-      label: 'Try selecting',
-      description: 'Click and drag on the grid to select photos',
-      coachingHint: 'Click and drag to select multiple',
-      coachingTarget: '.dam-grid'
-    }
+    skipable: false
   },
   'bulk-tagging-demo': {
-    title: 'Organize with Grouping',
-    description: 'With the Command Palette, type "group" to organize your grid by categories like Team or Style.',
-    action: {
-      label: 'Try grouping',
-      description: 'Open Command Palette → Type "group" → Select "Group by Team"',
-      coachingHint: 'Type "group" to organize',
-      coachingTarget: '[data-omnisearch="input"]'
-    }
+    title: 'Organizing with Groups',
+    description: 'Organize your view by grouping assets. In the Command Palette, type "group" to see grouping options like Team or Style. This creates visual sections in your grid for easier navigation.',
+    skipable: false
   },
   'collections-organization': {
     title: 'Collections & More',
-    description: 'Create collections to curate sets of assets. Access collections and all other features through the Command Palette.',
+    description: 'Collections let you curate specific sets of assets for campaigns or projects. You can create, manage, and switch between collections - all through the Command Palette.',
     skipable: true
   },
   'completion': {
     title: "You're All Set! 🎉",
-    description: "Great job! You now know the essentials. Press / anytime to explore more features. Visit Help in the Command Palette for tips and shortcuts.",
+    description: "You now know the essentials of LashPop DAM. Remember, the Command Palette (/) is your gateway to everything. Explore the Help section there for more tips and keyboard shortcuts.",
     skipable: false
   }
 }
@@ -84,60 +56,40 @@ const DESKTOP_STEP_CONTENT: Record<DesktopTutorialStep, TutorialStepContent> = {
 const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
   'welcome': {
     title: 'Welcome to LashPop DAM',
-    description: "Let's take a quick tour of the mobile interface! You'll learn how to organize, tag, and find your photos on the go.",
+    description: "Let's take a quick tour of the mobile interface. You'll learn how to organize, tag, and find your photos on the go.",
     skipable: true
   },
   'action-button-intro': {
-    title: 'Your Action Button',
-    description: 'See that sparkle button on the right? It gives you quick access to everything. Let\'s try it!',
+    title: 'The Action Button',
+    description: 'The sparkle button in the bottom right is your gateway to all actions. It\'s context-aware - changing based on what you\'re doing. When nothing is selected, it opens the main menu.',
     highlight: 'action-button',
-    action: {
-      label: 'Try it',
-      description: 'Tap the sparkle button on the right',
-      coachingHint: 'Tap here to open menu',
-      coachingTarget: '[data-tutorial="action-button"]'
-    }
+    skipable: false
   },
   'command-palette-intro': {
-    title: 'Great! Now Find Command Palette',
-    description: 'The menu is open! The Command Palette at the top is your control center for everything.',
-    highlight: 'action-button-command-palette',
-    action: {
-      label: 'Open Command Palette',
-      description: 'Tap "Command Palette" at the top of the menu',
-      coachingHint: 'Tap Command Palette here',
-      coachingTarget: '[data-tutorial="action-button-command-palette"]'
-    }
+    title: 'Command Palette on Mobile',
+    description: 'The Command Palette gives you quick access to search, filter, and organize. You\'ll find it at the top of the Action Button menu. It works just like the desktop version.',
+    skipable: false
   },
   'command-palette-explore': {
-    title: 'Explore Your Control Center',
-    description: 'Excellent! This is where you can search for anything - filters, tags, team members, and more. Try typing something or explore the options.',
+    title: 'Using the Command Palette',
+    description: 'In the Command Palette, you can search for anything - team members, styles, tags, or actions. Just type what you need and select from the suggestions.',
     skipable: false
   },
   'selection-demo': {
-    title: 'Selecting Multiple Photos',
-    description: 'Now let\'s select some photos. Long-press any photo to start, then tap others to add them.',
+    title: 'Selecting Photos',
+    description: 'To select multiple photos, long-press any image to enter selection mode. Then tap additional photos to add them to your selection. The Action Button will show a count of selected items.',
     highlight: 'dam-grid',
-    action: {
-      label: 'Try selecting',
-      description: 'Long-press a photo, then tap 2 more',
-      coachingHint: 'Long-press any photo to start',
-      coachingTarget: '.dam-grid'
-    }
+    skipable: false
   },
   'bulk-actions': {
-    title: 'Organize Your Selection',
-    description: 'Perfect! You have photos selected. Now open the Action Button to see what you can do with them.',
-    action: {
-      label: 'Open Action Button',
-      description: 'Tap the Action Button to see options',
-      coachingHint: 'Open Action Button for options',
-      coachingTarget: '[data-tutorial="action-button"]'
-    }
+    title: 'Bulk Actions',
+    description: 'When you have photos selected, the Action Button transforms to show contextual actions. You can tag multiple photos at once, add them to collections, or clear your selection.',
+    highlight: 'action-button',
+    skipable: false
   },
   'completion': {
     title: "You're All Set! 🎉",
-    description: 'Excellent work! You now know the essentials. The Action Button is always there when you need it. Tap anytime to filter, tag, or organize your photos.',
+    description: "You now know the mobile basics! Remember: The sparkle Action Button is your main control, and long-press starts selection mode. Enjoy using LashPop DAM!",
     skipable: false
   }
 }
@@ -152,21 +104,13 @@ export function TutorialWalkthrough() {
     showOverlay,
     highlightElement,
     showPromptDialog,
-    isMinimized,
-    isWaitingForAction,
-    currentSubAction,
     nextStep,
     previousStep,
     skipTutorial,
     completeTutorial,
     highlightElementById,
     dismissPrompt,
-    acceptPrompt,
-    minimizeTutorial,
-    maximizeTutorial,
-    startWaitingForAction,
-    updateSubAction,
-    completeAction
+    acceptPrompt
   } = useDamTutorial()
 
   const stepContent = isMobile
@@ -206,15 +150,9 @@ export function TutorialWalkthrough() {
     if (currentStep === 'completion') {
       completeTutorial()
     } else {
-      // Just go to next step, don't minimize on Next button
       nextStep()
     }
   }, [currentStep, completeTutorial, nextStep])
-
-  // Handle action button click
-  const handleTryAction = useCallback(() => {
-    startWaitingForAction()
-  }, [startWaitingForAction])
 
   // Show prompt dialog if needed (takes precedence over tutorial)
   if (showPromptDialog) {
@@ -317,13 +255,13 @@ export function TutorialWalkthrough() {
 
   return (
     <>
-      {/* Mobile: Always show overlay backdrop for bottom sheet unless minimized */}
-      {isMobile && showOverlay && !isMinimized && (
+      {/* Mobile: Always show overlay backdrop for bottom sheet */}
+      {isMobile && showOverlay && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000]" />
       )}
 
       {/* Desktop: Show overlay only for welcome/completion screens (centered modals) */}
-      {!isMobile && (isWelcome || isCompletion) && !isMinimized && (
+      {!isMobile && (isWelcome || isCompletion) && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
       )}
 
@@ -350,58 +288,8 @@ export function TutorialWalkthrough() {
         `}</style>
       )}
 
-      {/* Minimized state - small progress indicator */}
-      {isMinimized && (
-        <div
-          onClick={maximizeTutorial}
-          className={clsx(
-            'fixed z-[10001] bg-cream border-2 border-dusty-rose shadow-lg rounded-full px-4 py-2 cursor-pointer hover:scale-105 transition-transform',
-            isMobile ? 'bottom-6 right-6' : 'top-6 right-6'
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <Sparkles className="w-4 h-4 text-dusty-rose animate-pulse" />
-            <span className="text-xs font-medium text-dune">
-              {isWaitingForAction ? 'Following along...' : `Step ${currentStepIndex + 1}/${totalSteps}`}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Coaching tooltips when waiting for action */}
-      {isWaitingForAction && (
-        <>
-          {/* Show coaching hint based on current sub-action or default */}
-          {currentSubAction === 'command-palette' ? (
-            <CoachingTooltip
-              message="Perfect! Now tap Command Palette"
-              targetSelector="[data-tutorial='action-button-command-palette']"
-              position="auto"
-            />
-          ) : currentSubAction === 'select-more' ? (
-            <CoachingTooltip
-              message="Great! Now tap 2 more photos"
-              targetSelector=".dam-grid"
-              position="auto"
-            />
-          ) : currentSubAction === 'tag-organize' ? (
-            <CoachingTooltip
-              message="Tap 'Tag & Organize' to continue"
-              targetSelector="[data-tutorial='action-button-command-palette']"
-              position="auto"
-            />
-          ) : stepContent?.action?.coachingHint ? (
-            <CoachingTooltip
-              message={stepContent.action.coachingHint}
-              targetSelector={stepContent.action.coachingTarget}
-              position="auto"
-            />
-          ) : null}
-        </>
-      )}
-
-      {/* Tutorial card - hidden when minimized */}
-      {!isMinimized && (
+      {/* Tutorial card */}
+      {(
         <div
           className={clsx(
             'bg-cream border-2 border-dusty-rose shadow-2xl',
@@ -441,29 +329,9 @@ export function TutorialWalkthrough() {
 
         {/* Content */}
         <div className="px-6 py-6">
-          <p className="text-base text-sage leading-relaxed mb-6">
+          <p className="text-base text-sage leading-relaxed">
             {stepContent.description}
           </p>
-
-          {stepContent.action && (
-            <div className="bg-warm-sand/30 rounded-2xl p-4 border border-sage/10">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-dusty-rose rounded-full flex items-center justify-center">
-                  <ArrowRight className="w-4 h-4 text-cream" />
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-dune mb-1">{stepContent.action.label}</div>
-                  <div className="text-sm text-sage mb-3">{stepContent.action.description}</div>
-                  <button
-                    onClick={handleTryAction}
-                    className="px-4 py-2 bg-dusty-rose text-cream rounded-full text-sm font-medium hover:bg-dusty-rose/90 transition-colors"
-                  >
-                    Try it now
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
