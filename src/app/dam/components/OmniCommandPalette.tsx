@@ -418,8 +418,6 @@ export function OmniCommandPalette({
               if (isMobile && !isSearchActive) {
                 console.log('Activating search...')
                 setIsSearchActive(true)
-                // Focus after state updates
-                setTimeout(() => inputRef.current?.focus(), 50)
               }
             }}
           >
@@ -446,6 +444,7 @@ export function OmniCommandPalette({
                     console.log('Input activating search...')
                     setIsSearchActive(true)
                   }
+                  // Input will naturally focus and show keyboard since it's not readOnly
                 }}
                 onFocus={(e) => {
                   console.log('Input onFocus', { isMobile, isSearchActive })
@@ -454,7 +453,7 @@ export function OmniCommandPalette({
                 }}
                 placeholder={isMobile && !isSearchActive ? "Tap to search…" : "Search tags, team, actions…"}
                 className="flex-1 bg-transparent outline-none text-sm placeholder:text-sage/60"
-                readOnly={isMobile && !isSearchActive}
+                readOnly={false}
               />
             </div>
             {isMobile && isSearchActive ? (
