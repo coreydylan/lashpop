@@ -478,7 +478,11 @@ export function OmniCommandPalette({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-1 py-3">
+        <div className={clsx(
+          "flex-1 overflow-y-auto px-1",
+          // Reduce padding even more when searching on mobile to minimize gap
+          isMobile && trimmedQuery ? "py-0.5" : isMobile ? "py-1.5" : "py-3"
+        )}>
           {mode === 'card-settings' ? (
             <div className="px-4 space-y-3">
               <div className="px-2 pb-2">
@@ -775,7 +779,32 @@ export function OmniCommandPalette({
                 )
               }
 
-              // Default rendering for non-active groups
+              // When searching, show actual items instead of group cards
+              if (trimmedQuery) {
+                return Object.entries(grouped).map(([groupName, groupItems]) => {
+                  const meta = getGroupMeta(groupName)
+                  return (
+                    <div key={groupName} className={clsx(
+                      "px-4",
+                      isMobile ? "pb-2" : "pb-4"
+                    )}>
+                      <div className={clsx(
+                        isMobile ? "mb-1.5" : "mb-2"
+                      )}>
+                        <p className="text-xs font-semibold text-sage/70 uppercase tracking-wider">{groupName}</p>
+                      </div>
+                      <div className={clsx(
+                        "flex flex-wrap",
+                        isMobile ? "gap-1.5" : "gap-2"
+                      )}>
+                        {groupItems.map(renderActionButton)}
+                      </div>
+                    </div>
+                  )
+                })
+              }
+
+              // Default rendering for non-active groups (when not searching)
               return Object.entries(grouped).map(([groupName, groupItems]) => {
                 const meta = getGroupMeta(groupName)
                 return (
