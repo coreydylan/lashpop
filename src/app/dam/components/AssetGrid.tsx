@@ -1102,22 +1102,40 @@ function AssetCard({
       onMouseLeave={handleTouchEnd}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Image - wrapped in PhotoView to maintain DOM structure and prevent blinking */}
-      <PhotoView src={asset.filePath}>
+      {/* Image - conditionally wrapped in PhotoView */}
+      {isSelectionMode ? (
         <div 
-          className="w-full h-full" 
-          onClick={(e) => {
-            // Prevent PhotoView from opening if in selection mode or modifier keys are pressed
-            if (isSelectionMode || e.metaKey || e.ctrlKey || e.shiftKey) {
-              e.preventDefault()
-              e.stopPropagation()
-              handleClick(e)
-            }
-          }}
+          className="w-full h-full"
+          onClick={handleClick}
         >
           {imageContent}
         </div>
-      </PhotoView>
+      ) : (
+        <PhotoView src={asset.filePath}>
+          <div 
+            className="w-full h-full" 
+            onClick={(e) => {
+              // If modifier keys are pressed, we're starting selection mode
+              // Stop propagation immediately to prevent Lightbox from opening
+              if (e.metaKey || e.ctrlKey || e.shiftKey) {
+                e.preventDefault()
+                e.stopPropagation()
+                handleClick(e)
+              }
+            }}
+            onClickCapture={(e) => {
+              // Capture phase interception for extra safety against Lightbox
+              if (e.metaKey || e.ctrlKey || e.shiftKey) {
+                e.preventDefault()
+                e.stopPropagation()
+                handleClick(e)
+              }
+            }}
+          >
+            {imageContent}
+          </div>
+        </PhotoView>
+      )}
 
       {/* Selection outline and overlay */}
       {isSelected && (
