@@ -198,12 +198,17 @@ export function FileUploader({
   const uploadFile = useCallback(
     async (fileId: string) => {
       console.log(`[Upload] uploadFile triggered for ${fileId}`)
-      let pendingFile: FileWithPreview | undefined
+      
+      const pendingFile = files.find(f => f.id === fileId)
+
+      if (!pendingFile) {
+        console.error(`[Upload] File ${fileId} not found in state`)
+        return
+      }
 
       setFiles((prev) =>
         prev.map((file) => {
           if (file.id === fileId) {
-            pendingFile = file
             return {
               ...file,
               status: "uploading",
@@ -215,10 +220,6 @@ export function FileUploader({
           return file
         })
       )
-
-      if (!pendingFile) {
-        return
-      }
 
       try {
         console.log(`[Upload] Starting upload for ${pendingFile.file.name} (${pendingFile.file.type})`)
@@ -322,7 +323,7 @@ export function FileUploader({
         })
       }
     },
-    [teamMemberId]
+    [teamMemberId, files]
   )
 
   useEffect(() => {
