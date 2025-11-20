@@ -45,6 +45,8 @@ interface TutorialState {
   showOverlay: boolean
   highlightElement: string | null
   showPromptDialog: boolean
+  isMinimized: boolean
+  isWaitingForAction: boolean
 
   // Auto-open command palette for demos
   shouldOpenCommandPalette: boolean
@@ -67,6 +69,12 @@ interface TutorialContextType extends TutorialState {
   // Prompt management
   dismissPrompt: () => void
   acceptPrompt: () => void
+
+  // Interactive tutorial
+  minimizeTutorial: () => void
+  maximizeTutorial: () => void
+  startWaitingForAction: () => void
+  completeAction: () => void
 
   // Helpers
   openCommandPaletteForDemo: (query?: string) => void
@@ -112,6 +120,8 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     showOverlay: false,
     highlightElement: null,
     showPromptDialog: false,
+    isMinimized: false,
+    isWaitingForAction: false,
     shouldOpenCommandPalette: false,
     commandPaletteQuery: ''
   })
@@ -375,6 +385,44 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const minimizeTutorial = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isMinimized: true,
+      showOverlay: false
+    }))
+  }, [])
+
+  const maximizeTutorial = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isMinimized: false,
+      showOverlay: prev.isMobile // Mobile always has overlay
+    }))
+  }, [])
+
+  const startWaitingForAction = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isWaitingForAction: true,
+      isMinimized: true,
+      showOverlay: false
+    }))
+  }, [])
+
+  const completeAction = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isWaitingForAction: false,
+      isMinimized: false,
+      showOverlay: prev.isMobile
+    }))
+    // Auto-advance after a short delay
+    setTimeout(() => {
+      nextStep()
+    }, 500)
+  }, [nextStep])
+
   // Check if we should show the prompt on mount
   useEffect(() => {
     // Detect device type
@@ -412,6 +460,10 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
         markStepComplete,
         dismissPrompt,
         acceptPrompt,
+        minimizeTutorial,
+        maximizeTutorial,
+        startWaitingForAction,
+        completeAction,
         openCommandPaletteForDemo,
         closeCommandPaletteForDemo,
         highlightElementById

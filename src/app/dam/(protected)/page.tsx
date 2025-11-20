@@ -115,7 +115,10 @@ export default function DAMPage() {
     startTutorial,
     restartTutorial,
     completedDesktop,
-    completedMobile
+    completedMobile,
+    currentStep,
+    isWaitingForAction,
+    completeAction
   } = useDamTutorial()
 
   // Fetch initial data using React Query
@@ -524,6 +527,31 @@ export default function DAMPage() {
     window.addEventListener("keydown", handleCommandShortcut)
     return () => window.removeEventListener("keydown", handleCommandShortcut)
   }, [openCommandPalette])
+
+  // Tutorial action watchers
+  useEffect(() => {
+    if (isWaitingForAction && currentStep) {
+      // Watch for command palette opening (desktop and mobile)
+      if ((currentStep === 'command-palette-intro' || currentStep === 'command-button-intro' || currentStep === 'filtering-demo') && isCommandOpen) {
+        completeAction()
+      }
+
+      // Watch for selection (desktop and mobile)
+      if (currentStep === 'selection-demo' && selectedAssets.length > 0) {
+        completeAction()
+      }
+
+      // Watch for filters being applied
+      if ((currentStep === 'filtering-demo' || currentStep === 'bulk-tagging-demo') && activeFilters.length > 0) {
+        completeAction()
+      }
+
+      // Watch for group by being applied
+      if (currentStep === 'bulk-tagging-demo' && groupByTags.length > 0) {
+        completeAction()
+      }
+    }
+  }, [isWaitingForAction, currentStep, isCommandOpen, selectedAssets.length, activeFilters.length, groupByTags.length, completeAction])
 
   // Keep ref updated for fetchAssets callback
   useEffect(() => {

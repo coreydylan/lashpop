@@ -133,13 +133,19 @@ export function TutorialWalkthrough() {
     showOverlay,
     highlightElement,
     showPromptDialog,
+    isMinimized,
+    isWaitingForAction,
     nextStep,
     previousStep,
     skipTutorial,
     completeTutorial,
     highlightElementById,
     dismissPrompt,
-    acceptPrompt
+    acceptPrompt,
+    minimizeTutorial,
+    maximizeTutorial,
+    startWaitingForAction,
+    completeAction
   } = useDamTutorial()
 
   const stepContent = isMobile
@@ -178,10 +184,18 @@ export function TutorialWalkthrough() {
   const handleNext = useCallback(() => {
     if (currentStep === 'completion') {
       completeTutorial()
+    } else if (stepContent?.action) {
+      // If this step has an action, minimize and wait for user to complete it
+      startWaitingForAction()
     } else {
       nextStep()
     }
-  }, [currentStep, completeTutorial, nextStep])
+  }, [currentStep, completeTutorial, nextStep, stepContent, startWaitingForAction])
+
+  // Handle action button click
+  const handleTryAction = useCallback(() => {
+    startWaitingForAction()
+  }, [startWaitingForAction])
 
   // Show prompt dialog if needed (takes precedence over tutorial)
   if (showPromptDialog) {
@@ -284,13 +298,13 @@ export function TutorialWalkthrough() {
 
   return (
     <>
-      {/* Mobile: Always show overlay backdrop for bottom sheet */}
-      {isMobile && showOverlay && (
+      {/* Mobile: Always show overlay backdrop for bottom sheet unless minimized */}
+      {isMobile && showOverlay && !isMinimized && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10000]" />
       )}
 
       {/* Desktop: Show overlay only for welcome/completion screens (centered modals) */}
-      {!isMobile && (isWelcome || isCompletion) && (
+      {!isMobile && (isWelcome || isCompletion) && !isMinimized && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
       )}
 
@@ -317,20 +331,39 @@ export function TutorialWalkthrough() {
         `}</style>
       )}
 
-      {/* Tutorial card */}
-      <div
-        className={clsx(
-          'bg-cream border-2 border-dusty-rose shadow-2xl',
-          isMobile
-            ? // Mobile: Fixed bottom sheet with overlay
-              'fixed bottom-0 left-0 right-0 z-[10002] rounded-t-3xl max-h-[70vh]'
-            : isWelcome || isCompletion
-            ? // Desktop welcome/completion: Centered modal
-              'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-3xl w-full max-w-xl'
-            : // Desktop steps: Inline card in top-right
-              'fixed top-6 right-6 z-40 rounded-3xl w-full max-w-md animate-in slide-in-from-right duration-300'
-        )}
-      >
+      {/* Minimized state - small progress indicator */}
+      {isMinimized && (
+        <div
+          onClick={maximizeTutorial}
+          className={clsx(
+            'fixed z-[10001] bg-cream border-2 border-dusty-rose shadow-lg rounded-full px-4 py-2 cursor-pointer hover:scale-105 transition-transform',
+            isMobile ? 'bottom-6 right-6' : 'top-6 right-6'
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <Sparkles className="w-4 h-4 text-dusty-rose animate-pulse" />
+            <span className="text-xs font-medium text-dune">
+              {isWaitingForAction ? 'Try it now...' : `Step ${currentStepIndex + 1}/${totalSteps}`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Tutorial card - hidden when minimized */}
+      {!isMinimized && (
+        <div
+          className={clsx(
+            'bg-cream border-2 border-dusty-rose shadow-2xl',
+            isMobile
+              ? // Mobile: Fixed bottom sheet with overlay
+                'fixed bottom-0 left-0 right-0 z-[10002] rounded-t-3xl max-h-[70vh]'
+              : isWelcome || isCompletion
+              ? // Desktop welcome/completion: Centered modal
+                'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 rounded-3xl w-full max-w-xl'
+              : // Desktop steps: Inline card in top-right
+                'fixed top-6 right-6 z-40 rounded-3xl w-full max-w-md animate-in slide-in-from-right duration-300'
+          )}
+        >
         {/* Header */}
         <div className="px-6 pt-6 pb-4 border-b border-sage/20">
           <div className="flex items-start justify-between">
@@ -367,9 +400,15 @@ export function TutorialWalkthrough() {
                 <div className="flex-shrink-0 w-8 h-8 bg-dusty-rose rounded-full flex items-center justify-center">
                   <ArrowRight className="w-4 h-4 text-cream" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="font-semibold text-dune mb-1">{stepContent.action.label}</div>
-                  <div className="text-sm text-sage">{stepContent.action.description}</div>
+                  <div className="text-sm text-sage mb-3">{stepContent.action.description}</div>
+                  <button
+                    onClick={handleTryAction}
+                    className="px-4 py-2 bg-dusty-rose text-cream rounded-full text-sm font-medium hover:bg-dusty-rose/90 transition-colors"
+                  >
+                    Try it now
+                  </button>
                 </div>
               </div>
             </div>
@@ -413,7 +452,8 @@ export function TutorialWalkthrough() {
             </button>
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </>
   )
 }
