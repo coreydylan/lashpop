@@ -285,7 +285,12 @@ export function OmniCommandPalette({
           onClose()
         }
       }}
-      onClick={onClose}
+      onClick={(e) => {
+        // Only close if clicking the backdrop itself, not children
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
     >
       <div
         className={clsx(
