@@ -32,6 +32,7 @@ import { useDamSettings } from "@/hooks/useDamSettings"
 import { useDamActions } from "@/hooks/useDamActions"
 import { useDamInitialData } from "@/hooks/useDamData"
 import { useDamTutorial } from "@/contexts/DamTutorialContext"
+import { useQueryClient } from "@tanstack/react-query"
 
 // Lazy load heavy components that aren't immediately visible
 const FileUploader = lazy(() => import("../components/FileUploader").then(mod => ({ default: mod.FileUploader })))
@@ -119,6 +120,7 @@ export default function DAMPage() {
 
   // Fetch initial data using React Query
   const { data: initialData, isLoading: isLoadingData, error: dataError, refetch: refetchInitialData } = useDamInitialData()
+  const queryClient = useQueryClient()
 
   const [allAssets, setAllAssets] = useState<Asset[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
@@ -530,8 +532,8 @@ export default function DAMPage() {
 
   const fetchAssets = useCallback(async () => {
     try {
-      // Use React Query's refetch instead of manual fetch
-      const { data } = await refetchInitialData()
+      // Use React Query's refetch with cancelRefetch to bypass stale cache
+      const { data } = await refetchInitialData({ cancelRefetch: true })
       const fetchedAssets = data?.assets || []
       setAllAssets(fetchedAssets)
       setIsLoading(false)
@@ -1117,6 +1119,10 @@ export default function DAMPage() {
         }
       }
 
+      // Invalidate React Query cache to force immediate refetch
+      queryClient.invalidateQueries({ queryKey: ['dam-initial-data'] })
+      queryClient.invalidateQueries({ queryKey: ['dam-assets'] })
+
       const updated = await fetchAssets()
       console.log('Tag removed successfully, fetched updated assets:', updated?.length)
 
@@ -1129,7 +1135,7 @@ export default function DAMPage() {
       // Re-fetch even on error to ensure UI is in sync
       await fetchAssets()
     }
-  }, [fetchAssets, selectedAssets, syncActiveLightboxAsset])
+  }, [fetchAssets, selectedAssets, syncActiveLightboxAsset, queryClient])
 
   const handleDelete = useCallback(async (assetIds: string[]) => {
     try {

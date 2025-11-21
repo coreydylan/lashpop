@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { assetTags } from "@/db/schema/asset_tags"
 import { and, inArray, eq } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 
 // Remove a specific tag from multiple assets
 export async function POST(request: NextRequest) {
@@ -28,7 +29,14 @@ export async function POST(request: NextRequest) {
         )
       )
 
-    return NextResponse.json({ success: true })
+    // Revalidate the DAM page cache
+    revalidatePath('/dam')
+
+    return NextResponse.json({ success: true }, {
+      headers: {
+        'Cache-Control': 'no-store, must-revalidate'
+      }
+    })
   } catch (error) {
     console.error("Error removing tag:", error)
     return NextResponse.json(

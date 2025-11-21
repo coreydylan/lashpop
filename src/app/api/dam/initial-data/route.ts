@@ -117,7 +117,8 @@ export async function GET() {
       teamMembers: allTeamMembers
     }, {
       headers: {
-        'Cache-Control': 's-maxage=30, stale-while-revalidate=60'
+        // Reduce cache time to 5 seconds for more immediate updates
+        'Cache-Control': 's-maxage=5, stale-while-revalidate=10'
       }
     })
   } catch (error) {
