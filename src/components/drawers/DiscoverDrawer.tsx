@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Heart, Star } from 'lucide-react';
 import DrawerContainer from './DrawerContainer';
 import { useDrawer } from './DrawerContext';
+import { usePanelStack } from '@/contexts/PanelStackContext';
+import { getAllServices } from '@/actions/services';
 
 // Beautiful sun icon from v1
 function SunIcon({ className = "w-5 h-5" }: { className?: string }) {
@@ -32,64 +34,207 @@ interface QuizStep {
 const quizSteps: QuizStep[] = [
   {
     id: 1,
-    title: "What brings you here today?",
-    subtitle: "Let's start with your lash goals",
+    title: "Have you visited Lash Pop before?",
+    subtitle: "Let us personalize your experience",
     options: [
-      { id: 'classic', label: 'Classic Elegance', description: 'Natural, one-to-one application', emoji: '✨' },
-      { id: 'volume', label: 'Soft Volume', description: 'Light and fluffy 2-6D fans', emoji: '🌸' },
-      { id: 'mega', label: 'Mega Drama', description: 'Bold 6-10D for maximum impact', emoji: '💫' },
-      { id: 'lift', label: 'Lash Lift', description: 'Enhance your natural lashes', emoji: '🌿' },
+      { id: 'returning', label: 'Yes, I have', description: 'Welcome back!' },
+      { id: 'new', label: 'First time', description: "Let's discover your perfect service" },
     ],
   },
   {
     id: 2,
-    title: "Tell us about your experience",
-    subtitle: "We'll customize your service accordingly",
+    title: "What services are you interested in?",
+    subtitle: "Select all that apply - we'll guide you through each one",
     options: [
-      { id: 'first_timer', label: "It's my first time", description: "Welcome! We'll take extra care", emoji: '🌱' },
-      { id: 'occasional', label: 'I visit occasionally', description: 'Great to see you again', emoji: '🌺' },
-      { id: 'regular', label: "I'm a regular", description: 'Welcome back, beauty', emoji: '🌹' },
-      { id: 'expert', label: 'Lash connoisseur', description: 'You know exactly what you love', emoji: '👑' },
+      { id: 'lashes', label: 'Lashes', description: 'Extensions, lifts, and tints' },
+      { id: 'brows', label: 'Brows', description: 'Shaping, tinting, and lamination' },
+      { id: 'waxing', label: 'Waxing', description: 'Professional hair removal' },
+      { id: 'permanent-makeup', label: 'Permanent Makeup', description: 'Semi-permanent beauty enhancements' },
+      { id: 'facials', label: 'Facials', description: 'Customized skincare treatments' },
+      { id: 'permanent-jewelry', label: 'Permanent Jewelry', description: 'Custom-fitted, clasp-free chains' },
+      { id: 'botox', label: 'Botox', description: 'Aesthetic injectables' },
     ],
   },
   {
     id: 3,
-    title: "Your signature style",
-    subtitle: "How do you want to feel?",
+    title: "Choose your lash style",
+    subtitle: "Each style creates a unique aesthetic",
     options: [
-      { id: 'natural', label: 'Naturally Beautiful', description: 'Effortless, barely-there enhancement', emoji: '🕊' },
-      { id: 'everyday', label: 'Everyday Confidence', description: 'Polished and put-together', emoji: '☀️' },
-      { id: 'dramatic', label: 'Bold & Beautiful', description: 'Turn heads wherever you go', emoji: '🦋' },
-      { id: 'special', label: 'Special Occasions', description: 'For those memorable moments', emoji: '✨' },
+      { id: 'classic', label: 'Classic', description: 'Natural, elegant look with one extension per natural lash' },
+      { id: 'hybrid', label: 'Hybrid', description: 'Perfect balance of Classic and Volume for texture and fullness' },
+      { id: 'volume', label: 'Volume', description: 'Dramatic, full look with multiple lightweight extensions' },
+      { id: 'wet-angel', label: 'Wet/Angel', description: 'Glossy, wispy look with textured tips for a dewy appearance' },
     ],
   },
 ];
 
 export default function DiscoverDrawer() {
-  const { setQuizResults, drawerStates, quizResults } = useDrawer();
+  const { setQuizResults, drawerStates, quizResults, toggleDrawer } = useDrawer();
+  const { actions: panelActions } = usePanelStack();
   const [currentStep, setCurrentStep] = useState(1);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [services, setServices] = useState<any[]>([]);
+
+  // Load services data
+  useEffect(() => {
+    async function loadServices() {
+      try {
+        const allServices = await getAllServices();
+        setServices(allServices);
+      } catch (error) {
+        console.error('Failed to load services:', error);
+      }
+    }
+    loadServices();
+  }, []);
 
   const handleAnswer = (questionId: string, answerId: string) => {
+    // Handle multi-select for services
+    if (currentStep === 2) {
+      setSelectedServices(prev => {
+        if (prev.includes(answerId)) {
+          return prev.filter(id => id !== answerId);
+        } else {
+          return [...prev, answerId];
+        }
+      });
+      return; // Don't auto-advance for multi-select
+    }
+
     setAnswers(prev => ({ ...prev, [questionId]: answerId }));
 
-    if (currentStep < quizSteps.length) {
+    // Handle flow logic
+    if (currentStep === 1) {
+      if (answerId === 'returning') {
+        // For returning visitors, could add a rebooking question here
+        setTimeout(() => setCurrentStep(2), 400);
+      } else {
+        setTimeout(() => setCurrentStep(2), 400);
+      }
+    } else if (currentStep === 3) {
+      // Lash style selected - complete the quiz and open panel
+      openServicePanel('lashes', answerId);
+    } else if (currentStep < quizSteps.length) {
       setTimeout(() => setCurrentStep(currentStep + 1), 400);
-    } else {
-      // Quiz complete
-      const results = {
-        serviceCategory: [answers['1'] || ''],
-        experience: answers['2'] || '',
-        style: answers['3'] || '',
-        timestamp: Date.now(),
-      };
-      setQuizResults(results);
     }
   };
 
   const resetQuiz = () => {
     setCurrentStep(1);
     setAnswers({});
+    setSelectedServices([]);
+  };
+
+  const handleContinueFromServices = () => {
+    if (selectedServices.includes('lashes')) {
+      setCurrentStep(3); // Go to lash styles
+    } else {
+      // Complete the quiz for non-lash services and open panel
+      openServicePanel(selectedServices[0], null);
+    }
+  };
+
+  const openServicePanel = (categoryId: string, lashStyle: string | null) => {
+    // Map our category IDs to the actual database category slugs
+    const categoryMapping: Record<string, string> = {
+      'lashes': 'lashes',
+      'brows': 'brows',
+      'waxing': 'waxing',
+      'permanent-makeup': 'permanent-makeup',
+      'facials': 'facials',
+      'permanent-jewelry': 'permanent-jewelry',
+      'botox': 'botox'
+    };
+
+    const mappedCategorySlug = categoryMapping[categoryId] || categoryId;
+
+    // Find services for this category
+    let categoryServices = services.filter(s =>
+      s.categorySlug === mappedCategorySlug ||
+      s.categoryName?.toLowerCase() === mappedCategorySlug
+    );
+
+    // Get category details from services
+    const categoryService = categoryServices[0];
+    const categoryName = categoryService?.categoryName || categoryId;
+    const actualCategoryId = categoryService?.categoryId || mappedCategorySlug;
+
+    // Build subcategories from services
+    const subcategoriesMap = new Map();
+    categoryServices.forEach(service => {
+      if (service.subcategorySlug && service.subcategoryName) {
+        if (!subcategoriesMap.has(service.subcategorySlug)) {
+          subcategoriesMap.set(service.subcategorySlug, {
+            id: service.subcategorySlug,
+            name: service.subcategoryName,
+            slug: service.subcategorySlug
+          });
+        }
+      }
+    });
+    const subcategories = Array.from(subcategoriesMap.values());
+
+    // If lashes and a style was chosen, filter to matching services
+    if (mappedCategorySlug === 'lashes' && lashStyle) {
+      const styleMappings: Record<string, string[]> = {
+        'classic': ['classic', 'natural', 'individual'],
+        'hybrid': ['hybrid', 'mixed', 'combination'],
+        'volume': ['volume', 'russian', 'mega', 'dramatic'],
+        'wet-angel': ['wet', 'angel', 'wispy', 'textured']
+      };
+
+      const styleKeywords = styleMappings[lashStyle] || [];
+      if (styleKeywords.length > 0) {
+        const filteredServices = categoryServices.filter(service =>
+          styleKeywords.some(keyword =>
+            service.name?.toLowerCase().includes(keyword) ||
+            service.description?.toLowerCase().includes(keyword) ||
+            service.subtitle?.toLowerCase().includes(keyword)
+          )
+        );
+
+        if (filteredServices.length > 0) {
+          categoryServices = filteredServices;
+        }
+      }
+    }
+
+    // Don't call selectCategory - that triggers CategoryPickerPanel to open its own panel
+    // Instead, directly open our filtered service panel
+
+    // Open service panel with our filtered services
+    panelActions.openPanel(
+      'service-panel',
+      {
+        categoryId: actualCategoryId,
+        categoryName: categoryName,
+        subcategories: subcategories,
+        services: categoryServices,
+        discoveryResult: {
+          selectedServices,
+          lashStyle,
+          isReturningVisitor: answers['1'] === 'returning'
+        }
+      },
+      {
+        parentId: panelActions.getPanelsByLevel(1)[0]?.id,
+        autoExpand: true,
+        scrollToTop: true
+      }
+    );
+
+    // Store results
+    const results = {
+      serviceCategory: selectedServices,
+      experience: answers['1'] || '',
+      style: lashStyle || '',
+      timestamp: Date.now(),
+    };
+    setQuizResults(results);
+
+    // Close the drawer
+    toggleDrawer('discover');
   };
 
   const currentStepData = quizSteps[currentStep - 1];
@@ -104,15 +249,12 @@ export default function DiscoverDrawer() {
         <div>
           <p className="caption text-sage">Your Style Profile</p>
           <p className="text-lg font-light text-dune">
-            {quizResults.style === 'natural' && 'Naturally Beautiful'}
-            {quizResults.style === 'everyday' && 'Everyday Confidence'}
-            {quizResults.style === 'dramatic' && 'Bold & Beautiful'}
-            {quizResults.style === 'special' && 'Special Occasions'}
-            {' • '}
-            {quizResults.serviceCategory.includes('classic') && 'Classic'}
-            {quizResults.serviceCategory.includes('volume') && 'Volume'}
-            {quizResults.serviceCategory.includes('mega') && 'Mega'}
-            {quizResults.serviceCategory.includes('lift') && 'Lift'}
+            {quizResults.style === 'classic' && 'Classic'}
+            {quizResults.style === 'hybrid' && 'Hybrid'}
+            {quizResults.style === 'volume' && 'Volume'}
+            {quizResults.style === 'wet-angel' && 'Wet/Angel'}
+            {quizResults.serviceCategory && quizResults.serviceCategory.length > 0 && ' • '}
+            {quizResults.serviceCategory && quizResults.serviceCategory.join(', ')}
           </p>
         </div>
       </div>
@@ -188,52 +330,74 @@ export default function DiscoverDrawer() {
             </div>
 
             {/* Beautiful Options Grid */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              {currentStepData.options.map((option, index) => (
-                <motion.button
-                  key={option.id}
-                  onClick={() => handleAnswer(String(currentStep), option.id)}
-                  className={`
-                    relative p-6 rounded-2xl text-left transition-all group
-                    ${answers[String(currentStep)] === option.id
-                      ? 'glass shadow-lg scale-[1.02]'
-                      : 'bg-cream/50 hover:bg-cream/80 hover:shadow-md'
-                    }
-                  `}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {/* Decorative corner */}
-                  <div className="absolute top-0 right-0 w-16 h-16 opacity-10">
-                    <div className="absolute top-2 right-2 w-12 h-12 rounded-full bg-gradient-to-br from-dusty-rose to-terracotta" />
-                  </div>
+            <div className={`grid ${currentStep === 2 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'} gap-4`}>
+              {currentStepData.options.map((option, index) => {
+                const isSelected = currentStep === 2
+                  ? selectedServices.includes(option.id)
+                  : answers[String(currentStep)] === option.id;
 
-                  <div className="relative">
-                    <div className="flex items-start gap-4">
-                      <span className="text-2xl">{option.emoji}</span>
-                      <div className="flex-1">
-                        <p className="font-light text-lg text-dune mb-1">{option.label}</p>
-                        <p className="text-sm text-dune/60">{option.description}</p>
+                return (
+                  <motion.button
+                    key={option.id}
+                    onClick={() => handleAnswer(String(currentStep), option.id)}
+                    className={`
+                      relative p-6 rounded-2xl text-left transition-all group
+                      ${isSelected
+                        ? 'glass shadow-lg scale-[1.02]'
+                        : 'bg-cream/50 hover:bg-cream/80 hover:shadow-md'
+                      }
+                    `}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {/* Decorative corner */}
+                    <div className="absolute top-0 right-0 w-16 h-16 opacity-10">
+                      <div className="absolute top-2 right-2 w-12 h-12 rounded-full bg-gradient-to-br from-dusty-rose to-terracotta" />
+                    </div>
+
+                    <div className="relative">
+                      <div className="flex items-start gap-4">
+                        {option.emoji && <span className="text-2xl">{option.emoji}</span>}
+                        <div className="flex-1">
+                          <p className="font-light text-lg text-dune mb-1">{option.label}</p>
+                          <p className="text-sm text-dune/60">{option.description}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Selection indicator */}
-                  {answers[String(currentStep)] === option.id && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute bottom-3 right-3 w-6 h-6 bg-dusty-rose rounded-full flex items-center justify-center"
-                    >
-                      <div className="w-2 h-2 bg-cream rounded-full" />
-                    </motion.div>
-                  )}
-                </motion.button>
-              ))}
+                    {/* Selection indicator */}
+                    {isSelected && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute bottom-3 right-3 w-6 h-6 bg-dusty-rose rounded-full flex items-center justify-center"
+                      >
+                        <div className="w-2 h-2 bg-cream rounded-full" />
+                      </motion.div>
+                    )}
+                  </motion.button>
+                );
+              })}
             </div>
+
+            {/* Continue button for multi-select step */}
+            {currentStep === 2 && selectedServices.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center mt-6"
+              >
+                <button
+                  onClick={handleContinueFromServices}
+                  className="px-8 py-3 rounded-full bg-dusty-rose text-cream font-light hover:bg-terracotta transition-colors"
+                >
+                  Continue
+                </button>
+              </motion.div>
+            )}
 
             {/* Navigation */}
             <div className="flex justify-between items-center mt-10">

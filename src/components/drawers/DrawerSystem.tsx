@@ -3,7 +3,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DiscoverDrawer from './DiscoverDrawer';
-import ServicesDrawerV2 from './ServicesDrawerV2';
 import { useDrawer } from './DrawerContext';
 
 interface Service {
@@ -64,7 +63,6 @@ export default function DrawerSystem({ services }: DrawerSystemProps) {
 
       {/* Drawer Components */}
       <DiscoverDrawer />
-      <ServicesDrawerV2 services={services} />
     </>
   );
 }
