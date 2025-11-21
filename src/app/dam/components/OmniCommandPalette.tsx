@@ -17,6 +17,7 @@ import {
   ChevronLeft
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
+import { useVisualViewport } from "@/hooks/useVisualViewport"
 
 export interface CommandItem {
   id: string
@@ -71,62 +72,12 @@ export function OmniCommandPalette({
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string | null>(null) // For two-level navigation
   const [isSearchActive, setIsSearchActive] = useState(false)
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const trimmedQuery = query.trim()
 
-  console.log('OmniCommandPalette render', { open, isMobile, isSearchActive, isKeyboardVisible })
+  // Use our new robust viewport hook
+  const { viewportHeight, offsetTop, isKeyboardOpen } = useVisualViewport()
 
-  // Detect keyboard visibility on mobile
-  useEffect(() => {
-    if (!isMobile || !open) return
-
-    const detectKeyboard = () => {
-      // Check if input is focused and viewport height has decreased (keyboard appeared)
-      const visualViewport = window.visualViewport
-      if (visualViewport) {
-        const keyboardHeight = window.innerHeight - visualViewport.height
-        setIsKeyboardVisible(keyboardHeight > 100) // Keyboard is visible if it takes more than 100px
-      }
-    }
-
-    // Initial check
-    detectKeyboard()
-
-    // Listen for viewport changes
-    const handleViewportChange = () => detectKeyboard()
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportChange)
-      window.visualViewport.addEventListener('scroll', handleViewportChange)
-    }
-
-    // Also listen for focus events on the input
-    const handleFocus = () => {
-      // Small delay to let keyboard animation complete
-      setTimeout(detectKeyboard, 300)
-    }
-
-    const handleBlur = () => {
-      setTimeout(() => setIsKeyboardVisible(false), 100)
-    }
-
-    const input = inputRef.current
-    if (input) {
-      input.addEventListener('focus', handleFocus)
-      input.addEventListener('blur', handleBlur)
-    }
-
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportChange)
-        window.visualViewport.removeEventListener('scroll', handleViewportChange)
-      }
-      if (input) {
-        input.removeEventListener('focus', handleFocus)
-        input.removeEventListener('blur', handleBlur)
-      }
-    }
-  }, [isMobile, open])
+  console.log('OmniCommandPalette render', { open, isMobile, isSearchActive, isKeyboardOpen, viewportHeight, offsetTop })
 
   // Wrap onClose to log when it's called
   const handleClose = useCallback(() => {
@@ -288,6 +239,31 @@ export function OmniCommandPalette({
     }
   }, [trimmedQuery, activeGroup])
 
+  // Sync search active state with keyboard
+  useEffect(() => {
+    if (isMobile && isKeyboardOpen) {
+      setIsSearchActive(true)
+    }
+  }, [isMobile, isKeyboardOpen])
+
+  // Lock body scroll when open to ensure stable viewport positioning
+  useEffect(() => {
+    if (open) {
+      // Save original styles
+      const originalStyle = window.getComputedStyle(document.body).overflow
+      const originalPaddingRight = window.getComputedStyle(document.body).paddingRight
+      
+      // Prevent scrolling
+      document.body.style.overflow = 'hidden'
+      
+      // Restore on cleanup
+      return () => {
+        document.body.style.overflow = originalStyle
+        document.body.style.paddingRight = originalPaddingRight
+      }
+    }
+  }, [open])
+
   if (!open) return null
 
   const contextLabel = contextSummary
@@ -334,15 +310,16 @@ export function OmniCommandPalette({
       <button
         key={item.id}
         disabled={item.disabled}
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation()
           if (item.disabled) return
           item.onSelect()
           handleClose()
         }}
         className={clsx(
-          "flex items-center gap-3 rounded-2xl border text-left transition shadow-sm",
-          // Ultra-compact sizing when keyboard is visible
-          isMobile && isKeyboardVisible ? "px-2 py-1.5 min-w-[120px]" :
+          "flex items-center gap-3 rounded-2xl border text-left transition shadow-sm relative overflow-hidden",
+          // Compact sizing when keyboard is visible
+          isMobile && isKeyboardOpen ? "px-3 py-2 min-w-[140px]" :
           // Mobile-optimized sizing
           isMobile ? "px-3 py-2 min-w-[140px]" : "px-4 py-2 min-w-[210px]",
           isActive ? "border-dusty-rose/60 bg-dusty-rose/10" : "border-sage/15 bg-white/90",
@@ -351,8 +328,8 @@ export function OmniCommandPalette({
       >
         {item.avatarUrl && (
           <div className={clsx(
-            "rounded-full overflow-hidden border border-cream/60 flex-shrink-0",
-            isMobile && isKeyboardVisible ? "w-5 h-5" :
+            "rounded-full overflow-hidden border border-cream/60 flex-shrink-0 flex items-center justify-center bg-warm-sand/20",
+            isMobile && isKeyboardOpen ? "w-6 h-6" :
             isMobile ? "w-6 h-6" : "w-8 h-8"
           )}>
             <img
@@ -362,15 +339,15 @@ export function OmniCommandPalette({
             />
           </div>
         )}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
           <div className={clsx(
-            "flex items-center gap-2 font-semibold text-dune",
+            "flex items-center gap-2 font-semibold text-dune w-full",
             isMobile ? "text-xs" : "text-sm"
           )}>
             <span className="truncate">{displayLabel}</span>
             {!activeCategory && item.badge && (
               <span className={clsx(
-                "uppercase tracking-widest text-sage/70 bg-sage/10 rounded-full px-2 py-0.5",
+                "uppercase tracking-widest text-sage/70 bg-sage/10 rounded-full px-2 py-0.5 flex-shrink-0 ml-auto",
                 isMobile ? "text-[9px]" : "text-[10px]"
               )}>
                 {item.badge}
@@ -378,18 +355,41 @@ export function OmniCommandPalette({
             )}
           </div>
           {item.description && (
-            <p className="text-xs text-sage/70 mt-0.5 truncate">{item.description}</p>
+            <p className="text-xs text-sage/70 mt-0.5 truncate w-full">{item.description}</p>
           )}
         </div>
       </button>
     )
   }
 
+  // Determine container style based on mode
+  const isFlipped = isMobile && isKeyboardOpen
+  const containerStyle = isFlipped
+    ? { 
+        position: 'fixed' as const,
+        top: `${offsetTop}px`,
+        left: 0,
+        width: '100%',
+        height: `${viewportHeight}px`,
+        maxHeight: `${viewportHeight}px`,
+        borderRadius: '0px',
+        // Add top padding to clear the dynamic island/status bar area when flipped
+        paddingTop: 'max(env(safe-area-inset-top), 20px)', 
+      }
+    : isMobile 
+      ? { maxHeight: '80vh' }
+      : { maxHeight: '80vh' }
+
   return (
     <div
+      data-command-palette="true"
       className={clsx(
         "fixed inset-0 z-[9999] flex bg-black/40 backdrop-blur-sm",
-        isMobile ? "items-end" : "items-start justify-center pt-16"
+        // When flipped (keyboard open), we mount to top (start)
+        // When normal (keyboard closed), we mount to bottom (end)
+        isMobile 
+          ? (isFlipped ? "items-start" : "items-end")
+          : "items-start justify-center pt-16"
       )}
       onTouchStart={(e) => {
         console.log('Backdrop onTouchStart', { target: e.target, currentTarget: e.currentTarget, isBackdrop: e.target === e.currentTarget })
@@ -409,63 +409,84 @@ export function OmniCommandPalette({
       }}
     >
       <div
+        style={isMobile ? containerStyle : undefined}
         className={clsx(
-          "bg-cream text-dune shadow-2xl border border-sage/15 flex flex-col",
+          // Updated background with slight transparency and blur for better blending
+          "bg-cream/95 backdrop-blur-xl text-dune shadow-2xl border border-sage/15 flex transition-all duration-200 ease-out",
+          // Flip layout column order when keyboard is open
+          isFlipped ? "flex-col-reverse" : "flex-col",
           isMobile
-            ? isKeyboardVisible
-              ? "w-full rounded-t-[28px] pb-safe-bottom max-h-[50vh]" // Smaller when keyboard is visible
-              : "w-full rounded-t-[28px] pb-safe-bottom max-h-[80vh]" // Larger when keyboard hidden
+            ? isFlipped
+              ? "w-full pb-0" // Full width, no bottom padding (viewport handles it)
+              : "w-full rounded-t-[28px] pb-safe-bottom"
             : "w-full max-w-2xl rounded-[32px] max-h-[80vh]"
         )}
         onTouchStart={(e) => e.stopPropagation()}
         onClick={(event) => event.stopPropagation()}
       >
         <div className={clsx(
-          "border-b border-sage/10",
-          isMobile && isKeyboardVisible ? "px-4 pt-2 pb-1.5" : // Even more compact when keyboard visible
+          // Move border to top when flipped (since this div is at the bottom)
+          // Add relative positioning for the skirt
+          "relative",
+          isFlipped ? "border-t border-sage/10 bg-cream/95" : "border-b border-sage/10",
+          isFlipped ? "px-3 py-2" : // Minimal padding when searching
           isMobile ? "px-4 pt-3 pb-2.5" : "px-5 pt-5 pb-4"
         )} onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className={clsx(
-                "flex items-center gap-2 font-semibold uppercase text-sage/70",
-                isMobile ? "text-[10px] tracking-[0.2em]" : "text-xs tracking-[0.28em]"
-              )}>
-                <Sparkles className={isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} />
-                Command
-              </div>
-              {contextLabel && !isMobile && (
-                <p className="text-sm text-dune/70 mt-1">{contextLabel}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {activeGroup && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setActiveGroup(null)
-                    setActiveCategory(null)
-                    setActiveIndex(0)
-                  }}
-                  className={clsx(
-                    "font-semibold text-dusty-rose bg-dusty-rose/10 border border-dusty-rose/20 rounded-full transition hover:bg-dusty-rose/15",
-                    isMobile ? "text-[10px] px-2 py-0.5" : "text-xs px-3 py-1"
-                  )}
-                >
-                  All
-                </button>
-              )}
-              {!isMobile && (
-                <div className="flex items-center gap-1 text-xs text-sage/80 border border-sage/30 rounded-full px-2 py-1">
-                  esc
+          
+          {/* Background skirt to cover any gaps below the search bar (e.g. keyboard overscroll) */}
+          {isFlipped && (
+            <div 
+              className="absolute top-full left-0 w-full h-[50vh] bg-cream/95 backdrop-blur-xl" 
+              style={{ pointerEvents: 'none' }}
+            />
+          )}
+          
+          {/* Hide header when keyboard is open on mobile to save space */}
+          {(!isMobile || !isKeyboardOpen) && (
+            <div className="flex items-center justify-between mb-2.5">
+              <div>
+                <div className={clsx(
+                  "flex items-center gap-2 font-semibold uppercase text-sage/70",
+                  isMobile ? "text-[10px] tracking-[0.2em]" : "text-xs tracking-[0.28em]"
+                )}>
+                  <Sparkles className={isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} />
+                  Command
                 </div>
-              )}
+                {contextLabel && !isMobile && (
+                  <p className="text-sm text-dune/70 mt-1">{contextLabel}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {activeGroup && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setActiveGroup(null)
+                      setActiveCategory(null)
+                      setActiveIndex(0)
+                    }}
+                    className={clsx(
+                      "font-semibold text-dusty-rose bg-dusty-rose/10 border border-dusty-rose/20 rounded-full transition hover:bg-dusty-rose/15",
+                      isMobile ? "text-[10px] px-2 py-0.5" : "text-xs px-3 py-1"
+                    )}
+                  >
+                    All
+                  </button>
+                )}
+                {!isMobile && (
+                  <div className="flex items-center gap-1 text-xs text-sage/80 border border-sage/30 rounded-full px-2 py-1">
+                    esc
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
           <div
             className={clsx(
               "flex items-center gap-3 rounded-[20px] border bg-cream/80 shadow-inner transition-all",
-              isMobile && isKeyboardVisible ? "mt-1.5" : // Less margin when keyboard visible
+              // Remove margin when keyboard is open (flipped mode)
+              isFlipped ? "mt-0" : 
               isMobile ? "mt-2.5" : "mt-4",
               isMobile && !isSearchActive
                 ? "border-sage/20 cursor-pointer hover:border-sage/30"
@@ -483,6 +504,8 @@ export function OmniCommandPalette({
           >
             <div className={clsx(
               "flex items-center gap-3 flex-1",
+              // Tighter padding when keyboard is open
+              isFlipped ? "px-3 py-2" : 
               isMobile ? "px-3 py-2" : "px-4 py-2.5"
             )}>
               <Search className={clsx(
@@ -522,7 +545,8 @@ export function OmniCommandPalette({
                   e.stopPropagation()
                   inputRef.current?.blur()
                   setIsSearchActive(false)
-                  onQueryChange("")
+                  // Optional: don't clear query if they just want to close keyboard
+                  // onQueryChange("") 
                 }}
                 className="px-4 py-2.5 text-sm font-semibold text-dusty-rose hover:text-dusty-rose/80 transition-colors flex-shrink-0"
               >
@@ -539,11 +563,11 @@ export function OmniCommandPalette({
         </div>
 
         <div className={clsx(
-          "flex-1 overflow-y-auto px-1",
+          "flex-1 overflow-y-auto px-1 scrollbar-hide",
           // Minimal padding when keyboard is visible to maximize content area
-          isMobile && isKeyboardVisible ? "py-0.5" :
+          isFlipped ? "py-1" :
           // Reduce padding even more when searching on mobile to minimize gap
-          isMobile && trimmedQuery ? "py-0.5" : isMobile ? "py-1.5" : "py-3"
+          isMobile && trimmedQuery ? "py-1" : isMobile ? "py-1.5" : "py-3"
         )}>
           {mode === 'card-settings' ? (
             <div className="px-4 space-y-3">
@@ -577,7 +601,7 @@ export function OmniCommandPalette({
                     key="team"
                     onClick={() => {
                       if (!onVisibleCardTagsChange) return
-
+                      
                       if (visibleCardTags.length === 0) {
                         // Was showing all, now hide team by showing all categories except team
                         const allCategoryIds = tagCategories
@@ -592,7 +616,7 @@ export function OmniCommandPalette({
                           .filter(cat => cat.isCollection !== true && cat.isRating !== true)
                           .map(cat => cat.id)
                         const allPossibleIds = ['team', ...allCategoryIds]
-                        if (newVisible.length === allPossibleIds.length - 1 &&
+                        if (newVisible.length === allPossibleIds.length - 1 && 
                             allPossibleIds.every(id => id === 'team' || newVisible.includes(id))) {
                           onVisibleCardTagsChange([]) // Reset to show all
                         } else {
@@ -605,9 +629,9 @@ export function OmniCommandPalette({
                     }}
                     className="w-full flex items-center gap-3 rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left transition hover:border-dusty-rose/40 hover:shadow-sm"
                   >
-                    <div
+                    <div 
                       className="flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition"
-                      style={{
+                      style={{ 
                         borderColor: isVisible ? '#C4A587' : '#E5E0D8',
                         backgroundColor: isVisible ? '#C4A587' : 'transparent'
                       }}
@@ -654,7 +678,7 @@ export function OmniCommandPalette({
                             .filter(cat => cat.isCollection !== true && cat.isRating !== true)
                             .map(cat => cat.id)
                           const allPossibleIds = ['team', ...allCategoryIds]
-                          if (newVisible.length === allPossibleIds.length - 1 &&
+                          if (newVisible.length === allPossibleIds.length - 1 && 
                               allPossibleIds.every(id => id === category.id || newVisible.includes(id))) {
                             onVisibleCardTagsChange([])
                           } else {
@@ -667,9 +691,9 @@ export function OmniCommandPalette({
                       }}
                       className="w-full flex items-center gap-3 rounded-2xl border border-sage/20 bg-white/70 px-4 py-3 text-left transition hover:border-dusty-rose/40 hover:shadow-sm"
                     >
-                      <div
+                      <div 
                         className="flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition"
-                        style={{
+                        style={{ 
                           borderColor: isVisible ? (category.color || '#A19781') : '#E5E0D8',
                           backgroundColor: isVisible ? (category.color || '#A19781') : 'transparent'
                         }}
@@ -706,25 +730,26 @@ export function OmniCommandPalette({
                 return (
                   <button
                     key={groupName}
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       setActiveGroup(groupName)
                       setActiveIndex(0)
                     }}
                     className={clsx(
-                      "flex items-center justify-between rounded-3xl border border-sage/20 bg-white/70 text-left shadow-sm transition hover:border-dusty-rose/40 hover:shadow active:scale-[0.98]",
+                      "flex items-center justify-between rounded-3xl border border-sage/20 bg-white/70 text-left shadow-sm transition hover:border-dusty-rose/40 hover:shadow active:scale-[0.98] w-full",
                       isMobile ? "px-5 py-5" : "px-5 py-4"
                     )}
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 text-sm font-semibold text-dune">
-                        <Icon className="w-4 h-4 text-dusty-rose" />
-                        {groupName}
+                        <Icon className="w-4 h-4 text-dusty-rose flex-shrink-0" />
+                        <span className="truncate">{groupName}</span>
                       </div>
-                      <p className="text-xs text-sage/70 mt-1">
+                      <p className="text-xs text-sage/70 mt-1 truncate">
                         {meta.description}
                       </p>
                     </div>
-                    <div className="text-xs font-bold text-sage/70 bg-sage/10 rounded-full px-2 py-0.5">
+                    <div className="text-xs font-bold text-sage/70 bg-sage/10 rounded-full px-2 py-0.5 ml-3 flex-shrink-0">
                       {groupItems.length}
                     </div>
                   </button>
@@ -745,19 +770,20 @@ export function OmniCommandPalette({
                 // Show category selection for this group
                 return (
                   <div className="px-4 pb-4">
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-3 mb-3 pl-1">
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation()
                           setActiveGroup(null)
                           setActiveCategory(null)
                         }}
-                        className="p-1 hover:bg-sage/10 rounded-full transition"
+                        className="p-1.5 -ml-1.5 hover:bg-sage/10 rounded-full transition flex items-center justify-center"
                       >
-                        <ChevronLeft className="w-4 h-4 text-sage" />
+                        <ChevronLeft className="w-5 h-5 text-sage" />
                       </button>
                       <div>
-                        <p className="text-sm font-semibold text-dune">{activeGroup}</p>
-                        <p className="text-xs text-sage/70">Select category</p>
+                        <p className="text-sm font-semibold text-dune leading-tight">{activeGroup}</p>
+                        <p className="text-xs text-sage/70 leading-tight">Select category</p>
                       </div>
                     </div>
                     {isMobile ? (
@@ -770,12 +796,12 @@ export function OmniCommandPalette({
                               onClick={() => setActiveCategory(category)}
                               className={clsx(
                                 "flex-shrink-0 rounded-2xl border border-sage/20 bg-white/70 hover:border-dusty-rose/40 transition",
-                                isKeyboardVisible ? "px-3 py-1.5" : "px-4 py-2.5"
+                                isKeyboardOpen ? "px-3 py-1.5" : "px-4 py-2.5"
                               )}
                             >
                               <span className={clsx(
                                 "font-medium text-dune whitespace-nowrap",
-                                isKeyboardVisible ? "text-xs" : "text-sm"
+                                isKeyboardOpen ? "text-xs" : "text-sm"
                               )}>{category}</span>
                               <span className="text-xs text-sage/60 ml-2">
                                 {filteredItems.filter(item => {
@@ -825,16 +851,19 @@ export function OmniCommandPalette({
               if (activeGroup && activeCategory) {
                 return (
                   <div className="px-4 pb-4">
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-3 mb-3 pl-1">
                       <button
-                        onClick={() => setActiveCategory(null)}
-                        className="p-1 hover:bg-sage/10 rounded-full transition"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveCategory(null)
+                        }}
+                        className="p-1.5 -ml-1.5 hover:bg-sage/10 rounded-full transition flex items-center justify-center"
                       >
-                        <ChevronLeft className="w-4 h-4 text-sage" />
+                        <ChevronLeft className="w-5 h-5 text-sage" />
                       </button>
                       <div>
-                        <p className="text-sm font-semibold text-dune">{activeGroup} › {activeCategory}</p>
-                        <p className="text-xs text-sage/70">Select option</p>
+                        <p className="text-sm font-semibold text-dune leading-tight">{activeGroup} › {activeCategory}</p>
+                        <p className="text-xs text-sage/70 leading-tight">Select option</p>
                       </div>
                     </div>
                     <div className={clsx(
@@ -854,18 +883,18 @@ export function OmniCommandPalette({
                   return (
                     <div key={groupName} className={clsx(
                       "px-4",
-                      isMobile && isKeyboardVisible ? "pb-1" :
+                      isMobile && isKeyboardOpen ? "pb-1" :
                       isMobile ? "pb-2" : "pb-4"
                     )}>
                       <div className={clsx(
-                        isMobile && isKeyboardVisible ? "mb-1" :
+                        isMobile && isKeyboardOpen ? "mb-1" :
                         isMobile ? "mb-1.5" : "mb-2"
                       )}>
                         <p className="text-xs font-semibold text-sage/70 uppercase tracking-wider">{groupName}</p>
                       </div>
                       <div className={clsx(
                         "flex flex-wrap",
-                        isMobile && isKeyboardVisible ? "gap-1" :
+                        isMobile && isKeyboardOpen ? "gap-1" :
                         isMobile ? "gap-1.5" : "gap-2"
                       )}>
                         {groupItems.map(renderActionButton)}

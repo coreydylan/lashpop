@@ -219,6 +219,7 @@ export default function DAMPage() {
     context: string
   } | null>(null)
   const [dissipatingTags, setDissipatingTags] = useState<Set<string>>(new Set())
+  const [appearingTags, setAppearingTags] = useState<Set<string>>(new Set())
 
   // Upload panel state
   const [isUploadOpen, setIsUploadOpen] = useState(false)
@@ -805,6 +806,50 @@ export default function DAMPage() {
 
     try {
       setSingleTagDrafts(normalized)
+      
+      // Add appearing animation for single asset tags
+      const newAppearingTags = new Set(appearingTags)
+      normalized.forEach(tag => {
+        newAppearingTags.add(`${activeLightboxAsset.id}-${tag.id}`)
+      })
+      setAppearingTags(newAppearingTags)
+
+      // Clear appearing animation after delay
+      setTimeout(() => {
+        setAppearingTags(prev => {
+          const next = new Set(prev)
+          normalized.forEach(tag => {
+            next.delete(`${activeLightboxAsset.id}-${tag.id}`)
+          })
+          return next
+        })
+      }, 1000)
+
+      // OPTIMISTIC UPDATE for Single Asset
+      setAllAssets(currentAssets => {
+        return currentAssets.map(asset => {
+          if (asset.id === activeLightboxAsset.id) {
+            const updatedAsset = { ...asset }
+            
+            // Handle Team Member
+            const teamTag = normalized.find((t: any) => t.category?.name === "team")
+            if (teamTag) {
+              updatedAsset.teamMemberId = teamTag.id
+            }
+
+            // Handle Regular Tags
+            const newRegularTags = normalized.filter((t: any) => t.category?.name !== "team")
+            if (newRegularTags.length > 0) {
+               const existingTags = updatedAsset.tags || []
+               const toAdd = newRegularTags.filter((nt: any) => !existingTags.some(et => et.id === nt.id))
+               updatedAsset.tags = [...existingTags, ...toAdd]
+            }
+            return updatedAsset
+          }
+          return asset
+        })
+      })
+
       await applyTagsToAssetIds([activeLightboxAsset.id], normalized)
       setSingleTagDrafts([])
       const updated = await fetchAssets()
@@ -812,8 +857,9 @@ export default function DAMPage() {
     } catch (error) {
       console.error("Failed to add tags:", error)
       setSingleTagDrafts([])
+      await fetchAssets() // Revert on error
     }
-  }, [activeLightboxAsset, applyTagsToAssetIds, fetchAssets, normalizeExclusiveTags, syncActiveLightboxAsset])
+  }, [activeLightboxAsset, applyTagsToAssetIds, fetchAssets, normalizeExclusiveTags, syncActiveLightboxAsset, appearingTags])
 
 
   const clearSelection = useCallback(() => {
@@ -892,14 +938,59 @@ export default function DAMPage() {
   const handleApplyTags = useCallback(async () => {
     if (omniTags.length === 0 || selectedAssets.length === 0) return
 
+    // Add appearing animation for queued tags
+    const newAppearingTags = new Set(appearingTags)
+    omniTags.forEach(tag => {
+      selectedAssets.forEach(assetId => {
+        newAppearingTags.add(`${assetId}-${tag.id}`)
+      })
+    })
+    setAppearingTags(newAppearingTags)
+
+    setTimeout(() => {
+      setAppearingTags(prev => {
+        const next = new Set(prev)
+        omniTags.forEach(tag => {
+          selectedAssets.forEach(assetId => {
+            next.delete(`${assetId}-${tag.id}`)
+          })
+        })
+        return next
+      })
+    }, 1000)
+
+    // OPTIMISTIC UPDATE for Queued Tags
+    setAllAssets(currentAssets => {
+      return currentAssets.map(asset => {
+        if (selectedAssets.includes(asset.id)) {
+          const updatedAsset = { ...asset }
+          
+          const teamTag = omniTags.find((t: any) => t.category?.name === "team")
+          if (teamTag) {
+            updatedAsset.teamMemberId = teamTag.id
+          }
+
+          const newRegularTags = omniTags.filter((t: any) => t.category?.name !== "team")
+          if (newRegularTags.length > 0) {
+             const existingTags = updatedAsset.tags || []
+             const toAdd = newRegularTags.filter((nt: any) => !existingTags.some(et => et.id === nt.id))
+             updatedAsset.tags = [...existingTags, ...toAdd]
+          }
+          return updatedAsset
+        }
+        return asset
+      })
+    })
+
     try {
       await applyTagsToAssetIds(selectedAssets, omniTags)
       await fetchAssets()
       clearSelection()
     } catch (error) {
       console.error("Failed to save tags:", error)
+      await fetchAssets() // Revert
     }
-  }, [applyTagsToAssetIds, clearSelection, fetchAssets, omniTags, selectedAssets])
+  }, [applyTagsToAssetIds, clearSelection, fetchAssets, omniTags, selectedAssets, appearingTags])
 
   const handleMultiTagSelectorChange = useCallback(async (tags: any[]) => {
     const normalized = normalizeExclusiveTags(tags)
@@ -917,17 +1008,71 @@ export default function DAMPage() {
 
     if (newlyAdded.length === 0) return
 
+    // Add appearing animation for new tags
+    const newAppearingTags = new Set(appearingTags)
+    newlyAdded.forEach(tag => {
+      selectedAssets.forEach(assetId => {
+        newAppearingTags.add(`${assetId}-${tag.id}`)
+      })
+    })
+    setAppearingTags(newAppearingTags)
+
+    // Clear appearing animation after delay
+    setTimeout(() => {
+      setAppearingTags(prev => {
+        const next = new Set(prev)
+        newlyAdded.forEach(tag => {
+          selectedAssets.forEach(assetId => {
+            next.delete(`${assetId}-${tag.id}`)
+          })
+        })
+        return next
+      })
+    }, 1000)
+
+    // OPTIMISTIC UPDATE: Immediately add tags to assets in state
+    setAllAssets(currentAssets => {
+      return currentAssets.map(asset => {
+        if (selectedAssets.includes(asset.id)) {
+          const updatedAsset = { ...asset }
+          
+          // Handle Team Member
+          const teamTag = newlyAdded.find((t: any) => t.category?.name === "team")
+          if (teamTag) {
+            updatedAsset.teamMemberId = teamTag.id
+          }
+
+          // Handle Regular Tags
+          const newRegularTags = newlyAdded.filter((t: any) => t.category?.name !== "team")
+          if (newRegularTags.length > 0) {
+             const existingTags = updatedAsset.tags || []
+             // Filter out duplicates
+             const toAdd = newRegularTags.filter((nt: any) => !existingTags.some(et => et.id === nt.id))
+             
+             // Map to correct structure if needed (Asset tags vs Tag object)
+             // The tag object from selector should be compatible
+             updatedAsset.tags = [...existingTags, ...toAdd]
+          }
+          return updatedAsset
+        }
+        return asset
+      })
+    })
+
     // Apply tags to assets in background, but keep UI showing the tags
     try {
       await applyTagsToAssetIds(selectedAssets, newlyAdded)
+      // We still fetch to ensure consistency, but UI is already updated
       await fetchAssets()
       // Don't clear omniTags here - let user manage them
     } catch (error) {
       console.error("Failed to add tags instantly:", error)
-      // On error, remove the failed tags from UI
+      // On error, might want to revert, but for now just log
+      // A re-fetch would correct it anyway
+      await fetchAssets()
       setOmniTags(omniTags)
     }
-  }, [applyTagsToAssetIds, computeExistingTags, fetchAssets, normalizeExclusiveTags, omniTags, selectedAssets])
+  }, [applyTagsToAssetIds, computeExistingTags, fetchAssets, normalizeExclusiveTags, omniTags, selectedAssets, appearingTags])
 
   const handleRemoveTag = useCallback(async (tagId: string, count: number, targetAssetIds?: string[], skipPrompt = false) => {
     const isTeamMemberTag = tagId.startsWith('team-')
@@ -1349,6 +1494,45 @@ export default function DAMPage() {
         description: activeFilters.length > 0 ? `Remove ${activeFilters.length} active filter${activeFilters.length === 1 ? '' : 's'}` : "No filters applied",
         disabled: activeFilters.length === 0,
         onSelect: handleClearFilters
+      })
+
+      // ========================================
+      // TAGGING CATEGORY (Disabled - Visibility Only)
+      // ========================================
+      // Reuse sortedCategories from above
+      sortedCategories.forEach((category) => {
+        const sortedTags = [...(category.tags || [])].sort((a: any, b: any) =>
+          a.displayName.localeCompare(b.displayName)
+        )
+
+        sortedTags.forEach((tag: any) => {
+          items.push({
+            id: `assign-disabled-${category.id}-${tag.id}`,
+            group: "Tagging",
+            label: `${category.displayName} › ${tag.displayName}`,
+            description: "Select assets first to apply tags",
+            badge: category.displayName,
+            disabled: true,
+            onSelect: () => {} // No-op
+          })
+        })
+      })
+
+      // ========================================
+      // TEAM CATEGORY (Disabled - Visibility Only)
+      // ========================================
+      // Reuse sortedTeamMembers from above
+      sortedTeamMembers.forEach((member) => {
+        items.push({
+          id: `assign-team-disabled-${member.id}`,
+          group: "Team",
+          label: member.name,
+          description: "Select assets first to assign team member",
+          badge: "Team",
+          avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
+          disabled: true,
+          onSelect: () => {} // No-op
+        })
       })
     }
 
@@ -2026,6 +2210,7 @@ export default function DAMPage() {
               visibleCardTags={visibleCardTags}
               pendingTagRemoval={pendingTagRemoval}
               dissipatingTags={dissipatingTags}
+              appearingTags={appearingTags}
               mobileChipBar={undefined} // Commented out InlineChipBar - filters now in OmniBar mobile layout
               chipBarInsertIndex={chipBarInsertIndex}
             />

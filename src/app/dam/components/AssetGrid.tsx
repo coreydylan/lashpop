@@ -36,6 +36,7 @@ interface TeamMember {
     x: number
     y: number
     scale: number
+    39: number
   } | null
   cropCloseUpCircleUrl?: string | null
 }
@@ -55,6 +56,7 @@ interface AssetGridProps {
     context: string
   } | null
   dissipatingTags?: Set<string>
+  appearingTags?: Set<string>
   mobileChipBar?: ReactElement
   chipBarInsertIndex?: number | null
 }
@@ -75,6 +77,7 @@ export function AssetGrid({
   visibleCardTags = [],
   pendingTagRemoval = null,
   dissipatingTags = new Set(),
+  appearingTags = new Set(),
   mobileChipBar,
   chipBarInsertIndex
 }: AssetGridProps) {
@@ -741,6 +744,7 @@ export function AssetGrid({
                   groupByCategories={groupByCategories}
                   pendingTagRemoval={pendingTagRemoval}
                   dissipatingTags={dissipatingTags}
+                  appearingTags={appearingTags}
                   onRef={(el) => {
                     if (el) assetRefs.current.set(asset.id, el)
                     else assetRefs.current.delete(asset.id)
@@ -863,6 +867,7 @@ export function AssetGrid({
                 groupByCategories={groupByCategories}
                 pendingTagRemoval={pendingTagRemoval}
                 dissipatingTags={dissipatingTags}
+                appearingTags={appearingTags}
                 onRef={(el) => {
                   if (el) assetRefs.current.set(asset.id, el)
                   else assetRefs.current.delete(asset.id)
@@ -908,6 +913,7 @@ interface AssetCardProps {
     context: string
   } | null
   dissipatingTags?: Set<string>
+  appearingTags?: Set<string>
 }
 
 function AssetCard({
@@ -927,7 +933,8 @@ function AssetCard({
   groupByCategories = [],
   onRef,
   pendingTagRemoval = null,
-  dissipatingTags = new Set()
+  dissipatingTags = new Set(),
+  appearingTags = new Set()
 }: AssetCardProps) {
   const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [imageLoaded, setImageLoaded] = useState(false)
@@ -1230,12 +1237,15 @@ function AssetCard({
                   pendingTagRemoval.tagId === teamTagId &&
                   pendingTagRemoval.assetIds.includes(asset.id)
                 const isDissipating = dissipatingTags.has(teamTagId)
+                const isAppearing = appearingTags.has(`${asset.id}-${teamTagId}`)
 
                 return (
                   <span
                     className={`px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden ${
                       isPending ? 'candy-cane-effect' : ''
-                    } ${isDissipating ? 'dissipate-effect' : ''}`}
+                    } ${isDissipating ? 'dissipate-effect' : ''} ${
+                      isAppearing ? 'appear-effect' : ''
+                    }`}
                     style={{
                       background: 'linear-gradient(135deg, #C4A587 0%, #C4A587CC 100%)'
                     }}
@@ -1251,13 +1261,16 @@ function AssetCard({
                   pendingTagRemoval.tagId === tag.id &&
                   pendingTagRemoval.assetIds.includes(asset.id)
                 const isDissipating = dissipatingTags.has(tag.id)
+                const isAppearing = appearingTags.has(`${asset.id}-${tag.id}`)
 
                 return (
                   <span
                     key={tag.id}
                     className={`px-2 py-0.5 backdrop-blur-sm text-cream text-[10px] rounded-full font-medium shadow-sm overflow-hidden ${
                       isPending ? 'candy-cane-effect' : ''
-                    } ${isDissipating ? 'dissipate-effect' : ''}`}
+                    } ${isDissipating ? 'dissipate-effect' : ''} ${
+                      isAppearing ? 'appear-effect' : ''
+                    }`}
                     style={{
                       background: `linear-gradient(135deg, ${tag.category.color || "#8A7C69"} 0%, ${tag.category.color || "#8A7C69"}CC 100%)`
                     }}

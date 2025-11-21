@@ -394,11 +394,19 @@ export function OmniChip({
           }
         }}
         onMouseLeave={() => !isMobile && scheduleClose()}
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation() // Prevent propagation to parent elements
           if (onClick) {
             onClick()
           } else if (isMobile && hasActions && variant !== "stack") {
+            // On mobile, toggle dropdown on click
             setShowDropdown(!showDropdown)
+          } else if (onRemove && !isMobile && !hasActions) {
+             // If only remove action and desktop, just execute it
+             onRemove()
+          } else if (!isMobile && hasActions && variant !== "stack") {
+             // On desktop click, also ensure dropdown is shown/toggled
+             setShowDropdown(true)
           }
         }}
       >
