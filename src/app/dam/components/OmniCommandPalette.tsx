@@ -71,9 +71,62 @@ export function OmniCommandPalette({
   const [activeGroup, setActiveGroup] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string | null>(null) // For two-level navigation
   const [isSearchActive, setIsSearchActive] = useState(false)
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const trimmedQuery = query.trim()
 
-  console.log('OmniCommandPalette render', { open, isMobile, isSearchActive })
+  console.log('OmniCommandPalette render', { open, isMobile, isSearchActive, isKeyboardVisible })
+
+  // Detect keyboard visibility on mobile
+  useEffect(() => {
+    if (!isMobile || !open) return
+
+    const detectKeyboard = () => {
+      // Check if input is focused and viewport height has decreased (keyboard appeared)
+      const visualViewport = window.visualViewport
+      if (visualViewport) {
+        const keyboardHeight = window.innerHeight - visualViewport.height
+        setIsKeyboardVisible(keyboardHeight > 100) // Keyboard is visible if it takes more than 100px
+      }
+    }
+
+    // Initial check
+    detectKeyboard()
+
+    // Listen for viewport changes
+    const handleViewportChange = () => detectKeyboard()
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange)
+      window.visualViewport.addEventListener('scroll', handleViewportChange)
+    }
+
+    // Also listen for focus events on the input
+    const handleFocus = () => {
+      // Small delay to let keyboard animation complete
+      setTimeout(detectKeyboard, 300)
+    }
+
+    const handleBlur = () => {
+      setTimeout(() => setIsKeyboardVisible(false), 100)
+    }
+
+    const input = inputRef.current
+    if (input) {
+      input.addEventListener('focus', handleFocus)
+      input.addEventListener('blur', handleBlur)
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange)
+        window.visualViewport.removeEventListener('scroll', handleViewportChange)
+      }
+      if (input) {
+        input.removeEventListener('focus', handleFocus)
+        input.removeEventListener('blur', handleBlur)
+      }
+    }
+  }, [isMobile, open])
 
   // Wrap onClose to log when it's called
   const handleClose = useCallback(() => {
@@ -288,6 +341,8 @@ export function OmniCommandPalette({
         }}
         className={clsx(
           "flex items-center gap-3 rounded-2xl border text-left transition shadow-sm",
+          // Ultra-compact sizing when keyboard is visible
+          isMobile && isKeyboardVisible ? "px-2 py-1.5 min-w-[120px]" :
           // Mobile-optimized sizing
           isMobile ? "px-3 py-2 min-w-[140px]" : "px-4 py-2 min-w-[210px]",
           isActive ? "border-dusty-rose/60 bg-dusty-rose/10" : "border-sage/15 bg-white/90",
@@ -297,6 +352,7 @@ export function OmniCommandPalette({
         {item.avatarUrl && (
           <div className={clsx(
             "rounded-full overflow-hidden border border-cream/60 flex-shrink-0",
+            isMobile && isKeyboardVisible ? "w-5 h-5" :
             isMobile ? "w-6 h-6" : "w-8 h-8"
           )}>
             <img
@@ -356,7 +412,9 @@ export function OmniCommandPalette({
         className={clsx(
           "bg-cream text-dune shadow-2xl border border-sage/15 flex flex-col",
           isMobile
-            ? "w-full rounded-t-[28px] pb-safe-bottom max-h-[80vh]"
+            ? isKeyboardVisible
+              ? "w-full rounded-t-[28px] pb-safe-bottom max-h-[50vh]" // Smaller when keyboard is visible
+              : "w-full rounded-t-[28px] pb-safe-bottom max-h-[80vh]" // Larger when keyboard hidden
             : "w-full max-w-2xl rounded-[32px] max-h-[80vh]"
         )}
         onTouchStart={(e) => e.stopPropagation()}
@@ -364,6 +422,7 @@ export function OmniCommandPalette({
       >
         <div className={clsx(
           "border-b border-sage/10",
+          isMobile && isKeyboardVisible ? "px-4 pt-2 pb-1.5" : // Even more compact when keyboard visible
           isMobile ? "px-4 pt-3 pb-2.5" : "px-5 pt-5 pb-4"
         )} onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between">
@@ -406,6 +465,7 @@ export function OmniCommandPalette({
           <div
             className={clsx(
               "flex items-center gap-3 rounded-[20px] border bg-cream/80 shadow-inner transition-all",
+              isMobile && isKeyboardVisible ? "mt-1.5" : // Less margin when keyboard visible
               isMobile ? "mt-2.5" : "mt-4",
               isMobile && !isSearchActive
                 ? "border-sage/20 cursor-pointer hover:border-sage/30"
@@ -480,6 +540,8 @@ export function OmniCommandPalette({
 
         <div className={clsx(
           "flex-1 overflow-y-auto px-1",
+          // Minimal padding when keyboard is visible to maximize content area
+          isMobile && isKeyboardVisible ? "py-0.5" :
           // Reduce padding even more when searching on mobile to minimize gap
           isMobile && trimmedQuery ? "py-0.5" : isMobile ? "py-1.5" : "py-3"
         )}>
@@ -706,9 +768,15 @@ export function OmniCommandPalette({
                             <button
                               key={category}
                               onClick={() => setActiveCategory(category)}
-                              className="flex-shrink-0 rounded-2xl border border-sage/20 bg-white/70 px-4 py-2.5 hover:border-dusty-rose/40 transition"
+                              className={clsx(
+                                "flex-shrink-0 rounded-2xl border border-sage/20 bg-white/70 hover:border-dusty-rose/40 transition",
+                                isKeyboardVisible ? "px-3 py-1.5" : "px-4 py-2.5"
+                              )}
                             >
-                              <span className="text-sm font-medium text-dune whitespace-nowrap">{category}</span>
+                              <span className={clsx(
+                                "font-medium text-dune whitespace-nowrap",
+                                isKeyboardVisible ? "text-xs" : "text-sm"
+                              )}>{category}</span>
                               <span className="text-xs text-sage/60 ml-2">
                                 {filteredItems.filter(item => {
                                   if (item.group !== activeGroup) return false
@@ -786,15 +854,18 @@ export function OmniCommandPalette({
                   return (
                     <div key={groupName} className={clsx(
                       "px-4",
+                      isMobile && isKeyboardVisible ? "pb-1" :
                       isMobile ? "pb-2" : "pb-4"
                     )}>
                       <div className={clsx(
+                        isMobile && isKeyboardVisible ? "mb-1" :
                         isMobile ? "mb-1.5" : "mb-2"
                       )}>
                         <p className="text-xs font-semibold text-sage/70 uppercase tracking-wider">{groupName}</p>
                       </div>
                       <div className={clsx(
                         "flex flex-wrap",
+                        isMobile && isKeyboardVisible ? "gap-1" :
                         isMobile ? "gap-1.5" : "gap-2"
                       )}>
                         {groupItems.map(renderActionButton)}
