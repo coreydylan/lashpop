@@ -129,10 +129,10 @@ export default function DAMPage() {
 
   // Get from settings hook instead of useState
   const activeFilters = settings.activeFilters
-  const setActiveFilters = (filters: ActiveFilter[]) => {
+  const setActiveFilters = useCallback((filters: ActiveFilter[]) => {
     updateActiveFilters(filters)
     logFilterChange({ filters })
-  }
+  }, [updateActiveFilters, logFilterChange])
   const activeFiltersRef = useRef<ActiveFilter[]>([])
 
   const [uploadingAssetIds, setUploadingAssetIds] = useState<string[]>([])
@@ -202,10 +202,10 @@ export default function DAMPage() {
 
   // Grid view state from settings
   const gridViewMode = settings.gridViewMode
-  const setGridViewMode = (mode: "square" | "aspect" | "masonry") => {
+  const setGridViewMode = useCallback((mode: "square" | "aspect" | "masonry") => {
     updateGridViewMode(mode)
     logViewChange({ viewMode: mode })
-  }
+  }, [updateGridViewMode, logViewChange])
   const [activeLightboxAsset, setActiveLightboxAsset] = useState<Asset | null>(null)
   const [activeLightboxIndex, setActiveLightboxIndex] = useState(-1)
   const [isLightboxVisible, setIsLightboxVisible] = useState(false)
@@ -229,10 +229,10 @@ export default function DAMPage() {
 
   // Group by settings from hook
   const groupByTags = settings.groupByCategories
-  const setGroupByTags = (categories: string[]) => {
+  const setGroupByTags = useCallback((categories: string[]) => {
     updateGroupByCategories(categories)
     logGroupChange({ groupBy: categories })
-  }
+  }, [updateGroupByCategories, logGroupChange])
 
   const [isCommandOpen, setIsCommandOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState("")

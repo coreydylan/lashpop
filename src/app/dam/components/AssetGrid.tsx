@@ -36,7 +36,6 @@ interface TeamMember {
     x: number
     y: number
     scale: number
-    39: number
   } | null
   cropCloseUpCircleUrl?: string | null
 }
