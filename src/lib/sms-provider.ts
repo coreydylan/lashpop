@@ -10,15 +10,26 @@ import twilio from 'twilio'
 let twilioClient: ReturnType<typeof twilio> | null = null
 
 function getTwilioClient() {
+  console.log('[SMS-PROVIDER] getTwilioClient called, existing client:', !!twilioClient)
+
   if (!twilioClient) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID
     const authToken = process.env.TWILIO_AUTH_TOKEN
 
+    console.log('[SMS-PROVIDER] Account SID:', accountSid?.substring(0, 10) + '...')
+    console.log('[SMS-PROVIDER] Auth Token exists:', !!authToken)
+    console.log('[SMS-PROVIDER] Auth Token length:', authToken?.length)
+
     if (!accountSid || !authToken) {
+      console.error('[SMS-PROVIDER] ERROR: Missing Twilio credentials')
+      console.error('[SMS-PROVIDER] Account SID present:', !!accountSid)
+      console.error('[SMS-PROVIDER] Auth Token present:', !!authToken)
       throw new Error('Twilio credentials not configured. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN.')
     }
 
+    console.log('[SMS-PROVIDER] Creating new Twilio client...')
     twilioClient = twilio(accountSid, authToken)
+    console.log('[SMS-PROVIDER] Twilio client created successfully')
   }
 
   return twilioClient
@@ -58,14 +69,24 @@ export async function sendSMS({ to, message }: SendSMSParams): Promise<void> {
  * Send OTP code via Twilio Verify API
  */
 export async function sendOTPCode(phoneNumber: string): Promise<void> {
+  console.log('[SMS-PROVIDER] sendOTPCode called for:', phoneNumber)
+
   const client = getTwilioClient()
+  console.log('[SMS-PROVIDER] Twilio client initialized')
+
   const verifySid = process.env.TWILIO_VERIFY_SERVICE_SID
+  console.log('[SMS-PROVIDER] Verify Service SID:', verifySid)
 
   if (!verifySid) {
+    console.error('[SMS-PROVIDER] ERROR: Verify Service SID not configured')
     throw new Error('Twilio Verify Service SID not configured. Set TWILIO_VERIFY_SERVICE_SID.')
   }
 
   try {
+    console.log('[SMS-PROVIDER] Creating verification request...')
+    console.log('[SMS-PROVIDER] To:', phoneNumber)
+    console.log('[SMS-PROVIDER] Service:', verifySid)
+
     const verification = await client.verify.v2
       .services(verifySid)
       .verifications.create({
@@ -73,9 +94,16 @@ export async function sendOTPCode(phoneNumber: string): Promise<void> {
         channel: 'sms'
       })
 
-    console.log(`✓ Verification sent to ${phoneNumber} (Status: ${verification.status})`)
-  } catch (error) {
-    console.error('✗ Verification send failed:', error)
+    console.log(`[SMS-PROVIDER] ✓ Verification sent to ${phoneNumber}`)
+    console.log(`[SMS-PROVIDER] Status: ${verification.status}`)
+    console.log(`[SMS-PROVIDER] SID: ${verification.sid}`)
+  } catch (error: any) {
+    console.error('[SMS-PROVIDER] ✗ Verification send failed')
+    console.error('[SMS-PROVIDER] Error name:', error.name)
+    console.error('[SMS-PROVIDER] Error message:', error.message)
+    console.error('[SMS-PROVIDER] Error code:', error.code)
+    console.error('[SMS-PROVIDER] Error status:', error.status)
+    console.error('[SMS-PROVIDER] Full error:', error)
     throw new Error('Failed to send verification code. Please try again.')
   }
 }
