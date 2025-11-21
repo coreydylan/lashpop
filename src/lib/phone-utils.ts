@@ -33,7 +33,19 @@ export function formatPhoneNumber(value: string): string {
  */
 export function toE164(phoneNumber: string, countryCode: string = '+1'): string {
   const digits = phoneNumber.replace(/\D/g, '')
-  return `${countryCode}${digits}`
+
+  // If already has 11 digits and starts with 1, it's already in E.164 format (without the +)
+  if (digits.length === 11 && digits[0] === '1') {
+    return `+${digits}`
+  }
+
+  // If has 10 digits, add country code
+  if (digits.length === 10) {
+    return `${countryCode}${digits}`
+  }
+
+  // Otherwise, just prepend +
+  return `+${digits}`
 }
 
 /**
