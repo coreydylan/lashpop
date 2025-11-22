@@ -38,7 +38,8 @@ export function SectionTransition({
   // Parallax effect
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
+    layoutEffect: false
   })
 
   const y = useTransform(

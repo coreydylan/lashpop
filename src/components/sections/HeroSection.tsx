@@ -7,7 +7,7 @@ import { SunIcon, CircleDecoration } from '../icons/DesertIcons'
 
 export function HeroSection() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { scrollY } = useScroll()
+  const { scrollY } = useScroll({ layoutEffect: false })
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
 

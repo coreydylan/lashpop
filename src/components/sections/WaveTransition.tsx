@@ -7,7 +7,8 @@ export function WaveTransition() {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollY, scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ["start end", "end start"],
+    layoutEffect: false
   })
   
   // Create multiple layers of parallax for depth

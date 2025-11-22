@@ -14,7 +14,8 @@ export function FounderLetterSection() {
   // Track scroll progress of the container
   const { scrollYProgress } = useScroll({
     target: mobileContainerRef,
-    offset: ["start start", "end end"]
+    offset: ["start start", "end end"],
+    layoutEffect: false
   })
 
   // Transform vertical scroll to horizontal movement
@@ -152,7 +153,10 @@ export function FounderLetterSection() {
       </div>
 
       {/* Mobile Layout - New Design */}
-      <div className="md:hidden relative min-h-screen py-16 px-6">
+      <div
+        ref={mobileContainerRef}
+        className="md:hidden relative min-h-screen py-16 px-6"
+      >
         {/* Letter Content - Top */}
         <motion.div
           className="mb-12"
