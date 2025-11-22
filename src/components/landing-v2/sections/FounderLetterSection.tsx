@@ -26,7 +26,7 @@ export function FounderLetterSection() {
   )
 
   return (
-    <section className="relative bg-[#FFF8F3]">
+    <section className="relative bg-[#FFE8E0]">
       {/* Desktop/Tablet Layout - New Design */}
       <div ref={ref} className="hidden md:block relative min-h-screen overflow-hidden">
         {/* Content Container */}
@@ -45,7 +45,11 @@ export function FounderLetterSection() {
                 alt="Founder's Letter"
                 width={0}
                 height={0}
-                style={{ width: '100%', height: 'auto' }}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  filter: 'brightness(0) saturate(100%) invert(50%) sepia(15%) saturate(800%) hue-rotate(320deg) brightness(95%) contrast(85%)'
+                }}
                 aria-describedby="founder-letter-text"
               />
             </div>
@@ -64,87 +68,24 @@ export function FounderLetterSection() {
 
           {/* Arch Image - Right Side */}
           <motion.div
-            className="relative flex-1 max-w-lg ml-12"
-            initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
-            animate={isInView ? {
-              opacity: 1,
-              scale: 1,
-              rotate: 0
-            } : {
-              opacity: 0,
-              scale: 0.9,
-              rotate: 5
-            }}
+            className="absolute bottom-0 right-0 w-1/2 max-w-lg"
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
             transition={{
               duration: 1,
               delay: 0.4,
               ease: [0.23, 1, 0.32, 1]
             }}
           >
-            {/* Decorative circle background */}
-            <motion.div
-              className="absolute -inset-8 bg-gradient-to-br from-pink-100/30 to-orange-100/30 rounded-full blur-3xl"
-              animate={isInView ? {
-                scale: [1, 1.1, 1],
-                rotate: [0, 180, 360],
-              } : {}}
-              transition={{
-                duration: 20,
-                repeat: Infinity,
-                ease: "linear"
-              }}
-            />
-
-            {/* Arch container with creative styling */}
-            <div className="relative">
-              {/* Floating animation wrapper */}
-              <motion.div
-                animate={isInView ? {
-                  y: [0, -10, 0],
-                } : {}}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              >
-                <div className="relative w-full h-auto">
-                  <Image
-                    src="/lashpop-images/emily-arch.png"
-                    alt="Emily in decorative arch"
-                    width={500}
-                    height={600}
-                    style={{ width: '100%', height: 'auto' }}
-                    className="relative z-10 drop-shadow-2xl"
-                  />
-                </div>
-              </motion.div>
-
-              {/* Decorative elements */}
-              <motion.div
-                className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-pink-200/40 to-purple-200/40 rounded-full blur-2xl"
-                animate={isInView ? {
-                  scale: [1, 1.2, 1],
-                  opacity: [0.5, 0.8, 0.5],
-                } : {}}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-              <motion.div
-                className="absolute -bottom-6 -left-6 w-32 h-32 bg-gradient-to-tr from-orange-200/40 to-yellow-200/40 rounded-full blur-2xl"
-                animate={isInView ? {
-                  scale: [1.2, 1, 1.2],
-                  opacity: [0.5, 0.8, 0.5],
-                } : {}}
-                transition={{
-                  duration: 3.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.5
-                }}
+            {/* Arch container */}
+            <div className="relative w-full h-auto">
+              <Image
+                src="/lashpop-images/emily-arch.png"
+                alt="Emily in decorative arch"
+                width={500}
+                height={600}
+                style={{ width: '100%', height: 'auto' }}
+                className="relative z-10"
               />
             </div>
           </motion.div>
@@ -152,10 +93,10 @@ export function FounderLetterSection() {
       </div>
 
       {/* Mobile Layout - New Design */}
-      <div className="md:hidden relative min-h-screen py-16 px-6">
-        {/* Letter Content - Top */}
+      <div className="md:hidden relative min-h-screen flex flex-col justify-center py-16 px-6 overflow-hidden">
+        {/* Letter Content - Centered */}
         <motion.div
-          className="mb-12"
+          className="z-10 mb-8"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -166,16 +107,20 @@ export function FounderLetterSection() {
             alt="Founder's Letter"
             width={0}
             height={0}
-            style={{ width: '100%', height: 'auto' }}
+            style={{
+              width: '100%',
+              height: 'auto',
+              filter: 'brightness(0) saturate(100%) invert(50%) sepia(15%) saturate(800%) hue-rotate(320deg) brightness(95%) contrast(85%)'
+            }}
             aria-describedby="founder-letter-text-mobile"
           />
         </motion.div>
 
         {/* Arch Image - Bottom */}
         <motion.div
-          className="relative mx-auto max-w-sm"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
+          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-sm"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{
             duration: 0.8,
@@ -183,9 +128,6 @@ export function FounderLetterSection() {
             ease: [0.23, 1, 0.32, 1]
           }}
         >
-          {/* Decorative background blur */}
-          <div className="absolute -inset-4 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
-
           {/* Arch image */}
           <div className="relative">
             <Image
@@ -194,36 +136,9 @@ export function FounderLetterSection() {
               width={400}
               height={500}
               style={{ width: '100%', height: 'auto' }}
-              className="relative z-10 drop-shadow-xl"
+              className="relative z-10"
             />
           </div>
-
-          {/* Small decorative elements */}
-          <motion.div
-            className="absolute -top-2 -right-2 w-16 h-16 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-xl"
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.4, 0.6, 0.4],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-          <motion.div
-            className="absolute -bottom-3 -left-3 w-20 h-20 bg-gradient-to-tr from-orange-200/30 to-yellow-200/30 rounded-full blur-xl"
-            animate={{
-              scale: [1.1, 1, 1.1],
-              opacity: [0.4, 0.6, 0.4],
-            }}
-            transition={{
-              duration: 3.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.5
-            }}
-          />
         </motion.div>
 
         {/* Hidden accessible text for screen readers */}
