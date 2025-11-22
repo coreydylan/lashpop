@@ -25,29 +25,14 @@ export function FounderLetterSection() {
   )
 
   return (
-    <section className="relative">
-      {/* Desktop/Tablet Layout - Unchanged */}
+    <section className="relative bg-[#FFF8F3]">
+      {/* Desktop/Tablet Layout - New Design */}
       <div ref={ref} className="hidden md:block relative min-h-screen overflow-hidden">
-        {/* Background Image with Ken Burns Effect */}
-        <motion.div
-          className="absolute inset-0 z-0"
-          initial={{ scale: 1.15 }}
-          animate={isInView ? { scale: 1 } : { scale: 1.15 }}
-          transition={{ duration: 20, ease: "linear" }}
-        >
-          <img
-            src="/lashpop-images/founderbg-desktop.jpg"
-            alt="Founder Background"
-            className="w-full h-full object-cover"
-          />
-          {/* Gradient overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
-        </motion.div>
-
-        {/* Letter Content - Left Side, Vertically Centered */}
-        <div className="relative z-10 container h-screen flex items-center">
+        {/* Content Container */}
+        <div className="relative container h-screen flex items-center justify-between">
+          {/* Letter Content - Left Side */}
           <motion.div
-            className="max-w-2xl mt-32"
+            className="max-w-2xl z-10"
             initial={{ opacity: 0, x: -50 }}
             animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
@@ -71,39 +56,170 @@ export function FounderLetterSection() {
               <p>With love and lashes, The LashPop Family</p>
             </div>
           </motion.div>
+
+          {/* Arch Image - Right Side */}
+          <motion.div
+            className="relative flex-1 max-w-lg ml-12"
+            initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
+            animate={isInView ? {
+              opacity: 1,
+              scale: 1,
+              rotate: 0
+            } : {
+              opacity: 0,
+              scale: 0.9,
+              rotate: 5
+            }}
+            transition={{
+              duration: 1,
+              delay: 0.4,
+              ease: [0.23, 1, 0.32, 1]
+            }}
+          >
+            {/* Decorative circle background */}
+            <motion.div
+              className="absolute -inset-8 bg-gradient-to-br from-pink-100/30 to-orange-100/30 rounded-full blur-3xl"
+              animate={isInView ? {
+                scale: [1, 1.1, 1],
+                rotate: [0, 180, 360],
+              } : {}}
+              transition={{
+                duration: 20,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+            />
+
+            {/* Arch container with creative styling */}
+            <div className="relative">
+              {/* Floating animation wrapper */}
+              <motion.div
+                animate={isInView ? {
+                  y: [0, -10, 0],
+                } : {}}
+                transition={{
+                  duration: 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <img
+                  src="/lashpop-images/emily-arch.png"
+                  alt="Emily in decorative arch"
+                  className="w-full h-auto relative z-10 drop-shadow-2xl"
+                />
+              </motion.div>
+
+              {/* Decorative elements */}
+              <motion.div
+                className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-pink-200/40 to-purple-200/40 rounded-full blur-2xl"
+                animate={isInView ? {
+                  scale: [1, 1.2, 1],
+                  opacity: [0.5, 0.8, 0.5],
+                } : {}}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              <motion.div
+                className="absolute -bottom-6 -left-6 w-32 h-32 bg-gradient-to-tr from-orange-200/40 to-yellow-200/40 rounded-full blur-2xl"
+                animate={isInView ? {
+                  scale: [1.2, 1, 1.2],
+                  opacity: [0.5, 0.8, 0.5],
+                } : {}}
+                transition={{
+                  duration: 3.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              />
+            </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* Mobile Layout - Horizontal Scroll Effect */}
-      {/* Container that creates the scroll distance */}
-      <div
-        ref={mobileContainerRef}
-        className="md:hidden relative h-[500vh]"
-      >
-        {/* Sticky wrapper that stays in viewport */}
-        <div className="sticky top-0 h-screen w-full overflow-hidden">
-          {/* Inner container for the image */}
-          <div className="relative h-full w-full bg-white">
-            {/* Motion container for horizontal translation */}
-            <motion.div
-              className="h-full"
-              style={{
-                x,
-                width: 'fit-content',
-                position: 'relative'
-              }}
-            >
-              <img
-                src="/founder%20letter%20mobile%20copy.jpg"
-                alt="A Letter from Our Founder"
-                className="h-full w-auto block object-cover"
-                style={{
-                  maxWidth: 'none',
-                  minHeight: '100%'
-                }}
-              />
-            </motion.div>
+      {/* Mobile Layout - New Design */}
+      <div className="md:hidden relative min-h-screen py-16 px-6">
+        {/* Letter Content - Top */}
+        <motion.div
+          className="mb-12"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+        >
+          <img
+            src="/founder-letter.svg"
+            alt="Founder's Letter"
+            className="w-full h-auto"
+            aria-describedby="founder-letter-text-mobile"
+          />
+        </motion.div>
+
+        {/* Arch Image - Bottom */}
+        <motion.div
+          className="relative mx-auto max-w-sm"
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{
+            duration: 0.8,
+            delay: 0.2,
+            ease: [0.23, 1, 0.32, 1]
+          }}
+        >
+          {/* Decorative background blur */}
+          <div className="absolute -inset-4 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
+
+          {/* Arch image */}
+          <div className="relative">
+            <img
+              src="/lashpop-images/emily-arch.png"
+              alt="Emily in decorative arch"
+              className="w-full h-auto relative z-10 drop-shadow-xl"
+            />
           </div>
+
+          {/* Small decorative elements */}
+          <motion.div
+            className="absolute -top-2 -right-2 w-16 h-16 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-xl"
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.4, 0.6, 0.4],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          <motion.div
+            className="absolute -bottom-3 -left-3 w-20 h-20 bg-gradient-to-tr from-orange-200/30 to-yellow-200/30 rounded-full blur-xl"
+            animate={{
+              scale: [1.1, 1, 1.1],
+              opacity: [0.4, 0.6, 0.4],
+            }}
+            transition={{
+              duration: 3.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.5
+            }}
+          />
+        </motion.div>
+
+        {/* Hidden accessible text for screen readers */}
+        <div id="founder-letter-text-mobile" className="sr-only">
+          <h2>A Letter from Our Founder</h2>
+          <p>Dear Beautiful Soul,</p>
+          <p>When I founded LashPop, I envisioned more than just a lash studio. I dreamed of creating a space where every person who walks through our doors feels seen, celebrated, and transformed.</p>
+          <p>Our journey began with a simple belief: that beauty services should be an experience of self-care and empowerment. Every lash we apply, every brow we shape, is done with intention and care, because we understand the confidence that comes from feeling your best.</p>
+          <p>Our team of artists doesn&apos;t just provide services—they craft experiences. Each member brings their unique talents and passion, creating a symphony of expertise that makes LashPop truly special.</p>
+          <p>Thank you for trusting us with your beauty journey. We can&apos;t wait to welcome you to our studio and show you what makes LashPop different.</p>
+          <p>With love and lashes, The LashPop Family</p>
         </div>
       </div>
     </section>
