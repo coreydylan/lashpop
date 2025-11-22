@@ -28,12 +28,12 @@ export function FounderLetterSection() {
   return (
     <section className="relative bg-[#FFE8E0]">
       {/* Desktop/Tablet Layout - New Design */}
-      <div ref={ref} className="hidden md:block relative min-h-screen overflow-hidden">
+      <div ref={ref} className="hidden md:block relative overflow-hidden" style={{ height: '80vh' }}>
         {/* Content Container */}
-        <div className="relative container h-screen flex items-end justify-between pb-12">
+        <div className="relative container h-full flex items-center justify-between">
           {/* Letter Content - Left Side */}
           <motion.div
-            className="max-w-2xl z-10 mb-8"
+            className="max-w-2xl z-10"
             initial={{ opacity: 0, x: -50 }}
             animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
@@ -68,7 +68,7 @@ export function FounderLetterSection() {
 
           {/* Arch Image - Right Side */}
           <motion.div
-            className="absolute bottom-0 right-0 w-1/2 max-w-md"
+            className="absolute bottom-0 right-0 w-1/2 max-w-sm"
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : { opacity: 0 }}
             transition={{
@@ -78,13 +78,13 @@ export function FounderLetterSection() {
             }}
           >
             {/* Arch container */}
-            <div className="relative w-full h-auto max-h-[75vh]">
+            <div className="relative w-full h-auto max-h-[60vh]">
               <Image
                 src="/lashpop-images/emily-arch.png"
                 alt="Emily in decorative arch"
                 width={500}
                 height={600}
-                style={{ width: '100%', height: 'auto', maxHeight: '75vh', objectFit: 'contain' }}
+                style={{ width: '100%', height: 'auto', maxHeight: '60vh', objectFit: 'contain' }}
                 className="relative z-10"
               />
             </div>
@@ -93,10 +93,10 @@ export function FounderLetterSection() {
       </div>
 
       {/* Mobile Layout - New Design */}
-      <div className="md:hidden relative min-h-screen flex flex-col justify-end py-12 px-6 overflow-hidden">
+      <div className="md:hidden relative flex flex-col justify-center py-12 px-6 overflow-hidden" style={{ height: '80vh' }}>
         {/* Letter Content - Centered */}
         <motion.div
-          className="z-10 mb-6"
+          className="z-10 mb-8"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -129,13 +129,13 @@ export function FounderLetterSection() {
           }}
         >
           {/* Arch image */}
-          <div className="relative max-h-[70vh]">
+          <div className="relative max-h-[55vh]">
             <Image
               src="/lashpop-images/emily-arch.png"
               alt="Emily in decorative arch"
               width={400}
               height={500}
-              style={{ width: '100%', height: 'auto', maxHeight: '70vh', objectFit: 'contain' }}
+              style={{ width: '100%', height: 'auto', maxHeight: '55vh', objectFit: 'contain' }}
               className="relative z-10"
             />
           </div>
