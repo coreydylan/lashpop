@@ -8,6 +8,7 @@ import { HEADER_HEIGHT } from '@/types/panel-stack';
 // Import panel components
 import { CategoryPickerPanel } from './panels/CategoryPickerPanel';
 import { ServicePanel } from './panels/ServicePanel';
+import { DiscoveryPanel } from './panels/DiscoveryPanel';
 
 export function PanelStackContainer() {
   const { state } = usePanelStack();
@@ -54,6 +55,7 @@ export function PanelStackContainer() {
         {sortedPanels.map(panel => (
           <div key={panel.id}>
             {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
+            {panel.type === 'discovery' && <DiscoveryPanel panel={panel} />}
             {panel.type === 'service-panel' && <ServicePanel panel={panel} />}
             {/* ServicePanel now handles service details internally */}
             {/* Schedule panel will be added later */}

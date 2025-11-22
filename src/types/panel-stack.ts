@@ -12,6 +12,7 @@
 export type PanelType =
   // Level 1: Discovery
   | 'category-picker'
+  | 'discovery'
 
   // Level 2: Browsing (one per category)
   | 'service-panel'

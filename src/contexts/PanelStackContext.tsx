@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect, useMemo } from 'react';
 import type {
   PanelStackState,
   PanelStackContextValue,
@@ -514,7 +514,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     dispatch({ type: 'UPDATE_PANEL_SUMMARY', payload: { panelId, summary } });
   }, []);
 
-  const actions: PanelStackActions = {
+  const actions: PanelStackActions = useMemo(() => ({
     openPanel,
     closePanel,
     dockPanel,
@@ -532,12 +532,30 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     getChildPanels,
     updatePanelData,
     updatePanelSummary,
-  };
+  }), [
+    openPanel,
+    closePanel,
+    dockPanel,
+    expandPanel,
+    togglePanel,
+    closeAll,
+    dockAll,
+    closePanelsFromLevel,
+    selectCategory,
+    deselectCategory,
+    expandNextServicePanel,
+    expandPreviousServicePanel,
+    getPanelById,
+    getPanelsByLevel,
+    getChildPanels,
+    updatePanelData,
+    updatePanelSummary,
+  ]);
 
-  const value: PanelStackContextValue = {
+  const value: PanelStackContextValue = useMemo(() => ({
     state,
     actions,
-  };
+  }), [state, actions]);
 
   return (
     <PanelStackContext.Provider value={value}>

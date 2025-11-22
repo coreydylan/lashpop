@@ -160,21 +160,6 @@ export default function DiscoverDrawer() {
     const categoryName = categoryService?.categoryName || categoryId;
     const actualCategoryId = categoryService?.categoryId || mappedCategorySlug;
 
-    // Build subcategories from services
-    const subcategoriesMap = new Map();
-    categoryServices.forEach(service => {
-      if (service.subcategorySlug && service.subcategoryName) {
-        if (!subcategoriesMap.has(service.subcategorySlug)) {
-          subcategoriesMap.set(service.subcategorySlug, {
-            id: service.subcategorySlug,
-            name: service.subcategoryName,
-            slug: service.subcategorySlug
-          });
-        }
-      }
-    });
-    const subcategories = Array.from(subcategoriesMap.values());
-
     // If lashes and a style was chosen, filter to matching services
     if (mappedCategorySlug === 'lashes' && lashStyle) {
       const styleMappings: Record<string, string[]> = {
@@ -199,6 +184,21 @@ export default function DiscoverDrawer() {
         }
       }
     }
+
+    // Build subcategories from filtered services
+    const subcategoriesMap = new Map();
+    categoryServices.forEach(service => {
+      if (service.subcategorySlug && service.subcategoryName) {
+        if (!subcategoriesMap.has(service.subcategorySlug)) {
+          subcategoriesMap.set(service.subcategorySlug, {
+            id: service.subcategorySlug,
+            name: service.subcategoryName,
+            slug: service.subcategorySlug
+          });
+        }
+      }
+    });
+    const subcategories = Array.from(subcategoriesMap.values());
 
     // Don't call selectCategory - that triggers CategoryPickerPanel to open its own panel
     // Instead, directly open our filtered service panel
