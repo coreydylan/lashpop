@@ -87,4 +87,6 @@ jspm_packages/
 # Local template clone, not part of repo
 vendor/
 .env*.local
+.env.production
+.env.production.lashpop
 vercel-dam-env-vars.txt
