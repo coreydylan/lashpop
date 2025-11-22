@@ -30,10 +30,10 @@ export function FounderLetterSection() {
       {/* Desktop/Tablet Layout - New Design */}
       <div ref={ref} className="hidden md:block relative overflow-hidden" style={{ height: '80vh' }}>
         {/* Content Container */}
-        <div className="relative container h-full flex items-center justify-between">
+        <div className="relative container h-full flex items-end justify-between gap-12 pb-8">
           {/* Letter Content - Left Side */}
           <motion.div
-            className="max-w-2xl z-10"
+            className="max-w-2xl z-10 flex-shrink-0 mb-12"
             initial={{ opacity: 0, x: -50 }}
             animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
@@ -68,7 +68,7 @@ export function FounderLetterSection() {
 
           {/* Arch Image - Right Side */}
           <motion.div
-            className="absolute bottom-0 right-0 w-1/2 max-w-sm"
+            className="flex-1 flex items-end justify-end max-w-sm"
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : { opacity: 0 }}
             transition={{
@@ -93,10 +93,10 @@ export function FounderLetterSection() {
       </div>
 
       {/* Mobile Layout - New Design */}
-      <div className="md:hidden relative flex flex-col justify-center py-12 px-6 overflow-hidden" style={{ height: '80vh' }}>
+      <div className="md:hidden relative flex flex-col justify-end py-8 px-6 overflow-hidden" style={{ height: '80vh' }}>
         {/* Letter Content - Centered */}
         <motion.div
-          className="z-10 mb-8"
+          className="z-10 mb-16"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
