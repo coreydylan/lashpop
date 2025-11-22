@@ -9,14 +9,19 @@ import DrawerSystem from '@/components/drawers/DrawerSystem';
 import { Navigation } from '@/components/sections/Navigation';
 import HeroSection from '@/components/landing-v2/HeroSection';
 import { HeroArchwayReveal } from '@/components/HeroArchwayReveal';
-import AboutSection from '@/components/landing-v2/AboutSection';
+import { WelcomeSection } from '@/components/landing-v2/sections/WelcomeSection';
+import { ScrollServicesTrigger } from '@/components/landing-v2/ScrollServicesTrigger';
+import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
-import TestimonialsSection from '@/components/landing-v2/TestimonialsSection';
-import { ContactSection } from '@/components/sections/ContactSection';
-import { Footer } from '@/components/sections/Footer';
+import { InstagramCarousel } from '@/components/landing-v2/sections/InstagramCarousel';
+import { ReviewsSection } from '@/components/landing-v2/sections/ReviewsSection';
+import { FAQSection } from '@/components/landing-v2/sections/FAQSection';
+import { MapSection } from '@/components/landing-v2/sections/MapSection';
+import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { PanelStackContainer } from '@/components/panel-stack/PanelStackContainer';
+import { SectionTransition } from '@/components/landing-v2/transitions/SectionTransition';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -56,12 +61,23 @@ interface TeamMember {
   funFact?: string;
 }
 
+interface Review {
+  id: string;
+  reviewerName: string;
+  subject: string | null;
+  reviewText: string;
+  rating: number;
+  reviewDate: Date | null;
+}
+
 interface LandingPageV2ClientProps {
   services: Service[];
   teamMembers: TeamMember[];
+  reviews: Review[];
+  instagramPosts?: any[]; // Using any[] for now to avoid circular type dependency, or define strict type
 }
 
-export default function LandingPageV2Client({ services, teamMembers }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, instagramPosts = [] }: LandingPageV2ClientProps) {
   return (
     <BookingOrchestratorProvider>
       <PanelStackProvider services={services}>
@@ -88,14 +104,46 @@ export default function LandingPageV2Client({ services, teamMembers }: LandingPa
                 {/* Hero with Archway Reveal and Photo Grid Scroller */}
                 <HeroArchwayReveal
                   heroContent={<HeroSection />}
-                  nextSection={<AboutSection />}
                 />
-                <div id="team">
-                  <EnhancedTeamSectionClient teamMembers={teamMembers} />
-                </div>
-                <TestimonialsSection />
-                <ContactSection />
-                <Footer />
+
+                {/* Welcome to LashPop Section - Now standalone */}
+                <WelcomeSection />
+
+                {/* Trigger to open services panel when scrolling past Welcome */}
+                <ScrollServicesTrigger />
+
+                {/* Founder Letter Section */}
+                <FounderLetterSection />
+
+                {/* Team Section */}
+                <SectionTransition variant="slideUp" delay={0.1}>
+                  <div id="team">
+                    <EnhancedTeamSectionClient teamMembers={teamMembers} />
+                  </div>
+                </SectionTransition>
+
+                {/* Instagram Carousel */}
+                <SectionTransition variant="scaleIn">
+                  <InstagramCarousel posts={instagramPosts} />
+                </SectionTransition>
+
+                {/* Reviews Section */}
+                <SectionTransition variant="slideUp">
+                  <ReviewsSection reviews={reviews} />
+                </SectionTransition>
+
+                {/* FAQ Section */}
+                <SectionTransition variant="fade">
+                  <FAQSection />
+                </SectionTransition>
+
+                {/* Map Section */}
+                <SectionTransition variant="scaleIn" delay={0.2}>
+                  <MapSection />
+                </SectionTransition>
+
+                {/* Footer */}
+                <FooterV2 />
             </main>
           </div>
         </PanelManagerProvider>

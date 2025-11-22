@@ -97,29 +97,22 @@ export function HeroArchwayReveal({ heroContent, nextSection }: HeroArchwayRevea
   }
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: '400vh' }}>
-      {/* Page Surface Layer (z-10) - Hero Section */}
-      <motion.div
-        className="sticky top-0 w-full h-screen overflow-hidden"
-        style={{
-          y: heroY,
-          opacity: heroOpacity,
-          zIndex: 10,
-        }}
-      >
+    <div ref={containerRef} className="relative">
+      {/* Hero Section */}
+      <div className="relative w-full h-screen overflow-hidden">
         {heroContent}
-      </motion.div>
+      </div>
 
-      {/* Subsurface Layer (z-1) - Image Grid with Archway Transition */}
+      {/* Image Grid - Immediately after hero */}
       {!isLoading && images.length > 0 && (
-        <ArchwayTransition scrollYProgress={scrollYProgress}>
+        <div className="relative w-full">
           <ImageMosaicJustified images={images} scrollYProgress={scrollYProgress} />
-        </ArchwayTransition>
+        </div>
       )}
 
       {/* Loading skeleton */}
       {isLoading && (
-        <div className="fixed inset-0 w-full h-screen bg-warm-sand/20 z-1 flex items-center justify-center">
+        <div className="relative w-full h-64 bg-cream flex items-center justify-center">
           <div className="text-center space-y-4">
             <motion.div
               animate={{ rotate: 360 }}
@@ -129,20 +122,6 @@ export function HeroArchwayReveal({ heroContent, nextSection }: HeroArchwayRevea
             <p className="caption text-dune/60">Loading gallery...</p>
           </div>
         </div>
-      )}
-
-      {/* Next Section - Slides in at the end */}
-      {nextSection && (
-        <motion.div
-          className="absolute bottom-0 w-full bg-gradient-to-b from-transparent to-warm-sand"
-          style={{
-            y: nextSectionY,
-            opacity: nextSectionOpacity,
-            zIndex: 5,
-          }}
-        >
-          {nextSection}
-        </motion.div>
       )}
 
       {/* Debug indicator (remove in production) */}

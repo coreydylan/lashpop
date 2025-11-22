@@ -12,31 +12,39 @@ import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorConte
 import { PanelManagerProvider } from '@/components/panels/PanelContext'
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView'
 import { PanelRenderer } from '@/components/panels/PanelRenderer'
+import { PanelStackProvider } from '@/contexts/PanelStackContext'
+import { PanelStackContainer } from '@/components/panel-stack/PanelStackContainer'
+import { getAllServices } from '@/actions/services'
 
-export default function HomePage() {
+export default async function HomePage() {
+  const services = await getAllServices()
+
   return (
     <BookingOrchestratorProvider>
       <PanelManagerProvider>
-        <Navigation />
-        <TeamPortfolioView />
-        <PanelRenderer />
-        <main className="overflow-x-hidden">
-        {/* Hero with Archway Reveal and Grid Scroller */}
-        <HeroArchwayReveal
-          heroContent={<HeroSection />}
-          nextSection={<ServiceDiscoveryQuiz />}
-        />
-        <div id="services">
-          <ServicesSection />
-        </div>
-        <TestimonialsSection />
-        <AboutSection />
-        <div id="team">
-          <EnhancedTeamSection />
-        </div>
-        <ContactSection />
-      </main>
-      <Footer />
+        <PanelStackProvider services={services}>
+          <Navigation />
+          <TeamPortfolioView />
+          <PanelRenderer />
+          <PanelStackContainer />
+          <main className="overflow-x-hidden">
+            {/* Hero with Archway Reveal and Grid Scroller */}
+            <HeroArchwayReveal
+              heroContent={<HeroSection />}
+              nextSection={<ServiceDiscoveryQuiz />}
+            />
+            <div id="services">
+              <ServicesSection />
+            </div>
+            <TestimonialsSection />
+            <AboutSection />
+            <div id="team">
+              <EnhancedTeamSection />
+            </div>
+            <ContactSection />
+          </main>
+          <Footer />
+        </PanelStackProvider>
       </PanelManagerProvider>
     </BookingOrchestratorProvider>
   )

@@ -32,11 +32,10 @@ export default function HeroSection() {
   const { scrollY } = useScroll()
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
-  const { expandDrawer } = useDrawer()
   const { actions: panelActions } = usePanelStack()
 
   return (
-    <section ref={containerRef} className="relative min-h-screen flex items-center">
+    <section ref={containerRef} className="relative h-screen flex items-end">
       {/* Background Elements - EXACT same as v1 */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Soft gradient background */}
@@ -74,13 +73,13 @@ export default function HeroSection() {
         style={{ opacity }}
         className="relative z-10 container-wide"
       >
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center min-h-screen py-32">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-end h-full pb-0">
           {/* Left Content */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-8"
+            className="space-y-8 pb-12"
           >
             {/* Small accent */}
             <motion.div
@@ -130,7 +129,7 @@ export default function HeroSection() {
                 Book Now
               </button>
               <button
-                onClick={() => expandDrawer('discover')}
+                onClick={() => panelActions.openPanel('discovery', {})}
                 className="btn btn-secondary"
               >
                 Discover Your Look
@@ -206,28 +205,6 @@ export default function HeroSection() {
         </div>
       </motion.div>
 
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 1 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="flex flex-col items-center gap-2"
-        >
-          <span className="caption text-dune/60">Scroll to explore</span>
-          <div className="w-5 h-8 rounded-full border border-sage/30 flex justify-center pt-2">
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-1 h-1 rounded-full bg-sage"
-            />
-          </div>
-        </motion.div>
-      </motion.div>
     </section>
   )
 }
