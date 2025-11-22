@@ -30,7 +30,10 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['Outfit', 'sans-serif'],
-        serif: ['Libre Baskerville', 'serif']
+        serif: ['Libre Baskerville', 'serif'],
+        josefin: ['var(--font-josefin)', 'serif'],
+        chivo: ['var(--font-chivo)', 'sans-serif'],
+        andika: ['var(--font-andika)', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',

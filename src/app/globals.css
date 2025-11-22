@@ -608,4 +608,28 @@ a,
   .brightness-110.saturate-130 {
     filter: brightness(1.15) saturate(1.4);
   }
+
+  /* V2 Theme Overrides */
+  .theme-v2 {
+    --font-serif: var(--font-josefin);
+    --font-sans: var(--font-chivo);
+    font-family: var(--font-andika);
+  }
+
+  .theme-v2 .h1, 
+  .theme-v2 .h2 {
+    font-family: var(--font-serif);
+  }
+
+  .theme-v2 .h3,
+  .theme-v2 .btn,
+  .theme-v2 .caption {
+    font-family: var(--font-sans);
+  }
+  
+  .theme-v2 p, 
+  .theme-v2 .body, 
+  .theme-v2 .body-lg {
+    font-family: var(--font-andika);
+  }
 }

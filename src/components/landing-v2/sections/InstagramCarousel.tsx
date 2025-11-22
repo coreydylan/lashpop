@@ -1,8 +1,10 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
-import { motion, useAnimation } from 'framer-motion'
-import { useInView } from 'framer-motion'
+import { motion, useInView } from 'framer-motion'
+import useEmblaCarousel from 'embla-carousel-react'
+import AutoScroll from 'embla-carousel-auto-scroll'
+import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 
 // Stub data using gallery images for now
 const galleryImages = [
@@ -34,55 +36,82 @@ interface InstagramCarouselProps {
 
 export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   const ref = useRef(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: "-20%" })
-  const [isPaused, setIsPaused] = useState(false)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const controls = useAnimation()
 
-  // Use provided posts or fallback to gallery images
-  const displayImages = posts.length > 0 
-    ? posts.map(p => p.mediaUrl)
-    : galleryImages
+  // Initialize Embla with AutoScroll
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    { 
+      loop: true, 
+      dragFree: true, // Keeps the "free scroll" feel
+      containScroll: false, // Allow infinite scroll without hard bounds
+      align: 'center',
+      skipSnaps: true,
+      inViewThreshold: 0.7 // Better intersection handling
+    },
+    [
+      AutoScroll({ 
+        playOnInit: true, 
+        speed: 1.5, // Increased back to 1.5 as requested
+        stopOnInteraction: false,
+        stopOnMouseEnter: true,
+        rootNode: (emblaRoot) => emblaRoot.parentElement 
+      })
+    ]
+  )
 
-  // Auto-scroll functionality
+  // Handle trackpad/mouse wheel scrolling
   useEffect(() => {
-    if (!isPaused && isInView && scrollRef.current) {
-      const scroll = async () => {
-        const scrollWidth = scrollRef.current?.scrollWidth || 0
-        const clientWidth = scrollRef.current?.clientWidth || 0
-        const maxScroll = scrollWidth - clientWidth
+    if (!emblaApi) return
 
-        // Scroll to end
-        await controls.start({
-          x: -maxScroll,
-          transition: {
-            duration: 60, // Slower scroll for better viewing
-            ease: "linear",
-          }
-        })
+    const onWheel = (event: WheelEvent) => {
+      // Only handle horizontal scrolling
+      // We check if the user is intentionally scrolling horizontally
+      const isHorizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+      
+      if (isHorizontal) {
+        // Stop the event from scrolling the page (if supported) or triggering back/forward
+        event.preventDefault()
+        
+        const engine = (emblaApi as any).internalEngine()
+        
+        if (engine && engine.animation && engine.location) {
+           // Stop auto-scroll animation temporarily while user interacts
+           const autoScroll = emblaApi.plugins().autoScroll
+           if (autoScroll && autoScroll.isPlaying()) {
+             autoScroll.stop()
+           }
 
-        // Reset to start
-        controls.set({ x: 0 })
-
-        // Start again
-        if (!isPaused) {
-          scroll()
+           // Emulate "drag" physics by using scrollBody instead of direct location setting
+           // This ensures the momentum and friction feel exactly like a touch drag
+           // Multiplier 2.5 matches the "feel" of direct touch manipulation better for wheel events
+           engine.scrollBody.useBaseFriction().useDuration(20) // Small duration helps it "catch" the drag
+           const delta = event.deltaX * -1 // Invert delta for natural scroll direction
+           const target = engine.location.get() + delta
+           engine.location.set(target)
+           engine.translate.to(target)
+           engine.animation.start()
         }
       }
-
-      scroll()
     }
-  }, [isPaused, isInView, controls])
 
-  const handlePauseScroll = () => {
-    setIsPaused(true)
-    controls.stop()
-  }
+    // Add wheel listener to the viewport with { passive: false } to allow preventDefault
+    const viewport = emblaApi.rootNode()
+    viewport.addEventListener('wheel', onWheel, { passive: false })
 
-  const handleResumeScroll = () => {
-    setIsPaused(false)
-  }
+    return () => {
+      viewport.removeEventListener('wheel', onWheel)
+    }
+  }, [emblaApi])
+
+  // Use provided posts or fallback to gallery images
+  // We duplicate them once to ensure smooth looping even on wide screens
+  const rawItems = posts.length > 0 
+    ? posts.map(p => ({ mediaUrl: p.mediaUrl, permalink: p.permalink }))
+    : galleryImages.map(url => ({ mediaUrl: url, permalink: null }))
+
+  // Triple the items to ensure absolutely seamless infinite scroll on large screens
+  const displayItems = [...rawItems, ...rawItems, ...rawItems]
 
   return (
     <>
@@ -103,54 +132,59 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
 
         {/* Carousel Container */}
         <motion.div
-          className="relative"
+          className="relative w-full"
           initial={{ opacity: 0, x: 100 }}
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 100 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <div
-            ref={scrollRef}
-            className="overflow-hidden"
-            onMouseEnter={handlePauseScroll}
-            onMouseLeave={handleResumeScroll}
-          >
-            <motion.div
-              className="flex gap-4 px-6"
-              animate={controls}
-            >
-              {/* Duplicate images for infinite scroll effect */}
-              {[...displayImages, ...displayImages].map((image, index) => (
-                <motion.div
+          {/* Embla Viewport */}
+          <div className="overflow-hidden" ref={emblaRef}>
+            {/* Embla Container */}
+            <div className="flex touch-pan-y gap-4 px-4">
+              {displayItems.map((item, index) => (
+                <div
                   key={index}
-                  className="shrink-0 w-80 h-80 cursor-pointer group"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.2 }}
-                  onClick={() => setSelectedImage(image)}
+                  className="flex-[0_0_auto] w-80 h-80 min-w-0 cursor-grab active:cursor-grabbing group relative"
+                  onClick={() => {
+                    if (item.permalink) {
+                      window.open(item.permalink, '_blank', 'noopener,noreferrer')
+                    } else {
+                      setSelectedImage(item.mediaUrl)
+                    }
+                  }}
                 >
-                  <div className="relative w-full h-full overflow-hidden rounded-2xl">
+                  <div className="relative w-full h-full overflow-hidden rounded-2xl transform transition-transform duration-300 group-hover:scale-[1.02]">
                     <img
-                      src={image}
+                      src={item.mediaUrl}
                       alt={`Gallery image ${index + 1}`}
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      className="w-full h-full object-cover"
+                      draggable={false} // Prevent default image drag ghost
                     />
+                    
                     {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center pointer-events-none">
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         whileHover={{ opacity: 1, scale: 1 }}
-                        className="bg-white/90 backdrop-blur-sm rounded-full p-3"
+                        className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg"
                       >
-                        <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
+                        {item.permalink ? (
+                          <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
                       </motion.div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           </div>
 
           {/* Gradient edges for seamless look */}

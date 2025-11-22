@@ -1,6 +1,6 @@
 import { getAllServices } from "@/actions/services"
 import { getTeamMembers } from "@/actions/team"
-import { getHighRatedReviews } from "@/actions/reviews"
+import { getHighRatedReviews, getReviewStats } from "@/actions/reviews"
 import { getInstagramPosts } from "@/actions/instagram"
 import LandingPageV2Client from "./LandingPageV2Client"
 
@@ -51,6 +51,9 @@ export default async function LandingPageV2() {
   // Fetch reviews from database
   const reviews = await getHighRatedReviews(15)
 
+  // Fetch review stats from database
+  const reviewStats = await getReviewStats()
+
   // Fetch Instagram posts
   const instagramPosts = await getInstagramPosts(20)
 
@@ -58,6 +61,7 @@ export default async function LandingPageV2() {
     services={formattedServices}
     teamMembers={formattedTeamMembers}
     reviews={reviews}
+    reviewStats={reviewStats}
     instagramPosts={instagramPosts}
   />
 }

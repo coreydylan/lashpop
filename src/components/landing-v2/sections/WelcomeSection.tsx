@@ -30,7 +30,7 @@ export function WelcomeSection() {
             transition={{ duration: 1, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
           >
             <motion.h2
-              className="text-5xl md:text-6xl lg:text-7xl font-light mb-6"
+              className="text-5xl md:text-6xl lg:text-7xl font-serif font-light mb-6"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.3 }}

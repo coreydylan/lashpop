@@ -19,6 +19,7 @@ import { serviceCategories } from "./schema/service_categories"
 import { services } from "./schema/services"
 import { testimonials } from "./schema/testimonials"
 import { reviews } from "./schema/reviews"
+import { reviewStats } from "./schema/review_stats"
 import { teamMemberCategories } from "./schema/team_member_categories"
 import { assets } from "./schema/assets"
 import { assetServices } from "./schema/asset_services"
@@ -78,6 +79,7 @@ const dbSchema = {
   services,
   testimonials,
   reviews,
+  reviewStats,
   teamMemberCategories,
   assets,
   assetServices,
@@ -182,6 +184,7 @@ export {
   services,
   testimonials,
   reviews,
+  reviewStats,
   teamMemberCategories,
   assets,
   assetServices,

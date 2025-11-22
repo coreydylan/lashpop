@@ -51,8 +51,8 @@ export function FAQSection() {
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="heading-2 text-dune mb-4">Frequently Asked Questions</h2>
-          <p className="body-text text-dune/70">
+          <h2 className="h2 font-serif text-dune mb-4">Frequently Asked Questions</h2>
+          <p className="body text-dune/70">
             Everything you need to know about our services
           </p>
         </motion.div>
@@ -76,7 +76,7 @@ export function FAQSection() {
                 onClick={() => toggleFAQ(index)}
                 className="w-full px-6 py-5 text-left flex items-center justify-between group"
               >
-                <h3 className="body-text-bold text-dune group-hover:text-dusty-rose transition-colors">
+                <h3 className="font-sans font-semibold text-dune group-hover:text-dusty-rose transition-colors">
                   {faq.question}
                 </h3>
                 <motion.svg
@@ -105,7 +105,7 @@ export function FAQSection() {
                     transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
                   >
                     <div className="px-6 pb-5">
-                      <p className="body-text text-dune/70">
+                      <p className="body text-dune/70">
                         {faq.answer}
                       </p>
                     </div>
@@ -123,12 +123,12 @@ export function FAQSection() {
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <p className="body-text text-dune/70 mb-4">
+          <p className="body text-dune/70 mb-4">
             Still have questions?
           </p>
           <a
             href="mailto:hello@lashpopstudios.com"
-            className="button-secondary inline-flex items-center gap-2"
+            className="btn btn-secondary inline-flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />

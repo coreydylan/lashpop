@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display } from 'next/font/google'
+import { Inter, Playfair_Display, Josefin_Slab, Chivo, Andika } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { UserKnowledgeProvider } from '@/contexts/UserKnowledgeContext'
@@ -14,6 +14,25 @@ const playfair = Playfair_Display({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-playfair',
+})
+
+const josefin = Josefin_Slab({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-josefin',
+})
+
+const chivo = Chivo({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-chivo',
+})
+
+const andika = Andika({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+  variable: '--font-andika',
 })
 
 export const viewport: Viewport = {
@@ -45,7 +64,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable} ${josefin.variable} ${chivo.variable} ${andika.variable}`}>
       <body className={`${inter.className} antialiased bg-stone-50 text-gray-800`}>
         <AuthProvider>
           <UserKnowledgeProvider>

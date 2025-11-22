@@ -1,5 +1,6 @@
 import { db } from "@/db"
 import { reviews } from "@/db/schema/reviews"
+import { reviewStats } from "@/db/schema/review_stats"
 import { desc, gte } from "drizzle-orm"
 
 export async function getReviews(limit = 20) {
@@ -29,6 +30,16 @@ export async function getHighRatedReviews(limit = 10) {
     return topReviews
   } catch (error) {
     console.error("Error fetching top reviews:", error)
+    return []
+  }
+}
+
+export async function getReviewStats() {
+  try {
+    const stats = await db.select().from(reviewStats)
+    return stats
+  } catch (error) {
+    console.error("Error fetching review stats:", error)
     return []
   }
 }

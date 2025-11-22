@@ -127,6 +127,13 @@
       "when": 1763771664994,
       "tag": "0017_chunky_robin_chapel",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1763792734616,
+      "tag": "0018_clumsy_pretty_boy",
+      "breakpoints": true
     }
   ]
 }

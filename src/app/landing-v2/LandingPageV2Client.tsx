@@ -70,20 +70,29 @@ interface Review {
   reviewDate: Date | null;
 }
 
+interface ReviewStat {
+  id: string;
+  source: string;
+  rating: string;
+  reviewCount: number;
+  updatedAt: Date;
+}
+
 interface LandingPageV2ClientProps {
   services: Service[];
   teamMembers: TeamMember[];
   reviews: Review[];
+  reviewStats?: ReviewStat[];
   instagramPosts?: any[]; // Using any[] for now to avoid circular type dependency, or define strict type
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, instagramPosts = [] }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [] }: LandingPageV2ClientProps) {
   return (
     <BookingOrchestratorProvider>
       <PanelStackProvider services={services}>
         <DrawerProvider>
           <PanelManagerProvider>
-            <div className="min-h-screen bg-cream relative">
+            <div className="min-h-screen bg-cream relative theme-v2">
               {/* Z-3: Fixed Header Layer */}
               <Navigation />
 
@@ -129,7 +138,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, in
 
                 {/* Reviews Section */}
                 <SectionTransition variant="slideUp">
-                  <ReviewsSection reviews={reviews} />
+                  <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
                 </SectionTransition>
 
                 {/* FAQ Section */}
