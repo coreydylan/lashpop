@@ -469,48 +469,6 @@ export function ServiceDiscoveryQuiz() {
             </motion.div>
           )}
 
-          {currentStep === 'lash-experience' && (
-            <motion.div
-              key="lash-experience"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-8"
-            >
-              {/* Header */}
-              <div className="text-center space-y-4">
-                <span className="caption text-terracotta">Step 2 of 3</span>
-                <h2 className="h2 text-dune">Have you had lash extensions before?</h2>
-              </div>
-
-              {/* Yes/No Options */}
-              <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                <motion.button
-                  onClick={() => handleLashExperience(true)}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="glass arch-full p-8 text-center hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="text-5xl mb-4">✨</div>
-                  <h3 className="h3 text-dune mb-2">Yes</h3>
-                  <p className="body text-dune/70">I&apos;ve had lash extensions before</p>
-                </motion.button>
-
-                <motion.button
-                  onClick={() => handleLashExperience(false)}
-                  whileHover={{ scale: 1.02, y: -4 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="glass arch-full p-8 text-center hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="text-5xl mb-4">🌟</div>
-                  <h3 className="h3 text-dune mb-2">No</h3>
-                  <p className="body text-dune/70">I&apos;m a first-timer!</p>
-                </motion.button>
-              </div>
-            </motion.div>
-          )}
-
           {currentStep === 'lash-style' && (
             <motion.div
               key="lash-style"

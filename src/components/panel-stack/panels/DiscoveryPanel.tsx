@@ -58,7 +58,7 @@ const serviceJourneys: Record<string, ServiceJourney> = {
     introContent: {
       title: 'The Art of Permanent Lashes',
       philosophy: 'At Lash Pop, we believe your lashes should enhance your natural beauty while fitting seamlessly into your lifestyle.',
-      description: 'Our expert artists craft personalized lash looks that complement your eye shape, facial features, and personal style. From subtle enhancement to dramatic transformation, we\'re here to help you discover your perfect lash journey.',
+      description: 'Our expert artists craft personalized lash looks that complement your eye shape, facial features, and personal style. From subtle enhancement to dramatic transformation, we&apos;re here to help you discover your perfect lash journey.',
     },
     educationContent: {
       title: 'Everything You Need to Know About Lashes',
@@ -429,7 +429,7 @@ export function DiscoveryPanel({ panel }: DiscoveryPanelProps) {
                 className="text-center py-8 border-t border-sage/20"
               >
                 <h3 className="text-lg font-medium text-dune mb-3">
-                  Welcome back! Are you rebooking a service you've had before?
+                  Welcome back! Are you rebooking a service you&apos;ve had before?
                 </h3>
                 <div className="flex gap-4 justify-center">
                   <motion.button
@@ -468,7 +468,7 @@ export function DiscoveryPanel({ panel }: DiscoveryPanelProps) {
                 What services are you interested in?
               </h3>
               <p className="text-sage text-sm">
-                Select all that apply - we'll guide you through each one
+                Select all that apply - we&apos;ll guide you through each one
               </p>
             </div>
 
@@ -932,7 +932,7 @@ export function DiscoveryPanel({ panel }: DiscoveryPanelProps) {
                 AI Assistant Coming Soon
               </h3>
               <p className="text-sage max-w-md mx-auto">
-                Our AI-powered Q&A feature is currently in development. Soon you'll be able to ask any questions about our services and get instant, personalized answers.
+                Our AI-powered Q&A feature is currently in development. Soon you&apos;ll be able to ask any questions about our services and get instant, personalized answers.
               </p>
             </div>
 

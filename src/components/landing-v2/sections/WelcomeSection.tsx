@@ -47,7 +47,7 @@ export function WelcomeSection() {
               style={{ color: '#8B5A6B' }} // Dark dusty rose
             >
               Where artistry meets precision in every lash application.
-              Our studio is more than a beauty destination—it's a sanctuary
+              Our studio is more than a beauty destination—it&apos;s a sanctuary
               where confidence blooms and natural beauty is enhanced with
               meticulous care and expertise.
             </motion.p>

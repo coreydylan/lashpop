@@ -32,7 +32,7 @@ export function SectionTransition({
   const ref = useRef(null)
   const isInView = useInView(ref, {
     once: triggerOnce,
-    margin: triggerMargin
+    margin: triggerMargin as any
   })
 
   // Parallax effect
@@ -124,7 +124,7 @@ export function StaggerContainer({
   const ref = useRef(null)
   const isInView = useInView(ref, {
     once: triggerOnce,
-    margin: triggerMargin
+    margin: triggerMargin as any
   })
 
   return (

@@ -19,33 +19,35 @@ const BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL || `https://${BUCKET_NA
 async function uploadImageToS3(imageUrl: string, id: string): Promise<string | null> {
   try {
     const response = await fetch(imageUrl)
-    if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`)
-    
+    if (!response.ok) return null
+
     const arrayBuffer = await response.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
-    
-    const key = `instagram/${id}-${nanoid()}.jpg`
-    
+
+    const key = `instagram/${id}_${Date.now()}.jpg`
+
     await s3Client.send(new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key: key,
       Body: buffer,
-      ContentType: "image/jpeg",
-      CacheControl: "max-age=31536000, public",
+      ContentType: 'image/jpeg',
+      CacheControl: 'public, max-age=31536000',
     }))
-    
+
     return `${BUCKET_URL}/${key}`
   } catch (error) {
-    console.error(`Error uploading image for post ${id}:`, error)
+    console.error('Error uploading to S3:', error)
     return null
   }
 }
 
 async function ensureTag(categoryName: string, tagName: string, isCollection = false) {
-  // 1. Ensure Category
-  let category = await db.query.tagCategories.findFirst({
-    where: eq(tagCategories.name, categoryName)
-  })
+  // 1. Ensure Category - use select instead of query
+  let [category] = await db
+    .select()
+    .from(tagCategories)
+    .where(eq(tagCategories.name, categoryName))
+    .limit(1)
 
   if (!category) {
     const [newCategory] = await db.insert(tagCategories).values({
@@ -56,13 +58,15 @@ async function ensureTag(categoryName: string, tagName: string, isCollection = f
     category = newCategory
   }
 
-  // 2. Ensure Tag
-  let tag = await db.query.tags.findFirst({
-    where: and(
+  // 2. Ensure Tag - use select instead of query
+  let [tag] = await db
+    .select()
+    .from(tags)
+    .where(and(
       eq(tags.name, tagName),
       eq(tags.categoryId, category!.id)
-    )
-  })
+    ))
+    .limit(1)
 
   if (!tag) {
     const [newTag] = await db.insert(tags).values({
@@ -73,118 +77,123 @@ async function ensureTag(categoryName: string, tagName: string, isCollection = f
     tag = newTag
   }
 
-  return tag
+  return tag!
 }
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
+    // Verify cron secret
+    const authHeader = request.headers.get('authorization')
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        // Optional: Protect endpoint. 
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const apifyToken = process.env.APIFY_API_TOKEN
-    if (!apifyToken) {
-      return NextResponse.json({ error: "APIFY_API_TOKEN not configured" }, { status: 500 })
+    // Fetch Instagram feed
+    const INSTAGRAM_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN
+    if (!INSTAGRAM_TOKEN) {
+      throw new Error("Instagram access token not configured")
     }
 
-    // Ensure Tags exist
-    const collectionTag = await ensureTag("collections", "instagram", true)
-    const websiteTag = await ensureTag("website", "ig_carousel", false)
-
-    // 1. Call Apify to get latest posts
-    const response = await fetch(
-      `https://api.apify.com/v2/acts/apify~instagram-post-scraper/run-sync-get-dataset-items?token=${apifyToken}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: ["lashpopstudios"],
-          resultsLimit: 12,
-          onlyPostsNewerThan: "1 day",
-          skipPinnedPosts: false,
-        }),
-      }
+    const instagramResponse = await fetch(
+      `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink&access_token=${INSTAGRAM_TOKEN}`
     )
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error("Apify error:", errorText)
-      return NextResponse.json({ error: "Failed to fetch from Apify", details: errorText }, { status: 500 })
+    if (!instagramResponse.ok) {
+      throw new Error(`Instagram API error: ${instagramResponse.statusText}`)
     }
 
-    const posts = await response.json()
-    
-    if (!Array.isArray(posts)) {
-      return NextResponse.json({ error: "Invalid response format from Apify" }, { status: 500 })
-    }
+    const instagramData = await instagramResponse.json()
+
+    // Ensure Instagram collection tag exists
+    const instagramTag = await ensureTag('collection', 'instagram', true)
 
     const results = {
       processed: 0,
-      added: 0,
+      created: 0,
       skipped: 0,
-      errors: 0
+      errors: [] as string[]
     }
 
-    // 2. Process each post
-    for (const post of posts) {
-      results.processed++
-      
+    for (const post of instagramData.data) {
       try {
-        // Check if exists in Assets
-        const existing = await db.query.assets.findFirst({
-          where: eq(assets.externalId, post.id)
-        })
+        // Only process images and videos
+        if (post.media_type !== 'IMAGE' && post.media_type !== 'VIDEO') {
+          results.skipped++
+          continue
+        }
+
+        const mediaUrl = post.media_type === 'VIDEO' ? post.thumbnail_url : post.media_url
+        if (!mediaUrl) {
+          results.skipped++
+          continue
+        }
+
+        // Check if already exists
+        const [existing] = await db
+          .select()
+          .from(assets)
+          .where(eq(assets.externalId, post.id))
+          .limit(1)
 
         if (existing) {
           results.skipped++
           continue
         }
 
-        // Upload image to S3
-        const s3Url = await uploadImageToS3(post.displayUrl, post.id)
-        
+        // Upload to S3
+        const s3Url = await uploadImageToS3(mediaUrl, post.id)
         if (!s3Url) {
-          results.errors++
+          results.errors.push(`Failed to upload ${post.id}`)
           continue
         }
 
-        // Insert into DB (Assets)
+        // Create asset
         const [newAsset] = await db.insert(assets).values({
-          fileName: `instagram-${post.id}.jpg`,
+          id: nanoid(),
+          fileName: `${post.id}.jpg`,
           filePath: s3Url,
           fileType: 'image',
           mimeType: 'image/jpeg',
-          fileSize: 0, // We don't know this from Apify easily, can skip or fetch HEAD
+          fileSize: 0, // We don't have the exact size from Instagram API
+          width: null,
+          height: null,
           externalId: post.id,
           source: 'instagram',
-          caption: post.caption,
           sourceMetadata: {
-            permalink: post.url,
-            likesCount: post.likesCount,
-            commentsCount: post.commentsCount,
-            mediaType: post.type
-          }
+            caption: post.caption,
+            permalink: post.permalink,
+            mediaType: post.media_type,
+            syncedAt: new Date().toISOString()
+          },
+          uploadedAt: new Date(),
         }).returning()
 
-        // Link Tags
-        await db.insert(assetTags).values([
-          { assetId: newAsset.id, tagId: collectionTag.id },
-          { assetId: newAsset.id, tagId: websiteTag.id }
-        ])
+        // Add Instagram collection tag
+        await db.insert(assetTags).values({
+          assetId: newAsset.id,
+          tagId: instagramTag.id,
+        })
 
-        results.added++
+        results.created++
       } catch (error) {
         console.error(`Error processing post ${post.id}:`, error)
-        results.errors++
+        results.errors.push(`Error processing ${post.id}: ${error}`)
       }
+
+      results.processed++
     }
 
-    return NextResponse.json({ success: true, results })
+    return NextResponse.json({
+      success: true,
+      results,
+      timestamp: new Date().toISOString()
+    })
+
   } catch (error) {
-    console.error("Sync error:", error)
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    console.error('Instagram sync error:', error)
+    return NextResponse.json(
+      { error: `Sync failed: ${error}` },
+      { status: 500 }
+    )
   }
 }

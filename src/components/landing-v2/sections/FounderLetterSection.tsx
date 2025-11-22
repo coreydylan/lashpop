@@ -66,8 +66,8 @@ export function FounderLetterSection() {
               <p>Dear Beautiful Soul,</p>
               <p>When I founded LashPop, I envisioned more than just a lash studio. I dreamed of creating a space where every person who walks through our doors feels seen, celebrated, and transformed.</p>
               <p>Our journey began with a simple belief: that beauty services should be an experience of self-care and empowerment. Every lash we apply, every brow we shape, is done with intention and care, because we understand the confidence that comes from feeling your best.</p>
-              <p>Our team of artists doesn't just provide services—they craft experiences. Each member brings their unique talents and passion, creating a symphony of expertise that makes LashPop truly special.</p>
-              <p>Thank you for trusting us with your beauty journey. We can't wait to welcome you to our studio and show you what makes LashPop different.</p>
+              <p>Our team of artists doesn&apos;t just provide services—they craft experiences. Each member brings their unique talents and passion, creating a symphony of expertise that makes LashPop truly special.</p>
+              <p>Thank you for trusting us with your beauty journey. We can&apos;t wait to welcome you to our studio and show you what makes LashPop different.</p>
               <p>With love and lashes, The LashPop Family</p>
             </div>
           </motion.div>
