@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core"
+import { pgEnum, pgTable, text, timestamp, uuid, integer, jsonb } from "drizzle-orm/pg-core"
 import { teamMembers } from "./team_members"
 
 export const assetType = pgEnum("asset_type", ["image", "video"])
@@ -30,6 +30,11 @@ export const assets = pgTable("assets", {
   // Additional metadata
   altText: text("alt_text"), // Accessibility description
   caption: text("caption"), // Optional caption/notes
+  
+  // External Source Metadata (e.g. Instagram)
+  externalId: text("external_id").unique(), // ID from external source (e.g. IG media ID)
+  source: text("source"), // e.g. "instagram"
+  sourceMetadata: jsonb("source_metadata"), // Store full payload (permalink, likes, etc)
 
   // Timestamps
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
