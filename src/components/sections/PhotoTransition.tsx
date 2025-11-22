@@ -10,7 +10,7 @@ export function PhotoTransition() {
     target: containerRef,
     offset: ["start end", "end start"],
     layoutEffect: false
-  })
+  } as any)
 
   const y = useTransform(scrollYProgress, [0, 1], [100, -100])
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0.6])

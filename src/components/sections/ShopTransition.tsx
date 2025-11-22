@@ -10,7 +10,7 @@ export function ShopTransition() {
     target: containerRef,
     offset: ["start end", "end start"],
     layoutEffect: false
-  })
+  } as any)
 
   const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.8, 1, 1.1])
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0.8])

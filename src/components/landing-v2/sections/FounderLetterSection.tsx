@@ -16,7 +16,7 @@ export function FounderLetterSection() {
     target: mobileContainerRef,
     offset: ["start start", "end end"],
     layoutEffect: false
-  })
+  } as any)
 
   // Transform vertical scroll to horizontal movement
   // Start at left edge, anchor at 25%, pan to right edge

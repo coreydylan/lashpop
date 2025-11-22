@@ -35,7 +35,7 @@ export function HeroArchwayReveal({ heroContent, nextSection }: HeroArchwayRevea
     target: containerRef,
     offset: ['start start', 'end start'],
     layoutEffect: false
-  })
+  } as any)
 
   // Track current scroll phase
   const currentPhase = useScrollPhases(scrollYProgress)

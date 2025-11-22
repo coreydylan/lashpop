@@ -9,7 +9,7 @@ export function WaveTransition() {
     target: containerRef,
     offset: ["start end", "end start"],
     layoutEffect: false
-  })
+  } as any)
   
   // Create multiple layers of parallax for depth
   const y1 = useTransform(scrollY, [0, 1000], [0, -120])

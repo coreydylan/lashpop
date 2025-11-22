@@ -37,7 +37,7 @@ export function PhilosophySection() {
     target: containerRef,
     offset: ["start end", "end start"],
     layoutEffect: false
-  })
+  } as any)
   
   const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0])
   const scale = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.95, 1, 1, 0.95])

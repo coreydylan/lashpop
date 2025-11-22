@@ -40,7 +40,7 @@ export function SectionTransition({
     target: ref,
     offset: ["start end", "end start"],
     layoutEffect: false
-  })
+  } as any)
 
   const y = useTransform(
     scrollYProgress,
