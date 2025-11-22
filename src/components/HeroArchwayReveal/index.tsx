@@ -12,6 +12,7 @@
 'use client'
 
 import { useRef } from 'react'
+import Image from 'next/image'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useGridImages } from './hooks/useGridImages'
 import { useScrollPhases } from './hooks/useScrollPhases'
@@ -80,10 +81,12 @@ export function HeroArchwayReveal({ heroContent, nextSection }: HeroArchwayRevea
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {images.map((image) => (
                   <div key={image.id} className="relative aspect-square overflow-hidden rounded-lg">
-                    <img
+                    <Image
                       src={image.url}
                       alt={image.alt}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                      className="object-cover"
                     />
                   </div>
                 ))}

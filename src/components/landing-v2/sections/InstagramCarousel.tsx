@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
+import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
@@ -55,7 +56,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
         speed: 1.5, // Increased back to 1.5 as requested
         stopOnInteraction: false,
         stopOnMouseEnter: true,
-        rootNode: (emblaRoot) => emblaRoot.parentElement 
+        rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement 
       })
     ]
   )
@@ -190,11 +191,12 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                   }}
                 >
                   <div className="relative w-full h-full overflow-hidden rounded-2xl transform transition-transform duration-300 group-hover:scale-[1.02]">
-                    <img
+                    <Image
                       src={item.mediaUrl}
                       alt={`Gallery image ${index + 1}`}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 320px"
+                      className="object-cover"
                       draggable={false} // Prevent default image drag ghost
                     />
                     
@@ -244,11 +246,15 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={selectedImage}
-              alt="Enlarged view"
-              className="w-full h-full object-contain rounded-lg"
-            />
+            <div className="relative w-full h-full min-h-[50vh] min-w-[50vw]">
+              <Image
+                src={selectedImage}
+                alt="Enlarged view"
+                fill
+                className="object-contain rounded-lg"
+                sizes="100vw"
+              />
+            </div>
             <button
               onClick={() => setSelectedImage(null)}
               className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"

@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform, useInView } from 'framer-motion'
 import { useRef } from 'react'
+import Image from 'next/image'
 
 export function FounderLetterSection() {
   const ref = useRef(null)
@@ -38,12 +39,16 @@ export function FounderLetterSection() {
             transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
           >
             {/* SVG Letter Graphic */}
-            <img
-              src="/founder-letter.svg"
-              alt="Founder's Letter"
-              className="w-full h-auto"
-              aria-describedby="founder-letter-text"
-            />
+            <div className="relative w-full h-auto">
+              <Image
+                src="/founder-letter.svg"
+                alt="Founder's Letter"
+                width={0}
+                height={0}
+                style={{ width: '100%', height: 'auto' }}
+                aria-describedby="founder-letter-text"
+              />
+            </div>
 
             {/* Hidden accessible text for screen readers and SEO */}
             <div id="founder-letter-text" className="sr-only">
@@ -103,11 +108,16 @@ export function FounderLetterSection() {
                   ease: "easeInOut"
                 }}
               >
-                <img
-                  src="/lashpop-images/emily-arch.png"
-                  alt="Emily in decorative arch"
-                  className="w-full h-auto relative z-10 drop-shadow-2xl"
-                />
+                <div className="relative w-full h-auto">
+                  <Image
+                    src="/lashpop-images/emily-arch.png"
+                    alt="Emily in decorative arch"
+                    width={500}
+                    height={600}
+                    style={{ width: '100%', height: 'auto' }}
+                    className="relative z-10 drop-shadow-2xl"
+                  />
+                </div>
               </motion.div>
 
               {/* Decorative elements */}
@@ -151,10 +161,12 @@ export function FounderLetterSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
         >
-          <img
+          <Image
             src="/founder-letter.svg"
             alt="Founder's Letter"
-            className="w-full h-auto"
+            width={0}
+            height={0}
+            style={{ width: '100%', height: 'auto' }}
             aria-describedby="founder-letter-text-mobile"
           />
         </motion.div>
@@ -176,10 +188,13 @@ export function FounderLetterSection() {
 
           {/* Arch image */}
           <div className="relative">
-            <img
+            <Image
               src="/lashpop-images/emily-arch.png"
               alt="Emily in decorative arch"
-              className="w-full h-auto relative z-10 drop-shadow-xl"
+              width={400}
+              height={500}
+              style={{ width: '100%', height: 'auto' }}
+              className="relative z-10 drop-shadow-xl"
             />
           </div>
 

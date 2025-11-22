@@ -54,7 +54,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       const unregister = orchestrator.actions.registerSection('team', sectionRef.current)
       return unregister
     }
-  }, [])
+  }, [orchestrator.actions])
 
   const handleMemberClick = (member: TeamMember) => {
     setSelectedMember(member)
@@ -132,7 +132,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                   {/* Larger Card with Room for Tags */}
                   <motion.div
                     className="relative aspect-[3/4.5] overflow-hidden rounded-3xl shadow-lg"
-                    whileHover={{ y: -4, shadow: "xl" }}
+                    whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
                     transition={{ duration: 0.3 }}
                   >
                     {/* Image */}

@@ -68,6 +68,7 @@ interface Review {
   reviewText: string;
   rating: number;
   reviewDate: Date | null;
+  source: string;
 }
 
 interface ReviewStat {

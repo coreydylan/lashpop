@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
+import Image from 'next/image'
 
 export function WelcomeSection() {
   const ref = useRef(null)
@@ -12,10 +13,12 @@ export function WelcomeSection() {
     <section ref={ref} className="relative min-h-screen overflow-hidden">
       {/* Background Image - No overlay */}
       <div className="absolute inset-0 z-0">
-        <img
+        <Image
           src="/desk.jpg"
           alt="LashPop Studio Desk"
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
+          priority
         />
       </div>
 

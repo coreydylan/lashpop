@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useRef, useEffect, useState } from "react"
+import { useRef, useEffect, useState, useCallback } from "react"
 import { createPortal } from "react-dom"
 import clsx from "clsx"
 import { X, Grid3x3, LayoutGrid, CreditCard } from "lucide-react"
@@ -99,7 +99,7 @@ export function OmniBar({
   const scrollAnimationFrame = useRef<number | null>(null)
 
   // Check scroll position to show/hide scroll indicators
-  const checkScroll = () => {
+  const checkScroll = useCallback(() => {
     const container = scrollContainerRef.current
     if (!container) return
 
@@ -110,7 +110,7 @@ export function OmniBar({
     
     if (shouldShowLeft !== showLeftScroll) setShowLeftScroll(shouldShowLeft)
     if (shouldShowRight !== showRightScroll) setShowRightScroll(shouldShowRight)
-  }
+  }, [showLeftScroll, showRightScroll])
 
   // Handle mouse wheel for horizontal scrolling
   const handleWheel = (e: React.WheelEvent) => {
@@ -207,7 +207,7 @@ export function OmniBar({
       clearInterval(interval)
       stopAutoScroll() // Ensure scrolling stops on unmount
     }
-  }, [showLeftScroll, showRightScroll]) // Re-bind if state changes (though logic inside doesn't depend on closure state much)
+  }, [showLeftScroll, showRightScroll, checkScroll]) // Re-bind if state changes (though logic inside doesn't depend on closure state much)
 
   // Handle mobile chips scroll to close dropdowns
   useEffect(() => {

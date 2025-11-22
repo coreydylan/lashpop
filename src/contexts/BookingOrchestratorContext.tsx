@@ -405,70 +405,7 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
   }, []);
 
   // ============================================================================
-  // Selection Actions
-  // ============================================================================
-
-  const selectService = useCallback(
-    (service: Service, options?: SelectServiceOptions) => {
-      dispatch({ type: 'SELECT_SERVICE', payload: service });
-      dispatch({ type: 'SET_JOURNEY_STEP', payload: { step: 'service-selected', breadcrumb: service.name } });
-
-      eventBusRef.current.emit({
-        type: 'SERVICE_SELECTED',
-        payload: { service, source: options?.source || 'drawer' },
-      });
-    },
-    []
-  );
-
-  const selectProvider = useCallback(
-    (provider: Provider, options?: SelectProviderOptions) => {
-      dispatch({ type: 'SELECT_PROVIDER', payload: provider });
-      dispatch({ type: 'SET_JOURNEY_STEP', payload: { step: 'provider-selected', breadcrumb: provider.name } });
-
-      eventBusRef.current.emit({
-        type: 'PROVIDER_SELECTED',
-        payload: { provider, source: options?.source || 'panel' },
-      });
-
-      // Handle side effects
-      if (options?.scrollToTeam) {
-        setTimeout(() => scrollToSection('team', { highlight: [provider.id] }), 100);
-      }
-
-      if (options?.openPortfolio) {
-        setTimeout(() => openPortfolio(provider.id, { withBookingPanel: options.openBookingPanel }), 200);
-      }
-
-      if (options?.openBookingPanel) {
-        setTimeout(() => compressPortfolio(), 300);
-        eventBusRef.current.emit({
-          type: 'BOOKING_PANEL_OPENED',
-          payload: { providerId: provider.id },
-        });
-      }
-    },
-    []
-  );
-
-  const toggleProvider = useCallback((provider: Provider) => {
-    dispatch({ type: 'TOGGLE_PROVIDER', payload: provider });
-  }, []);
-
-  const selectCategory = useCallback((category: string) => {
-    dispatch({ type: 'SELECT_CATEGORY', payload: category });
-    eventBusRef.current.emit({
-      type: 'CATEGORY_FILTERED',
-      payload: { categories: [category] },
-    });
-  }, []);
-
-  const clearSelections = useCallback(() => {
-    dispatch({ type: 'CLEAR_SELECTIONS' });
-  }, []);
-
-  // ============================================================================
-  // Navigation Actions
+  // Navigation Actions (Defined first because they are dependencies)
   // ============================================================================
 
   const scrollToSection = useCallback(
@@ -561,6 +498,69 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
       });
     }
   }, [state.portfolio.providerId]);
+
+  // ============================================================================
+  // Selection Actions
+  // ============================================================================
+
+  const selectService = useCallback(
+    (service: Service, options?: SelectServiceOptions) => {
+      dispatch({ type: 'SELECT_SERVICE', payload: service });
+      dispatch({ type: 'SET_JOURNEY_STEP', payload: { step: 'service-selected', breadcrumb: service.name } });
+
+      eventBusRef.current.emit({
+        type: 'SERVICE_SELECTED',
+        payload: { service, source: options?.source || 'drawer' },
+      });
+    },
+    []
+  );
+
+  const selectProvider = useCallback(
+    (provider: Provider, options?: SelectProviderOptions) => {
+      dispatch({ type: 'SELECT_PROVIDER', payload: provider });
+      dispatch({ type: 'SET_JOURNEY_STEP', payload: { step: 'provider-selected', breadcrumb: provider.name } });
+
+      eventBusRef.current.emit({
+        type: 'PROVIDER_SELECTED',
+        payload: { provider, source: options?.source || 'panel' },
+      });
+
+      // Handle side effects
+      if (options?.scrollToTeam) {
+        setTimeout(() => scrollToSection('team', { highlight: [provider.id] }), 100);
+      }
+
+      if (options?.openPortfolio) {
+        setTimeout(() => openPortfolio(provider.id, { withBookingPanel: options.openBookingPanel }), 200);
+      }
+
+      if (options?.openBookingPanel) {
+        setTimeout(() => compressPortfolio(), 300);
+        eventBusRef.current.emit({
+          type: 'BOOKING_PANEL_OPENED',
+          payload: { providerId: provider.id },
+        });
+      }
+    },
+    [scrollToSection, openPortfolio, compressPortfolio]
+  );
+
+  const toggleProvider = useCallback((provider: Provider) => {
+    dispatch({ type: 'TOGGLE_PROVIDER', payload: provider });
+  }, []);
+
+  const selectCategory = useCallback((category: string) => {
+    dispatch({ type: 'SELECT_CATEGORY', payload: category });
+    eventBusRef.current.emit({
+      type: 'CATEGORY_FILTERED',
+      payload: { categories: [category] },
+    });
+  }, []);
+
+  const clearSelections = useCallback(() => {
+    dispatch({ type: 'CLEAR_SELECTIONS' });
+  }, []);
 
   // ============================================================================
   // Orchestrated Workflows

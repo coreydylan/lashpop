@@ -154,7 +154,7 @@ export default function DAMPage() {
 
   // Get collection from settings
   const activeCollectionId = settings.activeCollectionId
-  const setActiveCollectionId = (id: string | null | undefined) => updateActiveCollection(id ?? undefined)
+  const setActiveCollectionId = useCallback((id: string | null | undefined) => updateActiveCollection(id ?? undefined), [updateActiveCollection])
 
   const filterableAssets = useMemo(
     () =>
@@ -353,7 +353,7 @@ export default function DAMPage() {
 
   const handleClearFilters = useCallback(() => {
     setActiveFilters([])
-  }, [])
+  }, [setActiveFilters])
 
   const toggleUploadPanel = useCallback(() => {
     setIsUploadOpen(prev => !prev)
@@ -937,7 +937,7 @@ export default function DAMPage() {
       setOmniTags([])
     }
     // Don't clear pendingTagRemoval here - let useEffect handle it based on selection state
-  }, [computeExistingTags])
+  }, [])
 
   const handleApplyTags = useCallback(async () => {
     if (omniTags.length === 0 || selectedAssets.length === 0) return
@@ -1076,7 +1076,7 @@ export default function DAMPage() {
       await fetchAssets()
       setOmniTags(omniTags)
     }
-  }, [applyTagsToAssetIds, computeExistingTags, fetchAssets, normalizeExclusiveTags, omniTags, selectedAssets, appearingTags])
+  }, [applyTagsToAssetIds, fetchAssets, normalizeExclusiveTags, omniTags, selectedAssets, appearingTags])
 
   const handleRemoveTag = useCallback(async (tagId: string, count: number, targetAssetIds?: string[], skipPrompt = false) => {
     const isTeamMemberTag = tagId.startsWith('team-')
@@ -1848,7 +1848,8 @@ export default function DAMPage() {
     toggleUploadPanel,
     selectionMode,
     selectAssetsByTag,
-    selectAssetsByTeamMember
+    selectAssetsByTeamMember,
+    setGroupByTags
   ])
 
   const renderGroupByChips = () => {

@@ -325,7 +325,7 @@ export function AssetGrid({
       result.push(...flatten(bucket))
     })
     return result
-  }, [visibleAssets, groupedAssets, groupByCategories.length])
+  }, [groupedAssets, groupByCategories.length, assets])
 
   // Detect touch device
   useEffect(() => {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, ReactNode } from "react"
 import { createPortal } from "react-dom"
+import Image from "next/image"
 import clsx from "clsx"
 import {
   Home,
@@ -554,17 +555,21 @@ export function ThumbPanel({
                   <div className="w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0">
                     {member.cropCloseUpCircleUrl ? (
                       // Use pre-cropped image if available
-                      <img
+                      <Image
                         src={member.cropCloseUpCircleUrl}
                         alt={member.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="24px"
                       />
                     ) : (
                       // Use original image with object-fit
-                      <img
+                      <Image
                         src={member.imageUrl}
                         alt={member.name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        sizes="24px"
                       />
                     )}
                   </div>

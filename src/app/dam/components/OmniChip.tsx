@@ -2,6 +2,7 @@
 
 import { ReactNode, useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
+import Image from "next/image"
 import { X, Sparkles, Layers, MousePointer, Trash2, Filter, ChevronRight } from "lucide-react"
 import clsx from "clsx"
 
@@ -452,61 +453,39 @@ export function OmniChip({
                   </div>
                 ) : isStaticImage ? (
                   // Use pre-cropped image (cropCloseUpCircleUrl)
-                  <img
+                  <Image
                     src={imageUrl}
-                    alt={optionDisplayName}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.currentTarget
-                      target.style.display = 'none'
-                      const parent = target.parentElement
-                      if (parent) {
-                        const size = isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'
-                        parent.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg class="${size} text-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>`
-                      }
-                    }}
+                    alt={optionDisplayName || "Image"}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 16px, 20px"
                   />
                 ) : imageCrop ? (
                   // Apply crop positioning if crop data exists
-                  <img
+                  <Image
                     src={imageUrl}
-                    alt={optionDisplayName}
-                    className="absolute inset-0"
+                    alt={optionDisplayName || "Image"}
+                    fill
+                    className="absolute inset-0 object-cover"
                     style={{
                       width: `${imageCrop.scale * 100}%`,
                       height: `${imageCrop.scale * 100}%`,
                       left: `${50 - (imageCrop.x * imageCrop.scale)}%`,
-                      top: `${50 - (imageCrop.y * imageCrop.scale)}%`,
-                      objectFit: 'cover'
+                      top: `${50 - (imageCrop.y * imageCrop.scale)}%`
                     }}
-                    onError={(e) => {
-                      const target = e.currentTarget
-                      target.style.display = 'none'
-                      const parent = target.parentElement
-                      if (parent) {
-                        const size = isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'
-                        parent.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg class="${size} text-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>`
-                      }
-                    }}
+                    sizes="(max-width: 768px) 16px, 20px"
                   />
                 ) : (
                   // Fallback to object-fit: cover
-                  <img
+                  <Image
                     src={imageUrl}
-                    alt={optionDisplayName}
-                    className="w-full h-full object-cover"
+                    alt={optionDisplayName || "Image"}
+                    fill
+                    className="object-cover"
                     style={{
                       objectPosition: 'center 30%'
                     }}
-                    onError={(e) => {
-                      const target = e.currentTarget
-                      target.style.display = 'none'
-                      const parent = target.parentElement
-                      if (parent) {
-                        const size = isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'
-                        parent.innerHTML = `<div class="w-full h-full flex items-center justify-center"><svg class="${size} text-cream/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></div>`
-                      }
-                    }}
+                    sizes="(max-width: 768px) 16px, 20px"
                   />
                 )}
               </div>

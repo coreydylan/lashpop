@@ -309,7 +309,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                         {/* Review Text - Scrollable */}
                         <div className="flex-1 overflow-y-auto review-text-scroll pr-2">
                           <p className="text-dune/85 leading-relaxed text-[15px]">
-                            "{review.reviewText}"
+                            &quot;{review.reviewText}&quot;
                           </p>
                         </div>
                       </div>
@@ -334,7 +334,8 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                   onClick={() => {
                     setCurrentIndex(index)
                     if (scrollContainerRef.current) {
-                      const cardWidth = scrollContainerRef.current.firstChild?.firstChild?.clientWidth || 400
+                      const firstCard = scrollContainerRef.current.firstChild?.firstChild as HTMLElement
+                      const cardWidth = firstCard?.clientWidth || 400
                       const gap = 24
                       scrollContainerRef.current.scrollTo({
                         left: index * (cardWidth + gap),
