@@ -2,6 +2,7 @@ import { getAllServices } from "@/actions/services"
 import { getTeamMembers } from "@/actions/team"
 import { getHighRatedReviews, getReviewStats } from "@/actions/reviews"
 import { getInstagramPosts } from "@/actions/instagram"
+import { getServiceCategories } from "@/actions/categories"
 import LandingPageV2Client from "./LandingPageV2Client"
 
 export default async function LandingPageV2() {
@@ -57,11 +58,15 @@ export default async function LandingPageV2() {
   // Fetch Instagram posts
   const instagramPosts = await getInstagramPosts(20)
 
+  // Fetch service categories
+  const serviceCategories = await getServiceCategories()
+
   return <LandingPageV2Client
     services={formattedServices}
     teamMembers={formattedTeamMembers}
     reviews={reviews}
     reviewStats={reviewStats}
     instagramPosts={instagramPosts}
+    serviceCategories={serviceCategories}
   />
 }

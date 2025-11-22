@@ -78,15 +78,25 @@ interface ReviewStat {
   updatedAt: Date;
 }
 
+interface ServiceCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  displayOrder: number;
+}
+
 interface LandingPageV2ClientProps {
   services: Service[];
   teamMembers: TeamMember[];
   reviews: Review[];
   reviewStats?: ReviewStat[];
   instagramPosts?: any[]; // Using any[] for now to avoid circular type dependency, or define strict type
+  serviceCategories?: ServiceCategory[];
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [] }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [] }: LandingPageV2ClientProps) {
   return (
     <BookingOrchestratorProvider>
       <PanelStackProvider services={services}>
@@ -127,7 +137,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 {/* Team Section */}
                 <SectionTransition variant="slideUp" delay={0.1}>
                   <div id="team">
-                    <EnhancedTeamSectionClient teamMembers={teamMembers} />
+                    <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
                   </div>
                 </SectionTransition>
 
