@@ -32,7 +32,7 @@ export function Navigation() {
   const handleNavClick = (item: any, e: React.MouseEvent) => {
     if (item.action === 'open-services') {
       e.preventDefault()
-      actions.openPanel('category-picker')
+      actions.openPanel('category-picker', { entryPoint: 'page' })
     } else if (item.href?.startsWith('#')) {
       e.preventDefault()
       const element = document.querySelector(item.href)
@@ -105,7 +105,7 @@ export function Navigation() {
               ))}
               <button 
                 className="btn btn-primary ml-4"
-                onClick={() => actions.openPanel('category-picker')}
+                onClick={() => actions.openPanel('category-picker', { entryPoint: 'page' })}
               >
                 Book Now
               </button>
@@ -183,7 +183,7 @@ export function Navigation() {
                 transition={{ delay: 0.5 }}
                 className="btn btn-primary mt-8"
                 onClick={() => {
-                  actions.openPanel('category-picker');
+                  actions.openPanel('category-picker', { entryPoint: 'page' });
                   setIsMobileMenuOpen(false);
                 }}
               >
