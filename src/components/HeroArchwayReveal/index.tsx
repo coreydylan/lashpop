@@ -128,17 +128,6 @@ export function HeroArchwayReveal({ heroContent, nextSection }: HeroArchwayRevea
         </div>
       )}
 
-      {/* Debug indicator (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 z-50 glass rounded-lg px-4 py-2 shadow-lg">
-          <p className="caption text-dune">
-            <span className="font-medium">Phase:</span> {currentPhase}
-          </p>
-          <p className="caption text-dune/60 mt-1">
-            <span className="font-medium">Images:</span> {images.length}
-          </p>
-        </div>
-      )}
     </div>
   )
 }

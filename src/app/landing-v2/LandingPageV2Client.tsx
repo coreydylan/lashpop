@@ -123,7 +123,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
               <main className="page-content overflow-x-hidden" style={{ paddingTop: 'var(--panel-stack-height, 0px)' }}>
                 {/* Hero with Archway Reveal and Photo Grid Scroller */}
                 <HeroArchwayReveal
-                  heroContent={<HeroSection />}
+                  heroContent={<HeroSection reviewStats={reviewStats} />}
                 />
 
                 {/* Welcome to LashPop Section - Now standalone */}
@@ -135,8 +135,8 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 {/* Founder Letter Section */}
                 <FounderLetterSection />
 
-                {/* Team Section */}
-                <SectionTransition variant="slideUp" delay={0.1}>
+                {/* Team Section - Adjusted trigger margin for earlier loading */}
+                <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
                   <div id="team">
                     <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
                   </div>

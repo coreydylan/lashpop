@@ -6,7 +6,7 @@ import Image from 'next/image'
 
 export function FounderLetterSection() {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-20%" })
+  const isInView = useInView(ref, { once: true, margin: "-10%" }) // Adjusted for earlier trigger
 
   // Mobile scroll logic - using container ref properly
   const mobileContainerRef = useRef<HTMLDivElement>(null)

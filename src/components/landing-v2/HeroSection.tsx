@@ -5,6 +5,16 @@ import { useRef } from 'react'
 import Image from 'next/image'
 import { useDrawer } from '../drawers/DrawerContext'
 import { usePanelStack } from '@/contexts/PanelStackContext'
+import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
+
+interface HeroSectionProps {
+  reviewStats?: Array<{
+    id: string
+    source: string
+    rating: string
+    reviewCount: number
+  }>
+}
 
 // Import the exact same icons from v1
 function SunIcon({ className = "w-6 h-6" }: { className?: string }) {
@@ -27,12 +37,15 @@ function CircleDecoration({ className = "w-full h-full" }: { className?: string 
   )
 }
 
-export default function HeroSection() {
+export default function HeroSection({ reviewStats }: HeroSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const { scrollY } = useScroll({ layoutEffect: false } as any)
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
   const { actions: panelActions } = usePanelStack()
+
+  // Calculate total reviews
+  const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
 
   return (
     <section ref={containerRef} className="relative h-screen flex items-end">
@@ -74,12 +87,12 @@ export default function HeroSection() {
         className="relative z-10 container-wide"
       >
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-end h-full pb-0">
-          {/* Left Content */}
+          {/* Left Content - Moved up with margin-bottom */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-8 pb-12"
+            className="space-y-6 mb-[20vh]"
           >
             {/* Small accent */}
             <motion.div
@@ -92,25 +105,71 @@ export default function HeroSection() {
               <span className="caption">Oceanside, California</span>
             </motion.div>
 
-            {/* Main heading - EXACT same text */}
+            {/* Main heading - Using serif font */}
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
-              className="h1 text-dune"
+              className="font-serif text-dune"
+              style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, lineHeight: 1.2 }}
             >
               Welcome to LashPop Studios
-              <span className="block text-dusty-rose italic">
+              <span className="block text-dusty-rose italic mt-2">
                 Effortless Beauty for the Modern Woman
               </span>
             </motion.h1>
+
+            {/* Beautiful Reviews Chip with Logos */}
+            {totalReviews > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="inline-block"
+              >
+                <div className="relative group">
+                  {/* Subtle outer glow */}
+                  <div className="absolute inset-0 rounded-full bg-golden/10 blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
+
+                  {/* Main chip */}
+                  <div className="relative px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      {/* Platform Logos - Using compact components */}
+                      <div className="flex items-center gap-0.5 pr-2 border-r border-dune/20">
+                        <GoogleLogoCompact />
+                        <YelpLogoCompact />
+                        <VagaroLogoCompact />
+                      </div>
+
+                      {/* Review Count and Stars */}
+                      <div className="flex items-center gap-1">
+                        <span className="font-serif text-sm font-semibold text-dune">
+                          {totalReviews.toLocaleString()}
+                        </span>
+                        {/* Five stars */}
+                        <div className="flex items-center -space-x-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <svg key={i} className="w-3.5 h-3.5 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="font-serif text-xs text-dune ml-0.5">
+                          Reviews
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Description */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="body-lg text-dune/80 max-w-md"
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="font-serif text-lg text-dune/80 max-w-md"
             >
               A collective of women-owned beauty businesses
             </motion.p>
@@ -119,7 +178,7 @@ export default function HeroSection() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
+              transition={{ delay: 0.7, duration: 0.8 }}
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <button
@@ -135,24 +194,6 @@ export default function HeroSection() {
                 Discover Your Look
               </button>
             </motion.div>
-
-            {/* Trust indicators */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8, duration: 0.8 }}
-              className="flex items-center gap-6 pt-8 border-t border-sage/20"
-            >
-              <div>
-                <p className="text-2xl font-light text-golden">500+</p>
-                <p className="caption text-dune/60">Happy Clients</p>
-              </div>
-              <div className="w-px h-10 bg-sage/20" />
-              <div>
-                <p className="text-2xl font-light text-golden">8+</p>
-                <p className="caption text-dune/60">Years Experience</p>
-              </div>
-            </motion.div>
           </motion.div>
 
           {/* Right Content - Image */}
@@ -160,11 +201,11 @@ export default function HeroSection() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative"
+            className="relative h-full flex items-end"
           >
-            <div className="relative">
-              {/* Arch-shaped image container */}
-              <div className="relative w-full aspect-[4/5] rounded-[200px_200px_0_0] overflow-hidden">
+            <div className="relative w-full">
+              {/* Arch-shaped image container - extends to bottom */}
+              <div className="relative w-full h-[85vh] rounded-[200px_200px_0_0] overflow-hidden">
                 <Image
                   src="/lashpop-images/studio/studio-photos-by-salome.jpg"
                   alt="LashPop Studio Interior"
