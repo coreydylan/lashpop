@@ -44,10 +44,6 @@ export default function InstagramCarouselManager() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    fetchInstagramAssets()
-  }, [config.damTagFilter])
-
   const fetchInstagramAssets = async () => {
     setLoading(true)
     try {
@@ -62,6 +58,11 @@ export default function InstagramCarouselManager() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchInstagramAssets()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.damTagFilter])
 
   const handleSave = async () => {
     setSaving(true)
@@ -260,7 +261,7 @@ export default function InstagramCarouselManager() {
               <div>
                 <h3 className="text-lg font-light text-dune">Selected Images</h3>
                 <p className="text-xs text-dune/60 mt-1">
-                  {assets.length} image{assets.length !== 1 ? "s" : ""} tagged with "{config.damTagFilter}"
+                  {assets.length} image{assets.length !== 1 ? 's' : ''} tagged with &ldquo;{config.damTagFilter}&rdquo;
                 </p>
               </div>
               <button
@@ -278,7 +279,7 @@ export default function InstagramCarouselManager() {
             ) : assets.length === 0 ? (
               <div className="text-center py-20">
                 <InstagramIcon className="w-16 h-16 mx-auto mb-4 text-dune/20" />
-                <p className="text-dune/60 mb-2">No images found with tag "{config.damTagFilter}"</p>
+                <p className="text-dune/60 mb-2">No images found with tag &ldquo;{config.damTagFilter}&rdquo;</p>
                 <p className="text-sm text-dune/40">
                   Add this tag to images in the DAM to display them here
                 </p>
@@ -325,7 +326,7 @@ export default function InstagramCarouselManager() {
               <div className="mt-4 p-3 bg-golden/10 border border-golden/20 rounded-xl">
                 <p className="text-xs text-dune/70">
                   <strong>Note:</strong> Showing {config.maxImages} of {assets.length} images.
-                  Increase the "Maximum Images" setting to show more.
+                  Increase the &ldquo;Maximum Images&rdquo; setting to show more.
                 </p>
               </div>
             )}
@@ -337,8 +338,8 @@ export default function InstagramCarouselManager() {
       <div className="glass border border-golden/20 rounded-2xl p-4 bg-golden/10">
         <p className="text-sm text-dune/70">
           <strong>Managing Instagram Content:</strong> Use the DAM to upload and tag images.
-          Images with the tag "{config.damTagFilter}" will automatically appear in the carousel.
-          You can sync posts directly from Instagram using the DAM's Instagram integration.
+          Images with the tag &ldquo;{config.damTagFilter}&rdquo; will automatically appear in the carousel.
+          You can sync posts directly from Instagram using the DAM&apos;s Instagram integration.
         </p>
       </div>
     </div>

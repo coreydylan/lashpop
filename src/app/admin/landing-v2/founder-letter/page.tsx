@@ -81,7 +81,7 @@ export default function FounderLetterEditor() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-light text-dune">Founder Letter Editor</h2>
-          <p className="text-sm text-dune/60 mt-1">Edit the founder's message and story section</p>
+          <p className="text-sm text-dune/60 mt-1">Edit the founder&apos;s message and story section</p>
         </div>
         <button
           onClick={handleSave}
@@ -198,6 +198,7 @@ export default function FounderLetterEditor() {
 
             <div className="relative w-full aspect-square bg-dune/5 rounded-2xl overflow-hidden mb-4">
               {content.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={content.imageUrl}
                   alt={content.altText}
@@ -254,6 +255,7 @@ export default function FounderLetterEditor() {
 
             <div className="relative w-full h-32 bg-dune/5 rounded-2xl overflow-hidden mb-4 flex items-center justify-center">
               {content.svgPath ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={content.svgPath}
                   alt="Founder letter graphic"
