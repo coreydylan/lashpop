@@ -105,19 +105,37 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               <span className="caption">Oceanside, California</span>
             </motion.div>
 
-            {/* Main heading - Using serif font */}
-            <motion.h1
+            {/* Main heading - New layered design */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
-              className="font-serif text-dune"
-              style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, lineHeight: 1.2 }}
+              className="relative"
             >
-              Welcome to LashPop Studios
-              <span className="block text-dusty-rose italic mt-2">
+              {/* "welcome" in League Script */}
+              <h1
+                className="font-league-script text-dune leading-none"
+                style={{ fontSize: 'clamp(4rem, 10vw, 7rem)' }}
+              >
+                welcome
+              </h1>
+
+              {/* "LashPop Studios" overlapping slightly */}
+              <div
+                className="font-serif text-dune -mt-6 md:-mt-8 relative z-10"
+                style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400 }}
+              >
+                LashPop Studios
+              </div>
+
+              {/* Tagline - smaller and italic */}
+              <div
+                className="font-serif text-dusty-rose italic mt-2"
+                style={{ fontSize: 'clamp(1rem, 2.5vw, 1.75rem)' }}
+              >
                 Effortless Beauty for the Modern Woman
-              </span>
-            </motion.h1>
+              </div>
+            </motion.div>
 
             {/* Beautiful Reviews Chip with Logos */}
             {totalReviews > 0 && (

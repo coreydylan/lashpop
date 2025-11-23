@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display, Josefin_Slab, Chivo, Andika } from 'next/font/google'
+import { Inter, Playfair_Display, Josefin_Slab, Chivo, Andika, League_Script } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { UserKnowledgeProvider } from '@/contexts/UserKnowledgeContext'
@@ -35,6 +35,13 @@ const andika = Andika({
   variable: '--font-andika',
 })
 
+const leagueScript = League_Script({
+  subsets: ['latin'],
+  weight: '400',
+  display: 'swap',
+  variable: '--font-league-script',
+})
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -64,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} ${josefin.variable} ${chivo.variable} ${andika.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable} ${josefin.variable} ${chivo.variable} ${andika.variable} ${leagueScript.variable}`}>
       <body className={`${inter.className} antialiased bg-stone-50 text-gray-800`}>
         <AuthProvider>
           <UserKnowledgeProvider>

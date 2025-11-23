@@ -34,6 +34,7 @@ const config: Config = {
         josefin: ['var(--font-josefin)', 'serif'],
         chivo: ['var(--font-chivo)', 'sans-serif'],
         andika: ['var(--font-andika)', 'sans-serif'],
+        'league-script': ['var(--font-league-script)', 'cursive'],
       },
       animation: {
         'fade-in': 'fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',

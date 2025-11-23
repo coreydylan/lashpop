@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head><title>Hydration Test</title></head>
+<body>
+<h1>The hydration errors you're seeing are caused by:</h1>
+<ol>
+<li><b>HeroSection</b> - uses useScroll() without layoutEffect: false</li>
+<li><b>SectionTransition</b> - uses useScroll({target: ref}) before ref hydrates</li>
+<li><b>FounderLetterSection</b> - uses useScroll({target: ref}) before ref hydrates</li>
+</ol>
+
+<p>These errors happen in Next.js dev mode but NOT in production mode because:</p>
+<ul>
+<li>Production does SSR optimization that hides these issues</li>
+<li>Dev mode's Fast Refresh is more sensitive to hydration mismatches</li>
+</ul>
+
+<p><b>The code on Vercel works because Vercel runs production builds</b></p>
+</body>
+</html>
