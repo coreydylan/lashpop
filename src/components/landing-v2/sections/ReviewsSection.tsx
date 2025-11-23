@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
+import useEmblaCarousel from 'embla-carousel-react'
+import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 
 // Custom CSS for hidden scrollbars
@@ -52,60 +54,56 @@ interface ReviewsSectionProps {
 
 export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProps) {
   const ref = useRef(null)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: true,
+    align: 'center',
+    skipSnaps: false
+  }, [
+    WheelGesturesPlugin()
+  ])
   const isInView = useInView(ref, { once: true, margin: "-20%" })
   const [currentIndex, setCurrentIndex] = useState(0)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeft, setScrollLeft] = useState(0)
 
-  // Auto-rotate reviews - pause when hovering
+  const onSelect = useCallback((api: any) => {
+    setCurrentIndex(api.selectedScrollSnap())
+  }, [])
+
   useEffect(() => {
-    if (reviews.length > 0 && !hoveredCard && !isDragging) {
+    if (!emblaApi) return
+    
+    emblaApi.on('select', onSelect)
+    emblaApi.on('reInit', onSelect)
+    
+    // Embla handles dragging state internally, but we track it for our auto-rotate logic
+    const onPointerDown = () => setIsDragging(true)
+    const onPointerUp = () => setIsDragging(false)
+    
+    emblaApi.rootNode().addEventListener('pointerdown', onPointerDown)
+    window.addEventListener('pointerup', onPointerUp) // Window to catch release outside
+    
+    return () => {
+        emblaApi.off('select', onSelect)
+        emblaApi.off('reInit', onSelect)
+        emblaApi.rootNode().removeEventListener('pointerdown', onPointerDown)
+        window.removeEventListener('pointerup', onPointerUp)
+    }
+  }, [emblaApi, onSelect])
+
+  // Auto-rotate reviews - pause when hovering or dragging
+  useEffect(() => {
+    if (reviews.length > 0 && !hoveredCard && !isDragging && emblaApi) {
       const interval = setInterval(() => {
-        handleScroll('right')
+        if (emblaApi.canScrollNext()) {
+            emblaApi.scrollNext()
+        } else {
+            emblaApi.scrollTo(0)
+        }
       }, 7000)
       return () => clearInterval(interval)
     }
-  }, [reviews.length, hoveredCard, isDragging])
-
-  const handleScroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const container = scrollContainerRef.current
-      const containerWidth = container.offsetWidth
-      const scrollAmount = containerWidth * 0.85 // Scroll almost full width
-
-      const targetScroll = direction === 'left'
-        ? Math.max(0, container.scrollLeft - scrollAmount)
-        : Math.min(container.scrollWidth - containerWidth, container.scrollLeft + scrollAmount)
-
-      container.scrollTo({
-        left: targetScroll,
-        behavior: 'smooth'
-      })
-
-      // Update index after scroll
-      setTimeout(() => {
-        const cards = container.querySelectorAll('.review-card')
-        let closestIndex = 0
-        let closestDistance = Infinity
-
-        cards.forEach((card, index) => {
-          const cardRect = card.getBoundingClientRect()
-          const containerRect = container.getBoundingClientRect()
-          const distance = Math.abs(cardRect.left - containerRect.left)
-
-          if (distance < closestDistance) {
-            closestDistance = distance
-            closestIndex = index
-          }
-        })
-
-        setCurrentIndex(closestIndex)
-      }, 300)
-    }
-  }
+  }, [reviews.length, hoveredCard, isDragging, emblaApi])
 
 
   const renderStars = (rating: number) => {
@@ -238,42 +236,19 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          {/* Enhanced Navigation Buttons */}
-          <button
-            onClick={() => handleScroll('left')}
-            className="absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-20 bg-white/30 backdrop-blur-xl rounded-full p-4 shadow-xl hover:bg-white/40 transition-all duration-300 border border-white/50 group hover:scale-110"
-            aria-label="Previous review"
-          >
-            <svg className="w-6 h-6 text-dune group-hover:text-dusty-rose transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <button
-            onClick={() => handleScroll('right')}
-            className="absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-20 bg-white/30 backdrop-blur-xl rounded-full p-4 shadow-xl hover:bg-white/40 transition-all duration-300 border border-white/50 group hover:scale-110"
-            aria-label="Next review"
-          >
-            <svg className="w-6 h-6 text-dune group-hover:text-dusty-rose transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
           {/* Instagram-style Snap Carousel */}
           <div
-            ref={scrollContainerRef}
-            className="review-carousel overflow-x-auto cursor-grab active:cursor-grabbing"
-            style={{
-              scrollSnapType: 'x mandatory',
-              WebkitOverflowScrolling: 'touch'
-            }}
+            ref={emblaRef}
+            className="review-carousel overflow-hidden cursor-grab active:cursor-grabbing"
           >
-            <div className="flex gap-5 pb-8 px-4 lg:px-12">
+            <div className="flex touch-pan-y pl-4 lg:pl-[calc(50vw-240px)] py-10">
               {reviews.map((review, index) => (
+                <div 
+                  key={review.id} 
+                  className="flex-[0_0_auto] mr-5 pl-4 first:pl-0"
+                >
                 <motion.div
-                  key={review.id}
-                  className="review-card shrink-0 w-[85vw] md:w-[420px] lg:w-[480px]"
-                  style={{ scrollSnapAlign: 'start' }}
+                  className="review-card w-[85vw] md:w-[420px] lg:w-[480px]"
                   initial={{ opacity: 0, scale: 0.95, y: 20 }}
                   animate={isInView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
                   transition={{ duration: 0.5, delay: 0.05 * (index % 6), ease: [0.23, 1, 0.32, 1] }}
@@ -332,6 +307,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                     </div>
                   </motion.div>
                 </motion.div>
+                </div>
               ))}
             </div>
           </div>

@@ -57,52 +57,17 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
         stopOnInteraction: false,
         stopOnMouseEnter: true,
         rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement 
-      })
+      }),
+      WheelGesturesPlugin()
     ]
   )
 
   // Handle trackpad/mouse wheel scrolling
   useEffect(() => {
     if (!emblaApi) return
-
-    const onWheel = (event: WheelEvent) => {
-      // Only handle horizontal scrolling
-      // We check if the user is intentionally scrolling horizontally
-      const isHorizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY)
-      
-      if (isHorizontal) {
-        // Stop the event from scrolling the page (if supported) or triggering back/forward
-        event.preventDefault()
-        
-        const engine = (emblaApi as any).internalEngine()
-        
-        if (engine && engine.animation && engine.location) {
-           // Stop auto-scroll animation temporarily while user interacts
-           const autoScroll = emblaApi.plugins().autoScroll
-           if (autoScroll && autoScroll.isPlaying()) {
-             autoScroll.stop()
-           }
-
-           // Emulate "drag" physics by using scrollBody instead of direct location setting
-           // This ensures the momentum and friction feel exactly like a touch drag
-           // Multiplier 2.5 matches the "feel" of direct touch manipulation better for wheel events
-           engine.scrollBody.useBaseFriction().useDuration(20) // Small duration helps it "catch" the drag
-           const delta = event.deltaX * -1 // Invert delta for natural scroll direction
-           const target = engine.location.get() + delta
-           engine.location.set(target)
-           engine.translate.to(target)
-           engine.animation.start()
-        }
-      }
-    }
-
-    // Add wheel listener to the viewport with { passive: false } to allow preventDefault
-    const viewport = emblaApi.rootNode()
-    viewport.addEventListener('wheel', onWheel, { passive: false })
-
-    return () => {
-      viewport.removeEventListener('wheel', onWheel)
-    }
+    
+    // Wheel gestures are now handled by the WheelGesturesPlugin
+    // which provides natural momentum and drag physics
   }, [emblaApi])
 
   // Use provided posts or fallback to gallery images
