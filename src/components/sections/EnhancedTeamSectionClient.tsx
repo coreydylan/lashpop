@@ -54,7 +54,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const orchestrator = useBookingOrchestrator()
   const highlights = orchestrator.state.highlights.providers
 
-  // Initialize Embla carousel without auto-scroll
+  // Desktop carousel - dragFree for smooth scrolling
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     dragFree: true,
@@ -62,6 +62,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     align: 'start',
     skipSnaps: true,
     inViewThreshold: 0.7
+  })
+
+  // Mobile carousel - centered with peek, snap scrolling
+  const [emblaMobileRef, emblaMobileApi] = useEmblaCarousel({
+    loop: true,
+    align: 'center',
+    containScroll: 'trimSnaps',
+    skipSnaps: false,
   })
 
   const isInView = useInView(sectionRef, { once: true, margin: "-20%" })
@@ -131,13 +139,29 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     }
   }
 
-  const handleMemberClick = (member: TeamMember) => {
-    // On desktop, expand the card. On mobile, show modal
-    if (window.innerWidth >= 768) {
-      handleExpandCard(member)
-    } else {
-      setSelectedMember(member)
-      setShowModal(true)
+  const handleMemberClick = async (member: TeamMember) => {
+    // Both desktop and mobile use expanding experience now
+    if (expandedMemberId === member.id) {
+      setExpandedMemberId(null)
+      setPortfolioPhotos([])
+      return
+    }
+
+    setExpandedMemberId(member.id)
+    setSelectedMember(member)
+
+    // Fetch portfolio photos if member has a uuid
+    if (member.uuid) {
+      setLoadingPhotos(true)
+      try {
+        const photos = await getAssetsByTeamMemberId(member.uuid)
+        setPortfolioPhotos(photos)
+      } catch (error) {
+        console.error('Error fetching portfolio:', error)
+        setPortfolioPhotos([])
+      } finally {
+        setLoadingPhotos(false)
+      }
     }
   }
 
@@ -205,9 +229,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </p>
         </motion.div>
 
-        {/* Carousel Container */}
+        {/* Desktop Carousel */}
         <motion.div
-          className="relative w-full"
+          className="relative w-full hidden md:block"
           initial={{ opacity: 0, x: 100 }}
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 100 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -333,6 +357,100 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           {/* Gradient edges for seamless look */}
           <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
           <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
+        </motion.div>
+
+        {/* Mobile Carousel - Centered with Peek Views */}
+        <motion.div
+          className="relative w-full md:hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <div className="overflow-hidden" ref={emblaMobileRef}>
+            <div className="flex gap-4 py-4">
+              {displayMembers.map((member, index) => {
+                const memberCategories = getTeamMemberCategories(member.specialties)
+
+                return (
+                  <div
+                    key={`${member.id}-${index}`}
+                    className="flex-[0_0_82%] min-w-0 relative"
+                  >
+                    <motion.div
+                      onClick={() => handleMemberClick(member)}
+                      className="relative aspect-[3/4] overflow-hidden rounded-2xl shadow-lg active:scale-[0.98] transition-transform cursor-pointer"
+                    >
+                      {/* Image */}
+                      <Image
+                        src={member.image}
+                        alt={member.name}
+                        fill
+                        sizes="(max-width: 768px) 82vw, 320px"
+                        className="object-cover"
+                        draggable={false}
+                      />
+
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+
+                      {/* Category Chips at Top */}
+                      {memberCategories.length > 0 && (
+                        <div className="absolute top-3 left-3 right-3 flex flex-wrap gap-1.5">
+                          {memberCategories.map((category, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2.5 py-1 rounded-full bg-white/25 backdrop-blur-md border border-white/35 text-[10px] font-medium text-white shadow-sm"
+                            >
+                              {category}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Content at Bottom */}
+                      <div className="absolute inset-x-0 bottom-0 p-4">
+                        <div className="space-y-1">
+                          <h3 className="font-sans font-bold text-white text-base drop-shadow-lg">
+                            {member.name}
+                          </h3>
+                          <p className="font-sans text-white/90 text-xs drop-shadow-md">
+                            {member.role}
+                          </p>
+                          {member.type === 'independent' && member.businessName && (
+                            <p className="font-sans text-white/80 text-[10px] italic drop-shadow-md">
+                              {member.businessName}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Tap to view indicator */}
+                        <div className="flex items-center gap-1.5 mt-3">
+                          <div className="flex-1 h-px bg-white/30" />
+                          <span className="text-white/70 text-[10px] font-medium">Tap to view</span>
+                          <div className="flex-1 h-px bg-white/30" />
+                        </div>
+                      </div>
+
+                      {/* Highlight Ring */}
+                      {isHighlighted(member.id) && (
+                        <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-2xl pointer-events-none" />
+                      )}
+                    </motion.div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Scroll Indicator Dots */}
+          <div className="flex justify-center gap-1.5 mt-6">
+            {teamMembers.slice(0, Math.min(teamMembers.length, 6)).map((_, idx) => (
+              <div
+                key={idx}
+                className="w-1.5 h-1.5 rounded-full bg-dune/20"
+              />
+            ))}
+          </div>
         </motion.div>
       </section>
 
@@ -524,131 +642,166 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         )}
       </AnimatePresence>
 
-      {/* Team Member Modal (Mobile Only) */}
+      {/* Mobile Expanding View - Morphs to Full Screen */}
       <AnimatePresence>
-        {showModal && selectedMember && (
+        {expandedMemberId !== null && selectedMember && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop Overlay */}
             <motion.div
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowModal(false)}
+              onClick={() => {
+                setExpandedMemberId(null)
+                setPortfolioPhotos([])
+              }}
             />
 
-            {/* Modal Content */}
+            {/* Full Screen Morphing Panel */}
             <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 overflow-y-auto md:hidden bg-white"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             >
-              <motion.div
-                className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto"
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                transition={{ type: "spring", damping: 20 }}
-                onClick={(e) => e.stopPropagation()}
+              {/* Close Button - Top Left */}
+              <button
+                onClick={() => {
+                  setExpandedMemberId(null)
+                  setPortfolioPhotos([])
+                }}
+                className="fixed top-4 left-4 z-10 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm border border-dune/10 flex items-center justify-center shadow-md active:scale-95 transition-transform"
               >
-                {/* Close Button */}
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md border border-white/60 flex items-center justify-center hover:bg-white transition-all"
-                >
-                  <X className="w-5 h-5 text-dune" />
-                </button>
+                <ArrowLeft className="w-4 h-4 text-dune" />
+              </button>
 
-                {/* Modal Header with Image */}
-                <div className="relative h-80 rounded-t-3xl overflow-hidden">
-                  <Image
-                    src={selectedMember.image}
-                    alt={selectedMember.name}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              {/* Hero Image */}
+              <div className="relative h-72 bg-gradient-to-br from-sage/20 to-dusty-rose/20">
+                <Image
+                  src={selectedMember.image}
+                  alt={selectedMember.name}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                  {/* Header Content */}
-                  <div className="absolute bottom-6 left-8 right-8">
-                    <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
-                      {selectedMember.name}
-                    </h2>
-                    <p className="text-lg text-white/90 drop-shadow-md">
-                      {selectedMember.role}
+                {/* Name & Role Overlay */}
+                <div className="absolute bottom-5 left-5 right-5">
+                  <h2 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">
+                    {selectedMember.name}
+                  </h2>
+                  <p className="text-base text-white/90 drop-shadow-md">
+                    {selectedMember.role}
+                  </p>
+                  {selectedMember.type === 'independent' && selectedMember.businessName && (
+                    <p className="text-xs text-white/80 italic drop-shadow-md mt-0.5">
+                      {selectedMember.businessName}
                     </p>
-                    {selectedMember.type === 'independent' && selectedMember.businessName && (
-                      <p className="text-sm text-white/80 italic mt-1 drop-shadow-md">
-                        {selectedMember.businessName}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
+              </div>
 
-                {/* Modal Body */}
-                <div className="p-8 space-y-6">
-                  {/* Category Tags */}
-                  {getTeamMemberCategories(selectedMember.specialties).length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
-                        <span
-                          key={idx}
-                          className="px-4 py-2 rounded-full bg-dusty-rose/10 border border-dusty-rose/20 text-sm font-medium text-dune"
-                        >
-                          {category}
-                        </span>
+              {/* Content */}
+              <div className="px-5 py-6 space-y-6">
+                {/* Category Chips */}
+                {getTeamMemberCategories(selectedMember.specialties).length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 rounded-full bg-dusty-rose/10 border border-dusty-rose/20 text-xs font-medium text-dune"
+                      >
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Bio */}
+                {selectedMember.bio && (
+                  <div>
+                    <h3 className="text-base font-semibold text-dune mb-2 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-dusty-rose" />
+                      About
+                    </h3>
+                    <p className="text-sm text-dune/70 leading-relaxed">{selectedMember.bio}</p>
+                  </div>
+                )}
+
+                {/* Quote */}
+                {selectedMember.quote && (
+                  <div className="bg-sage/5 rounded-xl p-4 border border-sage/10">
+                    <p className="text-dune/75 italic text-sm">&ldquo;{selectedMember.quote}&rdquo;</p>
+                  </div>
+                )}
+
+                {/* Portfolio */}
+                <div>
+                  <h3 className="text-base font-semibold text-dune mb-3 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-golden" />
+                    Portfolio
+                  </h3>
+
+                  {loadingPhotos ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="aspect-square bg-sage/10 rounded-lg animate-pulse" />
                       ))}
                     </div>
-                  )}
-
-                  {/* Bio Section */}
-                  {selectedMember.bio && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-dune mb-3">About</h3>
-                      <p className="text-dune/70 leading-relaxed">{selectedMember.bio}</p>
+                  ) : portfolioPhotos.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {portfolioPhotos.map((photo) => (
+                        <div key={photo.id} className="relative aspect-square overflow-hidden rounded-lg group">
+                          <Image
+                            src={photo.filePath}
+                            alt={photo.altText || 'Portfolio image'}
+                            fill
+                            className="object-cover group-active:scale-105 transition-transform"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-dune/40 text-xs">
+                      No portfolio photos yet
                     </div>
                   )}
+                </div>
 
-                  {/* Quote */}
-                  {selectedMember.quote && (
-                    <div className="bg-sage/10 rounded-2xl p-6 border border-sage/20">
-                      <Sparkles className="w-5 h-5 text-sage mb-3" />
-                      <p className="text-dune/80 italic">&ldquo;{selectedMember.quote}&rdquo;</p>
+                {/* Specialties */}
+                {selectedMember.specialties.length > 0 && (
+                  <div>
+                    <h3 className="text-base font-semibold text-dune mb-3">Specialties</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedMember.specialties.map((specialty, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-cream rounded-full">
+                          <div className="w-1.5 h-1.5 rounded-full bg-dusty-rose" />
+                          <span className="text-dune/70 text-xs">{specialty}</span>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Specialties List */}
-                  {selectedMember.specialties.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-dune mb-3">Specialties</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {selectedMember.specialties.map((specialty, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-dusty-rose" />
-                            <span className="text-dune/70 text-sm">{specialty}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                {/* Fun Fact */}
+                {selectedMember.funFact && (
+                  <div className="bg-golden/5 rounded-xl p-4 border border-golden/10">
+                    <h3 className="text-xs font-semibold text-dune/70 mb-1.5">Fun Fact</h3>
+                    <p className="text-dune/70 text-sm">{selectedMember.funFact}</p>
+                  </div>
+                )}
 
-                  {/* Fun Fact */}
-                  {selectedMember.funFact && (
-                    <div className="bg-golden/10 rounded-2xl p-6 border border-golden/20">
-                      <h3 className="text-sm font-semibold text-dune mb-2">Fun Fact</h3>
-                      <p className="text-dune/70">{selectedMember.funFact}</p>
-                    </div>
-                  )}
-
-                  {/* Contact & Booking */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                {/* Contact & Booking - Sticky Bottom */}
+                <div className="sticky bottom-0 bg-white pt-4 pb-safe space-y-2.5 border-t border-dune/5">
+                  <div className="flex gap-2.5">
                     <a
                       href={`tel:${selectedMember.phone}`}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-cream border border-dune/10 text-dune active:scale-95 transition-transform"
                     >
-                      <Phone className="w-4 h-4" />
-                      <span className="font-medium">Call</span>
+                      <Phone className="w-3.5 h-3.5" />
+                      <span className="font-medium text-xs">Call</span>
                     </a>
 
                     {selectedMember.instagram && (
@@ -656,25 +809,25 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-full bg-cream border border-dune/10 text-dune active:scale-95 transition-transform"
                       >
-                        <Instagram className="w-4 h-4" />
-                        <span className="font-medium">Instagram</span>
+                        <Instagram className="w-3.5 h-3.5" />
+                        <span className="font-medium text-xs">Instagram</span>
                       </a>
                     )}
-
-                    <a
-                      href={selectedMember.bookingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-dusty-rose text-white hover:bg-dusty-rose/90 transition-all"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span className="font-medium">Book Now</span>
-                    </a>
                   </div>
+
+                  <a
+                    href={selectedMember.bookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-full bg-dusty-rose text-white active:scale-95 transition-transform shadow-sm"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium text-sm">Book with {selectedMember.name.split(' ')[0]}</span>
+                  </a>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           </>
         )}

@@ -16,6 +16,8 @@ export interface AssetWithTags {
   fileType: "image" | "video";
   uploadedAt: Date;
   teamMemberId: string | null;
+  altText?: string | null;
+  caption?: string | null;
   tags?: Array<{
     id: string;
     name: string;
