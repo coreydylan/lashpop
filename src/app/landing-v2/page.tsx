@@ -33,6 +33,7 @@ export default async function LandingPageV2() {
   // Transform database format to component format
   const formattedTeamMembers = teamMembers.map((member, index) => ({
     id: index, // Use index as ID since UUID can't be converted to number
+    uuid: member.id, // Keep the actual UUID for DAM lookups
     name: member.name,
     role: member.role,
     type: member.type as 'employee' | 'independent',

@@ -3,9 +3,10 @@
 import { motion, AnimatePresence, useMotionValue, useTransform, useInView } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, GripVertical, ArrowLeft } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
+import { getAssetsByTeamMemberId, type AssetWithTags } from '@/actions/dam'
 
 interface TeamMember {
   id: number
@@ -44,6 +45,9 @@ interface EnhancedTeamSectionClientProps {
 export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] }: EnhancedTeamSectionClientProps) {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
+  const [expandedMemberId, setExpandedMemberId] = useState<number | null>(null)
+  const [portfolioPhotos, setPortfolioPhotos] = useState<AssetWithTags[]>([])
+  const [loadingPhotos, setLoadingPhotos] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
 
@@ -100,9 +104,41 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     }
   }, [emblaApi])
 
-  const handleMemberClick = (member: TeamMember) => {
+  // Fetch portfolio photos when expanding a card
+  const handleExpandCard = async (member: TeamMember) => {
+    if (expandedMemberId === member.id) {
+      // Close if clicking the same card
+      setExpandedMemberId(null)
+      setPortfolioPhotos([])
+      return
+    }
+
+    setExpandedMemberId(member.id)
     setSelectedMember(member)
-    setShowModal(true)
+
+    // Fetch portfolio photos if member has a uuid
+    if (member.uuid) {
+      setLoadingPhotos(true)
+      try {
+        const photos = await getAssetsByTeamMemberId(member.uuid)
+        setPortfolioPhotos(photos)
+      } catch (error) {
+        console.error('Error fetching portfolio:', error)
+        setPortfolioPhotos([])
+      } finally {
+        setLoadingPhotos(false)
+      }
+    }
+  }
+
+  const handleMemberClick = (member: TeamMember) => {
+    // On desktop, expand the card. On mobile, show modal
+    if (window.innerWidth >= 768) {
+      handleExpandCard(member)
+    } else {
+      setSelectedMember(member)
+      setShowModal(true)
+    }
   }
 
   const isHighlighted = (memberId: number) => highlights.includes(memberId.toString())
@@ -227,7 +263,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       {/* Content at Bottom */}
                       <div className="absolute inset-x-0 bottom-0 p-5">
                         {/* Name and Role */}
-                        <div className="space-y-1">
+                        <div className="space-y-1 mb-3">
                           <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg">
                             {member.name}
                           </h3>
@@ -243,28 +279,32 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           )}
                         </div>
 
-                        {/* Quick Actions */}
-                        <div className="flex gap-2 mt-4">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleMemberClick(member)
-                            }}
-                            className="px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs font-medium text-white hover:bg-white/30 transition-all"
-                          >
-                            View Profile
-                          </button>
-                          <a
-                            href={member.bookingUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="px-4 py-2 rounded-full bg-dusty-rose/80 backdrop-blur-md border border-dusty-rose/40 text-xs font-medium text-white hover:bg-dusty-rose/90 transition-all"
-                          >
-                            Book Now
-                          </a>
-                        </div>
+                        {/* Service Category Chips (smaller) */}
+                        {memberCategories.length > 0 && (
+                          <div className="flex gap-1.5 flex-wrap">
+                            {memberCategories.map((category, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 rounded-md bg-white/15 backdrop-blur-sm border border-white/25 text-[10px] font-medium text-white/90"
+                              >
+                                {category}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
+
+                      {/* Grippy Icon - Bottom Right */}
+                      <motion.div
+                        className="absolute bottom-4 right-4 pointer-events-none"
+                        initial={{ opacity: 0.6 }}
+                        whileHover={{ opacity: 1, x: 2 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-full p-2 shadow-lg">
+                          <GripVertical className="w-4 h-4 text-white" />
+                        </div>
+                      </motion.div>
 
                       {/* Hover Glow Effect */}
                       <AnimatePresence>
@@ -296,7 +336,195 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         </motion.div>
       </section>
 
-      {/* Team Member Modal */}
+      {/* Expanding Card View (Desktop) */}
+      <AnimatePresence>
+        {expandedMemberId !== null && selectedMember && (
+          <>
+            {/* Backdrop Overlay */}
+            <motion.div
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden md:block"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setExpandedMemberId(null)
+                setPortfolioPhotos([])
+              }}
+            />
+
+            {/* Expanding Panel - Slides from right */}
+            <motion.div
+              className="fixed right-0 top-0 bottom-0 w-full md:w-[600px] lg:w-[700px] bg-white shadow-2xl z-50 overflow-y-auto hidden md:block"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setExpandedMemberId(null)
+                  setPortfolioPhotos([])
+                }}
+                className="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-white border border-dune/20 flex items-center justify-center hover:bg-cream transition-all shadow-md"
+              >
+                <X className="w-5 h-5 text-dune" />
+              </button>
+
+              {/* Header Section */}
+              <div className="relative h-80 bg-gradient-to-br from-sage/20 to-dusty-rose/20">
+                <Image
+                  src={selectedMember.image}
+                  alt={selectedMember.name}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+                <div className="absolute bottom-6 left-8 right-8">
+                  <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+                    {selectedMember.name}
+                  </h2>
+                  <p className="text-lg text-white/90 drop-shadow-md mb-2">
+                    {selectedMember.role}
+                  </p>
+                  {selectedMember.type === 'independent' && selectedMember.businessName && (
+                    <p className="text-sm text-white/80 italic drop-shadow-md">
+                      {selectedMember.businessName}
+                    </p>
+                  )}
+
+                  {/* Category Chips */}
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 rounded-full bg-white/25 backdrop-blur-md border border-white/40 text-xs font-medium text-white"
+                      >
+                        {category}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Content Section */}
+              <div className="p-8 space-y-8">
+                {/* Bio Section */}
+                {selectedMember.bio && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-dune mb-3 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-dusty-rose" />
+                      About
+                    </h3>
+                    <p className="text-dune/70 leading-relaxed">{selectedMember.bio}</p>
+                  </div>
+                )}
+
+                {/* Quote */}
+                {selectedMember.quote && (
+                  <div className="bg-sage/10 rounded-2xl p-6 border border-sage/20">
+                    <p className="text-dune/80 italic text-sm">&ldquo;{selectedMember.quote}&rdquo;</p>
+                  </div>
+                )}
+
+                {/* Portfolio Section */}
+                <div>
+                  <h3 className="text-lg font-semibold text-dune mb-4 flex items-center gap-2">
+                    <Star className="w-5 h-5 text-golden" />
+                    Portfolio
+                  </h3>
+
+                  {loadingPhotos ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {[...Array(4)].map((_, i) => (
+                        <div key={i} className="aspect-square bg-sage/10 rounded-xl animate-pulse" />
+                      ))}
+                    </div>
+                  ) : portfolioPhotos.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-4">
+                      {portfolioPhotos.map((photo) => (
+                        <div key={photo.id} className="relative aspect-square overflow-hidden rounded-xl group">
+                          <Image
+                            src={photo.filePath}
+                            alt={photo.altText || 'Portfolio image'}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-dune/50 text-sm">
+                      No portfolio photos yet
+                    </div>
+                  )}
+                </div>
+
+                {/* Specialties */}
+                {selectedMember.specialties.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-dune mb-3">Specialties</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedMember.specialties.map((specialty, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-dusty-rose" />
+                          <span className="text-dune/70 text-sm">{specialty}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fun Fact */}
+                {selectedMember.funFact && (
+                  <div className="bg-golden/10 rounded-2xl p-6 border border-golden/20">
+                    <h3 className="text-sm font-semibold text-dune mb-2">Fun Fact</h3>
+                    <p className="text-dune/70 text-sm">{selectedMember.funFact}</p>
+                  </div>
+                )}
+
+                {/* Contact & Booking Actions */}
+                <div className="flex flex-col gap-3 pt-4 border-t border-dune/10">
+                  <div className="flex gap-3">
+                    <a
+                      href={`tel:${selectedMember.phone}`}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
+                    >
+                      <Phone className="w-4 h-4" />
+                      <span className="font-medium text-sm">Call</span>
+                    </a>
+
+                    {selectedMember.instagram && (
+                      <a
+                        href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
+                      >
+                        <Instagram className="w-4 h-4" />
+                        <span className="font-medium text-sm">Instagram</span>
+                      </a>
+                    )}
+                  </div>
+
+                  <a
+                    href={selectedMember.bookingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-dusty-rose text-white hover:bg-dusty-rose/90 transition-all shadow-md"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium">Book with {selectedMember.name.split(' ')[0]}</span>
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Team Member Modal (Mobile Only) */}
       <AnimatePresence>
         {showModal && selectedMember && (
           <>
