@@ -49,6 +49,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const [portfolioPhotos, setPortfolioPhotos] = useState<AssetWithTags[]>([])
   const [loadingPhotos, setLoadingPhotos] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [expandedPhotoId, setExpandedPhotoId] = useState<string | null>(null)
   const sectionRef = useRef<HTMLElement>(null)
 
   const orchestrator = useBookingOrchestrator()
@@ -257,12 +258,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     onMouseEnter={() => !isExpanded && setHoveredId(member.id)}
                     onMouseLeave={() => setHoveredId(null)}
                   >
-                    {/* Card with dynamic aspect ratio */}
+                    {/* Card with fixed aspect ratio */}
                     <motion.div
                       className="relative overflow-hidden rounded-3xl shadow-lg"
-                      animate={{
-                        height: isExpanded ? '600px' : 'auto',
-                        aspectRatio: isExpanded ? 'auto' : '3/4.5',
+                      style={{
+                        aspectRatio: '3/4.5',
                       }}
                       whileHover={!isExpanded ? { y: -4, scale: 1.02, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" } : {}}
                       transition={{ duration: 0.3 }}
@@ -374,104 +374,104 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             </div>
 
                             {/* Right: Content Column */}
-                            <div className="w-1/2 bg-white p-5 overflow-y-auto">
+                            <div className="w-1/2 bg-white overflow-y-auto relative">
                               {/* Close button */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setExpandedMemberId(null)
                                   setPortfolioPhotos([])
+                                  setExpandedPhotoId(null)
                                 }}
                                 className="absolute top-3 right-3 w-7 h-7 rounded-full bg-cream border border-dune/10 flex items-center justify-center hover:bg-dune/5 transition-colors z-10"
                               >
                                 <X className="w-4 h-4 text-dune" />
                               </button>
 
-                              <div className="space-y-4 mt-2">
-                                {/* Category Chips */}
-                                {memberCategories.length > 0 && (
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {memberCategories.map((category, idx) => (
-                                      <span
-                                        key={idx}
-                                        className="px-2.5 py-1 rounded-full bg-dusty-rose/10 border border-dusty-rose/20 text-[10px] font-medium text-dune"
-                                      >
-                                        {category}
-                                      </span>
-                                    ))}
+                              {!expandedPhotoId ? (
+                                // Grid View
+                                <div className="p-5 space-y-4 mt-2">
+                                  {/* Bio */}
+                                  {member.bio && (
+                                    <div>
+                                      <h4 className="text-xs font-semibold text-dune mb-1.5 flex items-center gap-1.5">
+                                        <Sparkles className="w-3 h-3 text-dusty-rose" />
+                                        About
+                                      </h4>
+                                      <p className="text-[11px] text-dune/70 leading-relaxed">{member.bio}</p>
+                                    </div>
+                                  )}
+
+                                  {/* Portfolio Album */}
+                                  {(loadingPhotos || portfolioPhotos.length > 0) && (
+                                    <div>
+                                      <h4 className="text-xs font-semibold text-dune mb-2 flex items-center gap-1.5">
+                                        <Star className="w-3 h-3 text-golden" />
+                                        Portfolio
+                                      </h4>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                // Full Width Photo View
+                                <div className="relative h-full flex flex-col">
+                                  {/* Back button */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setExpandedPhotoId(null)
+                                    }}
+                                    className="absolute top-3 left-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-dune/10 flex items-center justify-center hover:bg-white transition-colors z-10 shadow-md"
+                                  >
+                                    <ArrowLeft className="w-4 h-4 text-dune" />
+                                  </button>
+
+                                  {/* Expanded Photo */}
+                                  <div className="relative flex-1">
+                                    {portfolioPhotos.find(p => p.id === expandedPhotoId) && (
+                                      <Image
+                                        src={portfolioPhotos.find(p => p.id === expandedPhotoId)!.filePath}
+                                        alt={portfolioPhotos.find(p => p.id === expandedPhotoId)!.altText || 'Portfolio image'}
+                                        fill
+                                        className="object-contain"
+                                      />
+                                    )}
                                   </div>
-                                )}
+                                </div>
+                              )}
 
-                                {/* Bio */}
-                                {member.bio && (
-                                  <div>
-                                    <h4 className="text-xs font-semibold text-dune mb-1.5 flex items-center gap-1.5">
-                                      <Sparkles className="w-3 h-3 text-dusty-rose" />
-                                      About
-                                    </h4>
-                                    <p className="text-[11px] text-dune/70 leading-relaxed">{member.bio}</p>
-                                  </div>
-                                )}
-
-                                {/* Portfolio */}
-                                <div>
-                                  <h4 className="text-xs font-semibold text-dune mb-2 flex items-center gap-1.5">
-                                    <Star className="w-3 h-3 text-golden" />
-                                    Portfolio
-                                  </h4>
-
+                              {/* Photo Grid - Edge to Edge */}
+                              {!expandedPhotoId && (
+                                <div className="w-full">
                                   {loadingPhotos ? (
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-2 gap-0">
                                       {[...Array(4)].map((_, i) => (
-                                        <div key={i} className="aspect-square bg-sage/10 rounded-lg animate-pulse" />
+                                        <div key={i} className="aspect-square bg-sage/10 animate-pulse" />
                                       ))}
                                     </div>
                                   ) : portfolioPhotos.length > 0 ? (
-                                    <div className="grid grid-cols-2 gap-2">
-                                      {portfolioPhotos.slice(0, 6).map((photo) => (
-                                        <div key={photo.id} className="relative aspect-square overflow-hidden rounded-lg group">
+                                    <div className="grid grid-cols-2 gap-0">
+                                      {portfolioPhotos.map((photo) => (
+                                        <button
+                                          key={photo.id}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setExpandedPhotoId(photo.id)
+                                          }}
+                                          className="relative aspect-square overflow-hidden group cursor-pointer border border-dune/5 hover:border-dune/20 transition-colors"
+                                        >
                                           <Image
                                             src={photo.filePath}
                                             alt={photo.altText || 'Portfolio image'}
                                             fill
                                             className="object-cover group-hover:scale-105 transition-transform"
                                           />
-                                        </div>
+                                        </button>
                                       ))}
                                     </div>
-                                  ) : (
-                                    <div className="text-center py-4 text-dune/40 text-[10px]">
-                                      No portfolio photos yet
-                                    </div>
-                                  )}
+                                  ) : null}
                                 </div>
-
-                                {/* Specialties */}
-                                {member.specialties.length > 0 && (
-                                  <div>
-                                    <h4 className="text-xs font-semibold text-dune mb-2">Specialties</h4>
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {member.specialties.map((specialty, idx) => (
-                                        <div key={idx} className="flex items-center gap-1 px-2 py-1 bg-cream rounded-full">
-                                          <div className="w-1 h-1 rounded-full bg-dusty-rose" />
-                                          <span className="text-dune/70 text-[10px]">{specialty}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Booking CTA */}
-                                <a
-                                  href={member.bookingUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="block w-full text-center px-4 py-2.5 rounded-full bg-dusty-rose text-white text-xs font-medium hover:bg-dusty-rose/90 transition-colors mt-4"
-                                >
-                                  Book with {member.name.split(' ')[0]}
-                                </a>
-                              </div>
+                              )}
                             </div>
                           </div>
                         </>
