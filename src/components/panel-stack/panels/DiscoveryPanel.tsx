@@ -239,14 +239,7 @@ export function DiscoveryPanel({ panel }: DiscoveryPanelProps) {
   const handleReturningVisitor = (isReturning: boolean) => {
     setState(prev => ({ ...prev, isReturningVisitor: isReturning }));
     if (isReturning) {
-      goToStep('returning-visitor');
-      // Show rebooking question
-      setTimeout(() => {
-        const rebookingStep = document.getElementById('rebooking-question');
-        if (rebookingStep) {
-          rebookingStep.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
+      goToStep('rebooking-question');
     } else {
       goToStep('service-selection');
     }
@@ -419,38 +412,42 @@ export function DiscoveryPanel({ panel }: DiscoveryPanelProps) {
                 </motion.button>
               </div>
             </div>
+          </motion.div>
+        )}
 
-            {/* Rebooking question (appears after selecting "Yes") */}
-            {state.isReturningVisitor && (
-              <motion.div
-                id="rebooking-question"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center py-8 border-t border-sage/20"
-              >
-                <h3 className="text-lg font-medium text-dune mb-3">
-                  Welcome back! Are you rebooking a service you&apos;ve had before?
-                </h3>
-                <div className="flex gap-4 justify-center">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleRebookingResponse(true)}
-                    className="px-8 py-3 rounded-full bg-ocean-mist text-white font-medium"
-                  >
-                    Yes, rebooking
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => handleRebookingResponse(false)}
-                    className="px-8 py-3 rounded-full bg-sage/20 text-dune font-medium"
-                  >
-                    New service
-                  </motion.button>
-                </div>
-              </motion.div>
-            )}
+        {/* REBOOKING QUESTION */}
+        {state.currentStep === 'rebooking-question' && (
+          <motion.div
+            key="rebooking-question"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="space-y-6"
+          >
+            <div className="text-center py-8">
+              <Sparkles className="w-12 h-12 text-dusty-rose mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-dune mb-3">
+                Welcome back! Are you rebooking a service you&apos;ve had before?
+              </h3>
+              <div className="flex gap-4 justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleRebookingResponse(true)}
+                  className="px-8 py-3 rounded-full bg-ocean-mist text-white font-medium"
+                >
+                  Yes, rebooking
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleRebookingResponse(false)}
+                  className="px-8 py-3 rounded-full bg-sage/20 text-dune font-medium"
+                >
+                  New service
+                </motion.button>
+              </div>
+            </div>
           </motion.div>
         )}
 

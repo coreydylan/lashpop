@@ -21,6 +21,7 @@ import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { PanelStackContainer } from '@/components/panel-stack/PanelStackContainer';
+import { AutoDockOnScroll } from '@/components/panel-stack/AutoDockOnScroll';
 import { SectionTransition } from '@/components/landing-v2/transitions/SectionTransition';
 
 // Import global styles to ensure all the beautiful v1 styles are available
@@ -110,6 +111,9 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
               {/* Panel Stack System - Fixed at top below header */}
               <PanelStackContainer />
 
+              {/* Auto-dock panels when user scrolls main content */}
+              <AutoDockOnScroll scrollThreshold={100} />
+
               {/* Z-2: Drawer System Layer */}
               <DrawerSystem services={services} />
 
@@ -119,12 +123,15 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
               {/* Panel System - Renders active panels */}
               <PanelRenderer />
 
-              {/* Z-1: Page Surface with dynamic padding for panels */}
-              <main className="page-content overflow-x-hidden" style={{ paddingTop: 'var(--panel-stack-height, 0px)' }}>
-                {/* Hero with Archway Reveal and Photo Grid Scroller */}
-                <HeroArchwayReveal
+              {/* Z-1: Page Surface - panels now overlay instead of pushing content */}
+              <main className="page-content overflow-x-hidden">
+                {/* Hero with Archway Reveal and Photo Grid Scroller - Commented out for now */}
+                {/* <HeroArchwayReveal
                   heroContent={<HeroSection reviewStats={reviewStats} />}
-                />
+                /> */}
+                
+                {/* Hero Section - Direct Render */}
+                <HeroSection reviewStats={reviewStats} />
 
                 {/* Welcome to LashPop Section - Now standalone */}
                 <WelcomeSection />

@@ -14,13 +14,13 @@ export function PanelStackContainer() {
   const { state } = usePanelStack();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Calculate total height and update page padding
+  // Calculate total height (no longer adding padding to page content)
   useEffect(() => {
     if (!containerRef.current) return;
 
     const updateHeight = () => {
       const height = containerRef.current?.offsetHeight || 0;
-      // Emit height to context (will be used to add padding to page content)
+      // Set CSS variable for potential future use, but don't add padding
       document.documentElement.style.setProperty('--panel-stack-height', `${height}px`);
     };
 

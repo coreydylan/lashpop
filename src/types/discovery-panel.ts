@@ -1,5 +1,6 @@
 export type DiscoveryStep =
   | 'returning-visitor'
+  | 'rebooking-question'
   | 'service-selection'
   | 'service-journey'
   | 'lash-intro'

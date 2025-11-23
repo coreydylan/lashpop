@@ -69,18 +69,27 @@ export function HeroSection() {
               <span className="caption">Oceanside, California</span>
             </motion.div>
             
-            {/* Main heading */}
-            <motion.h1
+            {/* Main heading replaced with Logo */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
-              className="h1 text-dune"
             >
-              Welcome to LashPop Studios
-              <span className="block text-dusty-rose italic">
+              <div className="glass p-8 rounded-[3rem] inline-block mb-6">
+                <div className="relative w-[280px] h-[80px] md:w-[450px] md:h-[130px]">
+                  <Image
+                    src="/lashpop-images/branding/logo.png"
+                    alt="LashPop Studios"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              </div>
+              <h2 className="h1 block text-dusty-rose italic">
                 Effortless Beauty for the Modern Woman
-              </span>
-            </motion.h1>
+              </h2>
+            </motion.div>
 
             {/* Description */}
             <motion.p
