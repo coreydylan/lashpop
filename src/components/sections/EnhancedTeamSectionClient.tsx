@@ -243,92 +243,239 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
               {displayMembers.map((member, index) => {
                 const memberCategories = getTeamMemberCategories(member.specialties)
 
+                const isExpanded = expandedMemberId === member.id
+
                 return (
-                  <div
+                  <motion.div
                     key={`${member.id}-${index}`}
-                    className="flex-[0_0_auto] w-80 min-w-0 cursor-grab active:cursor-grabbing group relative"
+                    className="flex-[0_0_auto] min-w-0 cursor-pointer group relative"
+                    animate={{
+                      width: isExpanded ? '640px' : '320px',
+                    }}
+                    transition={{ type: 'spring', damping: 30, stiffness: 300 }}
                     onClick={() => handleMemberClick(member)}
-                    onMouseEnter={() => setHoveredId(member.id)}
+                    onMouseEnter={() => !isExpanded && setHoveredId(member.id)}
                     onMouseLeave={() => setHoveredId(null)}
                   >
-                    {/* Card with aspect ratio */}
+                    {/* Card with dynamic aspect ratio */}
                     <motion.div
-                      className="relative aspect-[3/4.5] overflow-hidden rounded-3xl shadow-lg"
-                      whileHover={{ y: -4, scale: 1.02, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+                      className="relative overflow-hidden rounded-3xl shadow-lg"
+                      animate={{
+                        height: isExpanded ? '600px' : 'auto',
+                        aspectRatio: isExpanded ? 'auto' : '3/4.5',
+                      }}
+                      whileHover={!isExpanded ? { y: -4, scale: 1.02, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" } : {}}
                       transition={{ duration: 0.3 }}
                     >
-                      {/* Image */}
-                      <Image
-                        src={member.image}
-                        alt={member.name}
-                        fill
-                        sizes="320px"
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        draggable={false}
-                      />
+                      {!isExpanded ? (
+                        <>
+                          {/* Collapsed State - Normal Card */}
+                          <Image
+                            src={member.image}
+                            alt={member.name}
+                            fill
+                            sizes="320px"
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                            draggable={false}
+                          />
 
-                      {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          {/* Gradient Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                      {/* Category Chips at Top */}
-                      {memberCategories.length > 0 && (
-                        <div className="absolute top-4 left-4 right-4 flex flex-wrap gap-2">
-                          {memberCategories.map((category, idx) => (
-                            <span
-                              key={idx}
-                              className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-xs font-medium text-white shadow-sm"
-                            >
-                              {category}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Content at Bottom */}
-                      <div className="absolute inset-x-0 bottom-0 p-5">
-                        {/* Name and Role */}
-                        <div className="space-y-1 mb-3">
-                          <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg">
-                            {member.name}
-                          </h3>
-                          <p className="font-sans text-white/90 text-sm drop-shadow-md">
-                            {member.role}
-                          </p>
-
-                          {/* Business Name for Independents */}
-                          {member.type === 'independent' && member.businessName && (
-                            <p className="font-sans text-white/80 text-xs italic drop-shadow-md mt-1">
-                              {member.businessName}
-                            </p>
+                          {/* Category Chips at Top */}
+                          {memberCategories.length > 0 && (
+                            <div className="absolute top-4 left-4 right-4 flex flex-wrap gap-2">
+                              {memberCategories.map((category, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-xs font-medium text-white shadow-sm"
+                                >
+                                  {category}
+                                </span>
+                              ))}
+                            </div>
                           )}
-                        </div>
 
-                        {/* Service Category Chips (smaller) */}
-                        {memberCategories.length > 0 && (
-                          <div className="flex gap-1.5 flex-wrap">
-                            {memberCategories.map((category, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 rounded-md bg-white/15 backdrop-blur-sm border border-white/25 text-[10px] font-medium text-white/90"
-                              >
-                                {category}
-                              </span>
-                            ))}
+                          {/* Content at Bottom */}
+                          <div className="absolute inset-x-0 bottom-0 p-5">
+                            {/* Name and Role */}
+                            <div className="space-y-1 mb-3">
+                              <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg">
+                                {member.name}
+                              </h3>
+                              <p className="font-sans text-white/90 text-sm drop-shadow-md">
+                                {member.role}
+                              </p>
+
+                              {/* Business Name for Independents */}
+                              {member.type === 'independent' && member.businessName && (
+                                <p className="font-sans text-white/80 text-xs italic drop-shadow-md mt-1">
+                                  {member.businessName}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Service Category Chips (smaller) */}
+                            {memberCategories.length > 0 && (
+                              <div className="flex gap-1.5 flex-wrap">
+                                {memberCategories.map((category, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-0.5 rounded-md bg-white/15 backdrop-blur-sm border border-white/25 text-[10px] font-medium text-white/90"
+                                  >
+                                    {category}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Grippy Icon - Bottom Right */}
-                      <motion.div
-                        className="absolute bottom-4 right-4 pointer-events-none"
-                        initial={{ opacity: 0.6 }}
-                        whileHover={{ opacity: 1, x: 2 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-full p-2 shadow-lg">
-                          <GripVertical className="w-4 h-4 text-white" />
-                        </div>
-                      </motion.div>
+                          {/* Grippy Icon - Bottom Right */}
+                          <motion.div
+                            className="absolute bottom-4 right-4 pointer-events-none"
+                            initial={{ opacity: 0.6 }}
+                            whileHover={{ opacity: 1, x: 2 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-full p-2 shadow-lg">
+                              <GripVertical className="w-4 h-4 text-white" />
+                            </div>
+                          </motion.div>
+                        </>
+                      ) : (
+                        <>
+                          {/* Expanded State - Two Column Layout */}
+                          <div className="flex h-full">
+                            {/* Left: Image Column */}
+                            <div className="relative w-1/2">
+                              <Image
+                                src={member.image}
+                                alt={member.name}
+                                fill
+                                sizes="320px"
+                                className="object-cover"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+                              {/* Name overlay on image */}
+                              <div className="absolute bottom-5 left-5 right-5">
+                                <h3 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">
+                                  {member.name}
+                                </h3>
+                                <p className="text-sm text-white/90 drop-shadow-md">
+                                  {member.role}
+                                </p>
+                                {member.type === 'independent' && member.businessName && (
+                                  <p className="text-xs text-white/80 italic drop-shadow-md mt-0.5">
+                                    {member.businessName}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Right: Content Column */}
+                            <div className="w-1/2 bg-white p-5 overflow-y-auto">
+                              {/* Close button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setExpandedMemberId(null)
+                                  setPortfolioPhotos([])
+                                }}
+                                className="absolute top-3 right-3 w-7 h-7 rounded-full bg-cream border border-dune/10 flex items-center justify-center hover:bg-dune/5 transition-colors z-10"
+                              >
+                                <X className="w-4 h-4 text-dune" />
+                              </button>
+
+                              <div className="space-y-4 mt-2">
+                                {/* Category Chips */}
+                                {memberCategories.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {memberCategories.map((category, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="px-2.5 py-1 rounded-full bg-dusty-rose/10 border border-dusty-rose/20 text-[10px] font-medium text-dune"
+                                      >
+                                        {category}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Bio */}
+                                {member.bio && (
+                                  <div>
+                                    <h4 className="text-xs font-semibold text-dune mb-1.5 flex items-center gap-1.5">
+                                      <Sparkles className="w-3 h-3 text-dusty-rose" />
+                                      About
+                                    </h4>
+                                    <p className="text-[11px] text-dune/70 leading-relaxed">{member.bio}</p>
+                                  </div>
+                                )}
+
+                                {/* Portfolio */}
+                                <div>
+                                  <h4 className="text-xs font-semibold text-dune mb-2 flex items-center gap-1.5">
+                                    <Star className="w-3 h-3 text-golden" />
+                                    Portfolio
+                                  </h4>
+
+                                  {loadingPhotos ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                      {[...Array(4)].map((_, i) => (
+                                        <div key={i} className="aspect-square bg-sage/10 rounded-lg animate-pulse" />
+                                      ))}
+                                    </div>
+                                  ) : portfolioPhotos.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-2">
+                                      {portfolioPhotos.slice(0, 6).map((photo) => (
+                                        <div key={photo.id} className="relative aspect-square overflow-hidden rounded-lg group">
+                                          <Image
+                                            src={photo.filePath}
+                                            alt={photo.altText || 'Portfolio image'}
+                                            fill
+                                            className="object-cover group-hover:scale-105 transition-transform"
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="text-center py-4 text-dune/40 text-[10px]">
+                                      No portfolio photos yet
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Specialties */}
+                                {member.specialties.length > 0 && (
+                                  <div>
+                                    <h4 className="text-xs font-semibold text-dune mb-2">Specialties</h4>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {member.specialties.map((specialty, idx) => (
+                                        <div key={idx} className="flex items-center gap-1 px-2 py-1 bg-cream rounded-full">
+                                          <div className="w-1 h-1 rounded-full bg-dusty-rose" />
+                                          <span className="text-dune/70 text-[10px]">{specialty}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Booking CTA */}
+                                <a
+                                  href={member.bookingUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="block w-full text-center px-4 py-2.5 rounded-full bg-dusty-rose text-white text-xs font-medium hover:bg-dusty-rose/90 transition-colors mt-4"
+                                >
+                                  Book with {member.name.split(' ')[0]}
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
 
                       {/* Hover Glow Effect */}
                       <AnimatePresence>
@@ -348,7 +495,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-3xl pointer-events-none" />
                       )}
                     </motion.div>
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>
@@ -453,194 +600,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </div>
         </motion.div>
       </section>
-
-      {/* Expanding Card View (Desktop) */}
-      <AnimatePresence>
-        {expandedMemberId !== null && selectedMember && (
-          <>
-            {/* Backdrop Overlay */}
-            <motion.div
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 hidden md:block"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setExpandedMemberId(null)
-                setPortfolioPhotos([])
-              }}
-            />
-
-            {/* Expanding Panel - Slides from right */}
-            <motion.div
-              className="fixed right-0 top-0 bottom-0 w-full md:w-[600px] lg:w-[700px] bg-white shadow-2xl z-50 overflow-y-auto hidden md:block"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => {
-                  setExpandedMemberId(null)
-                  setPortfolioPhotos([])
-                }}
-                className="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-white border border-dune/20 flex items-center justify-center hover:bg-cream transition-all shadow-md"
-              >
-                <X className="w-5 h-5 text-dune" />
-              </button>
-
-              {/* Header Section */}
-              <div className="relative h-80 bg-gradient-to-br from-sage/20 to-dusty-rose/20">
-                <Image
-                  src={selectedMember.image}
-                  alt={selectedMember.name}
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-                <div className="absolute bottom-6 left-8 right-8">
-                  <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
-                    {selectedMember.name}
-                  </h2>
-                  <p className="text-lg text-white/90 drop-shadow-md mb-2">
-                    {selectedMember.role}
-                  </p>
-                  {selectedMember.type === 'independent' && selectedMember.businessName && (
-                    <p className="text-sm text-white/80 italic drop-shadow-md">
-                      {selectedMember.businessName}
-                    </p>
-                  )}
-
-                  {/* Category Chips */}
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 rounded-full bg-white/25 backdrop-blur-md border border-white/40 text-xs font-medium text-white"
-                      >
-                        {category}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Content Section */}
-              <div className="p-8 space-y-8">
-                {/* Bio Section */}
-                {selectedMember.bio && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-dune mb-3 flex items-center gap-2">
-                      <Sparkles className="w-5 h-5 text-dusty-rose" />
-                      About
-                    </h3>
-                    <p className="text-dune/70 leading-relaxed">{selectedMember.bio}</p>
-                  </div>
-                )}
-
-                {/* Quote */}
-                {selectedMember.quote && (
-                  <div className="bg-sage/10 rounded-2xl p-6 border border-sage/20">
-                    <p className="text-dune/80 italic text-sm">&ldquo;{selectedMember.quote}&rdquo;</p>
-                  </div>
-                )}
-
-                {/* Portfolio Section */}
-                <div>
-                  <h3 className="text-lg font-semibold text-dune mb-4 flex items-center gap-2">
-                    <Star className="w-5 h-5 text-golden" />
-                    Portfolio
-                  </h3>
-
-                  {loadingPhotos ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      {[...Array(4)].map((_, i) => (
-                        <div key={i} className="aspect-square bg-sage/10 rounded-xl animate-pulse" />
-                      ))}
-                    </div>
-                  ) : portfolioPhotos.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      {portfolioPhotos.map((photo) => (
-                        <div key={photo.id} className="relative aspect-square overflow-hidden rounded-xl group">
-                          <Image
-                            src={photo.filePath}
-                            alt={photo.altText || 'Portfolio image'}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-dune/50 text-sm">
-                      No portfolio photos yet
-                    </div>
-                  )}
-                </div>
-
-                {/* Specialties */}
-                {selectedMember.specialties.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-dune mb-3">Specialties</h3>
-                    <div className="grid grid-cols-2 gap-3">
-                      {selectedMember.specialties.map((specialty, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-dusty-rose" />
-                          <span className="text-dune/70 text-sm">{specialty}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Fun Fact */}
-                {selectedMember.funFact && (
-                  <div className="bg-golden/10 rounded-2xl p-6 border border-golden/20">
-                    <h3 className="text-sm font-semibold text-dune mb-2">Fun Fact</h3>
-                    <p className="text-dune/70 text-sm">{selectedMember.funFact}</p>
-                  </div>
-                )}
-
-                {/* Contact & Booking Actions */}
-                <div className="flex flex-col gap-3 pt-4 border-t border-dune/10">
-                  <div className="flex gap-3">
-                    <a
-                      href={`tel:${selectedMember.phone}`}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
-                    >
-                      <Phone className="w-4 h-4" />
-                      <span className="font-medium text-sm">Call</span>
-                    </a>
-
-                    {selectedMember.instagram && (
-                      <a
-                        href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
-                      >
-                        <Instagram className="w-4 h-4" />
-                        <span className="font-medium text-sm">Instagram</span>
-                      </a>
-                    )}
-                  </div>
-
-                  <a
-                    href={selectedMember.bookingUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-dusty-rose text-white hover:bg-dusty-rose/90 transition-all shadow-md"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    <span className="font-medium">Book with {selectedMember.name.split(' ')[0]}</span>
-                  </a>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       {/* Mobile Expanding View - Morphs to Full Screen */}
       <AnimatePresence>
