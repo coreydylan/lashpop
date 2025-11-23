@@ -17,7 +17,8 @@ export function WelcomeSection() {
           src="/lashpop-images/deskcolor1.jpg"
           alt="LashPop Studio Desk"
           fill
-          className="object-cover"
+          sizes="100vw"
+          className="object-cover object-[35%_center] md:object-center"
           priority
         />
       </div>
@@ -25,7 +26,7 @@ export function WelcomeSection() {
       {/* Content Container with Safe Zone */}
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Text Area - Takes up top portion, leaving bottom 35% as safe zone */}
-        <div className="flex-1 flex items-center justify-center px-6 pb-[45vh]">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-[50vh] md:pb-[45vh] pt-8">
           <motion.div
             className="container max-w-5xl text-center"
             initial={{ opacity: 0, y: 40 }}
@@ -33,14 +34,14 @@ export function WelcomeSection() {
             transition={{ duration: 1, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
           >
             <motion.div
-              className="relative mx-auto mb-8"
+              className="relative mx-auto mb-4 md:mb-8"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={isInView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
             >
               {/* LP Logo with color mask */}
               <div
-                className="h-24 md:h-32 w-full mx-auto"
+                className="h-16 sm:h-20 md:h-32 w-full mx-auto"
                 style={{
                   maskImage: 'url(/lashpop-images/lp-logo.png)',
                   maskSize: 'contain',
@@ -56,7 +57,7 @@ export function WelcomeSection() {
             </motion.div>
 
             <motion.p
-              className="text-xl md:text-2xl !font-chivo font-light mb-6 leading-relaxed max-w-3xl mx-auto"
+              className="text-base sm:text-xl md:text-2xl !font-chivo font-light mb-4 md:mb-6 leading-relaxed max-w-xl md:max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
@@ -69,7 +70,7 @@ export function WelcomeSection() {
             </motion.p>
 
             <motion.p
-              className="text-lg md:text-xl !font-chivo font-light mb-8 leading-relaxed max-w-3xl mx-auto"
+              className="text-sm sm:text-lg md:text-xl !font-chivo font-light mb-6 md:mb-8 leading-relaxed max-w-xl md:max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}

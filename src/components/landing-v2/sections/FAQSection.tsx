@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
 
 // Define FAQ categories and items
-type FAQCategory = 'Booking & Appointments' | 'Policies' | 'Services' | 'Lash Extensions' | 'Lash Lifts & Tints' | 'Brows' | 'Microblading & PMU' | 'Botox & Injectables' | 'Facials' | 'Permanent Jewelry' | 'Waxing'
+type FAQCategory = 'Top FAQs' | 'Booking & Appointments' | 'Policies' | 'Services' | 'Lash Extensions' | 'Lash Lifts & Tints' | 'Brows' | 'Microblading & PMU' | 'Botox & Injectables' | 'Facials' | 'Permanent Jewelry' | 'Waxing'
 
-const categories: FAQCategory[] = [
+const categories: Exclude<FAQCategory, 'Top FAQs'>[] = [
   'Booking & Appointments',
   'Policies',
   'Services',
@@ -427,22 +427,50 @@ export function FAQSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-10%" })
   const [expandedIndex, setExpandedIndex] = useState<string | null>(null)
-  const [activeCategory, setActiveCategory] = useState<FAQCategory | 'All'>('All')
+  const [activeCategory, setActiveCategory] = useState<FAQCategory | 'All'>('Top FAQs')
 
   const toggleFAQ = (id: string) => {
     setExpandedIndex(expandedIndex === id ? null : id)
   }
 
+  // Define Top FAQs selection
+  const topFAQSelections = [
+    { category: 'Booking & Appointments', index: 0 }, // How do I book...
+    { category: 'Booking & Appointments', index: 1 }, // How do I know...
+    { category: 'Booking & Appointments', index: 3 }, // How to Prepare...
+    { category: 'Policies', index: 0 }, // Children & Pets
+    { category: 'Policies', index: 2 }, // Independent team members
+    { category: 'Lash Extensions', index: 0 }, // Appointment Lengths
+    { category: 'Lash Extensions', index: 2 }, // Aftercare
+    { category: 'Lash Extensions', index: 4 }, // Fills frequency
+    { category: 'Lash Lifts & Tints', index: 3 }, // Damage?
+    { category: 'Brows', index: 2 }, // Aftercare
+    { category: 'Permanent Jewelry', index: 0 }, // What is it?
+  ];
+
   // Filter FAQs based on active category
-  const filteredFAQs = activeCategory === 'All' 
-    ? Object.entries(faqData).flatMap(([category, items]) => 
-        items.map((item, index) => ({ ...item, category, id: `${category}-${index}` }))
-      )
-    : faqData[activeCategory as string]?.map((item, index) => ({ 
-        ...item, 
-        category: activeCategory, 
-        id: `${activeCategory}-${index}` 
-      })) || []
+  let filteredFAQs: Array<{ question: string; answer: React.ReactNode; category: string; id: string }> = [];
+
+  if (activeCategory === 'Top FAQs') {
+    filteredFAQs = topFAQSelections.map(selection => {
+      const item = faqData[selection.category][selection.index];
+      return {
+        ...item,
+        category: selection.category,
+        id: `top-${selection.category}-${selection.index}`
+      };
+    });
+  } else if (activeCategory === 'All') {
+    filteredFAQs = Object.entries(faqData).flatMap(([category, items]) => 
+      items.map((item, index) => ({ ...item, category, id: `${category}-${index}` }))
+    );
+  } else {
+    filteredFAQs = faqData[activeCategory as string]?.map((item, index) => ({ 
+      ...item, 
+      category: activeCategory, 
+      id: `${activeCategory}-${index}` 
+    })) || [];
+  }
 
   return (
     <section ref={ref} className="pb-20 bg-cream">
@@ -454,37 +482,40 @@ export function FAQSection() {
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="flex flex-wrap justify-center gap-3">
-            {['All', ...categories].map((category, index) => (
-              <motion.button
-                key={category}
-                onClick={() => setActiveCategory(category as FAQCategory | 'All')}
-                className="relative group"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {/* Active/Hover State Background */}
-                <div className={`absolute inset-0 rounded-full transition-opacity duration-300 ${
-                  activeCategory === category 
-                    ? 'bg-dusty-rose shadow-md' 
-                    : 'bg-white/50 hover:bg-white/80'
-                }`} />
-                
-                {/* Content */}
-                <div className={`relative px-4 py-2 rounded-full border transition-colors duration-300 ${
-                  activeCategory === category
-                    ? 'border-dusty-rose text-white'
-                    : 'border-white/60 text-dune hover:border-dusty-rose/30'
-                }`}>
-                  <span className="text-sm font-medium whitespace-nowrap">
-                    {category}
-                  </span>
-                </div>
-              </motion.button>
-            ))}
+          {/* Scrollable container for mobile */}
+          <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden">
+            <div className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-3 min-w-max md:min-w-0">
+              {['Top FAQs', 'All', ...categories].map((category, index) => (
+                <motion.button
+                  key={category}
+                  onClick={() => setActiveCategory(category as FAQCategory | 'All')}
+                  className="relative group shrink-0"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {/* Active/Hover State Background */}
+                  <div className={`absolute inset-0 rounded-full transition-opacity duration-300 ${
+                    activeCategory === category 
+                      ? 'bg-dusty-rose shadow-md' 
+                      : 'bg-white/50 hover:bg-white/80'
+                  }`} />
+                  
+                  {/* Content */}
+                  <div className={`relative px-4 py-2 rounded-full border transition-colors duration-300 ${
+                    activeCategory === category
+                      ? 'border-dusty-rose text-white'
+                      : 'border-white/60 text-dune hover:border-dusty-rose/30'
+                  }`}>
+                    <span className="text-sm font-medium whitespace-nowrap">
+                      {category}
+                    </span>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
           </div>
         </motion.div>
 
@@ -509,7 +540,8 @@ export function FAQSection() {
                   className="w-full px-6 py-5 text-left flex items-center justify-between group"
                 >
                   <div className="flex flex-col items-start gap-1">
-                    {activeCategory === 'All' && (
+                    {/* Show category label if in All or Top FAQs view */}
+                    {(activeCategory === 'All' || activeCategory === 'Top FAQs') && (
                       <span className="text-xs font-medium text-dusty-rose uppercase tracking-wider">
                         {faq.category}
                       </span>

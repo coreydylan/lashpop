@@ -125,11 +125,11 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2">
-              <li>123 Beauty Lane</li>
-              <li>Los Angeles, CA 90210</li>
+              <li>429 S Coast Hwy</li>
+              <li>Oceanside, CA 92054</li>
               <li className="pt-2">
-                <a href="tel:3105555274" className="hover:text-[#C4A484] transition-colors">
-                  (310) 555-LASH
+                <a href="tel:7602120448" className="hover:text-[#C4A484] transition-colors">
+                  +1 (760) 212-0448
                 </a>
               </li>
               <li>

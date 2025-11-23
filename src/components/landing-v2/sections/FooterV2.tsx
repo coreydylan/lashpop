@@ -101,12 +101,12 @@ export function FooterV2() {
             <h4 className="caption-bold text-dune mb-4">Visit Us</h4>
             <address className="not-italic space-y-3">
               <p className="caption text-dune/70">
-                123 Main Street<br />
+                429 S Coast Hwy<br />
                 Oceanside, CA 92054
               </p>
               <p className="caption text-dune/70">
-                <a href="tel:+17605551234" className="hover:text-dusty-rose transition-colors">
-                  (760) 555-1234
+                <a href="tel:+17602120448" className="hover:text-dusty-rose transition-colors">
+                  +1 (760) 212-0448
                 </a>
               </p>
               <p className="caption text-dune/70">
@@ -118,9 +118,8 @@ export function FooterV2() {
             <div className="mt-4">
               <p className="caption-bold text-dune mb-2">Hours</p>
               <p className="caption text-dune/70">
-                Mon-Fri: 9AM - 7PM<br />
-                Sat: 10AM - 6PM<br />
-                Sun: By appointment
+                8a-7:30p every day<br />
+                by appointment only
               </p>
             </div>
           </div>

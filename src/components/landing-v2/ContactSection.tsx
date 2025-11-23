@@ -49,8 +49,8 @@ export default function ContactSection() {
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Location</h3>
                     <p className="text-gray-600">
-                      123 Beauty Lane<br />
-                      Los Angeles, CA 90210
+                      429 S Coast Hwy<br />
+                      Oceanside, CA 92054
                     </p>
                     <button className="text-[#C4A484] hover:text-[#D4A574] text-sm mt-2 flex items-center gap-1">
                       Get Directions
@@ -66,7 +66,7 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Phone</h3>
-                    <p className="text-gray-600">(310) 555-LASH</p>
+                    <p className="text-gray-600">+1 (760) 212-0448</p>
                     <p className="text-sm text-gray-500 mt-1">Text or call for appointments</p>
                   </div>
                 </div>
@@ -92,16 +92,11 @@ export default function ContactSection() {
                     <h3 className="font-semibold text-gray-900 mb-2">Hours</h3>
                     <div className="space-y-1 text-gray-600">
                       <div className="flex justify-between">
-                        <span>Monday - Friday</span>
-                        <span className="font-medium">9:00 AM - 7:00 PM</span>
+                        <span>Every Day</span>
+                        <span className="font-medium">8:00 AM - 7:30 PM</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Saturday</span>
-                        <span className="font-medium">9:00 AM - 7:00 PM</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Sunday</span>
-                        <span className="font-medium">10:00 AM - 5:00 PM</span>
+                        <span className="italic">By appointment only</span>
                       </div>
                     </div>
                   </div>

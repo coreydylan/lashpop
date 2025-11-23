@@ -45,7 +45,7 @@ export function ContactSection() {
             >
               <h4 className="caption text-terracotta mb-2">Visit</h4>
               <p className="body text-dune/70">
-                123 Coastal Way<br />
+                429 S Coast Hwy<br />
                 Oceanside, CA 92054
               </p>
             </motion.div>
@@ -59,8 +59,8 @@ export function ContactSection() {
             >
               <h4 className="caption text-terracotta mb-2">Hours</h4>
               <p className="body text-dune/70">
-                Tuesday - Saturday<br />
-                9:00 AM - 6:00 PM
+                8a-7:30p every day<br />
+                by appointment only
               </p>
             </motion.div>
             
@@ -73,7 +73,7 @@ export function ContactSection() {
             >
               <h4 className="caption text-terracotta mb-2">Connect</h4>
               <p className="body text-dune/70">
-                (760) 555-1234<br />
+                +1 (760) 212-0448<br />
                 @lashpopstudios
               </p>
             </motion.div>
