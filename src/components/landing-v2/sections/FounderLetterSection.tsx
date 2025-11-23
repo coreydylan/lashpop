@@ -118,83 +118,97 @@ export function FounderLetterSection() {
         </div>
       </div>
 
-      {/* Mobile Layout - New Design */}
+      {/* Mobile Layout - Arch First with Zoom Effect */}
       <div
         ref={mobileContainerRef}
-        className="md:hidden relative pt-32 px-6 z-20"
+        className="md:hidden relative z-20"
       >
-        {/* Letter Content - Top */}
-        <motion.div
-          className="mb-12 drop-shadow-sm [&_img]:sepia [&_img]:brightness-[0.4] [&_img]:hue-rotate-[320deg] [&_img]:saturate-[0.5]"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
-        >
-          <Image
-            src="/founder-letter.svg"
-            alt="Founder's Letter"
-            width={600}
-            height={800}
-            className="w-full h-auto"
-            priority
-          />
-        </motion.div>
+        {/* Sticky Container for Arch with Zoom Effect */}
+        <div className="relative min-h-[150vh]">
+          {/* Arch Image - Now First with Zoom Effect */}
+          <div className="sticky top-0 h-screen flex items-start justify-center overflow-hidden pt-20">
+            <motion.div
+              className="relative"
+              style={{
+                scale: useTransform(scrollYProgress, [0, 0.5], [1, 1.5]),
+                y: useTransform(scrollYProgress, [0, 0.5], [0, 150]),
+                transformOrigin: 'center bottom'
+              }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* Decorative background blur */}
+              <motion.div
+                className="absolute -inset-8 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl"
+                style={{
+                  opacity: useTransform(scrollYProgress, [0.3, 0.5], [1, 0.3])
+                }}
+              />
 
-        {/* Arch Image - Bottom */}
-        <motion.div
-          className="relative mx-auto max-w-sm"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{
-            duration: 0.8,
-            delay: 0.2,
-            ease: [0.23, 1, 0.32, 1]
-          }}
-        >
-          {/* Decorative background blur */}
-          <div className="absolute -inset-4 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
+              {/* Arch image */}
+              <div className="relative">
+                <Image
+                  src="/lashpop-images/emily-arch.png"
+                  alt="Emily in decorative arch"
+                  width={350}
+                  height={450}
+                  style={{ width: '100%', height: 'auto' }}
+                  className="relative z-10 drop-shadow-xl max-w-[350px]"
+                  priority
+                />
+              </div>
 
-          {/* Arch image */}
-          <div className="relative">
-            <Image
-              src="/lashpop-images/emily-arch.png"
-              alt="Emily in decorative arch"
-              width={400}
-              height={500}
-              style={{ width: '100%', height: 'auto' }}
-              className="relative z-10 drop-shadow-xl"
-            />
+              {/* Small decorative elements */}
+              <motion.div
+                className="absolute -top-2 -right-2 w-16 h-16 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-xl"
+                animate={{
+                  scale: [1, 1.1, 1],
+                  opacity: [0.4, 0.6, 0.4],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              <motion.div
+                className="absolute -bottom-3 -left-3 w-20 h-20 bg-gradient-to-tr from-orange-200/30 to-yellow-200/30 rounded-full blur-xl"
+                animate={{
+                  scale: [1.1, 1, 1.1],
+                  opacity: [0.4, 0.6, 0.4],
+                }}
+                transition={{
+                  duration: 3.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 0.5
+                }}
+              />
+            </motion.div>
           </div>
+        </div>
 
-          {/* Small decorative elements */}
+        {/* Letter Content - Now at Bottom with Full Width */}
+        <div className="relative bg-inherit pt-8 pb-12 -mx-4">
           <motion.div
-            className="absolute -top-2 -right-2 w-16 h-16 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-xl"
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.4, 0.6, 0.4],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-          <motion.div
-            className="absolute -bottom-3 -left-3 w-20 h-20 bg-gradient-to-tr from-orange-200/30 to-yellow-200/30 rounded-full blur-xl"
-            animate={{
-              scale: [1.1, 1, 1.1],
-              opacity: [0.4, 0.6, 0.4],
-            }}
-            transition={{
-              duration: 3.5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.5
-            }}
-          />
-        </motion.div>
+            className="drop-shadow-sm [&_img]:sepia [&_img]:brightness-[0.4] [&_img]:hue-rotate-[320deg] [&_img]:saturate-[0.5] scale-125 origin-center"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <Image
+              src="/founder-letter.svg"
+              alt="Founder's Letter"
+              width={800}
+              height={1000}
+              className="w-full h-auto max-w-none object-contain"
+              style={{ marginTop: '-10%', marginBottom: '-10%' }}
+              priority
+            />
+          </motion.div>
+        </div>
 
         {/* Hidden accessible text for screen readers */}
         <div id="founder-letter-text-mobile" className="sr-only">

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { HEADER_HEIGHT } from '@/types/panel-stack';
 
@@ -13,6 +13,21 @@ import { DiscoveryPanel } from './panels/DiscoveryPanel';
 export function PanelStackContainer() {
   const { state } = usePanelStack();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Handle visibility based on scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show when scrolled past hero (approx 80vh)
+      const showThreshold = window.innerHeight * 0.8;
+      setIsVisible(window.scrollY > showThreshold);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Check initial state
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Calculate total height (no longer adding padding to page content)
   useEffect(() => {
@@ -46,10 +61,16 @@ export function PanelStackContainer() {
   }
 
   return (
-    <div
+    <motion.div
       ref={containerRef}
-      className="fixed left-0 right-0 z-40 bg-cream shadow-lg"
-      style={{ top: `${HEADER_HEIGHT}px` }}
+      className="fixed left-0 right-0 z-40 bg-cream shadow-lg top-[56px] md:top-[64px]" // Mobile and desktop header heights
+      initial={{ y: -100, opacity: 0 }}
+      animate={{
+        y: isVisible ? 0 : -100,
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: isVisible ? 'auto' : 'none'
+      }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
       <AnimatePresence mode="popLayout">
         {sortedPanels.map(panel => (
@@ -62,6 +83,6 @@ export function PanelStackContainer() {
           </div>
         ))}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

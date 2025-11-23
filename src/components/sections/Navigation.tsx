@@ -4,18 +4,21 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePanelStack } from '@/contexts/PanelStackContext'
 
 const navItems = [
-  { label: 'Services', href: '#services' },
-  { label: 'Gallery', href: '#gallery' },
-  { label: 'About', href: '#about' },
+  { label: 'Services', action: 'open-services' },
   { label: 'Team', href: '#team' },
-  { label: 'Contact', href: '#contact' }
+  { label: 'Gallery', href: '#gallery' },
+  { label: 'Reviews', href: '#reviews' },
+  { label: 'FAQ', href: '#faq' },
+  { label: 'Find Us', href: '#find-us' }
 ]
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { actions } = usePanelStack()
   
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +28,27 @@ export function Navigation() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const handleNavClick = (item: any, e: React.MouseEvent) => {
+    if (item.action === 'open-services') {
+      e.preventDefault()
+      actions.openPanel('category-picker')
+    } else if (item.href?.startsWith('#')) {
+      e.preventDefault()
+      const element = document.querySelector(item.href)
+      if (element) {
+        const headerOffset = 80 // Adjust for header height
+        const elementPosition = element.getBoundingClientRect().top
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        })
+      }
+    }
+    setIsMobileMenuOpen(false)
+  }
   
   return (
     <>
@@ -61,15 +85,28 @@ export function Navigation() {
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-8">
               {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="caption text-dune/70 hover:text-dusty-rose transition-colors duration-300"
-                >
-                  {item.label}
-                </Link>
+                item.href ? (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="caption text-dune/70 hover:text-dusty-rose transition-colors duration-300 leading-none flex items-center h-8"
+                  >
+                    {item.label}
+                  </Link>
+                ) : (
+                  <button
+                    key={item.label}
+                    onClick={(e) => handleNavClick(item, e)}
+                    className="caption text-dune/70 hover:text-dusty-rose transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
+                  >
+                    {item.label}
+                  </button>
+                )
               ))}
-              <button className="btn btn-primary ml-4">
+              <button 
+                className="btn btn-primary ml-4"
+                onClick={() => actions.openPanel('category-picker')}
+              >
                 Book Now
               </button>
             </div>
@@ -122,13 +159,22 @@ export function Navigation() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Link
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="text-2xl font-light text-dune"
-                  >
-                    {item.label}
-                  </Link>
+                  {item.href ? (
+                    <Link
+                      href={item.href}
+                      onClick={(e) => handleNavClick(item, e)}
+                      className="text-2xl font-light text-dune"
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={(e) => handleNavClick(item, e)}
+                      className="text-2xl font-light text-dune"
+                    >
+                      {item.label}
+                    </button>
+                  )}
                 </motion.div>
               ))}
               <motion.button
@@ -136,6 +182,10 @@ export function Navigation() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
                 className="btn btn-primary mt-8"
+                onClick={() => {
+                  actions.openPanel('category-picker');
+                  setIsMobileMenuOpen(false);
+                }}
               >
                 Book Now
               </motion.button>

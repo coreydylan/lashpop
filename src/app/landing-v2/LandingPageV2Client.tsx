@@ -151,22 +151,30 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                 {/* Instagram Carousel */}
                 <SectionTransition variant="scaleIn">
-                  <InstagramCarousel posts={instagramPosts} />
+                  <div id="gallery">
+                    <InstagramCarousel posts={instagramPosts} />
+                  </div>
                 </SectionTransition>
 
                 {/* Reviews Section */}
                 <SectionTransition variant="slideUp">
-                  <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
+                  <div id="reviews">
+                    <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
+                  </div>
                 </SectionTransition>
 
                 {/* FAQ Section */}
                 <SectionTransition variant="fade">
-                  <FAQSection />
+                  <div id="faq">
+                    <FAQSection />
+                  </div>
                 </SectionTransition>
 
                 {/* Map Section */}
                 <SectionTransition variant="scaleIn" delay={0.2}>
-                  <MapSection />
+                  <div id="find-us" className="pt-20">
+                    <MapSection />
+                  </div>
                 </SectionTransition>
 
                 {/* Footer */}

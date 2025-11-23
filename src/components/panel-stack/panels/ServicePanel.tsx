@@ -254,31 +254,34 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Subcategory Tabs */}
+              {/* Subcategory Tabs - Optimized for mobile */}
               {data.subcategories.length > 0 && (
-                <div className="flex gap-2 mb-4 md:mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-                  {data.subcategories.map(subcat => (
-                    <button
-                      key={subcat.id}
-                      onClick={() => setActiveTab(subcat.id)}
-                      className={`
-                        px-3 py-1.5 md:px-4 md:py-2 rounded-full whitespace-nowrap transition-all text-sm md:text-base
-                        ${
-                          activeTab === subcat.id
-                            ? 'bg-dusty-rose text-white shadow-md'
-                            : 'bg-sage/10 text-sage hover:bg-sage/20'
-                        }
-                      `}
-                    >
-                      {subcat.name}
-                    </button>
-                  ))}
+                <div className="mb-4 md:mb-6 -mx-4 px-4 md:mx-0 md:px-0">
+                  <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                    {data.subcategories.map(subcat => (
+                      <button
+                        key={subcat.id}
+                        onClick={() => setActiveTab(subcat.id)}
+                        className={`
+                          px-3 py-1.5 md:px-4 md:py-2 rounded-full whitespace-nowrap transition-all
+                          text-xs md:text-base flex-shrink-0
+                          ${
+                            activeTab === subcat.id
+                              ? 'bg-dusty-rose text-white shadow-md'
+                              : 'bg-sage/10 text-sage hover:bg-sage/20'
+                          }
+                        `}
+                      >
+                        {subcat.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Service Cards - Horizontal Scroll */}
-              <div className="relative">
-                <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+              {/* Service Cards - Optimized horizontal scroll for mobile */}
+              <div className="relative -mx-4 px-4 md:mx-0 md:px-0">
+                <div className="flex gap-2.5 md:gap-4 overflow-x-auto pb-3 scrollbar-hide">
                   {filteredServices.map((service, index) => (
                     <motion.button
                       key={service.id}
@@ -288,22 +291,24 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleServiceClick(service)}
-                      className="flex-shrink-0 w-56 md:w-64 p-3 md:p-4 rounded-xl glass hover:shadow-lg transition-all text-left"
+                      className="flex-shrink-0 w-48 md:w-64 p-2.5 md:p-4 rounded-xl glass hover:shadow-lg transition-all text-left"
                     >
                       <div className="aspect-video bg-warm-sand/20 rounded-lg mb-2 md:mb-3" />
-                      <h4 className="font-medium text-dune mb-1 md:mb-2 text-sm md:text-base truncate">
+                      <h4 className="font-medium text-dune mb-1 md:mb-2 text-xs md:text-base truncate">
                         {service.name}
                       </h4>
                       {service.subtitle && (
-                        <p className="text-xs text-sage/80 mb-2 line-clamp-1">{service.subtitle}</p>
+                        <p className="text-[10px] md:text-xs text-sage/80 mb-1.5 md:mb-2 line-clamp-1">
+                          {service.subtitle}
+                        </p>
                       )}
-                      <div className="flex items-center justify-between text-xs md:text-sm text-sage">
+                      <div className="flex items-center justify-between text-[10px] md:text-sm text-sage">
                         <span className="font-medium">${(service.priceStarting / 100).toFixed(0)}+</span>
                         <span>{service.durationMinutes} min</span>
                       </div>
-                      <div className="mt-2 md:mt-3 flex items-center text-xs md:text-sm text-dusty-rose">
+                      <div className="mt-1.5 md:mt-3 flex items-center text-[10px] md:text-sm text-dusty-rose">
                         View Details
-                        <ChevronRight className="w-3 h-3 md:w-4 md:h-4 ml-1" />
+                        <ChevronRight className="w-2.5 h-2.5 md:w-4 md:h-4 ml-1" />
                       </div>
                     </motion.button>
                   ))}
@@ -328,19 +333,19 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               transition={{ duration: 0.2 }}
               className="space-y-4 md:space-y-6"
             >
-              {/* Quick Stats */}
-              <div className="flex items-center gap-4 md:gap-6 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 md:w-5 md:h-5 text-sage" />
-                  <span className="text-xs md:text-sm text-dune">{selectedService.durationMinutes} min</span>
+              {/* Quick Stats - Compact for mobile */}
+              <div className="flex items-center gap-3 md:gap-6 flex-wrap">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <Clock className="w-3.5 h-3.5 md:w-5 md:h-5 text-sage" />
+                  <span className="text-[11px] md:text-sm text-dune">{selectedService.durationMinutes} min</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-terracotta" />
-                  <span className="text-xs md:text-sm text-dune">Starting at {priceDisplay}</span>
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <DollarSign className="w-3.5 h-3.5 md:w-5 md:h-5 text-terracotta" />
+                  <span className="text-[11px] md:text-sm text-dune">From {priceDisplay}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 md:w-5 md:h-5 text-ocean-mist" />
-                  <span className="text-xs md:text-sm text-dune">{MOCK_PROVIDERS.length} artists available</span>
+                <div className="flex items-center gap-1.5 md:gap-2">
+                  <User className="w-3.5 h-3.5 md:w-5 md:h-5 text-ocean-mist" />
+                  <span className="text-[11px] md:text-sm text-dune">{providers.length || MOCK_PROVIDERS.length} artists</span>
                 </div>
               </div>
 
@@ -429,57 +434,114 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                   </div>
                 )}
 
-                {/* Providers Grid */}
+                {/* Providers Grid - Horizontal scroll on mobile, grid on desktop */}
                 {!isLoadingProviders && providers.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                    {providers.map(provider => {
-                    const isSelected = selectedProviders.has(provider.id);
+                  <div className="md:grid md:grid-cols-4 md:gap-3">
+                    {/* Mobile: Horizontal scroll */}
+                    <div className="md:hidden -mx-4 px-4">
+                      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                        {providers.map(provider => {
+                        const isSelected = selectedProviders.has(provider.id);
 
-                    return (
-                      <motion.button
-                        key={provider.id}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleProviderToggle(provider.id)}
-                        className={`
-                          relative p-2 md:p-3 rounded-xl transition-all
-                          ${
-                            isSelected
-                              ? 'bg-gradient-to-br from-dusty-rose/30 to-warm-sand/30 ring-2 ring-dusty-rose shadow-md'
-                              : 'bg-sage/5 hover:bg-sage/10'
-                          }
-                        `}
-                      >
-                        {isSelected && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="absolute top-1 right-1 md:top-2 md:right-2 w-4 h-4 md:w-5 md:h-5 rounded-full bg-dusty-rose flex items-center justify-center"
+                        return (
+                          <motion.button
+                            key={provider.id}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleProviderToggle(provider.id)}
+                            className={`
+                              relative p-2 rounded-xl transition-all flex-shrink-0 w-28
+                              ${
+                                isSelected
+                                  ? 'bg-gradient-to-br from-dusty-rose/30 to-warm-sand/30 ring-2 ring-dusty-rose shadow-md'
+                                  : 'bg-sage/5 hover:bg-sage/10'
+                              }
+                            `}
                           >
-                            <Check className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
-                          </motion.div>
-                        )}
+                            {isSelected && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute top-1 right-1 w-4 h-4 rounded-full bg-dusty-rose flex items-center justify-center"
+                              >
+                                <Check className="w-2.5 h-2.5 text-white" />
+                              </motion.div>
+                            )}
 
-                        {provider.imageUrl ? (
-                          <div className="aspect-square rounded-lg mb-1 md:mb-2 overflow-hidden">
-                            <Image
-                              src={provider.imageUrl}
-                              alt={provider.name}
-                              width={100}
-                              height={100}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="aspect-square bg-warm-sand/20 rounded-lg mb-1 md:mb-2 flex items-center justify-center">
-                            <User className="w-6 h-6 text-sage/30" />
-                          </div>
-                        )}
-                        <p className="text-xs md:text-sm font-medium text-dune text-center truncate">{provider.name}</p>
-                        <p className="text-[10px] md:text-xs text-sage text-center mt-0.5 truncate">{provider.role}</p>
-                      </motion.button>
-                    );
-                  })}
+                            {provider.imageUrl ? (
+                              <div className="aspect-square rounded-lg mb-1 overflow-hidden">
+                                <Image
+                                  src={provider.imageUrl}
+                                  alt={provider.name}
+                                  width={100}
+                                  height={100}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="aspect-square bg-warm-sand/20 rounded-lg mb-1 flex items-center justify-center">
+                                <User className="w-5 h-5 text-sage/30" />
+                              </div>
+                            )}
+                            <p className="text-xs font-medium text-dune text-center truncate">{provider.name}</p>
+                            <p className="text-[10px] text-sage text-center mt-0.5 truncate">{provider.role}</p>
+                          </motion.button>
+                        );
+                      })}
+                      </div>
+                    </div>
+
+                    {/* Desktop: Grid layout */}
+                    <div className="hidden md:contents">
+                      {providers.map(provider => {
+                        const isSelected = selectedProviders.has(provider.id);
+
+                        return (
+                          <motion.button
+                            key={provider.id}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleProviderToggle(provider.id)}
+                            className={`
+                              relative p-3 rounded-xl transition-all
+                              ${
+                                isSelected
+                                  ? 'bg-gradient-to-br from-dusty-rose/30 to-warm-sand/30 ring-2 ring-dusty-rose shadow-md'
+                                  : 'bg-sage/5 hover:bg-sage/10'
+                              }
+                            `}
+                          >
+                            {isSelected && (
+                              <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute top-2 right-2 w-5 h-5 rounded-full bg-dusty-rose flex items-center justify-center"
+                              >
+                                <Check className="w-3 h-3 text-white" />
+                              </motion.div>
+                            )}
+
+                            {provider.imageUrl ? (
+                              <div className="aspect-square rounded-lg mb-2 overflow-hidden">
+                                <Image
+                                  src={provider.imageUrl}
+                                  alt={provider.name}
+                                  width={100}
+                                  height={100}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="aspect-square bg-warm-sand/20 rounded-lg mb-2 flex items-center justify-center">
+                                <User className="w-6 h-6 text-sage/30" />
+                              </div>
+                            )}
+                            <p className="text-sm font-medium text-dune text-center truncate">{provider.name}</p>
+                            <p className="text-xs text-sage text-center mt-0.5 truncate">{provider.role}</p>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
 

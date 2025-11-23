@@ -17,66 +17,104 @@ export function MapSection() {
   const [mapLoaded, setMapLoaded] = useState(false)
 
   useEffect(() => {
-    if (!mapContainer.current || !isInView || mapLoaded) return
+    // Only initialize if container exists, visible, and map not yet loaded
+    if (!mapContainer.current || !isInView || map.current) return
 
-    // Set Mapbox access token - Using provided public token
+    // Set Mapbox access token
     mapboxgl.accessToken = 'pk.eyJ1IjoiY29yZXlkeWxhbiIsImEiOiJjbWk5a2E1Z2YwbjNsMmtvZzBxeTZxNnhqIn0.b92WsE5LmoVB7wVXNQGeiw'
 
-    // Initialize map
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: STUDIO_LOCATION,
-      zoom: 14,
-      interactive: true
-    })
+    try {
+      // Initialize map
+      const newMap = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/light-v11',
+        center: STUDIO_LOCATION,
+        zoom: 14,
+        interactive: true
+      })
 
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right')
+      // Custom styling via map load event to match theme
+      newMap.on('style.load', () => {
+        // Set water color
+        newMap.setPaintProperty('water', 'fill-color', '#e8f4f8') // ocean-mist like
+        
+        // Set land/background color (cream)
+        const creamColor = '#fbf9f5'
+        newMap.setPaintProperty('background', 'background-color', creamColor)
+        
+        // Also try to target landuse layers if available for more coverage
+        if (newMap.getLayer('landuse')) {
+          newMap.setPaintProperty('landuse', 'fill-color', creamColor)
+        }
+        if (newMap.getLayer('land')) {
+          newMap.setPaintProperty('land', 'background-color', creamColor)
+        }
+        
+        // Colorize roads
+        if (newMap.getLayer('road-simple')) {
+          newMap.setPaintProperty('road-simple', 'line-color', '#ffffff')
+        }
+        
+        // Adjust poi labels color
+        const labelLayers = ['poi-label', 'road-label', 'waterway-label']
+        labelLayers.forEach(layer => {
+          if (newMap.getLayer(layer)) {
+            newMap.setPaintProperty(layer, 'text-color', '#8a7c69') // dune color
+          }
+        })
+      })
 
-    // Handle load event
-    map.current.on('load', () => {
-      setMapLoaded(true)
-      map.current?.resize()
-    })
+      map.current = newMap
 
-    // Add custom marker
-    const el = document.createElement('div')
-    el.className = 'custom-marker'
-    el.style.width = '40px'
-    el.style.height = '40px'
-    el.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'%23d4907e\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M12 0C7.31 0 3.5 3.81 3.5 8.5c0 6.5 8.5 15.5 8.5 15.5s8.5-9 8.5-15.5C20.5 3.81 16.69 0 12 0zm0 12c-1.93 0-3.5-1.57-3.5-3.5S10.07 5 12 5s3.5 1.57 3.5 3.5S13.93 12 12 12z\'/%3E%3C/svg%3E")'
-    el.style.backgroundSize = 'cover'
-    el.style.cursor = 'pointer'
+      // Add navigation controls
+      newMap.addControl(new mapboxgl.NavigationControl(), 'top-right')
 
-    // Add marker with popup
-    const marker = new mapboxgl.Marker(el)
-      .setLngLat(STUDIO_LOCATION)
-      .setPopup(
-        new mapboxgl.Popup({ offset: 25 })
-          .setHTML(`
-            <div style="text-align: center; padding: 10px;">
-              <h3 style="margin: 0 0 5px; color: #4a4a4a;">LashPop Studios</h3>
-              <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Oceanside, CA</p>
-              <a
-                href="https://maps.google.com/?q=${STUDIO_LOCATION[1]},${STUDIO_LOCATION[0]}"
-                target="_blank"
-                rel="noopener noreferrer"
-                style="color: #d4907e; text-decoration: none; font-weight: 500;"
-              >
-                Get Directions →
-              </a>
-            </div>
-          `)
-      )
-      .addTo(map.current)
+      // Handle load event
+      newMap.on('load', () => {
+        setMapLoaded(true)
+        newMap.resize()
+      })
 
-    // Open popup on marker click
-    el.addEventListener('click', () => {
-      marker.togglePopup()
-    })
+      // Add custom marker
+      const el = document.createElement('div')
+      el.className = 'custom-marker'
+      el.style.width = '40px'
+      el.style.height = '40px'
+      el.style.backgroundImage = 'url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'%23d4907e\' viewBox=\'0 0 24 24\'%3E%3Cpath d=\'M12 0C7.31 0 3.5 3.81 3.5 8.5c0 6.5 8.5 15.5 8.5 15.5s8.5-9 8.5-15.5C20.5 3.81 16.69 0 12 0zm0 12c-1.93 0-3.5-1.57-3.5-3.5S10.07 5 12 5s3.5 1.57 3.5 3.5S13.93 12 12 12z\'/%3E%3C/svg%3E")'
+      el.style.backgroundSize = 'cover'
+      el.style.cursor = 'pointer'
 
-    // Cleanup
+      // Add marker with popup
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat(STUDIO_LOCATION)
+        .setPopup(
+          new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+              <div style="text-align: center; padding: 10px;">
+                <h3 style="margin: 0 0 5px; color: #4a4a4a;">LashPop Studios</h3>
+                <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Oceanside, CA</p>
+                <a
+                  href="https://maps.google.com/?q=${STUDIO_LOCATION[1]},${STUDIO_LOCATION[0]}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style="color: #d4907e; text-decoration: none; font-weight: 500;"
+                >
+                  Get Directions →
+                </a>
+              </div>
+            `)
+        )
+        .addTo(newMap)
+
+      // Open popup on marker click
+      el.addEventListener('click', () => {
+        marker.togglePopup()
+      })
+    } catch (error) {
+      console.error('Error initializing map:', error)
+    }
+
+    // Cleanup function
     return () => {
       if (map.current) {
         map.current.remove()
@@ -84,12 +122,12 @@ export function MapSection() {
         setMapLoaded(false)
       }
     }
-  }, [isInView, mapLoaded])
+  }, [isInView]) // Only re-run if isInView changes, ignore mapLoaded dependency to prevent loops
 
   return (
     <section ref={ref} className="relative">
-      {/* Section Header */}
-      <div className="container py-12">
+      {/* Section Header - Commented out as requested */}
+      {/* <div className="container py-12">
         <motion.div
           className="text-center"
           initial={{ opacity: 0, y: 20 }}
@@ -101,11 +139,11 @@ export function MapSection() {
             Visit our beautiful studio in Oceanside
           </p>
         </motion.div>
-      </div>
+      </div> */}
 
-      {/* Map Container */}
+      {/* Map Container - Made taller */}
       <motion.div
-        className="relative w-full h-[400px] md:h-[500px]"
+        className="relative w-full h-[500px] md:h-[600px]"
         initial={{ opacity: 0, y: 20 }}
         animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
         transition={{ duration: 0.8, delay: 0.2 }}

@@ -140,66 +140,133 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
   };
 
   return (
-    <div className="bg-cream border-b border-sage/10 px-4 py-3 md:px-6 md:py-4">
-      <div className="flex items-start justify-between gap-4">
-        {/* Category Chips Bar */}
-        <div className="flex flex-wrap gap-2 md:gap-3 flex-1">
+    <div className="bg-cream border-b border-sage/10 px-4 py-2 md:px-6 md:py-4">
+      {/* Mobile: horizontal scroll with inline X */}
+      <div className="md:hidden">
+        <div className="flex gap-2 overflow-x-auto -mx-4 px-4 scrollbar-hide">
           {categories.map((category, index) => {
-          const selected = isSelected(category.id);
-          const IconComponent = getCategoryIcon(category.iconName);
+            const selected = isSelected(category.id);
+            const IconComponent = getCategoryIcon(category.iconName);
 
-          return (
-            <motion.button
-              key={category.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleCategoryClick(category)}
-              className={`
-                relative px-3 py-2 md:px-4 md:py-2.5 rounded-full font-medium
-                transition-all duration-200 flex items-center gap-1.5 md:gap-2
-                ${
-                  selected
-                    ? 'text-white shadow-lg transform scale-105'
-                    : 'border hover:scale-105'
-                }
-              `}
-              style={{
-                backgroundColor: selected ? category.colors.primary : category.colors.light,
-                borderColor: selected ? 'transparent' : category.colors.medium,
-                color: selected ? 'white' : category.colors.primary,
-                boxShadow: selected ? `0 4px 20px ${category.colors.ring}` : 'none',
-              }}
-            >
-              {/* Icon */}
-              <IconComponent className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            return (
+              <motion.button
+                key={category.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handleCategoryClick(category)}
+                className={`
+                  relative px-2.5 py-1 rounded-full font-medium
+                  transition-all duration-200 flex items-center gap-1
+                  flex-shrink-0 text-[11px]
+                  ${
+                    selected
+                      ? 'text-white shadow-md transform scale-105'
+                      : 'border hover:scale-105'
+                  }
+                `}
+                style={{
+                  backgroundColor: selected ? category.colors.primary : category.colors.light,
+                  borderColor: selected ? 'transparent' : category.colors.medium,
+                  color: selected ? 'white' : category.colors.primary,
+                  boxShadow: selected ? `0 2px 10px ${category.colors.ring}` : 'none',
+                }}
+              >
+                {/* Icon */}
+                <IconComponent className="w-3 h-3 flex-shrink-0" />
 
-              {/* Category Name */}
-              <span className="text-xs md:text-sm">{category.name}</span>
+                {/* Category Name */}
+                <span className="whitespace-nowrap">{category.name}</span>
 
-              {/* Check Icon (selected only) */}
-              {selected && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
+                {/* Check Icon (selected only) */}
+                {selected && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="flex-shrink-0"
+                  >
+                    <Check className="w-2.5 h-2.5" />
+                  </motion.span>
+                )}
+              </motion.button>
+            );
+          })}
+
+          {/* Close X at the end of scroll */}
+          <button
+            onClick={() => actions.closePanel(panel.id)}
+            className="flex-shrink-0 px-3 flex items-center justify-center transition-colors"
+            aria-label="Close category picker"
+          >
+            <X className="w-4 h-4 text-sage/60 hover:text-dune transition-colors" />
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop: original layout with separate button */}
+      <div className="hidden md:flex items-start gap-3">
+        <div className="flex-1 overflow-hidden">
+          <div className="flex gap-3 flex-wrap">
+            {categories.map((category, index) => {
+              const selected = isSelected(category.id);
+              const IconComponent = getCategoryIcon(category.iconName);
+
+              return (
+                <motion.button
+                  key={category.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleCategoryClick(category)}
+                  className={`
+                    relative px-4 py-2.5 rounded-full font-medium
+                    transition-all duration-200 flex items-center gap-2
+                    ${
+                      selected
+                        ? 'text-white shadow-lg transform scale-105'
+                        : 'border hover:scale-105'
+                    }
+                  `}
+                  style={{
+                    backgroundColor: selected ? category.colors.primary : category.colors.light,
+                    borderColor: selected ? 'transparent' : category.colors.medium,
+                    color: selected ? 'white' : category.colors.primary,
+                    boxShadow: selected ? `0 4px 20px ${category.colors.ring}` : 'none',
+                  }}
                 >
-                  <Check className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                </motion.span>
-              )}
-            </motion.button>
-          );
-        })}
+                  {/* Icon */}
+                  <IconComponent className="w-4 h-4 flex-shrink-0" />
+
+                  {/* Category Name */}
+                  <span className="text-sm whitespace-nowrap">{category.name}</span>
+
+                  {/* Check Icon (selected only) */}
+                  {selected && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="flex-shrink-0"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </motion.span>
+                  )}
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Close Button */}
+        {/* Close Button - Desktop */}
         <button
           onClick={() => actions.closePanel(panel.id)}
-          className="flex-shrink-0 w-6 h-6 md:w-7 md:h-7 rounded-full hover:bg-sage/10 flex items-center justify-center transition-colors group"
+          className="flex-shrink-0 w-7 h-7 rounded-full hover:bg-sage/10 flex items-center justify-center transition-colors group"
           aria-label="Close category picker"
         >
-          <X className="w-4 h-4 md:w-5 md:h-5 text-sage group-hover:text-dune transition-colors" />
+          <X className="w-5 h-5 text-sage group-hover:text-dune transition-colors" />
         </button>
       </div>
     </div>

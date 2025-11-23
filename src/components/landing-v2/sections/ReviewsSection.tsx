@@ -336,8 +336,8 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
             </div>
           </div>
 
-          {/* Ultra Minimal Morphing Line Indicator */}
-          <motion.div
+          {/* Ultra Minimal Morphing Line Indicator - Commented out as requested */}
+          {/* <motion.div
             className="flex justify-center mt-8"
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : { opacity: 0 }}
@@ -384,7 +384,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                 </motion.button>
               ))}
             </div>
-          </motion.div>
+          </motion.div> */}
         </motion.div>
       </div>
       </section>
