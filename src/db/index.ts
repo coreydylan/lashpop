@@ -50,6 +50,15 @@ import {
   playbackEvents
 } from "./schema/scrollytelling-cms"
 
+// Landing Page CMS schemas
+import { landingPageSections } from "./schema/landing_page_sections"
+import { landingPageHero } from "./schema/landing_page_hero"
+import { landingPageContent } from "./schema/landing_page_content"
+import { landingPageReviews } from "./schema/landing_page_reviews"
+import { landingPageInstagram } from "./schema/landing_page_instagram"
+import { landingPageGridScroller } from "./schema/landing_page_grid_scroller"
+import { landingPageFaqs } from "./schema/landing_page_faqs"
+
 // Vagaro mirror schemas
 import { appointments } from "./schema/appointments"
 import { vagaroCustomers } from "./schema/vagaro_customers"
@@ -107,6 +116,15 @@ const dbSchema = {
   drawerStates,
   collisionRules,
   playbackEvents,
+
+  // Landing Page CMS tables
+  landingPageSections,
+  landingPageHero,
+  landingPageContent,
+  landingPageReviews,
+  landingPageInstagram,
+  landingPageGridScroller,
+  landingPageFaqs,
 
   // Vagaro mirror tables
   appointments,
@@ -211,6 +229,14 @@ export {
   drawerStates,
   collisionRules,
   playbackEvents,
+  // Landing Page CMS
+  landingPageSections,
+  landingPageHero,
+  landingPageContent,
+  landingPageReviews,
+  landingPageInstagram,
+  landingPageGridScroller,
+  landingPageFaqs,
   // Vagaro mirror
   appointments,
   vagaroCustomers,
