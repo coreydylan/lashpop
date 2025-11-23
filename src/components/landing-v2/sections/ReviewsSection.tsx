@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { YelpLogo, GoogleLogo, VagaroLogo } from '@/components/icons/ReviewLogos'
+import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 
 // Custom CSS for hidden scrollbars
 const scrollbarStyles = `
@@ -138,6 +138,19 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     }
   }
 
+  const getSourceLogoCompact = (source: string) => {
+    switch (source.toLowerCase()) {
+      case 'yelp':
+        return <YelpLogoCompact />
+      case 'google':
+        return <GoogleLogoCompact />
+      case 'vagaro':
+        return <VagaroLogoCompact />
+      default:
+        return null
+    }
+  }
+
   const getSourceLabel = (source: string) => {
       switch (source.toLowerCase()) {
           case 'yelp': return 'Yelp'
@@ -182,30 +195,33 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
 
                     {/* Main badge */}
                     <div className="relative px-4 py-2.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-300 group-hover:bg-white/60 group-hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_6px_rgba(0,0,0,0.12)]">
-                      <div className="flex items-center gap-3">
-                        {/* Platform Logo */}
-                        <div className="shrink-0 flex items-center">
-                          {getSourceLogo(stat.source)}
+                      <div className="flex items-center gap-2.5">
+                        {/* Platform Logo - Compact */}
+                        <div className="shrink-0 flex items-center pr-2.5">
+                          {getSourceLogoCompact(stat.source)}
                         </div>
 
-                        {/* Vertical Divider */}
-                        <div className="h-5 w-px bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
-
-                        {/* Rating */}
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-sans font-bold text-dune text-sm tracking-tight">{Math.round(parseFloat(stat.rating) * 10) / 10}</span>
-                          <svg className="w-3.5 h-3.5 text-golden drop-shadow-sm" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        </div>
-
-                        {/* Vertical Divider */}
-                        <div className="h-5 w-px bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
-
-                        {/* Review Count */}
-                        <span className="font-sans text-xs font-medium text-dune/70 tracking-tight">
+                        {/* Count */}
+                        <span className="font-sans text-sm font-semibold text-dune tracking-tight">
                           {stat.reviewCount.toLocaleString()}
                         </span>
+
+                        {/* Stars */}
+                        <div className="flex gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <svg
+                                key={i}
+                                className={`w-3.5 h-3.5 ${i < parseFloat(stat.rating) ? 'text-golden' : 'text-sage/30'}`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </div>
+
+                        {/* "Reviews" text */}
+                        <span className="font-sans text-xs text-dune/60 font-medium">Reviews</span>
                       </div>
                     </div>
                   </div>
@@ -269,14 +285,28 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
                   >
                     {/* Frosted Glass Card */}
-                    <div className="bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/60 relative overflow-hidden group h-[280px] flex flex-col">
+                    <div className="bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/60 relative overflow-hidden group h-[280px] flex flex-col w-full">
                       {/* Subtle gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-br from-dusty-rose/3 via-transparent to-sage/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
+                      {/* Rating with number and source icon - Absolute positioned */}
+                      <div className="absolute top-5 right-5 flex items-center gap-2 z-20">
+                        <div className="flex items-center gap-2 bg-golden/10 px-3 py-1.5 rounded-full">
+                          <span className="font-sans font-bold text-golden text-sm">{review.rating}</span>
+                          <svg className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        </div>
+                        {/* Source Icon */}
+                        <div className="scale-90">
+                          {getSourceLogo(review.source)}
+                        </div>
+                      </div>
+
                       {/* Content */}
-                      <div className="relative z-10 flex flex-col h-full p-7">
-                        {/* Header: Name and Rating */}
-                        <div className="flex items-start gap-4 mb-4 shrink-0">
+                      <div className="relative z-10 flex flex-col h-full p-7 pt-9">
+                        {/* Header: Name */}
+                        <div className="flex items-start gap-4 mb-4 shrink-0 pr-24">
                           <div className="flex-1 min-w-0">
                             <h3 className="font-sans font-semibold text-dune text-base mb-1 truncate">
                               {review.reviewerName}
@@ -289,20 +319,6 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                                 })}
                               </p>
                             )}
-                          </div>
-
-                          {/* Rating with number and source icon */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="flex items-center gap-2 bg-golden/10 px-3 py-1.5 rounded-full">
-                              <span className="font-sans font-bold text-golden text-sm">{review.rating}</span>
-                              <svg className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            </div>
-                            {/* Source Icon */}
-                            <div className="scale-90">
-                              {getSourceLogo(review.source)}
-                            </div>
                           </div>
                         </div>
 
