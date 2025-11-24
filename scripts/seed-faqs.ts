@@ -4,14 +4,14 @@
  */
 
 import { config } from 'dotenv'
-config({ path: '.env.local' })
+config({ path: '.env' })
 
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { faqCategories, faqItems } from '../src/db/schema/faqs'
 
 const connectionString = process.env.DATABASE_URL!
-const client = postgres(connectionString)
+const client = postgres(connectionString, { max: 1 })
 const db = drizzle(client)
 
 // All FAQ data from the current FAQSection component

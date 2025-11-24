@@ -20,6 +20,7 @@ import {
   FolderPlus,
   AlertCircle
 } from 'lucide-react'
+import { MiniRichEditor } from '@/components/admin/MiniRichEditor'
 
 interface FAQCategory {
   id: string
@@ -541,12 +542,11 @@ export default function FAQManagerPage() {
                                 placeholder="Question"
                                 className="w-full px-3 py-2 bg-white border border-sage/20 rounded-lg focus:outline-none focus:border-dusty-rose/50"
                               />
-                              <textarea
+                              <MiniRichEditor
                                 value={editingItem.answer}
-                                onChange={e => setEditingItem({ ...editingItem, answer: e.target.value })}
-                                placeholder="Answer (HTML supported)"
-                                rows={4}
-                                className="w-full px-3 py-2 bg-white border border-sage/20 rounded-lg focus:outline-none focus:border-dusty-rose/50 text-sm"
+                                onChange={(html) => setEditingItem({ ...editingItem, answer: html })}
+                                placeholder="Enter your answer..."
+                                minHeight={100}
                               />
                               <div className="flex items-center justify-between">
                                 <label className="flex items-center gap-2 cursor-pointer">
@@ -639,12 +639,11 @@ export default function FAQManagerPage() {
                             className="w-full px-3 py-2 bg-white border border-sage/20 rounded-lg focus:outline-none focus:border-dusty-rose/50"
                             autoFocus
                           />
-                          <textarea
+                          <MiniRichEditor
                             value={newItem.answer}
-                            onChange={e => setNewItem({ ...newItem, answer: e.target.value })}
-                            placeholder="Answer (HTML supported)"
-                            rows={3}
-                            className="w-full px-3 py-2 bg-white border border-sage/20 rounded-lg focus:outline-none focus:border-dusty-rose/50 text-sm"
+                            onChange={(html) => setNewItem({ ...newItem, answer: html })}
+                            placeholder="Enter your answer..."
+                            minHeight={80}
                           />
                           <div className="flex items-center justify-between">
                             <label className="flex items-center gap-2 cursor-pointer">
@@ -703,7 +702,8 @@ export default function FAQManagerPage() {
       >
         <p className="text-xs text-dune/70">
           <strong>Tips:</strong> Mark FAQs as &quot;Featured&quot; (⭐) to include them in the &quot;Top FAQs&quot; section. 
-          Toggle visibility (👁) to show/hide FAQs on the website. Answers support basic HTML for formatting.
+          Toggle visibility (👁) to show/hide FAQs on the website. Use the rich editor toolbar to format answers with 
+          bold, italic, lists, and links — or toggle HTML mode for advanced editing.
         </p>
       </motion.div>
     </div>
