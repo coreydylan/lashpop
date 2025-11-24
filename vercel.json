@@ -5,6 +5,10 @@
       "schedule": "0 0 * * *"
     },
     {
+      "path": "/api/cron/sync-review-stats",
+      "schedule": "0 6 * * *"
+    },
+    {
       "path": "/api/cron/instagram-sync",
       "schedule": "0 0 * * *"
     }
