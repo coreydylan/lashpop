@@ -6,6 +6,9 @@ import { getServiceCategories } from "@/actions/categories"
 import { getFAQsGroupedByCategory } from "@/actions/faqs"
 import LandingPageV2Client from "./LandingPageV2Client"
 
+// Ensure fresh data on each request (for admin-managed content)
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   // Fetch services from database
   const services = await getAllServices()

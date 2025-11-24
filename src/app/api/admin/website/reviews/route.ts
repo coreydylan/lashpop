@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { homepageReviews } from '@/db/schema/website_settings'
-import { desc, gte, eq, asc } from 'drizzle-orm'
+import { desc, gte, asc } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,6 +80,10 @@ export async function PUT(request: NextRequest) {
       await db.insert(homepageReviews).values(insertData)
       console.log('[Reviews API] Inserted new selections')
     }
+
+    // Revalidate the homepage so it fetches fresh reviews
+    revalidatePath('/')
+    console.log('[Reviews API] Revalidated homepage cache')
 
     return NextResponse.json({ 
       success: true,
