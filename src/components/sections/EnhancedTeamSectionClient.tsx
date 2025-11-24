@@ -104,7 +104,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
   const isHighlighted = (memberId: number) => highlights.includes(memberId.toString())
 
-  // Map specialties to service categories
+  // Map specialties to service categories (fallback when no Vagaro data)
   const getTeamMemberCategories = (specialties: string[]) => {
     // Map common specialty keywords to categories
     const mappings: Record<string, string> = {
@@ -114,17 +114,31 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       'volume': 'Lashes',
       'hybrid': 'Lashes',
       'mega': 'Lashes',
-      'brow': 'Brows',
-      'lamination': 'Brows',
-      'microblading': 'Brows',
-      'threading': 'Brows',
-      'lift': 'Lifts',
-      'perm': 'Lifts',
+      'wispy': 'Lashes',
+      'wet': 'Lashes',
+      'brow': 'Brow',
+      'lamination': 'Brow',
+      'microblading': 'Brow',
+      'threading': 'Brow',
+      'lift': 'Lash Lifts',
+      'perm': 'Lash Lifts',
       'tint': 'Tinting',
       'dye': 'Tinting',
       'wax': 'Waxing',
-      'facial': 'Treatments',
-      'treatment': 'Treatments'
+      'facial': 'Facials',
+      'hydrafacial': 'Facials',
+      'dermaplaning': 'Facials',
+      'skin': 'Skin Care',
+      'plasma': 'Plasma',
+      'fibroblast': 'Plasma',
+      'jet plasma': 'Plasma',
+      'botox': 'Injectables',
+      'filler': 'Injectables',
+      'injection': 'Injectables',
+      'iv': 'Wellness',
+      'permanent makeup': 'Permanent Makeup',
+      'lip blush': 'Permanent Makeup',
+      'jewelry': 'Permanent Jewelry'
     }
 
     const categories = new Set<string>()
@@ -139,7 +153,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       }
     })
 
-    return Array.from(categories).slice(0, 3) // Max 3 category chips
+    return Array.from(categories).slice(0, 4) // Max 4 category chips
   }
 
   return (

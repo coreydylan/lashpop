@@ -56,12 +56,15 @@ export async function getServicesForTeamMember(vagaroEmployeeId: string | null):
   }
   
   // Return unique categories, cleaned up
-  const uniqueCategories = [...new Set(memberServices)]
+  const uniqueCategories = Array.from(new Set(memberServices))
   
-  // Clean up category names (remove " Services" suffix for cleaner tags)
-  return uniqueCategories.map(cat => 
-    cat.replace(' Services', '').replace(' Service', '')
-  ).slice(0, 4) // Max 4 tags
+  // Clean up category names and format nicely
+  return uniqueCategories.map(cat => {
+    let cleaned = cat.replace(' Services', '').replace(' Service', '')
+    // "Lash" should be "Lashes"
+    if (cleaned === 'Lash') cleaned = 'Lashes'
+    return cleaned
+  }).slice(0, 4) // Max 4 tags
 }
 
 /**
