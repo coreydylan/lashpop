@@ -55,13 +55,26 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'LashPop Studios | Award-Winning Lash Extensions & Beauty Services',
-  description: 'Experience the art of natural beauty enhancement at LashPop Studios. Award-winning lash extensions, lifts, brow services, and advanced skincare treatments.',
-  keywords: 'lash extensions, volume lashes, classic lashes, lash lift, brow services, beauty salon, skincare',
+  title: 'LashPop Studios - Luxury Lashes, Tailored to You',
+  description: 'Experience luxury lash services in Los Angeles. From classic to mega volume, discover your perfect lash look with our expert artists.',
+  keywords: 'lash extensions, eyelash extensions, volume lashes, classic lashes, mega volume, lash lift, Los Angeles, beauty studio',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'LashPop Studios',
+  },
+  openGraph: {
+    title: 'LashPop Studios - Luxury Lashes, Tailored to You',
+    description: 'Experience luxury lash services in Los Angeles. Book your appointment today.',
+    images: ['/images/og-image.jpg'],
+    url: 'https://lashpopstudios.com',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'LashPop Studios',
+    description: 'Luxury lash services in Los Angeles',
+    images: ['/images/twitter-card.jpg'],
   },
 }
 

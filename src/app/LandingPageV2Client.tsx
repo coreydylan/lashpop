@@ -8,7 +8,6 @@ import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
 import { Navigation } from '@/components/sections/Navigation';
 import HeroSection from '@/components/landing-v2/HeroSection';
-import { HeroArchwayReveal } from '@/components/HeroArchwayReveal';
 import { WelcomeSection } from '@/components/landing-v2/sections/WelcomeSection';
 import { ScrollServicesTrigger } from '@/components/landing-v2/ScrollServicesTrigger';
 import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
@@ -429,10 +428,6 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
               {/* Z-1: Page Surface - panels now overlay instead of pushing content */}
               <main className={`page-content overflow-x-hidden ${isMobile ? 'mobile-snap-container' : ''}`}>
-                {/* Hero with Archway Reveal and Photo Grid Scroller - Commented out for now */}
-                {/* <HeroArchwayReveal
-                  heroContent={<HeroSection reviewStats={reviewStats} />}
-                /> */}
                 
                 {/* Hero Section - Direct Render */}
                 <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="hero">
@@ -509,3 +504,4 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     </BookingOrchestratorProvider>
   );
 }
+
