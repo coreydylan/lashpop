@@ -56,6 +56,11 @@ export default function ReviewsManagerPage() {
       const response = await fetch('/api/admin/website/reviews')
       if (response.ok) {
         const data = await response.json()
+        console.log('Fetched reviews data:', { 
+          totalReviews: data.reviews?.length, 
+          selectedIds: data.selectedIds 
+        })
+        
         const allReviews = data.reviews || []
         const selected = data.selectedIds || []
         
@@ -71,8 +76,16 @@ export default function ReviewsManagerPage() {
           .sort((a: Review, b: Review) => a.displayOrder - b.displayOrder)
         const unselectedList = marked.filter((r: Review) => !r.isSelected)
         
+        console.log('Processed reviews:', { 
+          selected: selectedList.length, 
+          unselected: unselectedList.length 
+        })
+        
         setSelectedReviews(selectedList)
         setReviews(unselectedList)
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to fetch reviews:', errorData)
       }
     } catch (error) {
       console.error('Error fetching reviews:', error)
@@ -107,19 +120,24 @@ export default function ReviewsManagerPage() {
         displayOrder: index
       }))
 
+      console.log('Saving reviews:', selectedIds)
+
       const response = await fetch('/api/admin/website/reviews', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ selectedReviews: selectedIds })
       })
 
-      if (response.ok) {
+      const data = await response.json()
+      console.log('Save response:', data)
+
+      if (response.ok && data.success) {
         setSaved(true)
         setHasChanges(false)
         setTimeout(() => setSaved(false), 2000)
       } else {
-        const data = await response.json()
-        alert(`Failed to save: ${data.error}`)
+        console.error('Save failed:', data)
+        alert(`Failed to save: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error saving review settings:', error)

@@ -50,17 +50,24 @@ export async function GET() {
 // PUT - Update selected reviews and their order
 export async function PUT(request: NextRequest) {
   try {
-    const { selectedReviews } = await request.json()
+    const body = await request.json()
+    console.log('[Reviews API] PUT request body:', body)
+    
+    const { selectedReviews } = body
 
     if (!Array.isArray(selectedReviews)) {
+      console.error('[Reviews API] Invalid body - selectedReviews is not an array')
       return NextResponse.json(
         { error: 'Invalid request body - selectedReviews must be an array' },
         { status: 400 }
       )
     }
 
-    // Clear existing selections and insert new ones
+    console.log(`[Reviews API] Saving ${selectedReviews.length} reviews`)
+
+    // Clear existing selections
     await db.delete(homepageReviews)
+    console.log('[Reviews API] Cleared existing selections')
 
     // Insert new selections
     if (selectedReviews.length > 0) {
@@ -70,6 +77,7 @@ export async function PUT(request: NextRequest) {
       }))
 
       await db.insert(homepageReviews).values(insertData)
+      console.log('[Reviews API] Inserted new selections')
     }
 
     return NextResponse.json({ 
@@ -77,7 +85,7 @@ export async function PUT(request: NextRequest) {
       selectedCount: selectedReviews.length
     })
   } catch (error) {
-    console.error('Error updating reviews:', error)
+    console.error('[Reviews API] Error updating reviews:', error)
     return NextResponse.json(
       { error: 'Failed to update reviews', details: String(error) },
       { status: 500 }
