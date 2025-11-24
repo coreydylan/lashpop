@@ -145,12 +145,35 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                 transition={{ delay: 0.5, duration: 0.8 }}
                 className="inline-block"
               >
-                <div className="relative group">
+                <button
+                  onClick={() => {
+                    const reviewsSection = document.getElementById('reviews');
+                    if (reviewsSection) {
+                      // Calculate offset to center the reviews section vertically
+                      const elementRect = reviewsSection.getBoundingClientRect();
+                      const absoluteElementTop = elementRect.top + window.pageYOffset;
+                      const elementHeight = elementRect.height;
+                      const viewportHeight = window.innerHeight;
+                      
+                      // Center position: absoluteElementTop - (viewportHeight - elementHeight) / 2
+                      // Also account for header height (80px) to ensure it's not covered
+                      const headerHeight = 80;
+                      const centerOffset = Math.max(headerHeight, (viewportHeight - elementHeight) / 2);
+                      const targetPosition = absoluteElementTop - centerOffset;
+
+                      window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }}
+                  className="relative group cursor-pointer text-left"
+                >
                   {/* Subtle outer glow */}
                   <div className="absolute inset-0 rounded-full bg-golden/10 blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
 
                   {/* Main chip */}
-                  <div className="relative px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 shadow-sm">
+                  <div className="relative px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 shadow-sm transition-all duration-300 group-hover:bg-white/60 group-hover:scale-105">
                     <div className="flex items-center gap-2">
                       {/* Platform Logos - Using compact components */}
                       <div className="flex items-center gap-0.5 pr-2 border-r border-dune/20">
@@ -178,7 +201,7 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               </motion.div>
             )}
 
@@ -200,7 +223,16 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <button
-                onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero' })}
+                onClick={() => {
+                  // Align Welcome section top with bottom of services panel stack
+                  // Header (80px) + PanelStack (~64px) = 144px offset
+                  const offset = 144
+                  window.scrollTo({
+                    top: window.innerHeight - offset,
+                    behavior: 'smooth'
+                  })
+                  panelActions.openPanel('category-picker', { entryPoint: 'hero' })
+                }}
                 className="btn btn-primary"
               >
                 Book Now

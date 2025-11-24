@@ -29,6 +29,7 @@ export function AutoDockOnScroll({
   enabled = true
 }: AutoDockOnScrollProps) {
   const { state, actions } = usePanelStack();
+  const { dockAll } = actions;
   const lastScrollY = useRef(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasDockedRef = useRef(false);
@@ -59,7 +60,7 @@ export function AutoDockOnScroll({
       if (scrollDelta >= scrollThreshold && !hasDockedRef.current) {
         // Debounce the dock action
         scrollTimeoutRef.current = setTimeout(() => {
-          actions.dockAll();
+          dockAll();
           hasDockedRef.current = true;
         }, debounceDelay);
       }
@@ -84,7 +85,7 @@ export function AutoDockOnScroll({
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [enabled, scrollThreshold, debounceDelay, actions, state.panels]);
+  }, [enabled, scrollThreshold, debounceDelay, dockAll, state.panels]);
 
   // This component doesn't render anything
   return null;

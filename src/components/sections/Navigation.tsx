@@ -49,6 +49,28 @@ export function Navigation() {
     }
     setIsMobileMenuOpen(false)
   }
+
+    const handleBookNow = () => {
+      // Scroll to the content section (past hero)
+      // We want the top of the Welcome section to align with the bottom of the services panel stack
+      // Header Height: 80px
+      // Panel Stack Bar Height: ~64px
+      // Total Offset: ~144px
+      // So we want the Welcome section top to be at 144px from the top of the viewport.
+      // ScrollTop = WelcomeTop - 144px
+      // Since WelcomeTop is window.innerHeight (after Hero), we scroll to window.innerHeight - 144.
+      const headerHeight = 80
+      const panelStackHeight = 64
+      const totalOffset = headerHeight + panelStackHeight
+
+      window.scrollTo({
+        top: window.innerHeight - totalOffset,
+        behavior: 'smooth'
+      })
+      
+      // Open the panel
+      actions.openPanel('category-picker', { entryPoint: 'page' })
+    }
   
   return (
     <>
@@ -105,7 +127,7 @@ export function Navigation() {
               ))}
               <button 
                 className="btn btn-primary ml-4"
-                onClick={() => actions.openPanel('category-picker', { entryPoint: 'page' })}
+                onClick={handleBookNow}
               >
                 Book Now
               </button>
@@ -183,7 +205,7 @@ export function Navigation() {
                 transition={{ delay: 0.5 }}
                 className="btn btn-primary mt-8"
                 onClick={() => {
-                  actions.openPanel('category-picker', { entryPoint: 'page' });
+                  handleBookNow();
                   setIsMobileMenuOpen(false);
                 }}
               >

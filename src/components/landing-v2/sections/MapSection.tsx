@@ -40,7 +40,13 @@ export function MapSection() {
         
         // Set land/background color (cream)
         const creamColor = '#fbf9f5'
-        newMap.setPaintProperty('background', 'background-color', creamColor)
+        // Check if background layer exists (it's a specific layer type, not always present as 'background' ID)
+        if (newMap.getLayer('background')) {
+          newMap.setPaintProperty('background', 'background-color', creamColor)
+        } else {
+           // Fallback: try to set background color on the style itself if supported, or ignore
+           // Note: mapbox-gl doesn't have a setBackgroundColor method, it relies on the background layer
+        }
         
         // Also try to target landuse layers if available for more coverage
         if (newMap.getLayer('landuse')) {

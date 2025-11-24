@@ -246,7 +246,13 @@ function panelStackReducer(state: PanelStackState, action: Action): PanelStackSt
         ),
       };
 
-    case 'UPDATE_PANEL_SUMMARY':
+    case 'UPDATE_PANEL_SUMMARY': {
+      // Check if summary is actually different to avoid loops
+      const panelToUpdate = state.panels.find(p => p.id === action.payload.panelId);
+      if (panelToUpdate && panelToUpdate.summary === action.payload.summary) {
+        return state;
+      }
+
       return {
         ...state,
         panels: state.panels.map(p =>
@@ -255,6 +261,7 @@ function panelStackReducer(state: PanelStackState, action: Action): PanelStackSt
             : p
         ),
       };
+    }
 
     case 'UPDATE_TOTAL_HEIGHT':
       return {
@@ -329,6 +336,12 @@ let panelIdCounter = 0;
 export function PanelStackProvider({ children, services = [] }: PanelStackProviderProps) {
   const [state, dispatch] = useReducer(panelStackReducer, getInitialState(services));
   const eventBusRef = useRef(createEventBus());
+  
+  // Keep track of latest state for stable callbacks
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Update max visible panels based on viewport
   useEffect(() => {
@@ -355,6 +368,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
   const openPanel = useCallback(
     (type: PanelType, data: any, options?: OpenPanelOptions): string => {
       const panelId = `panel-${++panelIdCounter}`;
+      const currentState = stateRef.current;
 
       // Determine level based on type
       let level: PanelLevel = 1;
@@ -363,7 +377,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
       if (type === 'schedule') level = 4;
 
       // Calculate position within level
-      const panelsInLevel = state.panels.filter(p => p.level === level);
+      const panelsInLevel = currentState.panels.filter(p => p.level === level);
       const position = options?.insertAtPosition ?? panelsInLevel.length;
 
       const newPanel: Panel = {
@@ -394,11 +408,12 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
 
       return panelId;
     },
-    [state.panels]
+    [] // Stable callback
   );
 
   const closePanel = useCallback((panelId: string) => {
-    const panel = state.panels.find(p => p.id === panelId);
+    const currentState = stateRef.current;
+    const panel = currentState.panels.find(p => p.id === panelId);
     if (!panel) return;
 
     dispatch({ type: 'CLOSE_PANEL', payload: panelId });
@@ -407,7 +422,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
       type: 'PANEL_CLOSED',
       payload: { panelId, panelType: panel.type },
     });
-  }, [state.panels]);
+  }, []); // Stable callback
 
   const dockPanel = useCallback((panelId: string) => {
     dispatch({ type: 'DOCK_PANEL', payload: panelId });
@@ -426,7 +441,8 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
   }, []);
 
   const togglePanel = useCallback((panelId: string) => {
-    const panel = state.panels.find(p => p.id === panelId);
+    const currentState = stateRef.current;
+    const panel = currentState.panels.find(p => p.id === panelId);
     if (!panel) return;
 
     if (panel.state === 'expanded') {
@@ -434,7 +450,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     } else {
       expandPanel(panelId);
     }
-  }, [state.panels, dockPanel, expandPanel]);
+  }, [dockPanel, expandPanel]); // Stable dependencies
 
   const closeAll = useCallback(() => {
     dispatch({ type: 'CLOSE_ALL' });
@@ -461,7 +477,8 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
   }, []);
 
   const expandNextServicePanel = useCallback(() => {
-    const servicePanels = state.panels.filter(p => p.level === 2).sort((a, b) => a.position - b.position);
+    const currentState = stateRef.current;
+    const servicePanels = currentState.panels.filter(p => p.level === 2).sort((a, b) => a.position - b.position);
     const currentExpanded = servicePanels.find(p => p.state === 'expanded');
 
     if (!currentExpanded && servicePanels.length > 0) {
@@ -475,10 +492,11 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     if (servicePanels[nextIndex]) {
       expandPanel(servicePanels[nextIndex].id);
     }
-  }, [state.panels, expandPanel]);
+  }, [expandPanel]);
 
   const expandPreviousServicePanel = useCallback(() => {
-    const servicePanels = state.panels.filter(p => p.level === 2).sort((a, b) => a.position - b.position);
+    const currentState = stateRef.current;
+    const servicePanels = currentState.panels.filter(p => p.level === 2).sort((a, b) => a.position - b.position);
     const currentExpanded = servicePanels.find(p => p.state === 'expanded');
 
     if (!currentExpanded && servicePanels.length > 0) {
@@ -492,19 +510,19 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     if (servicePanels[prevIndex]) {
       expandPanel(servicePanels[prevIndex].id);
     }
-  }, [state.panels, expandPanel]);
+  }, [expandPanel]);
 
   const getPanelById = useCallback((id: string) => {
-    return state.panels.find(p => p.id === id);
-  }, [state.panels]);
+    return stateRef.current.panels.find(p => p.id === id);
+  }, []);
 
   const getPanelsByLevel = useCallback((level: PanelLevel) => {
-    return state.panels.filter(p => p.level === level);
-  }, [state.panels]);
+    return stateRef.current.panels.filter(p => p.level === level);
+  }, []);
 
   const getChildPanels = useCallback((parentId: string) => {
-    return state.panels.filter(p => p.parentId === parentId);
-  }, [state.panels]);
+    return stateRef.current.panels.filter(p => p.parentId === parentId);
+  }, []);
 
   const updatePanelData = useCallback((panelId: string, data: any) => {
     dispatch({ type: 'UPDATE_PANEL_DATA', payload: { panelId, data } });
