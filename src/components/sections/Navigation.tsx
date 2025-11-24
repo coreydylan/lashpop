@@ -92,7 +92,7 @@ export function Navigation() {
           isScrolled ? 'glass backdrop-blur-md py-4' : 'py-6'
         }`}
       >
-        <div className="container-wide">
+        <div className="w-full px-6 md:px-12">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link 

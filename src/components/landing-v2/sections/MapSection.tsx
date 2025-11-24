@@ -30,7 +30,9 @@ export function MapSection() {
         style: 'mapbox://styles/mapbox/light-v11',
         center: STUDIO_LOCATION,
         zoom: 14,
-        interactive: true
+        interactive: true,
+        scrollZoom: false, // Disable scroll zoom by default to prevent page scroll blocking
+        cooperativeGestures: true // Requires two fingers to move map on mobile, allows page scroll
       })
 
       // Custom styling via map load event to match theme
