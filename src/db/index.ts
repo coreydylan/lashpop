@@ -32,6 +32,7 @@ import { setPhotos } from "./schema/set_photos"
 import { damUserSettings } from "./schema/dam_user_settings"
 import { damUserActions } from "./schema/dam_user_actions"
 import { websiteSettings, homepageReviews } from "./schema/website_settings"
+import { faqCategories, faqItems } from "./schema/faqs"
 
 // Scrollytelling CMS schemas
 import {
@@ -94,6 +95,8 @@ const dbSchema = {
   damUserActions,
   websiteSettings,
   homepageReviews,
+  faqCategories,
+  faqItems,
 
   // Scrollytelling CMS tables
   compositions,
@@ -201,6 +204,8 @@ export {
   damUserActions,
   websiteSettings,
   homepageReviews,
+  faqCategories,
+  faqItems,
   // Scrollytelling CMS
   compositions,
   layers,

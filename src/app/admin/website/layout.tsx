@@ -10,6 +10,7 @@ import {
   Star, 
   Instagram, 
   FileText, 
+  HelpCircle,
   ChevronLeft,
   Menu,
   X,
@@ -22,6 +23,7 @@ const sections = [
   { id: 'team', label: 'Team', icon: Users, description: 'Team members & visibility' },
   { id: 'instagram', label: 'Instagram', icon: Instagram, description: 'IG carousel settings' },
   { id: 'reviews', label: 'Reviews', icon: Star, description: 'Review selection & order' },
+  { id: 'faq', label: 'FAQ', icon: HelpCircle, description: 'Questions & answers' },
 ]
 
 export default function WebsiteAdminLayout({

@@ -8,6 +8,7 @@ import {
   Star, 
   Instagram, 
   FileText, 
+  HelpCircle,
   ArrowRight,
   Sparkles
 } from 'lucide-react'
@@ -51,6 +52,14 @@ const sections = [
     icon: Star, 
     description: 'Select and order which reviews appear on the homepage',
     color: 'golden',
+    stats: 'Database'
+  },
+  { 
+    id: 'faq', 
+    label: 'FAQ Manager', 
+    icon: HelpCircle, 
+    description: 'Manage FAQ categories, questions, and featured items',
+    color: 'sage',
     stats: 'Database'
   },
 ]
