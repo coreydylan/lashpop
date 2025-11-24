@@ -1048,6 +1048,14 @@ function AssetCard({
     onClick(e)
   }
 
+  const handleCaptureClick = (e: React.MouseEvent) => {
+    // Intercept Cmd/Ctrl/Shift + Click to handle selection and prevent PhotoView
+    // We do this in capture phase to stop the event from reaching PhotoView
+    if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      handleClick(e)
+    }
+  }
+
   const imageContent = useMemo(() => (
     <img
       src={asset.filePath}
@@ -1085,6 +1093,7 @@ function AssetCard({
         // Removed dynamic will-change to prevent masonry blinking issues
       }}
       onClick={handleClick}
+      onClickCapture={handleCaptureClick}
       onMouseDown={(e) => {
         onMouseDown(e)
       }}
@@ -1115,14 +1124,6 @@ function AssetCard({
           style={{
             // Disable PhotoView interaction when in selection mode
             pointerEvents: isSelectionMode ? 'none' : 'auto'
-          }}
-          onClick={(e) => {
-            // Prevent PhotoView from opening if modifier keys are pressed
-            // This allows cmd/ctrl+click and shift+click to work for selection
-            if (e.metaKey || e.ctrlKey || e.shiftKey) {
-              e.preventDefault()
-              e.stopPropagation()
-            }
           }}
         >
           {imageContent}
