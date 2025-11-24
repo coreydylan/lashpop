@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/db'
+import { db } from '@/db'
 import { reviews } from '@/db/schema/reviews'
-import { websiteSettings } from '@/db/schema/website_settings'
-import { desc, gte, eq } from 'drizzle-orm'
+import { homepageReviews } from '@/db/schema/website_settings'
+import { desc, gte, eq, asc } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
-const REVIEWS_SECTION = 'homepage_reviews'
-
-// GET - Fetch all reviews
+// GET - Fetch all reviews and selected IDs
 export async function GET() {
   try {
-    const db = getDb()
-
     // Fetch all reviews with rating >= 3
     const allReviews = await db
       .select()
@@ -20,41 +16,32 @@ export async function GET() {
       .where(gte(reviews.rating, 3))
       .orderBy(desc(reviews.reviewDate))
 
-    // Fetch selected reviews config from website_settings
-    let selectedReviewsConfig: { id: string; displayOrder: number }[] = []
-    try {
-      const [setting] = await db
-        .select()
-        .from(websiteSettings)
-        .where(eq(websiteSettings.section, REVIEWS_SECTION))
-        .limit(1)
-      
-      if (setting?.config && Array.isArray((setting.config as any).selectedReviews)) {
-        selectedReviewsConfig = (setting.config as any).selectedReviews
-      }
-    } catch {
-      // Table might not exist yet, use empty config
-      console.log('Website settings table not found, using empty config')
-    }
+    // Fetch selected reviews from homepage_reviews table
+    const selectedReviewsData = await db
+      .select()
+      .from(homepageReviews)
+      .orderBy(asc(homepageReviews.displayOrder))
 
-    // Map reviews with display order from config
-    const reviewsWithOrder = allReviews.map(review => {
-      const config = selectedReviewsConfig.find(c => c.id === review.id)
-      return {
-        ...review,
-        isSelected: !!config,
-        displayOrder: config?.displayOrder ?? 999
-      }
-    })
+    // Create a map of selected review IDs to their display order
+    const selectedMap = new Map(
+      selectedReviewsData.map(r => [r.reviewId, r.displayOrder])
+    )
+
+    // Map reviews with selection status and display order
+    const reviewsWithOrder = allReviews.map(review => ({
+      ...review,
+      isSelected: selectedMap.has(review.id),
+      displayOrder: selectedMap.get(review.id) ?? 999
+    }))
 
     return NextResponse.json({
       reviews: reviewsWithOrder,
-      selectedIds: selectedReviewsConfig.map(c => c.id)
+      selectedIds: selectedReviewsData.map(r => r.reviewId)
     })
   } catch (error) {
     console.error('Error fetching reviews:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch reviews' },
+      { error: 'Failed to fetch reviews', details: String(error) },
       { status: 500 }
     )
   }
@@ -63,47 +50,26 @@ export async function GET() {
 // PUT - Update selected reviews and their order
 export async function PUT(request: NextRequest) {
   try {
-    const db = getDb()
     const { selectedReviews } = await request.json()
 
     if (!Array.isArray(selectedReviews)) {
       return NextResponse.json(
-        { error: 'Invalid request body' },
+        { error: 'Invalid request body - selectedReviews must be an array' },
         { status: 400 }
       )
     }
 
-    // Format the config
-    const config = {
-      selectedReviews: selectedReviews.map((item: { id: string; displayOrder: number }) => ({
-        id: item.id,
+    // Clear existing selections and insert new ones
+    await db.delete(homepageReviews)
+
+    // Insert new selections
+    if (selectedReviews.length > 0) {
+      const insertData = selectedReviews.map((item: { id: string; displayOrder: number }) => ({
+        reviewId: item.id,
         displayOrder: item.displayOrder
-      })),
-      updatedAt: new Date().toISOString()
-    }
+      }))
 
-    try {
-      // Try to upsert the setting
-      const [existing] = await db
-        .select()
-        .from(websiteSettings)
-        .where(eq(websiteSettings.section, REVIEWS_SECTION))
-        .limit(1)
-
-      if (existing) {
-        await db
-          .update(websiteSettings)
-          .set({ config, updatedAt: new Date() })
-          .where(eq(websiteSettings.section, REVIEWS_SECTION))
-      } else {
-        await db
-          .insert(websiteSettings)
-          .values({ section: REVIEWS_SECTION, config })
-      }
-    } catch (dbError) {
-      // If table doesn't exist, log but don't fail
-      console.error('Could not persist to database:', dbError)
-      // Settings will work in-memory for this session
+      await db.insert(homepageReviews).values(insertData)
     }
 
     return NextResponse.json({ 
@@ -113,9 +79,8 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Error updating reviews:', error)
     return NextResponse.json(
-      { error: 'Failed to update reviews' },
+      { error: 'Failed to update reviews', details: String(error) },
       { status: 500 }
     )
   }
 }
-

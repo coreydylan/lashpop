@@ -1,8 +1,10 @@
+"use server"
+
 import { db } from "@/db"
 import { reviews } from "@/db/schema/reviews"
 import { reviewStats } from "@/db/schema/review_stats"
-import { websiteSettings } from "@/db/schema/website_settings"
-import { desc, gte, eq, inArray } from "drizzle-orm"
+import { homepageReviews } from "@/db/schema/website_settings"
+import { desc, gte, inArray, asc } from "drizzle-orm"
 
 export async function getReviews(limit = 20) {
   try {
@@ -25,35 +27,23 @@ export async function getReviews(limit = 20) {
  */
 export async function getHomepageReviews(fallbackLimit = 10) {
   try {
-    // Try to get selected reviews from website settings
-    let selectedConfig: { id: string; displayOrder: number }[] = []
-    
-    try {
-      const [setting] = await db
-        .select()
-        .from(websiteSettings)
-        .where(eq(websiteSettings.section, 'homepage_reviews'))
-        .limit(1)
-      
-      if (setting?.config && Array.isArray((setting.config as any).selectedReviews)) {
-        selectedConfig = (setting.config as any).selectedReviews
-      }
-    } catch {
-      // Table might not exist yet
-      console.log('Website settings not available, using fallback')
-    }
+    // Get selected review IDs from homepage_reviews table
+    const selectedData = await db
+      .select()
+      .from(homepageReviews)
+      .orderBy(asc(homepageReviews.displayOrder))
 
-    // If we have selected reviews, fetch them in order
-    if (selectedConfig.length > 0) {
-      const selectedIds = selectedConfig.map(c => c.id)
+    // If we have selected reviews, fetch them
+    if (selectedData.length > 0) {
+      const selectedIds = selectedData.map(r => r.reviewId)
       
       const selectedReviews = await db
         .select()
         .from(reviews)
         .where(inArray(reviews.id, selectedIds))
 
-      // Sort by the display order from config
-      const orderMap = new Map(selectedConfig.map(c => [c.id, c.displayOrder]))
+      // Sort by the display order from homepage_reviews
+      const orderMap = new Map(selectedData.map(r => [r.reviewId, r.displayOrder]))
       selectedReviews.sort((a, b) => {
         const orderA = orderMap.get(a.id) ?? 999
         const orderB = orderMap.get(b.id) ?? 999
@@ -67,6 +57,7 @@ export async function getHomepageReviews(fallbackLimit = 10) {
     return getHighRatedReviews(fallbackLimit)
   } catch (error) {
     console.error("Error fetching homepage reviews:", error)
+    // Return empty array on error - let the page handle gracefully
     return []
   }
 }
