@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { usePanelStack } from '@/contexts/PanelStackContext'
+import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
 
 const navItems = [
   { label: 'Services', action: 'open-services' },
@@ -19,6 +21,7 @@ export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { actions } = usePanelStack()
+  const pathname = usePathname()
   
   useEffect(() => {
     const handleScroll = () => {
@@ -30,21 +33,31 @@ export function Navigation() {
   }, [])
 
   const handleNavClick = (item: any, e: React.MouseEvent) => {
+    // Handle Logo click (home link)
+    if (item.href === '/') {
+      // If we're on the landing page (v2) or home page, scroll to top
+      if (pathname === '/landing-v2' || pathname === '/') {
+        e.preventDefault()
+        smoothScrollTo(0, 1000, getScroller())
+        setIsMobileMenuOpen(false)
+        return
+      }
+      return
+    }
+
     if (item.action === 'open-services') {
       e.preventDefault()
       actions.openPanel('category-picker', { entryPoint: 'page' })
     } else if (item.href?.startsWith('#')) {
       e.preventDefault()
-      const element = document.querySelector(item.href)
-      if (element) {
-        const headerOffset = 80 // Adjust for header height
-        const elementPosition = element.getBoundingClientRect().top
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset
-
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth'
-        })
+      
+      if (item.href === '#gallery' || item.href === '#reviews') {
+        smoothScrollToElement(item.href, 80, 1000, 'center')
+      } else if (item.href === '#faq') {
+        // Special alignment for FAQ to show selectors below header
+        smoothScrollToElement(item.href, 180, 1000, 'top')
+      } else {
+        smoothScrollToElement(item.href, 80, 1000, 'top')
       }
     }
     setIsMobileMenuOpen(false)
@@ -63,10 +76,7 @@ export function Navigation() {
       const panelStackHeight = 64
       const totalOffset = headerHeight + panelStackHeight
 
-      window.scrollTo({
-        top: window.innerHeight - totalOffset,
-        behavior: 'smooth'
-      })
+      smoothScrollTo(window.innerHeight - totalOffset, 1000, getScroller())
       
       // Open the panel
       actions.openPanel('category-picker', { entryPoint: 'page' })
@@ -85,7 +95,11 @@ export function Navigation() {
         <div className="container-wide">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="relative">
+            <Link 
+              href="/" 
+              onClick={(e) => handleNavClick({ href: '/' }, e)}
+              className="relative flex items-center h-8"
+            >
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 className="flex items-center gap-2"
@@ -111,6 +125,7 @@ export function Navigation() {
                   <Link
                     key={item.label}
                     href={item.href}
+                    onClick={(e) => handleNavClick(item, e)}
                     className="caption text-dune/70 hover:text-dusty-rose transition-colors duration-300 leading-none flex items-center h-8"
                   >
                     {item.label}
