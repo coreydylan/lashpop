@@ -47,7 +47,13 @@ export const teamMemberServices = pgTable("team_member_services", {
     .notNull()
     .references(() => teamMembers.id, { onDelete: "cascade" }),
   serviceId: uuid("service_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  price: text("price"),
+  priceWithTax: text("price_with_tax"),
+  durationMinutes: text("duration_minutes"),
+  pointsGiven: text("points_given"),
+  pointsRedeem: text("points_redeem"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow()
 })
 
 export type InsertTeamMember = typeof teamMembers.$inferInsert
