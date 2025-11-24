@@ -36,8 +36,42 @@ function splitParagraphs(content: string) {
     .filter(Boolean)
 }
 
+// Common UI/navigation text that should never be treated as reviewer names
+const JUNK_PATTERNS = [
+  /^cancel$/i,
+  /^submit$/i,
+  /^continue$/i,
+  /^back$/i,
+  /select location/i,
+  /type of service/i,
+  /for businesses/i,
+  /for customers/i,
+  /find businesses/i,
+  /business software/i,
+  /business features/i,
+  /business products/i,
+  /^company$/i,
+  /^resources$/i,
+  /united states?/i,
+  /australia/i,
+  /canada/i,
+  /united kingdom/i,
+  /javascript:/i,
+  /^\[.*\]$/,  // Markdown links like [Back]
+  /^#+\s/,    // Markdown headers
+  /^\*\s/,    // Markdown list items
+  /^-\s*\[/,  // Markdown checkbox items
+]
+
+function isJunkText(text: string): boolean {
+  const trimmed = text.trim()
+  return JUNK_PATTERNS.some(pattern => pattern.test(trimmed))
+}
+
 function looksLikeName(segment: string) {
   if (!segment) return false
+  // Reject junk UI text immediately
+  if (isJunkText(segment)) return false
   const cleaned = segment.replace(/[^A-Za-z0-9 .,''\-]/g, '').trim()
   if (!cleaned) return false
   const words = cleaned.split(/\s+/)
@@ -122,11 +156,16 @@ function parseReviews(markdown: string, providerNames: Set<string>): ParsedRevie
 
     const consumeReview = (subject: string | null, textSegment: string | undefined) => {
       if (!textSegment) return
+      const trimmedText = textSegment.trim()
+      // Skip empty or junk review text (contains javascript links, markdown navigation, etc.)
+      if (!trimmedText || isJunkText(trimmedText) || trimmedText.includes('javascript:')) return
+      // Minimum review length - real reviews are at least a few words
+      if (trimmedText.length < 10) return
       reviews.push({
         reviewerName,
         reviewDate,
         subject,
-        reviewText: textSegment.trim()
+        reviewText: trimmedText
       })
       createdEntry = true
       i++
