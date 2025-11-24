@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&family=Libre+Baskerville:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&family=Libre+Baskerville:ital@0;1&family=TikTok+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -9,6 +9,7 @@
     /* Typography */
     --font-sans: 'Outfit', sans-serif;
     --font-serif: 'Libre Baskerville', serif;
+    --font-caption: 'TikTok Sans', sans-serif;
 
     /* Desert Ocean Palette */
     --sage: 161, 151, 129;           /* Soft sage green */
@@ -300,9 +301,10 @@ a,
   }
   
   .caption {
+    font-family: var(--font-caption);
     font-size: 0.875rem;
-    font-weight: 400;
-    letter-spacing: 0.08em;
+    font-weight: 500;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
   }
 
@@ -633,9 +635,12 @@ a,
   }
 
   .theme-v2 .h3,
-  .theme-v2 .btn,
-  .theme-v2 .caption {
+  .theme-v2 .btn {
     font-family: var(--font-sans);
+  }
+  
+  .theme-v2 .caption {
+    font-family: var(--font-caption);
   }
   
   .theme-v2 p, 

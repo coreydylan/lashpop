@@ -14,7 +14,7 @@ import { friendBookingRequests } from "./schema/friend_booking_requests"
 
 // Local schemas
 import { customers } from "./schema/customers"
-import { teamMembers } from "./schema/team_members"
+import { teamMembers, teamMemberServices } from "./schema/team_members"
 import { serviceCategories } from "./schema/service_categories"
 import { services } from "./schema/services"
 import { testimonials } from "./schema/testimonials"
@@ -77,6 +77,7 @@ const dbSchema = {
   // Local tables
   customers,
   teamMembers,
+  teamMemberServices,
   serviceCategories,
   services,
   testimonials,
@@ -186,6 +187,7 @@ export {
   // Local tables
   customers,
   teamMembers,
+  teamMemberServices,
   serviceCategories,
   services,
   testimonials,

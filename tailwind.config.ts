@@ -31,6 +31,7 @@ const config: Config = {
       fontFamily: {
         sans: ['Outfit', 'sans-serif'],
         serif: ['Libre Baskerville', 'serif'],
+        caption: ['TikTok Sans', 'sans-serif'],
         josefin: ['var(--font-josefin)', 'serif'],
         chivo: ['var(--font-chivo)', 'sans-serif'],
         andika: ['var(--font-andika)', 'sans-serif'],

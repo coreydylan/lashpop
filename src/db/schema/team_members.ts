@@ -30,6 +30,7 @@ export const teamMembers = pgTable("team_members", {
   availability: text("availability"),
   displayOrder: text("display_order").default("0"),
   isActive: boolean("is_active").default(true).notNull(),
+  showOnWebsite: boolean("show_on_website").default(true), // Legacy column - preserved for data
 
   // Metadata
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -37,5 +38,19 @@ export const teamMembers = pgTable("team_members", {
   lastSyncedAt: timestamp("last_synced_at") // Track when last synced from Vagaro
 })
 
+/**
+ * Team Member Services - Junction table linking team members to services they perform
+ */
+export const teamMemberServices = pgTable("team_member_services", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  teamMemberId: uuid("team_member_id")
+    .notNull()
+    .references(() => teamMembers.id, { onDelete: "cascade" }),
+  serviceId: uuid("service_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+})
+
 export type InsertTeamMember = typeof teamMembers.$inferInsert
 export type SelectTeamMember = typeof teamMembers.$inferSelect
+export type InsertTeamMemberService = typeof teamMemberServices.$inferInsert
+export type SelectTeamMemberService = typeof teamMemberServices.$inferSelect
