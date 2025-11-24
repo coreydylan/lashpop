@@ -3,6 +3,7 @@ import { getTeamMembers } from "@/actions/team"
 import { getHomepageReviews, getReviewStats } from "@/actions/reviews"
 import { getInstagramPosts } from "@/actions/instagram"
 import { getServiceCategories } from "@/actions/categories"
+import { getFAQsGroupedByCategory } from "@/actions/faqs"
 import LandingPageV2Client from "./LandingPageV2Client"
 
 export default async function HomePage() {
@@ -61,6 +62,9 @@ export default async function HomePage() {
   // Fetch service categories
   const serviceCategories = await getServiceCategories()
 
+  // Fetch FAQs
+  const faqData = await getFAQsGroupedByCategory()
+
   return <LandingPageV2Client
     services={formattedServices}
     teamMembers={formattedTeamMembers}
@@ -68,5 +72,6 @@ export default async function HomePage() {
     reviewStats={reviewStats}
     instagramPosts={instagramPosts}
     serviceCategories={serviceCategories}
+    faqData={faqData}
   />
 }

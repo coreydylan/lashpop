@@ -88,6 +88,32 @@ interface ServiceCategory {
   displayOrder: number;
 }
 
+interface FAQCategory {
+  id: string;
+  name: string;
+  displayName: string;
+  displayOrder: number;
+}
+
+interface FAQItem {
+  id: string;
+  categoryId: string;
+  question: string;
+  answer: string;
+  displayOrder: number;
+  isFeatured: boolean;
+}
+
+interface FAQWithCategory extends FAQItem {
+  categoryDisplayName: string;
+}
+
+interface FAQData {
+  categories: FAQCategory[];
+  itemsByCategory: Record<string, FAQItem[]>;
+  featuredItems: FAQWithCategory[];
+}
+
 interface LandingPageV2ClientProps {
   services: Service[];
   teamMembers: TeamMember[];
@@ -95,6 +121,7 @@ interface LandingPageV2ClientProps {
   reviewStats?: ReviewStat[];
   instagramPosts?: any[]; // Using any[] for now to avoid circular type dependency, or define strict type
   serviceCategories?: ServiceCategory[];
+  faqData?: FAQData;
 }
 
 // Add custom CSS for scroll-snap on mobile
@@ -208,7 +235,7 @@ const scrollSnapStyles = `
   }
 `;
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [] }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -478,7 +505,11 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="faq">
                   <SectionTransition variant="fade">
                     <div id="faq">
-                      <FAQSection />
+                      <FAQSection 
+                        categories={faqData?.categories || []}
+                        itemsByCategory={faqData?.itemsByCategory || {}}
+                        featuredItems={faqData?.featuredItems || []}
+                      />
                     </div>
                   </SectionTransition>
                 </div>
