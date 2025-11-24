@@ -1,10 +1,50 @@
 'use server'
 
-import { db, assets, assetTags, tags, tagCategories } from "@/db"
-import { desc, eq, and } from "drizzle-orm"
+import { db, assets, assetTags, tags, websiteSettings } from "@/db"
+import { desc, eq } from "drizzle-orm"
 
-export async function getInstagramPosts(limit = 20) {
+/**
+ * Get Instagram carousel settings from admin panel
+ */
+async function getInstagramSettings(): Promise<{
+  maxPosts: number
+  autoScroll: boolean
+  scrollSpeed: number
+  showCaptions: boolean
+}> {
+  const defaults = {
+    maxPosts: 12,
+    autoScroll: true,
+    scrollSpeed: 20,
+    showCaptions: false
+  }
+
   try {
+    const [setting] = await db
+      .select()
+      .from(websiteSettings)
+      .where(eq(websiteSettings.section, 'instagram_carousel'))
+      .limit(1)
+    
+    if (setting?.config) {
+      return {
+        ...defaults,
+        ...(setting.config as any)
+      }
+    }
+  } catch {
+    // Table might not exist yet
+  }
+
+  return defaults
+}
+
+export async function getInstagramPosts(limit?: number) {
+  try {
+    // Get settings from admin panel
+    const settings = await getInstagramSettings()
+    const effectiveLimit = limit ?? settings.maxPosts
+
     // 1. Find the "IG Carousel" tag ID
     // We don't use 'with' relations here to avoid schema configuration issues
     const carouselTag = await db
@@ -32,7 +72,7 @@ export async function getInstagramPosts(limit = 20) {
       .innerJoin(assetTags, eq(assets.id, assetTags.assetId))
       .where(eq(assetTags.tagId, carouselTag.id))
       .orderBy(desc(assets.uploadedAt))
-      .limit(limit)
+      .limit(effectiveLimit)
 
     // 3. Map to expected format
     return posts.map(post => ({
@@ -47,3 +87,5 @@ export async function getInstagramPosts(limit = 20) {
     return []
   }
 }
+
+export { getInstagramSettings }

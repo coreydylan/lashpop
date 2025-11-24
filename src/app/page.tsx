@@ -1,6 +1,6 @@
 import { getAllServices } from "@/actions/services"
 import { getTeamMembers } from "@/actions/team"
-import { getHighRatedReviews, getReviewStats } from "@/actions/reviews"
+import { getHomepageReviews, getReviewStats } from "@/actions/reviews"
 import { getInstagramPosts } from "@/actions/instagram"
 import { getServiceCategories } from "@/actions/categories"
 import LandingPageV2Client from "./LandingPageV2Client"
@@ -49,8 +49,8 @@ export default async function HomePage() {
     funFact: member.funFact || undefined
   }))
 
-  // Fetch reviews from database
-  const reviews = await getHighRatedReviews(15)
+  // Fetch reviews from database (uses admin-selected reviews if available)
+  const reviews = await getHomepageReviews(15)
 
   // Fetch review stats from database
   const reviewStats = await getReviewStats()

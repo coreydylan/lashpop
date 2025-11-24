@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { Instagram, RefreshCw, Settings, AlertCircle, ExternalLink, Heart, MessageCircle } from 'lucide-react'
+import { Instagram, RefreshCw, Settings, AlertCircle, ExternalLink, Heart, MessageCircle, Save, Check } from 'lucide-react'
 import Link from 'next/link'
 
 interface InstagramPost {
@@ -18,6 +18,9 @@ interface InstagramPost {
 export default function InstagramCarouselEditor() {
   const [posts, setPosts] = useState<InstagramPost[]>([])
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
   const [settings, setSettings] = useState({
     maxPosts: 12,
     showCaptions: false,
@@ -26,8 +29,52 @@ export default function InstagramCarouselEditor() {
   })
 
   useEffect(() => {
+    fetchInstagramSettings()
     fetchInstagramPosts()
   }, [])
+
+  const fetchInstagramSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/website/instagram')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.settings) {
+          setSettings(data.settings)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching Instagram settings:', error)
+    }
+  }
+
+  const handleSaveSettings = async () => {
+    setSaving(true)
+    try {
+      const response = await fetch('/api/admin/website/instagram', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings })
+      })
+
+      if (response.ok) {
+        setSaved(true)
+        setHasChanges(false)
+        setTimeout(() => setSaved(false), 2000)
+      } else {
+        alert('Failed to save settings')
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      alert('Failed to save settings')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const updateSetting = <K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
+    setSettings(prev => ({ ...prev, [key]: value }))
+    setHasChanges(true)
+  }
 
   const fetchInstagramPosts = async () => {
     setLoading(true)
@@ -86,13 +133,20 @@ export default function InstagramCarouselEditor() {
               <RefreshCw className="w-4 h-4" />
               Sync Posts
             </button>
-            <Link
-              href="/dam?filter=source:instagram"
-              className="btn btn-primary"
+            <button
+              onClick={handleSaveSettings}
+              disabled={saving || !hasChanges}
+              className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} ${!hasChanges && !saved ? 'opacity-50' : ''}`}
             >
-              <ExternalLink className="w-4 h-4" />
-              View in DAM
-            </Link>
+              {saving ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : saved ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {saved ? 'Saved!' : 'Save Settings'}
+            </button>
           </div>
         </div>
       </motion.div>
@@ -123,7 +177,7 @@ export default function InstagramCarouselEditor() {
                     min="4"
                     max="24"
                     value={settings.maxPosts}
-                    onChange={(e) => setSettings(prev => ({ ...prev, maxPosts: parseInt(e.target.value) }))}
+                    onChange={(e) => updateSetting('maxPosts', parseInt(e.target.value))}
                     className="flex-1 accent-terracotta"
                   />
                   <span className="text-sm text-dune w-8 text-right">{settings.maxPosts}</span>
@@ -141,7 +195,7 @@ export default function InstagramCarouselEditor() {
                     min="10"
                     max="40"
                     value={settings.scrollSpeed}
-                    onChange={(e) => setSettings(prev => ({ ...prev, scrollSpeed: parseInt(e.target.value) }))}
+                    onChange={(e) => updateSetting('scrollSpeed', parseInt(e.target.value))}
                     className="flex-1 accent-terracotta"
                   />
                   <span className="text-sm text-dune w-12 text-right">{settings.scrollSpeed}s</span>
@@ -155,7 +209,7 @@ export default function InstagramCarouselEditor() {
                     Auto-scroll
                   </span>
                   <div 
-                    onClick={() => setSettings(prev => ({ ...prev, autoScroll: !prev.autoScroll }))}
+                    onClick={() => updateSetting('autoScroll', !settings.autoScroll)}
                     className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
                       settings.autoScroll ? 'bg-terracotta' : 'bg-sage/30'
                     }`}
@@ -171,7 +225,7 @@ export default function InstagramCarouselEditor() {
                     Show captions
                   </span>
                   <div 
-                    onClick={() => setSettings(prev => ({ ...prev, showCaptions: !prev.showCaptions }))}
+                    onClick={() => updateSetting('showCaptions', !settings.showCaptions)}
                     className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
                       settings.showCaptions ? 'bg-terracotta' : 'bg-sage/30'
                     }`}

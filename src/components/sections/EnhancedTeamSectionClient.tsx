@@ -20,6 +20,8 @@ interface TeamMember {
   phone: string
   email?: string
   specialties: string[]
+  // Service categories pulled directly from Vagaro service assignments
+  serviceCategories?: string[]
   bio?: string
   quote?: string
   availability?: string
@@ -154,7 +156,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
               {/* Embla Container */}
               <div className="flex touch-pan-y gap-4 px-4">
                 {teamMembers.map((member, index) => {
-                  const memberCategories = getTeamMemberCategories(member.specialties)
+                  // Use service categories from Vagaro, fallback to derived from specialties
+                  const memberCategories = member.serviceCategories?.length 
+                    ? member.serviceCategories 
+                    : getTeamMemberCategories(member.specialties)
 
                   return (
                     <motion.div
@@ -169,9 +174,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       }}
                       onClick={() => handleMemberClick(member)}
                     >
-                      {/* Frosted Glass Card - Taller format */}
-                      <div className="relative h-[500px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group">
-                        {/* Clear Background Image - NO BLUR */}
+                      {/* Clean Card Design - Taller format */}
+                      <div className="relative h-[420px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
+                        {/* Clear Background Image */}
                         <div className="absolute inset-0">
                           <Image
                             src={member.image}
@@ -179,77 +184,30 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             fill
                             className="object-cover"
                           />
-                          {/* Subtle gradient only at bottom for readability */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                          {/* Gradient for readability at bottom */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                         </div>
 
-                        {/* Floating Glass Content Container - ONLY ON BOTTOM */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6">
-                          {/* Frosted glass background for content only */}
-                          <div className="absolute inset-0 bg-white/15 backdrop-blur-xl rounded-t-3xl border-t border-white/30 shadow-2xl" />
-
-                          {/* Content */}
-                          <div className="relative space-y-3">
-                            {/* Category Chips */}
-                            {memberCategories.length > 0 && (
-                              <div className="flex gap-2 mb-3 flex-wrap">
-                                {memberCategories.map((category) => (
-                                  <span
-                                    key={category}
-                                    className="px-3 py-1.5 text-xs font-semibold bg-white/25 backdrop-blur-md text-white rounded-full border border-white/40 shadow-lg"
-                                  >
-                                    {category}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Name and Role */}
-                            <div>
-                              <h3 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">
-                                {member.name}
-                              </h3>
-                              <p className="text-white/90 text-sm drop-shadow-md">
-                                {member.role}
-                              </p>
-                              {member.businessName && (
-                                <p className="text-white/70 text-xs mt-1 drop-shadow-sm">
-                                  {member.businessName}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Quick Actions */}
-                            <div className="flex gap-2 pt-2">
-                              {member.instagram && (
-                                <button
-                                  className="p-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white/80 hover:bg-white/25 transition-all"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    window.open(`https://instagram.com/${member.instagram}`, '_blank')
-                                  }}
+                        {/* Content at Bottom */}
+                        <div className="absolute bottom-0 left-0 right-0 p-5">
+                          {/* Service Tags - Above Name */}
+                          {memberCategories.length > 0 && (
+                            <div className="flex gap-1.5 flex-wrap mb-2">
+                              {memberCategories.map((category) => (
+                                <span
+                                  key={category}
+                                  className="px-2 py-1 text-[10px] font-medium bg-white/20 backdrop-blur-md text-white rounded-full border border-white/30"
                                 >
-                                  <Instagram size={16} />
-                                </button>
-                              )}
-                              <button
-                                className="flex-1 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-medium text-sm hover:bg-white/30 transition-all"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  window.open(member.bookingUrl, '_blank')
-                                }}
-                              >
-                                Book Now
-                              </button>
+                                  {category}
+                                </span>
+                              ))}
                             </div>
+                          )}
 
-                            {/* Hover Indicator */}
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white/80 text-xs">
-                                Tap for details
-                              </div>
-                            </div>
-                          </div>
+                          {/* Name */}
+                          <h3 className="text-xl font-bold text-white drop-shadow-lg">
+                            {member.name}
+                          </h3>
                         </div>
 
                         {/* Highlight Effect */}
@@ -274,10 +232,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </div>
         ) : (
           <div className="container px-4">
-            {/* Desktop Grid View - Keep existing */}
+            {/* Desktop Grid View - Unified design with mobile */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {teamMembers.map((member, index) => {
-              const memberCategories = getTeamMemberCategories(member.specialties)
+              // Use service categories from Vagaro, fallback to derived from specialties
+              const memberCategories = member.serviceCategories?.length 
+                ? member.serviceCategories 
+                : getTeamMemberCategories(member.specialties)
 
               return (
                 <motion.div
@@ -295,9 +256,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                   onMouseEnter={() => setHoveredId(member.id)}
                   onMouseLeave={() => setHoveredId(null)}
                 >
-                  {/* Larger Card with Room for Tags */}
+                  {/* Clean Card Design */}
                   <motion.div
-                    className="relative aspect-[3/4.5] overflow-hidden rounded-3xl shadow-lg"
+                    className="relative aspect-[3/4] overflow-hidden rounded-3xl shadow-lg"
                     whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
                     transition={{ duration: 0.3 }}
                   >
@@ -309,73 +270,29 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
                     />
 
-                    {/* Subtle Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                    {/* Category Chips at Top */}
-                    {memberCategories.length > 0 && (
-                      <motion.div
-                        className="absolute top-4 left-4 right-4 flex flex-wrap gap-2"
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                      >
-                        {memberCategories.map((category, idx) => (
-                          <span
-                            key={idx}
-                            className="px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-xs font-medium text-white shadow-sm"
-                          >
-                            {category}
-                          </span>
-                        ))}
-                      </motion.div>
-                    )}
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
                     {/* Content at Bottom */}
                     <div className="absolute inset-x-0 bottom-0 p-5">
-                      {/* Name and Role */}
-                      <div className="space-y-1">
-                        <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg">
-                          {member.name}
-                        </h3>
-                        <p className="font-sans text-white/90 text-sm drop-shadow-md">
-                          {member.role}
-                        </p>
+                      {/* Service Tags - Above Name */}
+                      {memberCategories.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                          {memberCategories.map((category, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-[10px] font-medium text-white"
+                            >
+                              {category}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
-                        {/* Business Name for Independents */}
-                        {member.type === 'independent' && member.businessName && (
-                          <p className="font-sans text-white/80 text-xs italic drop-shadow-md mt-1">
-                            {member.businessName}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Quick Actions - Always Visible */}
-                      <motion.div
-                        className="flex gap-2 mt-4"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleMemberClick(member)
-                          }}
-                          className="px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-xs font-medium text-white hover:bg-white/30 transition-all"
-                        >
-                          View Profile
-                        </button>
-                        <a
-                          href={member.bookingUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="px-4 py-2 rounded-full bg-dusty-rose/80 backdrop-blur-md border border-dusty-rose/40 text-xs font-medium text-white hover:bg-dusty-rose/90 transition-all"
-                        >
-                          Book Now
-                        </a>
-                      </motion.div>
+                      {/* Name */}
+                      <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg">
+                        {member.name}
+                      </h3>
                     </div>
 
                     {/* Hover Glow Effect */}

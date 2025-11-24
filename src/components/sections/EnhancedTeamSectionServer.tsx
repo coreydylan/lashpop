@@ -1,8 +1,8 @@
-import { getTeamMembers } from "@/actions/team"
+import { getTeamMembersWithServices } from "@/actions/team"
 import { EnhancedTeamSectionClient } from "./EnhancedTeamSectionClient"
 
 export async function EnhancedTeamSection() {
-  const teamMembers = await getTeamMembers()
+  const teamMembers = await getTeamMembersWithServices()
 
   // Transform database format to component format
   const formattedTeamMembers = teamMembers.map((member, index) => ({
@@ -15,6 +15,8 @@ export async function EnhancedTeamSection() {
     image: member.imageUrl,
     phone: member.phone,
     specialties: member.specialties as string[],
+    // Service categories pulled directly from Vagaro service assignments
+    serviceCategories: member.serviceCategories,
     bio: member.bio || undefined,
     quote: member.quote || undefined,
     availability: member.availability || undefined,

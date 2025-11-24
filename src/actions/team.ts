@@ -3,7 +3,7 @@
 import { getDb } from "@/db"
 import { teamMembers } from "@/db/schema/team_members"
 import { services } from "@/db/schema/services"
-import { and, eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, isNotNull } from "drizzle-orm"
 
 export async function getTeamMembers() {
   const db = getDb()
@@ -15,6 +15,79 @@ export async function getTeamMembers() {
     .orderBy(teamMembers.displayOrder)
 
   return members
+}
+
+/**
+ * Get services that a team member can perform based on Vagaro data
+ * Returns an array of unique main categories (e.g., "Lash Services", "Brow Services")
+ */
+export async function getServicesForTeamMember(vagaroEmployeeId: string | null): Promise<string[]> {
+  if (!vagaroEmployeeId) return []
+  
+  const db = getDb()
+  
+  // Get all services that have Vagaro data
+  const allServices = await db
+    .select()
+    .from(services)
+    .where(
+      and(
+        isNotNull(services.vagaroData),
+        eq(services.isActive, true)
+      )
+    )
+  
+  // Find services where this employee is in the servicePerformedBy array
+  const memberServices: string[] = []
+  
+  for (const service of allServices) {
+    const vagaroData = service.vagaroData as any
+    if (!vagaroData?.servicePerformedBy) continue
+    
+    const performers = vagaroData.servicePerformedBy || []
+    const isPerformer = performers.some((p: any) => {
+      const employeeId = p.serviceProviderId || p.employeeId
+      return employeeId === vagaroEmployeeId
+    })
+    
+    if (isPerformer && service.mainCategory) {
+      memberServices.push(service.mainCategory)
+    }
+  }
+  
+  // Return unique categories, cleaned up
+  const uniqueCategories = [...new Set(memberServices)]
+  
+  // Clean up category names (remove " Services" suffix for cleaner tags)
+  return uniqueCategories.map(cat => 
+    cat.replace(' Services', '').replace(' Service', '')
+  ).slice(0, 4) // Max 4 tags
+}
+
+/**
+ * Get team members with their service categories
+ */
+export async function getTeamMembersWithServices() {
+  const db = getDb()
+
+  const members = await db
+    .select()
+    .from(teamMembers)
+    .where(eq(teamMembers.isActive, true))
+    .orderBy(teamMembers.displayOrder)
+
+  // Fetch service categories for all members in parallel
+  const membersWithServices = await Promise.all(
+    members.map(async (member) => {
+      const serviceCategories = await getServicesForTeamMember(member.vagaroEmployeeId)
+      return {
+        ...member,
+        serviceCategories
+      }
+    })
+  )
+
+  return membersWithServices
 }
 
 export async function getTeamMembersByType(type: 'employee' | 'independent') {
