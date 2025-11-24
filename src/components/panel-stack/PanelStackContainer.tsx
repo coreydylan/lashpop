@@ -14,9 +14,27 @@ export function PanelStackContainer() {
   const { state } = usePanelStack();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Handle visibility based on scroll position
+  // Check if mobile
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Handle visibility based on scroll position or panel state
+  useEffect(() => {
+    // On mobile, always show if there are panels
+    if (isMobile) {
+      setIsVisible(state.panels.some(p => p.state !== 'closed'));
+      return;
+    }
+
+    // On desktop, use scroll position
     const handleScroll = () => {
       // Show when scrolled past hero (approx 80vh)
       const showThreshold = window.innerHeight * 0.8;
@@ -27,7 +45,7 @@ export function PanelStackContainer() {
     handleScroll(); // Check initial state
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [isMobile, state.panels]);
 
   // Calculate total height (no longer adding padding to page content)
   useEffect(() => {

@@ -73,24 +73,34 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
 
   useEffect(() => {
     if (!emblaApi) return
-    
+
     emblaApi.on('select', onSelect)
     emblaApi.on('reInit', onSelect)
-    
+
     // Embla handles dragging state internally, but we track it for our auto-rotate logic
     const onPointerDown = () => setIsDragging(true)
     const onPointerUp = () => setIsDragging(false)
-    
+
     emblaApi.rootNode().addEventListener('pointerdown', onPointerDown)
     window.addEventListener('pointerup', onPointerUp) // Window to catch release outside
-    
+
+    // Add subtle nudge animation when carousel comes into view
+    if (isInView && window.innerWidth < 768) {
+      setTimeout(() => {
+        emblaApi.scrollTo(0.2, false)
+        setTimeout(() => {
+          emblaApi.scrollTo(0, true)
+        }, 300)
+      }, 800)
+    }
+
     return () => {
         emblaApi.off('select', onSelect)
         emblaApi.off('reInit', onSelect)
         emblaApi.rootNode().removeEventListener('pointerdown', onPointerDown)
         window.removeEventListener('pointerup', onPointerUp)
     }
-  }, [emblaApi, onSelect])
+  }, [emblaApi, onSelect, isInView])
 
   // Auto-rotate reviews - pause when hovering or dragging
   useEffect(() => {
@@ -298,7 +308,18 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                     transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}
                     className="w-full overflow-x-auto no-scrollbar touch-pan-x px-4"
                   >
-                    <div className="flex gap-3 min-w-max pb-2 mx-auto justify-center">
+                    <motion.div
+                      className="flex gap-3 min-w-max pb-2 mx-auto justify-center"
+                      initial={{ x: 0 }}
+                      animate={{ x: [-10, 0] }}
+                      transition={{
+                        x: {
+                          delay: 0.5,
+                          duration: 0.5,
+                          ease: "easeOut",
+                          times: [0, 1]
+                        }
+                      }}>
                       {reviewStats.map((stat) => (
                         <div key={stat.id} className="relative group shrink-0">
                           {/* Main badge */}
@@ -340,7 +361,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
-                    </div>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>

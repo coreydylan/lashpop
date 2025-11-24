@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
 
@@ -428,6 +428,16 @@ export function FAQSection() {
   const isInView = useInView(ref, { once: true, margin: "-10%" })
   const [expandedIndex, setExpandedIndex] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<FAQCategory | 'All'>('Top FAQs')
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const toggleFAQ = (id: string) => {
     setExpandedIndex(expandedIndex === id ? null : id)
@@ -483,8 +493,22 @@ export function FAQSection() {
           transition={{ duration: 0.6 }}
         >
           {/* Scrollable container for mobile */}
-          <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden">
-            <div className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-3 min-w-max md:min-w-0">
+          <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
+            <motion.div
+              className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-3 min-w-max md:min-w-0"
+              initial={{ x: 0 }}
+              animate={{
+                x: isMobile && isInView ? [0, -10, 0] : 0
+              }}
+              transition={{
+                x: {
+                  delay: 1.2,
+                  duration: 0.6,
+                  ease: "easeInOut",
+                  times: [0, 0.5, 1],
+                  repeat: 0
+                }
+              }}>
               {['Top FAQs', 'All', ...categories].map((category, index) => (
                 <motion.button
                   key={category}
@@ -515,7 +539,7 @@ export function FAQSection() {
                   </div>
                 </motion.button>
               ))}
-            </div>
+            </motion.div>
           </div>
         </motion.div>
 

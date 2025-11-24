@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorContext';
 import { PanelStackProvider } from '@/contexts/PanelStackContext';
 import { DrawerProvider } from '@/components/drawers/DrawerContext';
@@ -98,13 +98,317 @@ interface LandingPageV2ClientProps {
   serviceCategories?: ServiceCategory[];
 }
 
+// Add custom CSS for scroll-snap on mobile
+const scrollSnapStyles = `
+  @media (max-width: 767px) {
+    /* Main container with card-scroll behavior */
+    .mobile-snap-container {
+      scroll-behavior: smooth;
+      overflow-y: auto;
+      height: 100vh;
+      -webkit-overflow-scrolling: touch;
+      position: relative;
+      /* Subtle elastic overscroll on iOS */
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Each section as a "card" */
+    .mobile-snap-section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      /* Card-like appearance with subtle depth */
+      background: linear-gradient(to bottom,
+        rgba(255,255,255,0.02) 0%,
+        transparent 10%,
+        transparent 90%,
+        rgba(0,0,0,0.02) 100%);
+      /* Subtle border between cards */
+      border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+
+    /* Add visual feedback at section boundaries */
+    .mobile-snap-section::after {
+      content: '';
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 3px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 2px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Show boundary indicator when scrollable */
+    .mobile-snap-section:not(:last-child)::after {
+      opacity: 0.3;
+      animation: subtleBounce 2s ease-in-out infinite;
+    }
+
+    @keyframes subtleBounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(3px); }
+    }
+
+    /* Special handling for sections that need more space */
+    .mobile-snap-section:has(#team),
+    .mobile-snap-section:has(#gallery),
+    .mobile-snap-section:has(#reviews) {
+      min-height: auto; /* Let content determine height */
+      padding-bottom: 10vh; /* Add some breathing room */
+    }
+
+    /* Adjust for fixed navigation */
+    .mobile-snap-section {
+      scroll-margin-top: 64px; /* Height of navigation */
+      padding-top: 20px; /* Add some padding after nav */
+    }
+
+    /* First section doesn't need extra padding */
+    .mobile-snap-section:first-child {
+      padding-top: 0;
+      scroll-margin-top: 0;
+    }
+
+    /* Smooth scroll physics */
+    .mobile-snap-container {
+      scroll-padding: 64px 0 0 0;
+    }
+
+    /* Add momentum scrolling for iOS */
+    .mobile-snap-container {
+      -webkit-overflow-scrolling: touch;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+    }
+
+    /* Visual indicator that section is "locked" */
+    .mobile-snap-section.in-view {
+      animation: subtlePulse 0.6s ease-out;
+    }
+
+    @keyframes subtlePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.002); }
+      100% { transform: scale(1); }
+    }
+
+    /* Add class for when we want to snap */
+    .mobile-snap-container.snap-active {
+      scroll-snap-type: y mandatory;
+    }
+
+    .snap-active .mobile-snap-section {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+  }
+`;
+
 export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [] }: LandingPageV2ClientProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  const [currentSection, setCurrentSection] = useState<string>('');
+
+  useEffect(() => {
+    // Check if mobile on mount and resize
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Set up card-to-card scroll mechanics
+  useEffect(() => {
+    if (!isMobile) return;
+
+    let currentSectionIndex = 0;
+    let isTransitioning = false;
+    let touchStartY = 0;
+    let scrollAccumulator = 0;
+    let lastScrollY = 0;
+    let snapContainer: HTMLElement | null = null;
+
+    // Get the main container and sections
+    snapContainer = document.querySelector('.mobile-snap-container');
+    if (!snapContainer) return;
+
+    const sections = document.querySelectorAll('.mobile-snap-section');
+    if (sections.length === 0) return;
+
+    // Function to snap to a specific section
+    const snapToSection = (index: number, instant = false) => {
+      if (index < 0 || index >= sections.length || isTransitioning) return;
+
+      isTransitioning = true;
+      currentSectionIndex = index;
+      const targetSection = sections[index] as HTMLElement;
+      const targetScrollTop = targetSection.offsetTop;
+
+      // Update current section state
+      const sectionId = targetSection.getAttribute('data-section-id') || '';
+      setCurrentSection(sectionId);
+
+      // Scroll to the section
+      snapContainer!.scrollTo({
+        top: targetScrollTop,
+        behavior: instant ? 'auto' : 'smooth'
+      });
+
+      // Trigger animations after snap
+      setTimeout(() => {
+        targetSection.classList.add('in-view');
+        targetSection.dispatchEvent(new CustomEvent('section-locked'));
+
+        setTimeout(() => {
+          targetSection.classList.remove('in-view');
+          isTransitioning = false;
+        }, 900);
+      }, instant ? 0 : 400);
+    };
+
+    // Handle wheel/scroll events with threshold
+    const handleWheel = (e: WheelEvent) => {
+      if (isTransitioning) {
+        e.preventDefault();
+        return;
+      }
+
+      // Don't prevent default immediately - let some natural scrolling happen
+      const currentSection = sections[currentSectionIndex] as HTMLElement;
+      const rect = currentSection.getBoundingClientRect();
+      const scrollTop = snapContainer!.scrollTop;
+      const sectionTop = currentSection.offsetTop;
+      const sectionBottom = sectionTop + currentSection.offsetHeight;
+      const viewportHeight = window.innerHeight;
+
+      // Check if we're at section boundaries
+      const atSectionBottom = scrollTop >= sectionBottom - viewportHeight - 50;
+      const atSectionTop = scrollTop <= sectionTop + 50;
+
+      const deltaY = e.deltaY;
+
+      // If scrolling down and at bottom of section, or scrolling up and at top
+      if ((deltaY > 0 && atSectionBottom && currentSectionIndex < sections.length - 1) ||
+          (deltaY < 0 && atSectionTop && currentSectionIndex > 0)) {
+
+        scrollAccumulator += deltaY;
+
+        // Lower threshold for more responsive snapping
+        const threshold = 30;
+
+        if (Math.abs(scrollAccumulator) > threshold) {
+          if (scrollAccumulator > 0 && currentSectionIndex < sections.length - 1) {
+            // Scrolling down - go to next section
+            snapToSection(currentSectionIndex + 1);
+          } else if (scrollAccumulator < 0 && currentSectionIndex > 0) {
+            // Scrolling up - go to previous section
+            snapToSection(currentSectionIndex - 1);
+          }
+          scrollAccumulator = 0;
+        }
+
+        // Prevent default only when at boundaries
+        e.preventDefault();
+      }
+      // Allow natural scrolling within section
+    };
+
+    // Handle touch events for mobile swipe
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isTransitioning) {
+        e.preventDefault();
+        return;
+      }
+
+      const touchEndY = e.touches[0].clientY;
+      const deltaY = touchStartY - touchEndY;
+
+      // Only prevent default if we're moving vertically
+      if (Math.abs(deltaY) > 5) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (isTransitioning) return;
+
+      const touchEndY = e.changedTouches[0].clientY;
+      const deltaY = touchStartY - touchEndY;
+      const threshold = 50; // Swipe threshold
+
+      if (deltaY > threshold && currentSectionIndex < sections.length - 1) {
+        // Swiped up - next section
+        snapToSection(currentSectionIndex + 1);
+      } else if (deltaY < -threshold && currentSectionIndex > 0) {
+        // Swiped down - previous section
+        snapToSection(currentSectionIndex - 1);
+      }
+    };
+
+    // Also handle edge detection for natural scrolling at section boundaries
+    const handleScroll = () => {
+      const scrollTop = snapContainer!.scrollTop;
+      const currentSection = sections[currentSectionIndex] as HTMLElement;
+      const sectionTop = currentSection.offsetTop;
+      const sectionBottom = sectionTop + currentSection.offsetHeight;
+      const viewportHeight = window.innerHeight;
+
+      // Check if we've scrolled past the current section's boundaries
+      if (!isTransitioning) {
+        if (scrollTop > sectionBottom - viewportHeight + 100 && currentSectionIndex < sections.length - 1) {
+          // Reached bottom of current section, snap to next
+          snapToSection(currentSectionIndex + 1);
+        } else if (scrollTop < sectionTop - 100 && currentSectionIndex > 0) {
+          // Scrolled above current section, snap to previous
+          snapToSection(currentSectionIndex - 1);
+        }
+      }
+
+      lastScrollY = scrollTop;
+    };
+
+    // Initial snap to first section
+    snapToSection(0, true);
+
+    // Add event listeners
+    snapContainer.addEventListener('wheel', handleWheel, { passive: false });
+    snapContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+    snapContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+    snapContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+    snapContainer.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      if (snapContainer) {
+        snapContainer.removeEventListener('wheel', handleWheel);
+        snapContainer.removeEventListener('touchstart', handleTouchStart);
+        snapContainer.removeEventListener('touchmove', handleTouchMove);
+        snapContainer.removeEventListener('touchend', handleTouchEnd);
+        snapContainer.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, [isMobile]);
+
   return (
     <BookingOrchestratorProvider>
       <PanelStackProvider services={services}>
         <DrawerProvider>
           <PanelManagerProvider>
             <div className="min-h-screen bg-cream relative theme-v2">
+              {/* Inject scroll-snap styles */}
+              <style dangerouslySetInnerHTML={{ __html: scrollSnapStyles }} />
+
               {/* Z-3: Fixed Header Layer */}
               <Navigation />
 
@@ -124,61 +428,79 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
               <PanelRenderer />
 
               {/* Z-1: Page Surface - panels now overlay instead of pushing content */}
-              <main className="page-content overflow-x-hidden">
+              <main className={`page-content overflow-x-hidden ${isMobile ? 'mobile-snap-container' : ''}`}>
                 {/* Hero with Archway Reveal and Photo Grid Scroller - Commented out for now */}
                 {/* <HeroArchwayReveal
                   heroContent={<HeroSection reviewStats={reviewStats} />}
                 /> */}
                 
                 {/* Hero Section - Direct Render */}
-                <HeroSection reviewStats={reviewStats} />
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="hero">
+                  <HeroSection reviewStats={reviewStats} />
+                </div>
 
                 {/* Welcome to LashPop Section - Now standalone */}
-                <WelcomeSection />
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="welcome">
+                  <WelcomeSection />
+                </div>
 
                 {/* Trigger to open services panel when scrolling past Welcome */}
                 <ScrollServicesTrigger />
 
                 {/* Founder Letter Section */}
-                <FounderLetterSection />
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="founder">
+                  <FounderLetterSection />
+                </div>
 
                 {/* Team Section - Adjusted trigger margin for earlier loading */}
-                <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
-                  <div id="team">
-                    <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
-                  </div>
-                </SectionTransition>
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="team">
+                  <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
+                    <div id="team">
+                      <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
+                    </div>
+                  </SectionTransition>
+                </div>
 
                 {/* Instagram Carousel */}
-                <SectionTransition variant="scaleIn">
-                  <div id="gallery">
-                    <InstagramCarousel posts={instagramPosts} />
-                  </div>
-                </SectionTransition>
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="instagram">
+                  <SectionTransition variant="scaleIn">
+                    <div id="gallery">
+                      <InstagramCarousel posts={instagramPosts} />
+                    </div>
+                  </SectionTransition>
+                </div>
 
                 {/* Reviews Section */}
-                <SectionTransition variant="slideUp">
-                  <div id="reviews">
-                    <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
-                  </div>
-                </SectionTransition>
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="reviews">
+                  <SectionTransition variant="slideUp">
+                    <div id="reviews">
+                      <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
+                    </div>
+                  </SectionTransition>
+                </div>
 
                 {/* FAQ Section */}
-                <SectionTransition variant="fade">
-                  <div id="faq">
-                    <FAQSection />
-                  </div>
-                </SectionTransition>
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="faq">
+                  <SectionTransition variant="fade">
+                    <div id="faq">
+                      <FAQSection />
+                    </div>
+                  </SectionTransition>
+                </div>
 
                 {/* Map Section */}
-                <SectionTransition variant="scaleIn" delay={0.2}>
-                  <div id="find-us" className="pt-20">
-                    <MapSection />
-                  </div>
-                </SectionTransition>
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="map">
+                  <SectionTransition variant="scaleIn" delay={0.2}>
+                    <div id="find-us" className="pt-20">
+                      <MapSection />
+                    </div>
+                  </SectionTransition>
+                </div>
 
                 {/* Footer */}
-                <FooterV2 />
+                <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="footer">
+                  <FooterV2 />
+                </div>
             </main>
           </div>
         </PanelManagerProvider>

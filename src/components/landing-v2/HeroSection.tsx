@@ -1,7 +1,7 @@
 'use client'
 
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRef } from 'react'
+import { motion, useScroll, useTransform, useAnimation } from 'framer-motion'
+import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useDrawer } from '../drawers/DrawerContext'
 import { usePanelStack } from '@/contexts/PanelStackContext'
@@ -43,9 +43,67 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
   const { actions: panelActions } = usePanelStack()
+  const [isMobile, setIsMobile] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const controls = useAnimation()
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Auto-scroll animation for mobile buttons
+  useEffect(() => {
+    if (!isMobile || !scrollContainerRef.current) return
+
+    let direction = 1
+    let position = 0
+    const maxScroll = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth
+
+    const animateScroll = () => {
+      if (!scrollContainerRef.current) return
+
+      position += direction * 0.5
+
+      if (position >= maxScroll || position <= 0) {
+        direction *= -1
+        // Pause at the ends
+        setTimeout(() => {
+          requestAnimationFrame(animateScroll)
+        }, 2000)
+        return
+      }
+
+      scrollContainerRef.current.scrollLeft = position
+      requestAnimationFrame(animateScroll)
+    }
+
+    const timeoutId = setTimeout(() => {
+      animateScroll()
+    }, 1000)
+
+    // Stop animation on user interaction
+    const handleUserScroll = () => {
+      // User has interacted, stop auto-scroll
+    }
+
+    scrollContainerRef.current?.addEventListener('touchstart', handleUserScroll)
+    scrollContainerRef.current?.addEventListener('wheel', handleUserScroll)
+
+    return () => {
+      clearTimeout(timeoutId)
+      scrollContainerRef.current?.removeEventListener('touchstart', handleUserScroll)
+      scrollContainerRef.current?.removeEventListener('wheel', handleUserScroll)
+    }
+  }, [isMobile])
 
   return (
     <section ref={containerRef} className="relative h-screen flex items-end">
@@ -281,16 +339,107 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                 className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-warm-sand/50 blur-2xl"
               />
 
-              {/* Text overlay */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1, duration: 0.8 }}
-                className="absolute bottom-8 left-8 right-8 glass rounded-2xl p-6"
-              >
-                <p className="caption text-terracotta mb-2">Award Winning</p>
-                <p className="text-lg font-light text-dune">Best Lash Studio • North County SD</p>
-              </motion.div>
+              {/* Mobile-specific overlay with scrollable button and chips */}
+              {isMobile ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1, duration: 0.8 }}
+                  className="absolute bottom-16 left-8 right-8 flex flex-col items-center gap-3"
+                >
+                  {/* Scrollable Button Container */}
+                  <div className="w-full">
+                    <div
+                      ref={scrollContainerRef}
+                      className="overflow-x-auto scrollbar-none"
+                      style={{
+                        scrollSnapType: 'x mandatory',
+                        WebkitOverflowScrolling: 'touch',
+                      }}
+                    >
+                      <div className="flex gap-4 px-8" style={{ width: 'calc(100vw - 64px + 200px)' }}>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' });
+                          }}
+                          className="flex-shrink-0 btn btn-primary rounded-full px-8 py-2.5 text-sm"
+                          style={{
+                            scrollSnapAlign: 'center',
+                            width: 'calc(100vw - 64px)',
+                            maxWidth: '280px'
+                          }}
+                        >
+                          Book Now
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            panelActions.openPanel('discovery', {});
+                          }}
+                          className="flex-shrink-0 btn btn-secondary rounded-full px-8 py-2.5 text-sm"
+                          style={{
+                            scrollSnapAlign: 'center',
+                            width: 'calc(100vw - 64px)',
+                            maxWidth: '280px'
+                          }}
+                        >
+                          Discover Your Look
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reviews Counter Chip */}
+                  {totalReviews > 0 && (
+                    <div className="relative group">
+                      <div className="relative px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-0.5 pr-2 border-r border-dune/20">
+                            <GoogleLogoCompact />
+                            <YelpLogoCompact />
+                            <VagaroLogoCompact />
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="font-serif text-sm font-semibold text-dune">
+                              {totalReviews.toLocaleString()}
+                            </span>
+                            <div className="flex items-center -space-x-0.5">
+                              {[...Array(5)].map((_, i) => (
+                                <svg key={i} className="w-3.5 h-3.5 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              ))}
+                            </div>
+                            <span className="font-serif text-xs text-dune ml-0.5">
+                              Reviews
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Smaller Award Winning Box */}
+                  <div className="glass rounded-xl px-4 py-2.5">
+                    <p className="caption text-terracotta mb-0.5 text-xs">Award Winning</p>
+                    <p className="text-sm font-light text-dune">Best Lash Studio • North County SD</p>
+                  </div>
+                </motion.div>
+              ) : (
+                /* Desktop text overlay */
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 1, duration: 0.8 }}
+                  className="absolute bottom-8 left-8 right-8 glass rounded-2xl p-6"
+                >
+                  <p className="caption text-terracotta mb-2">Award Winning</p>
+                  <p className="text-lg font-light text-dune">Best Lash Studio • North County SD</p>
+                </motion.div>
+              )}
             </div>
           </motion.div>
         </div>

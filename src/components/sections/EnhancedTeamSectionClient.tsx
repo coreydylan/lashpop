@@ -5,6 +5,9 @@ import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
+import useEmblaCarousel from 'embla-carousel-react'
+import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
+import { useInView } from 'framer-motion'
 
 interface TeamMember {
   id: number
@@ -44,7 +47,20 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
+  const isInView = useInView(sectionRef, { once: true, margin: "-20%" })
+
+  // Initialize Embla Carousel for mobile
+  const [emblaRef, emblaApi] = useEmblaCarousel(
+    {
+      loop: true,
+      align: 'center',
+      skipSnaps: false,
+      containScroll: 'trimSnaps'
+    },
+    [WheelGesturesPlugin()]
+  )
 
   const orchestrator = useBookingOrchestrator()
   const highlights = orchestrator.state.highlights.providers
@@ -55,6 +71,29 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       return unregister
     }
   }, [orchestrator.actions])
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Add subtle nudge animation when carousel comes into view on mobile
+  useEffect(() => {
+    if (!emblaApi || !isInView || !isMobile) return
+
+    // Subtle nudge animation
+    setTimeout(() => {
+      emblaApi.scrollTo(0.3, false)
+      setTimeout(() => {
+        emblaApi.scrollTo(0, true)
+      }, 400)
+    }, 800)
+  }, [emblaApi, isInView, isMobile])
 
   const handleMemberClick = (member: TeamMember) => {
     setSelectedMember(member)
@@ -107,9 +146,136 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         ref={sectionRef}
         className="py-20 bg-cream overflow-hidden"
       >
-        <div className="container px-4">
-          {/* Team Grid with More Spacing */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+        {/* Mobile Carousel View */}
+        {isMobile ? (
+          <div className="relative w-full">
+            {/* Embla Viewport */}
+            <div className="overflow-hidden" ref={emblaRef}>
+              {/* Embla Container */}
+              <div className="flex touch-pan-y gap-4 px-4">
+                {teamMembers.map((member, index) => {
+                  const memberCategories = getTeamMemberCategories(member.specialties)
+
+                  return (
+                    <motion.div
+                      key={member.id}
+                      className="flex-[0_0_auto] w-72 cursor-grab active:cursor-grabbing"
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
+                      transition={{
+                        duration: 0.6,
+                        delay: index * 0.1,
+                        ease: [0.23, 1, 0.32, 1]
+                      }}
+                      onClick={() => handleMemberClick(member)}
+                    >
+                      {/* Frosted Glass Card - Taller format */}
+                      <div className="relative h-[500px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group">
+                        {/* Clear Background Image - NO BLUR */}
+                        <div className="absolute inset-0">
+                          <Image
+                            src={member.image}
+                            alt={member.name}
+                            fill
+                            className="object-cover"
+                          />
+                          {/* Subtle gradient only at bottom for readability */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                        </div>
+
+                        {/* Floating Glass Content Container - ONLY ON BOTTOM */}
+                        <div className="absolute bottom-0 left-0 right-0 p-6">
+                          {/* Frosted glass background for content only */}
+                          <div className="absolute inset-0 bg-white/15 backdrop-blur-xl rounded-t-3xl border-t border-white/30 shadow-2xl" />
+
+                          {/* Content */}
+                          <div className="relative space-y-3">
+                            {/* Category Chips */}
+                            {memberCategories.length > 0 && (
+                              <div className="flex gap-2 mb-3 flex-wrap">
+                                {memberCategories.map((category) => (
+                                  <span
+                                    key={category}
+                                    className="px-3 py-1.5 text-xs font-semibold bg-white/25 backdrop-blur-md text-white rounded-full border border-white/40 shadow-lg"
+                                  >
+                                    {category}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Name and Role */}
+                            <div>
+                              <h3 className="text-2xl font-bold text-white mb-1 drop-shadow-lg">
+                                {member.name}
+                              </h3>
+                              <p className="text-white/90 text-sm drop-shadow-md">
+                                {member.role}
+                              </p>
+                              {member.businessName && (
+                                <p className="text-white/70 text-xs mt-1 drop-shadow-sm">
+                                  {member.businessName}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Quick Actions */}
+                            <div className="flex gap-2 pt-2">
+                              {member.instagram && (
+                                <button
+                                  className="p-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white/80 hover:bg-white/25 transition-all"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    window.open(`https://instagram.com/${member.instagram}`, '_blank')
+                                  }}
+                                >
+                                  <Instagram size={16} />
+                                </button>
+                              )}
+                              <button
+                                className="flex-1 px-4 py-2 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-medium text-sm hover:bg-white/30 transition-all"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  window.open(member.bookingUrl, '_blank')
+                                }}
+                              >
+                                Book Now
+                              </button>
+                            </div>
+
+                            {/* Hover Indicator */}
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <div className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-white/80 text-xs">
+                                Tap for details
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Highlight Effect */}
+                        {isHighlighted(member.id) && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/30 to-transparent animate-pulse" />
+                            <div className="absolute top-4 right-4 bg-dusty-rose text-white px-3 py-1 rounded-full text-xs font-medium">
+                              Recommended
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Gradient edges for seamless look */}
+            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
+            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
+          </div>
+        ) : (
+          <div className="container px-4">
+            {/* Desktop Grid View - Keep existing */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {teamMembers.map((member, index) => {
               const memberCategories = getTeamMemberCategories(member.specialties)
 
@@ -233,8 +399,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                 </motion.div>
               )
             })}
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       {/* Team Member Modal */}

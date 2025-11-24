@@ -7,9 +7,57 @@ export function ScrollServicesTrigger() {
   const triggerRef = useRef<HTMLDivElement>(null)
   const { actions: panelActions, state } = usePanelStack()
   const [hasTriggered, setHasTriggered] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
+  // Check if mobile
   useEffect(() => {
-    if (!triggerRef.current) return
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Mobile: Listen for section-locked events on the founder section
+  useEffect(() => {
+    if (!isMobile) return
+
+    const handleSectionLocked = (event: Event) => {
+      const target = event.target as HTMLElement
+      const sectionId = target.getAttribute('data-section-id')
+
+      // Trigger when we land on the founder section (which comes after welcome)
+      if (sectionId === 'founder' && !hasTriggered) {
+        const isPanelOpen = state.panels.some(p => p.type === 'category-picker' && p.state !== 'closed')
+
+        if (!isPanelOpen) {
+          panelActions.openPanel(
+            'category-picker',
+            { entryPoint: 'scroll-trigger-mobile' },
+            { scrollToTop: false }
+          )
+          setHasTriggered(true)
+        }
+      }
+    }
+
+    // Listen for section-locked events on all sections
+    const sections = document.querySelectorAll('.mobile-snap-section')
+    sections.forEach(section => {
+      section.addEventListener('section-locked', handleSectionLocked)
+    })
+
+    return () => {
+      sections.forEach(section => {
+        section.removeEventListener('section-locked', handleSectionLocked)
+      })
+    }
+  }, [isMobile, hasTriggered, panelActions, state.panels])
+
+  // Desktop: Use IntersectionObserver
+  useEffect(() => {
+    if (isMobile || !triggerRef.current) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -43,7 +91,7 @@ export function ScrollServicesTrigger() {
     return () => {
       observer.disconnect()
     }
-  }, [hasTriggered, panelActions, state.panels])
+  }, [isMobile, hasTriggered, panelActions, state.panels])
 
   // Reset trigger when all panels are closed
   useEffect(() => {

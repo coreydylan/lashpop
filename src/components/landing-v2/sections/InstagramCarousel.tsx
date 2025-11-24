@@ -62,13 +62,34 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
     ]
   )
 
-  // Handle trackpad/mouse wheel scrolling
+  // Handle trackpad/mouse wheel scrolling and add initial nudge
   useEffect(() => {
     if (!emblaApi) return
-    
+
     // Wheel gestures are now handled by the WheelGesturesPlugin
     // which provides natural momentum and drag physics
-  }, [emblaApi])
+
+    // Add subtle nudge animation when carousel comes into view on mobile
+    if (isInView && typeof window !== 'undefined' && window.innerWidth < 768) {
+      // Pause the auto-scroll briefly
+      const autoScrollPlugin = emblaApi.plugins().autoScroll
+      if (autoScrollPlugin) {
+        autoScrollPlugin.stop()
+
+        // Do a subtle nudge animation
+        setTimeout(() => {
+          emblaApi.scrollTo(1, false)
+          setTimeout(() => {
+            emblaApi.scrollTo(0, true)
+            // Resume auto-scroll after nudge
+            setTimeout(() => {
+              autoScrollPlugin.play()
+            }, 500)
+          }, 400)
+        }, 600)
+      }
+    }
+  }, [emblaApi, isInView])
 
   // Use provided posts or fallback to gallery images
   // We duplicate them once to ensure smooth looping even on wide screens
