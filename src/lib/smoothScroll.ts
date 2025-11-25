@@ -1,8 +1,19 @@
 export const getScroller = (): Window | Element => {
   if (typeof document === 'undefined') return window; // SSR safety
-  const container = document.querySelector('.mobile-snap-container');
-  const isMobileContainerActive = container && getComputedStyle(container).display !== 'none';
-  return isMobileContainerActive ? container : window;
+
+  // Check for the new mobile scroll container first, then legacy
+  const mobileContainer = document.querySelector('.mobile-scroll-container');
+  if (mobileContainer && getComputedStyle(mobileContainer).display !== 'none') {
+    return mobileContainer;
+  }
+
+  // Legacy container support
+  const legacyContainer = document.querySelector('.mobile-snap-container');
+  if (legacyContainer && getComputedStyle(legacyContainer).display !== 'none') {
+    return legacyContainer;
+  }
+
+  return window;
 };
 
 // Cubic easing for a more natural, less "sticky" feel

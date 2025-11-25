@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
+import { useScrollDirection } from '@/hooks/useScrollDirection'
 
 const navItems = [
   { label: 'Services', action: 'open-services' },
@@ -20,17 +21,33 @@ const navItems = [
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const { actions } = usePanelStack()
   const pathname = usePathname()
-  
+
+  // Track scroll direction for mobile header hide/show
+  const { direction, isAtTop } = useScrollDirection({ threshold: 10 })
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
-    
+
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Determine if header should be visible on mobile
+  // Show when: at top, scrolling up, or menu is open
+  const isMobileHeaderVisible = isAtTop || direction === 'up' || isMobileMenuOpen
 
   const handleNavClick = (item: any, e: React.MouseEvent) => {
     // Handle Logo click (home link)
@@ -86,11 +103,16 @@ export function Navigation() {
     <>
       <motion.nav
         initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
-          isScrolled ? 'glass backdrop-blur-md py-4' : 'py-6'
+        animate={{
+          y: isMobile && !isMobileHeaderVisible ? -100 : 0,
+        }}
+        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          isScrolled ? 'glass backdrop-blur-md py-3 md:py-4' : 'py-4 md:py-6'
         }`}
+        style={{
+          paddingTop: `calc(env(safe-area-inset-top, 0px) + ${isScrolled ? '0.75rem' : '1rem'})`,
+        }}
       >
         <div className="w-full px-6 md:px-12">
           <div className="flex items-center justify-between">
