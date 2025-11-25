@@ -62,14 +62,15 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
 
   // Auto-scroll animation for mobile buttons
   useEffect(() => {
-    if (!isMobile || !scrollContainerRef.current) return
+    const scrollContainer = scrollContainerRef.current
+    if (!isMobile || !scrollContainer) return
 
     let direction = 1
     let position = 0
-    const maxScroll = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth
+    const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth
 
     const animateScroll = () => {
-      if (!scrollContainerRef.current) return
+      if (!scrollContainer) return
 
       position += direction * 0.5
 
@@ -82,7 +83,7 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
         return
       }
 
-      scrollContainerRef.current.scrollLeft = position
+      scrollContainer.scrollLeft = position
       requestAnimationFrame(animateScroll)
     }
 
@@ -95,13 +96,13 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
       // User has interacted, stop auto-scroll
     }
 
-    scrollContainerRef.current?.addEventListener('touchstart', handleUserScroll)
-    scrollContainerRef.current?.addEventListener('wheel', handleUserScroll)
+    scrollContainer.addEventListener('touchstart', handleUserScroll)
+    scrollContainer.addEventListener('wheel', handleUserScroll)
 
     return () => {
       clearTimeout(timeoutId)
-      scrollContainerRef.current?.removeEventListener('touchstart', handleUserScroll)
-      scrollContainerRef.current?.removeEventListener('wheel', handleUserScroll)
+      scrollContainer.removeEventListener('touchstart', handleUserScroll)
+      scrollContainer.removeEventListener('wheel', handleUserScroll)
     }
   }, [isMobile])
 

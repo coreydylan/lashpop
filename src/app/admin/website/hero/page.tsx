@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Image as ImageIcon, Move, Save, RefreshCw, Check, AlertCircle } from 'lucide-react'
@@ -22,11 +22,7 @@ export default function HeroSectionEditor() {
   const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 })
   const [objectFit, setObjectFit] = useState<'cover' | 'contain'>('cover')
 
-  useEffect(() => {
-    fetchHeroImages()
-  }, [])
-
-  const fetchHeroImages = async () => {
+  const fetchHeroImages = useCallback(async () => {
     setLoading(true)
     try {
       // Fetch images tagged with website/hero
@@ -34,16 +30,23 @@ export default function HeroSectionEditor() {
       if (response.ok) {
         const data = await response.json()
         setAvailableImages(data.assets || [])
-        if (data.assets?.length > 0 && !heroImage) {
-          setHeroImage(data.assets[0])
-        }
+        
+        // Only set initial image if none selected
+        setHeroImage(current => {
+          if (current) return current
+          return data.assets?.length > 0 ? data.assets[0] : null
+        })
       }
     } catch (error) {
       console.error('Error fetching hero images:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchHeroImages()
+  }, [fetchHeroImages])
 
   const handleSave = async () => {
     setSaving(true)

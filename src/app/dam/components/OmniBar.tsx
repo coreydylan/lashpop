@@ -186,11 +186,17 @@ export function OmniBar({
 
     // Use ResizeObserver to detect content/container size changes robustly
     const resizeObserver = new ResizeObserver(() => {
-      checkScroll()
+      // Use requestAnimationFrame to avoid "ResizeObserver loop limit exceeded"
+      requestAnimationFrame(() => {
+         checkScroll()
+      })
     })
     
     resizeObserver.observe(container)
-    resizeObserver.observe(container.firstElementChild as Element || container) // Observe content wrapper too
+    const firstChild = container.firstElementChild
+    if (firstChild) {
+      resizeObserver.observe(firstChild)
+    }
     
     // Listen for scroll events
     container.addEventListener('scroll', checkScroll)
@@ -207,7 +213,7 @@ export function OmniBar({
       clearInterval(interval)
       stopAutoScroll() // Ensure scrolling stops on unmount
     }
-  }, [showLeftScroll, showRightScroll, checkScroll]) // Re-bind if state changes (though logic inside doesn't depend on closure state much)
+  }, [checkScroll])
 
   // Handle mobile chips scroll to close dropdowns
   useEffect(() => {

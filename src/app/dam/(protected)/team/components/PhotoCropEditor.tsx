@@ -173,17 +173,21 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
   }, [safeAspect])
 
   useEffect(() => {
-    if (!containerRef.current || typeof ResizeObserver === "undefined") return
+    const container = containerRef.current
+    if (!container || typeof ResizeObserver === "undefined") return
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       if (entry) {
         const { width, height } = entry.contentRect
-        setContainerSize({ width, height })
+        setContainerSize(prev => {
+          if (prev.width === width && prev.height === height) return prev;
+          return { width, height }
+        })
       }
     })
 
-    observer.observe(containerRef.current)
+    observer.observe(container)
     return () => observer.disconnect()
   }, [])
 

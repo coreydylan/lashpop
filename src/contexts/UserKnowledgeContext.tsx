@@ -223,11 +223,21 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
   // Link to authenticated user
   useEffect(() => {
     if (session?.user) {
-      setKnowledge(prev => ({
-        ...prev,
-        userId: session.user.id,
-        phoneNumber: (session.user as any).phoneNumber || prev.phoneNumber
-      }));
+      setKnowledge(prev => {
+        const newUserId = session.user.id;
+        const newPhoneNumber = (session.user as any).phoneNumber || prev.phoneNumber;
+
+        // Prevent infinite loop by checking if values actually changed
+        if (prev.userId === newUserId && prev.phoneNumber === newPhoneNumber) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          userId: newUserId,
+          phoneNumber: newPhoneNumber
+        };
+      });
     }
   }, [session]);
 

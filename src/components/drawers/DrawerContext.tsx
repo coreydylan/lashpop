@@ -163,15 +163,22 @@ export function DrawerProvider({ children }: { children: React.ReactNode }) {
         const rect = servicesSection.getBoundingClientRect();
         const shouldDock = rect.top < 200 && rect.top > -rect.height;
 
-        if (shouldDock && drawerStates.services === 'invisible') {
-          setDrawerState('services', 'docked');
-        }
+        setDrawerStates(prev => {
+          if (shouldDock && prev.services === 'invisible') {
+            return {
+               ...prev,
+               services: 'docked'
+            }
+          }
+          // IMPORTANT: Do NOT update state if conditions aren't met to avoid re-render loops
+          return prev;
+        });
       }
     };
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [drawerStates.services, setDrawerState]);
+  }, []); // Empty dependency array as we use functional state update
 
   return (
     <DrawerContext.Provider
