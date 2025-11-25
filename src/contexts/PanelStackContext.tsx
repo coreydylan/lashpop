@@ -401,8 +401,8 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
         payload: { panelId, panelType: type },
       });
 
-      // Scroll to top if requested
-      if (options?.scrollToTop !== false) {
+      // Scroll to top only if explicitly requested (default: false)
+      if (options?.scrollToTop === true) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 

@@ -221,12 +221,23 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-6 mb-[28vh]"
           >
-            {/* Beautiful Reviews Chip with Logos - Moved to Top */}
+            {/* Small accent */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="flex items-center gap-2 text-golden"
+            >
+              <SunIcon className="w-5 h-5" />
+              <span className="caption">Oceanside, California</span>
+            </motion.div>
+
+            {/* Beautiful Reviews Chip with Logos */}
             {totalReviews > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.8 }}
+                transition={{ delay: 0.4, duration: 0.8 }}
                 className="inline-block"
               >
                 <button
@@ -289,23 +300,12 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               </motion.div>
             )}
 
-            {/* Small accent */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-              className="flex items-center gap-2 text-golden"
-            >
-              <SunIcon className="w-5 h-5" />
-              <span className="caption">Oceanside, California</span>
-            </motion.div>
-
             {/* Main heading - New layered design */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="relative"
+              className="relative -mt-2"
             >
               {/* "welcome to" in League Script - Smaller */}
               <h1

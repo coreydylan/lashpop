@@ -6,16 +6,16 @@ import { usePanelStack } from '@/contexts/PanelStackContext';
 import { HEADER_HEIGHT } from '@/types/panel-stack';
 
 // Import panel components
-import { CategoryPickerPanel } from './panels/CategoryPickerPanel';
-import { ServicePanel } from './panels/ServicePanel';
-import { DiscoveryPanel } from './panels/DiscoveryPanel';
+import { CategoryPickerPanel } from '../panels/CategoryPickerPanel';
+import { ServicePanel } from '../panels/ServicePanel';
+import { DiscoveryPanel } from '../panels/DiscoveryPanel';
 
-export function PanelStackContainer() {
+export function TopPanelContainer() {
   const { state } = usePanelStack();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Use ref to access state without triggering effect re-runs
   const stateRef = useRef(state);
   useEffect(() => {
@@ -61,24 +61,22 @@ export function PanelStackContainer() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isMobile, state.panels]);
 
-  // Calculate total height (no longer adding padding to page content)
+  // Calculate total height (set CSS variable for potential use)
   useEffect(() => {
     if (!containerRef.current) return;
 
     const updateHeight = () => {
       const height = containerRef.current?.offsetHeight || 0;
-      // Set CSS variable for potential future use, but don't add padding
       document.documentElement.style.setProperty('--panel-stack-height', `${height}px`);
     };
 
     updateHeight();
 
-    // Watch for height changes
     const resizeObserver = new ResizeObserver(updateHeight);
     resizeObserver.observe(containerRef.current);
 
     return () => resizeObserver.disconnect();
-  }, [state.panels]); // This is intentional - we want to recalculate height when panels change
+  }, [state.panels]);
 
   // Sort panels by level, then by position
   const sortedPanels = [...state.panels]
@@ -95,7 +93,9 @@ export function PanelStackContainer() {
   return (
     <motion.div
       ref={containerRef}
-      className="fixed left-0 right-0 z-30 bg-cream shadow-lg top-[80px]" // Position below header (80px height)
+      data-panel-mode="top"
+      className="fixed left-0 right-0 z-30 bg-cream shadow-lg"
+      style={{ top: `${HEADER_HEIGHT}px` }}
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,
@@ -110,8 +110,6 @@ export function PanelStackContainer() {
             {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
             {panel.type === 'discovery' && <DiscoveryPanel panel={panel} />}
             {panel.type === 'service-panel' && <ServicePanel panel={panel} />}
-            {/* ServicePanel now handles service details internally */}
-            {/* Schedule panel will be added later */}
           </div>
         ))}
       </AnimatePresence>

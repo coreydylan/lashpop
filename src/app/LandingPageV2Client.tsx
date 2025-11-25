@@ -19,8 +19,7 @@ import { MapSection } from '@/components/landing-v2/sections/MapSection';
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
-import { PanelStackContainer } from '@/components/panel-stack/PanelStackContainer';
-import { AutoDockOnScroll } from '@/components/panel-stack/AutoDockOnScroll';
+import { PanelStackRenderer } from '@/components/panel-stack/PanelStackRenderer';
 import { SectionTransition } from '@/components/landing-v2/transitions/SectionTransition';
 
 // Import global styles to ensure all the beautiful v1 styles are available
@@ -438,11 +437,8 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
               {/* Z-3: Fixed Header Layer */}
               <Navigation />
 
-              {/* Panel Stack System - Fixed at top below header */}
-              <PanelStackContainer />
-
-              {/* Auto-dock panels when user scrolls main content */}
-              <AutoDockOnScroll scrollThreshold={100} />
+              {/* Panel Stack System - Responsive: top panels on desktop, bottom sheet on mobile */}
+              <PanelStackRenderer />
 
               {/* Z-2: Drawer System Layer */}
               <DrawerSystem services={services} />

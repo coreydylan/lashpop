@@ -126,7 +126,7 @@ export interface OpenPanelOptions {
   parentId?: string;
   insertAtPosition?: number;
   autoExpand?: boolean; // Default true
-  scrollToTop?: boolean; // Default true
+  scrollToTop?: boolean; // Default false (changed from true)
 }
 
 export interface PanelStackActions {
@@ -176,6 +176,19 @@ export const PANEL_DOCKED_HEIGHT_MOBILE = 32;
 export const PANEL_MAX_HEIGHT_DESKTOP = '60vh';
 export const PANEL_MAX_HEIGHT_MOBILE = '80vh';
 export const HEADER_HEIGHT = 80; // Match Header.tsx height
+
+// Bottom sheet snap points (percentage from bottom, 0 = bottom of screen)
+export const BOTTOM_SHEET_SNAP_POINTS = {
+  closed: 100,  // Off screen
+  peek: 88,     // Just handle + header visible
+  half: 45,     // Half screen
+  full: 8,      // Nearly full screen
+} as const;
+
+export type BottomSheetSnapPoint = keyof typeof BOTTOM_SHEET_SNAP_POINTS;
+
+// Render mode for responsive behavior
+export type PanelRenderMode = 'top' | 'bottom';
 
 // ============================================================================
 // Events
