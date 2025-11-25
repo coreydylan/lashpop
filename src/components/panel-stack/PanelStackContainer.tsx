@@ -15,6 +15,12 @@ export function PanelStackContainer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Use ref to access state without triggering effect re-runs
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Check if mobile
   useEffect(() => {
@@ -30,7 +36,8 @@ export function PanelStackContainer() {
   useEffect(() => {
     // On mobile, always show if there are panels
     if (isMobile) {
-      setIsVisible(state.panels.some(p => p.state !== 'closed'));
+      const hasPanels = state.panels.some(p => p.state !== 'closed');
+      setIsVisible(hasPanels);
       return;
     }
 
@@ -45,7 +52,7 @@ export function PanelStackContainer() {
     handleScroll(); // Check initial state
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMobile, state.panels]);
+  }, [isMobile, state.panels]); // This is intentional - we want to update visibility when panels change
 
   // Calculate total height (no longer adding padding to page content)
   useEffect(() => {
@@ -64,7 +71,7 @@ export function PanelStackContainer() {
     resizeObserver.observe(containerRef.current);
 
     return () => resizeObserver.disconnect();
-  }, [state.panels]);
+  }, [state.panels]); // This is intentional - we want to recalculate height when panels change
 
   // Sort panels by level, then by position
   const sortedPanels = [...state.panels]

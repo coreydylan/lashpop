@@ -33,6 +33,12 @@ export function AutoDockOnScroll({
   const lastScrollY = useRef(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasDockedRef = useRef(false);
+  
+  // Use ref to access current state without adding to dependencies
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -40,6 +46,7 @@ export function AutoDockOnScroll({
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const scrollDelta = Math.abs(currentScrollY - lastScrollY.current);
+      const currentState = stateRef.current;
 
       // Clear existing timeout
       if (scrollTimeoutRef.current) {
@@ -47,7 +54,7 @@ export function AutoDockOnScroll({
       }
 
       // Check if there are any expanded panels
-      const hasExpandedPanels = state.panels.some(p => p.state === 'expanded');
+      const hasExpandedPanels = currentState.panels.some(p => p.state === 'expanded');
 
       if (!hasExpandedPanels) {
         // Reset the docked flag if no panels are expanded
@@ -68,16 +75,11 @@ export function AutoDockOnScroll({
       lastScrollY.current = currentScrollY;
     };
 
-    // Reset when panels are opened/closed
-    const resetOnPanelChange = () => {
-      hasDockedRef.current = false;
-      lastScrollY.current = window.scrollY;
-    };
+    // Reset when component mounts
+    hasDockedRef.current = false;
+    lastScrollY.current = window.scrollY;
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // Reset the docked flag when panels change
-    resetOnPanelChange();
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -85,7 +87,7 @@ export function AutoDockOnScroll({
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [enabled, scrollThreshold, debounceDelay, dockAll, state.panels]);
+  }, [enabled, scrollThreshold, debounceDelay, dockAll]); // Removed state.panels - use ref instead
 
   // This component doesn't render anything
   return null;

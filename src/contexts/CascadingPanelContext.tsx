@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useRef, useEffect, useMemo } from 'react';
 import type {
   CascadingPanelState,
   CascadingPanelContextValue,
@@ -246,6 +246,12 @@ export function CascadingPanelProvider({ children, services = [] }: CascadingPan
   const [state, dispatch] = useReducer(cascadingPanelReducer, getInitialState(services));
   const eventBusRef = useRef(createEventBus());
   const panelIdCounter = useRef(0);
+  
+  // Keep track of latest state for stable callbacks
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // ============================================================================
   // Panel Operations
@@ -254,6 +260,7 @@ export function CascadingPanelProvider({ children, services = [] }: CascadingPan
   const openPanel = useCallback(
     (type: PanelType, data: any, options?: OpenPanelOptions): string => {
       const panelId = `panel-${++panelIdCounter.current}`;
+      const currentState = stateRef.current;
 
       // Determine level based on type
       let level: PanelLevel = 1;
@@ -262,7 +269,7 @@ export function CascadingPanelProvider({ children, services = [] }: CascadingPan
       if (['service-detail', 'provider-detail', 'provider-services', 'schedule'].includes(type)) level = 4;
 
       // Calculate position within level
-      const panelsInLevel = state.panels.filter(p => p.level === level);
+      const panelsInLevel = currentState.panels.filter(p => p.level === level);
       const position = panelsInLevel.length;
 
       const newPanel: PanelStackItem = {
@@ -286,11 +293,12 @@ export function CascadingPanelProvider({ children, services = [] }: CascadingPan
 
       return panelId;
     },
-    [state.panels]
+    [] // Stable callback - uses ref
   );
 
   const closePanel = useCallback((panelId: string, closeChildren = true) => {
-    const panel = state.panels.find(p => p.id === panelId);
+    const currentState = stateRef.current;
+    const panel = currentState.panels.find(p => p.id === panelId);
     if (!panel) return;
 
     dispatch({ type: 'SET_CLOSING', payload: panelId });
@@ -303,7 +311,7 @@ export function CascadingPanelProvider({ children, services = [] }: CascadingPan
         payload: { panelId, panelType: panel.type },
       });
     }, 400); // Match animation duration
-  }, [state.panels]);
+  }, []); // Stable callback - uses ref
 
   const collapsePanel = useCallback((panelId: string) => {
     dispatch({ type: 'COLLAPSE_PANEL', payload: panelId });
@@ -380,29 +388,29 @@ export function CascadingPanelProvider({ children, services = [] }: CascadingPan
   }, []);
 
   // ============================================================================
-  // Utility
+  // Utility (use refs for stable callbacks)
   // ============================================================================
 
   const getPanelsByLevel = useCallback(
-    (level: number) => state.panels.filter(p => p.level === level),
-    [state.panels]
+    (level: number) => stateRef.current.panels.filter(p => p.level === level),
+    []
   );
 
   const getPanelById = useCallback(
-    (id: string) => state.panels.find(p => p.id === id),
-    [state.panels]
+    (id: string) => stateRef.current.panels.find(p => p.id === id),
+    []
   );
 
   const getChildPanels = useCallback(
-    (parentId: string) => state.panels.filter(p => p.parentId === parentId),
-    [state.panels]
+    (parentId: string) => stateRef.current.panels.filter(p => p.parentId === parentId),
+    []
   );
 
   // ============================================================================
-  // Actions Object
+  // Actions Object (memoized to prevent infinite re-renders)
   // ============================================================================
 
-  const actions: CascadingPanelActions = {
+  const actions: CascadingPanelActions = useMemo(() => ({
     openPanel,
     closePanel,
     collapsePanel,
@@ -418,16 +426,32 @@ export function CascadingPanelProvider({ children, services = [] }: CascadingPan
     getPanelsByLevel,
     getPanelById,
     getChildPanels,
-  };
+  }), [
+    openPanel,
+    closePanel,
+    collapsePanel,
+    expandPanel,
+    toggleCategory,
+    selectSubcategory,
+    clearCategories,
+    selectService,
+    selectProvider,
+    scrollToPanel,
+    closeAllPanels,
+    closePanelsFromLevel,
+    getPanelsByLevel,
+    getPanelById,
+    getChildPanels,
+  ]);
 
   // ============================================================================
   // Context Value
   // ============================================================================
 
-  const contextValue: CascadingPanelContextValue = {
+  const contextValue: CascadingPanelContextValue = useMemo(() => ({
     state,
     actions,
-  };
+  }), [state, actions]);
 
   return (
     <CascadingPanelContext.Provider value={contextValue}>

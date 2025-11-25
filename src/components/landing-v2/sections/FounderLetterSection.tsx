@@ -49,7 +49,7 @@ export function FounderLetterSection() {
       const pinTrigger = ScrollTrigger.create({
         trigger: content,
         start: "bottom bottom", // Pin when content bottom hits viewport bottom
-        end: "+=150%", // Stay pinned for 150% of viewport height worth of scrolling
+        end: "+=80%", // Stay pinned for 80% of viewport height worth of scrolling (reduced from 150%)
         pin: true,
         pinSpacing: true,
         anticipatePin: 1,
@@ -101,7 +101,7 @@ export function FounderLetterSection() {
     <section className="relative w-full bg-cream">
 
       {/* Desktop/Tablet Layout - GSAP ScrollTrigger pinning */}
-      <div ref={desktopSectionRef} className="hidden md:block relative z-20">
+      <div ref={desktopSectionRef} className="hidden md:block relative z-20 overflow-hidden">
         <div ref={desktopContentRef} className="min-h-screen flex flex-col justify-end will-change-transform">
           {/* Content Container - sits at bottom of viewport */}
           <div className="container flex justify-between items-end gap-12 pb-0">
@@ -153,9 +153,9 @@ export function FounderLetterSection() {
               ref={archRef}
               className="relative flex-1 max-w-lg"
             >
-              {/* Decorative circle background */}
+              {/* Decorative circle background - contained within section */}
               <div
-                className="absolute -inset-8 bg-gradient-to-br from-pink-100/30 to-orange-100/30 rounded-full blur-3xl"
+                className="absolute inset-0 bg-gradient-to-br from-pink-100/20 to-orange-100/20 rounded-full blur-2xl pointer-events-none"
               />
 
               {/* Arch container with creative styling */}
@@ -172,13 +172,7 @@ export function FounderLetterSection() {
                     />
                 </div>
 
-                {/* Decorative elements */}
-                <div
-                  className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-pink-200/40 to-purple-200/40 rounded-full blur-2xl opacity-60"
-                />
-                <div
-                  className="absolute -bottom-6 -left-6 w-32 h-32 bg-gradient-to-tr from-orange-200/40 to-yellow-200/40 rounded-full blur-2xl opacity-60"
-                />
+                {/* Decorative elements - removed to prevent shadow artifacts */}
               </div>
             </div>
           </div>

@@ -99,7 +99,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
   }
 
   return (
-    <section ref={ref} className="pb-20 bg-cream">
+    <section ref={ref} className="pt-12 pb-20 bg-cream">
       <div className="container max-w-4xl">
         {/* Category Sorter - Beautiful Frosted Glass Chips */}
         <motion.div

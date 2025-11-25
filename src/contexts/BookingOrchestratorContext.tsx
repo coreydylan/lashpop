@@ -364,9 +364,15 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
     eventBusRef.current.emit({ type: 'VIEWPORT_RESIZED', payload: viewport });
   }, []);
 
+  // Use stateRef to avoid recreating this callback when viewport changes
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
   const getAvailableHeight = useCallback(() => {
-    return state.viewport.availableHeight;
-  }, [state.viewport.availableHeight]);
+    return stateRef.current.viewport.availableHeight;
+  }, []); // Stable callback - uses ref
 
   // Listen for window resize
   useEffect(() => {
@@ -410,13 +416,14 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
 
   const scrollToSection = useCallback(
     (sectionId: string, options?: ScrollToSectionOptions) => {
-      const section = state.sections.find((s) => s.id === sectionId);
+      const currentState = stateRef.current;
+      const section = currentState.sections.find((s) => s.id === sectionId);
       if (!section?.element) {
         console.warn(`Section "${sectionId}" not found in registry`);
         return;
       }
 
-      const offset = options?.offset || state.viewport.topOffset + 20;
+      const offset = options?.offset || currentState.viewport.topOffset + 20;
       const elementTop = section.element.getBoundingClientRect().top + window.scrollY;
       const scrollTo = elementTop - offset;
 
@@ -444,7 +451,7 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
         eventBusRef.current.emit({ type: 'SECTION_VISIBLE', payload: { sectionId } });
       }, 800);
     },
-    [state.sections, state.viewport.topOffset]
+    [] // Stable callback - uses stateRef
   );
 
   const openPortfolio = useCallback((providerId: string, options?: OpenPortfolioOptions) => {
@@ -464,7 +471,7 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
   }, [scrollToSection]);
 
   const closePortfolio = useCallback(() => {
-    const providerId = state.portfolio.providerId;
+    const providerId = stateRef.current.portfolio.providerId;
     dispatch({ type: 'CLOSE_PORTFOLIO' });
 
     if (providerId) {
@@ -473,10 +480,10 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
         payload: { providerId },
       });
     }
-  }, [state.portfolio.providerId]);
+  }, []); // Stable callback - uses stateRef
 
   const compressPortfolio = useCallback(() => {
-    const providerId = state.portfolio.providerId;
+    const providerId = stateRef.current.portfolio.providerId;
     dispatch({ type: 'COMPRESS_PORTFOLIO' });
 
     if (providerId) {
@@ -485,10 +492,10 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
         payload: { providerId },
       });
     }
-  }, [state.portfolio.providerId]);
+  }, []); // Stable callback - uses stateRef
 
   const expandPortfolio = useCallback(() => {
-    const providerId = state.portfolio.providerId;
+    const providerId = stateRef.current.portfolio.providerId;
     dispatch({ type: 'EXPAND_PORTFOLIO' });
 
     if (providerId) {
@@ -497,7 +504,7 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
         payload: { providerId },
       });
     }
-  }, [state.portfolio.providerId]);
+  }, []); // Stable callback - uses stateRef
 
   // ============================================================================
   // Selection Actions
@@ -583,7 +590,8 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
 
   const initiatePortfolioFromService = useCallback(
     async (serviceId: string, providerId: string) => {
-      const section = state.sections.find((s) => s.id === 'team');
+      const currentState = stateRef.current;
+      const section = currentState.sections.find((s) => s.id === 'team');
       if (!section?.element) {
         console.warn('Team section not found in registry');
         return;
@@ -596,7 +604,7 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
       });
 
       // Scroll to team section
-      const offset = state.viewport.topOffset + 20;
+      const offset = currentState.viewport.topOffset + 20;
       const elementTop = section.element.getBoundingClientRect().top + window.scrollY;
       const scrollTo = elementTop - offset;
 
@@ -621,7 +629,7 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
         payload: { providerId },
       });
     },
-    [state.sections, state.viewport.topOffset]
+    [] // Stable callback - uses stateRef
   );
 
   const completeQuizWorkflow = useCallback(
@@ -649,10 +657,10 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
   );
 
   // ============================================================================
-  // Actions Object
+  // Actions Object (memoized to prevent infinite re-renders)
   // ============================================================================
 
-  const actions: OrchestratorActions = {
+  const actions: OrchestratorActions = React.useMemo(() => ({
     selectService,
     selectProvider,
     toggleProvider,
@@ -670,7 +678,25 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
     updateSectionBounds,
     updateViewportDimensions,
     getAvailableHeight,
-  };
+  }), [
+    selectService,
+    selectProvider,
+    toggleProvider,
+    selectCategory,
+    clearSelections,
+    scrollToSection,
+    openPortfolio,
+    closePortfolio,
+    compressPortfolio,
+    expandPortfolio,
+    initiateBookingFromTeamMember,
+    initiatePortfolioFromService,
+    completeQuizWorkflow,
+    registerSection,
+    updateSectionBounds,
+    updateViewportDimensions,
+    getAvailableHeight,
+  ]);
 
   // ============================================================================
   // Context Value

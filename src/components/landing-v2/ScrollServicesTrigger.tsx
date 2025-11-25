@@ -8,6 +8,18 @@ export function ScrollServicesTrigger() {
   const { actions: panelActions, state } = usePanelStack()
   const [hasTriggered, setHasTriggered] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  
+  // Use refs to avoid re-running effects when state changes
+  const stateRef = useRef(state)
+  const hasTriggeredRef = useRef(hasTriggered)
+  
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
+  
+  useEffect(() => {
+    hasTriggeredRef.current = hasTriggered
+  }, [hasTriggered])
 
   // Check if mobile
   useEffect(() => {
@@ -28,8 +40,9 @@ export function ScrollServicesTrigger() {
       const sectionId = target.getAttribute('data-section-id')
 
       // Trigger when we land on the founder section (which comes after welcome)
-      if (sectionId === 'founder' && !hasTriggered) {
-        const isPanelOpen = state.panels.some(p => p.type === 'category-picker' && p.state !== 'closed')
+      if (sectionId === 'founder' && !hasTriggeredRef.current) {
+        const currentState = stateRef.current
+        const isPanelOpen = currentState.panels.some(p => p.type === 'category-picker' && p.state !== 'closed')
 
         if (!isPanelOpen) {
           panelActions.openPanel(
@@ -53,7 +66,7 @@ export function ScrollServicesTrigger() {
         section.removeEventListener('section-locked', handleSectionLocked)
       })
     }
-  }, [isMobile, hasTriggered, panelActions, state.panels])
+  }, [isMobile, panelActions]) // Removed hasTriggered and state.panels - use refs instead
 
   // Desktop: Use IntersectionObserver
   useEffect(() => {
@@ -63,9 +76,10 @@ export function ScrollServicesTrigger() {
       (entries) => {
         entries.forEach((entry) => {
           // When the trigger point comes into view and we haven't triggered yet
-          if (entry.isIntersecting && !hasTriggered) {
+          if (entry.isIntersecting && !hasTriggeredRef.current) {
+            const currentState = stateRef.current
             // Check if panel is not already open
-            const isPanelOpen = state.panels.some(p => p.type === 'category-picker' && p.state !== 'closed')
+            const isPanelOpen = currentState.panels.some(p => p.type === 'category-picker' && p.state !== 'closed')
 
             if (!isPanelOpen) {
               // Open the category-picker panel without scrolling to top
@@ -91,7 +105,7 @@ export function ScrollServicesTrigger() {
     return () => {
       observer.disconnect()
     }
-  }, [isMobile, hasTriggered, panelActions, state.panels])
+  }, [isMobile, panelActions]) // Removed hasTriggered and state.panels - use refs instead
 
   // Reset trigger when all panels are closed
   useEffect(() => {

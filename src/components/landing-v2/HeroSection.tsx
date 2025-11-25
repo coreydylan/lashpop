@@ -285,7 +285,8 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                 onClick={() => {
                   // Align Welcome section top with bottom of services panel stack
                   // Header (80px) + PanelStack (~64px) = 144px offset
-                  const offset = 144
+                  // Adding extra 80px to scroll a bit further down
+                  const offset = 64
                   window.scrollTo({
                     top: window.innerHeight - offset,
                     behavior: 'smooth'
