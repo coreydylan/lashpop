@@ -657,4 +657,11 @@ a,
   .theme-v2 .body-lg {
     font-family: var(--font-andika);
   }
+
+  /* Allow overrides inside theme v2 sections */
+  .theme-v2 .font-swanky,
+  .theme-v2 .font-swanky *,
+  .font-swanky {
+    font-family: var(--font-swanky), cursive !important;
+  }
 }

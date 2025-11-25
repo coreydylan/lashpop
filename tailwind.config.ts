@@ -36,6 +36,7 @@ const config: Config = {
         chivo: ['var(--font-chivo)', 'sans-serif'],
         andika: ['var(--font-andika)', 'sans-serif'],
         'league-script': ['var(--font-league-script)', 'cursive'],
+        swanky: ['var(--font-swanky)', 'cursive'],
         corey: ['Corey Nice', 'cursive'],
       },
       animation: {

@@ -27,19 +27,7 @@ export function FounderLetterSection() {
   )
 
   return (
-    <section className="relative w-full">
-      {/* Background Image and Overlay */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/lashpop-images/flower-pattern.png"
-          alt="Flower pattern background"
-          fill
-          className="object-cover"
-          quality={100}
-          priority
-        />
-        <div className="absolute inset-0 bg-[#dbcdcc]/80" />
-      </div>
+    <section className="relative w-full bg-cream">
 
       {/* Desktop/Tablet Layout - New Design */}
       <div ref={ref} className="hidden md:block relative overflow-hidden z-20 pt-24 pb-0">
@@ -53,7 +41,7 @@ export function FounderLetterSection() {
             transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
           >
             {/* SVG Letter Graphic */}
-            <div className="relative w-full text-[#8a5e55] font-corey text-xl md:text-2xl leading-relaxed font-normal">
+            <div className="relative w-full text-[#8a5e55] text-xl md:text-2xl leading-relaxed font-normal font-swanky">
               <p className="mb-6">Dear Beautiful Soul,</p>
               
               <p className="mb-6">
@@ -206,7 +194,7 @@ export function FounderLetterSection() {
         {/* Letter Content - Now at Bottom with Full Width */}
         <div className="relative bg-inherit pt-8 pb-12 px-6">
           <motion.div
-            className="text-[#8a5e55] font-corey text-lg leading-relaxed font-normal"
+            className="text-[#8a5e55] text-lg leading-relaxed font-normal font-swanky"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
