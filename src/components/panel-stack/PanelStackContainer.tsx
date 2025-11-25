@@ -4,14 +4,33 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { HEADER_HEIGHT } from '@/types/panel-stack';
+import { MobileBottomSheet } from './MobileBottomSheet';
 
 // Import panel components
 import { CategoryPickerPanel } from './panels/CategoryPickerPanel';
 import { ServicePanel } from './panels/ServicePanel';
 import { DiscoveryPanel } from './panels/DiscoveryPanel';
 
+// Panel title mapping
+const getPanelTitle = (type: string, data?: any): string => {
+  switch (type) {
+    case 'category-picker':
+      return 'Choose a Service';
+    case 'discovery':
+      return 'Discover Your Look';
+    case 'service-panel':
+      return data?.categoryName || 'Services';
+    case 'service-detail':
+      return data?.serviceName || 'Service Details';
+    case 'schedule':
+      return 'Book Appointment';
+    default:
+      return 'Panel';
+  }
+};
+
 export function PanelStackContainer() {
-  const { state } = usePanelStack();
+  const { state, actions } = usePanelStack();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -49,7 +68,7 @@ export function PanelStackContainer() {
 
   // Calculate total height (no longer adding padding to page content)
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isMobile) return;
 
     const updateHeight = () => {
       const height = containerRef.current?.offsetHeight || 0;
@@ -64,7 +83,7 @@ export function PanelStackContainer() {
     resizeObserver.observe(containerRef.current);
 
     return () => resizeObserver.disconnect();
-  }, [state.panels]);
+  }, [state.panels, isMobile]);
 
   // Sort panels by level, then by position
   const sortedPanels = [...state.panels]
@@ -78,10 +97,48 @@ export function PanelStackContainer() {
     return null;
   }
 
+  // Render panel content based on type
+  const renderPanelContent = (panel: typeof sortedPanels[0]) => {
+    switch (panel.type) {
+      case 'category-picker':
+        return <CategoryPickerPanel panel={panel} />;
+      case 'discovery':
+        return <DiscoveryPanel panel={panel} />;
+      case 'service-panel':
+        return <ServicePanel panel={panel} />;
+      default:
+        return null;
+    }
+  };
+
+  // Mobile: Render as bottom sheets
+  if (isMobile) {
+    return (
+      <>
+        {sortedPanels.map((panel, index) => (
+          <MobileBottomSheet
+            key={panel.id}
+            isOpen={panel.state !== 'closed'}
+            isDocked={panel.state === 'docked'}
+            onClose={() => actions.closePanel(panel.id)}
+            onDock={() => actions.dockPanel(panel.id)}
+            onExpand={() => actions.expandPanel(panel.id)}
+            title={getPanelTitle(panel.type, panel.data)}
+            subtitle={panel.summary}
+            zIndex={50 + index}
+          >
+            {renderPanelContent(panel)}
+          </MobileBottomSheet>
+        ))}
+      </>
+    );
+  }
+
+  // Desktop: Render as top-down panel stack
   return (
     <motion.div
       ref={containerRef}
-      className="fixed left-0 right-0 z-30 bg-cream shadow-lg top-[80px]" // Position below header (80px height)
+      className="fixed left-0 right-0 z-30 bg-cream shadow-lg top-[80px]"
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,
@@ -93,11 +150,7 @@ export function PanelStackContainer() {
       <AnimatePresence mode="popLayout">
         {sortedPanels.map(panel => (
           <div key={panel.id}>
-            {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
-            {panel.type === 'discovery' && <DiscoveryPanel panel={panel} />}
-            {panel.type === 'service-panel' && <ServicePanel panel={panel} />}
-            {/* ServicePanel now handles service details internally */}
-            {/* Schedule panel will be added later */}
+            {renderPanelContent(panel)}
           </div>
         ))}
       </AnimatePresence>

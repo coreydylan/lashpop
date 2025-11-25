@@ -1,6 +1,13 @@
 import Image from 'next/image'
 
-// Standard size logos for consistent display
+// Dusty rose color from the design system: rgb(205, 168, 158)
+const DUSTY_ROSE = '#CDA89E'
+
+// CSS filter to colorize images to dusty rose
+// This filter transforms any image to the dusty rose color
+const dustyRoseFilter = 'brightness(0) saturate(100%) invert(77%) sepia(11%) saturate(656%) hue-rotate(335deg) brightness(92%) contrast(87%)'
+
+// Standard size logos for consistent display - colorized to dusty rose
 export const YelpLogo = () => (
   <div className="relative w-8 h-8">
     <Image
@@ -8,6 +15,7 @@ export const YelpLogo = () => (
       alt="Yelp Logo"
       fill
       className="object-contain object-center"
+      style={{ filter: dustyRoseFilter }}
     />
   </div>
 )
@@ -15,10 +23,10 @@ export const YelpLogo = () => (
 export const GoogleLogo = () => (
   <div className="relative w-8 h-8 flex items-center justify-center">
     <svg viewBox="0 0 24 24" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill={DUSTY_ROSE}/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill={DUSTY_ROSE} fillOpacity="0.85"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill={DUSTY_ROSE} fillOpacity="0.7"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill={DUSTY_ROSE} fillOpacity="0.55"/>
     </svg>
   </div>
 )
@@ -30,19 +38,20 @@ export const VagaroLogo = () => (
       alt="Vagaro Logo"
       fill
       className="object-contain object-center"
+      style={{ filter: dustyRoseFilter }}
     />
   </div>
 )
 
 // Compact versions for small spaces like the hero chip
-// Using the actual logo images but sized appropriately for small display
+// Using the actual logo images but sized appropriately for small display - colorized to dusty rose
 export const GoogleLogoCompact = () => (
   <div className="relative w-4 h-4 flex items-center justify-center">
     <svg viewBox="0 0 24 24" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill={DUSTY_ROSE}/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill={DUSTY_ROSE} fillOpacity="0.85"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill={DUSTY_ROSE} fillOpacity="0.7"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill={DUSTY_ROSE} fillOpacity="0.55"/>
     </svg>
   </div>
 )
@@ -54,6 +63,7 @@ export const YelpLogoCompact = () => (
       alt="Yelp"
       fill
       className="object-contain object-center"
+      style={{ filter: dustyRoseFilter }}
     />
   </div>
 )
@@ -65,6 +75,7 @@ export const VagaroLogoCompact = () => (
       alt="Vagaro"
       fill
       className="object-contain object-center"
+      style={{ filter: dustyRoseFilter }}
     />
   </div>
 )

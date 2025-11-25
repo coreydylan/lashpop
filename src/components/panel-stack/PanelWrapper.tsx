@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { usePanelStack } from '@/contexts/PanelStackContext';
@@ -20,8 +20,19 @@ export function PanelWrapper({
   subtitle,
 }: PanelWrapperProps) {
   const { actions } = usePanelStack();
+  const [isMobile, setIsMobile] = useState(false);
   const isExpanded = panel.state === 'expanded';
   const isDocked = panel.state === 'docked';
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleToggle = () => {
     actions.togglePanel(panel.id);
@@ -31,6 +42,12 @@ export function PanelWrapper({
     actions.closePanel(panel.id);
   };
 
+  // On mobile, MobileBottomSheet provides the wrapper, so just return children
+  if (isMobile) {
+    return <>{children}</>;
+  }
+
+  // Desktop: Full wrapper with header and controls
   return (
     <motion.div
       layout
@@ -49,9 +66,9 @@ export function PanelWrapper({
       {/* Docked Header */}
       <div
         className={`
-          flex items-center justify-between px-4 md:px-6 bg-cream/95 backdrop-blur-md
+          flex items-center justify-between px-6 bg-cream/95 backdrop-blur-md
           transition-all cursor-pointer
-          ${isDocked ? 'h-8 md:h-12 hover:bg-warm-sand/5' : 'h-12 md:h-14'}
+          ${isDocked ? 'h-12 hover:bg-warm-sand/5' : 'h-14'}
           ${isExpanded ? 'border-b border-dusty-rose/20' : ''}
         `}
         onClick={isDocked ? handleToggle : undefined}
@@ -61,7 +78,7 @@ export function PanelWrapper({
           {title && (
             <h3 className={`
               font-serif text-dune font-medium truncate
-              ${isDocked ? 'text-sm md:text-base' : 'text-base md:text-lg'}
+              ${isDocked ? 'text-base' : 'text-lg'}
             `}>
               {title}
             </h3>
@@ -69,7 +86,7 @@ export function PanelWrapper({
 
           {/* Summary (when docked) */}
           {isDocked && panel.summary && (
-            <span className="text-xs md:text-sm text-sage truncate hidden sm:inline">
+            <span className="text-sm text-sage truncate">
               · {panel.summary}
             </span>
           )}
@@ -83,26 +100,26 @@ export function PanelWrapper({
 
           {/* Subtitle (when expanded) */}
           {isExpanded && subtitle && (
-            <span className="text-xs md:text-sm text-sage truncate hidden md:inline">
+            <span className="text-sm text-sage truncate">
               {subtitle}
             </span>
           )}
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Toggle button */}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleToggle}
-            className="p-1.5 md:p-2 rounded-full hover:bg-sage/10 transition-colors"
+            className="p-2 rounded-full hover:bg-sage/10 transition-colors"
             aria-label={isExpanded ? 'Dock panel' : 'Expand panel'}
           >
             {isExpanded ? (
-              <ChevronUp className="w-4 h-4 md:w-5 md:h-5 text-sage" />
+              <ChevronUp className="w-5 h-5 text-sage" />
             ) : (
-              <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-sage" />
+              <ChevronDown className="w-5 h-5 text-sage" />
             )}
           </motion.button>
 
@@ -111,10 +128,10 @@ export function PanelWrapper({
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleClose}
-            className="p-1.5 md:p-2 rounded-full hover:bg-sage/10 transition-colors"
+            className="p-2 rounded-full hover:bg-sage/10 transition-colors"
             aria-label="Close panel"
           >
-            <X className="w-4 h-4 md:w-5 md:h-5 text-sage" />
+            <X className="w-5 h-5 text-sage" />
           </motion.button>
         </div>
       </div>
@@ -137,8 +154,8 @@ export function PanelWrapper({
             <div
               className="
                 bg-cream overflow-y-auto overscroll-contain
-                max-h-[80vh] md:max-h-[60vh]
-                px-4 py-4 md:px-6 md:py-6
+                max-h-[60vh]
+                px-6 py-6
               "
             >
               {children}
