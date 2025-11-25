@@ -6,6 +6,13 @@ import Image from 'next/image'
 import { useDrawer } from '../drawers/DrawerContext'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+// Register ScrollTrigger plugin
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 interface HeroSectionProps {
   reviewStats?: Array<{
@@ -39,6 +46,9 @@ function CircleDecoration({ className = "w-full h-full" }: { className?: string 
 
 export default function HeroSection({ reviewStats }: HeroSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const imageRef = useRef<HTMLImageElement>(null)
+  const imageContainerRef = useRef<HTMLDivElement>(null)
+  
   const { scrollY } = useScroll({ layoutEffect: false } as any)
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
@@ -49,6 +59,64 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
+
+  // GSAP Animation for Background Pan
+  useEffect(() => {
+    // Wait for refs to be ready
+    if (!imageRef.current || !imageContainerRef.current) return
+
+    const mm = gsap.matchMedia()
+
+    mm.add("(min-width: 768px)", () => {
+      const image = imageRef.current
+      const container = imageContainerRef.current
+
+      if (!image || !container) return
+
+      // Initial pan animation on load
+      gsap.fromTo(image, 
+        { 
+          scale: 1.4,
+          xPercent: 0, 
+        },
+        { 
+          scale: 1.2,
+          xPercent: 20, // Pan significantly right (camera moves left) - Reversed
+          duration: 4, // Slower animation
+          ease: "power2.out"
+        }
+      )
+
+      // Pin the arch container so it stays at the bottom of the viewport while fading out
+      ScrollTrigger.create({
+        trigger: container,
+        start: "bottom bottom", // Start pinning when container bottom hits viewport bottom
+        end: "+=500", // Pin for 500px of scrolling (adjust to match fade out duration)
+        pin: true,
+        pinSpacing: false, // Don't add spacing, let content overlap naturally
+        anticipatePin: 1,
+      })
+
+      // Scroll-triggered pan animation (parallax) - Starts only when user scrolls
+      // We removed the 'scrub' on the initial timeline to avoid conflict
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: container,
+          start: "top center", // Start parallax when container enters view
+          end: "bottom top", 
+          scrub: 1,
+        }
+      })
+
+      // Continue panning
+      tl.to(image, {
+        xPercent: 25, // Continue panning right slightly - Reversed
+        ease: "none"
+      }, 0)
+    })
+
+    return () => mm.revert()
+  }, [])
 
   // Check if mobile
   useEffect(() => {
@@ -151,57 +219,14 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-6 mb-[20vh]"
+            className="space-y-6 mb-[28vh]"
           >
-            {/* Small accent */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="flex items-center gap-2 text-golden"
-            >
-              <SunIcon className="w-5 h-5" />
-              <span className="caption">Oceanside, California</span>
-            </motion.div>
-
-            {/* Main heading - New layered design */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8 }}
-              className="relative"
-            >
-              {/* "welcome" in League Script */}
-              <h1
-                className="font-league-script text-dune leading-none"
-                style={{ fontSize: 'clamp(4rem, 10vw, 7rem)' }}
-              >
-                welcome
-              </h1>
-
-              {/* "LashPop Studios" overlapping slightly */}
-              <div
-                className="font-serif text-dune -mt-6 md:-mt-8 relative z-10"
-                style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400 }}
-              >
-                LashPop Studios
-              </div>
-
-              {/* Tagline - smaller and italic */}
-              <div
-                className="font-serif text-dusty-rose italic mt-2"
-                style={{ fontSize: 'clamp(1rem, 2.5vw, 1.75rem)' }}
-              >
-                Effortless Beauty for the Modern Woman
-              </div>
-            </motion.div>
-
-            {/* Beautiful Reviews Chip with Logos */}
+            {/* Beautiful Reviews Chip with Logos - Moved to Top */}
             {totalReviews > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
                 className="inline-block"
               >
                 <button
@@ -234,11 +259,11 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                   {/* Main chip */}
                   <div className="relative px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 shadow-sm transition-all duration-300 group-hover:bg-white/60 group-hover:scale-105">
                     <div className="flex items-center gap-2">
-                      {/* Platform Logos - Using compact components */}
-                      <div className="flex items-center gap-0.5 pr-2 border-r border-dune/20">
-                        <GoogleLogoCompact />
-                        <YelpLogoCompact />
-                        <VagaroLogoCompact />
+                      {/* Platform Logos - Colorized Dusty Rose */}
+                      <div className="flex items-center gap-1.5 pr-2 border-r border-dusty-rose/30 text-dusty-rose">
+                        <GoogleLogoCompact monochrome />
+                        <YelpLogoCompact monochrome />
+                        <VagaroLogoCompact monochrome />
                       </div>
 
                       {/* Review Count and Stars */}
@@ -264,21 +289,54 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               </motion.div>
             )}
 
-            {/* Description */}
-            <motion.p
+            {/* Small accent */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="flex items-center gap-2 text-golden"
+            >
+              <SunIcon className="w-5 h-5" />
+              <span className="caption">Oceanside, California</span>
+            </motion.div>
+
+            {/* Main heading - New layered design */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
-              className="font-serif text-lg text-dune/80 max-w-md"
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="relative"
             >
-              A collective of women-owned beauty businesses
-            </motion.p>
+              {/* "welcome to" in League Script - Smaller */}
+              <h1
+                className="font-league-script text-dune leading-none pl-2"
+                style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}
+              >
+                welcome to
+              </h1>
+
+              {/* "LashPop Studios" overlapping slightly */}
+              <div
+                className="font-serif text-dune -mt-4 md:-mt-6 relative z-10"
+                style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400 }}
+              >
+                LashPop Studios
+              </div>
+
+              {/* Tagline - smaller and italic */}
+              <div
+                className="font-serif text-dusty-rose italic mt-2"
+                style={{ fontSize: 'clamp(1rem, 2.5vw, 1.75rem)' }}
+              >
+                Effortless Beauty for the Modern Woman
+              </div>
+            </motion.div>
 
             {/* CTA Buttons - Book Now opens panel stack, Discover opens drawer */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <button
@@ -311,24 +369,60 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative h-full flex items-end"
+            className="relative h-full flex items-end pl-[65px]" // Added padding-left to fix offset
           >
-            <div className="relative w-full">
+            <div className="relative w-full h-full flex items-end">
               {/* Arch-shaped image container - extends to bottom */}
-              <div className="relative w-full h-[85vh] rounded-[200px_200px_0_0] overflow-hidden">
-                <Image
-                  src="/lashpop-images/studio/studio-photos-by-salome.jpg"
-                  alt="LashPop Studio Interior"
-                  fill
-                  className="object-cover object-right"
-                  priority
-                  quality={85}
-                />
+              <div 
+                ref={imageContainerRef}
+                className="relative w-full h-[85vh] rounded-[200px_200px_0_0] overflow-hidden"
+                style={{ 
+                  transformOrigin: 'bottom center',
+                  zIndex: 20
+                }}
+              >
+                {/* Image wrapper for pan animation */}
+                <div className="relative w-full h-full overflow-hidden">
+                  <Image
+                    ref={imageRef}
+                    src="/lashpop-images/studio/studio-photos-by-salome.jpg"
+                    alt="LashPop Studio Interior"
+                    fill
+                    className="object-cover object-right"
+                    priority
+                    quality={85}
+                    // Initial styles will be overridden by GSAP
+                    style={{
+                      transform: "scale(1.4) translateX(0%)", 
+                      transformOrigin: "center center"
+                    }}
+                  />
+                </div>
+                
                 {/* Soft overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-ocean-mist/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-ocean-mist/20 to-transparent pointer-events-none" />
+                
+                {/* Desktop text overlay - moved inside container to stay on top */}
+                {!isMobile && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 1, duration: 0.8 }}
+                    className="absolute bottom-8 left-8 right-8 glass rounded-2xl p-6 z-30"
+                  >
+                    <p className="caption text-terracotta mb-2">Award Winning</p>
+                    <p className="text-lg font-light text-dune">Best Lash Studio • North County SD</p>
+                  </motion.div>
+                )}
+
+                {/* Fade out overlay based on scroll */}
+                <motion.div 
+                  className="absolute inset-0 bg-cream pointer-events-none z-40"
+                  style={{ opacity: useTransform(scrollY, [100, 600], [0, 1]) }}
+                />
               </div>
 
-              {/* Floating accent element */}
+              {/* Floating accent element - Outside the pinning container if possible, or adjusted z-index */}
               <motion.div
                 animate={{
                   y: [0, -10, 0],
@@ -338,16 +432,16 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                   repeat: Infinity,
                   ease: "easeInOut"
                 }}
-                className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-warm-sand/50 blur-2xl"
+                className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-warm-sand/50 blur-2xl z-10"
               />
 
-              {/* Mobile-specific overlay with scrollable button and chips */}
-              {isMobile ? (
+              {/* Mobile-specific overlay with scrollable button and chips - OUTSIDE container for z-index stack context */}
+              {isMobile && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1, duration: 0.8 }}
-                  className="absolute bottom-16 left-8 right-8 flex flex-col items-center gap-3"
+                  className="absolute bottom-16 left-8 right-8 flex flex-col items-center gap-3 z-50"
                 >
                   {/* Scrollable Button Container */}
                   <div className="w-full">
@@ -429,17 +523,6 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                     <p className="caption text-terracotta mb-0.5 text-xs">Award Winning</p>
                     <p className="text-sm font-light text-dune">Best Lash Studio • North County SD</p>
                   </div>
-                </motion.div>
-              ) : (
-                /* Desktop text overlay */
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1, duration: 0.8 }}
-                  className="absolute bottom-8 left-8 right-8 glass rounded-2xl p-6"
-                >
-                  <p className="caption text-terracotta mb-2">Award Winning</p>
-                  <p className="text-lg font-light text-dune">Best Lash Studio • North County SD</p>
                 </motion.div>
               )}
             </div>
