@@ -61,7 +61,7 @@ export function FounderLetterSection() {
               </p>
 
               <p className="mb-6">
-                Our team is united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that "just woke up from eight blissful hours" look with little effort (even if your reality looks more like five). We're not here to judge ;)
+                Our team is united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that &ldquo;just woke up from eight blissful hours&rdquo; look with little effort (even if your reality looks more like five). We&apos;re not here to judge ;)
               </p>
 
               <p className="mb-6">
@@ -69,7 +69,7 @@ export function FounderLetterSection() {
               </p>
 
               <p className="mb-8">
-                Thank you for trusting us with your beauty routine. We don't take that lightly, and we can't wait to welcome you in.
+                Thank you for trusting us with your beauty routine. We don&apos;t take that lightly, and we can&apos;t wait to welcome you in.
               </p>
 
               <div className="flex flex-col gap-2">
@@ -219,7 +219,7 @@ export function FounderLetterSection() {
             </p>
 
             <p className="mb-6">
-              Our team is united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that "just woke up from eight blissful hours" look with little effort (even if your reality looks more like five). We're not here to judge ;)
+              Our team is united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that &ldquo;just woke up from eight blissful hours&rdquo; look with little effort (even if your reality looks more like five). We&apos;re not here to judge ;)
             </p>
 
             <p className="mb-6">
@@ -227,7 +227,7 @@ export function FounderLetterSection() {
             </p>
 
             <p className="mb-8">
-              Thank you for trusting us with your beauty routine. We don't take that lightly, and we can't wait to welcome you in.
+              Thank you for trusting us with your beauty routine. We don&apos;t take that lightly, and we can&apos;t wait to welcome you in.
             </p>
 
             <div className="flex flex-col gap-2">
