@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef, useMemo } from 'react';
 import type {
   BookingOrchestratorState,
   BookingOrchestratorContextValue,
@@ -652,7 +652,7 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
   // Actions Object
   // ============================================================================
 
-  const actions: OrchestratorActions = {
+  const actions: OrchestratorActions = useMemo(() => ({
     selectService,
     selectProvider,
     toggleProvider,
@@ -670,17 +670,35 @@ export function BookingOrchestratorProvider({ children }: BookingOrchestratorPro
     updateSectionBounds,
     updateViewportDimensions,
     getAvailableHeight,
-  };
+  }), [
+    selectService,
+    selectProvider,
+    toggleProvider,
+    selectCategory,
+    clearSelections,
+    scrollToSection,
+    openPortfolio,
+    closePortfolio,
+    compressPortfolio,
+    expandPortfolio,
+    initiateBookingFromTeamMember,
+    initiatePortfolioFromService,
+    completeQuizWorkflow,
+    registerSection,
+    updateSectionBounds,
+    updateViewportDimensions,
+    getAvailableHeight,
+  ]);
 
   // ============================================================================
   // Context Value
   // ============================================================================
 
-  const contextValue: BookingOrchestratorContextValue = {
+  const contextValue: BookingOrchestratorContextValue = useMemo(() => ({
     state,
     actions,
     eventBus: eventBusRef.current,
-  };
+  }), [state, actions]);
 
   return (
     <BookingOrchestratorContext.Provider value={contextValue}>{children}</BookingOrchestratorContext.Provider>
