@@ -1,0 +1,9 @@
+@font-face {
+    font-family: 'Corey Nice';
+    src: url('CoreyNice-Regular.woff2') format('woff2'),
+        url('CoreyNice-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+

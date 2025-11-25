@@ -53,15 +53,29 @@ export function FounderLetterSection() {
             transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
           >
             {/* SVG Letter Graphic */}
-            <div className="relative w-full h-auto drop-shadow-sm [&_img]:sepia [&_img]:brightness-[0.4] [&_img]:hue-rotate-[320deg] [&_img]:saturate-[0.5]">
-              <Image
-                src="/founder-letter.svg"
-                alt="Founder's Letter"
-                width={600}
-                height={800}
-                className="w-full h-auto"
-                priority
-              />
+            <div className="relative w-full text-[#8a5e55] font-corey text-xl md:text-2xl leading-relaxed font-normal">
+              <p className="mb-6">Dear Beautiful Soul,</p>
+              
+              <p className="mb-6">
+                When I started LashPop, I wanted to build something simple: a place where you actually feel taken care of. A space where you can exhale for an hour, maybe catch a quick nap, and walk out feeling like the best version of yourself.
+              </p>
+
+              <p className="mb-6">
+                Our team is united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that "just woke up from eight blissful hours" look with little effort (even if your reality looks more like five). We're not here to judge ;)
+              </p>
+
+              <p className="mb-6">
+                Every artist here brings something different to the table, but we all share the same obsession with getting it right. The details matter to us because we know they matter to you.
+              </p>
+
+              <p className="mb-8">
+                Thank you for trusting us with your beauty routine. We don't take that lightly, and we can't wait to welcome you in.
+              </p>
+
+              <div className="flex flex-col gap-2">
+                <p>With love and lashes,</p>
+                <p className="text-2xl md:text-3xl">The LashPop Family</p>
+              </div>
             </div>
 
             {/* Hidden accessible text for screen readers and SEO */}
@@ -190,23 +204,36 @@ export function FounderLetterSection() {
         </div>
 
         {/* Letter Content - Now at Bottom with Full Width */}
-        <div className="relative bg-inherit pt-8 pb-12 -mx-4">
+        <div className="relative bg-inherit pt-8 pb-12 px-6">
           <motion.div
-            className="drop-shadow-sm [&_img]:sepia [&_img]:brightness-[0.4] [&_img]:hue-rotate-[320deg] [&_img]:saturate-[0.5] scale-125 origin-center"
+            className="text-[#8a5e55] font-corey text-lg leading-relaxed font-normal"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
           >
-            <Image
-              src="/founder-letter.svg"
-              alt="Founder's Letter"
-              width={800}
-              height={1000}
-              className="w-full h-auto max-w-none object-contain"
-              style={{ marginTop: '-10%', marginBottom: '-10%' }}
-              priority
-            />
+            <p className="mb-6">Dear Beautiful Soul,</p>
+            
+            <p className="mb-6">
+              When I started LashPop, I wanted to build something simple: a place where you actually feel taken care of. A space where you can exhale for an hour, maybe catch a quick nap, and walk out feeling like the best version of yourself.
+            </p>
+
+            <p className="mb-6">
+              Our team is united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that "just woke up from eight blissful hours" look with little effort (even if your reality looks more like five). We're not here to judge ;)
+            </p>
+
+            <p className="mb-6">
+              Every artist here brings something different to the table, but we all share the same obsession with getting it right. The details matter to us because we know they matter to you.
+            </p>
+
+            <p className="mb-8">
+              Thank you for trusting us with your beauty routine. We don't take that lightly, and we can't wait to welcome you in.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <p>With love and lashes,</p>
+              <p className="text-xl">The LashPop Family</p>
+            </div>
           </motion.div>
         </div>
 

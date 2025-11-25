@@ -10,12 +10,13 @@ export function WelcomeSection() {
   const isInView = useInView(ref, { once: true, margin: "-20%" })
 
   return (
-    <section ref={ref} className="relative min-h-screen overflow-hidden">
+    <section ref={ref} className="relative min-h-[115vh] overflow-hidden">
       {/* Background Image - No overlay */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/lashpop-images/deskcolor1.jpg"
+          src="/lashpop-images/frontdeskeditwgradientedit2.webp"
           alt="LashPop Studio Desk"
+          quality={100}
           fill
           sizes="100vw"
           className="object-cover object-[35%_center] md:object-center"
@@ -26,7 +27,7 @@ export function WelcomeSection() {
       {/* Content Container with Safe Zone */}
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Text Area - Takes up top portion, leaving bottom 35% as safe zone */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-[50vh] md:pb-[45vh] pt-8">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-[50vh] md:pb-[45vh] pt-64">
           <motion.div
             className="container max-w-5xl text-center"
             initial={{ opacity: 0, y: 40 }}
@@ -57,28 +58,23 @@ export function WelcomeSection() {
             </motion.div>
 
             <motion.p
-              className="text-base sm:text-xl md:text-2xl !font-chivo font-light mb-4 md:mb-6 leading-relaxed max-w-xl md:max-w-3xl mx-auto"
+              className="text-sm sm:text-lg md:text-xl font-sans font-light mb-4 md:mb-6 leading-relaxed max-w-xl md:max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55' }} // Dark dusty rose
             >
-              Where artistry meets precision in every lash application.
-              Our studio is more than a beauty destination—it&apos;s a sanctuary
-              where confidence blooms and natural beauty is enhanced with
-              meticulous care and expertise.
+              We are a collective of women-owned beauty businesses who believe in low-maintenance morning routines, and the magic of a premium beauty experience.<br /><br />At LashPop Studios, we are committed to unmatched customer service, professionalism, studio atmosphere, and building trusted client relationships.
             </motion.p>
 
             <motion.p
-              className="text-sm sm:text-lg md:text-xl !font-chivo font-light mb-6 md:mb-8 leading-relaxed max-w-xl md:max-w-3xl mx-auto"
+              className="text-xs sm:text-base md:text-lg font-sans font-light mb-6 md:mb-8 leading-relaxed max-w-xl md:max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55', opacity: 0.9 }} // Slightly lighter
             >
-              Each service is tailored to your unique features, ensuring
-              results that feel authentically you. From classic elegance to
-              bold volume, we craft looks that elevate your natural radiance.
+              Our team specializes in eyelash extensions, lash lifts and tints, microblading, permanent makeup, brow shaping and tinting, brow laminations, customized facials and HydraFacials, waxing, Botox, and permanent jewelry and more.
             </motion.p>
 
             <motion.div

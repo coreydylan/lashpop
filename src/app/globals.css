@@ -1,5 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&family=Libre+Baskerville:ital@0;1&family=TikTok+Sans:wght@400;500;600;700&display=swap');
 
+@font-face {
+    font-family: 'Corey Nice';
+    src: url('/fonts/corey-nice/CoreyNice-Regular.woff2') format('woff2'),
+        url('/fonts/corey-nice/CoreyNice-Regular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
