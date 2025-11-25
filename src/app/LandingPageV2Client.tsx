@@ -22,6 +22,7 @@ import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { PanelStackContainer } from '@/components/panel-stack/PanelStackContainer';
 import { AutoDockOnScroll } from '@/components/panel-stack/AutoDockOnScroll';
 import { SectionTransition } from '@/components/landing-v2/transitions/SectionTransition';
+import { LashBlinkDivider } from '@/components/landing-v2/LashBlinkDivider';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -460,6 +461,9 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="hero">
                   <HeroSection reviewStats={reviewStats} />
                 </div>
+
+                {/* Lash Blink Divider - Animates at intersection */}
+                <LashBlinkDivider />
 
                 {/* Welcome to LashPop Section - Now standalone */}
                 <div className={isMobile ? "mobile-snap-section" : ""} data-section-id="welcome">
