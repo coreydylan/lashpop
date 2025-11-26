@@ -9,6 +9,9 @@ import 'mapbox-gl/dist/mapbox-gl.css'
 // Studio location - Oceanside, CA (you can update with exact coordinates)
 const STUDIO_LOCATION: [number, number] = [-117.3795, 33.1959]
 
+// Google Maps directions link (shared from Google Maps)
+const GOOGLE_MAPS_DIRECTIONS_URL = 'https://maps.app.goo.gl/mozm5VjGqw8qCuzL8'
+
 export function MapSection() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
@@ -102,7 +105,7 @@ export function MapSection() {
                 <h3 style="margin: 0 0 5px; color: #4a4a4a;">LashPop Studios</h3>
                 <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Oceanside, CA</p>
                 <a
-                  href="https://maps.google.com/?q=${STUDIO_LOCATION[1]},${STUDIO_LOCATION[0]}"
+                  href="${GOOGLE_MAPS_DIRECTIONS_URL}"
                   target="_blank"
                   rel="noopener noreferrer"
                   style="color: #d4907e; text-decoration: none; font-weight: 500;"
@@ -133,7 +136,7 @@ export function MapSection() {
   }, [isInView]) // Only re-run if isInView changes, ignore mapLoaded dependency to prevent loops
 
   return (
-    <section ref={ref} className="relative">
+    <section ref={ref} className="relative h-[100dvh] md:h-auto">
       {/* Section Header - Commented out as requested */}
       {/* <div className="container py-12">
         <motion.div
@@ -149,9 +152,9 @@ export function MapSection() {
         </motion.div>
       </div> */}
 
-      {/* Map Container - Made taller */}
+      {/* Map Container - Full viewport height on mobile, fixed on desktop */}
       <motion.div
-        className="relative w-full h-[500px] md:h-[600px]"
+        className="relative w-full h-full md:h-[600px]"
         initial={{ opacity: 0, y: 20 }}
         animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
         transition={{ duration: 0.8, delay: 0.2 }}
@@ -172,32 +175,29 @@ export function MapSection() {
           </div>
         )}
 
-        {/* Address Card Overlay */}
+        {/* Address Card Overlay - Desktop */}
         <motion.div
-          className="absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm"
+          className="hidden md:block absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm"
           initial={{ opacity: 0, x: -30 }}
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
           <h3 className="heading-4 text-dune mb-3">LashPop Studios</h3>
           <address className="body-text text-dune/70 not-italic mb-4">
-            123 Main Street<br />
+            429 S Coast Hwy<br />
             Oceanside, CA 92054
           </address>
-          <div className="space-y-2">
+          <div className="space-y-1">
             <p className="caption text-dune/70">
-              <span className="caption-bold">Mon-Fri:</span> 9:00 AM - 7:00 PM
+              <span className="caption-bold">Open Daily:</span> 8:00 AM – 7:30 PM
             </p>
-            <p className="caption text-dune/70">
-              <span className="caption-bold">Sat:</span> 10:00 AM - 6:00 PM
-            </p>
-            <p className="caption text-dune/70">
-              <span className="caption-bold">Sun:</span> By appointment
+            <p className="caption text-dune/50 text-sm">
+              By Appointment Only
             </p>
           </div>
           <div className="mt-4 pt-4 border-t border-sage/10">
             <a
-              href={`https://maps.google.com/?q=${STUDIO_LOCATION[1]},${STUDIO_LOCATION[0]}`}
+              href={GOOGLE_MAPS_DIRECTIONS_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-dusty-rose hover:text-dusty-rose/80 transition-colors"
@@ -208,6 +208,43 @@ export function MapSection() {
               </svg>
               <span className="caption-bold">Get Directions</span>
             </a>
+          </div>
+        </motion.div>
+
+        {/* Address Card Overlay - Mobile, positioned at bottom of map */}
+        <motion.div
+          className="md:hidden absolute bottom-32 left-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl z-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="heading-4 text-dune leading-tight">LashPop Studios</h3>
+              <address className="caption text-dune/70 not-italic mt-1">
+                429 S Coast Hwy, Oceanside, CA 92054
+              </address>
+            </div>
+            <a
+              href={GOOGLE_MAPS_DIRECTIONS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 inline-flex items-center gap-1.5 text-dusty-rose hover:text-dusty-rose/80 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="caption-bold">Directions</span>
+            </a>
+          </div>
+          <div className="mt-2">
+            <p className="caption text-dune/70">
+              <span className="caption-bold">Open Daily</span> 8A–7:30P
+            </p>
+            <p className="caption text-dune/50 text-xs mt-0.5">
+              By Appointment Only
+            </p>
           </div>
         </motion.div>
       </motion.div>

@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Instagram, Phone, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { X, Calendar, Instagram, Phone, ChevronLeft, ChevronRight, MapPin, Star, Sparkles } from 'lucide-react';
 import Image from 'next/image';
+import { useSwipeable } from 'react-swipeable';
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext';
 import type { Provider } from '@/types/orchestrator';
 
@@ -28,9 +29,19 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [isMobile, setIsMobile] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const { portfolio, viewport, selectedProviders } = state;
   const { providerId, state: portfolioState, withBookingPanel } = portfolio;
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Get the selected provider from orchestrator state (real data!)
   const provider: Provider | null = selectedProviders.length > 0
@@ -130,10 +141,350 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
     actions.closePortfolio();
   };
 
+  // Swipe handlers for mobile photo gallery
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (photos.length > 1) {
+        setCurrentPhotoIndex((prev) => (prev + 1) % photos.length);
+      }
+    },
+    onSwipedRight: () => {
+      if (photos.length > 1) {
+        setCurrentPhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+      }
+    },
+    trackMouse: false,
+    trackTouch: true,
+    preventScrollOnSwipe: true,
+  });
+
   if (!provider || portfolio.state === 'closed') {
     return null;
   }
 
+  // ============================================
+  // MOBILE FULL-SCREEN LAYOUT
+  // ============================================
+  if (isMobile) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ y: '100%', opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0 }}
+          transition={{
+            type: 'spring',
+            stiffness: 300,
+            damping: 30,
+            opacity: { duration: 0.3 },
+          }}
+          className="fixed inset-0 bg-cream z-50 overflow-hidden flex flex-col"
+          style={{ height: '100dvh' }}
+        >
+          {/* Mobile Header - Floating glass header */}
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="absolute top-0 left-0 right-0 z-20 safe-area-top"
+          >
+            <div className="flex items-center justify-between px-4 py-3 bg-cream/80 backdrop-blur-xl">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={handleClose}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/80 shadow-sm"
+                aria-label="Close"
+              >
+                <ChevronLeft className="w-6 h-6 text-dune" />
+              </motion.button>
+
+              <div className="flex items-center gap-2">
+                {provider.instagram && (
+                  <motion.a
+                    whileTap={{ scale: 0.9 }}
+                    href={`https://instagram.com/${provider.instagram}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white/80 shadow-sm"
+                    aria-label="Instagram"
+                  >
+                    <Instagram className="w-5 h-5 text-dune" />
+                  </motion.a>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Scrollable Content */}
+          <div
+            ref={contentRef}
+            className="flex-1 overflow-y-auto overscroll-contain"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
+            {/* Hero Photo Section with Provider Overlay */}
+            <div className="relative">
+              {/* Photo Carousel */}
+              <div {...swipeHandlers} className="relative aspect-[3/4] bg-warm-sand/20 overflow-hidden">
+                {isLoading ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-warm-sand/10">
+                    <div className="w-10 h-10 border-4 border-dusty-rose border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : photos.length > 0 ? (
+                  <>
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={currentPhotoIndex}
+                        initial={{ opacity: 0, scale: 1.05 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="absolute inset-0"
+                      >
+                        <Image
+                          src={photos[currentPhotoIndex].url}
+                          alt={photos[currentPhotoIndex].caption || 'Portfolio photo'}
+                          fill
+                          className="object-cover"
+                          style={{
+                            objectPosition: photos[currentPhotoIndex].cropData
+                              ? `${photos[currentPhotoIndex].cropData!.x}% ${photos[currentPhotoIndex].cropData!.y}%`
+                              : 'center',
+                          }}
+                          priority
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Photo Dots Indicator */}
+                    {photos.length > 1 && (
+                      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                        {photos.map((_, idx) => (
+                          <motion.button
+                            key={idx}
+                            onClick={() => setCurrentPhotoIndex(idx)}
+                            className={`rounded-full transition-all ${
+                              idx === currentPhotoIndex
+                                ? 'w-6 h-2 bg-white'
+                                : 'w-2 h-2 bg-white/50'
+                            }`}
+                            whileTap={{ scale: 0.8 }}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Swipe hint on first photo */}
+                    {photos.length > 1 && currentPhotoIndex === 0 && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ delay: 1 }}
+                        className="absolute bottom-28 left-1/2 -translate-x-1/2 text-white/70 text-xs flex items-center gap-1"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>Swipe for more</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </motion.div>
+                    )}
+                  </>
+                ) : (
+                  // No photos - Show provider image as hero
+                  <Image
+                    src={provider.imageUrl}
+                    alt={provider.name}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                )}
+
+                {/* Gradient overlay for text readability */}
+                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-cream via-cream/80 to-transparent" />
+              </div>
+
+              {/* Provider Info Card - Overlapping the photo */}
+              <div className="relative -mt-16 px-5">
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-white rounded-3xl shadow-xl p-5 border border-sage/5"
+                >
+                  {/* Avatar + Name row */}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden ring-2 ring-dusty-rose/20 flex-shrink-0 shadow-lg">
+                      <Image
+                        src={provider.imageUrl}
+                        alt={provider.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h1 className="font-serif text-2xl text-dune leading-tight">
+                        {provider.name}
+                      </h1>
+                      <p className="text-dusty-rose font-medium text-sm mt-0.5">
+                        {provider.role}
+                      </p>
+                      {/* Quick stats */}
+                      <div className="flex items-center gap-3 mt-2">
+                        <div className="flex items-center gap-1 text-sage text-xs">
+                          <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                          <span>5.0</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-sage text-xs">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>{provider.specialties.length} specialties</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quote (if available) */}
+                  {provider.quote && (
+                    <blockquote className="text-sage/80 text-sm italic leading-relaxed border-l-2 border-dusty-rose/30 pl-3 mb-4">
+                      &ldquo;{provider.quote}&rdquo;
+                    </blockquote>
+                  )}
+
+                  {/* Book Button */}
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleBookWithProvider}
+                    className="w-full py-4 bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white rounded-2xl font-semibold shadow-lg shadow-dusty-rose/25 flex items-center justify-center gap-2 text-base"
+                  >
+                    <Calendar className="w-5 h-5" />
+                    Book with {provider.name.split(' ')[0]}
+                  </motion.button>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Content Sections */}
+            <div className="px-5 py-6 space-y-6">
+              {/* Bio Section */}
+              {provider.bio && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <h3 className="font-serif text-lg text-dune mb-3">About</h3>
+                  <p className="text-sage leading-relaxed text-sm">{provider.bio}</p>
+                </motion.div>
+              )}
+
+              {/* Specialties Section */}
+              {provider.specialties.length > 0 && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.35 }}
+                >
+                  <h3 className="font-serif text-lg text-dune mb-3">Specialties</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {provider.specialties.map((specialty, idx) => (
+                      <span
+                        key={idx}
+                        className="px-4 py-2 bg-sage/8 text-sage rounded-full text-sm font-medium border border-sage/10"
+                      >
+                        {specialty}
+                      </span>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Fun Facts Section */}
+              {provider.funFacts && provider.funFacts.length > 0 && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5"
+                >
+                  <h3 className="font-serif text-lg text-dune mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-dusty-rose" />
+                    Fun Facts
+                  </h3>
+                  <ul className="space-y-3">
+                    {provider.funFacts.map((fact, idx) => (
+                      <li key={idx} className="text-sm text-dune/80 flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-dusty-rose/20 flex items-center justify-center flex-shrink-0 text-dusty-rose text-xs font-semibold">
+                          {idx + 1}
+                        </span>
+                        <span className="leading-relaxed">{fact}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              )}
+
+              {/* Photo Thumbnails (if multiple photos) */}
+              {photos.length > 1 && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.45 }}
+                >
+                  <h3 className="font-serif text-lg text-dune mb-3">Portfolio</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {photos.map((photo, idx) => (
+                      <motion.button
+                        key={photo.id}
+                        onClick={() => setCurrentPhotoIndex(idx)}
+                        className={`relative aspect-square rounded-xl overflow-hidden ${
+                          idx === currentPhotoIndex
+                            ? 'ring-2 ring-dusty-rose shadow-lg'
+                            : 'opacity-70'
+                        }`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Image
+                          src={photo.url}
+                          alt={photo.caption || `Photo ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Bottom spacer for safe area */}
+              <div className="h-24" />
+            </div>
+          </div>
+
+          {/* Fixed Bottom CTA (always visible) */}
+          <motion.div
+            initial={{ y: 100 }}
+            animate={{ y: 0 }}
+            transition={{ delay: 0.3, type: 'spring', stiffness: 300, damping: 30 }}
+            className="absolute bottom-0 left-0 right-0 safe-area-bottom bg-white/90 backdrop-blur-xl border-t border-sage/10"
+          >
+            <div className="px-5 py-4">
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleBookWithProvider}
+                className="w-full py-4 bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white rounded-2xl font-semibold shadow-xl shadow-dusty-rose/30 flex items-center justify-center gap-2 text-base"
+              >
+                <Calendar className="w-5 h-5" />
+                Book Appointment
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
+
+  // ============================================
+  // DESKTOP LAYOUT (Original)
+  // ============================================
   return (
     <AnimatePresence>
       <motion.div

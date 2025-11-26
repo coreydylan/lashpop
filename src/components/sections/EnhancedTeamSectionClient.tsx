@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
@@ -47,11 +48,43 @@ interface EnhancedTeamSectionClientProps {
 
 export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] }: EnhancedTeamSectionClientProps) {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
+  const [selectedMemberIndex, setSelectedMemberIndex] = useState<number>(0)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)
   const sectionRef = useRef<HTMLElement>(null)
+
+  // Navigation functions for swiping between team members
+  const goToNextMember = () => {
+    const nextIndex = (selectedMemberIndex + 1) % teamMembers.length
+    setSwipeDirection('left')
+    setSelectedMemberIndex(nextIndex)
+    setSelectedMember(teamMembers[nextIndex])
+  }
+
+  const goToPrevMember = () => {
+    const prevIndex = selectedMemberIndex === 0 ? teamMembers.length - 1 : selectedMemberIndex - 1
+    setSwipeDirection('right')
+    setSelectedMemberIndex(prevIndex)
+    setSelectedMember(teamMembers[prevIndex])
+  }
+
+  // Handle selecting a member (also tracks index)
+  const handleSelectMember = (member: TeamMember) => {
+    const index = teamMembers.findIndex(m => m.id === member.id)
+    setSelectedMemberIndex(index >= 0 ? index : 0)
+    setSelectedMember(member)
+    setSwipeDirection(null)
+    setShowModal(true)
+  }
   const isInView = useInView(sectionRef, { once: true, margin: "-20%" })
+
+  // Track mounted state for portal
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Initialize Embla Carousel for mobile
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -98,8 +131,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   }, [emblaApi, isInView, isMobile])
 
   const handleMemberClick = (member: TeamMember) => {
-    setSelectedMember(member)
-    setShowModal(true)
+    handleSelectMember(member)
   }
 
   const isHighlighted = (memberId: number) => highlights.includes(memberId.toString())
@@ -335,161 +367,327 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         )}
       </section>
 
-      {/* Team Member Modal */}
-      <AnimatePresence>
-        {showModal && selectedMember && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowModal(false)}
-            />
-
-            {/* Modal Content */}
-            <motion.div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
+      {/* Team Member Modal - Full Screen on Mobile (Portaled to body) */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {showModal && selectedMember && (
+            <>
+              {/* Backdrop - Hidden on mobile (full screen takeover) */}
               <motion.div
-                className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto"
-                initial={{ scale: 0.9, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 20 }}
-                transition={{ type: "spring", damping: 20 }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] hidden md:block"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowModal(false)}
+              />
+
+              {/* Modal Content - z-[10000] to appear above everything */}
+              <motion.div
+                className="fixed inset-0 z-[10000] md:flex md:items-center md:justify-center md:p-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+              {/* Mobile: Full screen | Desktop: Centered modal */}
+              <motion.div
+                className="bg-cream md:bg-white/95 md:backdrop-blur-xl md:rounded-3xl md:shadow-2xl md:max-w-4xl w-full h-full md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col"
+                initial={{ y: isMobile ? '100%' : 20, scale: isMobile ? 1 : 0.9 }}
+                animate={{ y: 0, scale: 1 }}
+                exit={{ y: isMobile ? '100%' : 20, scale: isMobile ? 1 : 0.9 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Close Button */}
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md border border-white/60 flex items-center justify-center hover:bg-white transition-all"
-                >
-                  <X className="w-5 h-5 text-dune" />
-                </button>
+                {/* ===== MOBILE LAYOUT ===== */}
+                {isMobile ? (
+                  <div
+                    className="flex flex-col h-full relative"
+                    style={{ height: '100dvh' }}
+                    onTouchStart={(e) => {
+                      const touch = e.touches[0]
+                      ;(e.currentTarget as HTMLDivElement).dataset.touchStartX = touch.clientX.toString()
+                      ;(e.currentTarget as HTMLDivElement).dataset.touchStartY = touch.clientY.toString()
+                    }}
+                    onTouchEnd={(e) => {
+                      const target = e.currentTarget as HTMLDivElement
+                      const startX = parseFloat(target.dataset.touchStartX || '0')
+                      const startY = parseFloat(target.dataset.touchStartY || '0')
+                      const touch = e.changedTouches[0]
+                      const deltaX = touch.clientX - startX
+                      const deltaY = touch.clientY - startY
 
-                {/* Modal Header with Image */}
-                <div className="relative h-80 rounded-t-3xl overflow-hidden">
-                  <Image
-                    src={selectedMember.image}
-                    alt={selectedMember.name}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                  {/* Header Content */}
-                  <div className="absolute bottom-6 left-8 right-8">
-                    <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
-                      {selectedMember.name}
-                    </h2>
-                    <p className="text-lg text-white/90 drop-shadow-md">
-                      {selectedMember.role}
-                    </p>
-                    {selectedMember.type === 'independent' && selectedMember.businessName && (
-                      <p className="text-sm text-white/80 italic mt-1 drop-shadow-md">
-                        {selectedMember.businessName}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Modal Body */}
-                <div className="p-8 space-y-6">
-                  {/* Category Tags */}
-                  {getTeamMemberCategories(selectedMember.specialties).length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
-                        <span
-                          key={idx}
-                          className="px-4 py-2 rounded-full bg-dusty-rose/10 border border-dusty-rose/20 text-sm font-medium text-dune"
+                      // Only trigger swipe if horizontal movement > vertical and exceeds threshold
+                      const threshold = 80
+                      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5 && Math.abs(deltaX) > threshold) {
+                        if (deltaX > 0) {
+                          goToPrevMember()
+                        } else {
+                          goToNextMember()
+                        }
+                      }
+                    }}
+                  >
+                    {/* Floating Header - with close button and pagination */}
+                    <div className="absolute top-0 left-0 right-0 z-20 safe-area-top">
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => setShowModal(false)}
+                          className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md"
+                          aria-label="Close"
                         >
-                          {category}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                          <X className="w-5 h-5 text-white" />
+                        </motion.button>
 
-                  {/* Bio Section */}
-                  {selectedMember.bio && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-dune mb-3">About</h3>
-                      <p className="text-dune/70 leading-relaxed">{selectedMember.bio}</p>
-                    </div>
-                  )}
+                        {/* Pagination dots */}
+                        <div className="flex items-center gap-1.5">
+                          {teamMembers.map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                                idx === selectedMemberIndex
+                                  ? 'bg-white w-4'
+                                  : 'bg-white/40'
+                              }`}
+                            />
+                          ))}
+                        </div>
 
-                  {/* Quote */}
-                  {selectedMember.quote && (
-                    <div className="bg-sage/10 rounded-2xl p-6 border border-sage/20">
-                      <Sparkles className="w-5 h-5 text-sage mb-3" />
-                      <p className="text-dune/80 italic">&ldquo;{selectedMember.quote}&rdquo;</p>
-                    </div>
-                  )}
-
-                  {/* Specialties List */}
-                  {selectedMember.specialties.length > 0 && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-dune mb-3">Specialties</h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        {selectedMember.specialties.map((specialty, idx) => (
-                          <div key={idx} className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-dusty-rose" />
-                            <span className="text-dune/70 text-sm">{specialty}</span>
-                          </div>
-                        ))}
+                        <div className="flex items-center gap-2">
+                          {selectedMember.instagram && (
+                            <a
+                              href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md"
+                            >
+                              <Instagram className="w-5 h-5 text-white" />
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  )}
 
-                  {/* Fun Fact */}
-                  {selectedMember.funFact && (
-                    <div className="bg-golden/10 rounded-2xl p-6 border border-golden/20">
-                      <h3 className="text-sm font-semibold text-dune mb-2">Fun Fact</h3>
-                      <p className="text-dune/70">{selectedMember.funFact}</p>
-                    </div>
-                  )}
-
-                  {/* Contact & Booking */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                    <a
-                      href={`tel:${selectedMember.phone}`}
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
-                    >
-                      <Phone className="w-4 h-4" />
-                      <span className="font-medium">Call</span>
-                    </a>
-
-                    {selectedMember.instagram && (
-                      <a
-                        href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
+                    {/* Scrollable Content with swipe animation */}
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={selectedMember.id}
+                        className="flex-1 overflow-y-auto overscroll-contain"
+                        style={{ WebkitOverflowScrolling: 'touch' }}
+                        initial={{ opacity: 0, x: swipeDirection === 'left' ? 100 : swipeDirection === 'right' ? -100 : 0 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0 }}
+                        transition={{ duration: 0.25, ease: 'easeOut' }}
                       >
-                        <Instagram className="w-4 h-4" />
-                        <span className="font-medium">Instagram</span>
-                      </a>
-                    )}
+                        {/* Hero Image Section */}
+                        <div className="relative">
+                          <div className="relative aspect-[3/4] overflow-hidden">
+                            <Image
+                              src={selectedMember.image}
+                              alt={selectedMember.name}
+                              fill
+                              className="object-cover"
+                              priority
+                            />
+                            {/* Gradient overlay */}
+                            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-cream via-cream/80 to-transparent" />
+                          </div>
 
-                    <a
-                      href={selectedMember.bookingUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-dusty-rose text-white hover:bg-dusty-rose/90 transition-all"
-                    >
-                      <Calendar className="w-4 h-4" />
-                      <span className="font-medium">Book Now</span>
-                    </a>
+                        {/* Info Card - Overlapping the photo */}
+                        <div className="relative -mt-16 px-5">
+                          <div className="bg-white rounded-3xl shadow-xl p-5 border border-sage/5">
+                            {/* Name and affiliation */}
+                            <div>
+                              <h1 className="font-serif text-2xl text-dune leading-tight">
+                                {selectedMember.name}
+                              </h1>
+                              <p className="text-dusty-rose font-medium text-sm mt-0.5">
+                                {selectedMember.type === 'independent' && selectedMember.businessName
+                                  ? selectedMember.businessName
+                                  : 'LashPop Artist'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Content Sections */}
+                      <div className="px-5 py-6 space-y-6">
+                        {/* Bio Section */}
+                        {selectedMember.bio && (
+                          <div>
+                            <h3 className="font-serif text-lg text-dune mb-3">About</h3>
+                            <p className="text-sage leading-relaxed text-sm">{selectedMember.bio}</p>
+                          </div>
+                        )}
+
+                        {/* Category Tags */}
+                        {getTeamMemberCategories(selectedMember.specialties).length > 0 && (
+                          <div>
+                            <h3 className="font-serif text-lg text-dune mb-3">Services</h3>
+                            <div className="flex flex-wrap gap-2">
+                              {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-4 py-2 bg-sage/8 text-sage rounded-full text-sm font-medium border border-sage/10"
+                                >
+                                  {category}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Fun Fact */}
+                        {selectedMember.funFact && (
+                          <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
+                            <h3 className="font-serif text-lg text-dune mb-2 flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-dusty-rose" />
+                              Fun Fact
+                            </h3>
+                            <p className="text-dune/80 text-sm leading-relaxed">{selectedMember.funFact}</p>
+                          </div>
+                        )}
+
+                        {/* Bottom spacer for safe area */}
+                        <div className="h-8 safe-area-bottom" />
+                      </div>
+                    </motion.div>
+                  </AnimatePresence>
                   </div>
-                </div>
+                ) : (
+                  /* ===== DESKTOP LAYOUT (Original) ===== */
+                  <div className="overflow-y-auto">
+                    {/* Close Button */}
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md border border-white/60 flex items-center justify-center hover:bg-white transition-all"
+                    >
+                      <X className="w-5 h-5 text-dune" />
+                    </button>
+
+                    {/* Modal Header with Image */}
+                    <div className="relative h-80 rounded-t-3xl overflow-hidden">
+                      <Image
+                        src={selectedMember.image}
+                        alt={selectedMember.name}
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                      {/* Header Content */}
+                      <div className="absolute bottom-6 left-8 right-8">
+                        <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+                          {selectedMember.name}
+                        </h2>
+                        <p className="text-lg text-white/90 drop-shadow-md">
+                          {selectedMember.role}
+                        </p>
+                        {selectedMember.type === 'independent' && selectedMember.businessName && (
+                          <p className="text-sm text-white/80 italic mt-1 drop-shadow-md">
+                            {selectedMember.businessName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Modal Body */}
+                    <div className="p-8 space-y-6">
+                      {/* Category Tags */}
+                      {getTeamMemberCategories(selectedMember.specialties).length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
+                            <span
+                              key={idx}
+                              className="px-4 py-2 rounded-full bg-dusty-rose/10 border border-dusty-rose/20 text-sm font-medium text-dune"
+                            >
+                              {category}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Bio Section */}
+                      {selectedMember.bio && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-dune mb-3">About</h3>
+                          <p className="text-dune/70 leading-relaxed">{selectedMember.bio}</p>
+                        </div>
+                      )}
+
+                      {/* Quote */}
+                      {selectedMember.quote && (
+                        <div className="bg-sage/10 rounded-2xl p-6 border border-sage/20">
+                          <Sparkles className="w-5 h-5 text-sage mb-3" />
+                          <p className="text-dune/80 italic">&ldquo;{selectedMember.quote}&rdquo;</p>
+                        </div>
+                      )}
+
+                      {/* Specialties List */}
+                      {selectedMember.specialties.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-dune mb-3">Specialties</h3>
+                          <div className="grid grid-cols-2 gap-3">
+                            {selectedMember.specialties.map((specialty, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full bg-dusty-rose" />
+                                <span className="text-dune/70 text-sm">{specialty}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Fun Fact */}
+                      {selectedMember.funFact && (
+                        <div className="bg-golden/10 rounded-2xl p-6 border border-golden/20">
+                          <h3 className="text-sm font-semibold text-dune mb-2">Fun Fact</h3>
+                          <p className="text-dune/70">{selectedMember.funFact}</p>
+                        </div>
+                      )}
+
+                      {/* Contact & Booking */}
+                      <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                        <a
+                          href={`tel:${selectedMember.phone}`}
+                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
+                        >
+                          <Phone className="w-4 h-4" />
+                          <span className="font-medium">Call</span>
+                        </a>
+
+                        {selectedMember.instagram && (
+                          <a
+                            href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
+                          >
+                            <Instagram className="w-4 h-4" />
+                            <span className="font-medium">Instagram</span>
+                          </a>
+                        )}
+
+                        <a
+                          href={selectedMember.bookingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-dusty-rose text-white hover:bg-dusty-rose/90 transition-all"
+                        >
+                          <Calendar className="w-4 h-4" />
+                          <span className="font-medium">Book Now</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
     </>
   )
 }

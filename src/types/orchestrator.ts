@@ -32,6 +32,8 @@ export interface Provider {
   quote?: string;
   funFacts?: string[];
   type: 'employee' | 'independent';
+  instagram?: string;
+  phone?: string;
 }
 
 export interface QuizResults {

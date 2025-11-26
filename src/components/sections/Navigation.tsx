@@ -89,7 +89,7 @@ export function Navigation() {
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
-          isScrolled ? 'glass backdrop-blur-md py-4' : 'py-6'
+          isScrolled ? 'glass backdrop-blur-md py-4' : 'py-6 md:bg-transparent glass md:glass-none backdrop-blur-md md:backdrop-blur-none'
         }`}
       >
         <div className="w-full px-6 md:px-12">

@@ -10,6 +10,9 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
 }
 
+// Event name for FAQ interaction changes
+const FAQ_INTERACTION_EVENT = 'faq-interaction-change'
+
 // Per-section snap configuration
 export interface SectionSnapConfig {
   threshold: number      // 0-1, how sensitive (higher = more likely to snap)
@@ -40,7 +43,11 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     // Team, Instagram, Reviews: original was 33%, try 15% to scroll a bit more
     'team': { threshold: 0.6, anchorOffset: vh * 0.15 },
     'instagram': { threshold: 0.6, anchorOffset: vh * 0.15 },
-    'reviews': { threshold: 0.6, anchorOffset: vh * 0.15 },
+    'reviews': { threshold: 0.6, anchorOffset: vh * 0.10 },
+    // FAQ: snap so chips dock right below header (80px from top)
+    'faq': { threshold: 0.5, anchorOffset: 80 },
+    // Map: snap to top so full viewport map + card is visible
+    'map': { threshold: 0.5, anchorOffset: 0 },
   }
 }
 
@@ -57,6 +64,18 @@ export function useMobileGSAPScroll({
   const isSnappingRef = useRef(false)
   const scrollTriggersRef = useRef<ScrollTrigger[]>([])
   const containerRef = useRef<HTMLElement | null>(null)
+  const faqInteractingRef = useRef(false)
+
+  // Listen for FAQ interaction state changes
+  useEffect(() => {
+    const handleFAQInteraction = (e: Event) => {
+      const customEvent = e as CustomEvent<{ isInteracting: boolean }>
+      faqInteractingRef.current = customEvent.detail?.isInteracting ?? false
+    }
+
+    window.addEventListener(FAQ_INTERACTION_EVENT, handleFAQInteraction)
+    return () => window.removeEventListener(FAQ_INTERACTION_EVENT, handleFAQInteraction)
+  }, [])
 
   // Merge default configs with custom configs
   const mergedConfigs = { ...getDefaultSectionConfigs(), ...sectionConfigs }
@@ -171,7 +190,6 @@ export function useMobileGSAPScroll({
       sections.forEach((section, index) => {
         const config = getConfigForSection(section)
         const sectionTop = section.offsetTop
-        const sectionHeight = section.offsetHeight
 
         // The "ideal" scroll position for this section (where it would be anchored)
         const idealScrollPos = sectionTop - config.anchorOffset
@@ -187,6 +205,15 @@ export function useMobileGSAPScroll({
 
       const targetSection = sections[closestIndex]
       if (!targetSection) return
+
+      const targetSectionId = targetSection.getAttribute('data-section-id') || ''
+
+      // Skip snapping for FAQ section when user is interacting with it
+      if (targetSectionId === 'faq' && faqInteractingRef.current) {
+        // Still update section tracking, just don't auto-snap
+        currentSectionRef.current = closestIndex
+        return
+      }
 
       const config = getConfigForSection(targetSection)
       const idealScrollPos = targetSection.offsetTop - config.anchorOffset

@@ -631,6 +631,32 @@ a,
     filter: brightness(1.15) saturate(1.4);
   }
 
+  /* Mapbox Navigation Controls - smaller on mobile */
+  .mapboxgl-ctrl-group {
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  }
+
+  .mapboxgl-ctrl-group button {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
+    background-size: 16px 16px !important;
+  }
+
+  @media (min-width: 768px) {
+    .mapboxgl-ctrl-group button {
+      width: 36px !important;
+      height: 36px !important;
+    }
+
+    .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
+      background-size: 18px 18px !important;
+    }
+  }
+
   /* V2 Theme Overrides */
   .theme-v2 {
     --font-serif: var(--font-josefin);

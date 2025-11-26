@@ -381,7 +381,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
             ref={emblaRef}
             className="review-carousel overflow-hidden cursor-grab active:cursor-grabbing"
           >
-            <div className="flex touch-pan-y pl-4 lg:pl-[calc(50vw-240px)] py-10">
+            <div className="flex touch-pan-y pl-4 lg:pl-[calc(50vw-240px)] py-4 md:py-10">
               {reviews.map((review, index) => (
                 <div 
                   key={review.id} 
@@ -400,7 +400,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                     whileHover={{ y: -4, transition: { duration: 0.2 } }}
                   >
                     {/* Frosted Glass Card */}
-                    <div className="bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/60 relative overflow-hidden group h-[280px] flex flex-col w-full">
+                    <div className="bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/60 relative overflow-hidden group h-[420px] md:h-[280px] flex flex-col w-full">
                       {/* Subtle gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-br from-dusty-rose/3 via-transparent to-sage/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

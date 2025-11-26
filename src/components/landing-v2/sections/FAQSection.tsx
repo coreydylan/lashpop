@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
 
@@ -30,12 +30,25 @@ interface FAQSectionProps {
   featuredItems: FAQWithCategory[]
 }
 
+// Custom event to signal FAQ interaction state changes
+const FAQ_INTERACTION_EVENT = 'faq-interaction-change'
+
+export function dispatchFAQInteraction(isInteracting: boolean) {
+  window.dispatchEvent(new CustomEvent(FAQ_INTERACTION_EVENT, {
+    detail: { isInteracting }
+  }))
+}
+
 export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSectionProps) {
   const ref = useRef(null)
+  const faqListRef = useRef<HTMLDivElement>(null)
+  const stickyHeaderRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: "-10%" })
   const [expandedIndex, setExpandedIndex] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('top-faqs')
   const [isMobile, setIsMobile] = useState(false)
+  const [isInteracting, setIsInteracting] = useState(false)
+  const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -46,7 +59,62 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Signal interaction state to GSAP scroll system
+  const setFAQInteracting = useCallback((interacting: boolean) => {
+    setIsInteracting(interacting)
+    dispatchFAQInteraction(interacting)
+  }, [])
+
+  // Reset interaction state when user scrolls away from FAQ section
+  useEffect(() => {
+    if (!isMobile) return
+
+    const handleSectionChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ sectionId: string }>
+      if (customEvent.detail?.sectionId !== 'faq' && isInteracting) {
+        setFAQInteracting(false)
+      }
+    }
+
+    window.addEventListener('section-locked', handleSectionChange)
+    return () => window.removeEventListener('section-locked', handleSectionChange)
+  }, [isMobile, isInteracting, setFAQInteracting])
+
+  // Scroll to align first FAQ card with bottom of sticky header when category changes
+  const handleCategoryChange = (categoryId: string) => {
+    setActiveCategory(categoryId)
+    setExpandedIndex(null) // Close any expanded FAQ
+
+    // On mobile, scroll to position first card below sticky header
+    if (isMobile && faqListRef.current) {
+      // Temporarily disable GSAP snap, scroll to top of list, then re-enable interaction mode
+      setFAQInteracting(true)
+
+      setTimeout(() => {
+        const headerHeight = 80 // Fixed header height
+        const stickyChipsHeight = stickyHeaderRef.current?.offsetHeight || 60
+        const totalOffset = headerHeight + stickyChipsHeight + 8
+
+        // Use getBoundingClientRect to get position relative to viewport
+        const faqListRect = faqListRef.current!.getBoundingClientRect()
+
+        // Get the mobile scroll container
+        const container = document.querySelector('.mobile-scroll-container')
+        if (container) {
+          const currentScrollTop = container.scrollTop
+          // Calculate target: current scroll + how far the list is from where it should be
+          const targetScrollY = currentScrollTop + faqListRect.top - totalOffset
+          container.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+        }
+      }, 50) // Small delay to let the DOM update
+    }
+  }
+
   const toggleFAQ = (id: string) => {
+    // Mark as interacting when user opens/closes FAQ cards on mobile
+    if (isMobile && !isInteracting) {
+      setFAQInteracting(true)
+    }
     setExpandedIndex(expandedIndex === id ? null : id)
   }
 
@@ -103,7 +171,8 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
       <div className="container max-w-4xl">
         {/* Category Sorter - Beautiful Frosted Glass Chips */}
         <motion.div
-          className="mb-12"
+          ref={stickyHeaderRef}
+          className="mb-6 md:mb-12 sticky md:static top-[80px] z-50 glass backdrop-blur-md pt-4 pb-4 -mt-4 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
@@ -128,7 +197,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
               {categoryOptions.map((category, index) => (
                 <motion.button
                   key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
+                  onClick={() => handleCategoryChange(category.id)}
                   className="relative group shrink-0"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
@@ -161,6 +230,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
 
         {/* FAQ Items */}
         <motion.div
+          ref={faqListRef}
           className="space-y-4"
           layout
         >

@@ -102,37 +102,35 @@ export function FounderLetterSection() {
 
       {/* Desktop/Tablet Layout - GSAP ScrollTrigger pinning */}
       <div ref={desktopSectionRef} className="hidden md:block relative z-20 overflow-hidden">
-        <div ref={desktopContentRef} className="min-h-screen flex flex-col justify-end will-change-transform">
-          {/* Content Container - sits at bottom of viewport */}
-          <div className="container flex justify-between items-end gap-12 pb-0">
+        <div ref={desktopContentRef} className="h-screen flex flex-col justify-between will-change-transform pt-[calc(96px+3vh)]">
+          {/* Spacer to push content down from docked panels */}
+          <div className="flex-shrink-0" />
+          {/* Content Container - bottom-aligned with arch touching viewport bottom */}
+          <div className="container flex justify-between items-end gap-12">
             {/* Letter Content - Left Side */}
             <div
               ref={letterRef}
-              className="max-w-2xl z-30 pb-16"
+              className="max-w-2xl z-30 pb-[16vh]"
             >
               {/* SVG Letter Graphic */}
-              <div className="relative w-full text-[#8a5e55] text-xl md:text-2xl leading-relaxed font-normal font-swanky">
-                <p className="mb-6">Dear Beautiful Soul,</p>
-                
-                <p className="mb-6">
-                  When I started LashPop, I wanted to build something simple: a place where you actually feel taken care of. A space where you can exhale for an hour, maybe catch a quick nap, and walk out feeling like the best version of yourself.
+              <div className="relative w-full text-[#8a5e55] text-[clamp(1.1rem,1.6vw,1.6rem)] leading-relaxed font-normal font-swanky">
+                <p className="mb-[1.5vh]">Dear Beautiful Soul,</p>
+
+                <p className="mb-[1.5vh]">
+                  When I started LashPop, I wanted to build something simple: a place where you actually feel taken care of.
                 </p>
 
-                <p className="mb-6">
-                  Our team is united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that &ldquo;just woke up from eight blissful hours&rdquo; look with little effort (even if your reality looks more like five). We&apos;re not here to judge ;)
+                <p className="mb-[1.5vh]">
+                  We&apos;re all united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that &ldquo;just woke up from eight blissful hours&rdquo; look with little effort (even if your reality looks more like five). We&apos;re not here to judge ;)
                 </p>
 
-                <p className="mb-6">
-                  Every artist here brings something different to the table, but we all share the same obsession with getting it right. The details matter to us because we know they matter to you.
+                <p className="mb-[2vh]">
+                  Thank you for trusting us. We can&apos;t wait to see you.
                 </p>
 
-                <p className="mb-8">
-                  Thank you for trusting us with your beauty routine. We don&apos;t take that lightly, and we can&apos;t wait to welcome you in.
-                </p>
-
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-[0.5vh]">
                   <p>With love and lashes,</p>
-                  <p className="text-2xl md:text-3xl">The LashPop Family</p>
+                  <p className="text-[clamp(1.35rem,2.2vw,2rem)]">Emily and the LashPop Family</p>
                 </div>
               </div>
 
@@ -151,7 +149,7 @@ export function FounderLetterSection() {
             {/* Arch Image - Right Side, bottom-aligned */}
             <div
               ref={archRef}
-              className="relative flex-1 max-w-lg"
+              className="relative w-[35vw] max-w-[485px] flex-shrink-0"
             >
               {/* Decorative circle background - contained within section */}
               <div
@@ -165,8 +163,8 @@ export function FounderLetterSection() {
                     <Image
                       src="/lashpop-images/emily-arch.png"
                       alt="Emily in decorative arch"
-                      width={500}
-                      height={600}
+                      width={600}
+                      height={720}
                       style={{ width: '100%', height: 'auto' }}
                       className="relative z-10 drop-shadow-2xl"
                     />
