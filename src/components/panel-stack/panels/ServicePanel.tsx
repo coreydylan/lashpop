@@ -886,17 +886,6 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                   display: block !important;
                 }
 
-                /* Gradient mask at top to smooth the crop edge */
-                .vagaro-crop-mask {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  right: 0;
-                  height: 40px;
-                  background: linear-gradient(to bottom, rgb(250, 247, 241) 0%, rgb(250, 247, 241) 50%, transparent 100%);
-                  pointer-events: none;
-                  z-index: 5;
-                }
               `}</style>
 
               {/* Compact Service Summary - add horizontal padding since fullWidthContent is true */}
@@ -913,9 +902,6 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
               {/* Vagaro Widget Container - full width with header cropping */}
               <div className="vagaro-widget-wrapper" style={{ minHeight: '500px' }}>
-                {/* Gradient mask to smooth the crop edge */}
-                <div className="vagaro-crop-mask" />
-
                 {/* Widget container with CSS filter to warm up colors */}
                 <div
                   ref={loadWidgetIntoContainer}
