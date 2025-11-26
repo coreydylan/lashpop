@@ -360,6 +360,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
         title={currentView === 'browse' ? data.categoryName : ''}
         subtitle={currentView === 'browse' ? `${filteredServices.length} services available` : ''}
         onBreadcrumbClick={handleBreadcrumbClick}
+        fullWidthContent={currentView === 'booking'}
       >
         {/* View Content with Animations */}
         <AnimatePresence mode="wait">
@@ -839,41 +840,67 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
             >
-              {/* CSS to override Vagaro widget styles and apply cream tint */}
+              {/* CSS to override Vagaro widget styles, crop header, and force full width */}
               <style jsx global>{`
-                /* Shell container with cream background for blend mode to work */
-                .vagaro-widget-shell {
-                  background: rgb(250, 247, 241); /* cream */
-                  border-radius: 12px;
+                /* Outer wrapper for cropping and overflow control */
+                .vagaro-widget-wrapper {
+                  position: relative;
+                  overflow: hidden;
+                  width: 100% !important;
                 }
 
-                /* Force Vagaro container to be full width */
+                /* Force ALL Vagaro elements to be full width - target their specific classes */
                 .vagaro-widget-container,
-                .vagaro-widget-container .vagaro {
+                .vagaro-widget-container .vagaro,
+                .vagaro-widget-container .vagaro-container,
+                .vagaro-widget-container .vagaro-embedded-widget,
+                .vagaro-widget-container .vagaro-iframe,
+                .vagaro-widget-container .vagaro-iframe-100 {
                   width: 100% !important;
-                  max-width: none !important;
+                  max-width: 100% !important;
+                  min-width: 100% !important;
                   margin: 0 !important;
                   padding: 0 !important;
+                  box-sizing: border-box !important;
                 }
 
-                /* Hide Vagaro branding links */
+                /* Hide Vagaro branding/footer links */
+                .vagaro-widget-container .vagaro-footer,
                 .vagaro-widget-container .vagaro > a,
                 .vagaro-widget-container .vagaro > style + a {
                   display: none !important;
                 }
 
-                /* Style the iframe */
+                /* Pull the widget up to crop the Vagaro header */
+                .vagaro-widget-container {
+                  margin-top: -330px !important;
+                }
+
+                /* Style the iframe - force full width */
                 .vagaro-widget-container iframe {
                   width: 100% !important;
-                  max-width: none !important;
-                  min-height: 700px !important;
+                  min-width: 100% !important;
+                  max-width: 100% !important;
+                  min-height: 900px !important;
                   border: none !important;
-                  display: block;
+                  display: block !important;
+                }
+
+                /* Gradient mask at top to smooth the crop edge */
+                .vagaro-crop-mask {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  right: 0;
+                  height: 40px;
+                  background: linear-gradient(to bottom, rgb(250, 247, 241) 0%, rgb(250, 247, 241) 50%, transparent 100%);
+                  pointer-events: none;
+                  z-index: 5;
                 }
               `}</style>
 
-              {/* Compact Service Summary */}
-              <div className="flex items-center gap-4 text-sm text-dune/70 py-3 mb-4">
+              {/* Compact Service Summary - add horizontal padding since fullWidthContent is true */}
+              <div className="flex items-center gap-4 text-sm text-dune/70 py-3 mb-4 px-4 md:px-6">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-sage" />
                   <span>{selectedService.durationMinutes} min</span>
@@ -884,13 +911,17 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                 </div>
               </div>
 
-              {/* Vagaro Widget Container with warm/cream tint filter */}
-              <div className="relative w-full" style={{ minHeight: '500px' }}>
+              {/* Vagaro Widget Container - full width with header cropping */}
+              <div className="vagaro-widget-wrapper" style={{ minHeight: '500px' }}>
+                {/* Gradient mask to smooth the crop edge */}
+                <div className="vagaro-crop-mask" />
+
                 {/* Widget container with CSS filter to warm up colors */}
                 <div
                   ref={loadWidgetIntoContainer}
+                  className="vagaro-widget-container"
                   style={{
-                    minHeight: '500px',
+                    minHeight: '600px',
                     // CSS filter to make white appear cream/warm
                     filter: 'sepia(10%) saturate(95%) brightness(99%)',
                   }}
@@ -898,7 +929,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
                 {/* Loading State - overlay on top */}
                 {isBookingLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-cream/90 z-10">
+                  <div className="absolute inset-0 flex items-center justify-center bg-cream z-20">
                     <div className="text-center">
                       <Loader2 className="w-8 h-8 text-dusty-rose animate-spin mx-auto mb-3" />
                       <p className="text-sm text-dune/60">Loading booking...</p>
@@ -908,7 +939,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
                 {/* Error State - overlay on top */}
                 {hasBookingError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-cream/90 z-10">
+                  <div className="absolute inset-0 flex items-center justify-center bg-cream z-20">
                     <div className="text-center max-w-sm px-4">
                       <AlertCircle className="w-10 h-10 text-terracotta mx-auto mb-3" />
                       <h3 className="font-medium text-dune mb-2">Unable to load booking</h3>

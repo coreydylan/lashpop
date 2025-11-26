@@ -187,9 +187,9 @@ export function PanelWrapper({
           >
             <div
               className={`
-                bg-cream overflow-y-auto overscroll-contain
+                bg-cream overscroll-contain
                 max-h-[80vh] md:max-h-[60vh]
-                ${fullWidthContent ? 'px-0 py-0' : 'px-4 py-4 md:px-6 md:py-6'}
+                ${fullWidthContent ? 'px-0 py-0 overflow-x-hidden overflow-y-auto' : 'px-4 py-4 md:px-6 md:py-6 overflow-y-auto'}
               `}
             >
               {children}
