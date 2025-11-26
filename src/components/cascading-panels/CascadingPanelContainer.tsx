@@ -8,6 +8,7 @@ import { BookNowPanel } from './panels/BookNowPanel';
 import { CategoryPickerPanel } from './panels/CategoryPickerPanel';
 import { SubcategoryServicePanel } from './panels/SubcategoryServicePanel';
 import { ServiceDetailPanel } from './panels/ServiceDetailPanel';
+import { VagaroWidgetPanel } from './panels/VagaroWidgetPanel';
 
 export function CascadingPanelContainer() {
   const { state } = useCascadingPanels();
@@ -69,6 +70,7 @@ export function CascadingPanelContainer() {
                       {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
                       {panel.type === 'subcategory-services' && <SubcategoryServicePanel panel={panel} />}
                       {panel.type === 'service-detail' && <ServiceDetailPanel panel={panel} />}
+                      {panel.type === 'vagaro-widget' && <VagaroWidgetPanel panel={panel} />}
                     </div>
                   ))}
               </React.Fragment>

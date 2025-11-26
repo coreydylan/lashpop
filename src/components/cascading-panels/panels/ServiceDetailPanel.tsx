@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, DollarSign, User, Check } from 'lucide-react';
+import { Clock, DollarSign, Calendar, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { PanelWrapper } from '../PanelWrapper';
 import { useCascadingPanels } from '@/contexts/CascadingPanelContext';
@@ -25,32 +25,79 @@ interface Service {
   color: string | null;
   categoryName: string | null;
   subcategoryName: string | null;
+  vagaroWidgetUrl?: string | null;
 }
 
-interface Provider {
-  id: string;
-  name: string;
-  imageUrl: string;
-  role: string;
-}
+// =============================================================================
+// DEMO: Hardcoded Vagaro Widget URLs for testing
+// Remove this once URLs are populated in the database
+// =============================================================================
+const DEMO_WIDGET_URLS: Record<string, string> = {
+  // Classic Full Set of Lash Extensions
+  'classic-full-set': 'https://www.vagaro.com/Users/BusinessWidget.aspx?enc=MMLjhIwJMcwFQhXLL7ifVNktU+6gVG/xKebyJuJZAstemTnIIIKeu0QS8AhhSYXpPqb0D/obnhonLWVrRgENjVYs3JtTfqU8CaATRsRBExg82SjvbpaaJj/xgNGXz9tP05/mSHjXeIApPZOQ4417unuF/38gFm4LOsgznCtFcvfknouEkPRJzvFjgmuZxsCNNphibWlOXi33Q+uLIVjw6vX1VL6XX8djewz8V40GVgMfLfP7uXi/mcXkrtXYvUIp4qx4pm/R3xAWN1Z9ofHT3QCL3nrJ4nkPHE2HRtPKY0JjR4hn+ZSBmqPbWJ9nRi/SGr0fTbA5Zyv2g0HIy+Ht02Xc76Exb4O+SzfHKIrBxsJ5di+3pYTzSApYcOh7UtEydX4Rpd3IqiwPyLSYK71oTUNYnSXT7IDYG5oLvbk6/M9AvxL7hD6Xm3W05WQ6RyoYj3/cuTI2KVZ0U0XTx4FYFoIG59dLLFxlVG+xUM7zPCU=',
+  'classic': 'https://www.vagaro.com/Users/BusinessWidget.aspx?enc=MMLjhIwJMcwFQhXLL7ifVNktU+6gVG/xKebyJuJZAstemTnIIIKeu0QS8AhhSYXpPqb0D/obnhonLWVrRgENjVYs3JtTfqU8CaATRsRBExg82SjvbpaaJj/xgNGXz9tP05/mSHjXeIApPZOQ4417unuF/38gFm4LOsgznCtFcvfknouEkPRJzvFjgmuZxsCNNphibWlOXi33Q+uLIVjw6vX1VL6XX8djewz8V40GVgMfLfP7uXi/mcXkrtXYvUIp4qx4pm/R3xAWN1Z9ofHT3QCL3nrJ4nkPHE2HRtPKY0JjR4hn+ZSBmqPbWJ9nRi/SGr0fTbA5Zyv2g0HIy+Ht02Xc76Exb4O+SzfHKIrBxsJ5di+3pYTzSApYcOh7UtEydX4Rpd3IqiwPyLSYK71oTUNYnSXT7IDYG5oLvbk6/M9AvxL7hD6Xm3W05WQ6RyoYj3/cuTI2KVZ0U0XTx4FYFoIG59dLLFxlVG+xUM7zPCU=',
+  // Classic Lash Fill
+  'classic-fill': 'https://www.vagaro.com/Users/BusinessWidget.aspx?enc=MMLjhIwJMcwFQhXLL7ifVNktU+6gVG/xKebyJuJZAstemTnIIIKeu0QS8AhhSYXpPqb0D/obnhonLWVrRgENjVYs3JtTfqU8CaATRsRBExg82SjvbpaaJj/xgNGXz9tP05/mSHjXeIApPZOQ4417unuF/38gFm4LOsgznCtFcvfknouEkPRJzvFjgmuZxsCNNphibWlOXi33Q+uLIVjw6vX1VL6XX8djewz8V40GVgMfLfP7uXi/mcXkrtXYvUIp4qx4pm/R3xAWN1Z9ofHT3QCL3nrJ4nkPHE2HRtPKY0JjR4hn+ZSBmqPbWJ9nRi/SGr0fTbA5Zyv2g0HIy+Ht02Xc76Exb4O+SzfHKIrBxsJ5di+3pYTzSApYcOh7UtEydX4Rpd3IqiwPyLSYK71oTbAck5HSW+Ao7Odz9R5M7bGRHUhRJwe7uVMDHIdKSgmtlSG3DXuK01koAsbdwJ7yMq9oay9oJbICDxp2CBbRwGQ=',
+  'classic-lash-fill': 'https://www.vagaro.com/Users/BusinessWidget.aspx?enc=MMLjhIwJMcwFQhXLL7ifVNktU+6gVG/xKebyJuJZAstemTnIIIKeu0QS8AhhSYXpPqb0D/obnhonLWVrRgENjVYs3JtTfqU8CaATRsRBExg82SjvbpaaJj/xgNGXz9tP05/mSHjXeIApPZOQ4417unuF/38gFm4LOsgznCtFcvfknouEkPRJzvFjgmuZxsCNNphibWlOXi33Q+uLIVjw6vX1VL6XX8djewz8V40GVgMfLfP7uXi/mcXkrtXYvUIp4qx4pm/R3xAWN1Z9ofHT3QCL3nrJ4nkPHE2HRtPKY0JjR4hn+ZSBmqPbWJ9nRi/SGr0fTbA5Zyv2g0HIy+Ht02Xc76Exb4O+SzfHKIrBxsJ5di+3pYTzSApYcOh7UtEydX4Rpd3IqiwPyLSYK71oTbAck5HSW+Ao7Odz9R5M7bGRHUhRJwe7uVMDHIdKSgmtlSG3DXuK01koAsbdwJ7yMq9oay9oJbICDxp2CBbRwGQ=',
+  // Classic Mini Fill
+  'classic-mini': 'https://www.vagaro.com/Users/BusinessWidget.aspx?enc=MMLjhIwJMcwFQhXLL7ifVNktU+6gVG/xKebyJuJZAstemTnIIIKeu0QS8AhhSYXpPqb0D/obnhonLWVrRgENjVYs3JtTfqU8CaATRsRBExg82SjvbpaaJj/xgNGXz9tP05/mSHjXeIApPZOQ4417unuF/38gFm4LOsgznCtFcvfknouEkPRJzvFjgmuZxsCNNphibWlOXi33Q+uLIVjw6vX1VL6XX8djewz8V40GVgMfLfP7uXi/mcXkrtXYvUIp4qx4pm/R3xAWN1Z9ofHT3QCL3nrJ4nkPHE2HRtPKY0JjR4hn+ZSBmqPbWJ9nRi/SGr0fTbA5Zyv2g0HIy+Ht02Xc76Exb4O+SzfHKIrBxsJ5di+3pYTzSApYcOh7UtEydX4Rpd3IqiwPyLSYK71oTWRktKs8m6KIbEw/sH3LPHrlG+EUNWwZ+4eUIZSFWV5CIvuMDcC0qY4Fn+h2+fYFzkLP1YEABGY8VrHR3HTqi1Y=',
+  'classic-mini-fill': 'https://www.vagaro.com/Users/BusinessWidget.aspx?enc=MMLjhIwJMcwFQhXLL7ifVNktU+6gVG/xKebyJuJZAstemTnIIIKeu0QS8AhhSYXpPqb0D/obnhonLWVrRgENjVYs3JtTfqU8CaATRsRBExg82SjvbpaaJj/xgNGXz9tP05/mSHjXeIApPZOQ4417unuF/38gFm4LOsgznCtFcvfknouEkPRJzvFjgmuZxsCNNphibWlOXi33Q+uLIVjw6vX1VL6XX8djewz8V40GVgMfLfP7uXi/mcXkrtXYvUIp4qx4pm/R3xAWN1Z9ofHT3QCL3nrJ4nkPHE2HRtPKY0JjR4hn+ZSBmqPbWJ9nRi/SGr0fTbA5Zyv2g0HIy+Ht02Xc76Exb4O+SzfHKIrBxsJ5di+3pYTzSApYcOh7UtEydX4Rpd3IqiwPyLSYK71oTWRktKs8m6KIbEw/sH3LPHrlG+EUNWwZ+4eUIZSFWV5CIvuMDcC0qY4Fn+h2+fYFzkLP1YEABGY8VrHR3HTqi1Y=',
+};
 
-// Mock providers - will be replaced with real data fetching
-const MOCK_PROVIDERS: Provider[] = [
-  { id: '1', name: 'Sarah', imageUrl: '/placeholder-team.jpg', role: 'Lead Lash Artist' },
-  { id: '2', name: 'Maya', imageUrl: '/placeholder-team.jpg', role: 'Lash Specialist' },
-  { id: '3', name: 'Jamie', imageUrl: '/placeholder-team.jpg', role: 'Lash Artist' },
-  { id: '4', name: 'Taylor', imageUrl: '/placeholder-team.jpg', role: 'Senior Artist' },
-];
+// =============================================================================
+// FUTURE: Provider Selection
+// =============================================================================
+// The following code is preserved for when we implement custom provider selection
+// with Vagaro API integration for real-time availability.
+//
+// interface Provider {
+//   id: string;
+//   name: string;
+//   imageUrl: string;
+//   role: string;
+//   vagaroEmployeeId?: string;
+// }
+//
+// // Will be replaced with real data fetching from team_members table
+// const MOCK_PROVIDERS: Provider[] = [
+//   { id: '1', name: 'Sarah', imageUrl: '/placeholder-team.jpg', role: 'Lead Lash Artist' },
+//   { id: '2', name: 'Maya', imageUrl: '/placeholder-team.jpg', role: 'Lash Specialist' },
+//   { id: '3', name: 'Jamie', imageUrl: '/placeholder-team.jpg', role: 'Lash Artist' },
+//   { id: '4', name: 'Taylor', imageUrl: '/placeholder-team.jpg', role: 'Senior Artist' },
+// ];
+//
+// const handleProviderToggle = (providerId: string) => {
+//   setSelectedProviders(prev => {
+//     const newSet = new Set(prev);
+//     if (newSet.has(providerId)) {
+//       newSet.delete(providerId);
+//     } else {
+//       newSet.add(providerId);
+//     }
+//     return newSet;
+//   });
+// };
+//
+// const handleSelectAllProviders = () => {
+//   if (selectedProviders.size === MOCK_PROVIDERS.length) {
+//     setSelectedProviders(new Set());
+//   } else {
+//     setSelectedProviders(new Set(MOCK_PROVIDERS.map(p => p.id)));
+//   }
+// };
+// =============================================================================
 
 export function ServiceDetailPanel({ panel }: ServiceDetailPanelProps) {
-  const { state, actions } = useCascadingPanels();
+  const { actions } = useCascadingPanels();
   const data = panel.data as ServiceDetailPanelData;
   const service: Service = data.service;
 
-  const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
   const [gallery, setGallery] = useState<AssetWithTags[]>([]);
   const [isLoadingGallery, setIsLoadingGallery] = useState(true);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+
+  // FUTURE: Provider selection state
+  // const [selectedProviders, setSelectedProviders] = useState<Set<string>>(new Set());
 
   // Fetch service gallery from DAM
   useEffect(() => {
@@ -69,43 +116,36 @@ export function ServiceDetailPanel({ panel }: ServiceDetailPanelProps) {
     fetchGallery();
   }, [service.slug]);
 
-  const handleProviderToggle = (providerId: string) => {
-    setSelectedProviders(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(providerId)) {
-        newSet.delete(providerId);
-      } else {
-        newSet.add(providerId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSelectAllProviders = () => {
-    if (selectedProviders.size === MOCK_PROVIDERS.length) {
-      setSelectedProviders(new Set());
-    } else {
-      setSelectedProviders(new Set(MOCK_PROVIDERS.map(p => p.id)));
-    }
-  };
-
   const handleBookService = () => {
-    // Emit event for booking orchestrator
+    // Track service selection
     actions.selectService(service.id);
 
-    // Open schedule panel (to be built)
-    actions.openPanel(
-      'schedule',
-      {
-        service,
-        providerIds: Array.from(selectedProviders),
-      },
-      { parentId: panel.id }
-    );
+    // Check for widget URL: first from database, then from demo hardcoded URLs
+    const widgetUrl = service.vagaroWidgetUrl || DEMO_WIDGET_URLS[service.slug];
+
+    if (widgetUrl) {
+      // Open the Vagaro widget panel
+      actions.openPanel(
+        'vagaro-widget',
+        {
+          widgetUrl,
+          serviceName: service.name,
+          servicePrice: service.priceStarting,
+          serviceDuration: service.durationMinutes,
+        },
+        { parentId: panel.id }
+      );
+    } else {
+      // Fallback: no URL configured
+      console.warn(`No vagaroWidgetUrl configured for service: ${service.name} (slug: ${service.slug})`);
+      alert('Booking is not yet configured for this service. Please contact us to book.');
+    }
   };
 
   const priceDisplay = `$${(service.priceStarting / 100).toFixed(0)}+`;
   const visiblePhotos = showAllPhotos ? gallery : gallery.slice(0, 8);
+  // Check for widget URL from database OR demo hardcoded URLs
+  const hasWidgetUrl = !!(service.vagaroWidgetUrl || DEMO_WIDGET_URLS[service.slug]);
 
   return (
     <PanelWrapper
@@ -124,10 +164,6 @@ export function ServiceDetailPanel({ panel }: ServiceDetailPanelProps) {
           <div className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-terracotta" />
             <span className="text-sm text-dune">Starting at {priceDisplay}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-ocean-mist" />
-            <span className="text-sm text-dune">{MOCK_PROVIDERS.length} artists available</span>
           </div>
         </div>
 
@@ -181,7 +217,11 @@ export function ServiceDetailPanel({ panel }: ServiceDetailPanelProps) {
           </div>
         )}
 
-        {/* Provider Selection */}
+        {/* =================================================================== */}
+        {/* FUTURE: Provider Selection UI                                       */}
+        {/* =================================================================== */}
+        {/* When we implement custom provider selection with Vagaro API:
+
         <div>
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-medium text-dune">Choose Your Artist</h4>
@@ -239,25 +279,33 @@ export function ServiceDetailPanel({ panel }: ServiceDetailPanelProps) {
             </motion.div>
           )}
         </div>
+        */}
+        {/* =================================================================== */}
 
         {/* Book Button */}
         <div className="pt-4 border-t border-sage/10">
+          {!hasWidgetUrl && (
+            <div className="flex items-center gap-2 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <p className="text-sm text-amber-700">
+                Online booking coming soon for this service
+              </p>
+            </div>
+          )}
+
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleBookService}
-            disabled={selectedProviders.size === 0}
-            className={`w-full px-6 py-4 rounded-full font-medium transition-all ${
-              selectedProviders.size > 0
+            disabled={!hasWidgetUrl}
+            className={`w-full px-6 py-4 rounded-full font-medium transition-all flex items-center justify-center gap-2 ${
+              hasWidgetUrl
                 ? 'bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white shadow-lg hover:shadow-xl'
                 : 'bg-sage/20 text-sage/50 cursor-not-allowed'
             }`}
           >
-            {selectedProviders.size === 0
-              ? 'Select an artist to continue'
-              : selectedProviders.size === 1
-              ? 'View Availability'
-              : `View ${selectedProviders.size} Artists&apos; Availability`}
+            <Calendar className="w-5 h-5" />
+            Book This Service
           </motion.button>
         </div>
       </div>

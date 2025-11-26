@@ -25,7 +25,8 @@ export type PanelType =
   | 'service-detail'
   | 'provider-detail'
   | 'provider-services'
-  | 'schedule';
+  | 'schedule'
+  | 'vagaro-widget'; // Vagaro booking widget iframe
 
 export type PanelLevel = 1 | 2 | 3 | 4;
 
@@ -101,6 +102,13 @@ export interface ProviderServicesPanelData {
   providerId: string;
   providerName: string;
   services: any[];
+}
+
+export interface VagaroWidgetPanelData {
+  widgetUrl: string;
+  serviceName: string;
+  servicePrice?: number;
+  serviceDuration?: number;
 }
 
 // ============================================================================
