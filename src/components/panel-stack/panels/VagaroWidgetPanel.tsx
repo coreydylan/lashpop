@@ -4,19 +4,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Clock, DollarSign, Loader2, AlertCircle } from 'lucide-react';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
+import { getVagaroWidgetUrl } from '@/lib/vagaro-widget';
 import type { Panel, VagaroWidgetPanelData } from '@/types/panel-stack';
 
 interface VagaroWidgetPanelProps {
   panel: Panel;
 }
-
-// Fallback to all services widget if no service-specific URL
-const ALL_SERVICES_WIDGET_SCRIPT = 'https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfoR6PmS0?v=09imfFDQKcMOy0zTyGQlMuzyCSHrqkUB9fzUvd1qy2Fa#';
-
-// Service-specific widget scripts (hardcoded for demo, will be in database)
-const SERVICE_WIDGET_SCRIPTS: Record<string, string> = {
-  'classic': 'https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfoR6PmRW?v=avMXnLXkPKg91DeEID6Jji7gSkTP6tcpd4WwH2BVNJu#',
-};
 
 export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
   const { actions } = usePanelStack();
@@ -28,10 +21,8 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  // Get widget script URL - prefer database value, then service-specific demo, then all services fallback
-  const widgetScriptUrl = service.vagaroWidgetUrl
-    || SERVICE_WIDGET_SCRIPTS[service.slug]
-    || ALL_SERVICES_WIDGET_SCRIPT;
+  // Get widget script URL from service code (or fallback to all services)
+  const widgetScriptUrl = getVagaroWidgetUrl(service.vagaroServiceCode);
 
   // Update panel summary
   useEffect(() => {

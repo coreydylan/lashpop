@@ -140,7 +140,8 @@ export interface VagaroWidgetPanelData {
     subtitle?: string;
     durationMinutes: number;
     priceStarting: number;
-    vagaroWidgetUrl: string;
+    vagaroServiceCode?: string | null; // 5-char code for widget URL
+    vagaroWidgetUrl?: string; // DEPRECATED: use vagaroServiceCode
     categoryName?: string;
     subcategoryName?: string;
   };

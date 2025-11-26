@@ -8,7 +8,8 @@ export const services = pgTable("services", {
   // Vagaro Integration - Source of truth for core service data
   vagaroServiceId: text("vagaro_service_id").unique(), // Links to Vagaro service
   vagaroParentServiceId: text("vagaro_parent_service_id"), // Links to parent category in Vagaro
-  vagaroWidgetUrl: text("vagaro_widget_url"), // Vagaro embed script URL (from Vagaro's "Embed Code" > copy the script src URL)
+  vagaroWidgetUrl: text("vagaro_widget_url"), // DEPRECATED: Use vagaroServiceCode instead
+  vagaroServiceCode: text("vagaro_service_code"), // 5-char code from Vagaro widget URL (e.g., "6XoR0")
   vagaroData: jsonb("vagaro_data").$type<any>(), // Store full Vagaro response for reference
 
   // Local enrichment fields (not in Vagaro)

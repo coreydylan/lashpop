@@ -134,6 +134,13 @@
       "when": 1763792734616,
       "tag": "0018_clumsy_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1764193374104,
+      "tag": "0019_safe_glorian",
+      "breakpoints": true
     }
   ]
 }

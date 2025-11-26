@@ -11,12 +11,13 @@ import { ServicePanel } from '../panels/ServicePanel';
 import { DiscoveryPanel } from '../panels/DiscoveryPanel';
 import { VagaroWidgetPanel } from '../panels/VagaroWidgetPanel';
 
-// Snap points as percentages from bottom (0 = bottom of screen)
+// Snap points as percentages from top (0 = top of screen)
+// Refined for better mobile UX - more usable space at each level
 const SNAP_POINTS = {
-  closed: 100,    // Off screen (translateY 100%)
-  peek: 88,       // Just handle + header visible (~12% of screen = ~96px on iPhone)
-  half: 45,       // Half screen visible
-  full: 8,        // Nearly full (leaves status bar area)
+  closed: 100,      // Off screen (translateY 100%)
+  peek: 85,         // Header visible with content hint (~15% = ~120px on iPhone)
+  comfortable: 35,  // Primary expanded state - shows content without blocking too much
+  full: 5,          // Full takeover (leaves status bar)
 } as const;
 
 type SnapPoint = keyof typeof SNAP_POINTS;
@@ -59,7 +60,7 @@ export function BottomSheetContainer() {
     if (!hasAnyPanel) {
       animateToSnap('closed');
     } else if (hasExpandedPanel) {
-      animateToSnap('half');
+      animateToSnap('comfortable');
     } else {
       // Has panels but none expanded = peek
       animateToSnap('peek');
@@ -85,8 +86,8 @@ export function BottomSheetContainer() {
     // Fast swipe down = close/dock
     if (velocity > 500) {
       if (currentSnap === 'full') {
-        animateToSnap('half');
-      } else if (currentSnap === 'half') {
+        animateToSnap('comfortable');
+      } else if (currentSnap === 'comfortable') {
         animateToSnap('peek');
         actions.dockAll();
       } else {
@@ -99,27 +100,27 @@ export function BottomSheetContainer() {
     // Fast swipe up = expand
     if (velocity < -500) {
       if (currentSnap === 'peek' || currentSnap === 'closed') {
-        animateToSnap('half');
+        animateToSnap('comfortable');
         // Expand first panel
         const firstPanel = sortedPanels[0];
         if (firstPanel && firstPanel.state === 'docked') {
           actions.expandPanel(firstPanel.id);
         }
-      } else if (currentSnap === 'half') {
+      } else if (currentSnap === 'comfortable') {
         animateToSnap('full');
       }
       return;
     }
 
     // Slow drag - snap to nearest based on final position
-    if (currentPercentage > 94) {
+    if (currentPercentage > 92) {
       animateToSnap('closed');
       actions.closeAll();
-    } else if (currentPercentage > 66) {
+    } else if (currentPercentage > 60) {
       animateToSnap('peek');
       actions.dockAll();
-    } else if (currentPercentage > 26) {
-      animateToSnap('half');
+    } else if (currentPercentage > 20) {
+      animateToSnap('comfortable');
     } else {
       animateToSnap('full');
     }
@@ -127,7 +128,7 @@ export function BottomSheetContainer() {
 
   // Handle backdrop click
   const handleBackdropClick = () => {
-    if (currentSnap === 'half' || currentSnap === 'full') {
+    if (currentSnap === 'comfortable' || currentSnap === 'full') {
       animateToSnap('peek');
       actions.dockAll();
     }
@@ -174,7 +175,7 @@ export function BottomSheetContainer() {
       <motion.div
         ref={containerRef}
         data-panel-mode="bottom"
-        className="fixed inset-x-0 bottom-0 z-50 bg-cream rounded-t-3xl shadow-2xl will-change-transform"
+        className="fixed inset-x-0 bottom-0 z-50 bg-cream rounded-t-[20px] shadow-2xl will-change-transform"
         style={{
           height: '100dvh',
           touchAction: 'none',
@@ -187,16 +188,16 @@ export function BottomSheetContainer() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Drag Handle */}
+        {/* Drag Handle - Refined, minimal */}
         <div
-          className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+          className="flex justify-center pt-2.5 pb-1.5 cursor-grab active:cursor-grabbing"
           style={{ touchAction: 'none' }}
         >
           <motion.div
-            className="w-10 h-1 bg-sage/40 rounded-full"
+            className="w-9 h-1 bg-sage/30 rounded-full"
             animate={{
-              width: isDragging ? 48 : 40,
-              backgroundColor: isDragging ? 'rgb(161, 151, 129)' : 'rgba(161, 151, 129, 0.4)',
+              width: isDragging ? 44 : 36,
+              backgroundColor: isDragging ? 'rgba(161, 151, 129, 0.6)' : 'rgba(161, 151, 129, 0.3)',
             }}
             transition={{ duration: 0.15 }}
           />
@@ -207,8 +208,8 @@ export function BottomSheetContainer() {
           ref={contentRef}
           className="overflow-y-auto overscroll-contain"
           style={{
-            height: 'calc(100dvh - 24px)',
-            touchAction: currentSnap === 'full' ? 'pan-y' : 'none',
+            height: 'calc(100dvh - 20px)',
+            touchAction: currentSnap === 'full' || currentSnap === 'comfortable' ? 'pan-y' : 'none',
             overscrollBehavior: 'contain',
           }}
         >

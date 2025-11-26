@@ -82,6 +82,7 @@ export async function getAllServices() {
       subcategoryName: serviceSubcategories.name,
       subcategorySlug: serviceSubcategories.slug,
       vagaroWidgetUrl: services.vagaroWidgetUrl,
+      vagaroServiceCode: services.vagaroServiceCode,
     })
     .from(services)
     .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))

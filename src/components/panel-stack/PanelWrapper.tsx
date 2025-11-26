@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import type { Panel, BreadcrumbStep } from '@/types/panel-stack';
 
@@ -11,10 +11,16 @@ interface PanelWrapperProps {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
-  fullWidthContent?: boolean; // Remove padding from content area for full-width embeds
-  onBreadcrumbClick?: (stepId: string) => void; // Handler for breadcrumb navigation
+  fullWidthContent?: boolean;
+  onBreadcrumbClick?: (stepId: string) => void;
 }
 
+/**
+ * PanelWrapper - Responsive panel header and content wrapper
+ *
+ * Mobile (< md): Simplified centered header with back arrow
+ * Desktop (>= md): Original left-aligned breadcrumb navigation
+ */
 export function PanelWrapper({
   panel,
   children,
@@ -28,12 +34,29 @@ export function PanelWrapper({
   const isDocked = panel.state === 'docked';
   const hasBreadcrumbs = panel.breadcrumbs && panel.breadcrumbs.length > 1;
 
+  // Get the previous breadcrumb for back navigation (mobile)
+  const previousCrumb = hasBreadcrumbs
+    ? panel.breadcrumbs![panel.breadcrumbs!.length - 2]
+    : null;
+
+  // Get current title from last breadcrumb or fallback to title prop
+  const currentTitle = hasBreadcrumbs
+    ? panel.breadcrumbs![panel.breadcrumbs!.length - 1].label
+    : title;
+
   const handleToggle = () => {
     actions.togglePanel(panel.id);
   };
 
   const handleClose = () => {
     actions.closePanel(panel.id);
+  };
+
+  const handleBack = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (previousCrumb && onBreadcrumbClick) {
+      onBreadcrumbClick(previousCrumb.id);
+    }
   };
 
   return (
@@ -46,17 +69,103 @@ export function PanelWrapper({
         layout: { type: 'spring', stiffness: 300, damping: 30 },
         opacity: { duration: 0.2 },
       }}
-      className="w-full border-b border-sage/10"
+      className="w-full md:border-b md:border-sage/10"
       style={{
-        zIndex: 50 - panel.level, // Higher levels appear "above" lower levels
+        zIndex: 50 - panel.level,
       }}
     >
-      {/* Docked Header */}
+      {/* ===== MOBILE HEADER (< md) ===== */}
       <div
         className={`
-          flex items-center justify-between px-4 md:px-6 bg-cream/95 backdrop-blur-md
+          md:hidden flex items-center bg-cream/95 backdrop-blur-md transition-all
+          ${isDocked
+            ? 'h-12 cursor-pointer active:bg-warm-sand/5'
+            : 'h-14 border-b border-sage/10'
+          }
+        `}
+        onClick={isDocked ? handleToggle : undefined}
+      >
+        {/* Left: Back button or Toggle */}
+        <div className="flex-shrink-0 w-12 flex items-center justify-center">
+          {isExpanded && previousCrumb && onBreadcrumbClick ? (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={handleBack}
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-sage/10 transition-colors"
+              aria-label={`Back to ${previousCrumb.label}`}
+            >
+              <ChevronLeft className="w-6 h-6 text-sage" />
+            </motion.button>
+          ) : (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggle();
+              }}
+              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-sage/10 transition-colors"
+              aria-label={isExpanded ? 'Minimize panel' : 'Expand panel'}
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-5 h-5 text-sage" />
+              ) : (
+                <ChevronUp className="w-5 h-5 text-sage" />
+              )}
+            </motion.button>
+          )}
+        </div>
+
+        {/* Center: Title and Subtitle */}
+        <div className="flex-1 min-w-0 text-center px-2">
+          {isDocked ? (
+            <p className="text-sm text-dune truncate">
+              {currentTitle}
+              {panel.summary && (
+                <span className="text-sage ml-1">· {panel.summary}</span>
+              )}
+            </p>
+          ) : (
+            <>
+              <h3 className="font-serif text-base font-medium text-dune truncate">
+                {currentTitle}
+              </h3>
+              {subtitle && (
+                <p className="text-xs text-sage truncate mt-0.5">
+                  {subtitle}
+                </p>
+              )}
+            </>
+          )}
+
+          {isDocked && panel.badge && (
+            <span className="inline-block ml-2 px-2 py-0.5 rounded-full bg-dusty-rose text-white text-[10px] font-semibold uppercase">
+              {typeof panel.badge === 'number' ? panel.badge : panel.badge}
+            </span>
+          )}
+        </div>
+
+        {/* Right: Close button */}
+        <div className="flex-shrink-0 w-12 flex items-center justify-center">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClose();
+            }}
+            className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-sage/10 transition-colors"
+            aria-label="Close panel"
+          >
+            <X className="w-5 h-5 text-sage" />
+          </motion.button>
+        </div>
+      </div>
+
+      {/* ===== DESKTOP HEADER (>= md) ===== */}
+      <div
+        className={`
+          hidden md:flex items-center justify-between px-6 bg-cream/95 backdrop-blur-md
           transition-all cursor-pointer
-          ${isDocked ? 'h-8 md:h-12 hover:bg-warm-sand/5' : 'h-12 md:h-14'}
+          ${isDocked ? 'h-12 hover:bg-warm-sand/5' : 'h-14'}
           ${isExpanded ? 'border-b border-dusty-rose/20' : ''}
         `}
         onClick={isDocked ? handleToggle : undefined}
@@ -64,7 +173,7 @@ export function PanelWrapper({
         <div className="flex-1 flex items-center gap-2 min-w-0 overflow-hidden">
           {/* Breadcrumbs (when available and expanded) */}
           {hasBreadcrumbs && isExpanded ? (
-            <div className="flex items-center gap-1 md:gap-1.5 min-w-0 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto scrollbar-hide">
               {panel.breadcrumbs!.map((crumb, index) => {
                 const isLast = index === panel.breadcrumbs!.length - 1;
                 const isClickable = !isLast && onBreadcrumbClick;
@@ -81,7 +190,7 @@ export function PanelWrapper({
                       disabled={isLast}
                       className={`
                         font-serif whitespace-nowrap transition-colors flex-shrink-0
-                        ${isDocked ? 'text-xs md:text-sm' : 'text-sm md:text-base'}
+                        ${isDocked ? 'text-sm' : 'text-base'}
                         ${isLast
                           ? 'text-dune font-medium cursor-default'
                           : 'text-sage hover:text-dusty-rose cursor-pointer'
@@ -91,7 +200,7 @@ export function PanelWrapper({
                       {crumb.label}
                     </button>
                     {!isLast && (
-                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-sage/50 flex-shrink-0" />
+                      <ChevronRight className="w-4 h-4 text-sage/50 flex-shrink-0" />
                     )}
                   </React.Fragment>
                 );
@@ -103,7 +212,7 @@ export function PanelWrapper({
               {title && (
                 <h3 className={`
                   font-serif text-dune font-medium truncate
-                  ${isDocked ? 'text-sm md:text-base' : 'text-base md:text-lg'}
+                  ${isDocked ? 'text-base' : 'text-lg'}
                 `}>
                   {title}
                 </h3>
@@ -111,7 +220,7 @@ export function PanelWrapper({
 
               {/* Summary (when docked) */}
               {isDocked && panel.summary && (
-                <span className="text-xs md:text-sm text-sage truncate hidden sm:inline">
+                <span className="text-sm text-sage truncate">
                   · {panel.summary}
                 </span>
               )}
@@ -120,7 +229,7 @@ export function PanelWrapper({
 
           {/* Breadcrumb summary when docked with breadcrumbs */}
           {hasBreadcrumbs && isDocked && (
-            <span className="text-xs md:text-sm text-sage truncate">
+            <span className="text-sm text-sage truncate">
               {panel.breadcrumbs!.map(c => c.label).join(' › ')}
             </span>
           )}
@@ -134,38 +243,36 @@ export function PanelWrapper({
 
           {/* Subtitle (when expanded, no breadcrumbs) */}
           {isExpanded && subtitle && !hasBreadcrumbs && (
-            <span className="text-xs md:text-sm text-sage truncate hidden md:inline">
+            <span className="text-sm text-sage truncate">
               {subtitle}
             </span>
           )}
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-          {/* Toggle button */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleToggle}
-            className="p-1.5 md:p-2 rounded-full hover:bg-sage/10 transition-colors"
+            className="p-2 rounded-full hover:bg-sage/10 transition-colors"
             aria-label={isExpanded ? 'Dock panel' : 'Expand panel'}
           >
             {isExpanded ? (
-              <ChevronUp className="w-4 h-4 md:w-5 md:h-5 text-sage" />
+              <ChevronUp className="w-5 h-5 text-sage" />
             ) : (
-              <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-sage" />
+              <ChevronDown className="w-5 h-5 text-sage" />
             )}
           </motion.button>
 
-          {/* Close button */}
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={handleClose}
-            className="p-1.5 md:p-2 rounded-full hover:bg-sage/10 transition-colors"
+            className="p-2 rounded-full hover:bg-sage/10 transition-colors"
             aria-label="Close panel"
           >
-            <X className="w-4 h-4 md:w-5 md:h-5 text-sage" />
+            <X className="w-5 h-5 text-sage" />
           </motion.button>
         </div>
       </div>
@@ -187,9 +294,9 @@ export function PanelWrapper({
           >
             <div
               className={`
-                bg-cream overscroll-contain
-                max-h-[80vh] md:max-h-[60vh]
-                ${fullWidthContent ? 'px-0 py-0 overflow-x-hidden overflow-y-auto' : 'px-4 py-4 md:px-6 md:py-6 overflow-y-auto'}
+                bg-cream overscroll-contain overflow-y-auto overflow-x-hidden
+                max-h-[75vh] md:max-h-[60vh]
+                ${fullWidthContent ? '' : 'pt-4 md:px-6 md:py-6'}
               `}
             >
               {children}

@@ -28,7 +28,9 @@ export default async function HomePage() {
     categoryName: service.categoryName,
     categorySlug: service.categorySlug,
     subcategoryName: service.subcategoryName,
-    subcategorySlug: service.subcategorySlug
+    subcategorySlug: service.subcategorySlug,
+    vagaroWidgetUrl: service.vagaroWidgetUrl ?? undefined,
+    vagaroServiceCode: service.vagaroServiceCode ?? undefined,
   }))
 
   // Fetch team members from database
