@@ -55,8 +55,8 @@ export function ScrollServicesTrigger() {
       }
     }
 
-    // Listen for section-locked events on all sections
-    const sections = document.querySelectorAll('.mobile-snap-section')
+    // Listen for section-locked events on all sections (supports both old and new class names)
+    const sections = document.querySelectorAll('.mobile-section, .mobile-snap-section')
     sections.forEach(section => {
       section.addEventListener('section-locked', handleSectionLocked)
     })
