@@ -28,15 +28,19 @@ interface UseMobileGSAPScrollOptions {
 
 // Get default config for content-heavy sections (computed at runtime to avoid SSR issues)
 const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
-  // Positive anchorOffset = scroll less = section appears HIGHER on screen
-  // We want the section to land about 1/3 down from top, so offset by +33% of viewport
-  const anchorOffset = typeof window !== 'undefined' ? window.innerHeight * 0.33 : 250
+  // targetY = section.offsetTop - anchorOffset
+  // Higher anchorOffset = scroll LESS = section top appears LOWER on viewport
+  // Lower anchorOffset = scroll MORE = section top goes UP/off screen
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+
   return {
-    // These sections anchor 1/3 down the screen (content appears 2/3 up)
-    // and have higher sensitivity
-    'team': { threshold: 0.6, anchorOffset },
-    'instagram': { threshold: 0.6, anchorOffset },
-    'reviews': { threshold: 0.6, anchorOffset },
+    // Welcome: original was 0, was too low. Try small positive to scroll less.
+    'welcome': { threshold: 0.5, anchorOffset: vh * 0.18 },
+
+    // Team, Instagram, Reviews: original was 33%, try 15% to scroll a bit more
+    'team': { threshold: 0.6, anchorOffset: vh * 0.15 },
+    'instagram': { threshold: 0.6, anchorOffset: vh * 0.15 },
+    'reviews': { threshold: 0.6, anchorOffset: vh * 0.15 },
   }
 }
 
