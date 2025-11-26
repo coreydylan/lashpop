@@ -9,6 +9,7 @@ import { HEADER_HEIGHT } from '@/types/panel-stack';
 import { CategoryPickerPanel } from '../panels/CategoryPickerPanel';
 import { ServicePanel } from '../panels/ServicePanel';
 import { DiscoveryPanel } from '../panels/DiscoveryPanel';
+import { VagaroWidgetPanel } from '../panels/VagaroWidgetPanel';
 
 export function TopPanelContainer() {
   const { state } = usePanelStack();
@@ -110,6 +111,7 @@ export function TopPanelContainer() {
             {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
             {panel.type === 'discovery' && <DiscoveryPanel panel={panel} />}
             {panel.type === 'service-panel' && <ServicePanel panel={panel} />}
+            {panel.type === 'vagaro-widget' && <VagaroWidgetPanel panel={panel} />}
           </div>
         ))}
       </AnimatePresence>

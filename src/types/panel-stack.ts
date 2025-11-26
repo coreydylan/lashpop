@@ -21,7 +21,8 @@ export type PanelType =
   | 'service-detail'
 
   // Level 4: Action
-  | 'schedule';
+  | 'schedule'
+  | 'vagaro-widget';
 
 export type PanelLevel = 1 | 2 | 3 | 4;
 
@@ -116,6 +117,20 @@ export interface ServiceDetailPanelData {
 export interface SchedulePanelData {
   service: any;
   providerIds: string[];
+}
+
+export interface VagaroWidgetPanelData {
+  service: {
+    id: string;
+    name: string;
+    slug: string;
+    subtitle?: string;
+    durationMinutes: number;
+    priceStarting: number;
+    vagaroWidgetUrl: string;
+    categoryName?: string;
+    subcategoryName?: string;
+  };
 }
 
 // ============================================================================

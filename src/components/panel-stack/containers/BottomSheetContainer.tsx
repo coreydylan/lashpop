@@ -9,6 +9,7 @@ import { BottomSheetFrame } from '../frames/BottomSheetFrame';
 import { CategoryPickerPanel } from '../panels/CategoryPickerPanel';
 import { ServicePanel } from '../panels/ServicePanel';
 import { DiscoveryPanel } from '../panels/DiscoveryPanel';
+import { VagaroWidgetPanel } from '../panels/VagaroWidgetPanel';
 
 // Snap points as percentages from bottom (0 = bottom of screen)
 const SNAP_POINTS = {
@@ -213,10 +214,15 @@ export function BottomSheetContainer() {
         >
           <AnimatePresence mode="popLayout">
             {sortedPanels.map(panel => (
-              <BottomSheetFrame key={panel.id} panel={panel}>
+              <BottomSheetFrame
+                key={panel.id}
+                panel={panel}
+                fullWidthContent={panel.type === 'vagaro-widget'}
+              >
                 {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
                 {panel.type === 'discovery' && <DiscoveryPanel panel={panel} />}
                 {panel.type === 'service-panel' && <ServicePanel panel={panel} />}
+                {panel.type === 'vagaro-widget' && <VagaroWidgetPanel panel={panel} />}
               </BottomSheetFrame>
             ))}
           </AnimatePresence>

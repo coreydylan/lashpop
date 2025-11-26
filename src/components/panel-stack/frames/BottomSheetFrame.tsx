@@ -9,9 +9,10 @@ import type { Panel } from '@/types/panel-stack';
 interface BottomSheetFrameProps {
   panel: Panel;
   children: React.ReactNode;
+  fullWidthContent?: boolean;
 }
 
-export function BottomSheetFrame({ panel, children }: BottomSheetFrameProps) {
+export function BottomSheetFrame({ panel, children, fullWidthContent = false }: BottomSheetFrameProps) {
   const { actions } = usePanelStack();
   const isExpanded = panel.state === 'expanded';
   const isDocked = panel.state === 'docked';
@@ -123,7 +124,7 @@ export function BottomSheetFrame({ panel, children }: BottomSheetFrameProps) {
             }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4">
+            <div className={fullWidthContent ? '' : 'px-4 pb-4'}>
               {children}
             </div>
           </motion.div>

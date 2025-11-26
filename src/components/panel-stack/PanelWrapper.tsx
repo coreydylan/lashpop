@@ -11,6 +11,7 @@ interface PanelWrapperProps {
   children: React.ReactNode;
   title?: string;
   subtitle?: string;
+  fullWidthContent?: boolean; // Remove padding from content area for full-width embeds
 }
 
 export function PanelWrapper({
@@ -18,6 +19,7 @@ export function PanelWrapper({
   children,
   title,
   subtitle,
+  fullWidthContent = false,
 }: PanelWrapperProps) {
   const { actions } = usePanelStack();
   const isExpanded = panel.state === 'expanded';
@@ -135,11 +137,11 @@ export function PanelWrapper({
             className="overflow-hidden"
           >
             <div
-              className="
+              className={`
                 bg-cream overflow-y-auto overscroll-contain
                 max-h-[80vh] md:max-h-[60vh]
-                px-4 py-4 md:px-6 md:py-6
-              "
+                ${fullWidthContent ? 'px-0 py-0' : 'px-4 py-4 md:px-6 md:py-6'}
+              `}
             >
               {children}
             </div>

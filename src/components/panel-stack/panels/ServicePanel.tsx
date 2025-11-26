@@ -21,13 +21,17 @@ interface ServicePanelProps {
 
 type PanelView = 'browse' | 'service-detail' | 'time-selection';
 
-// Mock providers - will be replaced with real data
-const MOCK_PROVIDERS = [
-  { id: '1', name: 'Sarah', imageUrl: '/placeholder-team.jpg', role: 'Lead Lash Artist' },
-  { id: '2', name: 'Maya', imageUrl: '/placeholder-team.jpg', role: 'Lash Specialist' },
-  { id: '3', name: 'Jamie', imageUrl: '/placeholder-team.jpg', role: 'Lash Artist' },
-  { id: '4', name: 'Taylor', imageUrl: '/placeholder-team.jpg', role: 'Senior Artist' },
-];
+// Services that should open the VagaroWidgetPanel directly
+// VagaroWidgetPanel handles the actual widget URLs (from DB or fallback)
+const SERVICES_WITH_VAGARO_WIDGET = ['classic', 'classic-fill', 'classic-mini'];
+
+// Mock providers - preserved for future use (provider selection commented out)
+// const MOCK_PROVIDERS = [
+//   { id: '1', name: 'Sarah', imageUrl: '/placeholder-team.jpg', role: 'Lead Lash Artist' },
+//   { id: '2', name: 'Maya', imageUrl: '/placeholder-team.jpg', role: 'Lash Specialist' },
+//   { id: '3', name: 'Jamie', imageUrl: '/placeholder-team.jpg', role: 'Lash Artist' },
+//   { id: '4', name: 'Taylor', imageUrl: '/placeholder-team.jpg', role: 'Senior Artist' },
+// ];
 
 export function ServicePanel({ panel }: ServicePanelProps) {
   const { state, actions } = usePanelStack();
@@ -124,6 +128,34 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     // Track service view
     trackServiceView(service.id, service.name, data.categoryId);
 
+    // Check if service should use VagaroWidgetPanel (has DB URL or is in demo list)
+    const shouldUseVagaroWidget = service.vagaroWidgetUrl || SERVICES_WITH_VAGARO_WIDGET.includes(service.slug);
+
+    if (shouldUseVagaroWidget) {
+      // Open VagaroWidgetPanel directly - simplified flow!
+      // VagaroWidgetPanel will handle getting the correct script URL
+      actions.openPanel(
+        'vagaro-widget',
+        {
+          service: {
+            id: service.id,
+            name: service.name,
+            slug: service.slug,
+            subtitle: service.subtitle,
+            durationMinutes: service.durationMinutes,
+            priceStarting: service.priceStarting,
+            vagaroWidgetUrl: service.vagaroWidgetUrl, // May be null - VagaroWidgetPanel has fallbacks
+            categoryName: service.categoryName || data.categoryName,
+            subcategoryName: service.subcategoryName,
+          },
+        },
+        { parentId: panel.id }
+      );
+      return;
+    }
+
+    // Fallback to old flow for services without widget URLs
+    // (This can be removed once all services have widget URLs)
     setSelectedService(service);
     setCurrentView('service-detail');
     setNavigationPath([data.categoryName, service.name]);
@@ -345,7 +377,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                 </div>
                 <div className="flex items-center gap-1.5 md:gap-2">
                   <User className="w-3.5 h-3.5 md:w-5 md:h-5 text-ocean-mist" />
-                  <span className="text-[11px] md:text-sm text-dune">{providers.length || MOCK_PROVIDERS.length} artists</span>
+                  <span className="text-[11px] md:text-sm text-dune">{providers.length || 4} artists</span>
                 </div>
               </div>
 

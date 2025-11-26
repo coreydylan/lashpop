@@ -373,7 +373,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
       // Determine level based on type
       let level: PanelLevel = 1;
       if (type === 'service-panel') level = 2;
-      if (type === 'service-detail') level = 3;
+      if (type === 'service-detail' || type === 'vagaro-widget') level = 3;
       if (type === 'schedule') level = 4;
 
       // Calculate position within level
