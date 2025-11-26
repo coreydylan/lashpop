@@ -150,10 +150,18 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     }
   }, [currentView, activeTab, filteredServices.length, data.subcategories, data.services.length, selectedService, selectedProviders, providers, panel.id, actions]);
 
-  // Fetch team members when service is selected
+  // Fetch team members when service is selected (only for service-detail view, not booking)
   useEffect(() => {
     async function fetchProviders() {
-      if (!selectedService) return;
+      // Skip if no service, in booking view, or service doesn't have a valid UUID
+      if (!selectedService || currentView === 'booking') return;
+
+      // Check if the ID looks like a UUID (basic check)
+      const isValidUuid = selectedService.id && selectedService.id.includes('-');
+      if (!isValidUuid) {
+        console.warn('Service ID is not a valid UUID, skipping provider fetch:', selectedService.id);
+        return;
+      }
 
       setIsLoadingProviders(true);
       try {
@@ -167,7 +175,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     }
 
     fetchProviders();
-  }, [selectedService]);
+  }, [selectedService, currentView]);
 
   // Fetch gallery when service is selected
   useEffect(() => {
@@ -257,15 +265,18 @@ export function ServicePanel({ panel }: ServicePanelProps) {
       || ALL_SERVICES_WIDGET_SCRIPT;
   }, [selectedService]);
 
-  // Load Vagaro widget script when in booking view
-  useEffect(() => {
-    if (currentView !== 'booking' || !widgetContainerRef.current || scriptLoadedRef.current) return;
+  // Load Vagaro widget when container is mounted (using callback ref)
+  const loadWidgetIntoContainer = useCallback((container: HTMLDivElement | null) => {
+    if (!container || currentView !== 'booking' || !selectedService) return;
 
-    const container = widgetContainerRef.current;
-    const widgetScriptUrl = getWidgetScriptUrl();
+    // Store ref for potential cleanup
+    widgetContainerRef.current = container;
 
     // Clear any existing content
     container.innerHTML = '';
+
+    const widgetScriptUrl = getWidgetScriptUrl();
+    console.log('Loading Vagaro widget:', widgetScriptUrl);
 
     // Create the Vagaro widget structure
     const vagaroDiv = document.createElement('div');
@@ -279,11 +290,12 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     script.async = true;
 
     script.onload = () => {
+      console.log('Vagaro widget script loaded');
       setIsBookingLoading(false);
-      scriptLoadedRef.current = true;
     };
 
-    script.onerror = () => {
+    script.onerror = (e) => {
+      console.error('Vagaro widget script failed to load', e);
       setIsBookingLoading(false);
       setHasBookingError(true);
     };
@@ -291,15 +303,11 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     vagaroDiv.appendChild(script);
     container.appendChild(vagaroDiv);
 
-    // Set a timeout to hide loading after a reasonable time
-    const timeout = setTimeout(() => {
+    // Fallback timeout to hide loading
+    setTimeout(() => {
       setIsBookingLoading(false);
-    }, 3000);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [currentView, getWidgetScriptUrl]);
+    }, 5000);
+  }, [currentView, selectedService, getWidgetScriptUrl]);
 
   // Provider selection handlers
   const handleProviderToggle = (providerId: string) => {
@@ -831,8 +839,14 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
             >
-              {/* CSS to override Vagaro widget styles and crop the header */}
+              {/* CSS to override Vagaro widget styles and apply cream tint */}
               <style jsx global>{`
+                /* Shell container with cream background for blend mode to work */
+                .vagaro-widget-shell {
+                  background: rgb(250, 247, 241); /* cream */
+                  border-radius: 12px;
+                }
+
                 /* Force Vagaro container to be full width */
                 .vagaro-widget-container,
                 .vagaro-widget-container .vagaro {
@@ -848,33 +862,13 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                   display: none !important;
                 }
 
-                /* Inner wrapper that gets pulled up to crop the header */
-                .vagaro-iframe-wrapper {
-                  position: relative;
-                  margin-top: -330px;
-                  padding-top: 0;
-                  width: 100% !important;
-                }
-
                 /* Style the iframe */
                 .vagaro-widget-container iframe {
                   width: 100% !important;
                   max-width: none !important;
-                  min-height: 800px !important;
+                  min-height: 700px !important;
                   border: none !important;
                   display: block;
-                }
-
-                /* Mask to hide the cropped area with a gradient fade */
-                .vagaro-crop-mask {
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  right: 0;
-                  height: 30px;
-                  background: linear-gradient(to bottom, var(--color-cream, #F5F0E8) 0%, transparent 100%);
-                  pointer-events: none;
-                  z-index: 5;
                 }
               `}</style>
 
@@ -890,11 +884,21 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                 </div>
               </div>
 
-              {/* Full Width Vagaro Widget Container with cropping */}
-              <div className="relative overflow-hidden w-full -mx-4 md:-mx-6">
-                {/* Loading State */}
+              {/* Vagaro Widget Container with warm/cream tint filter */}
+              <div className="relative w-full" style={{ minHeight: '500px' }}>
+                {/* Widget container with CSS filter to warm up colors */}
+                <div
+                  ref={loadWidgetIntoContainer}
+                  style={{
+                    minHeight: '500px',
+                    // CSS filter to make white appear cream/warm
+                    filter: 'sepia(10%) saturate(95%) brightness(99%)',
+                  }}
+                />
+
+                {/* Loading State - overlay on top */}
                 {isBookingLoading && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80 min-h-[400px]">
+                  <div className="absolute inset-0 flex items-center justify-center bg-cream/90 z-10">
                     <div className="text-center">
                       <Loader2 className="w-8 h-8 text-dusty-rose animate-spin mx-auto mb-3" />
                       <p className="text-sm text-dune/60">Loading booking...</p>
@@ -902,9 +906,9 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                   </div>
                 )}
 
-                {/* Error State */}
+                {/* Error State - overlay on top */}
                 {hasBookingError && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80 min-h-[400px]">
+                  <div className="absolute inset-0 flex items-center justify-center bg-cream/90 z-10">
                     <div className="text-center max-w-sm px-4">
                       <AlertCircle className="w-10 h-10 text-terracotta mx-auto mb-3" />
                       <h3 className="font-medium text-dune mb-2">Unable to load booking</h3>
@@ -914,16 +918,6 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                     </div>
                   </div>
                 )}
-
-                {/* Gradient mask at top to smooth the crop */}
-                <div className="vagaro-crop-mask" />
-
-                {/* Widget container - pushed up to crop the header */}
-                <div
-                  ref={widgetContainerRef}
-                  className="vagaro-widget-container vagaro-iframe-wrapper px-4 md:px-6"
-                  style={{ minHeight: '500px' }}
-                />
               </div>
             </motion.div>
           )}

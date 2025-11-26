@@ -41,7 +41,7 @@ export function WelcomeSection() {
         {!isMobile ? (
           <ParallaxImage
             src="/lashpop-images/frontdeskeditwgradientedit2.webp"
-            depthSrc="/lashpop-images/frontdeskeditwgradientedit2_depth.png"
+            depthSrc="/lashpop-images/frontdeskeditwgradientedit2_depthv4.png"
             alt="LashPop Studio Desk"
             className="absolute inset-0 w-full h-full"
             parallaxAmount={0.15}
