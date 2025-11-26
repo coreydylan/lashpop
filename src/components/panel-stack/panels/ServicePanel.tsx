@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Clock, DollarSign, User, Check, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, DollarSign, User, Check, Loader2, AlertCircle } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import Image from 'next/image';
 import { PanelWrapper } from '../PanelWrapper';
@@ -12,18 +12,23 @@ import { PhoneSaveNudge } from '@/components/auth/PhoneSaveNudge';
 import { getAssetsByServiceSlug, type AssetWithTags } from '@/actions/dam';
 import { getTeamMembersByServiceId } from '@/actions/team';
 import { VagaroBookingWidget } from '@/components/VagaroBookingWidget';
-import type { Panel, ServicePanelData } from '@/types/panel-stack';
+import type { Panel, ServicePanelData, BreadcrumbStep } from '@/types/panel-stack';
 import type { SelectTeamMember } from '@/db/schema/team_members';
 
 interface ServicePanelProps {
   panel: Panel;
 }
 
-type PanelView = 'browse' | 'service-detail' | 'time-selection';
+type PanelView = 'browse' | 'service-detail' | 'time-selection' | 'booking';
 
-// Services that should open the VagaroWidgetPanel directly
-// VagaroWidgetPanel handles the actual widget URLs (from DB or fallback)
+// Services that use the inline Vagaro booking widget
 const SERVICES_WITH_VAGARO_WIDGET = ['classic', 'classic-fill', 'classic-mini'];
+
+// Fallback widget URLs (same as VagaroWidgetPanel)
+const ALL_SERVICES_WIDGET_SCRIPT = 'https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfoR6PmS0?v=09imfFDQKcMOy0zTyGQlMuzyCSHrqkUB9fzUvd1qy2Fa#';
+const SERVICE_WIDGET_SCRIPTS: Record<string, string> = {
+  'classic': 'https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfoR6PmRW?v=avMXnLXkPKg91DeEID6Jji7gSkTP6tcpd4WwH2BVNJu#',
+};
 
 // Mock providers - preserved for future use (provider selection commented out)
 // const MOCK_PROVIDERS = [
@@ -40,7 +45,6 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
   // View state
   const [currentView, setCurrentView] = useState<PanelView>('browse');
-  const [navigationPath, setNavigationPath] = useState<string[]>([data.categoryName]);
 
   // Browse view state
   const [activeTab, setActiveTab] = useState(data.subcategories[0]?.id || '');
@@ -55,6 +59,69 @@ export function ServicePanel({ panel }: ServicePanelProps) {
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [showSaveNudge, setShowSaveNudge] = useState(false);
   const [isWidgetLoaded, setIsWidgetLoaded] = useState(false);
+
+  // Booking view state (inline Vagaro widget)
+  const widgetContainerRef = useRef<HTMLDivElement>(null);
+  const scriptLoadedRef = useRef(false);
+  const [isBookingLoading, setIsBookingLoading] = useState(true);
+  const [hasBookingError, setHasBookingError] = useState(false);
+
+  // Build breadcrumbs based on current view
+  const buildBreadcrumbs = useCallback((): BreadcrumbStep[] => {
+    const crumbs: BreadcrumbStep[] = [
+      { id: 'browse', label: data.categoryName }
+    ];
+
+    if (selectedService && (currentView === 'service-detail' || currentView === 'time-selection' || currentView === 'booking')) {
+      crumbs.push({ id: 'service-detail', label: selectedService.name, data: { serviceId: selectedService.id } });
+    }
+
+    if (currentView === 'time-selection') {
+      crumbs.push({ id: 'time-selection', label: 'Select Artist' });
+    }
+
+    if (currentView === 'booking') {
+      crumbs.push({ id: 'booking', label: 'Book' });
+    }
+
+    return crumbs;
+  }, [data.categoryName, selectedService, currentView]);
+
+  // Update breadcrumbs when view changes
+  useEffect(() => {
+    const breadcrumbs = buildBreadcrumbs();
+    actions.updatePanelBreadcrumbs(panel.id, breadcrumbs);
+  }, [currentView, selectedService, panel.id, actions, buildBreadcrumbs]);
+
+  // Handle breadcrumb navigation
+  const handleBreadcrumbClick = useCallback((stepId: string) => {
+    switch (stepId) {
+      case 'browse':
+        setCurrentView('browse');
+        setSelectedService(null);
+        setSelectedProviders(new Set());
+        setGallery([]);
+        // Reset widget state
+        scriptLoadedRef.current = false;
+        setIsBookingLoading(true);
+        setHasBookingError(false);
+        break;
+      case 'service-detail':
+        setCurrentView('service-detail');
+        // Reset widget state
+        scriptLoadedRef.current = false;
+        setIsBookingLoading(true);
+        setHasBookingError(false);
+        break;
+      case 'time-selection':
+        setCurrentView('time-selection');
+        // Reset widget state
+        scriptLoadedRef.current = false;
+        setIsBookingLoading(true);
+        setHasBookingError(false);
+        break;
+    }
+  }, []);
 
   // Filter services by active subcategory
   const filteredServices = useMemo(() => {
@@ -128,46 +195,35 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     // Track service view
     trackServiceView(service.id, service.name, data.categoryId);
 
-    // Check if service should use VagaroWidgetPanel (has DB URL or is in demo list)
+    // Check if service should use Vagaro widget (has DB URL or is in demo list)
     const shouldUseVagaroWidget = service.vagaroWidgetUrl || SERVICES_WITH_VAGARO_WIDGET.includes(service.slug);
 
-    if (shouldUseVagaroWidget) {
-      // Open VagaroWidgetPanel directly - simplified flow!
-      // VagaroWidgetPanel will handle getting the correct script URL
-      actions.openPanel(
-        'vagaro-widget',
-        {
-          service: {
-            id: service.id,
-            name: service.name,
-            slug: service.slug,
-            subtitle: service.subtitle,
-            durationMinutes: service.durationMinutes,
-            priceStarting: service.priceStarting,
-            vagaroWidgetUrl: service.vagaroWidgetUrl, // May be null - VagaroWidgetPanel has fallbacks
-            categoryName: service.categoryName || data.categoryName,
-            subcategoryName: service.subcategoryName,
-          },
-        },
-        { parentId: panel.id }
-      );
-      return;
-    }
-
-    // Fallback to old flow for services without widget URLs
-    // (This can be removed once all services have widget URLs)
     setSelectedService(service);
-    setCurrentView('service-detail');
-    setNavigationPath([data.categoryName, service.name]);
     setSelectedProviders(new Set()); // Reset provider selection
+
+    // Reset widget state for new service
+    scriptLoadedRef.current = false;
+    setIsBookingLoading(true);
+    setHasBookingError(false);
+
+    if (shouldUseVagaroWidget) {
+      // Go directly to booking view for services with Vagaro widget
+      setCurrentView('booking');
+    } else {
+      // Go to service detail for services without widget (legacy flow)
+      setCurrentView('service-detail');
+    }
   };
 
   const handleBackToBrowse = () => {
     setCurrentView('browse');
-    setNavigationPath([data.categoryName]);
     setSelectedService(null);
     setSelectedProviders(new Set());
     setGallery([]);
+    // Reset widget state
+    scriptLoadedRef.current = false;
+    setIsBookingLoading(true);
+    setHasBookingError(false);
   };
 
   const handleContinueToTimeSelection = () => {
@@ -177,8 +233,73 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     }
 
     setCurrentView('time-selection');
-    setNavigationPath([data.categoryName, selectedService.name, 'Select Time']);
   };
+
+  const handleContinueToBooking = () => {
+    // Track service selection
+    if (selectedService) {
+      trackServiceSelection(selectedService.id, selectedService.name, data.categoryId);
+    }
+
+    // Reset widget state
+    scriptLoadedRef.current = false;
+    setIsBookingLoading(true);
+    setHasBookingError(false);
+
+    setCurrentView('booking');
+  };
+
+  // Get widget script URL for booking view
+  const getWidgetScriptUrl = useCallback(() => {
+    if (!selectedService) return ALL_SERVICES_WIDGET_SCRIPT;
+    return selectedService.vagaroWidgetUrl
+      || SERVICE_WIDGET_SCRIPTS[selectedService.slug]
+      || ALL_SERVICES_WIDGET_SCRIPT;
+  }, [selectedService]);
+
+  // Load Vagaro widget script when in booking view
+  useEffect(() => {
+    if (currentView !== 'booking' || !widgetContainerRef.current || scriptLoadedRef.current) return;
+
+    const container = widgetContainerRef.current;
+    const widgetScriptUrl = getWidgetScriptUrl();
+
+    // Clear any existing content
+    container.innerHTML = '';
+
+    // Create the Vagaro widget structure
+    const vagaroDiv = document.createElement('div');
+    vagaroDiv.className = 'vagaro';
+    vagaroDiv.style.cssText = 'width:100%; padding:0; border:0; margin:0; text-align:left;';
+
+    // Add the script
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = widgetScriptUrl;
+    script.async = true;
+
+    script.onload = () => {
+      setIsBookingLoading(false);
+      scriptLoadedRef.current = true;
+    };
+
+    script.onerror = () => {
+      setIsBookingLoading(false);
+      setHasBookingError(true);
+    };
+
+    vagaroDiv.appendChild(script);
+    container.appendChild(vagaroDiv);
+
+    // Set a timeout to hide loading after a reasonable time
+    const timeout = setTimeout(() => {
+      setIsBookingLoading(false);
+    }, 3000);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [currentView, getWidgetScriptUrl]);
 
   // Provider selection handlers
   const handleProviderToggle = (providerId: string) => {
@@ -221,47 +342,6 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     trackMouse: false,
   });
 
-  // Breadcrumb component
-  const Breadcrumb = () => (
-    <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm mb-3 md:mb-4 flex-wrap">
-      <button
-        onClick={handleBackToBrowse}
-        className={`transition-colors ${
-          currentView === 'browse'
-            ? 'text-dune font-medium'
-            : 'text-sage hover:text-dusty-rose'
-        }`}
-      >
-        {data.categoryName}
-      </button>
-
-      {selectedService && (
-        <>
-          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-sage/50" />
-          <button
-            onClick={() => currentView === 'time-selection' && setCurrentView('service-detail')}
-            className={`transition-colors ${
-              currentView === 'service-detail'
-                ? 'text-dune font-medium'
-                : currentView === 'time-selection'
-                ? 'text-sage hover:text-dusty-rose'
-                : 'text-dune'
-            }`}
-          >
-            {selectedService.name}
-          </button>
-        </>
-      )}
-
-      {currentView === 'time-selection' && (
-        <>
-          <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-sage/50" />
-          <span className="text-dune font-medium">Select Time</span>
-        </>
-      )}
-    </div>
-  );
-
   const visiblePhotos = showAllPhotos ? gallery : gallery.slice(0, 8);
   const priceDisplay = selectedService ? `$${(selectedService.priceStarting / 100).toFixed(0)}+` : '';
 
@@ -271,10 +351,8 @@ export function ServicePanel({ panel }: ServicePanelProps) {
         panel={panel}
         title={currentView === 'browse' ? data.categoryName : ''}
         subtitle={currentView === 'browse' ? `${filteredServices.length} services available` : ''}
+        onBreadcrumbClick={handleBreadcrumbClick}
       >
-        {/* Breadcrumb Navigation */}
-        {currentView !== 'browse' && <Breadcrumb />}
-
         {/* View Content with Animations */}
         <AnimatePresence mode="wait">
           {/* BROWSE VIEW */}
@@ -740,6 +818,112 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                     Safe and encrypted payment processing
                   </p>
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* BOOKING VIEW - Inline Vagaro Widget */}
+          {currentView === 'booking' && selectedService && (
+            <motion.div
+              key="booking"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* CSS to override Vagaro widget styles and crop the header */}
+              <style jsx global>{`
+                /* Force Vagaro container to be full width */
+                .vagaro-widget-container,
+                .vagaro-widget-container .vagaro {
+                  width: 100% !important;
+                  max-width: none !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                }
+
+                /* Hide Vagaro branding links */
+                .vagaro-widget-container .vagaro > a,
+                .vagaro-widget-container .vagaro > style + a {
+                  display: none !important;
+                }
+
+                /* Inner wrapper that gets pulled up to crop the header */
+                .vagaro-iframe-wrapper {
+                  position: relative;
+                  margin-top: -330px;
+                  padding-top: 0;
+                  width: 100% !important;
+                }
+
+                /* Style the iframe */
+                .vagaro-widget-container iframe {
+                  width: 100% !important;
+                  max-width: none !important;
+                  min-height: 800px !important;
+                  border: none !important;
+                  display: block;
+                }
+
+                /* Mask to hide the cropped area with a gradient fade */
+                .vagaro-crop-mask {
+                  position: absolute;
+                  top: 0;
+                  left: 0;
+                  right: 0;
+                  height: 30px;
+                  background: linear-gradient(to bottom, var(--color-cream, #F5F0E8) 0%, transparent 100%);
+                  pointer-events: none;
+                  z-index: 5;
+                }
+              `}</style>
+
+              {/* Compact Service Summary */}
+              <div className="flex items-center gap-4 text-sm text-dune/70 py-3 mb-4">
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-sage" />
+                  <span>{selectedService.durationMinutes} min</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <DollarSign className="w-4 h-4 text-terracotta" />
+                  <span>From {priceDisplay}</span>
+                </div>
+              </div>
+
+              {/* Full Width Vagaro Widget Container with cropping */}
+              <div className="relative overflow-hidden w-full -mx-4 md:-mx-6">
+                {/* Loading State */}
+                {isBookingLoading && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80 min-h-[400px]">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 text-dusty-rose animate-spin mx-auto mb-3" />
+                      <p className="text-sm text-dune/60">Loading booking...</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {hasBookingError && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80 min-h-[400px]">
+                    <div className="text-center max-w-sm px-4">
+                      <AlertCircle className="w-10 h-10 text-terracotta mx-auto mb-3" />
+                      <h3 className="font-medium text-dune mb-2">Unable to load booking</h3>
+                      <p className="text-sm text-dune/60">
+                        Please refresh or contact us to book.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Gradient mask at top to smooth the crop */}
+                <div className="vagaro-crop-mask" />
+
+                {/* Widget container - pushed up to crop the header */}
+                <div
+                  ref={widgetContainerRef}
+                  className="vagaro-widget-container vagaro-iframe-wrapper px-4 md:px-6"
+                  style={{ minHeight: '500px' }}
+                />
               </div>
             </motion.div>
           )}

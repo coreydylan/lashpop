@@ -2,26 +2,66 @@
 
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
+
+// Dynamically import ParallaxImage to avoid SSR issues with Three.js
+const ParallaxImage = dynamic(() => import('@/components/three/ParallaxImage'), {
+  ssr: false,
+  loading: () => (
+    <Image
+      src="/lashpop-images/frontdeskeditwgradientedit2.webp"
+      alt="LashPop Studio Desk"
+      quality={100}
+      fill
+      sizes="100vw"
+      className="object-cover object-[35%_center] md:object-center"
+      priority
+    />
+  ),
+})
 
 export function WelcomeSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-20%" })
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   return (
     <section ref={ref} className="relative min-h-[115vh] overflow-hidden">
-      {/* Background Image - No overlay */}
+      {/* Background Image - 3D Parallax on desktop */}
       <div className="absolute inset-0 z-0">
-        <Image
-          src="/lashpop-images/frontdeskeditwgradientedit2.webp"
-          alt="LashPop Studio Desk"
-          quality={100}
-          fill
-          sizes="100vw"
-          className="object-cover object-[35%_center] md:object-center"
-          priority
-        />
+        {!isMobile ? (
+          <ParallaxImage
+            src="/lashpop-images/frontdeskeditwgradientedit2.webp"
+            depthSrc="/lashpop-images/frontdeskeditwgradientedit2_depth.png"
+            alt="LashPop Studio Desk"
+            className="absolute inset-0 w-full h-full"
+            parallaxAmount={0.15}
+            scrollIntensity={0.3}
+            scrollTrigger={{
+              start: "top bottom",
+              end: "bottom top",
+            }}
+          />
+        ) : (
+          <Image
+            src="/lashpop-images/frontdeskeditwgradientedit2.webp"
+            alt="LashPop Studio Desk"
+            quality={100}
+            fill
+            sizes="100vw"
+            className="object-cover object-[35%_center] md:object-center"
+            priority
+          />
+        )}
       </div>
 
       {/* Content Container with Safe Zone */}

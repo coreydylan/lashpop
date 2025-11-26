@@ -62,7 +62,6 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
 
   // GSAP Animation for Background Pan
   useEffect(() => {
-    // Wait for refs to be ready
     if (!imageRef.current || !imageContainerRef.current) return
 
     const mm = gsap.matchMedia()
@@ -74,15 +73,15 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
       if (!image || !container) return
 
       // Initial pan animation on load
-      gsap.fromTo(image, 
-        { 
+      gsap.fromTo(image,
+        {
           scale: 1.4,
-          xPercent: 0, 
+          xPercent: 0,
         },
-        { 
+        {
           scale: 1.2,
-          xPercent: 20, // Pan significantly right (camera moves left) - Reversed
-          duration: 4, // Slower animation
+          xPercent: 20,
+          duration: 4,
           ease: "power2.out"
         }
       )
@@ -90,27 +89,25 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
       // Pin the arch container so it stays at the bottom of the viewport while fading out
       ScrollTrigger.create({
         trigger: container,
-        start: "bottom bottom", // Start pinning when container bottom hits viewport bottom
-        end: "+=500", // Pin for 500px of scrolling (adjust to match fade out duration)
+        start: "bottom bottom",
+        end: "+=500",
         pin: true,
-        pinSpacing: false, // Don't add spacing, let content overlap naturally
+        pinSpacing: false,
         anticipatePin: 1,
       })
 
-      // Scroll-triggered pan animation (parallax) - Starts only when user scrolls
-      // We removed the 'scrub' on the initial timeline to avoid conflict
+      // Scroll-triggered pan animation (parallax)
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: container,
-          start: "top center", // Start parallax when container enters view
-          end: "bottom top", 
+          start: "top center",
+          end: "bottom top",
           scrub: 1,
         }
       })
 
-      // Continue panning
       tl.to(image, {
-        xPercent: 25, // Continue panning right slightly - Reversed
+        xPercent: 25,
         ease: "none"
       }, 0)
     })
@@ -391,9 +388,8 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                     className="object-cover object-right"
                     priority
                     quality={85}
-                    // Initial styles will be overridden by GSAP
                     style={{
-                      transform: "scale(1.4) translateX(0%)", 
+                      transform: "scale(1.4) translateX(0%)",
                       transformOrigin: "center center"
                     }}
                   />

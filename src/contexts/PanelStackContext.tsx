@@ -11,6 +11,7 @@ import type {
   PanelState,
   OpenPanelOptions,
   PanelStackEvent,
+  BreadcrumbStep,
   HEADER_HEIGHT,
 } from '@/types/panel-stack';
 
@@ -52,6 +53,7 @@ type Action =
   | { type: 'DESELECT_CATEGORY'; payload: string }
   | { type: 'UPDATE_PANEL_DATA'; payload: { panelId: string; data: any } }
   | { type: 'UPDATE_PANEL_SUMMARY'; payload: { panelId: string; summary: string } }
+  | { type: 'UPDATE_PANEL_BREADCRUMBS'; payload: { panelId: string; breadcrumbs: BreadcrumbStep[] } }
   | { type: 'UPDATE_TOTAL_HEIGHT'; payload: number }
   | { type: 'SET_INTERACTING'; payload: boolean };
 
@@ -258,6 +260,17 @@ function panelStackReducer(state: PanelStackState, action: Action): PanelStackSt
         panels: state.panels.map(p =>
           p.id === action.payload.panelId
             ? { ...p, summary: action.payload.summary }
+            : p
+        ),
+      };
+    }
+
+    case 'UPDATE_PANEL_BREADCRUMBS': {
+      return {
+        ...state,
+        panels: state.panels.map(p =>
+          p.id === action.payload.panelId
+            ? { ...p, breadcrumbs: action.payload.breadcrumbs }
             : p
         ),
       };
@@ -532,6 +545,10 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     dispatch({ type: 'UPDATE_PANEL_SUMMARY', payload: { panelId, summary } });
   }, []);
 
+  const updatePanelBreadcrumbs = useCallback((panelId: string, breadcrumbs: BreadcrumbStep[]) => {
+    dispatch({ type: 'UPDATE_PANEL_BREADCRUMBS', payload: { panelId, breadcrumbs } });
+  }, []);
+
   const actions: PanelStackActions = useMemo(() => ({
     openPanel,
     closePanel,
@@ -550,6 +567,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     getChildPanels,
     updatePanelData,
     updatePanelSummary,
+    updatePanelBreadcrumbs,
   }), [
     openPanel,
     closePanel,
@@ -568,6 +586,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     getChildPanels,
     updatePanelData,
     updatePanelSummary,
+    updatePanelBreadcrumbs,
   ]);
 
   const value: PanelStackContextValue = useMemo(() => ({

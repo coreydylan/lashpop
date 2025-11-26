@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import { usePanelStack } from '@/contexts/PanelStackContext';
-import type { Panel } from '@/types/panel-stack';
+import type { Panel, BreadcrumbStep } from '@/types/panel-stack';
 
 interface PanelWrapperProps {
   panel: Panel;
@@ -12,6 +12,7 @@ interface PanelWrapperProps {
   title?: string;
   subtitle?: string;
   fullWidthContent?: boolean; // Remove padding from content area for full-width embeds
+  onBreadcrumbClick?: (stepId: string) => void; // Handler for breadcrumb navigation
 }
 
 export function PanelWrapper({
@@ -20,10 +21,12 @@ export function PanelWrapper({
   title,
   subtitle,
   fullWidthContent = false,
+  onBreadcrumbClick,
 }: PanelWrapperProps) {
   const { actions } = usePanelStack();
   const isExpanded = panel.state === 'expanded';
   const isDocked = panel.state === 'docked';
+  const hasBreadcrumbs = panel.breadcrumbs && panel.breadcrumbs.length > 1;
 
   const handleToggle = () => {
     actions.togglePanel(panel.id);
@@ -58,33 +61,79 @@ export function PanelWrapper({
         `}
         onClick={isDocked ? handleToggle : undefined}
       >
-        <div className="flex-1 flex items-center gap-3 min-w-0">
-          {/* Title */}
-          {title && (
-            <h3 className={`
-              font-serif text-dune font-medium truncate
-              ${isDocked ? 'text-sm md:text-base' : 'text-base md:text-lg'}
-            `}>
-              {title}
-            </h3>
+        <div className="flex-1 flex items-center gap-2 min-w-0 overflow-hidden">
+          {/* Breadcrumbs (when available and expanded) */}
+          {hasBreadcrumbs && isExpanded ? (
+            <div className="flex items-center gap-1 md:gap-1.5 min-w-0 overflow-x-auto scrollbar-hide">
+              {panel.breadcrumbs!.map((crumb, index) => {
+                const isLast = index === panel.breadcrumbs!.length - 1;
+                const isClickable = !isLast && onBreadcrumbClick;
+
+                return (
+                  <React.Fragment key={crumb.id}>
+                    <button
+                      onClick={(e) => {
+                        if (isClickable) {
+                          e.stopPropagation();
+                          onBreadcrumbClick(crumb.id);
+                        }
+                      }}
+                      disabled={isLast}
+                      className={`
+                        font-serif whitespace-nowrap transition-colors flex-shrink-0
+                        ${isDocked ? 'text-xs md:text-sm' : 'text-sm md:text-base'}
+                        ${isLast
+                          ? 'text-dune font-medium cursor-default'
+                          : 'text-sage hover:text-dusty-rose cursor-pointer'
+                        }
+                      `}
+                    >
+                      {crumb.label}
+                    </button>
+                    {!isLast && (
+                      <ChevronRight className="w-3 h-3 md:w-4 md:h-4 text-sage/50 flex-shrink-0" />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          ) : (
+            <>
+              {/* Title (fallback when no breadcrumbs) */}
+              {title && (
+                <h3 className={`
+                  font-serif text-dune font-medium truncate
+                  ${isDocked ? 'text-sm md:text-base' : 'text-base md:text-lg'}
+                `}>
+                  {title}
+                </h3>
+              )}
+
+              {/* Summary (when docked) */}
+              {isDocked && panel.summary && (
+                <span className="text-xs md:text-sm text-sage truncate hidden sm:inline">
+                  · {panel.summary}
+                </span>
+              )}
+            </>
           )}
 
-          {/* Summary (when docked) */}
-          {isDocked && panel.summary && (
-            <span className="text-xs md:text-sm text-sage truncate hidden sm:inline">
-              · {panel.summary}
+          {/* Breadcrumb summary when docked with breadcrumbs */}
+          {hasBreadcrumbs && isDocked && (
+            <span className="text-xs md:text-sm text-sage truncate">
+              {panel.breadcrumbs!.map(c => c.label).join(' › ')}
             </span>
           )}
 
           {/* Badge */}
           {panel.badge && (
-            <span className="px-2 py-0.5 rounded-full bg-dusty-rose text-white text-xs font-semibold">
+            <span className="px-2 py-0.5 rounded-full bg-dusty-rose text-white text-xs font-semibold flex-shrink-0">
               {typeof panel.badge === 'number' ? panel.badge : panel.badge.toUpperCase()}
             </span>
           )}
 
-          {/* Subtitle (when expanded) */}
-          {isExpanded && subtitle && (
+          {/* Subtitle (when expanded, no breadcrumbs) */}
+          {isExpanded && subtitle && !hasBreadcrumbs && (
             <span className="text-xs md:text-sm text-sage truncate hidden md:inline">
               {subtitle}
             </span>

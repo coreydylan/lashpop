@@ -31,6 +31,16 @@ export type PanelState = 'closed' | 'docked' | 'expanded';
 export type PanelBadge = 'new' | 'updated' | number;
 
 // ============================================================================
+// Breadcrumb Navigation (for multi-step panels)
+// ============================================================================
+
+export interface BreadcrumbStep {
+  id: string;
+  label: string;
+  data?: Record<string, any>; // Context needed to restore this step
+}
+
+// ============================================================================
 // Panel State
 // ============================================================================
 
@@ -46,6 +56,9 @@ export interface Panel {
   // Summary for docked header
   summary?: string;
   badge?: PanelBadge;
+
+  // Breadcrumb navigation for multi-step panels
+  breadcrumbs?: BreadcrumbStep[];
 
   // Timestamps
   createdAt: number;
@@ -171,6 +184,7 @@ export interface PanelStackActions {
   getChildPanels: (parentId: string) => Panel[];
   updatePanelData: (panelId: string, data: any) => void;
   updatePanelSummary: (panelId: string, summary: string) => void;
+  updatePanelBreadcrumbs: (panelId: string, breadcrumbs: BreadcrumbStep[]) => void;
 }
 
 // ============================================================================
