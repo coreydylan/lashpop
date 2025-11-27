@@ -1,9 +1,8 @@
 'use client'
 
-import { motion, useScroll, useTransform, useAnimation } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
-import { useDrawer } from '../drawers/DrawerContext'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import { gsap } from 'gsap'
@@ -48,19 +47,27 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const imageContainerRef = useRef<HTMLDivElement>(null)
-  
+
   const { scrollY } = useScroll({ layoutEffect: false } as any)
+
+  // ALL useTransform hooks must be called unconditionally at top level
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
+  const yCircle2 = useTransform(scrollY, [0, 500], [0, -100])
+  const yCircle3 = useTransform(scrollY, [0, 500], [0, -60])
+  const archFadeOpacity = useTransform(scrollY, [100, 600], [0, 1])
+
+  // Mobile-specific transforms for arch fade
+  const mobileArchOpacity = useTransform(scrollY, [0, 400], [1, 0])
+  const mobileArchScale = useTransform(scrollY, [0, 400], [1, 0.95])
+
   const { actions: panelActions } = usePanelStack()
   const [isMobile, setIsMobile] = useState(false)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const controls = useAnimation()
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
 
-  // GSAP Animation for Background Pan
+  // GSAP Animation for Background Pan (Desktop only)
   useEffect(() => {
     if (!imageRef.current || !imageContainerRef.current) return
 
@@ -125,100 +132,209 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Auto-scroll animation for mobile buttons
-  useEffect(() => {
-    const scrollContainer = scrollContainerRef.current
-    if (!isMobile || !scrollContainer) return
+  // No GSAP needed for mobile - we use a simpler approach with native scroll
 
-    let direction = 1
-    let position = 0
-    const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth
+  // ============================================
+  // MOBILE LAYOUT - Simple layered approach
+  // ============================================
+  if (isMobile) {
+    return (
+      <section ref={containerRef} className="relative min-h-[100dvh]">
+        {/* ===== LAYER 1: Fixed Background with Arch ===== */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
+          {/* Background gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-cream via-[rgb(235,224,203)] to-[rgb(226,182,166)]" />
 
-    const animateScroll = () => {
-      if (!scrollContainer) return
+          {/* Floating decorative circles */}
+          <div className="absolute top-20 right-4 w-20 h-20">
+            <CircleDecoration className="text-dusty-rose" />
+          </div>
+          <div className="absolute bottom-48 left-4 w-16 h-16">
+            <CircleDecoration className="text-sage" />
+          </div>
 
-      position += direction * 0.5
+          {/* Arch Image - Bottom aligned, 85% viewport height */}
+          <motion.div
+            className="absolute bottom-0 left-0 right-0 flex justify-center"
+            style={{ opacity: mobileArchOpacity, scale: mobileArchScale }}
+          >
+            <div
+              className="relative w-[80vw] max-w-[380px] overflow-hidden"
+              style={{
+                borderRadius: 'clamp(120px, 40vw, 190px) clamp(120px, 40vw, 190px) 0 0',
+                height: '85dvh',
+              }}
+            >
+              <Image
+                src="/lashpop-images/studio/studio-photos-by-salome.jpg"
+                alt="LashPop Studio Interior"
+                fill
+                className="object-cover object-center"
+                priority
+                quality={85}
+              />
+            </div>
+          </motion.div>
+        </div>
 
-      if (position >= maxScroll || position <= 0) {
-        direction *= -1
-        // Pause at the ends
-        setTimeout(() => {
-          requestAnimationFrame(animateScroll)
-        }, 2000)
-        return
-      }
+        {/* ===== LAYER 2: Scrollable Content with Gradient ===== */}
+        {/* This layer scrolls with the page. The gradient creates the overlay effect. */}
+        <div className="relative z-10">
+          {/* First viewport - shows title with Oceanside at the fold */}
+          <div
+            className="min-h-[100dvh] flex flex-col justify-end"
+            style={{
+              background: 'linear-gradient(to top, rgb(247, 244, 240) 0%, rgb(247, 244, 240) 30%, rgba(247, 244, 240, 0.9) 50%, rgba(247, 244, 240, 0) 100%)',
+            }}
+          >
+            {/* Above-the-fold content - positioned at bottom of viewport */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="px-6 text-center pb-4"
+            >
+              <h1
+                className="font-league-script text-dune leading-none"
+                style={{ fontSize: '2.5rem' }}
+              >
+                welcome to
+              </h1>
+              <div
+                className="font-serif text-dune mt-1"
+                style={{ fontSize: '1.875rem', fontWeight: 400 }}
+              >
+                LashPop Studios
+              </div>
+              <div
+                className="font-serif text-dusty-rose italic mt-2"
+                style={{ fontSize: '1rem' }}
+              >
+                Effortless Beauty for the Modern Woman
+              </div>
 
-      scrollContainer.scrollLeft = position
-      requestAnimationFrame(animateScroll)
-    }
+              {/* Fold line - Oceanside California */}
+              <div className="flex items-center justify-center gap-2 text-golden pt-3">
+                <SunIcon className="w-4 h-4" />
+                <span className="text-xs tracking-wide uppercase">Oceanside, California</span>
+              </div>
+            </motion.div>
+          </div>
 
-    const timeoutId = setTimeout(() => {
-      animateScroll()
-    }, 1000)
+          {/* Below-the-fold content - buttons and chips */}
+          <div
+            className="bg-cream px-6 pb-12"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.8 }}
+              className="mx-auto flex w-full max-w-[300px] flex-col gap-3 pt-8"
+            >
+              <button
+                onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' })}
+                className="w-full py-4 px-6 rounded-2xl bg-dusty-rose text-white font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+              >
+                Book Now
+              </button>
 
-    // Stop animation on user interaction
-    const handleUserScroll = () => {
-      // User has interacted, stop auto-scroll
-    }
+              <button
+                onClick={() => panelActions.openPanel('discovery', {})}
+                className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+              >
+                Discover Your Look
+              </button>
 
-    scrollContainer.addEventListener('touchstart', handleUserScroll)
-    scrollContainer.addEventListener('wheel', handleUserScroll)
+              {totalReviews > 0 && (
+                <button
+                  onClick={() => {
+                    const reviewsSection = document.getElementById('reviews');
+                    if (reviewsSection) {
+                      reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }}
+                  className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+                >
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <GoogleLogoCompact />
+                      <YelpLogoCompact />
+                      <VagaroLogoCompact />
+                    </div>
+                    <span className="font-semibold">{totalReviews.toLocaleString()}</span>
+                    <div className="flex items-center -space-x-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <span className="text-sm text-dune/70">Reviews</span>
+                  </div>
+                </button>
+              )}
 
-    return () => {
-      clearTimeout(timeoutId)
-      scrollContainer.removeEventListener('touchstart', handleUserScroll)
-      scrollContainer.removeEventListener('wheel', handleUserScroll)
-    }
-  }, [isMobile])
+              <div className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-terracotta">Award Winning</span>
+                  <span className="text-dune/70">•</span>
+                  <span>Best Lash Studio</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
+  // ============================================
+  // DESKTOP LAYOUT - Original side-by-side
+  // ============================================
   return (
     <section ref={containerRef} className="relative h-screen flex items-end">
-      {/* Background Elements - EXACT same as v1 */}
+      {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Soft gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-cream via-[rgb(235,224,203)] to-[rgb(226,182,166)]" />
-
-        {/* Subtle overlay for depth */}
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-sage/5" />
 
-        {/* Floating circles with enhanced parallax */}
+        {/* Floating circles with parallax */}
         <motion.div
           style={{ y }}
-          className="absolute top-10 right-10 w-32 h-32 md:w-48 md:h-48"
+          className="absolute top-10 right-10 w-48 h-48"
         >
           <CircleDecoration className="text-dusty-rose" />
         </motion.div>
 
         <motion.div
-          style={{ y: useTransform(scrollY, [0, 500], [0, -100]) }}
-          className="absolute bottom-40 left-10 w-24 h-24 md:w-36 md:h-36"
+          style={{ y: yCircle2 }}
+          className="absolute bottom-40 left-10 w-36 h-36"
         >
           <CircleDecoration className="text-sage" />
         </motion.div>
 
-        {/* Additional floating element */}
         <motion.div
-          style={{ y: useTransform(scrollY, [0, 500], [0, -60]) }}
-          className="absolute bottom-32 right-20 w-16 h-16 md:w-24 md:h-24 opacity-50"
+          style={{ y: yCircle3 }}
+          className="absolute bottom-32 right-20 w-24 h-24 opacity-50"
         >
           <CircleDecoration className="text-golden" />
         </motion.div>
       </div>
 
-      {/* Main Content - EXACT same layout as v1 */}
+      {/* Main Content */}
       <motion.div
         style={{ opacity }}
         className="relative z-10 container-wide"
       >
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-end h-full pb-0">
-          {/* Left Content - Moved up with margin-bottom */}
+          {/* Left Content */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-6 mb-[28vh]"
           >
-            {/* Small accent */}
+            {/* Location accent */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -229,7 +345,7 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               <span className="caption">Oceanside, California</span>
             </motion.div>
 
-            {/* Beautiful Reviews Chip with Logos */}
+            {/* Reviews Chip */}
             {totalReviews > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -241,45 +357,30 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                   onClick={() => {
                     const reviewsSection = document.getElementById('reviews');
                     if (reviewsSection) {
-                      // Calculate offset to center the reviews section vertically
                       const elementRect = reviewsSection.getBoundingClientRect();
                       const absoluteElementTop = elementRect.top + window.pageYOffset;
                       const elementHeight = elementRect.height;
                       const viewportHeight = window.innerHeight;
-                      
-                      // Center position: absoluteElementTop - (viewportHeight - elementHeight) / 2
-                      // Also account for header height (80px) to ensure it's not covered
                       const headerHeight = 80;
                       const centerOffset = Math.max(headerHeight, (viewportHeight - elementHeight) / 2);
                       const targetPosition = absoluteElementTop - centerOffset;
-
-                      window.scrollTo({
-                        top: targetPosition,
-                        behavior: 'smooth'
-                      });
+                      window.scrollTo({ top: targetPosition, behavior: 'smooth' });
                     }
                   }}
                   className="relative group cursor-pointer text-left"
                 >
-                  {/* Subtle outer glow */}
                   <div className="absolute inset-0 rounded-full bg-golden/10 blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
-
-                  {/* Main chip */}
                   <div className="relative px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 shadow-sm transition-all duration-300 group-hover:bg-white/60 group-hover:scale-105">
                     <div className="flex items-center gap-2">
-                      {/* Platform Logos - Colorized Dusty Rose */}
                       <div className="flex items-center gap-1.5 pr-2 border-r border-dusty-rose/30 text-dusty-rose">
                         <GoogleLogoCompact monochrome />
                         <YelpLogoCompact monochrome />
                         <VagaroLogoCompact monochrome />
                       </div>
-
-                      {/* Review Count and Stars */}
                       <div className="flex items-center gap-1">
                         <span className="font-serif text-sm font-semibold text-dune">
                           {totalReviews.toLocaleString()}
                         </span>
-                        {/* Five stars */}
                         <div className="flex items-center -space-x-0.5">
                           {[...Array(5)].map((_, i) => (
                             <svg key={i} className="w-3.5 h-3.5 text-golden" fill="currentColor" viewBox="0 0 20 20">
@@ -287,9 +388,7 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                             </svg>
                           ))}
                         </div>
-                        <span className="font-serif text-xs text-dune ml-0.5">
-                          Reviews
-                        </span>
+                        <span className="font-serif text-xs text-dune ml-0.5">Reviews</span>
                       </div>
                     </div>
                   </div>
@@ -297,30 +396,25 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               </motion.div>
             )}
 
-            {/* Main heading - New layered design */}
+            {/* Main heading */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
               className="relative -mt-2"
             >
-              {/* "welcome to" in League Script - Smaller */}
               <h1
                 className="font-league-script text-dune leading-none pl-2"
                 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}
               >
                 welcome to
               </h1>
-
-              {/* "LashPop Studios" overlapping slightly */}
               <div
-                className="font-serif text-dune -mt-4 md:-mt-6 relative z-10"
+                className="font-serif text-dune -mt-6 relative z-10"
                 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400 }}
               >
                 LashPop Studios
               </div>
-
-              {/* Tagline - smaller and italic */}
               <div
                 className="font-serif text-dusty-rose italic mt-2"
                 style={{ fontSize: 'clamp(1rem, 2.5vw, 1.75rem)' }}
@@ -329,23 +423,17 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               </div>
             </motion.div>
 
-            {/* CTA Buttons - Book Now opens panel stack, Discover opens drawer */}
+            {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.8 }}
-              className="flex flex-col sm:flex-row gap-4 pt-4"
+              className="flex flex-row gap-4 pt-4"
             >
               <button
                 onClick={() => {
-                  // Align Welcome section top with bottom of services panel stack
-                  // Header (80px) + PanelStack (~64px) = 144px offset
-                  // Adding extra 80px to scroll a bit further down
                   const offset = 64
-                  window.scrollTo({
-                    top: window.innerHeight - offset,
-                    behavior: 'smooth'
-                  })
+                  window.scrollTo({ top: window.innerHeight - offset, behavior: 'smooth' })
                   panelActions.openPanel('category-picker', { entryPoint: 'hero' })
                 }}
                 className="btn btn-primary"
@@ -361,24 +449,19 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
             </motion.div>
           </motion.div>
 
-          {/* Right Content - Image */}
+          {/* Right Content - Arch Image */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative h-full flex items-end pl-[65px]" // Added padding-left to fix offset
+            className="relative h-full flex items-end pl-[65px]"
           >
             <div className="relative w-full h-full flex items-end">
-              {/* Arch-shaped image container - extends to bottom */}
-              <div 
+              <div
                 ref={imageContainerRef}
                 className="relative w-full h-[85vh] rounded-[200px_200px_0_0] overflow-hidden"
-                style={{ 
-                  transformOrigin: 'bottom center',
-                  zIndex: 20
-                }}
+                style={{ transformOrigin: 'bottom center', zIndex: 20 }}
               >
-                {/* Image wrapper for pan animation */}
                 <div className="relative w-full h-full overflow-hidden">
                   <Image
                     ref={imageRef}
@@ -388,144 +471,37 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                     className="object-cover object-right"
                     priority
                     quality={85}
-                    style={{
-                      transform: "scale(1.4) translateX(0%)",
-                      transformOrigin: "center center"
-                    }}
+                    style={{ transform: "scale(1.4) translateX(0%)", transformOrigin: "center center" }}
                   />
                 </div>
-                
-                {/* Soft overlay */}
+
                 <div className="absolute inset-0 bg-gradient-to-t from-ocean-mist/20 to-transparent pointer-events-none" />
-                
-                {/* Desktop text overlay - moved inside container to stay on top */}
-                {!isMobile && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1, duration: 0.8 }}
-                    className="absolute bottom-8 left-8 right-8 glass rounded-2xl p-6 z-30"
-                  >
-                    <p className="caption text-terracotta mb-2">Award Winning</p>
-                    <p className="text-lg font-light text-dune">Best Lash Studio • North County SD</p>
-                  </motion.div>
-                )}
 
-                {/* Fade out overlay based on scroll */}
-                <motion.div 
-                  className="absolute inset-0 bg-cream pointer-events-none z-40"
-                  style={{ opacity: useTransform(scrollY, [100, 600], [0, 1]) }}
-                />
-              </div>
-
-              {/* Floating accent element - Outside the pinning container if possible, or adjusted z-index */}
-              <motion.div
-                animate={{
-                  y: [0, -10, 0],
-                }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-warm-sand/50 blur-2xl z-10"
-              />
-
-              {/* Mobile-specific overlay with scrollable button and chips - OUTSIDE container for z-index stack context */}
-              {isMobile && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1, duration: 0.8 }}
-                  className="absolute bottom-16 left-8 right-8 flex flex-col items-center gap-3 z-50"
+                  className="absolute bottom-8 left-8 right-8 glass rounded-2xl p-6 z-30"
                 >
-                  {/* Scrollable Button Container */}
-                  <div className="w-full">
-                    <div
-                      ref={scrollContainerRef}
-                      className="overflow-x-auto scrollbar-none"
-                      style={{
-                        scrollSnapType: 'x mandatory',
-                        WebkitOverflowScrolling: 'touch',
-                      }}
-                    >
-                      <div className="flex gap-4 px-8" style={{ width: 'calc(100vw - 64px + 200px)' }}>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' });
-                          }}
-                          className="flex-shrink-0 btn btn-primary rounded-full px-8 py-2.5 text-sm"
-                          style={{
-                            scrollSnapAlign: 'center',
-                            width: 'calc(100vw - 64px)',
-                            maxWidth: '280px'
-                          }}
-                        >
-                          Book Now
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            panelActions.openPanel('discovery', {});
-                          }}
-                          className="flex-shrink-0 btn btn-secondary rounded-full px-8 py-2.5 text-sm"
-                          style={{
-                            scrollSnapAlign: 'center',
-                            width: 'calc(100vw - 64px)',
-                            maxWidth: '280px'
-                          }}
-                        >
-                          Discover Your Look
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Reviews Counter Chip */}
-                  {totalReviews > 0 && (
-                    <div className="relative group">
-                      <div className="relative px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-0.5 pr-2 border-r border-dune/20">
-                            <GoogleLogoCompact />
-                            <YelpLogoCompact />
-                            <VagaroLogoCompact />
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-serif text-sm font-semibold text-dune">
-                              {totalReviews.toLocaleString()}
-                            </span>
-                            <div className="flex items-center -space-x-0.5">
-                              {[...Array(5)].map((_, i) => (
-                                <svg key={i} className="w-3.5 h-3.5 text-golden" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                              ))}
-                            </div>
-                            <span className="font-serif text-xs text-dune ml-0.5">
-                              Reviews
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Smaller Award Winning Box */}
-                  <div className="glass rounded-xl px-4 py-2.5">
-                    <p className="caption text-terracotta mb-0.5 text-xs">Award Winning</p>
-                    <p className="text-sm font-light text-dune">Best Lash Studio • North County SD</p>
-                  </div>
+                  <p className="caption text-terracotta mb-2">Award Winning</p>
+                  <p className="text-lg font-light text-dune">Best Lash Studio • North County SD</p>
                 </motion.div>
-              )}
+
+                <motion.div
+                  className="absolute inset-0 bg-cream pointer-events-none z-40"
+                  style={{ opacity: archFadeOpacity }}
+                />
+              </div>
+
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-warm-sand/50 blur-2xl z-10"
+              />
             </div>
           </motion.div>
         </div>
       </motion.div>
-
     </section>
   )
 }

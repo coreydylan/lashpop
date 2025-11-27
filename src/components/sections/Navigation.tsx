@@ -20,14 +20,23 @@ const navItems = [
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const { actions } = usePanelStack()
   const pathname = usePathname()
-  
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
-    
+
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -82,23 +91,29 @@ export function Navigation() {
       actions.openPanel('category-picker', { entryPoint: 'page' })
     }
   
+  // Mobile header shrinks from py-6 (24px each side = 48px padding) to py-2 (8px each side = 16px padding)
+  // Logo shrinks from h-8 to h-5 on mobile when scrolled
+  const mobileScrolled = isMobile && isScrolled
+
   return (
     <>
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-500 ${
-          isScrolled ? 'glass backdrop-blur-md py-4' : 'py-6 md:bg-transparent glass md:glass-none backdrop-blur-md md:backdrop-blur-none'
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          isScrolled
+            ? `glass backdrop-blur-md ${mobileScrolled ? 'py-2' : 'py-4'}`
+            : 'py-6 md:bg-transparent glass md:glass-none backdrop-blur-md md:backdrop-blur-none'
         }`}
       >
         <div className="w-full px-6 md:px-12">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               onClick={(e) => handleNavClick({ href: '/' }, e)}
-              className="relative flex items-center h-8"
+              className={`relative flex items-center transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
             >
               <motion.div
                 whileHover={{ scale: 1.05 }}
@@ -109,7 +124,7 @@ export function Navigation() {
                   alt="LashPop Studios"
                   width={120}
                   height={40}
-                  className="h-8 w-auto brightness-0 saturate-100"
+                  className={`w-auto brightness-0 saturate-100 transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
                   style={{
                     filter: 'brightness(0) saturate(100%) invert(73%) sepia(10%) saturate(633%) hue-rotate(313deg) brightness(94%) contrast(88%)'
                   }}
