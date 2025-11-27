@@ -8,6 +8,7 @@ import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
 import { Navigation } from '@/components/sections/Navigation';
 import { MobileHeader } from '@/components/landing-v2/MobileHeader';
+import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
 import HeroSection from '@/components/landing-v2/HeroSection';
 import { WelcomeSection } from '@/components/landing-v2/sections/WelcomeSection';
 import { ScrollServicesTrigger } from '@/components/landing-v2/ScrollServicesTrigger';
@@ -134,6 +135,7 @@ interface LandingPageV2ClientProps {
 }
 
 // Minimal mobile styles - GSAP handles the scroll behavior
+// Note: html/body transparency is now in globals.css for reliability
 const mobileScrollStyles = `
   @media (max-width: 767px) {
     /* Main scrollable container - native smooth scrolling */
@@ -144,6 +146,12 @@ const mobileScrollStyles = `
       height: 100dvh; /* Dynamic viewport height for mobile browsers */
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-y: contain;
+      background: transparent !important;
+    }
+
+    /* Ensure the main page content wrapper is also transparent */
+    .page-content {
+      background: transparent !important;
     }
 
     /* Each section - flexible height based on content */
@@ -212,39 +220,66 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
       <PanelStackProvider services={services}>
         <DrawerProvider>
           <PanelManagerProvider>
-            <div className="min-h-screen bg-cream relative theme-v2">
+            <div className={`min-h-screen relative theme-v2 ${isMobile ? '' : 'bg-cream'}`}>
               {/* Inject mobile scroll styles */}
               <style dangerouslySetInnerHTML={{ __html: mobileScrollStyles }} />
 
-              {/* Z-3: Fixed Header Layer */}
-              {/* Desktop: Full Navigation | Mobile: MobileHeader with dock behavior */}
-              <Navigation />
-              {isMobile && <MobileHeader currentSection={currentSection} />}
+              {/*
+                =====================================================
+                MOBILE LAYER 0: Fixed Hero Background
+                =====================================================
+                This MUST be rendered BEFORE and OUTSIDE the scroll container.
+                It's at z-0, everything else is z-10+.
+                Contains: gradient, arch image, logo, decorative circles.
+              */}
+              {isMobile && <MobileHeroBackground />}
 
-              {/* Panel Stack System - Responsive: top panels on desktop, bottom sheet on mobile */}
-              <PanelStackRenderer />
+              {/*
+                =====================================================
+                MOBILE LAYER 10+: All Page Content (above background)
+                =====================================================
+                The wrapper below has z-10 on mobile to ensure all content
+                renders ABOVE the fixed background layer.
+              */}
+              <div className={isMobile ? 'relative z-10 mobile-content-wrapper' : ''}>
+                {/* Z-3: Fixed Header Layer */}
+                {/* Desktop: Full Navigation | Mobile: MobileHeader with dock behavior */}
+                <Navigation />
+                {isMobile && <MobileHeader currentSection={currentSection} />}
 
-              {/* Z-2: Drawer System Layer */}
-              <DrawerSystem services={services} />
+                {/* Panel Stack System - Responsive: top panels on desktop, bottom sheet on mobile */}
+                <PanelStackRenderer />
 
-              {/* Z-1.5: Portfolio Surface Layer */}
-              <TeamPortfolioView />
+                {/* Z-2: Drawer System Layer */}
+                <DrawerSystem services={services} />
 
-              {/* Panel System - Renders active panels */}
-              <PanelRenderer />
+                {/* Z-1.5: Portfolio Surface Layer */}
+                <TeamPortfolioView />
 
-              {/* Z-1: Page Surface - panels now overlay instead of pushing content */}
-              <main className={`page-content overflow-x-hidden ${isMobile ? 'mobile-scroll-container' : ''}`}>
+                {/* Panel System - Renders active panels */}
+                <PanelRenderer />
 
-                {/* Hero Section - Direct Render */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="hero">
-                  <HeroSection reviewStats={reviewStats} />
-                </div>
+                {/* Z-1: Page Surface - panels now overlay instead of pushing content */}
+                <main className={`page-content overflow-x-hidden ${isMobile ? 'mobile-scroll-container' : ''}`}>
 
-                {/* Welcome to LashPop Section - Now standalone */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="welcome">
-                  <WelcomeSection />
-                </div>
+                  {/*
+                    HERO SECTION: Transparent on mobile to show MobileHeroBackground through.
+                    On desktop, HeroSection renders its own background.
+                  */}
+                  <div
+                    className={isMobile ? "mobile-section" : ""}
+                    data-section-id="hero"
+                    style={isMobile ? { background: 'transparent' } : undefined}
+                  >
+                    <HeroSection reviewStats={reviewStats} />
+                  </div>
+
+                  {/*
+                    WELCOME SECTION: Has its own background image, works on both mobile/desktop.
+                  */}
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="welcome">
+                    <WelcomeSection />
+                  </div>
 
                 {/* Trigger to open services panel when scrolling past Welcome */}
                 <ScrollServicesTrigger />
@@ -310,7 +345,8 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     <FooterV2 />
                   </div>
                 </div>
-            </main>
+              </main>
+            </div>{/* End of z-10 content wrapper */}
           </div>
         </PanelManagerProvider>
       </DrawerProvider>

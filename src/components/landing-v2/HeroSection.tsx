@@ -132,105 +132,23 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
   }, [])
 
   // No more custom scroll handling needed - page scrolls naturally
-
-  // Mobile arch zoom state
-  const [mobileArchScale, setMobileArchScale] = useState(1)
-  const [mobileLogoOpacity, setMobileLogoOpacity] = useState(1)
-
-  // Handle mobile arch zoom-through effect
-  useEffect(() => {
-    if (!isMobile) return
-
-    const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
-    if (!scrollContainer) return
-
-    const handleScroll = () => {
-      const scrollTop = scrollContainer.scrollTop
-      const viewportHeight = window.innerHeight
-
-      // Zoom through arch over first 60% of viewport scroll
-      const zoomProgress = Math.min(scrollTop / (viewportHeight * 0.6), 1)
-      // Scale from 1 to 1.5 (zooming in through the arch)
-      const scale = 1 + (zoomProgress * 0.5)
-      setMobileArchScale(scale)
-
-      // Fade out logo over first 30% of viewport scroll
-      const fadeProgress = Math.min(scrollTop / (viewportHeight * 0.3), 1)
-      setMobileLogoOpacity(1 - fadeProgress)
-    }
-
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
-
-    return () => scrollContainer.removeEventListener('scroll', handleScroll)
-  }, [isMobile])
+  // Mobile background (arch, gradient, logo) is now handled by MobileHeroBackground component
 
   // ============================================
-  // MOBILE LAYOUT - Fixed arch behind, content scrolls as page
+  // MOBILE LAYOUT - Content only (background handled by MobileHeroBackground)
   // ============================================
   if (isMobile) {
     return (
-      <section ref={containerRef} className="relative min-h-[100dvh]">
-        {/* ===== FIXED LAYER: Arch background (z-0) - behind everything ===== */}
-        <div className="fixed inset-0 z-0 pointer-events-none">
-          {/* Background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-b from-cream via-[rgb(235,224,203)] to-[rgb(226,182,166)]" />
-
-          {/* Floating decorative circles */}
-          <div className="absolute top-20 right-4 w-20 h-20">
-            <CircleDecoration className="text-dusty-rose" />
-          </div>
-          <div className="absolute bottom-48 left-4 w-16 h-16">
-            <CircleDecoration className="text-sage" />
-          </div>
-
-          {/* Arch Image - Bottom aligned, 85% viewport height, ZOOMS on scroll */}
-          <div className="absolute bottom-0 left-0 right-0 flex justify-center overflow-hidden">
-            <div
-              className="relative w-[80vw] max-w-[380px] overflow-hidden transition-transform duration-100 ease-out"
-              style={{
-                borderRadius: 'clamp(120px, 40vw, 190px) clamp(120px, 40vw, 190px) 0 0',
-                height: '85dvh',
-                transform: `scale(${mobileArchScale})`,
-                transformOrigin: 'center bottom',
-              }}
-            >
-              <Image
-                src="/lashpop-images/studio/studio-photos-by-salome.jpg"
-                alt="LashPop Studio Interior"
-                fill
-                className="object-cover object-center"
-                priority
-                quality={85}
-              />
-            </div>
-          </div>
-
-          {/* LASHPOP Logo - Fixed at top, fades out on scroll */}
-          <div
-            className="absolute left-0 right-0 flex justify-center transition-opacity duration-100"
-            style={{
-              top: '5vh',
-              opacity: mobileLogoOpacity,
-              pointerEvents: mobileLogoOpacity > 0.5 ? 'auto' : 'none',
-            }}
-          >
-            <Image
-              src="/lashpop-images/branding/logo.png"
-              alt="LashPop Studios"
-              width={120}
-              height={40}
-              className="h-8 w-auto"
-              style={{
-                filter: 'brightness(0) saturate(100%) invert(73%) sepia(10%) saturate(633%) hue-rotate(313deg) brightness(94%) contrast(88%)'
-              }}
-              priority
-            />
-          </div>
-        </div>
+      <section ref={containerRef} className="relative min-h-[100dvh]" style={{ background: 'transparent' }}>
+        {/*
+          NOTE: The fixed background layer (arch, gradient, logo, circles) is now
+          rendered by MobileHeroBackground in LandingPageV2Client.tsx.
+          This section ONLY contains the scrollable content.
+          The transparent background allows MobileHeroBackground to show through.
+        */}
 
         {/* ===== PAGE FLOW CONTENT - scrolls with page over the arch ===== */}
-        <div className="relative z-10">
+        <div className="relative">
           {/* ABOVE THE FOLD - exactly 100dvh, gradient covers bottom ~35% with readable text area */}
           {/* Uses flex to push content to bottom, Oceanside anchored at very bottom */}
           <div

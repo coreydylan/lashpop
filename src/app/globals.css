@@ -80,6 +80,25 @@
     /* Enable smooth momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
   }
+
+  /*
+   * MOBILE HERO TRANSPARENCY
+   * On mobile, body must be transparent so the fixed MobileHeroBackground (z-0) shows through
+   * the scroll container and content wrapper (z-10).
+   */
+  @media (max-width: 767px) {
+    html, body {
+      background: transparent !important;
+    }
+
+    .mobile-content-wrapper {
+      background: transparent !important;
+    }
+
+    .mobile-scroll-container {
+      background: transparent !important;
+    }
+  }
   
   ::selection {
     background: rgba(var(--dusty-rose), 0.2);
