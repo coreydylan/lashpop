@@ -132,10 +132,8 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // No GSAP needed for mobile - we use a simpler approach with native scroll
-
   // ============================================
-  // MOBILE LAYOUT - Simple layered approach
+  // MOBILE LAYOUT - Fixed gradient, scrolling content
   // ============================================
   if (isMobile) {
     return (
@@ -177,112 +175,111 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
           </motion.div>
         </div>
 
-        {/* ===== LAYER 2: Scrollable Content with Gradient ===== */}
-        {/* This layer scrolls with the page. The gradient creates the overlay effect. */}
-        <div className="relative z-10">
-          {/* First viewport - shows title with Oceanside at the fold */}
-          <div
-            className="min-h-[100dvh] flex flex-col justify-end"
-            style={{
-              background: 'linear-gradient(to top, rgb(247, 244, 240) 0%, rgb(247, 244, 240) 30%, rgba(247, 244, 240, 0.9) 50%, rgba(247, 244, 240, 0) 100%)',
-            }}
-          >
-            {/* Above-the-fold content - positioned at bottom of viewport */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="px-6 text-center pb-4"
-            >
-              <h1
-                className="font-league-script text-dune leading-none"
-                style={{ fontSize: '2.5rem' }}
-              >
-                welcome to
-              </h1>
-              <div
-                className="font-serif text-dune mt-1"
-                style={{ fontSize: '1.875rem', fontWeight: 400 }}
-              >
-                LashPop Studios
-              </div>
-              <div
-                className="font-serif text-dusty-rose italic mt-2"
-                style={{ fontSize: '1rem' }}
-              >
-                Effortless Beauty for the Modern Woman
-              </div>
+        {/* ===== LAYER 2: Fixed Gradient Overlay (bottom portion only) ===== */}
+        <div
+          className="fixed bottom-0 left-0 right-0 z-5 pointer-events-none"
+          style={{
+            height: '45dvh',
+            background: 'linear-gradient(to top, rgb(247, 244, 240) 0%, rgb(247, 244, 240) 40%, rgba(247, 244, 240, 0.85) 70%, rgba(247, 244, 240, 0) 100%)',
+          }}
+        />
 
-              {/* Fold line - Oceanside California */}
-              <div className="flex items-center justify-center gap-2 text-golden pt-3">
-                <SunIcon className="w-4 h-4" />
-                <span className="text-xs tracking-wide uppercase">Oceanside, California</span>
-              </div>
-            </motion.div>
-          </div>
+        {/* ===== LAYER 3: Scrollable Content ===== */}
+        <div className="relative z-10">
+          {/* Spacer to position content at bottom of first viewport */}
+          <div style={{ height: 'calc(100dvh - 180px)' }} />
+
+          {/* Hero text content */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+            className="px-6 text-center"
+          >
+            <h1
+              className="font-league-script text-dune leading-none"
+              style={{ fontSize: '2.5rem' }}
+            >
+              welcome to
+            </h1>
+            <div
+              className="font-serif text-dune mt-1"
+              style={{ fontSize: '1.875rem', fontWeight: 400 }}
+            >
+              LashPop Studios
+            </div>
+            <div
+              className="font-serif text-dusty-rose italic mt-2"
+              style={{ fontSize: '1rem' }}
+            >
+              Effortless Beauty for the Modern Woman
+            </div>
+
+            {/* Fold line - Oceanside California */}
+            <div className="flex items-center justify-center gap-2 text-golden pt-3">
+              <SunIcon className="w-4 h-4" />
+              <span className="text-xs tracking-wide uppercase">Oceanside, California</span>
+            </div>
+          </motion.div>
 
           {/* Below-the-fold content - buttons and chips */}
-          <div
-            className="bg-cream px-6 pb-12"
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.8 }}
+            className="mx-auto flex w-full max-w-[300px] flex-col gap-3 pt-8 px-6 pb-12"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-              className="mx-auto flex w-full max-w-[300px] flex-col gap-3 pt-8"
+            <button
+              onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' })}
+              className="w-full py-4 px-6 rounded-2xl bg-dusty-rose text-white font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
             >
-              <button
-                onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' })}
-                className="w-full py-4 px-6 rounded-2xl bg-dusty-rose text-white font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
-              >
-                Book Now
-              </button>
+              Book Now
+            </button>
 
+            <button
+              onClick={() => panelActions.openPanel('discovery', {})}
+              className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+            >
+              Discover Your Look
+            </button>
+
+            {totalReviews > 0 && (
               <button
-                onClick={() => panelActions.openPanel('discovery', {})}
+                onClick={() => {
+                  const reviewsSection = document.getElementById('reviews');
+                  if (reviewsSection) {
+                    reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }}
                 className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
               >
-                Discover Your Look
-              </button>
-
-              {totalReviews > 0 && (
-                <button
-                  onClick={() => {
-                    const reviewsSection = document.getElementById('reviews');
-                    if (reviewsSection) {
-                      reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                  }}
-                  className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
-                >
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <GoogleLogoCompact />
-                      <YelpLogoCompact />
-                      <VagaroLogoCompact />
-                    </div>
-                    <span className="font-semibold">{totalReviews.toLocaleString()}</span>
-                    <div className="flex items-center -space-x-0.5">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-sm text-dune/70">Reviews</span>
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <GoogleLogoCompact />
+                    <YelpLogoCompact />
+                    <VagaroLogoCompact />
                   </div>
-                </button>
-              )}
-
-              <div className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm">
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-terracotta">Award Winning</span>
-                  <span className="text-dune/70">•</span>
-                  <span>Best Lash Studio</span>
+                  <span className="font-semibold">{totalReviews.toLocaleString()}</span>
+                  <div className="flex items-center -space-x-0.5">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-sm text-dune/70">Reviews</span>
                 </div>
+              </button>
+            )}
+
+            <div className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-terracotta">Award Winning</span>
+                <span className="text-dune/70">•</span>
+                <span>Best Lash Studio</span>
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </div>
       </section>
     )
