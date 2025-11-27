@@ -57,9 +57,7 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
   const yCircle3 = useTransform(scrollY, [0, 500], [0, -60])
   const archFadeOpacity = useTransform(scrollY, [100, 600], [0, 1])
 
-  // Mobile scroll state - controlled by internal scroll, not page scroll
-  const [heroScrollProgress, setHeroScrollProgress] = useState(0)
-  const [heroScrollComplete, setHeroScrollComplete] = useState(false)
+  // Mobile - no longer need internal scroll state
   const heroContentRef = useRef<HTMLDivElement>(null)
 
   const { actions: panelActions } = usePanelStack()
@@ -133,167 +131,16 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Mobile hero scroll handler - ALL scroll events route to hero content first
-  useEffect(() => {
-    if (!isMobile) return
-
-    const heroContent = heroContentRef.current
-    if (!heroContent) return
-
-    let touchStartY = 0
-
-    const getScrollState = () => {
-      const { scrollTop, scrollHeight, clientHeight } = heroContent
-      const maxScroll = Math.max(1, scrollHeight - clientHeight)
-      const atBottom = scrollTop >= maxScroll - 2
-      const atTop = scrollTop <= 2
-      return { scrollTop, maxScroll, atBottom, atTop }
-    }
-
-    // Lock/unlock page scroll
-    const setPageScrollLocked = (locked: boolean) => {
-      if (locked) {
-        document.documentElement.style.overflow = 'hidden'
-        document.body.style.overflow = 'hidden'
-      } else {
-        document.documentElement.style.overflow = ''
-        document.body.style.overflow = ''
-      }
-    }
-
-    // Lock body scroll initially
-    if (!heroScrollComplete) {
-      setPageScrollLocked(true)
-    }
-
-    // Capture ALL wheel events at the window level
-    const handleWheel = (e: WheelEvent) => {
-      const { scrollTop, maxScroll, atBottom } = getScrollState()
-
-      // Phase 1: Hero not complete - all scrolls control hero content
-      if (!heroScrollComplete) {
-        e.preventDefault()
-        e.stopPropagation()
-
-        // Scrolling down
-        if (e.deltaY > 0) {
-          if (!atBottom) {
-            heroContent.scrollTop = Math.min(maxScroll, scrollTop + e.deltaY)
-            setHeroScrollProgress(heroContent.scrollTop / maxScroll)
-          } else {
-            // Reached bottom - unlock page scroll
-            setHeroScrollComplete(true)
-            setHeroScrollProgress(1)
-            setPageScrollLocked(false)
-          }
-        }
-        // Scrolling up
-        else if (e.deltaY < 0) {
-          heroContent.scrollTop = Math.max(0, scrollTop + e.deltaY)
-          setHeroScrollProgress(heroContent.scrollTop / maxScroll)
-        }
-      }
-      // Phase 2: Hero complete, but user scrolling up at top of page - re-engage hero
-      else if (e.deltaY < 0 && window.scrollY <= 5) {
-        e.preventDefault()
-        e.stopPropagation()
-        setHeroScrollComplete(false)
-        setPageScrollLocked(true)
-        // Set hero content to bottom so we can scroll up from there
-        heroContent.scrollTop = maxScroll
-        setHeroScrollProgress(1)
-      }
-      // Otherwise let page scroll naturally
-    }
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY
-    }
-
-    // Capture ALL touch events
-    const handleTouchMove = (e: TouchEvent) => {
-      const touchY = e.touches[0].clientY
-      const deltaY = touchStartY - touchY // positive = scrolling down
-      touchStartY = touchY
-
-      const { scrollTop, maxScroll, atBottom } = getScrollState()
-
-      // Phase 1: Hero not complete - all scrolls control hero content
-      if (!heroScrollComplete) {
-        e.preventDefault()
-
-        // Scrolling down
-        if (deltaY > 0) {
-          if (!atBottom) {
-            heroContent.scrollTop = Math.min(maxScroll, scrollTop + deltaY * 1.5)
-            setHeroScrollProgress(heroContent.scrollTop / maxScroll)
-          } else {
-            // Reached bottom - unlock page scroll
-            setHeroScrollComplete(true)
-            setHeroScrollProgress(1)
-            setPageScrollLocked(false)
-          }
-        }
-        // Scrolling up
-        else if (deltaY < 0) {
-          heroContent.scrollTop = Math.max(0, scrollTop + deltaY * 1.5)
-          setHeroScrollProgress(heroContent.scrollTop / maxScroll)
-        }
-      }
-      // Phase 2: Hero complete, but user scrolling up at top of page - re-engage hero
-      else if (deltaY < 0 && window.scrollY <= 5) {
-        e.preventDefault()
-        setHeroScrollComplete(false)
-        setPageScrollLocked(true)
-        heroContent.scrollTop = maxScroll
-        setHeroScrollProgress(1)
-      }
-      // Otherwise let page scroll naturally
-    }
-
-    // Handle scrolling back up to re-engage hero
-    const handlePageScroll = () => {
-      if (heroScrollComplete && window.scrollY <= 0) {
-        // User scrolled back to top - re-engage hero scroll
-        setHeroScrollComplete(false)
-        setPageScrollLocked(true)
-        const { maxScroll } = getScrollState()
-        heroContent.scrollTop = maxScroll
-        setHeroScrollProgress(1)
-      }
-    }
-
-    // Use capture phase to intercept ALL events before they reach any element
-    window.addEventListener('wheel', handleWheel, { passive: false, capture: true })
-    window.addEventListener('touchstart', handleTouchStart, { passive: true, capture: true })
-    window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true })
-    window.addEventListener('scroll', handlePageScroll, { passive: true })
-
-    return () => {
-      window.removeEventListener('wheel', handleWheel, { capture: true })
-      window.removeEventListener('touchstart', handleTouchStart, { capture: true })
-      window.removeEventListener('touchmove', handleTouchMove, { capture: true })
-      window.removeEventListener('scroll', handlePageScroll)
-      // Ensure scroll is restored on cleanup
-      setPageScrollLocked(false)
-    }
-  }, [isMobile, heroScrollComplete])
+  // No more custom scroll handling needed - page scrolls naturally
 
   // ============================================
-  // MOBILE LAYOUT - Only arch is fixed, everything else is page flow
+  // MOBILE LAYOUT - Fixed arch behind, content scrolls as page
   // ============================================
   if (isMobile) {
     return (
-      <section ref={containerRef} className="relative">
-        {/* ===== FIXED LAYER: Arch background (z-0) - behind page ===== */}
-        {/* Only fades AFTER internal scroll is complete */}
-        <div
-          className="fixed inset-0 z-0 pointer-events-none"
-          style={{
-            opacity: heroScrollComplete ? 0 : 1,
-            transition: 'opacity 0.3s ease-out',
-          }}
-        >
+      <section ref={containerRef} className="relative min-h-[100dvh]">
+        {/* ===== FIXED LAYER: Arch background (z-0) - behind everything ===== */}
+        <div className="fixed inset-0 z-0 pointer-events-none">
           {/* Background gradient */}
           <div className="absolute inset-0 bg-gradient-to-b from-cream via-[rgb(235,224,203)] to-[rgb(226,182,166)]" />
 
@@ -326,143 +173,117 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* ===== PAGE FLOW: Spacer + Hero content area (z-10) ===== */}
-        <div className="relative z-10 min-h-[100dvh] flex flex-col">
-          {/* Spacer - pushes gradient+content to bottom */}
-          <div className="flex-1" />
-
-          {/* Combined gradient + content container - fixed 30dvh height */}
-          {/* Only fades AFTER internal scroll is complete (heroScrollComplete) */}
+        {/* ===== PAGE FLOW CONTENT - scrolls with page over the arch ===== */}
+        <div className="relative z-10">
+          {/* ABOVE THE FOLD - exactly 100dvh, gradient covers bottom ~35% with readable text area */}
+          {/* Uses flex to push content to bottom, Oceanside anchored at very bottom */}
           <div
-            className="relative"
+            className="relative flex flex-col justify-end px-6"
             style={{
-              height: '30dvh',
-              opacity: heroScrollComplete ? 0 : 1,
-              transition: 'opacity 0.3s ease-out',
+              height: '100dvh',
+              background: 'linear-gradient(to top, rgb(235, 224, 203) 0%, rgba(235, 224, 203, 0.98) 8%, rgba(235, 224, 203, 0.92) 15%, rgba(235, 224, 203, 0.75) 25%, rgba(235, 224, 203, 0.4) 32%, transparent 40%)',
             }}
           >
-            {/* Bottom gradient background - FIXED in place, doesn't scroll */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: 'linear-gradient(to top, rgb(247, 244, 240) 0%, rgb(247, 244, 240) 30%, rgba(247, 244, 240, 0.85) 60%, rgba(247, 244, 240, 0.5) 80%, rgba(247, 244, 240, 0) 100%)',
-              }}
-            />
-
-            {/* Scrollable content area - with gradient mask at top for soft fade */}
-            <div
-              ref={heroContentRef}
-              className="absolute inset-0 overflow-y-auto overscroll-contain px-6"
-              style={{
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-                maskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 15%, black 100%)',
-              }}
+            {/* Hero text content - near bottom of viewport with breathing room */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.8 }}
+              className="text-center pb-8"
             >
-              {/* Hero text content - sized to fit exactly in container with Oceanside at bottom */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.8 }}
-                className="text-center flex flex-col justify-end"
-                style={{ minHeight: '30dvh', paddingBottom: '8px' }}
+              <h1
+                className="font-league-script text-dune leading-none mb-[-0.25rem]"
+                style={{ fontSize: '2.5rem' }}
               >
-                <div>
-                  <h1
-                    className="font-league-script text-dune leading-none"
-                    style={{ fontSize: '2.5rem' }}
-                  >
-                    welcome to
-                  </h1>
-                  <div
-                    className="font-serif text-dune mt-1"
-                    style={{ fontSize: '1.875rem', fontWeight: 400 }}
-                  >
-                    LashPop Studios
-                  </div>
-                  <div
-                    className="font-serif text-dusty-rose italic mt-2"
-                    style={{ fontSize: '1rem' }}
-                  >
-                    Effortless Beauty for the Modern Woman
-                  </div>
-
-                  {/* Oceanside California - THIS IS THE FOLD LINE */}
-                  <div className="flex items-center justify-center gap-2 text-golden pt-3">
-                    <SunIcon className="w-4 h-4" />
-                    <span className="text-xs tracking-wide uppercase">Oceanside, California</span>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Below-the-fold content - buttons and chips */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.8 }}
-                className="mx-auto flex w-full max-w-[300px] flex-col gap-3 pt-4"
+                welcome to
+              </h1>
+              <div
+                className="font-serif text-dune"
+                style={{ fontSize: '1.875rem', fontWeight: 400 }}
               >
-                <button
-                  onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' })}
-                  className="w-full py-4 px-6 rounded-2xl bg-dusty-rose text-white font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
-                >
-                  Book Now
-                </button>
+                LashPop Studios
+              </div>
+              <div
+                className="font-serif text-dusty-rose italic mt-2"
+                style={{ fontSize: '1rem' }}
+              >
+                Effortless Beauty for the Modern Woman
+              </div>
 
+              {/* Oceanside California - ANCHORED at bottom of 100dvh */}
+              <div className="flex items-center justify-center gap-2 text-golden pt-3">
+                <SunIcon className="w-4 h-4" />
+                <span className="text-xs tracking-wide uppercase">Oceanside, California</span>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* BELOW THE FOLD - gradient from cream to pink to match next section */}
+          <div
+            ref={heroContentRef}
+            className="relative px-6 py-6"
+            style={{
+              background: 'linear-gradient(to bottom, rgb(235, 224, 203) 0%, rgb(235, 224, 203) 60%, rgb(226, 182, 166) 100%)',
+            }}
+          >
+            {/* Buttons and chips - immediately below the fold */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.8 }}
+              className="mx-auto flex w-full max-w-[300px] flex-col gap-3"
+            >
+              <button
+                onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' })}
+                className="w-full py-4 px-6 rounded-2xl bg-dusty-rose text-white font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+              >
+                Book Now
+              </button>
+
+              <button
+                onClick={() => panelActions.openPanel('discovery', {})}
+                className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+              >
+                Discover Your Look
+              </button>
+
+              {totalReviews > 0 && (
                 <button
-                  onClick={() => panelActions.openPanel('discovery', {})}
+                  onClick={() => {
+                    const reviewsSection = document.getElementById('reviews');
+                    if (reviewsSection) {
+                      reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }}
                   className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
                 >
-                  Discover Your Look
-                </button>
-
-                {totalReviews > 0 && (
-                  <button
-                    onClick={() => {
-                      setHeroScrollComplete(true)
-                      document.documentElement.style.overflow = ''
-                      document.body.style.overflow = ''
-                      setTimeout(() => {
-                        const reviewsSection = document.getElementById('reviews');
-                        if (reviewsSection) {
-                          reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                      }, 100)
-                    }}
-                    className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
-                  >
-                    <div className="flex items-center justify-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <GoogleLogoCompact />
-                        <YelpLogoCompact />
-                        <VagaroLogoCompact />
-                      </div>
-                      <span className="font-semibold">{totalReviews.toLocaleString()}</span>
-                      <div className="flex items-center -space-x-0.5">
-                        {[...Array(5)].map((_, i) => (
-                          <svg key={i} className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                        ))}
-                      </div>
-                      <span className="text-sm text-dune/70">Reviews</span>
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <GoogleLogoCompact />
+                      <YelpLogoCompact />
+                      <VagaroLogoCompact />
                     </div>
-                  </button>
-                )}
-
-                <div className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-terracotta">Award Winning</span>
-                    <span className="text-dune/70">•</span>
-                    <span>Best Lash Studio</span>
+                    <span className="font-semibold">{totalReviews.toLocaleString()}</span>
+                    <div className="flex items-center -space-x-0.5">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <span className="text-sm text-dune/70">Reviews</span>
                   </div>
-                </div>
+                </button>
+              )}
 
-                {/* Extra space at bottom for scrolling */}
-                <div className="h-16" />
-              </motion.div>
-            </div>
+              <div className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-terracotta">Award Winning</span>
+                  <span className="text-dune/70">•</span>
+                  <span>Best Lash Studio</span>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
