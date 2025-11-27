@@ -133,6 +133,38 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
 
   // No more custom scroll handling needed - page scrolls naturally
 
+  // Mobile arch zoom state
+  const [mobileArchScale, setMobileArchScale] = useState(1)
+  const [mobileLogoOpacity, setMobileLogoOpacity] = useState(1)
+
+  // Handle mobile arch zoom-through effect
+  useEffect(() => {
+    if (!isMobile) return
+
+    const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
+    if (!scrollContainer) return
+
+    const handleScroll = () => {
+      const scrollTop = scrollContainer.scrollTop
+      const viewportHeight = window.innerHeight
+
+      // Zoom through arch over first 60% of viewport scroll
+      const zoomProgress = Math.min(scrollTop / (viewportHeight * 0.6), 1)
+      // Scale from 1 to 1.5 (zooming in through the arch)
+      const scale = 1 + (zoomProgress * 0.5)
+      setMobileArchScale(scale)
+
+      // Fade out logo over first 30% of viewport scroll
+      const fadeProgress = Math.min(scrollTop / (viewportHeight * 0.3), 1)
+      setMobileLogoOpacity(1 - fadeProgress)
+    }
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
+    return () => scrollContainer.removeEventListener('scroll', handleScroll)
+  }, [isMobile])
+
   // ============================================
   // MOBILE LAYOUT - Fixed arch behind, content scrolls as page
   // ============================================
@@ -152,13 +184,15 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
             <CircleDecoration className="text-sage" />
           </div>
 
-          {/* Arch Image - Bottom aligned, 85% viewport height */}
-          <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+          {/* Arch Image - Bottom aligned, 85% viewport height, ZOOMS on scroll */}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-center overflow-hidden">
             <div
-              className="relative w-[80vw] max-w-[380px] overflow-hidden"
+              className="relative w-[80vw] max-w-[380px] overflow-hidden transition-transform duration-100 ease-out"
               style={{
                 borderRadius: 'clamp(120px, 40vw, 190px) clamp(120px, 40vw, 190px) 0 0',
                 height: '85dvh',
+                transform: `scale(${mobileArchScale})`,
+                transformOrigin: 'center bottom',
               }}
             >
               <Image
@@ -170,6 +204,28 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                 quality={85}
               />
             </div>
+          </div>
+
+          {/* LASHPOP Logo - Fixed at top, fades out on scroll */}
+          <div
+            className="absolute left-0 right-0 flex justify-center transition-opacity duration-100"
+            style={{
+              top: '5vh',
+              opacity: mobileLogoOpacity,
+              pointerEvents: mobileLogoOpacity > 0.5 ? 'auto' : 'none',
+            }}
+          >
+            <Image
+              src="/lashpop-images/branding/logo.png"
+              alt="LashPop Studios"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+              style={{
+                filter: 'brightness(0) saturate(100%) invert(73%) sepia(10%) saturate(633%) hue-rotate(313deg) brightness(94%) contrast(88%)'
+              }}
+              priority
+            />
           </div>
         </div>
 

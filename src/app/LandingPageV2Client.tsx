@@ -7,6 +7,7 @@ import { DrawerProvider } from '@/components/drawers/DrawerContext';
 import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
 import { Navigation } from '@/components/sections/Navigation';
+import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import HeroSection from '@/components/landing-v2/HeroSection';
 import { WelcomeSection } from '@/components/landing-v2/sections/WelcomeSection';
 import { ScrollServicesTrigger } from '@/components/landing-v2/ScrollServicesTrigger';
@@ -114,6 +115,13 @@ interface FAQData {
   featuredItems: FAQWithCategory[];
 }
 
+interface FounderLetterContent {
+  greeting: string;
+  paragraphs: string[];
+  signOff: string;
+  signature: string;
+}
+
 interface LandingPageV2ClientProps {
   services: Service[];
   teamMembers: TeamMember[];
@@ -122,6 +130,7 @@ interface LandingPageV2ClientProps {
   instagramPosts?: any[]; // Using any[] for now to avoid circular type dependency, or define strict type
   serviceCategories?: ServiceCategory[];
   faqData?: FAQData;
+  founderLetterContent?: FounderLetterContent;
 }
 
 // Minimal mobile styles - GSAP handles the scroll behavior
@@ -167,7 +176,7 @@ const mobileScrollStyles = `
   }
 `;
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -208,7 +217,9 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
               <style dangerouslySetInnerHTML={{ __html: mobileScrollStyles }} />
 
               {/* Z-3: Fixed Header Layer */}
+              {/* Desktop: Full Navigation | Mobile: MobileHeader with dock behavior */}
               <Navigation />
+              {isMobile && <MobileHeader currentSection={currentSection} />}
 
               {/* Panel Stack System - Responsive: top panels on desktop, bottom sheet on mobile */}
               <PanelStackRenderer />
@@ -238,63 +249,66 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 {/* Trigger to open services panel when scrolling past Welcome */}
                 <ScrollServicesTrigger />
 
-                {/* Founder Letter Section */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="founder">
-                  <FounderLetterSection />
-                </div>
+                {/* Continuous cream background wrapper for all sections from founder onwards */}
+                <div className="bg-cream relative">
+                  {/* Founder Letter Section */}
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="founder">
+                    <FounderLetterSection content={founderLetterContent} />
+                  </div>
 
-                {/* Team Section - Adjusted trigger margin for earlier loading */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="team">
-                  <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
-                    <div id="team">
-                      <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
-                    </div>
-                  </SectionTransition>
-                </div>
+                  {/* Team Section - Adjusted trigger margin for earlier loading */}
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="team">
+                    <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
+                      <div id="team">
+                        <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
+                      </div>
+                    </SectionTransition>
+                  </div>
 
-                {/* Instagram Carousel */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
-                  <SectionTransition variant="scaleIn">
-                    <div id="gallery">
-                      <InstagramCarousel posts={instagramPosts} />
-                    </div>
-                  </SectionTransition>
-                </div>
+                  {/* Instagram Carousel */}
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
+                    <SectionTransition variant="scaleIn">
+                      <div id="gallery">
+                        <InstagramCarousel posts={instagramPosts} />
+                      </div>
+                    </SectionTransition>
+                  </div>
 
-                {/* Reviews Section */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews">
-                  <SectionTransition variant="slideUp">
-                    <div id="reviews">
-                      <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
-                    </div>
-                  </SectionTransition>
-                </div>
+                  {/* Reviews Section */}
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews">
+                    <SectionTransition variant="slideUp">
+                      <div id="reviews">
+                        <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
+                      </div>
+                    </SectionTransition>
+                  </div>
 
-                {/* FAQ Section */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="faq">
-                  <SectionTransition variant="fade">
-                    <div id="faq">
-                      <FAQSection
-                        categories={faqData?.categories || []}
-                        itemsByCategory={faqData?.itemsByCategory || {}}
-                        featuredItems={faqData?.featuredItems || []}
-                      />
-                    </div>
-                  </SectionTransition>
-                </div>
+                  {/* FAQ Section */}
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="faq">
+                    <SectionTransition variant="fade">
+                      <div id="faq">
+                        <FAQSection
+                          categories={faqData?.categories || []}
+                          itemsByCategory={faqData?.itemsByCategory || {}}
+                          featuredItems={faqData?.featuredItems || []}
+                        />
+                      </div>
+                    </SectionTransition>
+                  </div>
 
-                {/* Map Section */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="map">
-                  <SectionTransition variant="scaleIn" delay={0.2}>
-                    <div id="find-us" className="pt-20">
-                      <MapSection />
-                    </div>
-                  </SectionTransition>
-                </div>
+                  {/* Map Section */}
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="map">
+                    <SectionTransition variant="scaleIn" delay={0.2}>
+                      <div id="find-us" className="pt-20">
+                        <MapSection />
+                      </div>
+                    </SectionTransition>
+                  </div>
 
-                {/* Footer */}
-                <div className={isMobile ? "mobile-section" : ""} data-section-id="footer">
-                  <FooterV2 />
+                  {/* Footer */}
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="footer">
+                    <FooterV2 />
+                  </div>
                 </div>
             </main>
           </div>
