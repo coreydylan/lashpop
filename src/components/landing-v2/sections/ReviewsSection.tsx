@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
-import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
+import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 
 // Custom CSS for hidden scrollbars
@@ -54,13 +54,14 @@ interface ReviewsSectionProps {
 
 export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProps) {
   const ref = useRef(null)
-  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+  const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
     skipSnaps: false
-  }, [
-    WheelGesturesPlugin()
-  ])
+  })
+
+  // Hover-based wheel scroll - only captures wheel events when hovering
+  const { wheelContainerRef } = useCarouselWheelScroll(emblaApi)
   const isInView = useInView(ref, { once: true, margin: "-20%" })
   const [currentIndex, setCurrentIndex] = useState(0)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
@@ -371,6 +372,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
 
         {/* Full-width Reviews Container with Beautiful Frosted Glass */}
         <motion.div
+          ref={wheelContainerRef}
           className="relative"
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}

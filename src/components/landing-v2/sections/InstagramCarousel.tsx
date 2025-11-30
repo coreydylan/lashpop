@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { motion, useInView } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
-import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
+import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 
 // Stub data using gallery images for now
 const galleryImages = [
@@ -40,10 +40,10 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   const isInView = useInView(ref, { once: true, margin: "-20%" })
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
 
-  // Initialize Embla with AutoScroll
+  // Initialize Embla with AutoScroll (wheel gestures handled by useCarouselWheelScroll)
   const [emblaRef, emblaApi] = useEmblaCarousel(
-    { 
-      loop: true, 
+    {
+      loop: true,
       dragFree: true, // Keeps the "free scroll" feel
       containScroll: false, // Allow infinite scroll without hard bounds
       align: 'center',
@@ -51,16 +51,18 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
       inViewThreshold: 0.7 // Better intersection handling
     },
     [
-      AutoScroll({ 
-        playOnInit: true, 
+      AutoScroll({
+        playOnInit: true,
         speed: 1.5, // Increased back to 1.5 as requested
         stopOnInteraction: false,
         stopOnMouseEnter: true,
-        rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement 
-      }),
-      WheelGesturesPlugin()
+        rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement
+      })
     ]
   )
+
+  // Hover-based wheel scroll - only captures wheel events when hovering
+  const { wheelContainerRef } = useCarouselWheelScroll(emblaApi)
 
   // Handle trackpad/mouse wheel scrolling and add initial nudge
   useEffect(() => {
@@ -155,6 +157,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
 
         {/* Carousel Container */}
         <motion.div
+          ref={wheelContainerRef}
           className="relative w-full"
           initial={{ opacity: 0, x: 100 }}
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 100 }}
