@@ -22,8 +22,20 @@ import {
   Tag,
   Plus,
   X,
-  Lock
+  Lock,
+  FileText,
+  Sparkles
 } from 'lucide-react'
+import { QuickFactsEditor } from '@/components/team/QuickFactsEditor'
+
+interface QuickFact {
+  id: string
+  factType: string
+  customLabel: string | null
+  value: string
+  customIcon: string | null
+  displayOrder: number
+}
 
 interface TeamMember {
   id: string
@@ -45,6 +57,7 @@ interface TeamMember {
   lastSyncedAt: string | null
   vagaroServiceCategories: string[]
   manualServiceCategories: string[]
+  quickFacts?: QuickFact[]
 }
 
 // Common service category options for manual tags
@@ -70,6 +83,8 @@ export default function TeamManagerPage() {
   const [saved, setSaved] = useState(false)
   const [expandedMember, setExpandedMember] = useState<string | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
+  const [editingBio, setEditingBio] = useState<string | null>(null)
+  const [bioValue, setBioValue] = useState('')
 
   useEffect(() => {
     fetchTeamMembers()
@@ -78,15 +93,53 @@ export default function TeamManagerPage() {
   const fetchTeamMembers = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/admin/website/team')
-      if (response.ok) {
-        const data = await response.json()
-        setTeamMembers(data.members || [])
+      // Fetch team members and quick facts in parallel
+      const [membersRes, factsRes] = await Promise.all([
+        fetch('/api/admin/website/team'),
+        fetch('/api/admin/website/team/quick-facts')
+      ])
+
+      if (membersRes.ok) {
+        const data = await membersRes.json()
+        let members = data.members || []
+
+        // Merge quick facts if available
+        if (factsRes.ok) {
+          const factsData = await factsRes.json()
+          const factsByMember = factsData.factsByMember || {}
+          members = members.map((member: TeamMember) => ({
+            ...member,
+            quickFacts: factsByMember[member.id] || []
+          }))
+        }
+
+        setTeamMembers(members)
       }
     } catch (error) {
       console.error('Error fetching team members:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const updateBio = async (memberId: string, newBio: string) => {
+    try {
+      const response = await fetch('/api/admin/website/team', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, bio: newBio })
+      })
+
+      if (response.ok) {
+        setTeamMembers(prev => prev.map(m =>
+          m.id === memberId ? { ...m, bio: newBio } : m
+        ))
+        setEditingBio(null)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+    } catch (error) {
+      console.error('Error updating bio:', error)
     }
   }
 
@@ -536,13 +589,77 @@ export default function TeamManagerPage() {
                           )}
                         </div>
 
+                        {/* Quick Facts Editor */}
+                        <div className="sm:col-span-2 p-4 bg-dusty-rose/5 rounded-2xl border border-dusty-rose/10">
+                          <QuickFactsEditor
+                            memberId={member.id}
+                            memberName={member.name}
+                            initialFacts={member.quickFacts || []}
+                            onFactsChange={(facts) => {
+                              setTeamMembers(prev => prev.map(m =>
+                                m.id === member.id ? { ...m, quickFacts: facts } : m
+                              ))
+                            }}
+                          />
+                        </div>
+
+                        {/* Bio Editor */}
+                        <div className="sm:col-span-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-xs uppercase tracking-wider text-dune/40 font-medium flex items-center gap-2">
+                              <FileText className="w-3.5 h-3.5" />
+                              Bio
+                            </h4>
+                            {editingBio !== member.id && (
+                              <button
+                                onClick={() => {
+                                  setEditingBio(member.id)
+                                  setBioValue(member.bio || '')
+                                }}
+                                className="text-xs text-ocean-mist hover:underline"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          </div>
+                          {editingBio === member.id ? (
+                            <div className="space-y-2">
+                              <textarea
+                                value={bioValue}
+                                onChange={(e) => setBioValue(e.target.value)}
+                                className="w-full px-3 py-2 text-sm border border-sage/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40 min-h-[120px] resize-y"
+                                placeholder="Enter bio..."
+                              />
+                              <div className="flex gap-2 justify-end">
+                                <button
+                                  onClick={() => setEditingBio(null)}
+                                  className="px-3 py-1.5 text-xs text-dune/60 hover:text-dune"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => updateBio(member.id, bioValue)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-ocean-mist text-white rounded-lg hover:bg-ocean-mist/90"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  Save Bio
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-dune/70 leading-relaxed text-sm">
+                              {member.bio || <span className="text-dune/40 italic">No bio yet</span>}
+                            </p>
+                          )}
+                        </div>
+
                         {/* Specialties */}
                         {member.specialties && member.specialties.length > 0 && (
                           <div className="sm:col-span-2 space-y-2">
                             <h4 className="text-xs uppercase tracking-wider text-dune/40 font-medium">Specialties</h4>
                             <div className="flex flex-wrap gap-2">
                               {member.specialties.map((specialty, i) => (
-                                <span 
+                                <span
                                   key={i}
                                   className="px-3 py-1 bg-warm-sand/50 text-dune/70 rounded-full text-xs"
                                 >
@@ -550,14 +667,6 @@ export default function TeamManagerPage() {
                                 </span>
                               ))}
                             </div>
-                          </div>
-                        )}
-
-                        {/* Bio */}
-                        {member.bio && (
-                          <div className="sm:col-span-2 space-y-2">
-                            <h4 className="text-xs uppercase tracking-wider text-dune/40 font-medium">Bio</h4>
-                            <p className="text-dune/70 leading-relaxed">{member.bio}</p>
                           </div>
                         )}
 

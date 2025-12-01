@@ -10,6 +10,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
+import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 
 interface TeamMember {
   id: number
@@ -31,6 +32,7 @@ interface TeamMember {
   bookingUrl: string
   favoriteServices?: string[]
   funFact?: string
+  quickFacts?: QuickFact[]
 }
 
 interface PortfolioImage {
@@ -720,8 +722,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   </div>
                                 )}
 
-                                {/* Fun Fact */}
-                                {selectedMember.funFact && (
+                                {/* Quick Facts Grid */}
+                                {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
+                                  <div>
+                                    <h3 className="font-serif text-lg text-dune mb-3">Quick Facts</h3>
+                                    <QuickFactsGrid facts={selectedMember.quickFacts} />
+                                  </div>
+                                ) : selectedMember.funFact && (
+                                  /* Fallback to single Fun Fact if no quick facts */
                                   <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
                                     <h3 className="font-serif text-base text-dune mb-2 flex items-center gap-2">
                                       <Sparkles className="w-4 h-4 text-dusty-rose" />
@@ -777,12 +785,32 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                 {/* ===== MOBILE LAYOUT ===== */}
                 {isMobile ? (
                   <div
-                    className="flex flex-col h-full relative"
-                    style={{ height: '100dvh' }}
+                    className="flex flex-col h-full relative touch-pan-x"
+                    style={{ height: '100dvh', overscrollBehavior: 'none' }}
                     onTouchStart={(e) => {
                       const touch = e.touches[0]
-                      ;(e.currentTarget as HTMLDivElement).dataset.touchStartX = touch.clientX.toString()
-                      ;(e.currentTarget as HTMLDivElement).dataset.touchStartY = touch.clientY.toString()
+                      const target = e.currentTarget as HTMLDivElement
+                      target.dataset.touchStartX = touch.clientX.toString()
+                      target.dataset.touchStartY = touch.clientY.toString()
+                      target.dataset.isHorizontalSwipe = 'undecided'
+                    }}
+                    onTouchMove={(e) => {
+                      const target = e.currentTarget as HTMLDivElement
+                      const startX = parseFloat(target.dataset.touchStartX || '0')
+                      const startY = parseFloat(target.dataset.touchStartY || '0')
+                      const touch = e.touches[0]
+                      const deltaX = Math.abs(touch.clientX - startX)
+                      const deltaY = Math.abs(touch.clientY - startY)
+
+                      // Once we've moved enough to decide direction, lock it in
+                      if (target.dataset.isHorizontalSwipe === 'undecided' && (deltaX > 10 || deltaY > 10)) {
+                        target.dataset.isHorizontalSwipe = deltaX > deltaY ? 'yes' : 'no'
+                      }
+
+                      // If horizontal swipe detected, prevent vertical scroll by stopping propagation
+                      if (target.dataset.isHorizontalSwipe === 'yes') {
+                        e.preventDefault()
+                      }
                     }}
                     onTouchEnd={(e) => {
                       const target = e.currentTarget as HTMLDivElement
@@ -792,15 +820,18 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       const deltaX = touch.clientX - startX
                       const deltaY = touch.clientY - startY
 
-                      // Only trigger swipe if horizontal movement > vertical and exceeds threshold
+                      // Only trigger swipe if we detected a horizontal swipe and it exceeds threshold
                       const threshold = 80
-                      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5 && Math.abs(deltaX) > threshold) {
+                      if (target.dataset.isHorizontalSwipe === 'yes' && Math.abs(deltaX) > threshold) {
                         if (deltaX > 0) {
                           goToPrevMember()
                         } else {
                           goToNextMember()
                         }
                       }
+
+                      // Reset state
+                      target.dataset.isHorizontalSwipe = 'undecided'
                     }}
                   >
                     {/* Floating Header - with close button and pagination */}
@@ -919,8 +950,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           </div>
                         )}
 
-                        {/* Fun Fact */}
-                        {selectedMember.funFact && (
+                        {/* Quick Facts Grid (Mobile) */}
+                        {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
+                          <div>
+                            <h3 className="font-serif text-lg text-dune mb-3">Quick Facts</h3>
+                            <QuickFactsGrid facts={selectedMember.quickFacts} />
+                          </div>
+                        ) : selectedMember.funFact && (
+                          /* Fallback to single Fun Fact if no quick facts */
                           <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
                             <h3 className="font-serif text-lg text-dune mb-2 flex items-center gap-2">
                               <Sparkles className="w-4 h-4 text-dusty-rose" />
@@ -1025,8 +1062,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </div>
                       )}
 
-                      {/* Fun Fact */}
-                      {selectedMember.funFact && (
+                      {/* Quick Facts Grid (Desktop Modal) */}
+                      {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
+                        <div>
+                          <h3 className="text-lg font-semibold text-dune mb-3">Quick Facts</h3>
+                          <QuickFactsGrid facts={selectedMember.quickFacts} />
+                        </div>
+                      ) : selectedMember.funFact && (
+                        /* Fallback to single Fun Fact if no quick facts */
                         <div className="bg-golden/10 rounded-2xl p-6 border border-golden/20">
                           <h3 className="text-sm font-semibold text-dune mb-2">Fun Fact</h3>
                           <p className="text-dune/70">{selectedMember.funFact}</p>

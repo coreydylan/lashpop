@@ -23,7 +23,16 @@ export async function EnhancedTeamSection() {
     instagram: member.instagram || undefined,
     bookingUrl: member.bookingUrl,
     favoriteServices: member.favoriteServices as string[] | undefined,
-    funFact: member.funFact || undefined
+    funFact: member.funFact || undefined,
+    // Quick facts from database
+    quickFacts: member.quickFacts?.map(fact => ({
+      id: fact.id,
+      factType: fact.factType,
+      customLabel: fact.customLabel,
+      value: fact.value,
+      customIcon: fact.customIcon,
+      displayOrder: fact.displayOrder
+    })) || []
   }))
 
   return <EnhancedTeamSectionClient teamMembers={formattedTeamMembers} />

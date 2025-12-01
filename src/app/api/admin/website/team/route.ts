@@ -124,11 +124,12 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// PATCH - Update a single team member's manual service categories
+// PATCH - Update a single team member's details (manual categories, bio, funFact)
 export async function PATCH(request: NextRequest) {
   try {
     const db = getDb()
-    const { memberId, manualServiceCategories } = await request.json()
+    const body = await request.json()
+    const { memberId, manualServiceCategories, bio, funFact } = body
 
     if (!memberId) {
       return NextResponse.json(
@@ -137,26 +138,39 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    if (!Array.isArray(manualServiceCategories)) {
-      return NextResponse.json(
-        { error: 'manualServiceCategories must be an array' },
-        { status: 400 }
-      )
+    // Build update object dynamically based on what was provided
+    const updateData: Record<string, any> = {
+      updatedAt: new Date()
+    }
+
+    if (manualServiceCategories !== undefined) {
+      if (!Array.isArray(manualServiceCategories)) {
+        return NextResponse.json(
+          { error: 'manualServiceCategories must be an array' },
+          { status: 400 }
+        )
+      }
+      updateData.manualServiceCategories = manualServiceCategories
+    }
+
+    if (bio !== undefined) {
+      updateData.bio = bio
+    }
+
+    if (funFact !== undefined) {
+      updateData.funFact = funFact
     }
 
     await db
       .update(teamMembers)
-      .set({
-        manualServiceCategories: manualServiceCategories,
-        updatedAt: new Date()
-      })
+      .set(updateData)
       .where(eq(teamMembers.id, memberId))
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating manual service categories:', error)
+    console.error('Error updating team member:', error)
     return NextResponse.json(
-      { error: 'Failed to update manual service categories' },
+      { error: 'Failed to update team member' },
       { status: 500 }
     )
   }

@@ -21,6 +21,7 @@ import { testimonials } from "./schema/testimonials"
 import { reviews } from "./schema/reviews"
 import { reviewStats } from "./schema/review_stats"
 import { teamMemberCategories } from "./schema/team_member_categories"
+import { teamQuickFacts, QUICK_FACT_TYPES } from "./schema/team_quick_facts"
 import { assets } from "./schema/assets"
 import { assetServices } from "./schema/asset_services"
 import { teamMemberPhotos } from "./schema/team_member_photos"
@@ -59,7 +60,9 @@ import { businessLocations } from "./schema/business_locations"
 import { formResponses } from "./schema/form_responses"
 import { transactions } from "./schema/transactions"
 
+// Load from .env.local first, fall back to .env
 config({ path: ".env.local" })
+config({ path: ".env" })
 
 const databaseUrl = process.env.DATABASE_URL
 
@@ -78,6 +81,7 @@ const dbSchema = {
   customers,
   teamMembers,
   teamMemberServices,
+  teamQuickFacts,
   serviceCategories,
   services,
   testimonials,
@@ -188,6 +192,8 @@ export {
   customers,
   teamMembers,
   teamMemberServices,
+  teamQuickFacts,
+  QUICK_FACT_TYPES,
   serviceCategories,
   services,
   testimonials,

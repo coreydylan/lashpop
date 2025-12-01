@@ -2,8 +2,9 @@
 
 import { getDb } from "@/db"
 import { teamMembers } from "@/db/schema/team_members"
+import { teamQuickFacts } from "@/db/schema/team_quick_facts"
 import { services } from "@/db/schema/services"
-import { and, eq, inArray, isNotNull } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, asc } from "drizzle-orm"
 
 export async function getTeamMembers() {
   const db = getDb()
@@ -68,6 +69,21 @@ export async function getServicesForTeamMember(vagaroEmployeeId: string | null):
 }
 
 /**
+ * Get quick facts for a team member
+ */
+export async function getQuickFactsForMember(memberId: string) {
+  const db = getDb()
+
+  const facts = await db
+    .select()
+    .from(teamQuickFacts)
+    .where(eq(teamQuickFacts.teamMemberId, memberId))
+    .orderBy(asc(teamQuickFacts.displayOrder))
+
+  return facts
+}
+
+/**
  * Get team members with their service categories
  * Merges Vagaro-derived categories with manually set categories
  */
@@ -79,6 +95,25 @@ export async function getTeamMembersWithServices() {
     .from(teamMembers)
     .where(eq(teamMembers.isActive, true))
     .orderBy(teamMembers.displayOrder)
+
+  // Fetch all quick facts for all members in one query
+  const memberIds = members.map(m => m.id)
+  const allQuickFacts = memberIds.length > 0
+    ? await db
+        .select()
+        .from(teamQuickFacts)
+        .where(inArray(teamQuickFacts.teamMemberId, memberIds))
+        .orderBy(asc(teamQuickFacts.displayOrder))
+    : []
+
+  // Group quick facts by member ID
+  const quickFactsByMember = allQuickFacts.reduce((acc, fact) => {
+    if (!acc[fact.teamMemberId]) {
+      acc[fact.teamMemberId] = []
+    }
+    acc[fact.teamMemberId].push(fact)
+    return acc
+  }, {} as Record<string, typeof allQuickFacts>)
 
   // Fetch service categories for all members in parallel
   const membersWithServices = await Promise.all(
@@ -101,7 +136,8 @@ export async function getTeamMembersWithServices() {
         ...member,
         serviceCategories: allCategories.slice(0, 4), // Max 4 tags
         vagaroServiceCategories: vagaroCategories, // Keep track of which came from Vagaro
-        manualServiceCategories: manualCategories // Keep track of manual ones
+        manualServiceCategories: manualCategories, // Keep track of manual ones
+        quickFacts: quickFactsByMember[member.id] || [] // Add quick facts
       }
     })
   )
