@@ -1,15 +1,19 @@
 'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
-import { gsap, ScrollTrigger, initGSAP, isGSAPInitialized, initGSAPSync } from '@/lib/gsap'
+import { gsap, initGSAPSync } from '@/lib/gsap'
 
 // Event name for FAQ interaction changes
 const FAQ_INTERACTION_EVENT = 'faq-interaction-change'
+
+// Event name to signal programmatic scroll (should not trigger snap)
+export const PROGRAMMATIC_SCROLL_EVENT = 'programmatic-scroll'
 
 // Per-section snap configuration
 export interface SectionSnapConfig {
   threshold: number      // 0-1, how sensitive (higher = more likely to snap)
   anchorOffset: number   // Pixels from top of viewport where section anchors (0 = top, negative = higher up)
+  disableSnap?: boolean  // If true, don't auto-snap to this section
 }
 
 interface UseMobileGSAPScrollOptions {
@@ -23,7 +27,6 @@ interface UseMobileGSAPScrollOptions {
 }
 
 // Get default config for ALL sections (computed at runtime to avoid SSR issues)
-// More sensitive thresholds (0.7+) = more likely to snap
 const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
   // targetY = section.offsetTop - anchorOffset
   // Higher anchorOffset = scroll LESS = section top appears LOWER on viewport
@@ -33,29 +36,28 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
 
   return {
     // Hero: snap to top of section (no offset needed)
-    'hero': { threshold: 0.7, anchorOffset: 0 },
+    'hero': { threshold: 0.5, anchorOffset: 0 },
 
     // Welcome: position content comfortably in view
-    'welcome': { threshold: 0.7, anchorOffset: vh * 0.12 },
+    'welcome': { threshold: 0.5, anchorOffset: vh * 0.12 },
 
     // Founder letter: position for comfortable reading
-    'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
+    'founder': { threshold: 0.5, anchorOffset: vh * 0.10 },
 
     // Team, Instagram, Reviews: position with header visible
-    'team': { threshold: 0.7, anchorOffset: headerHeight + 10 },
-    'instagram': { threshold: 0.7, anchorOffset: headerHeight + 10 },
-    'reviews': { threshold: 0.7, anchorOffset: headerHeight + 10 },
+    'team': { threshold: 0.5, anchorOffset: headerHeight + 10 },
+    'instagram': { threshold: 0.5, anchorOffset: headerHeight + 10 },
+    'reviews': { threshold: 0.5, anchorOffset: headerHeight + 10 },
 
-    // FAQ: position so sticky tab selector docks at 44px (right below mobile header)
-    // Section has pt-12 (48px) and sticky header has -mt-4 (-16px), so sticky starts 32px from section top
-    // To dock sticky at 44px: section top = 44 - 32 = 12px → anchorOffset = 12
-    'faq': { threshold: 0.7, anchorOffset: 12 },
+    // FAQ: DISABLE auto-snap - let user scroll freely within FAQ content
+    // Section tracking still works, just no forced snap
+    'faq': { threshold: 0.3, anchorOffset: 12, disableSnap: true },
 
     // Map: snap to top so full viewport map + card is visible
-    'map': { threshold: 0.7, anchorOffset: 0 },
+    'map': { threshold: 0.5, anchorOffset: 0 },
 
     // Footer: snap to show footer content
-    'footer': { threshold: 0.6, anchorOffset: 0 },
+    'footer': { threshold: 0.4, anchorOffset: 0 },
   }
 }
 
@@ -69,10 +71,12 @@ export function useMobileGSAPScroll({
   onSectionChange
 }: UseMobileGSAPScrollOptions) {
   const currentSectionRef = useRef<number>(0)
+  const currentSectionIdRef = useRef<string>('')
   const isSnappingRef = useRef(false)
-  const scrollTriggersRef = useRef<ScrollTrigger[]>([])
   const containerRef = useRef<HTMLElement | null>(null)
   const faqInteractingRef = useRef(false)
+  const programmaticScrollRef = useRef(false)
+  const programmaticScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Listen for FAQ interaction state changes
   useEffect(() => {
@@ -85,6 +89,29 @@ export function useMobileGSAPScroll({
     return () => window.removeEventListener(FAQ_INTERACTION_EVENT, handleFAQInteraction)
   }, [])
 
+  // Listen for programmatic scroll signals (from FAQ, etc.)
+  useEffect(() => {
+    const handleProgrammaticScroll = () => {
+      programmaticScrollRef.current = true
+      // Clear any existing timeout
+      if (programmaticScrollTimeoutRef.current) {
+        clearTimeout(programmaticScrollTimeoutRef.current)
+      }
+      // Reset after 500ms - enough time for smooth scroll to complete
+      programmaticScrollTimeoutRef.current = setTimeout(() => {
+        programmaticScrollRef.current = false
+      }, 500)
+    }
+
+    window.addEventListener(PROGRAMMATIC_SCROLL_EVENT, handleProgrammaticScroll)
+    return () => {
+      window.removeEventListener(PROGRAMMATIC_SCROLL_EVENT, handleProgrammaticScroll)
+      if (programmaticScrollTimeoutRef.current) {
+        clearTimeout(programmaticScrollTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Merge default configs with custom configs
   const mergedConfigs = { ...getDefaultSectionConfigs(), ...sectionConfigs }
 
@@ -94,7 +121,8 @@ export function useMobileGSAPScroll({
     const config = mergedConfigs[sectionId]
     return {
       threshold: config?.threshold ?? snapThreshold,
-      anchorOffset: config?.anchorOffset ?? 0
+      anchorOffset: config?.anchorOffset ?? 0,
+      disableSnap: config?.disableSnap ?? false
     }
   }, [mergedConfigs, snapThreshold])
 
@@ -158,30 +186,26 @@ export function useMobileGSAPScroll({
     // and we need it ready immediately
     initGSAPSync()
 
-    // Create ScrollTrigger for each section to track which is active
-    sections.forEach((section, index) => {
-      const st = ScrollTrigger.create({
-        trigger: section,
-        scroller: container,
-        start: 'top center',
-        end: 'bottom center',
-        onEnter: () => {
-          if (!isSnappingRef.current) {
-            currentSectionRef.current = index
-            const sectionId = section.getAttribute('data-section-id') || ''
-            onSectionChange?.(sectionId, index)
+    // Helper function to detect current section based on scroll position
+    const detectCurrentSection = () => {
+      const scrollTop = container.scrollTop
+      const viewportCenter = scrollTop + window.innerHeight / 2
+
+      // Find which section the viewport center is in
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const section = sections[i]
+        const sectionTop = section.offsetTop
+        if (viewportCenter >= sectionTop) {
+          const sectionId = section.getAttribute('data-section-id') || ''
+          if (currentSectionIdRef.current !== sectionId) {
+            currentSectionIdRef.current = sectionId
+            currentSectionRef.current = i
+            onSectionChange?.(sectionId, i)
           }
-        },
-        onEnterBack: () => {
-          if (!isSnappingRef.current) {
-            currentSectionRef.current = index
-            const sectionId = section.getAttribute('data-section-id') || ''
-            onSectionChange?.(sectionId, index)
-          }
+          return
         }
-      })
-      scrollTriggersRef.current.push(st)
-    })
+      }
+    }
 
     // Debounced snap check - only snap when user stops scrolling
     let scrollEndTimer: NodeJS.Timeout | null = null
@@ -190,12 +214,16 @@ export function useMobileGSAPScroll({
     let lastScrollTime = Date.now()
 
     const checkForSnap = () => {
-      if (isSnappingRef.current) return
+      // Skip if currently snapping or during programmatic scroll
+      if (isSnappingRef.current || programmaticScrollRef.current) return
+
+      // Skip all snapping when user is interacting with FAQ
+      if (faqInteractingRef.current) return
 
       const scrollTop = container.scrollTop
       const viewportHeight = window.innerHeight
 
-      // Find which section we're closest to (considering anchor offsets)
+      // Find which section we're closest to for potential snapping
       let closestIndex = 0
       let closestDistance = Infinity
 
@@ -218,16 +246,11 @@ export function useMobileGSAPScroll({
       const targetSection = sections[closestIndex]
       if (!targetSection) return
 
-      const targetSectionId = targetSection.getAttribute('data-section-id') || ''
-
-      // Skip snapping for FAQ section when user is interacting with it
-      if (targetSectionId === 'faq' && faqInteractingRef.current) {
-        // Still update section tracking, just don't auto-snap
-        currentSectionRef.current = closestIndex
-        return
-      }
-
       const config = getConfigForSection(targetSection)
+
+      // Skip snapping if this section has snap disabled
+      if (config.disableSnap) return
+
       const idealScrollPos = targetSection.offsetTop - config.anchorOffset
 
       // Calculate how far we are from the snap point
@@ -235,9 +258,10 @@ export function useMobileGSAPScroll({
       const thresholdPx = viewportHeight * config.threshold
 
       // Only snap if we're within the threshold AND scroll velocity is low
-      if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 5 && Math.abs(scrollVelocity) < 2) {
+      // Use higher velocity threshold to only snap when truly stopped
+      if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 10 && Math.abs(scrollVelocity) < 0.5) {
         snapToSection(closestIndex, sections)
-      } else if (distanceFromSnapPoint <= 5) {
+      } else if (distanceFromSnapPoint <= 10) {
         // Already at snap point, just dispatch event
         currentSectionRef.current = closestIndex
         dispatchSectionLocked(targetSection)
@@ -257,40 +281,33 @@ export function useMobileGSAPScroll({
       lastScrollY = currentScrollY
       lastScrollTime = now
 
+      // Update section tracking on every scroll (throttled by ref check in detectCurrentSection)
+      detectCurrentSection()
+
       // Clear existing timer
       if (scrollEndTimer) {
         clearTimeout(scrollEndTimer)
       }
 
-      // Check for snap after scrolling stops - reduced delay for more responsive snapping
-      scrollEndTimer = setTimeout(checkForSnap, 100)
+      // Check for snap after scrolling stops
+      // Use longer delay to avoid snap during continuous scrolling
+      scrollEndTimer = setTimeout(checkForSnap, 200)
     }
 
-    // Handle touch end for more responsive snapping on mobile
+    // Handle touch end for snapping on mobile
     const handleTouchEnd = () => {
-      // Reduced delay for more responsive snapping after touch
       if (scrollEndTimer) {
         clearTimeout(scrollEndTimer)
       }
-      scrollEndTimer = setTimeout(checkForSnap, 120)
+      // Use longer delay after touch to let momentum scrolling settle
+      scrollEndTimer = setTimeout(checkForSnap, 250)
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
     container.addEventListener('touchend', handleTouchEnd, { passive: true })
 
     // Initial section detection
-    setTimeout(() => {
-      const scrollTop = container.scrollTop
-      sections.forEach((section, index) => {
-        const sectionTop = section.offsetTop
-        const sectionBottom = sectionTop + section.offsetHeight
-        if (scrollTop >= sectionTop && scrollTop < sectionBottom) {
-          currentSectionRef.current = index
-          const sectionId = section.getAttribute('data-section-id') || ''
-          onSectionChange?.(sectionId, index)
-        }
-      })
-    }, 100)
+    setTimeout(detectCurrentSection, 100)
 
     return () => {
       container.removeEventListener('scroll', handleScroll)
@@ -298,8 +315,6 @@ export function useMobileGSAPScroll({
       if (scrollEndTimer) {
         clearTimeout(scrollEndTimer)
       }
-      scrollTriggersRef.current.forEach(st => st.kill())
-      scrollTriggersRef.current = []
     }
   }, [enabled, sectionSelector, containerSelector, snapThreshold, snapToSection, onSectionChange, dispatchSectionLocked, getConfigForSection])
 

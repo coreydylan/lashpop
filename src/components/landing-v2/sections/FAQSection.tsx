@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
+import { PROGRAMMATIC_SCROLL_EVENT } from '@/hooks/useMobileGSAPScroll'
 
 interface FAQCategory {
   id: string
@@ -39,6 +40,11 @@ export function dispatchFAQInteraction(isInteracting: boolean) {
   }))
 }
 
+// Signal that a programmatic scroll is happening (prevents snap)
+function dispatchProgrammaticScroll() {
+  window.dispatchEvent(new CustomEvent(PROGRAMMATIC_SCROLL_EVENT))
+}
+
 export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSectionProps) {
   const ref = useRef(null)
   const faqListRef = useRef<HTMLDivElement>(null)
@@ -47,8 +53,6 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
   const [expandedIndex, setExpandedIndex] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('top-faqs')
   const [isMobile, setIsMobile] = useState(false)
-  const [isInteracting, setIsInteracting] = useState(false)
-  const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -59,49 +63,6 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Signal interaction state to GSAP scroll system
-  const setFAQInteracting = useCallback((interacting: boolean) => {
-    setIsInteracting(interacting)
-    dispatchFAQInteraction(interacting)
-  }, [])
-
-  // Reset interaction state after period of inactivity
-  // This re-enables scroll snapping if user stops interacting with FAQ
-  const scheduleInteractionReset = useCallback(() => {
-    // Clear any existing timeout
-    if (interactionTimeoutRef.current) {
-      clearTimeout(interactionTimeoutRef.current)
-    }
-    // Schedule reset after 3 seconds of inactivity
-    interactionTimeoutRef.current = setTimeout(() => {
-      setFAQInteracting(false)
-    }, 3000)
-  }, [setFAQInteracting])
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (interactionTimeoutRef.current) {
-        clearTimeout(interactionTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  // Reset interaction state when user scrolls away from FAQ section
-  useEffect(() => {
-    if (!isMobile) return
-
-    const handleSectionChange = (e: Event) => {
-      const customEvent = e as CustomEvent<{ sectionId: string }>
-      if (customEvent.detail?.sectionId !== 'faq' && isInteracting) {
-        setFAQInteracting(false)
-      }
-    }
-
-    window.addEventListener('section-locked', handleSectionChange)
-    return () => window.removeEventListener('section-locked', handleSectionChange)
-  }, [isMobile, isInteracting, setFAQInteracting])
-
   // Scroll to align first FAQ card with bottom of sticky header when category changes
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId)
@@ -109,10 +70,8 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
 
     // On mobile, scroll to position first card below sticky header
     if (isMobile && faqListRef.current) {
-      // Temporarily disable GSAP snap, scroll to top of list
-      setFAQInteracting(true)
-      // Schedule auto-reset after inactivity
-      scheduleInteractionReset()
+      // Signal programmatic scroll to prevent snap interference
+      dispatchProgrammaticScroll()
 
       setTimeout(() => {
         const headerHeight = 44 // Mobile header height (44px)
@@ -125,6 +84,8 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
         // Get the mobile scroll container
         const container = document.querySelector('.mobile-scroll-container')
         if (container) {
+          // Signal again right before scroll
+          dispatchProgrammaticScroll()
           const currentScrollTop = container.scrollTop
           // Calculate target: current scroll + how far the list is from where it should be
           const targetScrollY = currentScrollTop + faqListRect.top - totalOffset
@@ -137,33 +98,32 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
   const toggleFAQ = (id: string) => {
     const isExpanding = expandedIndex !== id
 
-    // Mark as interacting when user opens/closes FAQ cards on mobile
-    if (isMobile) {
-      setFAQInteracting(true)
-      // Schedule auto-reset after inactivity
-      scheduleInteractionReset()
+    // On mobile, handle scroll adjustments when expanding cards
+    if (isMobile && isExpanding) {
+      // Signal programmatic scroll before any adjustments
+      dispatchProgrammaticScroll()
 
       // When expanding, scroll to ensure the card header stays visible
-      if (isExpanding) {
-        setTimeout(() => {
-          const cardElement = document.querySelector(`[data-faq-id="${id}"]`)
-          if (cardElement) {
-            const rect = cardElement.getBoundingClientRect()
-            const headerHeight = 44
-            const stickyHeight = stickyHeaderRef.current?.offsetHeight || 60
-            const minVisibleTop = headerHeight + stickyHeight + 16 // 16px buffer
+      setTimeout(() => {
+        const cardElement = document.querySelector(`[data-faq-id="${id}"]`)
+        if (cardElement) {
+          const rect = cardElement.getBoundingClientRect()
+          const headerHeight = 44
+          const stickyHeight = stickyHeaderRef.current?.offsetHeight || 60
+          const minVisibleTop = headerHeight + stickyHeight + 16 // 16px buffer
 
-            // If card header is above the visible area (behind sticky elements)
-            if (rect.top < minVisibleTop) {
-              const container = document.querySelector('.mobile-scroll-container')
-              if (container) {
-                const scrollAdjustment = minVisibleTop - rect.top + 8
-                container.scrollBy({ top: -scrollAdjustment, behavior: 'smooth' })
-              }
+          // If card header is above the visible area (behind sticky elements)
+          if (rect.top < minVisibleTop) {
+            const container = document.querySelector('.mobile-scroll-container')
+            if (container) {
+              // Signal again right before scroll
+              dispatchProgrammaticScroll()
+              const scrollAdjustment = minVisibleTop - rect.top + 8
+              container.scrollBy({ top: -scrollAdjustment, behavior: 'smooth' })
             }
           }
-        }, 50) // Small delay for DOM update
-      }
+        }
+      }, 50) // Small delay for DOM update
     }
 
     setExpandedIndex(isExpanding ? id : null)
