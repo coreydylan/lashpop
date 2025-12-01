@@ -1,13 +1,11 @@
 'use client'
 
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Instagram, Phone, Calendar, X, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
-import useEmblaCarousel from 'embla-carousel-react'
-import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 
@@ -108,17 +106,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   useEffect(() => {
     setMounted(true)
   }, [])
-
-  // Initialize Embla Carousel for mobile
-  const [emblaRef, emblaApi] = useEmblaCarousel(
-    {
-      loop: true,
-      align: 'center',
-      skipSnaps: false,
-      containScroll: 'trimSnaps'
-    },
-    [WheelGesturesPlugin()]
-  )
 
   const orchestrator = useBookingOrchestrator()
   const highlights = orchestrator.state.highlights.providers
@@ -245,18 +232,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     return img?.width && img?.height && img.width > img.height
   }, [portfolioImages, currentImageIndex])
 
-  // Add subtle nudge animation when carousel comes into view on mobile
+  // Auto-select first team member on mobile when section comes into view
   useEffect(() => {
-    if (!emblaApi || !isInView || !isMobile) return
-
-    // Subtle nudge animation
-    setTimeout(() => {
-      emblaApi.scrollTo(0.3, false)
-      setTimeout(() => {
-        emblaApi.scrollTo(0, true)
-      }, 400)
-    }, 800)
-  }, [emblaApi, isInView, isMobile])
+    if (isMobile && isInView && teamMembers.length > 0 && !selectedMember) {
+      // Select first member by default on mobile
+      setSelectedMemberIndex(0)
+      setSelectedMember(teamMembers[0])
+    }
+  }, [isMobile, isInView, teamMembers, selectedMember])
 
   const handleMemberClick = (member: TeamMember, index: number) => {
     if (isMobile) {
@@ -342,89 +325,167 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         ref={sectionRef}
         className="py-20 bg-cream overflow-hidden"
       >
-        {/* Mobile Carousel View */}
+        {/* Mobile Hybrid View: Portrait Strip + Selected Card */}
         {isMobile ? (
-          <div className="relative w-full">
-            {/* Embla Viewport */}
-            <div className="overflow-hidden" ref={emblaRef}>
-              {/* Embla Container */}
-              <div className="flex touch-pan-y gap-4 px-4">
-                {teamMembers.map((member, index) => {
-                  // Use service categories from Vagaro, fallback to derived from specialties
-                  const memberCategories = member.serviceCategories?.length 
-                    ? member.serviceCategories 
-                    : getTeamMemberCategories(member.specialties)
-
-                  return (
-                    <motion.div
-                      key={member.id}
-                      className="flex-[0_0_auto] w-72 cursor-grab active:cursor-grabbing"
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-                      transition={{
-                        duration: 0.6,
-                        delay: index * 0.1,
-                        ease: [0.23, 1, 0.32, 1]
-                      }}
-                      onClick={() => handleMemberClick(member, index)}
-                    >
-                      {/* Clean Card Design - Taller format */}
-                      <div className="relative h-[420px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
-                        {/* Clear Background Image */}
-                        <div className="absolute inset-0">
+          <div className="w-full px-4">
+            {/* Horizontal Portrait Strip - All team members visible */}
+            <motion.div
+              className="mb-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+                <div className="flex gap-3 pb-2">
+                  {teamMembers.map((member, index) => {
+                    const isSelected = selectedMemberIndex === index && selectedMember?.id === member.id
+                    return (
+                      <motion.button
+                        key={member.id}
+                        className="flex-shrink-0 flex flex-col items-center gap-1.5"
+                        onClick={() => {
+                          setSelectedMemberIndex(index)
+                          setSelectedMember(member)
+                        }}
+                        whileTap={{ scale: 0.95 }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                      >
+                        {/* Circular Avatar */}
+                        <div
+                          className={`relative w-16 h-16 rounded-full overflow-hidden transition-all duration-300 ${
+                            isSelected
+                              ? 'ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream scale-110'
+                              : 'ring-1 ring-sage/20'
+                          }`}
+                        >
                           <Image
                             src={member.image}
                             alt={member.name}
                             fill
                             className="object-cover"
                           />
-                          {/* Gradient for readability at bottom */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                        </div>
-
-                        {/* Content at Bottom */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          {/* Name */}
-                          <h3 className="text-lg font-bold text-white drop-shadow-lg mb-1.5">
-                            {member.name}
-                          </h3>
-
-                          {/* Services - Horizontal scrolling chips */}
-                          {memberCategories.length > 0 && (
-                            <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
-                              <div className="flex gap-1 min-w-max">
-                                {memberCategories.slice(0, 4).map((category) => (
-                                  <span
-                                    key={category}
-                                    className="px-2 py-0.5 text-[9px] font-medium bg-white/15 backdrop-blur-sm text-white/90 rounded-full whitespace-nowrap"
-                                  >
-                                    {category}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
+                          {/* Highlight indicator */}
+                          {isHighlighted(member.id) && !isSelected && (
+                            <div className="absolute inset-0 ring-2 ring-dusty-rose rounded-full animate-pulse" />
                           )}
                         </div>
-
-                        {/* Highlight Effect */}
-                        {isHighlighted(member.id) && (
-                          <div className="absolute inset-0 pointer-events-none">
-                            <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/30 to-transparent animate-pulse" />
-                            <div className="absolute top-4 right-4 bg-dusty-rose text-white px-3 py-1 rounded-full text-xs font-medium">
-                              Recommended
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </motion.div>
-                  )
-                })}
+                        {/* Name below avatar */}
+                        <span
+                          className={`text-[10px] font-medium transition-colors truncate max-w-16 ${
+                            isSelected ? 'text-dusty-rose' : 'text-sage'
+                          }`}
+                        >
+                          {member.name.split(' ')[0]}
+                        </span>
+                      </motion.button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Gradient edges for seamless look */}
-            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
+            {/* Selected Member Card */}
+            <AnimatePresence mode="wait">
+              {selectedMember && (
+                <motion.div
+                  key={selectedMember.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                  className="cursor-pointer"
+                  onClick={() => handleSelectMember(selectedMember)}
+                >
+                  {/* Card with image and info */}
+                  <div className="relative rounded-3xl overflow-hidden shadow-xl bg-white">
+                    {/* Image Section */}
+                    <div className="relative aspect-[4/5] overflow-hidden">
+                      <Image
+                        src={selectedMember.image}
+                        alt={selectedMember.name}
+                        fill
+                        className="object-cover"
+                        priority
+                      />
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                      {/* Tap hint */}
+                      <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full">
+                        <span className="text-white text-xs font-medium">Tap for details</span>
+                      </div>
+
+                      {/* Content at bottom of image */}
+                      <div className="absolute bottom-0 left-0 right-0 p-5">
+                        <h3 className="text-2xl font-serif text-white drop-shadow-lg mb-1">
+                          {selectedMember.name}
+                        </h3>
+                        <p className="text-white/90 text-sm font-medium mb-3">
+                          {selectedMember.type === 'independent' && selectedMember.businessName
+                            ? selectedMember.businessName
+                            : 'LashPop Artist'}
+                        </p>
+
+                        {/* Service categories */}
+                        {(() => {
+                          const memberCategories = selectedMember.serviceCategories?.length
+                            ? selectedMember.serviceCategories
+                            : getTeamMemberCategories(selectedMember.specialties)
+                          return memberCategories.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5">
+                              {memberCategories.slice(0, 4).map((category) => (
+                                <span
+                                  key={category}
+                                  className="px-2.5 py-1 text-[10px] font-medium bg-white/20 backdrop-blur-sm text-white rounded-full"
+                                >
+                                  {category}
+                                </span>
+                              ))}
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* Quick info section below image */}
+                    <div className="p-4 bg-white">
+                      {selectedMember.bio && (
+                        <p className="text-sage text-sm line-clamp-2 leading-relaxed">
+                          {selectedMember.bio}
+                        </p>
+                      )}
+
+                      {/* Swipe navigation hint */}
+                      <div className="flex items-center justify-center gap-2 mt-4 text-sage/60">
+                        <ChevronLeft className="w-4 h-4" />
+                        <span className="text-xs">Select a team member above</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </div>
+                    </div>
+
+                    {/* Highlight Effect */}
+                    {isHighlighted(selectedMember.id) && (
+                      <div className="absolute top-4 left-4 bg-dusty-rose text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+                        Recommended
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Initial state: auto-select first member if none selected */}
+            {!selectedMember && teamMembers.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-8 text-sage"
+              >
+                <p className="text-sm">Select a team member to learn more</p>
+              </motion.div>
+            )}
           </div>
         ) : (
           <div className="container px-4">
