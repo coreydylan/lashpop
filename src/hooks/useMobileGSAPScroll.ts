@@ -1,14 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback } from 'react'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-
-// Register GSAP plugins
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger, ScrollToPlugin)
-}
+import { gsap, ScrollTrigger, initGSAP, isGSAPInitialized, initGSAPSync } from '@/lib/gsap'
 
 // Event name for FAQ interaction changes
 const FAQ_INTERACTION_EVENT = 'faq-interaction-change'
@@ -145,6 +138,10 @@ export function useMobileGSAPScroll({
     // Clear any existing ScrollTriggers from previous renders
     scrollTriggersRef.current.forEach(st => st.kill())
     scrollTriggersRef.current = []
+
+    // Initialize GSAP (use sync here since this is user-initiated scroll tracking)
+    // and we need it ready immediately
+    initGSAPSync()
 
     // Create ScrollTrigger for each section to track which is active
     sections.forEach((section, index) => {

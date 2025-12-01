@@ -2,12 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react'
 import * as THREE from 'three'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
+import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
 
 interface ParallaxImageProps {
   src: string
@@ -86,6 +81,13 @@ export default function ParallaxImage({
   const meshRef = useRef<THREE.Mesh | null>(null)
   const animationIdRef = useRef<number | null>(null)
   const mouseRef = useRef({ x: 0, y: 0 })
+  const needsRenderRef = useRef(true)
+  const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Mark that we need a render
+  const requestRender = useCallback(() => {
+    needsRenderRef.current = true
+  }, [])
 
   const resize = useCallback(() => {
     if (!containerRef.current || !rendererRef.current || !cameraRef.current || !meshRef.current) return
@@ -119,7 +121,16 @@ export default function ParallaxImage({
     }
 
     meshRef.current.scale.set(scaleX, scaleY, 1)
-  }, [])
+    requestRender()
+  }, [requestRender])
+
+  // Debounced resize handler
+  const debouncedResize = useCallback(() => {
+    if (resizeTimeoutRef.current) {
+      clearTimeout(resizeTimeoutRef.current)
+    }
+    resizeTimeoutRef.current = setTimeout(resize, 100)
+  }, [resize])
 
   useEffect(() => {
     if (!containerRef.current || !canvasRef.current) return
@@ -160,6 +171,7 @@ export default function ParallaxImage({
       colorTexture.magFilter = THREE.LinearFilter
       colorTexture.flipY = true // Flip Y for correct orientation
       colorTexture.needsUpdate = true
+      requestRender()
     })
 
     const depthTexture = textureLoader.load(depthSrc, () => {
@@ -168,6 +180,7 @@ export default function ParallaxImage({
       depthTexture.magFilter = THREE.LinearFilter
       depthTexture.flipY = true // Flip Y for correct orientation
       depthTexture.needsUpdate = true
+      requestRender()
     })
 
     // Create shader material
@@ -195,15 +208,18 @@ export default function ParallaxImage({
     // Initial resize
     resize()
 
-    // Render loop
+    // On-demand render loop - only renders when needsRenderRef.current is true
     const render = () => {
-      renderer.render(scene, camera)
+      if (needsRenderRef.current) {
+        renderer.render(scene, camera)
+        needsRenderRef.current = false
+      }
       animationIdRef.current = requestAnimationFrame(render)
     }
     render()
 
-    // Handle resize
-    const resizeObserver = new ResizeObserver(resize)
+    // Handle resize with debouncing
+    const resizeObserver = new ResizeObserver(debouncedResize)
     resizeObserver.observe(container)
 
     // Mouse move for subtle parallax
@@ -218,48 +234,56 @@ export default function ParallaxImage({
           y: mouseRef.current.y,
           duration: 0.5,
           ease: 'power2.out',
+          onUpdate: requestRender,
         })
       }
     }
     container.addEventListener('mousemove', handleMouseMove)
 
-    // GSAP ScrollTrigger for scroll-based parallax
-    const mm = gsap.matchMedia()
+    // Initialize GSAP deferred, then set up ScrollTrigger
+    initGSAP().then(() => {
+      const mm = gsap.matchMedia()
 
-    mm.add('(min-width: 768px)', () => {
-      // Initial pan animation (mimicking original behavior)
-      if (initialPan && meshRef.current) {
-        gsap.fromTo(
-          meshRef.current.position,
-          { x: 0, y: 0 },
-          {
-            x: initialPan.x * 0.1,
-            y: initialPan.y * 0.1,
-            duration: 4,
-            ease: 'power2.out',
-          }
-        )
-      }
+      mm.add('(min-width: 768px)', () => {
+        // Initial pan animation (mimicking original behavior)
+        if (initialPan && meshRef.current) {
+          gsap.fromTo(
+            meshRef.current.position,
+            { x: 0, y: 0 },
+            {
+              x: initialPan.x * 0.1,
+              y: initialPan.y * 0.1,
+              duration: 4,
+              ease: 'power2.out',
+              onUpdate: requestRender,
+            }
+          )
+        }
 
-      // Scroll-triggered parallax
-      ScrollTrigger.create({
-        trigger: container,
-        start: scrollTriggerConfig?.start || 'top bottom',
-        end: scrollTriggerConfig?.end || 'bottom top',
-        scrub: 1,
-        onUpdate: (self) => {
-          if (materialRef.current) {
-            materialRef.current.uniforms.uScrollProgress.value = self.progress
-          }
-          // Subtle camera movement for extra depth
-          if (cameraRef.current) {
-            const p = self.progress
-            cameraRef.current.position.x = (p - 0.5) * scrollIntensity * 0.05
-            cameraRef.current.position.y = (p - 0.5) * scrollIntensity * 0.025
-            cameraRef.current.lookAt(0, 0, 0)
-          }
-        },
+        // Scroll-triggered parallax
+        ScrollTrigger.create({
+          trigger: container,
+          start: scrollTriggerConfig?.start || 'top bottom',
+          end: scrollTriggerConfig?.end || 'bottom top',
+          scrub: 1,
+          onUpdate: (self) => {
+            if (materialRef.current) {
+              materialRef.current.uniforms.uScrollProgress.value = self.progress
+            }
+            // Subtle camera movement for extra depth
+            if (cameraRef.current) {
+              const p = self.progress
+              cameraRef.current.position.x = (p - 0.5) * scrollIntensity * 0.05
+              cameraRef.current.position.y = (p - 0.5) * scrollIntensity * 0.025
+              cameraRef.current.lookAt(0, 0, 0)
+            }
+            requestRender()
+          },
+        })
       })
+
+      // Store mm for cleanup
+      ;(container as HTMLDivElement & { _gsapMatchMedia?: gsap.MatchMedia })._gsapMatchMedia = mm
     })
 
     // Cleanup
@@ -267,16 +291,25 @@ export default function ParallaxImage({
       if (animationIdRef.current) {
         cancelAnimationFrame(animationIdRef.current)
       }
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current)
+      }
       resizeObserver.disconnect()
       container.removeEventListener('mousemove', handleMouseMove)
-      mm.revert()
+
+      // Clean up GSAP matchMedia if it was set up
+      const mm = (container as HTMLDivElement & { _gsapMatchMedia?: gsap.MatchMedia })._gsapMatchMedia
+      if (mm) {
+        mm.revert()
+      }
+
       geometry.dispose()
       material.dispose()
       colorTexture.dispose()
       depthTexture.dispose()
       renderer.dispose()
     }
-  }, [src, depthSrc, parallaxAmount, scrollIntensity, initialPan, scrollTriggerConfig, resize])
+  }, [src, depthSrc, parallaxAmount, scrollIntensity, initialPan, scrollTriggerConfig, resize, debouncedResize, requestRender])
 
   return (
     <div ref={containerRef} className={`relative overflow-hidden ${className}`}>

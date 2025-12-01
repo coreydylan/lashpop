@@ -5,13 +5,7 @@ import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-
-// Register ScrollTrigger plugin
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-}
+import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
 
 interface HeroSectionProps {
   reviewStats?: Array<{
@@ -70,55 +64,62 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
   useEffect(() => {
     if (!imageRef.current || !imageContainerRef.current) return
 
-    const mm = gsap.matchMedia()
+    let mm: gsap.MatchMedia | null = null
 
-    mm.add("(min-width: 768px)", () => {
-      const image = imageRef.current
-      const container = imageContainerRef.current
+    // Initialize GSAP deferred, then set up animations
+    initGSAP().then(() => {
+      mm = gsap.matchMedia()
 
-      if (!image || !container) return
+      mm.add("(min-width: 768px)", () => {
+        const image = imageRef.current
+        const container = imageContainerRef.current
 
-      // Initial pan animation on load
-      gsap.fromTo(image,
-        {
-          scale: 1.4,
-          xPercent: 0,
-        },
-        {
-          scale: 1.2,
-          xPercent: 20,
-          duration: 4,
-          ease: "power2.out"
-        }
-      )
+        if (!image || !container) return
 
-      // Pin the arch container so it stays at the bottom of the viewport while fading out
-      ScrollTrigger.create({
-        trigger: container,
-        start: "bottom bottom",
-        end: "+=500",
-        pin: true,
-        pinSpacing: false,
-        anticipatePin: 1,
-      })
+        // Initial pan animation on load
+        gsap.fromTo(image,
+          {
+            scale: 1.4,
+            xPercent: 0,
+          },
+          {
+            scale: 1.2,
+            xPercent: 20,
+            duration: 4,
+            ease: "power2.out"
+          }
+        )
 
-      // Scroll-triggered pan animation (parallax)
-      const tl = gsap.timeline({
-        scrollTrigger: {
+        // Pin the arch container so it stays at the bottom of the viewport while fading out
+        ScrollTrigger.create({
           trigger: container,
-          start: "top center",
-          end: "bottom top",
-          scrub: 1,
-        }
-      })
+          start: "bottom bottom",
+          end: "+=500",
+          pin: true,
+          pinSpacing: false,
+          anticipatePin: 1,
+        })
 
-      tl.to(image, {
-        xPercent: 25,
-        ease: "none"
-      }, 0)
+        // Scroll-triggered pan animation (parallax)
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: container,
+            start: "top center",
+            end: "bottom top",
+            scrub: 1,
+          }
+        })
+
+        tl.to(image, {
+          xPercent: 25,
+          ease: "none"
+        }, 0)
+      })
     })
 
-    return () => mm.revert()
+    return () => {
+      if (mm) mm.revert()
+    }
   }, [])
 
   // Check if mobile

@@ -9,7 +9,23 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    optimizePackageImports: [
+      'lucide-react',
+      'framer-motion',
+      'gsap',
+      '@gsap/react',
+      'embla-carousel',
+      'embla-carousel-react',
+      'date-fns',
+      'lodash',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-tooltip',
+    ],
   },
   // Note: Body size limits are configured in vercel.json for Vercel deployments
   // Configure API routes to handle large uploads

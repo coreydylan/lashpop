@@ -3,17 +3,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-
-// Register ScrollTrigger plugin
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger)
-  // Configure ScrollTrigger for smoother behavior
-  ScrollTrigger.config({
-    ignoreMobileResize: true,
-  })
-}
+import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
 
 interface FounderLetterContent {
   greeting: string
@@ -59,67 +49,78 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
   // GSAP ScrollTrigger for desktop
   useEffect(() => {
-    // Only run on desktop
-    const mm = gsap.matchMedia()
-    
-    mm.add("(min-width: 768px)", () => {
-      const section = desktopSectionRef.current
-      const content = desktopContentRef.current
-      const arch = archRef.current
-      const letter = letterRef.current
-      
-      if (!section || !content || !arch || !letter) return
+    let mm: gsap.MatchMedia | null = null
 
-      // Create the pin trigger - pins when arch bottom hits viewport bottom
-      const pinTrigger = ScrollTrigger.create({
-        trigger: content,
-        start: "bottom bottom", // Pin when content bottom hits viewport bottom
-        end: "+=80%", // Stay pinned for 80% of viewport height worth of scrolling (reduced from 150%)
-        pin: true,
-        pinSpacing: true,
-        anticipatePin: 1,
-        fastScrollEnd: true, // Prevents jumping on fast scroll
-        preventOverlaps: true, // Prevents overlap issues
-        onUpdate: (self) => {
-          const progress = self.progress
-          
-          // Timeline:
-          // 0.0 - 0.2: Pause phase (everything visible, no changes)
-          // 0.2 - 0.6: Arch fades out
-          // 0.4 - 0.8: Letter fades out and moves up
-          // 0.8 - 1.0: Everything gone
-          
-          if (progress <= 0.2) {
-            // Pause phase - everything fully visible
-            gsap.set(arch, { opacity: 1 })
-            gsap.set(letter, { opacity: 1, y: 0 })
-          } else if (progress <= 0.6) {
-            // Arch fading out
-            const archProgress = (progress - 0.2) / 0.4 // 0 to 1 over this range
-            gsap.set(arch, { opacity: 1 - archProgress })
-            
-            if (progress <= 0.4) {
-              gsap.set(letter, { opacity: 1, y: 0 })
-            } else {
-              const letterProgress = (progress - 0.4) / 0.4
-              gsap.set(letter, { opacity: 1 - letterProgress, y: -40 * letterProgress })
-            }
-          } else {
-            // Both faded out
-            gsap.set(arch, { opacity: 0 })
-            const letterProgress = Math.min(1, (progress - 0.4) / 0.4)
-            gsap.set(letter, { opacity: 1 - letterProgress, y: -40 * letterProgress })
-          }
-        }
+    // Initialize GSAP deferred, then set up animations
+    initGSAP().then(() => {
+      // Configure ScrollTrigger for smoother behavior
+      ScrollTrigger.config({
+        ignoreMobileResize: true,
       })
 
-      // Cleanup
-      return () => {
-        pinTrigger.kill()
-      }
+      mm = gsap.matchMedia()
+
+      mm.add("(min-width: 768px)", () => {
+        const section = desktopSectionRef.current
+        const content = desktopContentRef.current
+        const arch = archRef.current
+        const letter = letterRef.current
+
+        if (!section || !content || !arch || !letter) return
+
+        // Create the pin trigger - pins when arch bottom hits viewport bottom
+        const pinTrigger = ScrollTrigger.create({
+          trigger: content,
+          start: "bottom bottom", // Pin when content bottom hits viewport bottom
+          end: "+=80%", // Stay pinned for 80% of viewport height worth of scrolling (reduced from 150%)
+          pin: true,
+          pinSpacing: true,
+          anticipatePin: 1,
+          fastScrollEnd: true, // Prevents jumping on fast scroll
+          preventOverlaps: true, // Prevents overlap issues
+          onUpdate: (self) => {
+            const progress = self.progress
+
+            // Timeline:
+            // 0.0 - 0.2: Pause phase (everything visible, no changes)
+            // 0.2 - 0.6: Arch fades out
+            // 0.4 - 0.8: Letter fades out and moves up
+            // 0.8 - 1.0: Everything gone
+
+            if (progress <= 0.2) {
+              // Pause phase - everything fully visible
+              gsap.set(arch, { opacity: 1 })
+              gsap.set(letter, { opacity: 1, y: 0 })
+            } else if (progress <= 0.6) {
+              // Arch fading out
+              const archProgress = (progress - 0.2) / 0.4 // 0 to 1 over this range
+              gsap.set(arch, { opacity: 1 - archProgress })
+
+              if (progress <= 0.4) {
+                gsap.set(letter, { opacity: 1, y: 0 })
+              } else {
+                const letterProgress = (progress - 0.4) / 0.4
+                gsap.set(letter, { opacity: 1 - letterProgress, y: -40 * letterProgress })
+              }
+            } else {
+              // Both faded out
+              gsap.set(arch, { opacity: 0 })
+              const letterProgress = Math.min(1, (progress - 0.4) / 0.4)
+              gsap.set(letter, { opacity: 1 - letterProgress, y: -40 * letterProgress })
+            }
+          }
+        })
+
+        // Cleanup
+        return () => {
+          pinTrigger.kill()
+        }
+      })
     })
 
-    return () => mm.revert()
+    return () => {
+      if (mm) mm.revert()
+    }
   }, [])
 
   return (
