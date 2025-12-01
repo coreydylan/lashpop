@@ -1,11 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/db'
 import { teamMembers } from '@/db/schema/team_members'
-import { eq, asc } from 'drizzle-orm'
+import { services } from '@/db/schema/services'
+import { eq, asc, isNotNull, and } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
-// GET - Fetch all team members (including inactive)
+/**
+ * Get Vagaro-derived service categories for a team member
+ */
+async function getVagaroCategories(vagaroEmployeeId: string | null): Promise<string[]> {
+  if (!vagaroEmployeeId) return []
+
+  const db = getDb()
+
+  const allServices = await db
+    .select()
+    .from(services)
+    .where(
+      and(
+        isNotNull(services.vagaroData),
+        eq(services.isActive, true)
+      )
+    )
+
+  const memberServices: string[] = []
+
+  for (const service of allServices) {
+    const vagaroData = service.vagaroData as any
+    if (!vagaroData?.servicePerformedBy) continue
+
+    const performers = vagaroData.servicePerformedBy || []
+    const isPerformer = performers.some((p: any) => {
+      const employeeId = p.serviceProviderId || p.employeeId
+      return employeeId === vagaroEmployeeId
+    })
+
+    if (isPerformer && service.mainCategory) {
+      memberServices.push(service.mainCategory)
+    }
+  }
+
+  const uniqueCategories = Array.from(new Set(memberServices))
+
+  return uniqueCategories.map(cat => {
+    let cleaned = cat.replace(' Services', '').replace(' Service', '')
+    if (cleaned === 'Lash') cleaned = 'Lashes'
+    return cleaned
+  })
+}
+
+// GET - Fetch all team members (including inactive) with service categories
 export async function GET() {
   try {
     const db = getDb()
@@ -15,11 +60,23 @@ export async function GET() {
       .from(teamMembers)
       .orderBy(asc(teamMembers.displayOrder))
 
+    // Fetch service categories for all members
+    const membersWithCategories = await Promise.all(
+      members.map(async (member) => {
+        const vagaroCategories = await getVagaroCategories(member.vagaroEmployeeId)
+        const manualCategories = (member.manualServiceCategories as string[]) || []
+
+        return {
+          ...member,
+          specialties: member.specialties || [],
+          vagaroServiceCategories: vagaroCategories,
+          manualServiceCategories: manualCategories,
+        }
+      })
+    )
+
     return NextResponse.json({
-      members: members.map(member => ({
-        ...member,
-        specialties: member.specialties || [],
-      }))
+      members: membersWithCategories
     })
   } catch (error) {
     console.error('Error fetching team members:', error)
@@ -62,6 +119,44 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating team members:', error)
     return NextResponse.json(
       { error: 'Failed to update team members' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH - Update a single team member's manual service categories
+export async function PATCH(request: NextRequest) {
+  try {
+    const db = getDb()
+    const { memberId, manualServiceCategories } = await request.json()
+
+    if (!memberId) {
+      return NextResponse.json(
+        { error: 'Member ID is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!Array.isArray(manualServiceCategories)) {
+      return NextResponse.json(
+        { error: 'manualServiceCategories must be an array' },
+        { status: 400 }
+      )
+    }
+
+    await db
+      .update(teamMembers)
+      .set({
+        manualServiceCategories: manualServiceCategories,
+        updatedAt: new Date()
+      })
+      .where(eq(teamMembers.id, memberId))
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error updating manual service categories:', error)
+    return NextResponse.json(
+      { error: 'Failed to update manual service categories' },
       { status: 500 }
     )
   }

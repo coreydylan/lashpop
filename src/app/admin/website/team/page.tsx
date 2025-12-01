@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { motion, Reorder } from 'framer-motion'
 import Image from 'next/image'
-import { 
-  Users, 
-  Eye, 
-  EyeOff, 
-  RefreshCw, 
-  Save, 
-  Check, 
+import {
+  Users,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Save,
+  Check,
   AlertCircle,
   GripVertical,
   ExternalLink,
@@ -18,7 +18,11 @@ import {
   Briefcase,
   ChevronDown,
   ChevronUp,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Tag,
+  Plus,
+  X,
+  Lock
 } from 'lucide-react'
 
 interface TeamMember {
@@ -39,7 +43,25 @@ interface TeamMember {
   displayOrder: string
   vagaroEmployeeId: string | null
   lastSyncedAt: string | null
+  vagaroServiceCategories: string[]
+  manualServiceCategories: string[]
 }
+
+// Common service category options for manual tags
+const CATEGORY_OPTIONS = [
+  'Lashes',
+  'Brow',
+  'Waxing',
+  'Facials',
+  'Skin Care',
+  'Permanent Makeup',
+  'Permanent Jewelry',
+  'Injectables',
+  'Wellness',
+  'Plasma',
+  'Tinting',
+  'Lash Lifts',
+]
 
 export default function TeamManagerPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
@@ -111,6 +133,47 @@ export default function TeamManagerPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const updateManualCategories = async (memberId: string, categories: string[]) => {
+    try {
+      const response = await fetch('/api/admin/website/team', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, manualServiceCategories: categories })
+      })
+
+      if (response.ok) {
+        // Update local state
+        setTeamMembers(prev => prev.map(m =>
+          m.id === memberId ? { ...m, manualServiceCategories: categories } : m
+        ))
+      } else {
+        const data = await response.json()
+        alert(`Failed to update: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Error updating manual categories:', error)
+      alert('Failed to update categories')
+    }
+  }
+
+  const addManualCategory = (memberId: string, category: string) => {
+    const member = teamMembers.find(m => m.id === memberId)
+    if (!member) return
+
+    const currentCategories = member.manualServiceCategories || []
+    if (!currentCategories.includes(category)) {
+      updateManualCategories(memberId, [...currentCategories, category])
+    }
+  }
+
+  const removeManualCategory = (memberId: string, category: string) => {
+    const member = teamMembers.find(m => m.id === memberId)
+    if (!member) return
+
+    const currentCategories = member.manualServiceCategories || []
+    updateManualCategories(memberId, currentCategories.filter(c => c !== category))
   }
 
   const activeCount = teamMembers.filter(m => m.isActive).length
@@ -354,7 +417,7 @@ export default function TeamManagerPage() {
                         {/* Links */}
                         <div className="space-y-2">
                           <h4 className="text-xs uppercase tracking-wider text-dune/40 font-medium">Links</h4>
-                          <a 
+                          <a
                             href={member.bookingUrl}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -368,6 +431,107 @@ export default function TeamManagerPage() {
                             <div className="flex items-center gap-2 text-dune/60">
                               <Briefcase className="w-4 h-4 text-dune/40" />
                               Vagaro ID: {member.vagaroEmployeeId}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Service Tags - Shows on profile card */}
+                        <div className="sm:col-span-2 space-y-3 p-4 bg-sage/5 rounded-2xl border border-sage/10">
+                          <div className="flex items-center gap-2">
+                            <Tag className="w-4 h-4 text-dusty-rose" />
+                            <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium">Service Tags</h4>
+                            <span className="text-xs text-dune/40">(shown on profile card)</span>
+                          </div>
+
+                          {/* Vagaro Tags (read-only) */}
+                          {member.vagaroServiceCategories && member.vagaroServiceCategories.length > 0 && (
+                            <div className="space-y-1.5">
+                              <p className="text-xs text-dune/50 flex items-center gap-1">
+                                <Lock className="w-3 h-3" />
+                                From Vagaro (auto-synced)
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {member.vagaroServiceCategories.map((cat, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-3 py-1.5 bg-dusty-rose/20 text-dusty-rose rounded-full text-xs font-medium flex items-center gap-1"
+                                  >
+                                    {cat}
+                                    <Lock className="w-3 h-3 opacity-50" />
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Manual Tags (editable) */}
+                          <div className="space-y-1.5">
+                            <p className="text-xs text-dune/50">Custom tags (editable)</p>
+                            <div className="flex flex-wrap gap-2">
+                              {(member.manualServiceCategories || []).map((cat, i) => (
+                                <span
+                                  key={i}
+                                  className="px-3 py-1.5 bg-ocean-mist/20 text-ocean-mist rounded-full text-xs font-medium flex items-center gap-1 group"
+                                >
+                                  {cat}
+                                  <button
+                                    onClick={() => removeManualCategory(member.id, cat)}
+                                    className="w-4 h-4 rounded-full hover:bg-ocean-mist/30 flex items-center justify-center opacity-60 hover:opacity-100"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              ))}
+
+                              {/* Add Tag Dropdown */}
+                              <div className="relative group/dropdown">
+                                <button className="px-3 py-1.5 bg-sage/10 hover:bg-sage/20 text-dune/60 rounded-full text-xs font-medium flex items-center gap-1 transition-colors">
+                                  <Plus className="w-3 h-3" />
+                                  Add Tag
+                                </button>
+                                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-sage/20 py-2 z-50 hidden group-hover/dropdown:block">
+                                  {CATEGORY_OPTIONS
+                                    .filter(cat =>
+                                      !(member.vagaroServiceCategories || []).includes(cat) &&
+                                      !(member.manualServiceCategories || []).includes(cat)
+                                    )
+                                    .map((cat) => (
+                                      <button
+                                        key={cat}
+                                        onClick={() => addManualCategory(member.id, cat)}
+                                        className="w-full px-4 py-2 text-left text-sm text-dune/70 hover:bg-sage/10 hover:text-dune transition-colors"
+                                      >
+                                        {cat}
+                                      </button>
+                                    ))
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Preview of combined tags */}
+                          {((member.vagaroServiceCategories?.length || 0) + (member.manualServiceCategories?.length || 0)) > 0 && (
+                            <div className="pt-2 border-t border-sage/10">
+                              <p className="text-xs text-dune/40 mb-1.5">Preview (max 4 shown on card):</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {[...(member.vagaroServiceCategories || []), ...(member.manualServiceCategories || [])]
+                                  .slice(0, 4)
+                                  .map((cat, i) => (
+                                    <span
+                                      key={i}
+                                      className="px-2 py-1 bg-dune/10 text-dune/70 rounded-full text-[10px] font-medium"
+                                    >
+                                      {cat}
+                                    </span>
+                                  ))
+                                }
+                                {([...(member.vagaroServiceCategories || []), ...(member.manualServiceCategories || [])].length > 4) && (
+                                  <span className="text-[10px] text-dune/40">
+                                    +{[...(member.vagaroServiceCategories || []), ...(member.manualServiceCategories || [])].length - 4} more
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>

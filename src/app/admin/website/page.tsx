@@ -14,18 +14,26 @@ import {
 } from 'lucide-react'
 
 const sections = [
-  { 
-    id: 'hero', 
-    label: 'Hero Section', 
-    icon: Image, 
+  {
+    id: 'hero',
+    label: 'Hero Section',
+    icon: Image,
     description: 'Manage the above-the-fold hero image displayed in the arch shape',
     color: 'dusty-rose',
     stats: 'DAM Integration'
   },
-  { 
-    id: 'founder-letter', 
-    label: 'Founder Letter', 
-    icon: FileText, 
+  {
+    id: 'services',
+    label: 'Services Manager',
+    icon: Sparkles,
+    description: 'Manage service images, demo mode, and Vagaro sync status',
+    color: 'ocean-mist',
+    stats: 'Database + DAM'
+  },
+  {
+    id: 'founder-letter',
+    label: 'Founder Letter',
+    icon: FileText,
     description: 'Emily\'s welcome message and signature section',
     color: 'sage',
     stats: 'HTML Source'

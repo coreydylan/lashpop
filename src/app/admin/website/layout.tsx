@@ -19,6 +19,7 @@ import {
 
 const sections = [
   { id: 'hero', label: 'Hero Section', icon: Image, description: 'Above the fold image & arch' },
+  { id: 'services', label: 'Services', icon: Sparkles, description: 'Service images & demo mode' },
   { id: 'founder-letter', label: 'Founder Letter', icon: FileText, description: 'Emily\'s message' },
   { id: 'team', label: 'Team', icon: Users, description: 'Team members & visibility' },
   { id: 'instagram', label: 'Instagram', icon: Instagram, description: 'IG carousel settings' },

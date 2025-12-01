@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { Image as ImageIcon, Move, Save, RefreshCw, Check, AlertCircle } from 'lucide-react'
+import { Image as ImageIcon, Move, Save, RefreshCw, Check, AlertCircle, Folder } from 'lucide-react'
+import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
 
 interface HeroImage {
   id: string
@@ -21,6 +22,7 @@ export default function HeroSectionEditor() {
   const [saved, setSaved] = useState(false)
   const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 })
   const [objectFit, setObjectFit] = useState<'cover' | 'contain'>('cover')
+  const [showImagePicker, setShowImagePicker] = useState(false)
 
   const fetchHeroImages = useCallback(async () => {
     setLoading(true)
@@ -30,7 +32,7 @@ export default function HeroSectionEditor() {
       if (response.ok) {
         const data = await response.json()
         setAvailableImages(data.assets || [])
-        
+
         // Only set initial image if none selected
         setHeroImage(current => {
           if (current) return current
@@ -60,6 +62,15 @@ export default function HeroSectionEditor() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleImageSelect = (asset: Asset) => {
+    setHeroImage({
+      id: asset.id,
+      url: asset.filePath,
+      fileName: asset.fileName
+    })
+    setShowImagePicker(false)
   }
 
   if (loading) {
@@ -115,10 +126,10 @@ export default function HeroSectionEditor() {
         >
           <div className="glass rounded-3xl p-6 border border-sage/20">
             <h3 className="font-serif text-lg text-dune mb-4">Arch Preview</h3>
-            
+
             {/* Arch-shaped preview container */}
             <div className="relative aspect-[3/4] max-h-[500px] mx-auto">
-              <div 
+              <div
                 className="absolute inset-0 rounded-[120px_120px_0_0] overflow-hidden bg-warm-sand/50"
                 style={{ maxWidth: '320px', margin: '0 auto' }}
               >
@@ -141,7 +152,7 @@ export default function HeroSectionEditor() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Subtle gradient overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-ocean-mist/20 to-transparent pointer-events-none" />
               </div>
@@ -154,7 +165,7 @@ export default function HeroSectionEditor() {
                   <Move className="w-4 h-4" />
                   <span>Image Position</span>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-dune/50 uppercase tracking-wider">
@@ -188,8 +199,8 @@ export default function HeroSectionEditor() {
                   <button
                     onClick={() => setObjectFit('cover')}
                     className={`flex-1 py-2 px-4 rounded-xl text-sm transition-all ${
-                      objectFit === 'cover' 
-                        ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30' 
+                      objectFit === 'cover'
+                        ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                         : 'bg-cream/50 text-dune/60 border border-sage/20'
                     }`}
                   >
@@ -198,8 +209,8 @@ export default function HeroSectionEditor() {
                   <button
                     onClick={() => setObjectFit('contain')}
                     className={`flex-1 py-2 px-4 rounded-xl text-sm transition-all ${
-                      objectFit === 'contain' 
-                        ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30' 
+                      objectFit === 'contain'
+                        ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                         : 'bg-cream/50 text-dune/60 border border-sage/20'
                     }`}
                   >
@@ -221,63 +232,91 @@ export default function HeroSectionEditor() {
           <div className="glass rounded-3xl p-6 border border-sage/20">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-serif text-lg text-dune">Select Image</h3>
-              <button
-                onClick={fetchHeroImages}
-                className="text-sm text-dune/60 hover:text-dune flex items-center gap-1"
-              >
-                <RefreshCw className="w-3 h-3" />
-                Refresh
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowImagePicker(true)}
+                  className="btn btn-secondary text-sm"
+                >
+                  <Folder className="w-4 h-4" />
+                  Browse DAM
+                </button>
+                <button
+                  onClick={fetchHeroImages}
+                  className="text-sm text-dune/60 hover:text-dune flex items-center gap-1 px-2 py-1"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                </button>
+              </div>
             </div>
 
+            {/* Quick picks from tagged images */}
             {availableImages.length === 0 ? (
               <div className="p-8 bg-golden/10 rounded-2xl border border-golden/20">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-golden flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm text-dune font-medium">No hero images found</p>
+                    <p className="text-sm text-dune font-medium">No hero images tagged yet</p>
                     <p className="text-xs text-dune/60 mt-1">
-                      Tag images with <code className="bg-dune/10 px-1 rounded">Website: Hero</code> in the DAM to make them available here.
+                      Click <strong>Browse DAM</strong> to pick any image, or tag images with <code className="bg-dune/10 px-1 rounded">Website: Hero</code> in the DAM for quick access.
                     </p>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {availableImages.filter(img => img.url && img.url.length > 0).map((image) => (
-                  <button
-                    key={image.id}
-                    onClick={() => setHeroImage(image)}
-                    className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${
-                      heroImage?.id === image.id
-                        ? 'border-dusty-rose shadow-lg scale-[1.02]'
-                        : 'border-transparent hover:border-sage/30'
-                    }`}
-                  >
-                    <Image
-                      src={image.url}
-                      alt={image.fileName || 'Hero image option'}
-                      fill
-                      className="object-cover"
-                    />
-                    {heroImage?.id === image.id && (
-                      <div className="absolute inset-0 bg-dusty-rose/20 flex items-center justify-center">
-                        <Check className="w-8 h-8 text-white drop-shadow-lg" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+              <>
+                <p className="text-xs text-dune/50 mb-3">Quick picks (tagged with Website: Hero)</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {availableImages.filter(img => img.url && img.url.length > 0).map((image) => (
+                    <button
+                      key={image.id}
+                      onClick={() => setHeroImage(image)}
+                      className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${
+                        heroImage?.id === image.id
+                          ? 'border-dusty-rose shadow-lg scale-[1.02]'
+                          : 'border-transparent hover:border-sage/30'
+                      }`}
+                    >
+                      <Image
+                        src={image.url}
+                        alt={image.fileName || 'Hero image option'}
+                        fill
+                        className="object-cover"
+                      />
+                      {heroImage?.id === image.id && (
+                        <div className="absolute inset-0 bg-dusty-rose/20 flex items-center justify-center">
+                          <Check className="w-8 h-8 text-white drop-shadow-lg" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Currently selected */}
+            {heroImage && (
+              <div className="mt-4 p-3 rounded-xl bg-sage/5 border border-sage/10">
+                <p className="text-xs text-dune/60 mb-1">Currently selected</p>
+                <p className="text-sm text-dune font-medium truncate">{heroImage.fileName}</p>
               </div>
             )}
 
             <p className="text-xs text-dune/40 mt-4">
-              Images with the <strong>Website: Hero</strong> tag in the DAM will appear here. 
-              Only 1 image should have this tag at a time.
+              Use <strong>Browse DAM</strong> to select any image from your media library, or tag images with <strong>Website: Hero</strong> for quick access here.
             </p>
           </div>
         </motion.div>
       </div>
+
+      {/* Mini DAM Explorer Modal */}
+      <MiniDamExplorer
+        isOpen={showImagePicker}
+        onClose={() => setShowImagePicker(false)}
+        onSelect={handleImageSelect}
+        selectedAssetId={heroImage?.id}
+        title="Select Hero Image"
+        subtitle="Choose an image for the landing page arch"
+      />
     </div>
   )
 }
-
