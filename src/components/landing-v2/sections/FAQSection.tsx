@@ -70,7 +70,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     if (!isMobile || !sectionRef.current) return
 
     const section = sectionRef.current
-    const container = document.querySelector('.mobile-scroll-container')
+    const container = document.querySelector('.mobile-scroll-container') as HTMLElement
     if (!container) return
 
     const observer = new IntersectionObserver(
@@ -84,13 +84,23 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
               hasSnappedOnEntryRef.current = true
               dispatchProgrammaticScroll()
 
-              // Calculate snap position: dock sticky header at 44px below mobile header
+              // Calculate snap position to show first FAQ card at top
+              // We want: faqList top = mobileHeader (44px) + stickyHeader height + small buffer
               const headerHeight = 44
-              const stickyChipsHeight = stickyHeaderRef.current?.offsetHeight || 52
-              // Position so sticky header docks right at mobile header bottom
-              const targetScrollY = section.offsetTop - headerHeight + 16
+              const stickyHeight = stickyHeaderRef.current?.offsetHeight || 52
+              const buffer = 8
 
-              container.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+              if (faqListRef.current) {
+                // Get current position of FAQ list relative to viewport
+                const faqListRect = faqListRef.current.getBoundingClientRect()
+                // Calculate where we want the FAQ list to be (below both headers)
+                const targetFaqListTop = headerHeight + stickyHeight + buffer
+                // Calculate scroll adjustment needed
+                const scrollAdjustment = faqListRect.top - targetFaqListTop
+                const targetScrollY = container.scrollTop + scrollAdjustment
+
+                container.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+              }
             }
           }
 
