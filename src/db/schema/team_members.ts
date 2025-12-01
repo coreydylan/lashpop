@@ -26,6 +26,7 @@ export const teamMembers = pgTable("team_members", {
   imageUrl: text("image_url").notNull(),
   specialties: jsonb("specialties").notNull().$type<string[]>(),
   favoriteServices: jsonb("favorite_services").$type<string[]>(),
+  manualServiceCategories: jsonb("manual_service_categories").$type<string[]>(), // Custom tags for services not in Vagaro (e.g., injectables)
   funFact: text("fun_fact"),
   availability: text("availability"),
   displayOrder: text("display_order").default("0"),

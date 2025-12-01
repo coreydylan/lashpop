@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core"
 import { serviceCategories } from "./service_categories"
 import { serviceSubcategories } from "./service_subcategories"
+import { assets } from "./assets"
 
 export const services = pgTable("services", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -32,6 +33,13 @@ export const services = pgTable("services", {
   mainCategory: text("main_category").notNull(), // "Lash Services", "Brow Services", etc.
   subCategory: text("sub_category"), // "Classic Extensions", "Volume Extensions", etc.
   displayTitle: text("display_title"), // Short display name like "Fill", "Full Set", etc.
+
+  // Key image for service cards and display (overrides subcategory key image)
+  keyImageAssetId: uuid("key_image_asset_id")
+    .references(() => assets.id, { onDelete: "set null" }),
+
+  // Demo mode: when true, show demo photos instead of real service photos
+  useDemoPhotos: boolean("use_demo_photos").default(false).notNull(),
 
   // Metadata
   createdAt: timestamp("created_at").defaultNow().notNull(),

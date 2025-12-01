@@ -69,6 +69,7 @@ export async function getServicesForTeamMember(vagaroEmployeeId: string | null):
 
 /**
  * Get team members with their service categories
+ * Merges Vagaro-derived categories with manually set categories
  */
 export async function getTeamMembersWithServices() {
   const db = getDb()
@@ -82,10 +83,25 @@ export async function getTeamMembersWithServices() {
   // Fetch service categories for all members in parallel
   const membersWithServices = await Promise.all(
     members.map(async (member) => {
-      const serviceCategories = await getServicesForTeamMember(member.vagaroEmployeeId)
+      // Get Vagaro-derived categories
+      const vagaroCategories = await getServicesForTeamMember(member.vagaroEmployeeId)
+
+      // Get manual categories (for services not in Vagaro like injectables)
+      const manualCategories = (member.manualServiceCategories as string[]) || []
+
+      // Merge and dedupe, keeping order: Vagaro first, then manual
+      const allCategories = [...vagaroCategories]
+      for (const cat of manualCategories) {
+        if (!allCategories.includes(cat)) {
+          allCategories.push(cat)
+        }
+      }
+
       return {
         ...member,
-        serviceCategories
+        serviceCategories: allCategories.slice(0, 4), // Max 4 tags
+        vagaroServiceCategories: vagaroCategories, // Keep track of which came from Vagaro
+        manualServiceCategories: manualCategories // Keep track of manual ones
       }
     })
   )
