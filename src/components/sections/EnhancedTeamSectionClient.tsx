@@ -358,7 +358,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                   return (
                     <motion.div
                       key={member.id}
-                      className="flex-[0_0_auto] w-[374px] cursor-grab active:cursor-grabbing"
+                      className="flex-[0_0_auto] w-[330px] cursor-grab active:cursor-grabbing"
                       initial={{ opacity: 0, x: 50 }}
                       animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
                       transition={{
@@ -368,8 +368,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       }}
                       onClick={() => handleMemberClick(member, index)}
                     >
-                      {/* Clean Card Design - Taller format (30% larger on mobile) */}
-                      <div className="relative h-[546px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
+                      {/* Clean Card Design - Taller format (~15% larger on mobile) */}
+                      <div className="relative h-[483px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
                         {/* Clear Background Image */}
                         <div className="absolute inset-0">
                           <Image

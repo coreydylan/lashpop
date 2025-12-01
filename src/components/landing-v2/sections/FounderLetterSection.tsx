@@ -152,12 +152,13 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     const targetScale = viewportWidth / archWidth // ~1.35-1.5x
 
     // Create scroll-triggered zoom animation
+    // Starts later (when arch center hits viewport center) and ends when bottom meets bottom
     const trigger = ScrollTrigger.create({
       trigger: mobileArchRef.current,
       scroller: scrollContainer,
-      start: 'top 80%', // Start when top of arch is 80% down viewport
-      end: 'bottom bottom', // End when bottom of arch aligns with bottom of viewport
-      scrub: 0.5, // Smooth scrubbing
+      start: 'center center', // Start when center of arch is at center of viewport
+      end: 'bottom bottom', // End exactly when bottom of arch aligns with bottom of viewport
+      scrub: 0.3, // Slightly tighter scrubbing for more responsive feel
       onUpdate: (self) => {
         if (mobileArchImageRef.current) {
           // Interpolate scale from 1 to targetScale based on scroll progress
