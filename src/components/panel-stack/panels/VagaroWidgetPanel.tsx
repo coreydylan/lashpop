@@ -1,25 +1,126 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Clock, DollarSign, Loader2, AlertCircle } from 'lucide-react';
+import React, { useEffect, useRef, useState, useContext, useMemo } from 'react';
+import { Clock, DollarSign, AlertCircle } from 'lucide-react';
+import { LPLogoLoader } from '@/components/ui/LPLogoLoader';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
+import { useVagaroWidget } from '@/contexts/VagaroWidgetContext';
 import { getVagaroWidgetUrl } from '@/lib/vagaro-widget';
+import { CROP_CONFIG, CROP_TRANSITION_DURATION, type CropSettings } from '@/lib/vagaro-events';
 import type { Panel, VagaroWidgetPanelData } from '@/types/panel-stack';
+
+// Import DevMode context - we check if it's available
+import { DevModeContext } from '@/contexts/DevModeContext';
+import { useDevMode } from '@/contexts/DevModeContext';
 
 interface VagaroWidgetPanelProps {
   panel: Panel;
 }
 
+/**
+ * Custom hook to get crop settings with dev mode override support.
+ * Directly accesses both contexts to ensure reactivity.
+ */
+function useCropSettingsWithDevMode(): { cropSettings: CropSettings; activeStep: string; isDevMode: boolean; debugInfo: string } {
+  const { state: widgetState } = useVagaroWidget();
+  const devModeContext = useContext(DevModeContext);
+
+  // Read ALL values from context state to ensure React tracks dependencies
+  const isDevMode = devModeContext?.state?.isEnabled ?? false;
+  const isLivePreview = devModeContext?.state?.isLivePreview ?? false;
+  const simulatedStep = devModeContext?.state?.simulatedStep ?? null;
+  const cropOverrides = devModeContext?.state?.cropOverrides ?? {};
+
+  // Log context access for debugging
+  console.log('[useCropSettingsWithDevMode] Context check:', {
+    hasContext: !!devModeContext,
+    isDevMode,
+    isLivePreview,
+    simulatedStep,
+    cropOverridesKeys: Object.keys(cropOverrides),
+  });
+
+  // Determine which step to use for crop settings
+  const activeStep = isDevMode && simulatedStep
+    ? simulatedStep
+    : widgetState.currentStep;
+
+  // Get the base crop settings for this step
+  const baseCropSettings = CROP_CONFIG[activeStep];
+
+  // Build debug info
+  const overrideKeys = Object.keys(cropOverrides);
+  const hasOverrideForStep = activeStep in cropOverrides;
+  const debugInfo = `ctx:${!!devModeContext} dev:${isDevMode} live:${isLivePreview} sim:${simulatedStep} step:${activeStep} overrides:[${overrideKeys.join(',')}] hasOverride:${hasOverrideForStep}`;
+
+  // If dev mode is enabled with live preview, check for overrides
+  if (isDevMode && isLivePreview) {
+    const override = cropOverrides[activeStep];
+    if (override) {
+      return { cropSettings: override, activeStep, isDevMode, debugInfo: `${debugInfo} -> OVERRIDE` };
+    }
+  }
+
+  return { cropSettings: baseCropSettings, activeStep, isDevMode, debugInfo: `${debugInfo} -> BASE` };
+}
+
 export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
   const { actions } = usePanelStack();
+  const { state: widgetState } = useVagaroWidget();
   const data = panel.data as VagaroWidgetPanelData;
   const service = data.service;
   const widgetContainerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
 
-  const [isLoading, setIsLoading] = useState(true);
+  // Track script loading separately from widget readiness
+  const [scriptLoaded, setScriptLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Widget is truly ready when Vagaro sends WidgetLoaded event
+  const isWidgetReady = widgetState.isLoaded;
+
+  // Show loading animation until widget is fully ready
+  const showLoading = !isWidgetReady && !hasError;
+
+  // Debug: Log loading state changes
+  useEffect(() => {
+    console.log('[VagaroWidgetPanel] Loading state:', {
+      isWidgetReady,
+      showLoading,
+      isVisible,
+      hasError,
+      scriptLoaded,
+      widgetStateIsLoaded: widgetState.isLoaded,
+      currentStep: widgetState.currentStep,
+    });
+  }, [isWidgetReady, showLoading, isVisible, hasError, scriptLoaded, widgetState.isLoaded, widgetState.currentStep]);
+
+  // Trigger fade-in animation when widget becomes ready
+  useEffect(() => {
+    if (isWidgetReady) {
+      console.log('[VagaroWidgetPanel] Widget ready! Triggering fade-in...');
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => setIsVisible(true), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isWidgetReady]);
+
+  // Get dynamic crop settings (with dev mode override support)
+  const { cropSettings, activeStep, isDevMode, debugInfo } = useCropSettingsWithDevMode();
+
+  // Debug: Log crop changes in dev mode
+  useEffect(() => {
+    if (isDevMode) {
+      console.log('[VagaroWidgetPanel] Crop update:', {
+        debugInfo,
+        marginTop: cropSettings.marginTop,
+        minHeight: cropSettings.minHeight,
+        maskHeight: cropSettings.maskHeight,
+      });
+    }
+  }, [isDevMode, debugInfo, cropSettings.marginTop, cropSettings.minHeight, cropSettings.maskHeight]);
 
   // Get widget script URL from service code (or fallback to all services)
   const widgetScriptUrl = getVagaroWidgetUrl(service.vagaroServiceCode);
@@ -48,22 +149,24 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
     script.async = true;
 
     script.onload = () => {
-      setIsLoading(false);
+      setScriptLoaded(true);
       scriptLoadedRef.current = true;
     };
 
     script.onerror = () => {
-      setIsLoading(false);
       setHasError(true);
     };
 
     vagaroDiv.appendChild(script);
     container.appendChild(vagaroDiv);
 
-    // Set a timeout to hide loading after a reasonable time
+    // Timeout for error state - if widget doesn't load within 15s, show error
     const timeout = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
+      if (!widgetState.isLoaded) {
+        console.warn('[VagaroWidgetPanel] Widget load timeout - WidgetLoaded event not received');
+        // Don't set error yet, Vagaro may still load - just log for debugging
+      }
+    }, 15000);
 
     return () => {
       clearTimeout(timeout);
@@ -77,6 +180,9 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
 
   const priceDisplay = `$${(service.priceStarting / 100).toFixed(0)}+`;
 
+  // DEBUG: Log on every render
+  console.log('🔴🔴🔴 VagaroWidgetPanel RENDER - panel-stack version 🔴🔴🔴');
+
   return (
     <PanelWrapper
       panel={panel}
@@ -84,7 +190,7 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
       subtitle={service.subtitle || `${service.categoryName || ''} ${service.subcategoryName ? `· ${service.subcategoryName}` : ''}`}
       fullWidthContent
     >
-      {/* CSS to override Vagaro widget styles and crop the header */}
+      {/* CSS to override Vagaro widget styles - using inline styles for dynamic values */}
       <style jsx global>{`
         /* Force Vagaro container to be full width */
         .vagaro-widget-container,
@@ -101,37 +207,16 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
           display: none !important;
         }
 
-        /* Inner wrapper that gets pulled up to crop the header */
-        .vagaro-iframe-wrapper {
-          position: relative;
-          margin-top: -330px;
-          padding-top: 0;
-          width: 100% !important;
-        }
-
-        /* Style the iframe */
+        /* Style the iframe - width only, height handled by wrapper */
         .vagaro-widget-container iframe {
           width: 100% !important;
           max-width: none !important;
-          min-height: 800px !important;
           border: none !important;
           display: block;
         }
-
-        /* Mask to hide the cropped area with a gradient fade */
-        .vagaro-crop-mask {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 30px;
-          background: linear-gradient(to bottom, var(--color-cream, #F5F0E8) 0%, transparent 100%);
-          pointer-events: none;
-          z-index: 5;
-        }
       `}</style>
 
-      <div>
+      <div className="vagaro-crop-wrapper">
         {/* Compact Service Summary - has its own padding since parent is fullWidth */}
         <div className="flex items-center gap-4 text-sm text-dune/70 px-4 py-3 md:px-6">
           <div className="flex items-center gap-1.5">
@@ -145,14 +230,19 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
         </div>
 
         {/* Full Page Width Vagaro Widget Container with cropping */}
-        <div className="relative overflow-hidden w-full">
-          {/* Loading State */}
-          {isLoading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80 min-h-[400px]">
-              <div className="text-center">
-                <Loader2 className="w-8 h-8 text-dusty-rose animate-spin mx-auto mb-3" />
-                <p className="text-sm text-dune/60">Loading booking...</p>
-              </div>
+        <div className="relative overflow-hidden w-full min-h-[400px]">
+          {/* DEBUG: Always visible marker to verify this component is rendering */}
+          <div className="absolute top-0 left-0 z-50 bg-red-500 text-white text-xs px-2 py-1">
+            NEW LOADER v2 | ready:{String(isWidgetReady)} | show:{String(showLoading)}
+          </div>
+
+          {/* Loading State - Shows LP logo animation until Vagaro widget is fully ready */}
+          {showLoading && (
+            <div
+              className="absolute inset-0 z-20 flex items-center justify-center bg-cream transition-opacity duration-500"
+              style={{ opacity: isVisible ? 0 : 1, pointerEvents: isVisible ? 'none' : 'auto' }}
+            >
+              <LPLogoLoader message="Loading booking..." size={56} />
             </div>
           )}
 
@@ -170,14 +260,39 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
           )}
 
           {/* Gradient mask at top to smooth the crop */}
-          <div className="vagaro-crop-mask" />
+          <div
+            className="absolute top-0 left-0 right-0 pointer-events-none z-10"
+            style={{
+              height: cropSettings.maskHeight,
+              background: 'linear-gradient(to bottom, var(--color-cream, #F5F0E8) 0%, transparent 100%)',
+              transition: `height ${CROP_TRANSITION_DURATION}ms ease-out`,
+            }}
+          />
 
           {/* Widget container - pushed up to crop the header */}
+          {/* Hidden until widget is ready to mask Vagaro's internal loading spinner */}
           <div
             ref={widgetContainerRef}
-            className="vagaro-widget-container vagaro-iframe-wrapper"
-            style={{ minHeight: '500px' }}
+            className="vagaro-widget-container relative w-full transition-opacity duration-500"
+            style={{
+              marginTop: cropSettings.marginTop,
+              minHeight: cropSettings.minHeight,
+              transition: `margin-top ${CROP_TRANSITION_DURATION}ms ease-out, min-height ${CROP_TRANSITION_DURATION}ms ease-out, opacity 500ms ease-out`,
+              opacity: isVisible ? 1 : 0,
+            }}
           />
+
+          {/* Dev mode indicator - shows current crop values and debug info */}
+          {isDevMode && (
+            <div className="absolute bottom-2 left-2 right-2 z-20 px-2 py-1 bg-black/80 text-white text-[10px] font-mono rounded space-y-1">
+              <div className="text-cyan-300">
+                step: {activeStep} | crop: {cropSettings.marginTop}px | h: {cropSettings.minHeight}px | mask: {cropSettings.maskHeight}px
+              </div>
+              <div className="text-stone-400 text-[8px] truncate">
+                {debugInfo}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </PanelWrapper>

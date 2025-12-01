@@ -19,6 +19,9 @@ export interface VagaroWidgetPanelData {
 }
 
 export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
+  // DEBUG: Log on every render
+  console.log('🟡🟡🟡 VagaroWidgetPanel RENDER - CASCADING-PANELS version (OLD) 🟡🟡🟡');
+
   const { actions } = useCascadingPanels();
   const data = panel.data as VagaroWidgetPanelData;
   const [isLoading, setIsLoading] = useState(true);
