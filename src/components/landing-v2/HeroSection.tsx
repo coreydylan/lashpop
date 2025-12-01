@@ -1,11 +1,12 @@
 'use client'
 
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo } from 'react'
 import Image from 'next/image'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
+import { useHeroArchwayConfig } from '@/hooks/useHeroArchwayConfig'
 
 interface HeroSectionProps {
   reviewStats?: Array<{
@@ -15,6 +16,9 @@ interface HeroSectionProps {
     reviewCount: number
   }>
 }
+
+// Default fallback image when no config is set
+const DEFAULT_HERO_IMAGE = '/lashpop-images/studio/studio-photos-by-salome.jpg'
 
 // Import the exact same icons from v1
 function SunIcon({ className = "w-6 h-6" }: { className?: string }) {
@@ -43,26 +47,43 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
   const imageContainerRef = useRef<HTMLDivElement>(null)
 
   const { scrollY } = useScroll({ layoutEffect: false } as any)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Get dynamic hero archway configuration
+  const { config, currentVariant, currentImage, loading: configLoading } = useHeroArchwayConfig(isMobile)
+
+  // Get animation settings with fallbacks
+  const initialAnim = currentVariant.initialAnimation
+  const scrollAnim = currentVariant.scrollAnimation
 
   // ALL useTransform hooks must be called unconditionally at top level
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
   const yCircle2 = useTransform(scrollY, [0, 500], [0, -100])
   const yCircle3 = useTransform(scrollY, [0, 500], [0, -60])
-  const archFadeOpacity = useTransform(scrollY, [100, 600], [0, 1])
+
+  // Dynamic fade overlay based on config
+  const fadeStart = scrollAnim.fadeStart || 100
+  const fadeEnd = scrollAnim.fadeEnd || 600
+  const archFadeOpacity = useTransform(scrollY, [fadeStart, fadeEnd], [0, 1])
 
   // Mobile - no longer need internal scroll state
   const heroContentRef = useRef<HTMLDivElement>(null)
 
   const { actions: panelActions } = usePanelStack()
-  const [isMobile, setIsMobile] = useState(false)
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
 
+  // Get image URL with fallback
+  const heroImageUrl = currentImage?.url || DEFAULT_HERO_IMAGE
+  const imagePosition = currentImage?.position || { x: 50, y: 50 }
+  const objectFit = currentImage?.objectFit || 'cover'
+
   // GSAP Animation for Background Pan (Desktop only)
   useEffect(() => {
     if (!imageRef.current || !imageContainerRef.current) return
+    if (initialAnim.type === 'none') return
 
     let mm: gsap.MatchMedia | null = null
 
@@ -76,51 +97,61 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
 
         if (!image || !container) return
 
-        // Initial pan animation on load
-        gsap.fromTo(image,
-          {
-            scale: 1.4,
-            xPercent: 0,
-          },
-          {
-            scale: 1.2,
-            xPercent: 20,
-            duration: 4,
-            ease: "power2.out"
+        // Initial pan animation on load - use config values
+        if (initialAnim.type === 'pan-zoom' || initialAnim.type === 'zoom-only' || initialAnim.type === 'pan-only') {
+          gsap.fromTo(image,
+            {
+              scale: initialAnim.startScale,
+              xPercent: initialAnim.startX,
+              yPercent: initialAnim.startY,
+            },
+            {
+              scale: initialAnim.endScale,
+              xPercent: initialAnim.endX,
+              yPercent: initialAnim.endY,
+              duration: initialAnim.duration,
+              ease: initialAnim.easing
+            }
+          )
+        }
+
+        // Scroll animation - only if enabled
+        if (scrollAnim.enabled) {
+          // Pin the arch container so it stays at the bottom of the viewport while fading out
+          if (scrollAnim.pin) {
+            ScrollTrigger.create({
+              trigger: container,
+              start: "bottom bottom",
+              end: "+=500",
+              pin: true,
+              pinSpacing: scrollAnim.pinSpacing,
+              anticipatePin: 1,
+            })
           }
-        )
 
-        // Pin the arch container so it stays at the bottom of the viewport while fading out
-        ScrollTrigger.create({
-          trigger: container,
-          start: "bottom bottom",
-          end: "+=500",
-          pin: true,
-          pinSpacing: false,
-          anticipatePin: 1,
-        })
+          // Scroll-triggered pan animation (parallax)
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: container,
+              start: scrollAnim.triggerStart,
+              end: scrollAnim.triggerEnd,
+              scrub: scrollAnim.scrubIntensity,
+            }
+          })
 
-        // Scroll-triggered pan animation (parallax)
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: container,
-            start: "top center",
-            end: "bottom top",
-            scrub: 1,
-          }
-        })
-
-        tl.to(image, {
-          xPercent: 25,
-          ease: "none"
-        }, 0)
+          tl.to(image, {
+            xPercent: scrollAnim.endX,
+            scale: scrollAnim.endScale,
+            ease: "none"
+          }, 0)
+        }
       })
     })
 
     return () => {
       if (mm) mm.revert()
     }
-  }, [])
+  }, [initialAnim, scrollAnim])
 
   // Check if mobile
   useEffect(() => {
@@ -436,23 +467,38 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
             <div className="relative w-full h-full flex items-end">
               <div
                 ref={imageContainerRef}
-                className="relative w-full h-[85vh] rounded-[200px_200px_0_0] overflow-hidden"
-                style={{ transformOrigin: 'bottom center', zIndex: 20 }}
+                className="relative w-full overflow-hidden"
+                style={{
+                  height: currentVariant.archHeight || '85vh',
+                  borderRadius: currentVariant.archBorderRadius || '200px 200px 0 0',
+                  transformOrigin: 'bottom center',
+                  zIndex: 20
+                }}
               >
                 <div className="relative w-full h-full overflow-hidden">
                   <Image
                     ref={imageRef}
-                    src="/lashpop-images/studio/studio-photos-by-salome.jpg"
-                    alt="LashPop Studio Interior"
+                    src={heroImageUrl}
+                    alt="LashPop Studio"
                     fill
-                    className="object-cover object-right"
+                    className={`object-${objectFit}`}
                     priority
                     quality={85}
-                    style={{ transform: "scale(1.4) translateX(0%)", transformOrigin: "center center" }}
+                    style={{
+                      objectPosition: `${imagePosition.x}% ${imagePosition.y}%`,
+                      transform: `scale(${initialAnim.startScale}) translateX(${initialAnim.startX}%)`,
+                      transformOrigin: "center center"
+                    }}
                   />
                 </div>
 
-                <div className="absolute inset-0 bg-gradient-to-t from-ocean-mist/20 to-transparent pointer-events-none" />
+                {/* Dynamic overlay gradient */}
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: currentVariant.overlayGradient || 'linear-gradient(to top, rgba(184, 200, 190, 0.2) 0%, transparent 100%)'
+                  }}
+                />
 
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -464,10 +510,13 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                   <p className="text-lg font-light text-dune">Best Lash Studio • North County SD</p>
                 </motion.div>
 
-                <motion.div
-                  className="absolute inset-0 bg-cream pointer-events-none z-40"
-                  style={{ opacity: archFadeOpacity }}
-                />
+                {/* Scroll-triggered fade overlay - only if enabled in config */}
+                {scrollAnim.fadeOverlay && (
+                  <motion.div
+                    className="absolute inset-0 bg-cream pointer-events-none z-40"
+                    style={{ opacity: archFadeOpacity }}
+                  />
+                )}
               </div>
 
               <motion.div

@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
+import { useHeroArchwayConfig } from '@/hooks/useHeroArchwayConfig'
 
 /**
  * MobileHeroBackground
@@ -18,6 +19,9 @@ import Image from 'next/image'
  * The scroll container and all page content should be z-10+ to render above this.
  */
 
+// Default fallback image when no config is set
+const DEFAULT_HERO_IMAGE = '/lashpop-images/studio/studio-photos-by-salome.jpg'
+
 function CircleDecoration({ className = "w-full h-full" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 100 100" fill="none">
@@ -32,6 +36,14 @@ export function MobileHeroBackground() {
   const archRef = useRef<HTMLDivElement>(null)
   const logoRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(true)
+
+  // Get dynamic hero archway configuration for mobile
+  const { currentVariant, currentImage } = useHeroArchwayConfig(true) // true = mobile
+
+  // Get image URL with fallback
+  const heroImageUrl = currentImage?.url || DEFAULT_HERO_IMAGE
+  const imagePosition = currentImage?.position || { x: 50, y: 50 }
+  const objectFit = currentImage?.objectFit || 'cover'
 
   // Handle scroll effects: arch zoom, logo fade, visibility toggle
   useEffect(() => {
@@ -102,21 +114,32 @@ export function MobileHeroBackground() {
           ref={archRef}
           className="relative w-[80vw] max-w-[380px] overflow-hidden will-change-transform"
           style={{
-            borderRadius: 'clamp(120px, 40vw, 190px) clamp(120px, 40vw, 190px) 0 0',
-            height: '85dvh',
+            borderRadius: currentVariant.archBorderRadius || 'clamp(120px, 40vw, 190px) clamp(120px, 40vw, 190px) 0 0',
+            height: currentVariant.archHeight || '85dvh',
             transform: 'scale3d(1, 1, 1)',
             transformOrigin: 'center bottom',
             backfaceVisibility: 'hidden',
           }}
         >
           <Image
-            src="/lashpop-images/studio/studio-photos-by-salome.jpg"
-            alt="LashPop Studio Interior"
+            src={heroImageUrl}
+            alt="LashPop Studio"
             fill
-            className="object-cover object-center"
+            className={`object-${objectFit}`}
+            style={{
+              objectPosition: `${imagePosition.x}% ${imagePosition.y}%`
+            }}
             priority
             quality={85}
           />
+
+          {/* Dynamic overlay gradient */}
+          {currentVariant.overlayGradient && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: currentVariant.overlayGradient }}
+            />
+          )}
         </div>
       </div>
 
