@@ -46,8 +46,10 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     'instagram': { threshold: 0.7, anchorOffset: headerHeight + 10 },
     'reviews': { threshold: 0.7, anchorOffset: headerHeight + 10 },
 
-    // FAQ: snap so tag selector docks right below mobile header (44px)
-    'faq': { threshold: 0.7, anchorOffset: headerHeight },
+    // FAQ: position so sticky tab selector docks at 44px (right below mobile header)
+    // Section has pt-12 (48px) and sticky header has -mt-4 (-16px), so sticky starts 32px from section top
+    // To dock sticky at 44px: section top = 44 - 32 = 12px → anchorOffset = 12
+    'faq': { threshold: 0.7, anchorOffset: 12 },
 
     // Map: snap to top so full viewport map + card is visible
     'map': { threshold: 0.7, anchorOffset: 0 },

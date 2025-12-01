@@ -65,6 +65,28 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     dispatchFAQInteraction(interacting)
   }, [])
 
+  // Reset interaction state after period of inactivity
+  // This re-enables scroll snapping if user stops interacting with FAQ
+  const scheduleInteractionReset = useCallback(() => {
+    // Clear any existing timeout
+    if (interactionTimeoutRef.current) {
+      clearTimeout(interactionTimeoutRef.current)
+    }
+    // Schedule reset after 3 seconds of inactivity
+    interactionTimeoutRef.current = setTimeout(() => {
+      setFAQInteracting(false)
+    }, 3000)
+  }, [setFAQInteracting])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current)
+      }
+    }
+  }, [])
+
   // Reset interaction state when user scrolls away from FAQ section
   useEffect(() => {
     if (!isMobile) return
@@ -87,8 +109,10 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
 
     // On mobile, scroll to position first card below sticky header
     if (isMobile && faqListRef.current) {
-      // Temporarily disable GSAP snap, scroll to top of list, then re-enable interaction mode
+      // Temporarily disable GSAP snap, scroll to top of list
       setFAQInteracting(true)
+      // Schedule auto-reset after inactivity
+      scheduleInteractionReset()
 
       setTimeout(() => {
         const headerHeight = 44 // Mobile header height (44px)
@@ -111,11 +135,38 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
   }
 
   const toggleFAQ = (id: string) => {
+    const isExpanding = expandedIndex !== id
+
     // Mark as interacting when user opens/closes FAQ cards on mobile
-    if (isMobile && !isInteracting) {
+    if (isMobile) {
       setFAQInteracting(true)
+      // Schedule auto-reset after inactivity
+      scheduleInteractionReset()
+
+      // When expanding, scroll to ensure the card header stays visible
+      if (isExpanding) {
+        setTimeout(() => {
+          const cardElement = document.querySelector(`[data-faq-id="${id}"]`)
+          if (cardElement) {
+            const rect = cardElement.getBoundingClientRect()
+            const headerHeight = 44
+            const stickyHeight = stickyHeaderRef.current?.offsetHeight || 60
+            const minVisibleTop = headerHeight + stickyHeight + 16 // 16px buffer
+
+            // If card header is above the visible area (behind sticky elements)
+            if (rect.top < minVisibleTop) {
+              const container = document.querySelector('.mobile-scroll-container')
+              if (container) {
+                const scrollAdjustment = minVisibleTop - rect.top + 8
+                container.scrollBy({ top: -scrollAdjustment, behavior: 'smooth' })
+              }
+            }
+          }
+        }, 50) // Small delay for DOM update
+      }
     }
-    setExpandedIndex(expandedIndex === id ? null : id)
+
+    setExpandedIndex(isExpanding ? id : null)
   }
 
   // Get FAQs to display based on active category
@@ -239,6 +290,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
             {filteredFAQs.map((faq) => (
               <motion.div
                 key={faq.id}
+                data-faq-id={faq.id}
                 layout
                 className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-sage/10"
                 initial={{ opacity: 0, y: 20 }}

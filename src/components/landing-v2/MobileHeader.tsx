@@ -155,7 +155,9 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       if (item.href === '#gallery' || item.href === '#reviews') {
         smoothScrollToElement(item.href, 60, 800, 'center')
       } else if (item.href === '#faq') {
-        smoothScrollToElement(item.href, 140, 800, 'top')
+        // Position FAQ section so sticky header docks at 44px (below mobile header)
+        // Use smaller offset to match snap behavior (anchorOffset = 12)
+        smoothScrollToElement(item.href, 54, 800, 'top')
       } else {
         smoothScrollToElement(item.href, 60, 800, 'top')
       }
