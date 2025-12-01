@@ -86,15 +86,15 @@ export function PanelWrapper({
         onClick={isDocked ? handleToggle : undefined}
       >
         {/* Left: Back button or Toggle */}
-        <div className="flex-shrink-0 w-12 flex items-center justify-center">
+        <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center">
           {isExpanded && previousCrumb && onBreadcrumbClick ? (
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={handleBack}
-              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-sage/10 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-sage/10 active:bg-sage/15 transition-colors"
               aria-label={`Back to ${previousCrumb.label}`}
             >
-              <ChevronLeft className="w-6 h-6 text-sage" />
+              <ChevronLeft className="w-5 h-5 text-sage" />
             </motion.button>
           ) : (
             <motion.button
@@ -103,7 +103,7 @@ export function PanelWrapper({
                 e.stopPropagation();
                 handleToggle();
               }}
-              className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-sage/10 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-sage/10 active:bg-sage/15 transition-colors"
               aria-label={isExpanded ? 'Minimize panel' : 'Expand panel'}
             >
               {isExpanded ? (
@@ -145,14 +145,14 @@ export function PanelWrapper({
         </div>
 
         {/* Right: Close button */}
-        <div className="flex-shrink-0 w-12 flex items-center justify-center">
+        <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center">
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={(e) => {
               e.stopPropagation();
               handleClose();
             }}
-            className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-sage/10 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-sage/10 active:bg-sage/15 transition-colors"
             aria-label="Close panel"
           >
             <X className="w-5 h-5 text-sage" />

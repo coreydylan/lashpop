@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { HEADER_HEIGHT } from '@/types/panel-stack';
+import type { Panel } from '@/types/panel-stack';
 
 // Import panel components
 import { CategoryPickerPanel } from '../panels/CategoryPickerPanel';
@@ -11,11 +12,33 @@ import { ServicePanel } from '../panels/ServicePanel';
 import { DiscoveryPanel } from '../panels/DiscoveryPanel';
 import { VagaroWidgetPanel } from '../panels/VagaroWidgetPanel';
 
+/**
+ * Renders a panel component based on its type.
+ * Vagaro widget panels are kept mounted but hidden when docked to preserve iframe state.
+ */
+function PanelContent({ panel }: { panel: Panel }) {
+  switch (panel.type) {
+    case 'category-picker':
+      return <CategoryPickerPanel panel={panel} />;
+    case 'discovery':
+      return <DiscoveryPanel panel={panel} />;
+    case 'service-panel':
+      return <ServicePanel panel={panel} />;
+    case 'vagaro-widget':
+      return <VagaroWidgetPanel panel={panel} />;
+    default:
+      return null;
+  }
+}
+
 export function TopPanelContainer() {
   const { state } = usePanelStack();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Track vagaro widget panels that have been opened (for persistence)
+  const [persistedVagaroPanels, setPersistedVagaroPanels] = useState<Panel[]>([]);
 
   // Use ref to access state without triggering effect re-runs
   const stateRef = useRef(state);
@@ -32,6 +55,25 @@ export function TopPanelContainer() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Track vagaro widget panels for persistence
+  useEffect(() => {
+    const vagaroPanels = state.panels.filter(p => p.type === 'vagaro-widget');
+
+    setPersistedVagaroPanels(prev => {
+      // Keep existing persisted panels and add new ones
+      const existingIds = new Set(prev.map(p => p.id));
+      const currentIds = new Set(vagaroPanels.map(p => p.id));
+
+      // Remove panels that have been explicitly closed (not in state at all)
+      const stillValid = prev.filter(p => currentIds.has(p.id));
+
+      // Add new panels
+      const newPanels = vagaroPanels.filter(p => !existingIds.has(p.id));
+
+      return [...stillValid, ...newPanels];
+    });
+  }, [state.panels]);
 
   // Handle visibility based on panel state (priority) or scroll position
   useEffect(() => {
@@ -87,7 +129,17 @@ export function TopPanelContainer() {
       return a.position - b.position;
     });
 
-  if (sortedPanels.length === 0) {
+  // Get non-vagaro/non-service panels for normal rendering
+  // Service panels need persistence to keep Vagaro iframe state when collapsing/expanding
+  const regularPanels = sortedPanels.filter(p => p.type !== 'vagaro-widget' && p.type !== 'service-panel');
+
+  // Get service panels (need persistence for embedded Vagaro widget)
+  const servicePanels = sortedPanels.filter(p => p.type === 'service-panel');
+
+  // Get vagaro panels with their current state
+  const vagaroPanels = sortedPanels.filter(p => p.type === 'vagaro-widget');
+
+  if (sortedPanels.length === 0 && persistedVagaroPanels.length === 0) {
     return null;
   }
 
@@ -105,16 +157,55 @@ export function TopPanelContainer() {
       }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
     >
+      {/* Regular panels with AnimatePresence for enter/exit animations */}
       <AnimatePresence mode="popLayout">
-        {sortedPanels.map(panel => (
+        {regularPanels.map(panel => (
           <div key={panel.id}>
-            {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
-            {panel.type === 'discovery' && <DiscoveryPanel panel={panel} />}
-            {panel.type === 'service-panel' && <ServicePanel panel={panel} />}
-            {panel.type === 'vagaro-widget' && <VagaroWidgetPanel panel={panel} />}
+            <PanelContent panel={panel} />
           </div>
         ))}
       </AnimatePresence>
+
+      {/* Service panels - kept mounted but hidden when docked to preserve Vagaro widget state */}
+      {servicePanels.map(panel => {
+        const isExpanded = panel.state === 'expanded';
+
+        return (
+          <div
+            key={panel.id}
+            style={{
+              display: isExpanded ? 'block' : 'none',
+            }}
+          >
+            <PanelContent panel={panel} />
+          </div>
+        );
+      })}
+
+      {/* Vagaro widget panels - kept mounted but hidden when docked */}
+      {persistedVagaroPanels.map(persistedPanel => {
+        // Find the current state of this panel
+        const currentPanel = state.panels.find(p => p.id === persistedPanel.id);
+        const isExpanded = currentPanel?.state === 'expanded';
+        const isInStack = currentPanel !== undefined;
+
+        // If panel is no longer in stack at all, don't render
+        if (!isInStack) {
+          return null;
+        }
+
+        return (
+          <div
+            key={persistedPanel.id}
+            style={{
+              // Hide but keep mounted when docked
+              display: isExpanded ? 'block' : 'none',
+            }}
+          >
+            <PanelContent panel={currentPanel || persistedPanel} />
+          </div>
+        );
+      })}
     </motion.div>
   );
 }

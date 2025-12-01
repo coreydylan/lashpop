@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { BottomSheetFrame } from '../frames/BottomSheetFrame';
+import type { Panel } from '@/types/panel-stack';
 
 // Import panel components
 import { CategoryPickerPanel } from '../panels/CategoryPickerPanel';
@@ -29,6 +30,24 @@ const springConfig = {
   stiffness: 300,
 };
 
+/**
+ * Renders panel content based on type.
+ */
+function PanelContent({ panel }: { panel: Panel }) {
+  switch (panel.type) {
+    case 'category-picker':
+      return <CategoryPickerPanel panel={panel} />;
+    case 'discovery':
+      return <DiscoveryPanel panel={panel} />;
+    case 'service-panel':
+      return <ServicePanel panel={panel} />;
+    case 'vagaro-widget':
+      return <VagaroWidgetPanel panel={panel} />;
+    default:
+      return null;
+  }
+}
+
 export function BottomSheetContainer() {
   const { state, actions } = usePanelStack();
   const controls = useAnimation();
@@ -38,6 +57,9 @@ export function BottomSheetContainer() {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef(0);
 
+  // Track vagaro widget panels for persistence
+  const [persistedVagaroPanels, setPersistedVagaroPanels] = useState<Panel[]>([]);
+
   // Sort panels by level
   const sortedPanels = [...state.panels]
     .filter(p => p.state !== 'closed')
@@ -45,6 +67,24 @@ export function BottomSheetContainer() {
 
   const hasExpandedPanel = sortedPanels.some(p => p.state === 'expanded');
   const hasAnyPanel = sortedPanels.length > 0;
+
+  // Track vagaro widget panels for persistence
+  useEffect(() => {
+    const vagaroPanels = state.panels.filter(p => p.type === 'vagaro-widget');
+
+    setPersistedVagaroPanels(prev => {
+      const existingIds = new Set(prev.map(p => p.id));
+      const currentIds = new Set(vagaroPanels.map(p => p.id));
+
+      // Remove panels that have been explicitly closed
+      const stillValid = prev.filter(p => currentIds.has(p.id));
+
+      // Add new panels
+      const newPanels = vagaroPanels.filter(p => !existingIds.has(p.id));
+
+      return [...stillValid, ...newPanels];
+    });
+  }, [state.panels]);
 
   // Animate to a snap point
   const animateToSnap = useCallback((snap: SnapPoint) => {
@@ -155,6 +195,11 @@ export function BottomSheetContainer() {
     return null;
   }
 
+  // Separate regular panels from panels that need persistence (vagaro-widget and service-panel with booking)
+  // Service panels need persistence to keep Vagaro iframe state when collapsing/expanding
+  const regularPanels = sortedPanels.filter(p => p.type !== 'vagaro-widget' && p.type !== 'service-panel');
+  const servicePanels = sortedPanels.filter(p => p.type === 'service-panel');
+
   return (
     <>
       {/* Backdrop overlay */}
@@ -213,20 +258,66 @@ export function BottomSheetContainer() {
             overscrollBehavior: 'contain',
           }}
         >
+          {/* Regular panels with AnimatePresence */}
           <AnimatePresence mode="popLayout">
-            {sortedPanels.map(panel => (
+            {regularPanels.map(panel => (
               <BottomSheetFrame
                 key={panel.id}
                 panel={panel}
-                fullWidthContent={panel.type === 'vagaro-widget'}
+                fullWidthContent={false}
               >
-                {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
-                {panel.type === 'discovery' && <DiscoveryPanel panel={panel} />}
-                {panel.type === 'service-panel' && <ServicePanel panel={panel} />}
-                {panel.type === 'vagaro-widget' && <VagaroWidgetPanel panel={panel} />}
+                <PanelContent panel={panel} />
               </BottomSheetFrame>
             ))}
           </AnimatePresence>
+
+          {/* Service panels - kept mounted but hidden when docked to preserve Vagaro widget state */}
+          {servicePanels.map(panel => {
+            const isExpanded = panel.state === 'expanded';
+
+            return (
+              <div
+                key={panel.id}
+                style={{
+                  display: isExpanded ? 'block' : 'none',
+                }}
+              >
+                <BottomSheetFrame
+                  panel={panel}
+                  fullWidthContent={false}
+                >
+                  <PanelContent panel={panel} />
+                </BottomSheetFrame>
+              </div>
+            );
+          })}
+
+          {/* Vagaro widget panels - kept mounted but hidden when docked */}
+          {persistedVagaroPanels.map(persistedPanel => {
+            const currentPanel = state.panels.find(p => p.id === persistedPanel.id);
+            const isExpanded = currentPanel?.state === 'expanded';
+            const isInStack = currentPanel !== undefined;
+
+            if (!isInStack) {
+              return null;
+            }
+
+            return (
+              <div
+                key={persistedPanel.id}
+                style={{
+                  display: isExpanded ? 'block' : 'none',
+                }}
+              >
+                <BottomSheetFrame
+                  panel={currentPanel || persistedPanel}
+                  fullWidthContent={true}
+                >
+                  <PanelContent panel={currentPanel || persistedPanel} />
+                </BottomSheetFrame>
+              </div>
+            );
+          })}
 
           {/* Bottom safe area padding */}
           <div className="h-8 bg-cream" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />

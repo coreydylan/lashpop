@@ -2,13 +2,15 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Clock, DollarSign, User, Check, Loader2, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, DollarSign, User, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import Image from 'next/image';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { useUserKnowledge } from '@/contexts/UserKnowledgeContext';
+import { useVagaroWidget } from '@/contexts/VagaroWidgetContext';
 import { PhoneSaveNudge } from '@/components/auth/PhoneSaveNudge';
+import { LPLogoLoader } from '@/components/ui/LPLogoLoader';
 import { getAssetsByServiceSlug, type AssetWithTags } from '@/actions/dam';
 import { getTeamMembersByServiceId } from '@/actions/team';
 import { VagaroBookingWidget } from '@/components/VagaroBookingWidget';
@@ -41,6 +43,7 @@ const SERVICE_WIDGET_SCRIPTS: Record<string, string> = {
 export function ServicePanel({ panel }: ServicePanelProps) {
   const { state, actions } = usePanelStack();
   const { trackServiceView, trackServiceSelection, trackProviderSelection, shouldShowSaveNudge } = useUserKnowledge();
+  const { state: vagaroState, reset: resetVagaroState } = useVagaroWidget();
   const data = panel.data as ServicePanelData;
 
   // View state
@@ -63,6 +66,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
   // Booking view state (inline Vagaro widget)
   const widgetContainerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
+  const loadedServiceIdRef = useRef<string | null>(null); // Track which service the widget was loaded for
   const [isBookingLoading, setIsBookingLoading] = useState(true);
   const [hasBookingError, setHasBookingError] = useState(false);
 
@@ -103,6 +107,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
         setGallery([]);
         // Reset widget state
         scriptLoadedRef.current = false;
+        loadedServiceIdRef.current = null;
         setIsBookingLoading(true);
         setHasBookingError(false);
         break;
@@ -110,6 +115,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
         setCurrentView('service-detail');
         // Reset widget state
         scriptLoadedRef.current = false;
+        loadedServiceIdRef.current = null;
         setIsBookingLoading(true);
         setHasBookingError(false);
         break;
@@ -117,6 +123,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
         setCurrentView('time-selection');
         // Reset widget state
         scriptLoadedRef.current = false;
+        loadedServiceIdRef.current = null;
         setIsBookingLoading(true);
         setHasBookingError(false);
         break;
@@ -211,8 +218,10 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
     // Reset widget state for new service
     scriptLoadedRef.current = false;
+    loadedServiceIdRef.current = null;
     setIsBookingLoading(true);
     setHasBookingError(false);
+    resetVagaroState(); // Reset widget loaded state for fresh loading animation
 
     if (shouldUseVagaroWidget) {
       // Go directly to booking view for services with Vagaro widget
@@ -230,6 +239,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     setGallery([]);
     // Reset widget state
     scriptLoadedRef.current = false;
+    loadedServiceIdRef.current = null;
     setIsBookingLoading(true);
     setHasBookingError(false);
   };
@@ -249,10 +259,15 @@ export function ServicePanel({ panel }: ServicePanelProps) {
       trackServiceSelection(selectedService.id, selectedService.name, data.categoryId);
     }
 
-    // Reset widget state
-    scriptLoadedRef.current = false;
-    setIsBookingLoading(true);
-    setHasBookingError(false);
+    // Reset widget state only if switching to a different booking
+    // Don't reset if we're just continuing from time selection for the same service
+    if (loadedServiceIdRef.current !== selectedService?.id) {
+      scriptLoadedRef.current = false;
+      loadedServiceIdRef.current = null;
+      setIsBookingLoading(true);
+      setHasBookingError(false);
+      resetVagaroState(); // Reset widget loaded state for fresh loading animation
+    }
 
     setCurrentView('booking');
   };
@@ -284,7 +299,13 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     // Store ref for potential cleanup
     widgetContainerRef.current = container;
 
-    // Clear any existing content
+    // Check if widget is already loaded for this service - don't reload on collapse/expand
+    if (loadedServiceIdRef.current === selectedService.id && container.children.length > 0) {
+      console.log('Vagaro widget already loaded for this service, skipping reload');
+      return;
+    }
+
+    // Clear any existing content (only when loading new service)
     container.innerHTML = '';
 
     const widgetScriptUrl = getWidgetScriptUrl();
@@ -303,6 +324,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
     script.onload = () => {
       console.log('Vagaro widget script loaded');
+      loadedServiceIdRef.current = selectedService.id; // Track that widget is loaded for this service
       setIsBookingLoading(false);
     };
 
@@ -413,7 +435,11 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               {/* Service Cards - Mobile: larger cards, Desktop: original sizing */}
               <div className="relative -mx-4 px-4 md:mx-0 md:px-0">
                 <div className="flex gap-3 md:gap-4 overflow-x-auto pb-3 scrollbar-hide">
-                  {filteredServices.map((service, index) => (
+                  {filteredServices.map((service, index) => {
+                    // Get service image (keyImageAssetId creates URL through imageUrl, or use imageUrl directly)
+                    const serviceImage = service.imageUrl;
+
+                    return (
                     <motion.button
                       key={service.id}
                       initial={{ opacity: 0, x: -20 }}
@@ -425,7 +451,25 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                       className="flex-shrink-0 w-56 md:w-64 rounded-2xl md:rounded-xl glass hover:shadow-lg transition-all text-left overflow-hidden"
                     >
                       {/* Card Image - Mobile: taller aspect, Desktop: video */}
-                      <div className="aspect-[4/3] md:aspect-video bg-warm-sand/20 relative" />
+                      <div className="aspect-[4/3] md:aspect-video bg-warm-sand/20 relative overflow-hidden">
+                        {serviceImage ? (
+                          <Image
+                            src={serviceImage}
+                            alt={service.name}
+                            fill
+                            className="object-cover transition-transform group-hover:scale-105"
+                            sizes="(max-width: 768px) 224px, 256px"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-sage/10 flex items-center justify-center">
+                              <span className="text-xs text-sage/40">
+                                {service.name.charAt(0)}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Card Content */}
                       <div className="p-4 md:p-4">
@@ -459,7 +503,8 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                         </div>
                       </div>
                     </motion.button>
-                  ))}
+                  );
+                  })}
                 </div>
               </div>
 
@@ -915,22 +960,24 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               {/* Vagaro Widget Container - Seamless full width */}
               <div className="vagaro-widget-wrapper" style={{ minHeight: '500px' }}>
                 {/* Widget container with warm color filter for brand consistency */}
+                {/* Hidden until Vagaro sends WidgetLoaded event to mask their internal spinner */}
                 <div
                   ref={loadWidgetIntoContainer}
-                  className="vagaro-widget-container"
+                  className="vagaro-widget-container transition-opacity duration-500"
                   style={{
                     minHeight: '600px',
                     filter: 'sepia(8%) saturate(95%) brightness(100%)',
+                    opacity: vagaroState.isLoaded ? 1 : 0,
                   }}
                 />
 
-                {/* Loading State */}
-                {isBookingLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-cream z-20">
-                    <div className="text-center">
-                      <Loader2 className="w-8 h-8 text-dusty-rose animate-spin mx-auto mb-3" />
-                      <p className="text-sm text-dune/60">Loading booking...</p>
-                    </div>
+                {/* Loading State - Shows LP logo animation until Vagaro widget is fully ready */}
+                {!vagaroState.isLoaded && !hasBookingError && (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center bg-cream z-20 transition-opacity duration-500"
+                    style={{ opacity: vagaroState.isLoaded ? 0 : 1 }}
+                  >
+                    <LPLogoLoader message="Loading booking..." size={56} />
                   </div>
                 )}
 

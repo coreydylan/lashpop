@@ -266,6 +266,17 @@ function panelStackReducer(state: PanelStackState, action: Action): PanelStackSt
     }
 
     case 'UPDATE_PANEL_BREADCRUMBS': {
+      const panel = state.panels.find(p => p.id === action.payload.panelId);
+      if (!panel) return state;
+
+      // Compare breadcrumbs to avoid unnecessary updates
+      const existingCrumbs = panel.breadcrumbs || [];
+      const newCrumbs = action.payload.breadcrumbs;
+      const areEqual = existingCrumbs.length === newCrumbs.length &&
+        existingCrumbs.every((c, i) => c.id === newCrumbs[i].id && c.label === newCrumbs[i].label);
+
+      if (areEqual) return state;
+
       return {
         ...state,
         panels: state.panels.map(p =>
