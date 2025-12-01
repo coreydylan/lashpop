@@ -36,28 +36,28 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
 
   return {
     // Hero: snap to top of section (no offset needed)
-    'hero': { threshold: 0.5, anchorOffset: 0 },
+    'hero': { threshold: 0.7, anchorOffset: 0 },
 
     // Welcome: position content comfortably in view
-    'welcome': { threshold: 0.5, anchorOffset: vh * 0.12 },
+    'welcome': { threshold: 0.7, anchorOffset: vh * 0.12 },
 
     // Founder letter: position for comfortable reading
-    'founder': { threshold: 0.5, anchorOffset: vh * 0.10 },
+    'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
 
     // Team, Instagram, Reviews: position with header visible
-    'team': { threshold: 0.5, anchorOffset: headerHeight + 10 },
-    'instagram': { threshold: 0.5, anchorOffset: headerHeight + 10 },
-    'reviews': { threshold: 0.5, anchorOffset: headerHeight + 10 },
+    'team': { threshold: 0.7, anchorOffset: headerHeight + 10 },
+    'instagram': { threshold: 0.7, anchorOffset: headerHeight + 10 },
+    'reviews': { threshold: 0.7, anchorOffset: headerHeight + 10 },
 
     // FAQ: DISABLE auto-snap - let user scroll freely within FAQ content
     // Section tracking still works, just no forced snap
     'faq': { threshold: 0.3, anchorOffset: 12, disableSnap: true },
 
     // Map: snap to top so full viewport map + card is visible
-    'map': { threshold: 0.5, anchorOffset: 0 },
+    'map': { threshold: 0.7, anchorOffset: 0 },
 
     // Footer: snap to show footer content
-    'footer': { threshold: 0.4, anchorOffset: 0 },
+    'footer': { threshold: 0.6, anchorOffset: 0 },
   }
 }
 
@@ -258,10 +258,9 @@ export function useMobileGSAPScroll({
       const thresholdPx = viewportHeight * config.threshold
 
       // Only snap if we're within the threshold AND scroll velocity is low
-      // Use higher velocity threshold to only snap when truly stopped
-      if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 10 && Math.abs(scrollVelocity) < 0.5) {
+      if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 5 && Math.abs(scrollVelocity) < 2) {
         snapToSection(closestIndex, sections)
-      } else if (distanceFromSnapPoint <= 10) {
+      } else if (distanceFromSnapPoint <= 5) {
         // Already at snap point, just dispatch event
         currentSectionRef.current = closestIndex
         dispatchSectionLocked(targetSection)
@@ -290,17 +289,15 @@ export function useMobileGSAPScroll({
       }
 
       // Check for snap after scrolling stops
-      // Use longer delay to avoid snap during continuous scrolling
-      scrollEndTimer = setTimeout(checkForSnap, 200)
+      scrollEndTimer = setTimeout(checkForSnap, 100)
     }
 
-    // Handle touch end for snapping on mobile
+    // Handle touch end for more responsive snapping on mobile
     const handleTouchEnd = () => {
       if (scrollEndTimer) {
         clearTimeout(scrollEndTimer)
       }
-      // Use longer delay after touch to let momentum scrolling settle
-      scrollEndTimer = setTimeout(checkForSnap, 250)
+      scrollEndTimer = setTimeout(checkForSnap, 120)
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
