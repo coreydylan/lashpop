@@ -23,7 +23,7 @@ export async function GET() {
       .limit(1)
 
     const config = result.length > 0
-      ? (result[0].config as HeroArchwayConfig)
+      ? (result[0].config as unknown as HeroArchwayConfig)
       : defaultHeroArchwayConfig
 
     // Select random images based on mode

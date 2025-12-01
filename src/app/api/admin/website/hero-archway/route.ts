@@ -30,7 +30,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      config: result[0].config as HeroArchwayConfig,
+      config: result[0].config as unknown as HeroArchwayConfig,
       isDefault: false,
       updatedAt: result[0].updatedAt
     })
