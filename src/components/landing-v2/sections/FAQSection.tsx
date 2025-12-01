@@ -59,6 +59,11 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     const container = document.querySelector('.mobile-scroll-container') as HTMLElement
     if (!container) return
 
+    // Get mobile header height from CSS variable
+    const mobileHeaderHeight = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height') || '44'
+    )
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -69,15 +74,14 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
             if (rect.top > -100 && rect.top < 200) {
               hasSnappedOnEntryRef.current = true
 
-              // Calculate snap position: dock sticky header below mobile header (44px)
-              const headerHeight = 44
+              // Calculate snap position: dock sticky header below mobile header
               const stickyHeight = stickyHeaderRef.current?.offsetHeight || 52
               const buffer = 8
 
               // Position FAQ list top right below both headers
               if (faqListRef.current) {
                 const faqListRect = faqListRef.current.getBoundingClientRect()
-                const targetFaqListTop = headerHeight + stickyHeight + buffer
+                const targetFaqListTop = mobileHeaderHeight + stickyHeight + buffer
                 const scrollAdjustment = faqListRect.top - targetFaqListTop
                 const targetScrollY = container.scrollTop + scrollAdjustment
 
@@ -95,7 +99,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
       {
         root: container,
         threshold: [0, 0.1],
-        rootMargin: '-44px 0px 0px 0px' // Account for mobile header
+        rootMargin: `-${mobileHeaderHeight}px 0px 0px 0px` // Account for mobile header
       }
     )
 
@@ -111,9 +115,11 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     // On mobile, scroll to position first card below sticky header
     if (isMobile && faqListRef.current) {
       setTimeout(() => {
-        const headerHeight = 44 // Mobile header height
+        const mobileHeaderHeight = parseInt(
+          getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height') || '44'
+        )
         const stickyChipsHeight = stickyHeaderRef.current?.offsetHeight || 60
-        const totalOffset = headerHeight + stickyChipsHeight + 8
+        const totalOffset = mobileHeaderHeight + stickyChipsHeight + 8
 
         const faqListRect = faqListRef.current!.getBoundingClientRect()
         const container = document.querySelector('.mobile-scroll-container')
@@ -169,7 +175,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
   // Build category options for the filter
   const categoryOptions = [
     { id: 'top-faqs', label: 'Top FAQs' },
-    { id: 'all', label: 'All' },
+    { id: 'all', label: 'All FAQs' },
     ...categories.map(c => ({ id: c.id, label: c.displayName }))
   ]
 
@@ -191,21 +197,21 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
         {/* On mobile: sticky at top-[44px] with gradient fade at bottom */}
         <motion.div
           ref={stickyHeaderRef}
-          className="mb-4 md:mb-12 sticky md:static top-[44px] z-50 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
+          className="mb-4 md:mb-12 sticky md:static top-[44px] z-40 md:top-0 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
           style={isMobile ? {
-            background: 'linear-gradient(180deg, rgba(250, 247, 244, 0.85) 0%, rgba(250, 247, 244, 0.85) 70%, rgba(250, 247, 244, 0) 100%)',
+            background: 'linear-gradient(180deg, rgba(250, 247, 244, 0.95) 0%, rgba(250, 247, 244, 0.9) 60%, rgba(250, 247, 244, 0) 100%)',
             backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)',
-            paddingTop: '8px',
-            paddingBottom: '16px',
-            marginTop: '-8px',
+            paddingTop: '16px',
+            paddingBottom: '24px',
+            marginTop: '-4px',
           } : undefined}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Scrollable container for mobile */}
-          <div className="overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
+          {/* Scrollable container for mobile - py for shadow room */}
+          <div className="overflow-x-auto py-2 -my-2 -mx-4 px-4 md:mx-0 md:px-0 md:py-0 md:my-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
             <motion.div
               className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-2 md:gap-3 min-w-max md:min-w-0"
               initial={{ x: 0 }}
@@ -225,7 +231,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                 <motion.button
                   key={category.id}
                   onClick={() => handleCategoryChange(category.id)}
-                  className="relative group shrink-0"
+                  className="relative group shrink-0 focus:outline-none focus-visible:outline-none"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -234,16 +240,16 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                 >
                   {/* Active/Hover State Background */}
                   <div className={`absolute inset-0 rounded-full transition-opacity duration-300 ${
-                    activeCategory === category.id 
-                      ? 'bg-dusty-rose shadow-md' 
+                    activeCategory === category.id
+                      ? 'bg-dusty-rose shadow-md'
                       : 'bg-white/50 hover:bg-white/80'
                   }`} />
-                  
+
                   {/* Content - Compact sizing for mobile */}
-                  <div className={`relative px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-colors duration-300 ${
+                  <div className={`relative px-3 py-1.5 md:px-4 md:py-2 rounded-full border ${
                     activeCategory === category.id
-                      ? 'border-dusty-rose text-white'
-                      : 'border-white/60 text-dune hover:border-dusty-rose/30'
+                      ? 'border-transparent text-white'
+                      : 'border-white/60 text-dune hover:border-dusty-rose/30 transition-colors duration-300'
                   }`}>
                     <span className="text-xs md:text-sm font-medium whitespace-nowrap">
                       {category.label}
@@ -258,7 +264,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
         {/* FAQ Items */}
         <motion.div
           ref={faqListRef}
-          className="space-y-4"
+          className="space-y-3 md:space-y-4"
           layout
         >
           <AnimatePresence mode="popLayout">
@@ -266,7 +272,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
               <motion.div
                 key={faq.id}
                 layout
-                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-sage/10"
+                className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-sage/10"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -274,25 +280,25 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
               >
                 <button
                   onClick={() => toggleFAQ(faq.id)}
-                  className="w-full px-6 py-5 text-left flex items-center justify-between group"
+                  className="w-full px-4 py-3.5 md:px-6 md:py-5 text-left flex items-center justify-between group"
                 >
-                  <div className="flex flex-col items-start gap-1">
+                  <div className="flex flex-col items-start gap-0.5 md:gap-1">
                     {/* Show category label if in All or Top FAQs view */}
                     {(activeCategory === 'all' || activeCategory === 'top-faqs') && (
-                      <span className="text-xs font-medium text-dusty-rose uppercase tracking-wider">
+                      <span className="text-[10px] md:text-xs font-medium text-dusty-rose uppercase tracking-wider">
                         {faq.category}
                       </span>
                     )}
-                    <h3 className="font-sans font-semibold text-dune group-hover:text-dusty-rose transition-colors pr-8">
+                    <h3 className="font-sans text-sm md:text-base font-semibold text-dune group-hover:text-dusty-rose transition-colors pr-6 md:pr-8">
                       {faq.question}
                     </h3>
                   </div>
                   <motion.div
-                    className="shrink-0 ml-4 text-dusty-rose bg-dusty-rose/10 rounded-full p-1.5 group-hover:bg-dusty-rose group-hover:text-white transition-colors duration-300"
+                    className="shrink-0 ml-3 md:ml-4 text-dusty-rose bg-dusty-rose/10 rounded-full p-1 md:p-1.5 group-hover:bg-dusty-rose group-hover:text-white transition-colors duration-300"
                     animate={{ rotate: expandedIndex === faq.id ? 180 : 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </motion.div>
@@ -306,9 +312,9 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
                     >
-                      <div className="px-6 pb-6 pt-2 border-t border-sage/5">
-                        <div 
-                          className="body text-dune/80 leading-relaxed space-y-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold"
+                      <div className="px-4 pb-4 pt-1.5 md:px-6 md:pb-6 md:pt-2 border-t border-sage/5">
+                        <div
+                          className="text-sm md:text-base text-dune/80 leading-relaxed space-y-3 md:space-y-4 [&_ul]:list-disc [&_ul]:pl-4 md:[&_ul]:pl-5 [&_ul]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold"
                           dangerouslySetInnerHTML={{ __html: faq.answer }}
                         />
                       </div>

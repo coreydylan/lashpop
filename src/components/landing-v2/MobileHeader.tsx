@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createPortal } from 'react-dom'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
@@ -45,7 +44,7 @@ interface MobileHeaderProps {
 export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 })
+  const [menuPosition, setMenuPosition] = useState({ top: 56, right: 20 })
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { actions } = usePanelStack()
@@ -82,10 +81,9 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     return () => scrollContainer.removeEventListener('scroll', checkVisibility)
   }, [getScrollContainer])
 
-  // Update menu position when opened - use layout effect for immediate positioning
-  useLayoutEffect(() => {
+  // Update menu position when opened
+  useEffect(() => {
     if (isMenuOpen && menuButtonRef.current) {
-      // Calculate position immediately before paint
       const rect = menuButtonRef.current.getBoundingClientRect()
       setMenuPosition({
         top: rect.bottom + 8,
@@ -164,20 +162,18 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     }
   }, [actions])
 
-  // Render the dropdown menu via portal
+  // Render the dropdown menu (inline, not portal - portal was breaking on mobile)
   const renderMenu = () => {
-    if (typeof window === 'undefined') return null
     if (!isMenuOpen) return null
 
-    const menu = (
+    return (
       <motion.div
-        key="mobile-header-menu"
         ref={menuRef}
         initial={{ opacity: 0, scale: 0.96, y: -4 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: -4 }}
         transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-        className="fixed z-[9999] rounded-xl overflow-hidden pointer-events-auto"
+        className="fixed z-[9999] rounded-xl overflow-hidden"
         style={{
           top: menuPosition.top,
           right: menuPosition.right,
@@ -191,8 +187,6 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       >
         <div className="py-1.5">
           {MENU_ITEMS.map((item, index) => {
-            // Check if this menu item matches the current section
-            // Map section also activates for footer
             const isActive = item.id === currentSection ||
               (item.id === 'map' && currentSection === 'footer')
 
@@ -227,8 +221,6 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
         </div>
       </motion.div>
     )
-
-    return createPortal(menu, document.body)
   }
 
   return (
@@ -244,7 +236,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
             transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
             className="fixed top-0 left-0 right-0 z-50 md:hidden"
             style={{
-              height: 44,
+              height: 'var(--mobile-header-height)',
               background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 247, 244, 0.92) 100%)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',

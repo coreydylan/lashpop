@@ -27,7 +27,10 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
   // Higher anchorOffset = scroll LESS = section top appears LOWER on viewport
   // Lower anchorOffset = scroll MORE = section top goes UP/off screen
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800
-  const headerHeight = 44 // Mobile header height
+  // Get mobile header height from CSS variable (with fallback)
+  const headerHeight = typeof window !== 'undefined'
+    ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height') || '44')
+    : 44
 
   return {
     // Hero: snap to top of section (no offset needed)

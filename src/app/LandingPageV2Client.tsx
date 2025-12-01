@@ -14,7 +14,6 @@ import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
 import HeroSection from '@/components/landing-v2/HeroSection';
 import { WelcomeSection } from '@/components/landing-v2/sections/WelcomeSection';
-import { ScrollServicesTrigger } from '@/components/landing-v2/ScrollServicesTrigger';
 import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
 import { InstagramCarousel } from '@/components/landing-v2/sections/InstagramCarousel';
@@ -292,8 +291,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     <WelcomeSection />
                   </div>
 
-                {/* Trigger to open services panel when scrolling past Welcome */}
-                <ScrollServicesTrigger />
+                {/* Services panel trigger removed - users open via menu/buttons */}
 
                 {/* Continuous cream background wrapper for all sections from founder onwards */}
                 <div className="bg-cream relative">

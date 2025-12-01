@@ -11,21 +11,30 @@ import {
   ChevronRight,
   Check,
   Folder,
-  Tag,
-  GripVertical
+  Tag as TagIcon,
+  GripVertical,
+  Link,
+  Lock
 } from "lucide-react"
+
+interface TagData {
+  id: string
+  name: string
+  displayName: string
+  sortOrder?: number
+  parentTagId?: string | null
+  serviceCategoryId?: string | null
+  serviceId?: string | null
+  children?: TagData[]
+}
 
 interface TagCategory {
   id: string
   name: string
   displayName: string
   color: string
-  tags?: Array<{
-    id: string
-    name: string
-    displayName: string
-    sortOrder?: number
-  }>
+  tags?: TagData[]
+  hierarchicalTags?: TagData[]
 }
 
 interface TagEditorProps {
@@ -309,7 +318,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
 
           {/* Search */}
           <div className="flex items-center gap-3 rounded-[20px] border border-sage/20 bg-white px-4 py-2.5">
-            <Tag className="w-4 h-4 text-sage/70" />
+            <TagIcon className="w-4 h-4 text-sage/70" />
             <input
               ref={searchInputRef}
               value={searchQuery}
@@ -441,89 +450,168 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
               {/* Tags */}
               {expandedCategories.has(category.id) && category.tags && category.tags.length > 0 && (
                 <div className="px-4 py-3 border-t border-sage/10 space-y-1">
-                  {category.tags.map((tag) => (
-                    <div
-                      key={tag.id}
-                      draggable={editingId !== `tag-${tag.id}`}
-                      onDragStart={() => handleDragStart(tag.id, category.id)}
-                      onDragOver={(e) => handleDragOver(e, tag.id)}
-                      onDrop={(e) => handleDrop(e, tag.id, category.id)}
-                      onDragEnd={handleDragEnd}
-                      className={clsx(
-                        "group flex items-center gap-3 px-3 py-2 rounded-xl transition",
-                        editingId === `tag-${tag.id}` ? "cursor-text" : "cursor-move",
-                        draggedTagId === tag.id && "opacity-50",
-                        dragOverTagId === tag.id && draggedTagId !== tag.id && "border-t-2 border-dusty-rose",
-                        selectedItems.has(`tag-${tag.id}`)
-                          ? "bg-dusty-rose/10 border border-dusty-rose/30"
-                          : "hover:bg-sage/5"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (e.shiftKey || e.metaKey || e.ctrlKey) {
-                          toggleSelection(`tag-${tag.id}`)
-                        } else {
-                          setSelectedItems(new Set([`tag-${tag.id}`]))
-                        }
-                      }}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation()
-                        setEditingId(`tag-${tag.id}`)
-                        setEditValue(tag.displayName)
-                      }}
-                    >
-                      <GripVertical className="w-3.5 h-3.5 text-sage/40" />
+                  {/* Use hierarchicalTags if available to show proper nesting */}
+                  {(category.hierarchicalTags || category.tags).map((tag) => {
+                    const isServiceLinked = !!(tag.serviceCategoryId || tag.serviceId)
+                    const hasChildren = tag.children && tag.children.length > 0
 
-                      {editingId === `tag-${tag.id}` ? (
-                        <input
-                          ref={editInputRef}
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onBlur={() => handleRename(tag.id, editValue, 'tag')}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleRename(tag.id, editValue, 'tag')
-                            }
-                            if (e.key === "Escape") {
-                              setEditingId(null)
-                              setEditValue("")
+                    return (
+                      <Fragment key={tag.id}>
+                        {/* Parent tag */}
+                        <div
+                          draggable={editingId !== `tag-${tag.id}` && !isServiceLinked}
+                          onDragStart={() => !isServiceLinked && handleDragStart(tag.id, category.id)}
+                          onDragOver={(e) => !isServiceLinked && handleDragOver(e, tag.id)}
+                          onDrop={(e) => !isServiceLinked && handleDrop(e, tag.id, category.id)}
+                          onDragEnd={handleDragEnd}
+                          className={clsx(
+                            "group flex items-center gap-3 px-3 py-2 rounded-xl transition",
+                            isServiceLinked ? "cursor-default" : (editingId === `tag-${tag.id}` ? "cursor-text" : "cursor-move"),
+                            draggedTagId === tag.id && "opacity-50",
+                            dragOverTagId === tag.id && draggedTagId !== tag.id && "border-t-2 border-dusty-rose",
+                            selectedItems.has(`tag-${tag.id}`)
+                              ? "bg-dusty-rose/10 border border-dusty-rose/30"
+                              : "hover:bg-sage/5"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (e.shiftKey || e.metaKey || e.ctrlKey) {
+                              toggleSelection(`tag-${tag.id}`)
+                            } else {
+                              setSelectedItems(new Set([`tag-${tag.id}`]))
                             }
                           }}
-                          className="flex-1 px-2 py-1 bg-white border border-dusty-rose/30 rounded text-sm outline-none"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        <span className="flex-1 text-sm text-dune">{tag.displayName}</span>
-                      )}
-
-                      <div className="flex items-center gap-1">
-                        {selectedItems.has(`tag-${tag.id}`) && (
-                          <Check className="w-3.5 h-3.5 text-dusty-rose" />
-                        )}
-                        <button
-                          onClick={(e) => {
+                          onDoubleClick={(e) => {
+                            if (isServiceLinked) return // Don't allow editing service-linked tags
                             e.stopPropagation()
                             setEditingId(`tag-${tag.id}`)
                             setEditValue(tag.displayName)
                           }}
-                          className="p-1 hover:bg-sage/10 rounded transition opacity-0 group-hover:opacity-100"
                         >
-                          <Edit2 className="w-3 h-3 text-sage/70" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (window.confirm("Delete this tag?")) {
-                              handleDeleteTag(tag.id)
-                            }
-                          }}
-                          className="p-1 hover:bg-red-50 rounded transition opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 className="w-3 h-3 text-red-500" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                          {isServiceLinked ? (
+                            <span title="Linked to service">
+                              <Link className="w-3.5 h-3.5 text-purple-400" />
+                            </span>
+                          ) : (
+                            <GripVertical className="w-3.5 h-3.5 text-sage/40" />
+                          )}
+
+                          {editingId === `tag-${tag.id}` && !isServiceLinked ? (
+                            <input
+                              ref={editInputRef}
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => handleRename(tag.id, editValue, 'tag')}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  handleRename(tag.id, editValue, 'tag')
+                                }
+                                if (e.key === "Escape") {
+                                  setEditingId(null)
+                                  setEditValue("")
+                                }
+                              }}
+                              className="flex-1 px-2 py-1 bg-white border border-dusty-rose/30 rounded text-sm outline-none"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            <span className={clsx(
+                              "flex-1 text-sm",
+                              hasChildren ? "font-medium text-dune" : "text-dune"
+                            )}>
+                              {tag.displayName}
+                              {hasChildren && (
+                                <span className="ml-2 text-xs text-sage/60">({tag.children?.length})</span>
+                              )}
+                            </span>
+                          )}
+
+                          <div className="flex items-center gap-1">
+                            {isServiceLinked && (
+                              <span className="text-xs text-purple-400 mr-1" title="Synced from services">
+                                <Lock className="w-3 h-3 inline" />
+                              </span>
+                            )}
+                            {selectedItems.has(`tag-${tag.id}`) && (
+                              <Check className="w-3.5 h-3.5 text-dusty-rose" />
+                            )}
+                            {!isServiceLinked && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setEditingId(`tag-${tag.id}`)
+                                    setEditValue(tag.displayName)
+                                  }}
+                                  className="p-1 hover:bg-sage/10 rounded transition opacity-0 group-hover:opacity-100"
+                                >
+                                  <Edit2 className="w-3 h-3 text-sage/70" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (window.confirm("Delete this tag?")) {
+                                      handleDeleteTag(tag.id)
+                                    }
+                                  }}
+                                  className="p-1 hover:bg-red-50 rounded transition opacity-0 group-hover:opacity-100"
+                                >
+                                  <Trash2 className="w-3 h-3 text-red-500" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Child tags (indented) */}
+                        {hasChildren && tag.children?.map((childTag) => {
+                          const isChildServiceLinked = !!(childTag.serviceCategoryId || childTag.serviceId)
+
+                          return (
+                            <div
+                              key={childTag.id}
+                              className={clsx(
+                                "group flex items-center gap-3 px-3 py-2 rounded-xl transition ml-6",
+                                isChildServiceLinked ? "cursor-default" : "cursor-move",
+                                selectedItems.has(`tag-${childTag.id}`)
+                                  ? "bg-dusty-rose/10 border border-dusty-rose/30"
+                                  : "hover:bg-sage/5"
+                              )}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (e.shiftKey || e.metaKey || e.ctrlKey) {
+                                  toggleSelection(`tag-${childTag.id}`)
+                                } else {
+                                  setSelectedItems(new Set([`tag-${childTag.id}`]))
+                                }
+                              }}
+                            >
+                              {isChildServiceLinked ? (
+                                <span title="Linked to service">
+                                  <Link className="w-3.5 h-3.5 text-purple-400" />
+                                </span>
+                              ) : (
+                                <GripVertical className="w-3.5 h-3.5 text-sage/40" />
+                              )}
+
+                              <span className="flex-1 text-sm text-dune/80">{childTag.displayName}</span>
+
+                              <div className="flex items-center gap-1">
+                                {isChildServiceLinked && (
+                                  <span className="text-xs text-purple-400" title="Synced from services">
+                                    <Lock className="w-3 h-3 inline" />
+                                  </span>
+                                )}
+                                {selectedItems.has(`tag-${childTag.id}`) && (
+                                  <Check className="w-3.5 h-3.5 text-dusty-rose" />
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </Fragment>
+                    )
+                  })}
                 </div>
               )}
             </div>

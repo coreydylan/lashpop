@@ -146,30 +146,63 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     if (!scrollContainer) return
 
     // Calculate the scale needed to fill viewport width
-    // Current arch width is 280px, viewport is typically 375-428px
+    // The arch image is 280px wide but the actual arch base is narrower (~210px)
+    // We need to overshoot so the arch base fills the viewport
     const viewportWidth = window.innerWidth
-    const archWidth = 280
-    const targetScale = viewportWidth / archWidth // ~1.35-1.5x
+    const archBaseWidth = 210 // Approximate width of the arch base (narrower than full image)
+    const targetScale = (viewportWidth / archBaseWidth) * 1.05 // Overshoot by 5% to ensure full coverage
 
-    // Create scroll-triggered zoom animation
-    // Starts later (when arch center hits viewport center) and ends when bottom meets bottom
-    const trigger = ScrollTrigger.create({
-      trigger: mobileArchRef.current,
-      scroller: scrollContainer,
-      start: 'center center', // Start when center of arch is at center of viewport
-      end: 'bottom bottom', // End exactly when bottom of arch aligns with bottom of viewport
-      scrub: 0.3, // Slightly tighter scrubbing for more responsive feel
-      onUpdate: (self) => {
-        if (mobileArchImageRef.current) {
-          // Interpolate scale from 1 to targetScale based on scroll progress
-          const scale = 1 + (self.progress * (targetScale - 1))
-          mobileArchImageRef.current.style.transform = `scale(${scale})`
-        }
+    // Store ref for closure
+    const imageRef = mobileArchImageRef.current
+    const triggerRef = mobileArchRef.current
+
+    // Set initial state
+    gsap.set(imageRef, { scale: 1 })
+
+    // Create the scroll-triggered tween directly
+    // scrub: 1 means it takes 1 second to "catch up" - provides buttery smoothness
+    const tween = gsap.to(imageRef, {
+      scale: targetScale,
+      ease: 'none', // Linear progress mapping to scroll
+      scrollTrigger: {
+        trigger: triggerRef,
+        scroller: scrollContainer,
+        start: 'top 33%', // Start when TOP of arch container is 1/3 from top of viewport
+        end: 'bottom bottom', // End when bottom of arch aligns with bottom of viewport
+        scrub: 1, // 1 second smoothing - the key to buttery animation
+        invalidateOnRefresh: true,
       }
     })
 
+    // Handle resize to recalculate scale
+    const handleResize = () => {
+      const newViewportWidth = window.innerWidth
+      const newTargetScale = (newViewportWidth / archBaseWidth) * 1.05
+      // Kill old tween and create new one with updated scale
+      tween.scrollTrigger?.kill()
+      tween.kill()
+
+      gsap.set(imageRef, { scale: 1 })
+      gsap.to(imageRef, {
+        scale: newTargetScale,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: triggerRef,
+          scroller: scrollContainer,
+          start: 'top 33%',
+          end: 'bottom bottom',
+          scrub: 1,
+          invalidateOnRefresh: true,
+        }
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+
     return () => {
-      trigger.kill()
+      tween.scrollTrigger?.kill()
+      tween.kill()
+      window.removeEventListener('resize', handleResize)
     }
   }, [isMobile])
 
@@ -258,27 +291,27 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         >
           <motion.div
             className="relative"
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
           >
             {/* Decorative background blur */}
             <div className="absolute -inset-6 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
 
-            {/* Arch image container with zoom transform */}
+            {/* Arch image container with zoom transform - GSAP controls scale */}
             <div
               ref={mobileArchImageRef}
               className="relative will-change-transform"
-              style={{ transformOrigin: 'center bottom' }}
+              style={{ transformOrigin: 'center bottom', transform: 'scale(1)' }}
             >
               <Image
                 src="/lashpop-images/emily-arch.png"
                 alt="Emily in decorative arch"
                 width={280}
                 height={360}
-                style={{ width: '100%', height: 'auto' }}
-                className="relative z-10 drop-shadow-xl max-w-[280px]"
+                style={{ width: '280px', height: 'auto' }}
+                className="relative z-10 drop-shadow-xl"
                 priority
               />
             </div>

@@ -4,13 +4,17 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { createPortal } from "react-dom"
-import { Plus } from "lucide-react"
+import { Plus, ChevronRight } from "lucide-react"
 import clsx from "clsx"
 
 interface Tag {
   id: string
   name: string
   displayName: string
+  parentTagId?: string | null
+  serviceCategoryId?: string | null
+  serviceId?: string | null
+  children?: Tag[]
 }
 
 interface TagCategory {
@@ -19,6 +23,7 @@ interface TagCategory {
   displayName: string
   color?: string
   tags: Tag[]
+  hierarchicalTags?: Tag[] // New: nested structure
 }
 
 interface SelectedTag extends Tag {
@@ -40,6 +45,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
   const [teamMembers, setTeamMembers] = useState<any[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [expandedCategory, setExpandedCategory] = useState<TagCategory | null>(null)
+  const [expandedParentTag, setExpandedParentTag] = useState<Tag | null>(null) // For hierarchical tags
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
   const buttonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -58,7 +64,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
         left: rect.left
       })
     }
-  }, [isOpen, expandedCategory])
+  }, [isOpen, expandedCategory, expandedParentTag])
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -69,6 +75,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
           buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setIsOpen(false)
         setExpandedCategory(null)
+        setExpandedParentTag(null)
       }
     }
 
@@ -143,6 +150,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
     // Close dropdown after adding
     setIsOpen(false)
     setExpandedCategory(null)
+    setExpandedParentTag(null)
   }, [selectedTags, onTagsChange])
 
   const handleAddTeamMember = useCallback((member: any) => {
@@ -165,6 +173,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
     // Close dropdown after adding
     setIsOpen(false)
     setExpandedCategory(null)
+    setExpandedParentTag(null)
   }, [selectedTags, onTagsChange])
 
   // Combine team category with tag categories
@@ -186,6 +195,19 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
   ]
 
   const isTeamCategory = expandedCategory?.id === 'team'
+
+  // Check if a category has hierarchical tags (parent tags with children)
+  const hasHierarchy = (category: TagCategory) => {
+    return category.hierarchicalTags && category.hierarchicalTags.some(t => t.children && t.children.length > 0)
+  }
+
+  // Get tags to display - use hierarchical if available
+  const getDisplayTags = (category: TagCategory): Tag[] => {
+    if (hasHierarchy(category) && category.hierarchicalTags) {
+      return category.hierarchicalTags
+    }
+    return category.tags
+  }
 
   const renderDropdown = () => {
     if (!isOpen || typeof window === 'undefined') return null
@@ -227,8 +249,8 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
           </div>
         )}
 
-        {/* Tags view */}
-        {expandedCategory && (
+        {/* Tags view - Level 1 (parent tags or flat tags) */}
+        {expandedCategory && !expandedParentTag && (
           <div className="py-1">
             {/* Back button */}
             <button
@@ -239,24 +261,34 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
               <span className="text-sm font-semibold text-dune">{expandedCategory.displayName}</span>
             </button>
 
-            {/* Tags list */}
-            {expandedCategory.tags.map((tag: any) => {
+            {/* Tags list - show hierarchical or flat */}
+            {getDisplayTags(expandedCategory).map((tag: Tag) => {
               const isSelected = selectedTags.some((t) => t.id === tag.id)
+              const hasChildren = tag.children && tag.children.length > 0
 
               return (
                 <button
                   key={tag.id}
-                  onClick={() => isTeamCategory ? handleAddTeamMember(tag) : handleAddTag(expandedCategory, tag)}
-                  disabled={isSelected}
+                  onClick={() => {
+                    if (isTeamCategory) {
+                      handleAddTeamMember(tag)
+                    } else if (hasChildren) {
+                      // Navigate to children
+                      setExpandedParentTag(tag)
+                    } else {
+                      handleAddTag(expandedCategory, tag)
+                    }
+                  }}
+                  disabled={isSelected && !hasChildren}
                   className={clsx(
                     "w-full flex items-center gap-2 px-4 py-2 text-left transition-colors",
-                    isSelected ? "bg-dusty-rose/10 cursor-not-allowed" : "hover:bg-warm-sand/50"
+                    isSelected && !hasChildren ? "bg-dusty-rose/10 cursor-not-allowed" : "hover:bg-warm-sand/50"
                   )}
                 >
                   {/* Avatar for team members */}
                   {isTeamCategory && (
                     <div className="relative w-6 h-6 rounded-full overflow-hidden border border-cream/30 flex-shrink-0 bg-warm-sand/40">
-                      {!tag.imageUrl || tag.imageUrl.includes('placeholder') ? (
+                      {!(tag as any).imageUrl || (tag as any).imageUrl.includes('placeholder') ? (
                         <div className="w-full h-full flex items-center justify-center">
                           <svg className="w-4 h-4 text-sage/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -264,7 +296,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
                         </div>
                       ) : (
                         <img
-                          src={tag.imageUrl}
+                          src={(tag as any).imageUrl}
                           alt={tag.displayName}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -283,12 +315,84 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
                   {/* Name */}
                   <span className={clsx(
                     "text-sm flex-1",
-                    isSelected ? "text-dusty-rose/60 font-medium" : "text-dune"
+                    isSelected && !hasChildren ? "text-dusty-rose/60 font-medium" : "text-dune"
                   )}>
                     {tag.displayName}
                   </span>
 
-                  {/* Selected indicator */}
+                  {/* Children indicator or selected indicator */}
+                  {hasChildren ? (
+                    <div className="flex items-center gap-1 text-sage/60">
+                      <span className="text-xs">{tag.children?.length}</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                  ) : isSelected ? (
+                    <span className="text-xs text-dusty-rose/60">✓ Added</span>
+                  ) : null}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Child tags view - Level 2 (services under a category) */}
+        {expandedCategory && expandedParentTag && (
+          <div className="py-1">
+            {/* Back button to parent */}
+            <button
+              onClick={() => setExpandedParentTag(null)}
+              className="w-full flex items-center gap-2 px-4 py-2 text-left hover:bg-warm-sand/50 transition-colors border-b border-sage/10"
+            >
+              <span className="text-sm text-sage">←</span>
+              <span className="text-sm font-semibold text-dune">{expandedParentTag.displayName}</span>
+            </button>
+
+            {/* Option to tag with parent category */}
+            {(() => {
+              const isParentSelected = selectedTags.some((t) => t.id === expandedParentTag.id)
+              return (
+                <button
+                  onClick={() => handleAddTag(expandedCategory, expandedParentTag)}
+                  disabled={isParentSelected}
+                  className={clsx(
+                    "w-full flex items-center gap-2 px-4 py-2 text-left transition-colors border-b border-sage/5",
+                    isParentSelected ? "bg-dusty-rose/10 cursor-not-allowed" : "hover:bg-warm-sand/50"
+                  )}
+                >
+                  <span className={clsx(
+                    "text-sm flex-1 italic",
+                    isParentSelected ? "text-dusty-rose/60" : "text-sage"
+                  )}>
+                    Tag as &ldquo;{expandedParentTag.displayName}&rdquo; (all)
+                  </span>
+                  {isParentSelected && (
+                    <span className="text-xs text-dusty-rose/60">✓ Added</span>
+                  )}
+                </button>
+              )
+            })()}
+
+            {/* Child tags list */}
+            {expandedParentTag.children?.map((childTag: Tag) => {
+              const isSelected = selectedTags.some((t) => t.id === childTag.id)
+
+              return (
+                <button
+                  key={childTag.id}
+                  onClick={() => handleAddTag(expandedCategory, childTag)}
+                  disabled={isSelected}
+                  className={clsx(
+                    "w-full flex items-center gap-2 px-4 py-2 text-left transition-colors",
+                    isSelected ? "bg-dusty-rose/10 cursor-not-allowed" : "hover:bg-warm-sand/50"
+                  )}
+                >
+                  <span className={clsx(
+                    "text-sm flex-1",
+                    isSelected ? "text-dusty-rose/60 font-medium" : "text-dune"
+                  )}>
+                    {childTag.displayName}
+                  </span>
+
                   {isSelected && (
                     <span className="text-xs text-dusty-rose/60">✓ Added</span>
                   )}

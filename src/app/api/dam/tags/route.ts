@@ -2,7 +2,23 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { tags } from "@/db/schema/tags"
-import { asc, eq } from "drizzle-orm"
+import { asc, eq, isNull } from "drizzle-orm"
+
+// Tag type with optional children for hierarchy
+interface TagWithChildren {
+  id: string
+  name: string
+  displayName: string
+  description: string | null
+  sortOrder: number
+  parentTagId: string | null
+  serviceCategoryId: string | null
+  serviceId: string | null
+  categoryId: string
+  createdAt: Date
+  updatedAt: Date
+  children?: TagWithChildren[]
+}
 
 export async function GET() {
   try {
@@ -14,16 +30,44 @@ export async function GET() {
       .from(tagCategories)
       .orderBy(asc(tagCategories.sortOrder))
 
-    // Fetch all tags
+    // Fetch all tags with hierarchy info
     const allTags = await db.select().from(tags).orderBy(asc(tags.sortOrder))
 
-    // Group tags by category, ensuring boolean fields are included
-    const categoriesWithTags = categories.map((category) => ({
-      ...category,
-      isCollection: category.isCollection || false,
-      isRating: category.isRating || false,
-      tags: allTags.filter((tag) => tag.categoryId === category.id)
-    }))
+    // Build hierarchical structure for tags
+    const buildTagHierarchy = (categoryTags: typeof allTags): TagWithChildren[] => {
+      // First, get all top-level tags (no parent)
+      const topLevelTags = categoryTags.filter(tag => !tag.parentTagId)
+
+      // Build children for each top-level tag
+      return topLevelTags.map(parentTag => {
+        const children = categoryTags
+          .filter(tag => tag.parentTagId === parentTag.id)
+          .map(childTag => ({
+            ...childTag,
+            children: [] // Service-level tags don't have children
+          }))
+
+        return {
+          ...parentTag,
+          children: children.length > 0 ? children : undefined
+        }
+      })
+    }
+
+    // Group tags by category with hierarchy
+    const categoriesWithTags = categories.map((category) => {
+      const categoryTags = allTags.filter((tag) => tag.categoryId === category.id)
+      const hierarchicalTags = buildTagHierarchy(categoryTags)
+
+      return {
+        ...category,
+        isCollection: category.isCollection || false,
+        isRating: category.isRating || false,
+        // Include both flat list (for backwards compatibility) and hierarchical
+        tags: categoryTags,
+        hierarchicalTags
+      }
+    })
 
     return NextResponse.json({ categories: categoriesWithTags }, {
       headers: {

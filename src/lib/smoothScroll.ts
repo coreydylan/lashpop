@@ -1,8 +1,16 @@
 export const getScroller = (): Window | Element => {
   if (typeof document === 'undefined') return window; // SSR safety
-  const container = document.querySelector('.mobile-snap-container');
-  const isMobileContainerActive = container && getComputedStyle(container).display !== 'none';
-  return isMobileContainerActive ? container : window;
+  // Check for mobile scroll container (used in landing page v2)
+  const mobileScrollContainer = document.querySelector('.mobile-scroll-container');
+  if (mobileScrollContainer && getComputedStyle(mobileScrollContainer).display !== 'none') {
+    return mobileScrollContainer;
+  }
+  // Fallback to old mobile-snap-container if it exists
+  const snapContainer = document.querySelector('.mobile-snap-container');
+  if (snapContainer && getComputedStyle(snapContainer).display !== 'none') {
+    return snapContainer;
+  }
+  return window;
 };
 
 // Cubic easing for a more natural, less "sticky" feel
