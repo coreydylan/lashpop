@@ -91,7 +91,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
       setFAQInteracting(true)
 
       setTimeout(() => {
-        const headerHeight = 80 // Fixed header height
+        const headerHeight = 44 // Mobile header height (44px)
         const stickyChipsHeight = stickyHeaderRef.current?.offsetHeight || 60
         const totalOffset = headerHeight + stickyChipsHeight + 8
 
@@ -170,9 +170,10 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     <section ref={ref} className="pt-12 pb-20 bg-cream">
       <div className="container max-w-4xl">
         {/* Category Sorter - Beautiful Frosted Glass Chips */}
+        {/* On mobile: sticky at top-[44px] to align seamlessly with bottom of mobile header (44px height) */}
         <motion.div
           ref={stickyHeaderRef}
-          className="mb-6 md:mb-12 sticky md:static top-[80px] z-50 glass backdrop-blur-md pt-4 pb-4 -mt-4 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
+          className="mb-6 md:mb-12 sticky md:static top-[44px] z-50 glass backdrop-blur-md pt-4 pb-4 -mt-4 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}

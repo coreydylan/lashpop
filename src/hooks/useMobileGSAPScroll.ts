@@ -22,25 +22,38 @@ interface UseMobileGSAPScrollOptions {
   onSectionChange?: (sectionId: string, index: number) => void
 }
 
-// Get default config for content-heavy sections (computed at runtime to avoid SSR issues)
+// Get default config for ALL sections (computed at runtime to avoid SSR issues)
+// More sensitive thresholds (0.7+) = more likely to snap
 const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
   // targetY = section.offsetTop - anchorOffset
   // Higher anchorOffset = scroll LESS = section top appears LOWER on viewport
   // Lower anchorOffset = scroll MORE = section top goes UP/off screen
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+  const headerHeight = 44 // Mobile header height
 
   return {
-    // Welcome: original was 0, was too low. Try small positive to scroll less.
-    'welcome': { threshold: 0.5, anchorOffset: vh * 0.18 },
+    // Hero: snap to top of section (no offset needed)
+    'hero': { threshold: 0.7, anchorOffset: 0 },
 
-    // Team, Instagram, Reviews: original was 33%, try 15% to scroll a bit more
-    'team': { threshold: 0.6, anchorOffset: vh * 0.15 },
-    'instagram': { threshold: 0.6, anchorOffset: vh * 0.15 },
-    'reviews': { threshold: 0.6, anchorOffset: vh * 0.10 },
-    // FAQ: snap so chips dock right below header (80px from top)
-    'faq': { threshold: 0.5, anchorOffset: 80 },
+    // Welcome: position content comfortably in view
+    'welcome': { threshold: 0.7, anchorOffset: vh * 0.12 },
+
+    // Founder letter: position for comfortable reading
+    'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
+
+    // Team, Instagram, Reviews: position with header visible
+    'team': { threshold: 0.7, anchorOffset: headerHeight + 10 },
+    'instagram': { threshold: 0.7, anchorOffset: headerHeight + 10 },
+    'reviews': { threshold: 0.7, anchorOffset: headerHeight + 10 },
+
+    // FAQ: snap so tag selector docks right below mobile header (44px)
+    'faq': { threshold: 0.7, anchorOffset: headerHeight },
+
     // Map: snap to top so full viewport map + card is visible
-    'map': { threshold: 0.5, anchorOffset: 0 },
+    'map': { threshold: 0.7, anchorOffset: 0 },
+
+    // Footer: snap to show footer content
+    'footer': { threshold: 0.6, anchorOffset: 0 },
   }
 }
 
@@ -247,17 +260,17 @@ export function useMobileGSAPScroll({
         clearTimeout(scrollEndTimer)
       }
 
-      // Check for snap after scrolling stops
-      scrollEndTimer = setTimeout(checkForSnap, 150)
+      // Check for snap after scrolling stops - reduced delay for more responsive snapping
+      scrollEndTimer = setTimeout(checkForSnap, 100)
     }
 
     // Handle touch end for more responsive snapping on mobile
     const handleTouchEnd = () => {
-      // Give a bit more time for momentum to settle on touch
+      // Reduced delay for more responsive snapping after touch
       if (scrollEndTimer) {
         clearTimeout(scrollEndTimer)
       }
-      scrollEndTimer = setTimeout(checkForSnap, 200)
+      scrollEndTimer = setTimeout(checkForSnap, 120)
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
