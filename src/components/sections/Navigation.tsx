@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { usePanelStack } from '@/contexts/PanelStackContext'
+import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
 
 const navItems = [
@@ -22,6 +23,7 @@ export function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const { actions } = usePanelStack()
+  const { registerLogoClick } = useDevMode()
   const pathname = usePathname()
 
   // Check if mobile
@@ -44,6 +46,9 @@ export function Navigation() {
   const handleNavClick = (item: any, e: React.MouseEvent) => {
     // Handle Logo click (home link)
     if (item.href === '/') {
+      // Register click for dev mode activation (5 clicks = activate)
+      registerLogoClick()
+
       // If we're on the landing page (v2) or home page, scroll to top
       if (pathname === '/landing-v2' || pathname === '/') {
         e.preventDefault()

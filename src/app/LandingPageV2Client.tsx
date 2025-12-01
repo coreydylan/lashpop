@@ -3,6 +3,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorContext';
 import { PanelStackProvider } from '@/contexts/PanelStackContext';
+import { VagaroWidgetProvider } from '@/contexts/VagaroWidgetContext';
+import { DevModeProvider } from '@/contexts/DevModeContext';
+import { DevModeOverlay } from '@/components/dev-mode';
 import { DrawerProvider } from '@/components/drawers/DrawerContext';
 import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
@@ -43,6 +46,10 @@ interface Service {
   categorySlug: string | null;
   subcategoryName: string | null;
   subcategorySlug: string | null;
+  // New fields for key image and demo mode
+  keyImageAssetId?: string | null;
+  useDemoPhotos?: boolean;
+  vagaroServiceCode?: string | null;
 }
 
 interface TeamMember {
@@ -216,8 +223,10 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
   });
 
   return (
+    <DevModeProvider>
     <BookingOrchestratorProvider>
       <PanelStackProvider services={services}>
+        <VagaroWidgetProvider>
         <DrawerProvider>
           <PanelManagerProvider>
             <div className={`min-h-screen relative theme-v2 ${isMobile ? '' : 'bg-cream'}`}>
@@ -350,8 +359,12 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
           </div>
         </PanelManagerProvider>
       </DrawerProvider>
+      {/* Dev Mode Overlay - activated by clicking logo 5 times */}
+      <DevModeOverlay />
+      </VagaroWidgetProvider>
       </PanelStackProvider>
     </BookingOrchestratorProvider>
+    </DevModeProvider>
   );
 }
 

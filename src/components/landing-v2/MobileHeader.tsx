@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { usePanelStack } from '@/contexts/PanelStackContext'
+import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
 
 // Section mapping for display names and navigation
@@ -47,6 +48,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { actions } = usePanelStack()
+  const { registerLogoClick } = useDevMode()
 
   // Get current section label for display
   const currentSectionLabel = SECTIONS.find(s => s.id === currentSection)?.label || ''
@@ -130,15 +132,18 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [isMenuOpen, getScrollContainer])
 
-  // Handle logo click - scroll to top
+  // Handle logo click - scroll to top + register for dev mode
   const handleLogoClick = useCallback(() => {
+    // Register click for dev mode activation (5 clicks = activate)
+    registerLogoClick()
+
     const scrollContainer = getScrollContainer()
     if (scrollContainer) {
       scrollContainer.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
       smoothScrollTo(0, 1000, getScroller())
     }
-  }, [getScrollContainer])
+  }, [getScrollContainer, registerLogoClick])
 
   // Handle menu item click
   const handleMenuItemClick = useCallback((item: MenuItem) => {

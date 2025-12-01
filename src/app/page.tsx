@@ -1,5 +1,5 @@
 import { getAllServices } from "@/actions/services"
-import { getTeamMembers } from "@/actions/team"
+import { getTeamMembersWithServices } from "@/actions/team"
 import { getHomepageReviews, getReviewStats } from "@/actions/reviews"
 import { getInstagramPosts } from "@/actions/instagram"
 import { getServiceCategories } from "@/actions/categories"
@@ -33,8 +33,8 @@ export default async function HomePage() {
     vagaroServiceCode: service.vagaroServiceCode ?? undefined,
   }))
 
-  // Fetch team members from database
-  const teamMembers = await getTeamMembers()
+  // Fetch team members from database with their service categories
+  const teamMembers = await getTeamMembersWithServices()
 
   // Transform database format to component format
   const formattedTeamMembers = teamMembers.map((member, index) => ({
@@ -46,6 +46,7 @@ export default async function HomePage() {
     image: member.imageUrl,
     phone: member.phone,
     specialties: member.specialties as string[],
+    serviceCategories: member.serviceCategories, // Service categories from Vagaro
     bio: member.bio || undefined,
     quote: member.quote || undefined,
     availability: member.availability || undefined,
