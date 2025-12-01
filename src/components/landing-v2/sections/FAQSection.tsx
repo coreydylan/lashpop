@@ -47,12 +47,14 @@ function dispatchProgrammaticScroll() {
 
 export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSectionProps) {
   const ref = useRef(null)
+  const sectionRef = useRef<HTMLElement>(null)
   const faqListRef = useRef<HTMLDivElement>(null)
   const stickyHeaderRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: "-10%" })
   const [expandedIndex, setExpandedIndex] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('top-faqs')
   const [isMobile, setIsMobile] = useState(false)
+  const hasSnappedOnEntryRef = useRef(false)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -62,6 +64,52 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Entry snap: when FAQ section enters viewport from scrolling down, snap once to dock sticky header
+  useEffect(() => {
+    if (!isMobile || !sectionRef.current) return
+
+    const section = sectionRef.current
+    const container = document.querySelector('.mobile-scroll-container')
+    if (!container) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Only snap when entering from above (scrolling down) and haven't snapped yet
+          if (entry.isIntersecting && !hasSnappedOnEntryRef.current) {
+            const rect = section.getBoundingClientRect()
+            // Only snap if section top is near the viewport top (entering, not already scrolled into)
+            if (rect.top > -100 && rect.top < 200) {
+              hasSnappedOnEntryRef.current = true
+              dispatchProgrammaticScroll()
+
+              // Calculate snap position: dock sticky header at 44px below mobile header
+              const headerHeight = 44
+              const stickyChipsHeight = stickyHeaderRef.current?.offsetHeight || 52
+              // Position so sticky header docks right at mobile header bottom
+              const targetScrollY = section.offsetTop - headerHeight + 16
+
+              container.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+            }
+          }
+
+          // Reset flag when section leaves viewport (so we can snap again on re-entry)
+          if (!entry.isIntersecting) {
+            hasSnappedOnEntryRef.current = false
+          }
+        })
+      },
+      {
+        root: container,
+        threshold: [0, 0.1],
+        rootMargin: '-44px 0px 0px 0px' // Account for mobile header
+      }
+    )
+
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [isMobile])
 
   // Scroll to align first FAQ card with bottom of sticky header when category changes
   const handleCategoryChange = (categoryId: string) => {
@@ -178,21 +226,29 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
   }
 
   return (
-    <section ref={ref} className="pt-12 pb-20 bg-cream">
+    <section ref={(el) => { (ref as any).current = el; sectionRef.current = el; }} className="pt-8 pb-20 bg-cream">
       <div className="container max-w-4xl">
-        {/* Category Sorter - Beautiful Frosted Glass Chips */}
-        {/* On mobile: sticky at top-[44px] to align seamlessly with bottom of mobile header (44px height) */}
+        {/* Category Sorter - Compact Frosted Glass Chips */}
+        {/* On mobile: sticky at top-[44px] with gradient fade at bottom */}
         <motion.div
           ref={stickyHeaderRef}
-          className="mb-6 md:mb-12 sticky md:static top-[44px] z-50 glass backdrop-blur-md pt-4 pb-4 -mt-4 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
+          className="mb-4 md:mb-12 sticky md:static top-[44px] z-50 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
+          style={isMobile ? {
+            background: 'linear-gradient(180deg, rgba(250, 247, 244, 0.85) 0%, rgba(250, 247, 244, 0.85) 70%, rgba(250, 247, 244, 0) 100%)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            paddingTop: '8px',
+            paddingBottom: '16px',
+            marginTop: '-8px',
+          } : undefined}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
         >
           {/* Scrollable container for mobile */}
-          <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
+          <div className="overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
             <motion.div
-              className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-3 min-w-max md:min-w-0"
+              className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-2 md:gap-3 min-w-max md:min-w-0"
               initial={{ x: 0 }}
               animate={{
                 x: isMobile && isInView ? [0, -10, 0] : 0
@@ -219,18 +275,18 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                 >
                   {/* Active/Hover State Background */}
                   <div className={`absolute inset-0 rounded-full transition-opacity duration-300 ${
-                    activeCategory === category.id 
-                      ? 'bg-dusty-rose shadow-md' 
+                    activeCategory === category.id
+                      ? 'bg-dusty-rose shadow-sm'
                       : 'bg-white/50 hover:bg-white/80'
                   }`} />
-                  
-                  {/* Content */}
-                  <div className={`relative px-4 py-2 rounded-full border transition-colors duration-300 ${
+
+                  {/* Content - Compact sizing for mobile */}
+                  <div className={`relative px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-colors duration-300 ${
                     activeCategory === category.id
                       ? 'border-dusty-rose text-white'
                       : 'border-white/60 text-dune hover:border-dusty-rose/30'
                   }`}>
-                    <span className="text-sm font-medium whitespace-nowrap">
+                    <span className="text-xs md:text-sm font-medium whitespace-nowrap">
                       {category.label}
                     </span>
                   </div>

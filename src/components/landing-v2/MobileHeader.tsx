@@ -241,10 +241,10 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
             className="fixed top-0 left-0 right-0 z-50 md:hidden"
             style={{
               height: 44,
-              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 247, 244, 0.92) 100%)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              borderBottom: '1px solid rgba(161, 151, 129, 0.08)',
+              background: 'rgba(250, 247, 244, 0.85)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              borderBottom: '1px solid rgba(161, 151, 129, 0.06)',
             }}
           >
             <div className="h-full px-5 flex items-center justify-between">

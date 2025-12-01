@@ -50,9 +50,8 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     'instagram': { threshold: 0.7, anchorOffset: headerHeight + 10 },
     'reviews': { threshold: 0.7, anchorOffset: headerHeight + 10 },
 
-    // FAQ: snap once on entry to dock sticky header, then allow free scroll within
-    // anchorOffset of 12 positions sticky tab selector right below mobile header
-    'faq': { threshold: 0.7, anchorOffset: 12, snapOnceOnly: true },
+    // FAQ: disable global snap - FAQSection handles its own entry snap
+    'faq': { threshold: 0.7, anchorOffset: 12, disableSnap: true },
 
     // Map: snap to top so full viewport map + card is visible
     'map': { threshold: 0.7, anchorOffset: 0 },
