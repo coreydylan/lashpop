@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { usePanelStack } from '@/contexts/PanelStackContext'
@@ -14,6 +14,7 @@ const SECTIONS = [
   { id: 'reviews', label: 'REVIEWS', href: '#reviews' },
   { id: 'faq', label: 'FAQ', href: '#faq' },
   { id: 'map', label: 'FIND US', href: '#find-us' },
+  { id: 'footer', label: 'FIND US', href: '#find-us' }, // Footer shows same as map
 ] as const
 
 // Menu item type
@@ -81,12 +82,13 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     return () => scrollContainer.removeEventListener('scroll', checkVisibility)
   }, [getScrollContainer])
 
-  // Update menu position when opened
-  useEffect(() => {
+  // Update menu position when opened - use layout effect for immediate positioning
+  useLayoutEffect(() => {
     if (isMenuOpen && menuButtonRef.current) {
+      // Calculate position immediately before paint
       const rect = menuButtonRef.current.getBoundingClientRect()
       setMenuPosition({
-        top: rect.bottom + 12,
+        top: rect.bottom + 8,
         right: window.innerWidth - rect.right
       })
     }
@@ -164,16 +166,18 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
 
   // Render the dropdown menu via portal
   const renderMenu = () => {
-    if (!isMenuOpen || typeof window === 'undefined') return null
+    if (typeof window === 'undefined') return null
+    if (!isMenuOpen) return null
 
     const menu = (
       <motion.div
+        key="mobile-header-menu"
         ref={menuRef}
         initial={{ opacity: 0, scale: 0.96, y: -4 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: -4 }}
         transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-        className="fixed z-[9999] rounded-xl overflow-hidden"
+        className="fixed z-[9999] rounded-xl overflow-hidden pointer-events-auto"
         style={{
           top: menuPosition.top,
           right: menuPosition.right,
@@ -187,8 +191,10 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       >
         <div className="py-1.5">
           {MENU_ITEMS.map((item, index) => {
+            // Check if this menu item matches the current section
+            // Map section also activates for footer
             const isActive = item.id === currentSection ||
-              (item.id === 'instagram' && currentSection === 'instagram')
+              (item.id === 'map' && currentSection === 'footer')
 
             return (
               <motion.button

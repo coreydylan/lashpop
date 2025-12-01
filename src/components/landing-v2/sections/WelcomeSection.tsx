@@ -117,8 +117,9 @@ export function WelcomeSection() {
               Our team specializes in eyelash extensions, lash lifts and tints, microblading, permanent makeup, brow shaping and tinting, brow laminations, customized facials and HydraFacials, waxing, Botox, and permanent jewelry and more.
             </motion.p>
 
+            {/* Hidden on mobile - services panel is a bottom sheet, not a top menu */}
             <motion.div
-              className="mt-8"
+              className="mt-8 hidden md:block"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.5, ease: [0.23, 1, 0.32, 1] }}

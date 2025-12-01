@@ -1,9 +1,9 @@
 'use client'
 
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
-import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
+import { gsap, ScrollTrigger, initGSAP, initGSAPSync } from '@/lib/gsap'
 
 interface FounderLetterContent {
   greeting: string
@@ -39,6 +39,17 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
   // Mobile scroll logic - using container ref properly
   const mobileContainerRef = useRef<HTMLDivElement>(null)
+  const mobileArchRef = useRef<HTMLDivElement>(null)
+  const mobileArchImageRef = useRef<HTMLDivElement>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Track scroll progress of the container (mobile)
   const { scrollYProgress } = useScroll({
@@ -123,6 +134,45 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     }
   }, [])
 
+  // GSAP ScrollTrigger for mobile arch zoom effect
+  useEffect(() => {
+    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current) return
+
+    // Initialize GSAP synchronously for mobile scroll
+    initGSAPSync()
+
+    // Get the scroll container (mobile uses .mobile-scroll-container)
+    const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
+    if (!scrollContainer) return
+
+    // Calculate the scale needed to fill viewport width
+    // Current arch width is 280px, viewport is typically 375-428px
+    const viewportWidth = window.innerWidth
+    const archWidth = 280
+    const targetScale = viewportWidth / archWidth // ~1.35-1.5x
+
+    // Create scroll-triggered zoom animation
+    // Starts later (when arch center hits viewport center) and ends when bottom meets bottom
+    const trigger = ScrollTrigger.create({
+      trigger: mobileArchRef.current,
+      scroller: scrollContainer,
+      start: 'center center', // Start when center of arch is at center of viewport
+      end: 'bottom bottom', // End exactly when bottom of arch aligns with bottom of viewport
+      scrub: 0.3, // Slightly tighter scrubbing for more responsive feel
+      onUpdate: (self) => {
+        if (mobileArchImageRef.current) {
+          // Interpolate scale from 1 to targetScale based on scroll progress
+          const scale = 1 + (self.progress * (targetScale - 1))
+          mobileArchImageRef.current.style.transform = `scale(${scale})`
+        }
+      }
+    })
+
+    return () => {
+      trigger.kill()
+    }
+  }, [isMobile])
+
   return (
     <section className="relative w-full bg-cream">
 
@@ -201,8 +251,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         ref={mobileContainerRef}
         className="md:hidden relative z-20 bg-cream"
       >
-        {/* Emily Arch Image - Centered at top */}
-        <div className="pt-8 pb-6 flex justify-center">
+        {/* Emily Arch Image - Centered at top with scroll-driven zoom */}
+        <div
+          ref={mobileArchRef}
+          className="pt-8 pb-6 flex justify-center overflow-hidden"
+        >
           <motion.div
             className="relative"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -213,8 +266,12 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             {/* Decorative background blur */}
             <div className="absolute -inset-6 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
 
-            {/* Arch image */}
-            <div className="relative">
+            {/* Arch image container with zoom transform */}
+            <div
+              ref={mobileArchImageRef}
+              className="relative will-change-transform"
+              style={{ transformOrigin: 'center bottom' }}
+            >
               <Image
                 src="/lashpop-images/emily-arch.png"
                 alt="Emily in decorative arch"

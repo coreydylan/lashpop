@@ -83,11 +83,17 @@
 
   /*
    * MOBILE HERO TRANSPARENCY
-   * On mobile, body must be transparent so the fixed MobileHeroBackground (z-0) shows through
-   * the scroll container and content wrapper (z-10).
+   * On mobile, we need a layered approach:
+   * - html: cream background (fallback for areas below MobileHeroBackground)
+   * - body: transparent so fixed MobileHeroBackground (z-0) shows through
+   * - scroll container: transparent to see through to MobileHeroBackground
    */
   @media (max-width: 767px) {
-    html, body {
+    html {
+      background: rgb(var(--cream)) !important;
+    }
+
+    body {
       background: transparent !important;
     }
 

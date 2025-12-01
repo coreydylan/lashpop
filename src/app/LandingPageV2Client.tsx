@@ -172,8 +172,10 @@ const mobileScrollStyles = `
 
     /* Allow taller sections to expand naturally */
     .mobile-section[data-section-id="team"],
+    .mobile-section[data-section-id="instagram"],
     .mobile-section[data-section-id="reviews"],
-    .mobile-section[data-section-id="faq"] {
+    .mobile-section[data-section-id="faq"],
+    .mobile-section[data-section-id="map"] {
       min-height: auto;
       padding-bottom: 60px;
     }
@@ -217,8 +219,8 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     enabled: isMobile,
     sectionSelector: '.mobile-section',
     containerSelector: '.mobile-scroll-container',
-    snapThreshold: 0.4, // Snap when within 40% of section boundary - more aggressive anchoring
-    snapDuration: 0.4,  // Slightly faster snap for snappier feel
+    snapThreshold: 0.55, // Snap when within 55% of section boundary - more aggressive for magical feel
+    snapDuration: 0.35,  // Snappier animation (research suggests 200-400ms ideal)
     onSectionChange: handleSectionChange
   });
 

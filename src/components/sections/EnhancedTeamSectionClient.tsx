@@ -340,13 +340,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     <>
       <section
         ref={sectionRef}
-        className="py-20 bg-cream overflow-hidden"
+        className="py-20 bg-cream overflow-x-hidden"
       >
         {/* Mobile Carousel View */}
         {isMobile ? (
           <div className="relative w-full">
-            {/* Embla Viewport */}
-            <div className="overflow-hidden" ref={emblaRef}>
+            {/* Embla Viewport - py-4 prevents card shadow/transform clipping */}
+            <div className="overflow-hidden py-4" ref={emblaRef}>
               {/* Embla Container */}
               <div className="flex touch-pan-y gap-4 px-4">
                 {teamMembers.map((member, index) => {
@@ -358,7 +358,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                   return (
                     <motion.div
                       key={member.id}
-                      className="flex-[0_0_auto] w-72 cursor-grab active:cursor-grabbing"
+                      className="flex-[0_0_auto] w-[330px] cursor-grab active:cursor-grabbing"
                       initial={{ opacity: 0, x: 50 }}
                       animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
                       transition={{
@@ -368,8 +368,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       }}
                       onClick={() => handleMemberClick(member, index)}
                     >
-                      {/* Clean Card Design - Taller format */}
-                      <div className="relative h-[420px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
+                      {/* Clean Card Design - Taller format (~15% larger on mobile) */}
+                      <div className="relative h-[483px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
                         {/* Clear Background Image */}
                         <div className="absolute inset-0">
                           <Image

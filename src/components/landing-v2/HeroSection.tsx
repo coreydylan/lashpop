@@ -208,20 +208,29 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               transition={{ delay: 0.7, duration: 0.8 }}
               className="mx-auto flex w-full max-w-[300px] flex-col gap-3"
             >
+              {/* Book Now - Primary frosted glass button with dusty rose fill */}
               <button
                 onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' })}
-                className="w-full py-4 px-6 rounded-2xl bg-dusty-rose text-white font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+                className="relative group w-full"
               >
-                Book Now
+                <div className="absolute inset-0 rounded-full bg-dusty-rose/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
+                <div className="relative py-3.5 px-6 rounded-full bg-dusty-rose/90 backdrop-blur-md border border-dusty-rose/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all">
+                  <span className="font-medium text-base text-white">Book Now</span>
+                </div>
               </button>
 
+              {/* Discover Your Look - Frosted glass secondary button */}
               <button
                 onClick={() => panelActions.openPanel('discovery', {})}
-                className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+                className="relative group w-full"
               >
-                Discover Your Look
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
+                <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all group-hover:bg-white/60">
+                  <span className="font-medium text-base text-dune">Discover Your Look</span>
+                </div>
               </button>
 
+              {/* Reviews chip - Frosted glass style matching other chips */}
               {totalReviews > 0 && (
                 <button
                   onClick={() => {
@@ -230,32 +239,39 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                       reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
                   }}
-                  className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm active:scale-[0.98] transition-transform"
+                  className="relative group w-full"
                 >
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <GoogleLogoCompact />
-                      <YelpLogoCompact />
-                      <VagaroLogoCompact />
+                  <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
+                  <div className="relative py-3 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all group-hover:bg-white/60">
+                    <div className="flex items-center justify-center gap-2.5">
+                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10">
+                        <GoogleLogoCompact />
+                        <YelpLogoCompact />
+                        <VagaroLogoCompact />
+                      </div>
+                      <span className="font-semibold text-sm text-dune">{totalReviews.toLocaleString()}</span>
+                      <div className="flex items-center -space-x-0.5">
+                        {[...Array(5)].map((_, i) => (
+                          <svg key={i} className="w-3.5 h-3.5 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <span className="text-xs text-dune/60 font-medium">Reviews</span>
                     </div>
-                    <span className="font-semibold">{totalReviews.toLocaleString()}</span>
-                    <div className="flex items-center -space-x-0.5">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-sm text-dune/70">Reviews</span>
                   </div>
                 </button>
               )}
 
-              <div className="w-full py-4 px-6 rounded-2xl bg-white border border-dusty-rose/30 text-dune font-medium text-base shadow-sm">
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-terracotta">Award Winning</span>
-                  <span className="text-dune/70">•</span>
-                  <span>Best Lash Studio</span>
+              {/* Award badge - Frosted glass chip */}
+              <div className="relative group w-full">
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
+                <div className="relative py-2.5 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)]">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-sm font-medium text-terracotta">Award Winning</span>
+                    <div className="h-3.5 w-px bg-gradient-to-b from-transparent via-dune/20 to-transparent" />
+                    <span className="text-sm font-medium text-dune/80">Best Lash Studio</span>
+                  </div>
                 </div>
               </div>
             </motion.div>

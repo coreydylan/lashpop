@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
 
@@ -30,25 +30,16 @@ interface FAQSectionProps {
   featuredItems: FAQWithCategory[]
 }
 
-// Custom event to signal FAQ interaction state changes
-const FAQ_INTERACTION_EVENT = 'faq-interaction-change'
-
-export function dispatchFAQInteraction(isInteracting: boolean) {
-  window.dispatchEvent(new CustomEvent(FAQ_INTERACTION_EVENT, {
-    detail: { isInteracting }
-  }))
-}
-
 export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSectionProps) {
   const ref = useRef(null)
+  const sectionRef = useRef<HTMLElement>(null)
   const faqListRef = useRef<HTMLDivElement>(null)
   const stickyHeaderRef = useRef<HTMLDivElement>(null)
+  const hasSnappedOnEntryRef = useRef(false)
   const isInView = useInView(ref, { once: true, margin: "-10%" })
   const [expandedIndex, setExpandedIndex] = useState<string | null>(null)
   const [activeCategory, setActiveCategory] = useState<string>('top-faqs')
   const [isMobile, setIsMobile] = useState(false)
-  const [isInteracting, setIsInteracting] = useState(false)
-  const interactionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -59,26 +50,58 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Signal interaction state to GSAP scroll system
-  const setFAQInteracting = useCallback((interacting: boolean) => {
-    setIsInteracting(interacting)
-    dispatchFAQInteraction(interacting)
-  }, [])
-
-  // Reset interaction state when user scrolls away from FAQ section
+  // Entry snap: when FAQ section enters viewport, snap ONCE to dock sticky header
+  // After this snap, user can freely scroll through FAQ cards
   useEffect(() => {
-    if (!isMobile) return
+    if (!isMobile || !sectionRef.current) return
 
-    const handleSectionChange = (e: Event) => {
-      const customEvent = e as CustomEvent<{ sectionId: string }>
-      if (customEvent.detail?.sectionId !== 'faq' && isInteracting) {
-        setFAQInteracting(false)
+    const section = sectionRef.current
+    const container = document.querySelector('.mobile-scroll-container') as HTMLElement
+    if (!container) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Snap when entering viewport and haven't snapped yet
+          if (entry.isIntersecting && !hasSnappedOnEntryRef.current) {
+            const rect = section.getBoundingClientRect()
+            // Only snap if section top is near viewport top (scrolling down into section)
+            if (rect.top > -100 && rect.top < 200) {
+              hasSnappedOnEntryRef.current = true
+
+              // Calculate snap position: dock sticky header below mobile header (44px)
+              const headerHeight = 44
+              const stickyHeight = stickyHeaderRef.current?.offsetHeight || 52
+              const buffer = 8
+
+              // Position FAQ list top right below both headers
+              if (faqListRef.current) {
+                const faqListRect = faqListRef.current.getBoundingClientRect()
+                const targetFaqListTop = headerHeight + stickyHeight + buffer
+                const scrollAdjustment = faqListRect.top - targetFaqListTop
+                const targetScrollY = container.scrollTop + scrollAdjustment
+
+                container.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+              }
+            }
+          }
+
+          // Reset flag when section leaves viewport (allows snap on re-entry)
+          if (!entry.isIntersecting) {
+            hasSnappedOnEntryRef.current = false
+          }
+        })
+      },
+      {
+        root: container,
+        threshold: [0, 0.1],
+        rootMargin: '-44px 0px 0px 0px' // Account for mobile header
       }
-    }
+    )
 
-    window.addEventListener('section-locked', handleSectionChange)
-    return () => window.removeEventListener('section-locked', handleSectionChange)
-  }, [isMobile, isInteracting, setFAQInteracting])
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [isMobile])
 
   // Scroll to align first FAQ card with bottom of sticky header when category changes
   const handleCategoryChange = (categoryId: string) => {
@@ -87,34 +110,23 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
 
     // On mobile, scroll to position first card below sticky header
     if (isMobile && faqListRef.current) {
-      // Temporarily disable GSAP snap, scroll to top of list, then re-enable interaction mode
-      setFAQInteracting(true)
-
       setTimeout(() => {
-        const headerHeight = 80 // Fixed header height
+        const headerHeight = 44 // Mobile header height
         const stickyChipsHeight = stickyHeaderRef.current?.offsetHeight || 60
         const totalOffset = headerHeight + stickyChipsHeight + 8
 
-        // Use getBoundingClientRect to get position relative to viewport
         const faqListRect = faqListRef.current!.getBoundingClientRect()
-
-        // Get the mobile scroll container
         const container = document.querySelector('.mobile-scroll-container')
         if (container) {
           const currentScrollTop = container.scrollTop
-          // Calculate target: current scroll + how far the list is from where it should be
           const targetScrollY = currentScrollTop + faqListRect.top - totalOffset
           container.scrollTo({ top: targetScrollY, behavior: 'smooth' })
         }
-      }, 50) // Small delay to let the DOM update
+      }, 50) // Small delay to let DOM update after category change
     }
   }
 
   const toggleFAQ = (id: string) => {
-    // Mark as interacting when user opens/closes FAQ cards on mobile
-    if (isMobile && !isInteracting) {
-      setFAQInteracting(true)
-    }
     setExpandedIndex(expandedIndex === id ? null : id)
   }
 
@@ -167,20 +179,35 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
   }
 
   return (
-    <section ref={ref} className="pt-12 pb-20 bg-cream">
+    <section
+      ref={(el) => {
+        (ref as React.MutableRefObject<HTMLElement | null>).current = el
+        sectionRef.current = el
+      }}
+      className="pt-8 pb-20 bg-cream"
+    >
       <div className="container max-w-4xl">
-        {/* Category Sorter - Beautiful Frosted Glass Chips */}
+        {/* Category Sorter - Compact Frosted Glass Chips */}
+        {/* On mobile: sticky at top-[44px] with gradient fade at bottom */}
         <motion.div
           ref={stickyHeaderRef}
-          className="mb-6 md:mb-12 sticky md:static top-[80px] z-50 glass backdrop-blur-md pt-4 pb-4 -mt-4 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
+          className="mb-4 md:mb-12 sticky md:static top-[44px] z-50 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
+          style={isMobile ? {
+            background: 'linear-gradient(180deg, rgba(250, 247, 244, 0.85) 0%, rgba(250, 247, 244, 0.85) 70%, rgba(250, 247, 244, 0) 100%)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            paddingTop: '8px',
+            paddingBottom: '16px',
+            marginTop: '-8px',
+          } : undefined}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
         >
           {/* Scrollable container for mobile */}
-          <div className="overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
+          <div className="overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 md:pb-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
             <motion.div
-              className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-3 min-w-max md:min-w-0"
+              className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-2 md:gap-3 min-w-max md:min-w-0"
               initial={{ x: 0 }}
               animate={{
                 x: isMobile && isInView ? [0, -10, 0] : 0
@@ -212,13 +239,13 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                       : 'bg-white/50 hover:bg-white/80'
                   }`} />
                   
-                  {/* Content */}
-                  <div className={`relative px-4 py-2 rounded-full border transition-colors duration-300 ${
+                  {/* Content - Compact sizing for mobile */}
+                  <div className={`relative px-3 py-1.5 md:px-4 md:py-2 rounded-full border transition-colors duration-300 ${
                     activeCategory === category.id
                       ? 'border-dusty-rose text-white'
                       : 'border-white/60 text-dune hover:border-dusty-rose/30'
                   }`}>
-                    <span className="text-sm font-medium whitespace-nowrap">
+                    <span className="text-xs md:text-sm font-medium whitespace-nowrap">
                       {category.label}
                     </span>
                   </div>
