@@ -14,6 +14,7 @@ export interface SectionSnapConfig {
   threshold: number      // 0-1, how sensitive (higher = more likely to snap)
   anchorOffset: number   // Pixels from top of viewport where section anchors (0 = top, negative = higher up)
   disableSnap?: boolean  // If true, don't auto-snap to this section
+  snapOnceOnly?: boolean // If true, only snap when first entering section, then allow free scroll
 }
 
 interface UseMobileGSAPScrollOptions {
@@ -49,9 +50,9 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     'instagram': { threshold: 0.7, anchorOffset: headerHeight + 10 },
     'reviews': { threshold: 0.7, anchorOffset: headerHeight + 10 },
 
-    // FAQ: DISABLE auto-snap - let user scroll freely within FAQ content
-    // Section tracking still works, just no forced snap
-    'faq': { threshold: 0.3, anchorOffset: 12, disableSnap: true },
+    // FAQ: snap once on entry to dock sticky header, then allow free scroll within
+    // anchorOffset of 12 positions sticky tab selector right below mobile header
+    'faq': { threshold: 0.7, anchorOffset: 12, snapOnceOnly: true },
 
     // Map: snap to top so full viewport map + card is visible
     'map': { threshold: 0.7, anchorOffset: 0 },
@@ -77,6 +78,8 @@ export function useMobileGSAPScroll({
   const faqInteractingRef = useRef(false)
   const programmaticScrollRef = useRef(false)
   const programmaticScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // Track sections with snapOnceOnly that have already been snapped to
+  const snappedOnceSectionsRef = useRef<Set<string>>(new Set())
 
   // Listen for FAQ interaction state changes
   useEffect(() => {
@@ -122,7 +125,8 @@ export function useMobileGSAPScroll({
     return {
       threshold: config?.threshold ?? snapThreshold,
       anchorOffset: config?.anchorOffset ?? 0,
-      disableSnap: config?.disableSnap ?? false
+      disableSnap: config?.disableSnap ?? false,
+      snapOnceOnly: config?.snapOnceOnly ?? false
     }
   }, [mergedConfigs, snapThreshold])
 
@@ -178,13 +182,11 @@ export function useMobileGSAPScroll({
 
     containerRef.current = container
 
-    // Clear any existing ScrollTriggers from previous renders
-    scrollTriggersRef.current.forEach(st => st.kill())
-    scrollTriggersRef.current = []
-
     // Initialize GSAP (use sync here since this is user-initiated scroll tracking)
-    // and we need it ready immediately
     initGSAPSync()
+
+    // Reset snapped-once tracking when hook re-initializes
+    snappedOnceSectionsRef.current.clear()
 
     // Helper function to detect current section based on scroll position
     const detectCurrentSection = () => {
@@ -246,10 +248,23 @@ export function useMobileGSAPScroll({
       const targetSection = sections[closestIndex]
       if (!targetSection) return
 
+      const targetSectionId = targetSection.getAttribute('data-section-id') || ''
       const config = getConfigForSection(targetSection)
 
       // Skip snapping if this section has snap disabled
       if (config.disableSnap) return
+
+      // For snapOnceOnly sections: skip if we've already snapped AND we're still in this section
+      if (config.snapOnceOnly && snappedOnceSectionsRef.current.has(targetSectionId)) {
+        // Check if user has scrolled away from this section (to a different one)
+        // If so, clear the flag so they can snap again when re-entering
+        if (currentSectionIdRef.current !== targetSectionId) {
+          snappedOnceSectionsRef.current.delete(targetSectionId)
+        } else {
+          // Still in the section, don't re-snap
+          return
+        }
+      }
 
       const idealScrollPos = targetSection.offsetTop - config.anchorOffset
 
@@ -259,10 +274,18 @@ export function useMobileGSAPScroll({
 
       // Only snap if we're within the threshold AND scroll velocity is low
       if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 5 && Math.abs(scrollVelocity) < 2) {
+        // Mark snapOnceOnly sections as snapped before snapping
+        if (config.snapOnceOnly) {
+          snappedOnceSectionsRef.current.add(targetSectionId)
+        }
         snapToSection(closestIndex, sections)
       } else if (distanceFromSnapPoint <= 5) {
         // Already at snap point, just dispatch event
         currentSectionRef.current = closestIndex
+        // Also mark as snapped if at snap point
+        if (config.snapOnceOnly) {
+          snappedOnceSectionsRef.current.add(targetSectionId)
+        }
         dispatchSectionLocked(targetSection)
       }
     }
