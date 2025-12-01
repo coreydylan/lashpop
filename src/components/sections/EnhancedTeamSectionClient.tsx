@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -9,6 +9,7 @@ import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { useInView } from 'framer-motion'
+import { gsap, initGSAP } from '@/lib/gsap'
 
 interface TeamMember {
   id: number
@@ -30,6 +31,14 @@ interface TeamMember {
   bookingUrl: string
   favoriteServices?: string[]
   funFact?: string
+}
+
+interface PortfolioImage {
+  id: string
+  url: string
+  width?: number
+  height?: number
+  caption?: string
 }
 
 interface ServiceCategory {
@@ -63,8 +72,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const [mounted, setMounted] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)
   const [columnsPerRow, setColumnsPerRow] = useState(4)
+  const [portfolioImages, setPortfolioImages] = useState<PortfolioImage[]>([])
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
   const expandedRowRef = useRef<HTMLDivElement>(null)
+  const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null)
 
   // Navigation functions for swiping between team members
   const goToNextMember = () => {
@@ -135,14 +148,102 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   // Get the row number for the selected member
   const selectedRow = selectedMember ? getRowForIndex(selectedMemberIndex) : -1
 
-  // Scroll expanded row into view when it appears
+  // Scroll to center expansion panel with GSAP when it appears
   useEffect(() => {
     if (expandedRowRef.current && selectedMember && !isMobile) {
-      setTimeout(() => {
-        expandedRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-      }, 100)
+      // Wait for the spring animation to mostly complete before scrolling
+      const scrollTimeout = setTimeout(async () => {
+        await initGSAP()
+        if (expandedRowRef.current) {
+          // Get the element's position after animation has settled
+          const element = expandedRowRef.current
+          const elementRect = element.getBoundingClientRect()
+          const elementTop = window.scrollY + elementRect.top
+          const elementHeight = element.offsetHeight || 500 // Fallback height
+          const viewportHeight = window.innerHeight
+
+          // Calculate scroll position to center the panel in viewport
+          // We want the center of the panel to be at the center of the viewport
+          const scrollTarget = elementTop - (viewportHeight / 2) + (elementHeight / 2)
+
+          gsap.to(window, {
+            duration: 0.6,
+            scrollTo: {
+              y: Math.max(0, scrollTarget),
+              autoKill: false
+            },
+            ease: 'power2.inOut'
+          })
+        }
+      }, 400) // Wait longer for spring animation to settle
+
+      return () => clearTimeout(scrollTimeout)
     }
   }, [selectedMember, isMobile])
+
+  // Fetch portfolio images when a member is selected (desktop only)
+  useEffect(() => {
+    if (selectedMember?.uuid && !isMobile) {
+      setIsLoadingPortfolio(true)
+      setCurrentImageIndex(0)
+
+      // Fetch DAM assets tagged to this team member
+      fetch(`/api/dam/team/${selectedMember.uuid}/photos`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.photos && data.photos.length > 0) {
+            const images: PortfolioImage[] = data.photos.map((photo: any) => ({
+              id: photo.id,
+              url: photo.filePath,
+              width: photo.width,
+              height: photo.height,
+              caption: photo.caption
+            }))
+            setPortfolioImages(images)
+          } else {
+            setPortfolioImages([])
+          }
+        })
+        .catch(() => setPortfolioImages([]))
+        .finally(() => setIsLoadingPortfolio(false))
+    } else {
+      setPortfolioImages([])
+    }
+  }, [selectedMember?.uuid, isMobile])
+
+  // Auto-advance carousel when there are multiple images
+  useEffect(() => {
+    if (portfolioImages.length > 1 && !isMobile) {
+      autoAdvanceRef.current = setInterval(() => {
+        setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
+      }, 4000) // Advance every 4 seconds
+
+      return () => {
+        if (autoAdvanceRef.current) {
+          clearInterval(autoAdvanceRef.current)
+        }
+      }
+    }
+  }, [portfolioImages.length, isMobile])
+
+  // Reset auto-advance when user manually changes image
+  const handleImageSelect = useCallback((index: number) => {
+    setCurrentImageIndex(index)
+    // Reset the auto-advance timer
+    if (autoAdvanceRef.current) {
+      clearInterval(autoAdvanceRef.current)
+      autoAdvanceRef.current = setInterval(() => {
+        setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
+      }, 4000)
+    }
+  }, [portfolioImages.length])
+
+  // Check if current image is horizontal (wider than tall)
+  const isCurrentImageHorizontal = useMemo(() => {
+    if (portfolioImages.length === 0) return false
+    const img = portfolioImages[currentImageIndex]
+    return img?.width && img?.height && img.width > img.height
+  }, [portfolioImages, currentImageIndex])
 
   // Add subtle nudge animation when carousel comes into view on mobile
   useEffect(() => {
@@ -458,18 +559,98 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         >
                           <div className="bg-white rounded-3xl shadow-xl border border-sage/10 overflow-hidden">
                             <div className="flex flex-col lg:flex-row">
-                              {/* Left: Large Photo */}
-                              <div className="lg:w-2/5 relative">
-                                <div className="aspect-[3/4] lg:aspect-auto lg:h-full relative">
-                                  <Image
-                                    src={selectedMember.image}
-                                    alt={selectedMember.name}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                  {/* Gradient overlay on mobile */}
-                                  <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent lg:hidden" />
+                              {/* Left: Portfolio Image Carousel */}
+                              <div className="lg:w-2/5 relative flex flex-col">
+                                {/* Main Image Display */}
+                                <div className="relative aspect-[4/5] lg:aspect-auto lg:flex-1 overflow-hidden bg-dune/5">
+                                  {/* Blurred background for horizontal images */}
+                                  {(portfolioImages.length > 0 ? isCurrentImageHorizontal : false) && (
+                                    <div className="absolute inset-0 overflow-hidden">
+                                      <Image
+                                        src={portfolioImages[currentImageIndex]?.url || selectedMember.image}
+                                        alt=""
+                                        fill
+                                        className="object-cover scale-150 blur-2xl opacity-60"
+                                        aria-hidden="true"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Loading state */}
+                                  {isLoadingPortfolio ? (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <div className="w-8 h-8 border-2 border-dusty-rose border-t-transparent rounded-full animate-spin" />
+                                    </div>
+                                  ) : (
+                                    <AnimatePresence mode="wait">
+                                      <motion.div
+                                        key={portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.id : 'headshot'}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="absolute inset-0 flex items-center justify-center"
+                                      >
+                                        <Image
+                                          src={portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image}
+                                          alt={selectedMember.name}
+                                          fill
+                                          className={`${
+                                            portfolioImages.length > 0 && isCurrentImageHorizontal
+                                              ? 'object-contain'
+                                              : 'object-cover'
+                                          }`}
+                                        />
+                                      </motion.div>
+                                    </AnimatePresence>
+                                  )}
+
+                                  {/* Navigation arrows for portfolio */}
+                                  {portfolioImages.length > 1 && (
+                                    <>
+                                      <button
+                                        onClick={() => handleImageSelect((currentImageIndex - 1 + portfolioImages.length) % portfolioImages.length)}
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-md"
+                                        aria-label="Previous image"
+                                      >
+                                        <ChevronLeft className="w-5 h-5 text-dune" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleImageSelect((currentImageIndex + 1) % portfolioImages.length)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-md"
+                                        aria-label="Next image"
+                                      >
+                                        <ChevronRight className="w-5 h-5 text-dune" />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
+
+                                {/* Thumbnail strip */}
+                                {portfolioImages.length > 1 && (
+                                  <div className="bg-dune/5 p-3">
+                                    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                                      {portfolioImages.map((img, idx) => (
+                                        <button
+                                          key={img.id}
+                                          onClick={() => handleImageSelect(idx)}
+                                          className={`relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all ${
+                                            idx === currentImageIndex
+                                              ? 'ring-2 ring-dusty-rose scale-105'
+                                              : 'opacity-60 hover:opacity-100'
+                                          }`}
+                                        >
+                                          <Image
+                                            src={img.url}
+                                            alt={`Portfolio ${idx + 1}`}
+                                            fill
+                                            className="object-cover"
+                                          />
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
 
                               {/* Right: Content */}
@@ -483,16 +664,32 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   <X className="w-5 h-5 text-dune" />
                                 </button>
 
-                                {/* Name & Title */}
+                                {/* Name, Title & Instagram */}
                                 <div className="mb-6 pr-12">
-                                  <h2 className="font-serif text-3xl text-dune mb-1">
+                                  <h2 className="font-serif text-3xl text-dune">
                                     {selectedMember.name}
                                   </h2>
-                                  <p className="text-dusty-rose font-medium">
-                                    {selectedMember.type === 'independent' && selectedMember.businessName
-                                      ? selectedMember.businessName
-                                      : 'LashPop Artist'}
-                                  </p>
+                                  {selectedMember.instagram ? (
+                                    <a
+                                      href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 text-dusty-rose font-medium mt-1 hover:text-dusty-rose/80 transition-colors"
+                                    >
+                                      <Instagram className="w-4 h-4" />
+                                      <span>
+                                        {selectedMember.type === 'independent' && selectedMember.businessName
+                                          ? selectedMember.businessName
+                                          : 'LashPop Artist'}
+                                      </span>
+                                    </a>
+                                  ) : (
+                                    <p className="text-dusty-rose font-medium mt-1">
+                                      {selectedMember.type === 'independent' && selectedMember.businessName
+                                        ? selectedMember.businessName
+                                        : 'LashPop Artist'}
+                                    </p>
+                                  )}
                                 </div>
 
                                 {/* Bio */}
@@ -525,7 +722,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                                 {/* Fun Fact */}
                                 {selectedMember.funFact && (
-                                  <div className="mb-8 bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
+                                  <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
                                     <h3 className="font-serif text-base text-dune mb-2 flex items-center gap-2">
                                       <Sparkles className="w-4 h-4 text-dusty-rose" />
                                       Fun Fact
@@ -533,39 +730,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                     <p className="text-dune/80 text-sm leading-relaxed">{selectedMember.funFact}</p>
                                   </div>
                                 )}
-
-                                {/* CTA Buttons */}
-                                <div className="flex flex-wrap gap-3">
-                                  <a
-                                    href={selectedMember.bookingUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-dusty-rose text-white hover:bg-dusty-rose/90 transition-all font-medium"
-                                  >
-                                    <Calendar className="w-4 h-4" />
-                                    Book Now
-                                  </a>
-
-                                  <a
-                                    href={`tel:${selectedMember.phone}`}
-                                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-cream border border-dune/10 text-dune hover:bg-sage/10 transition-all font-medium"
-                                  >
-                                    <Phone className="w-4 h-4" />
-                                    Call
-                                  </a>
-
-                                  {selectedMember.instagram && (
-                                    <a
-                                      href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-2 px-6 py-3 rounded-full bg-cream border border-dune/10 text-dune hover:bg-sage/10 transition-all font-medium"
-                                    >
-                                      <Instagram className="w-4 h-4" />
-                                      Instagram
-                                    </a>
-                                  )}
-                                </div>
                               </div>
                             </div>
                           </div>
