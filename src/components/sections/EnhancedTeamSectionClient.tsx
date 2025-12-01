@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -46,6 +46,14 @@ interface EnhancedTeamSectionClientProps {
   serviceCategories?: ServiceCategory[]
 }
 
+// Helper to determine columns per row based on breakpoint
+const getColumnsForWidth = (width: number): number => {
+  if (width >= 1024) return 4 // lg
+  if (width >= 768) return 3  // md
+  if (width >= 640) return 2  // sm
+  return 1
+}
+
 export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] }: EnhancedTeamSectionClientProps) {
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [selectedMemberIndex, setSelectedMemberIndex] = useState<number>(0)
@@ -54,7 +62,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const [isMobile, setIsMobile] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null)
+  const [columnsPerRow, setColumnsPerRow] = useState(4)
   const sectionRef = useRef<HTMLElement>(null)
+  const expandedRowRef = useRef<HTMLDivElement>(null)
 
   // Navigation functions for swiping between team members
   const goToNextMember = () => {
@@ -107,15 +117,32 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     }
   }, [orchestrator.actions])
 
-  // Check if mobile
+  // Check if mobile and track column count for desktop grid
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      const width = window.innerWidth
+      setIsMobile(width < 768)
+      setColumnsPerRow(getColumnsForWidth(width))
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Calculate which row a member is in (0-indexed)
+  const getRowForIndex = (index: number): number => Math.floor(index / columnsPerRow)
+
+  // Get the row number for the selected member
+  const selectedRow = selectedMember ? getRowForIndex(selectedMemberIndex) : -1
+
+  // Scroll expanded row into view when it appears
+  useEffect(() => {
+    if (expandedRowRef.current && selectedMember && !isMobile) {
+      setTimeout(() => {
+        expandedRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }, 100)
+    }
+  }, [selectedMember, isMobile])
 
   // Add subtle nudge animation when carousel comes into view on mobile
   useEffect(() => {
@@ -130,8 +157,28 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     }, 800)
   }, [emblaApi, isInView, isMobile])
 
-  const handleMemberClick = (member: TeamMember) => {
-    handleSelectMember(member)
+  const handleMemberClick = (member: TeamMember, index: number) => {
+    if (isMobile) {
+      // Mobile: use full-screen modal
+      handleSelectMember(member)
+    } else {
+      // Desktop: toggle inline expansion
+      if (selectedMember?.id === member.id) {
+        // Clicking same member closes the expansion
+        setSelectedMember(null)
+        setShowModal(false)
+      } else {
+        // Select new member (expansion will appear below their row)
+        setSelectedMemberIndex(index)
+        setSelectedMember(member)
+        setShowModal(false) // Don't use modal on desktop
+      }
+    }
+  }
+
+  // Close inline expansion
+  const closeExpansion = () => {
+    setSelectedMember(null)
   }
 
   const isHighlighted = (memberId: number) => highlights.includes(memberId.toString())
@@ -218,7 +265,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         delay: index * 0.1,
                         ease: [0.23, 1, 0.32, 1]
                       }}
-                      onClick={() => handleMemberClick(member)}
+                      onClick={() => handleMemberClick(member, index)}
                     >
                       {/* Clean Card Design - Taller format */}
                       <div className="relative h-[420px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
@@ -235,25 +282,27 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </div>
 
                         {/* Content at Bottom */}
-                        <div className="absolute bottom-0 left-0 right-0 p-5">
-                          {/* Service Tags - Above Name */}
-                          {memberCategories.length > 0 && (
-                            <div className="flex gap-1.5 flex-wrap mb-2">
-                              {memberCategories.map((category) => (
-                                <span
-                                  key={category}
-                                  className="px-2 py-1 text-[10px] font-medium bg-white/20 backdrop-blur-md text-white rounded-full border border-white/30"
-                                >
-                                  {category}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-
+                        <div className="absolute bottom-0 left-0 right-0 p-4">
                           {/* Name */}
-                          <h3 className="text-xl font-bold text-white drop-shadow-lg">
+                          <h3 className="text-lg font-bold text-white drop-shadow-lg mb-1.5">
                             {member.name}
                           </h3>
+
+                          {/* Services - Horizontal scrolling chips */}
+                          {memberCategories.length > 0 && (
+                            <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+                              <div className="flex gap-1 min-w-max">
+                                {memberCategories.slice(0, 4).map((category) => (
+                                  <span
+                                    key={category}
+                                    className="px-2 py-0.5 text-[9px] font-medium bg-white/15 backdrop-blur-sm text-white/90 rounded-full whitespace-nowrap"
+                                  >
+                                    {category}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Highlight Effect */}
@@ -278,90 +327,254 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </div>
         ) : (
           <div className="container px-4">
-            {/* Desktop Grid View - Unified design with mobile */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {teamMembers.map((member, index) => {
-              // Use service categories from Vagaro, fallback to derived from specialties
-              const memberCategories = member.serviceCategories?.length 
-                ? member.serviceCategories 
-                : getTeamMemberCategories(member.specialties)
+            {/* Desktop Grid View with Inline Expansion */}
+            <div className="max-w-7xl mx-auto">
+              {/* Render cards row by row so we can insert expansion after each row */}
+              {Array.from({ length: Math.ceil(teamMembers.length / columnsPerRow) }).map((_, rowIndex) => {
+                const rowStart = rowIndex * columnsPerRow
+                const rowMembers = teamMembers.slice(rowStart, rowStart + columnsPerRow)
+                const isExpansionRow = selectedRow === rowIndex && selectedMember
 
-              return (
-                <motion.div
-                  key={member.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{
-                    duration: 0.5,
-                    delay: index * 0.05,
-                    ease: [0.23, 1, 0.32, 1]
-                  }}
-                  className="relative group cursor-pointer"
-                  onClick={() => handleMemberClick(member)}
-                  onMouseEnter={() => setHoveredId(member.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                >
-                  {/* Clean Card Design */}
-                  <motion.div
-                    className="relative aspect-[3/4] overflow-hidden rounded-3xl shadow-lg"
-                    whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {/* Image */}
-                    <Image
-                      src={member.image}
-                      alt={member.name}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
+                return (
+                  <div key={rowIndex}>
+                    {/* Row of cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
+                      {rowMembers.map((member, indexInRow) => {
+                        const absoluteIndex = rowStart + indexInRow
+                        const memberCategories = member.serviceCategories?.length
+                          ? member.serviceCategories
+                          : getTeamMemberCategories(member.specialties)
+                        const isSelected = selectedMember?.id === member.id
 
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-                    {/* Content at Bottom */}
-                    <div className="absolute inset-x-0 bottom-0 p-5">
-                      {/* Service Tags - Above Name */}
-                      {memberCategories.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {memberCategories.map((category, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-[10px] font-medium text-white"
+                        return (
+                          <motion.div
+                            key={member.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{
+                              duration: 0.5,
+                              delay: indexInRow * 0.05,
+                              ease: [0.23, 1, 0.32, 1]
+                            }}
+                            className="relative group cursor-pointer"
+                            onClick={() => handleMemberClick(member, absoluteIndex)}
+                            onMouseEnter={() => setHoveredId(member.id)}
+                            onMouseLeave={() => setHoveredId(null)}
+                          >
+                            {/* Card Design */}
+                            <motion.div
+                              className={`relative aspect-[3/4] overflow-hidden rounded-3xl shadow-lg transition-all duration-300 ${
+                                isSelected ? 'ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream' : ''
+                              }`}
+                              whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+                              animate={{ scale: isSelected ? 1.02 : 1 }}
+                              transition={{ duration: 0.3 }}
                             >
-                              {category}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                              {/* Image */}
+                              <Image
+                                src={member.image}
+                                alt={member.name}
+                                fill
+                                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                              />
 
-                      {/* Name */}
-                      <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg">
-                        {member.name}
-                      </h3>
+                              {/* Gradient Overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+                              {/* Content at Bottom */}
+                              <div className="absolute inset-x-0 bottom-0 p-4">
+                                <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg mb-1.5">
+                                  {member.name}
+                                </h3>
+
+                                {memberCategories.length > 0 && (
+                                  <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+                                    <div className="flex gap-1 min-w-max">
+                                      {memberCategories.slice(0, 4).map((category, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="px-2 py-0.5 text-[9px] font-medium bg-white/15 backdrop-blur-sm text-white/90 rounded-full whitespace-nowrap"
+                                        >
+                                          {category}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Hover Glow Effect */}
+                              <AnimatePresence>
+                                {hoveredId === member.id && !isSelected && (
+                                  <motion.div
+                                    className="absolute inset-0 bg-white/5 pointer-events-none"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                  />
+                                )}
+                              </AnimatePresence>
+
+                              {/* Highlight Ring (from orchestrator) */}
+                              {isHighlighted(member.id) && !isSelected && (
+                                <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-3xl pointer-events-none" />
+                              )}
+                            </motion.div>
+
+                            {/* Connector arrow for selected card */}
+                            <AnimatePresence>
+                              {isSelected && (
+                                <motion.div
+                                  className="absolute left-1/2 -bottom-3 -translate-x-1/2 z-10"
+                                  initial={{ opacity: 0, y: -10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -10 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <div className="w-4 h-4 bg-white rotate-45 shadow-lg" />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        )
+                      })}
                     </div>
 
-                    {/* Hover Glow Effect */}
+                    {/* Inline Expansion Panel - appears below this row when a member from this row is selected */}
                     <AnimatePresence>
-                      {hoveredId === member.id && (
+                      {isExpansionRow && selectedMember && (
                         <motion.div
-                          className="absolute inset-0 bg-white/5 pointer-events-none"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                        />
+                          ref={expandedRowRef}
+                          className="mb-6 overflow-hidden"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{
+                            height: { type: "spring", damping: 25, stiffness: 200 },
+                            opacity: { duration: 0.2 }
+                          }}
+                        >
+                          <div className="bg-white rounded-3xl shadow-xl border border-sage/10 overflow-hidden">
+                            <div className="flex flex-col lg:flex-row">
+                              {/* Left: Large Photo */}
+                              <div className="lg:w-2/5 relative">
+                                <div className="aspect-[3/4] lg:aspect-auto lg:h-full relative">
+                                  <Image
+                                    src={selectedMember.image}
+                                    alt={selectedMember.name}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                  {/* Gradient overlay on mobile */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent lg:hidden" />
+                                </div>
+                              </div>
+
+                              {/* Right: Content */}
+                              <div className="lg:w-3/5 p-8 lg:p-10 relative">
+                                {/* Close Button */}
+                                <button
+                                  onClick={closeExpansion}
+                                  className="absolute top-6 right-6 w-10 h-10 rounded-full bg-cream hover:bg-sage/10 flex items-center justify-center transition-colors"
+                                  aria-label="Close"
+                                >
+                                  <X className="w-5 h-5 text-dune" />
+                                </button>
+
+                                {/* Name & Title */}
+                                <div className="mb-6 pr-12">
+                                  <h2 className="font-serif text-3xl text-dune mb-1">
+                                    {selectedMember.name}
+                                  </h2>
+                                  <p className="text-dusty-rose font-medium">
+                                    {selectedMember.type === 'independent' && selectedMember.businessName
+                                      ? selectedMember.businessName
+                                      : 'LashPop Artist'}
+                                  </p>
+                                </div>
+
+                                {/* Bio */}
+                                {selectedMember.bio && (
+                                  <div className="mb-6">
+                                    <h3 className="font-serif text-lg text-dune mb-2">About</h3>
+                                    <p className="text-sage leading-relaxed">{selectedMember.bio}</p>
+                                  </div>
+                                )}
+
+                                {/* Services */}
+                                {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
+                                  <div className="mb-6">
+                                    <h3 className="font-serif text-lg text-dune mb-3">Services</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                      {(selectedMember.serviceCategories?.length
+                                        ? selectedMember.serviceCategories
+                                        : getTeamMemberCategories(selectedMember.specialties)
+                                      ).map((category, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="px-4 py-2 text-sm font-medium bg-sage/10 text-sage rounded-full"
+                                        >
+                                          {category}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Fun Fact */}
+                                {selectedMember.funFact && (
+                                  <div className="mb-8 bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
+                                    <h3 className="font-serif text-base text-dune mb-2 flex items-center gap-2">
+                                      <Sparkles className="w-4 h-4 text-dusty-rose" />
+                                      Fun Fact
+                                    </h3>
+                                    <p className="text-dune/80 text-sm leading-relaxed">{selectedMember.funFact}</p>
+                                  </div>
+                                )}
+
+                                {/* CTA Buttons */}
+                                <div className="flex flex-wrap gap-3">
+                                  <a
+                                    href={selectedMember.bookingUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-dusty-rose text-white hover:bg-dusty-rose/90 transition-all font-medium"
+                                  >
+                                    <Calendar className="w-4 h-4" />
+                                    Book Now
+                                  </a>
+
+                                  <a
+                                    href={`tel:${selectedMember.phone}`}
+                                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-cream border border-dune/10 text-dune hover:bg-sage/10 transition-all font-medium"
+                                  >
+                                    <Phone className="w-4 h-4" />
+                                    Call
+                                  </a>
+
+                                  {selectedMember.instagram && (
+                                    <a
+                                      href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 px-6 py-3 rounded-full bg-cream border border-dune/10 text-dune hover:bg-sage/10 transition-all font-medium"
+                                    >
+                                      <Instagram className="w-4 h-4" />
+                                      Instagram
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
                       )}
                     </AnimatePresence>
-
-                    {/* Highlight Ring */}
-                    {isHighlighted(member.id) && (
-                      <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-3xl pointer-events-none" />
-                    )}
-                  </motion.div>
-                </motion.div>
-              )
-            })}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -520,19 +733,24 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           </div>
                         )}
 
-                        {/* Category Tags */}
-                        {getTeamMemberCategories(selectedMember.specialties).length > 0 && (
+                        {/* Services */}
+                        {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
                           <div>
                             <h3 className="font-serif text-lg text-dune mb-3">Services</h3>
-                            <div className="flex flex-wrap gap-2">
-                              {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-4 py-2 bg-sage/8 text-sage rounded-full text-sm font-medium border border-sage/10"
-                                >
-                                  {category}
-                                </span>
-                              ))}
+                            <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+                              <div className="flex gap-1.5 min-w-max">
+                                {(selectedMember.serviceCategories?.length
+                                  ? selectedMember.serviceCategories
+                                  : getTeamMemberCategories(selectedMember.specialties)
+                                ).map((category, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-3 py-1.5 text-xs font-medium bg-sage/10 text-sage rounded-full whitespace-nowrap"
+                                  >
+                                    {category}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         )}
@@ -593,17 +811,22 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                     {/* Modal Body */}
                     <div className="p-8 space-y-6">
-                      {/* Category Tags */}
-                      {getTeamMemberCategories(selectedMember.specialties).length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {getTeamMemberCategories(selectedMember.specialties).map((category, idx) => (
-                            <span
-                              key={idx}
-                              className="px-4 py-2 rounded-full bg-dusty-rose/10 border border-dusty-rose/20 text-sm font-medium text-dune"
-                            >
-                              {category}
-                            </span>
-                          ))}
+                      {/* Services - Horizontal scrolling chips */}
+                      {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
+                        <div className="overflow-x-auto scrollbar-hide -mx-2 px-2">
+                          <div className="flex gap-2 min-w-max">
+                            {(selectedMember.serviceCategories?.length
+                              ? selectedMember.serviceCategories
+                              : getTeamMemberCategories(selectedMember.specialties)
+                            ).map((category, idx) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1.5 text-xs font-medium bg-dusty-rose/10 text-dune/80 rounded-full whitespace-nowrap"
+                              >
+                                {category}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       )}
 
