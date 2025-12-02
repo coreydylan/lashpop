@@ -132,7 +132,9 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     }
 
     emblaApi.on('settle', onSettle)
-    return () => emblaApi.off('settle', onSettle)
+    return () => {
+      emblaApi.off('settle', onSettle)
+    }
   }, [emblaApi, isMobile, showTutorial, tutorialSuccess, checkAndComplete])
 
   // Auto-rotate reviews - pause when hovering or dragging
