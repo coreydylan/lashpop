@@ -413,10 +413,10 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
             ref={emblaRef}
             className="review-carousel overflow-visible cursor-grab active:cursor-grabbing"
           >
-            <div className="flex touch-pan-y pl-4 lg:pl-[calc(50vw-240px)] py-6 md:py-12">
+            <div className="flex touch-pan-x py-4 md:py-10">
               {reviews.map((review, index) => (
-                <div 
-                  key={review.id} 
+                <div
+                  key={review.id}
                   className="flex-[0_0_auto] mr-5 pl-4 first:pl-0"
                 >
                 <motion.div
