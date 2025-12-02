@@ -148,33 +148,62 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
         break
 
       case 'kenBurns':
-        // Ken Burns - zoom/pan with fade
-        const kenBurns = currentImage?.kenBurns || globalKenBurns || {
+        // Ken Burns - the zoom/pan movement IS the transition
+        // Previous image zooms out/pans away while new image zooms in/pans into place
+        const kenBurnsOut = previousImage?.kenBurns || globalKenBurns || {
           startScale: 1.0,
-          endScale: 1.08,
+          endScale: 1.15,
           startPosition: { x: 50, y: 50 },
+          endPosition: { x: 45, y: 45 }
+        }
+        const kenBurnsIn = currentImage?.kenBurns || globalKenBurns || {
+          startScale: 1.15,
+          endScale: 1.0,
+          startPosition: { x: 55, y: 55 },
           endPosition: { x: 50, y: 50 }
         }
 
-        gsap.set(currentEl, { opacity: 0 })
-        if (currentImg) {
-          gsap.set(currentImg, {
-            scale: kenBurns.startScale,
-            xPercent: (kenBurns.startPosition.x - 50) * 0.5,
-            yPercent: (kenBurns.startPosition.y - 50) * 0.5
-          })
+        // Set initial states
+        gsap.set(currentEl, { opacity: 1 }) // Both visible during transition
+
+        if (previousImg) {
+          // Previous image continues its Ken Burns motion and fades
+          tl.to(previousImg, {
+            scale: kenBurnsOut.endScale,
+            xPercent: (kenBurnsOut.endPosition.x - 50) * 0.8,
+            yPercent: (kenBurnsOut.endPosition.y - 50) * 0.8,
+            duration: duration,
+            ease: 'power1.inOut'
+          }, 0)
+          tl.to(previousEl, {
+            opacity: 0,
+            duration: duration * 0.7,
+            ease: 'power1.in'
+          }, duration * 0.3)
         }
 
-        tl.to(previousEl, { opacity: 0, duration: duration * 0.5, ease }, 0)
-          .to(currentEl, { opacity: 1, duration: duration * 0.5, ease }, 0)
-
         if (currentImg) {
+          // New image starts zoomed/offset and moves into final position
+          gsap.set(currentImg, {
+            scale: kenBurnsIn.startScale,
+            xPercent: (kenBurnsIn.startPosition.x - 50) * 0.8,
+            yPercent: (kenBurnsIn.startPosition.y - 50) * 0.8
+          })
+          gsap.set(currentEl, { opacity: 0 })
+
+          // Fade in while moving
+          tl.to(currentEl, {
+            opacity: 1,
+            duration: duration * 0.7,
+            ease: 'power1.out'
+          }, 0)
+
           tl.to(currentImg, {
-            scale: kenBurns.endScale,
-            xPercent: (kenBurns.endPosition.x - 50) * 0.5,
-            yPercent: (kenBurns.endPosition.y - 50) * 0.5,
-            duration: duration * 2, // Ken Burns continues after fade
-            ease: 'none'
+            scale: kenBurnsIn.endScale,
+            xPercent: (kenBurnsIn.endPosition.x - 50) * 0.8,
+            yPercent: (kenBurnsIn.endPosition.y - 50) * 0.8,
+            duration: duration,
+            ease: 'power1.inOut'
           }, 0)
         }
         break
