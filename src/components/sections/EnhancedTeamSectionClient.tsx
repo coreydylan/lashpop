@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, ThumbsUp } from 'lucide-react'
+import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
@@ -12,36 +12,43 @@ import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 
-// Swipe Tutorial Hint Component - just the wiggling animation
+// Swipe Tutorial Hint Component - subtle wiggling icon in center
 function SwipeHint() {
   return (
     <motion.div
-      className="absolute inset-0 flex items-end justify-center pb-14 pointer-events-none z-20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.2 }}
     >
-      {/* Swipe hint hand animation */}
       <motion.div
-        className="relative"
-        animate={{
-          x: [0, 20, 0, -20, 0],
-        }}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        className="bg-white/30 backdrop-blur-sm rounded-full p-2"
+        animate={{ x: [0, 4, 0, -4, 0] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <div className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2">
-          <motion.div
-            animate={{ x: [0, 4, 0, -4, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Hand className="w-4 h-4 text-white rotate-90" />
-          </motion.div>
-          <span className="text-[10px] text-white/90 font-medium">Swipe tags</span>
-        </div>
+        <Hand className="w-4 h-4 text-white/80 rotate-90" />
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// Swipe Success Component - subtle spinning check in center
+function SwipeSuccess() {
+  return (
+    <motion.div
+      className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: 0.6, delay: 0.8 }}
+    >
+      <motion.div
+        className="bg-white/40 backdrop-blur-sm rounded-full p-2"
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ duration: 0.3, ease: "backOut" }}
+      >
+        <Check className="w-4 h-4 text-emerald-500" strokeWidth={3} />
       </motion.div>
     </motion.div>
   )
@@ -52,10 +59,20 @@ function useSwipeTutorial() {
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(true) // Default true to prevent flash
   const [showTutorial, setShowTutorial] = useState(false)
   const [tutorialSuccess, setTutorialSuccess] = useState(false)
+  const swipeDistanceRef = useRef(0)
 
   useEffect(() => {
     const completed = localStorage.getItem('team-swipe-tutorial-completed') === 'true'
     setHasCompletedTutorial(completed)
+  }, [])
+
+  const resetSwipeDistance = useCallback(() => {
+    swipeDistanceRef.current = 0
+  }, [])
+
+  const addSwipeDistance = useCallback((distance: number) => {
+    swipeDistanceRef.current += Math.abs(distance)
+    return swipeDistanceRef.current
   }, [])
 
   const completeTutorial = useCallback(() => {
@@ -73,7 +90,15 @@ function useSwipeTutorial() {
     }
   }, [hasCompletedTutorial])
 
-  return { hasCompletedTutorial, showTutorial, tutorialSuccess, completeTutorial, triggerTutorial }
+  return {
+    hasCompletedTutorial,
+    showTutorial,
+    tutorialSuccess,
+    completeTutorial,
+    triggerTutorial,
+    addSwipeDistance,
+    resetSwipeDistance
+  }
 }
 
 interface TeamMember {
@@ -152,9 +177,17 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const firstCardRef = useRef<HTMLDivElement>(null)
 
   // Swipe tutorial state
-  const { hasCompletedTutorial, showTutorial, tutorialSuccess, completeTutorial, triggerTutorial } = useSwipeTutorial()
+  const {
+    hasCompletedTutorial,
+    showTutorial,
+    tutorialSuccess,
+    completeTutorial,
+    triggerTutorial,
+    addSwipeDistance,
+    resetSwipeDistance
+  } = useSwipeTutorial()
 
-  // Observe first card entering top half of viewport
+  // Observe first card - trigger tutorial immediately when visible
   useEffect(() => {
     if (!isMobile || hasCompletedTutorial || !firstCardRef.current) return
 
@@ -162,17 +195,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            // Check if the card is in the top half of the viewport
-            const rect = entry.boundingClientRect
-            const viewportHeight = window.innerHeight
-            if (rect.top < viewportHeight / 2) {
-              triggerTutorial()
-              observer.disconnect()
-            }
+            // Trigger immediately when card becomes visible
+            triggerTutorial()
+            observer.disconnect()
           }
         })
       },
-      { threshold: 0.5 }
+      { threshold: 0.1 } // Trigger when just 10% visible
     )
 
     observer.observe(firstCardRef.current)
@@ -496,6 +525,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         card.dataset.touchStartY = touch.clientY.toString()
                         card.dataset.touchCurrentX = touch.clientX.toString()
                         card.dataset.touchType = 'undecided' // undecided, tap, scroll-tags, scroll-page
+                        // Reset swipe distance tracking for tutorial
+                        if (isFirstSwipeable) resetSwipeDistance()
                       }}
                       onTouchMove={(e) => {
                         const card = e.currentTarget
@@ -527,9 +558,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           const tagsContainer = card.querySelector('[data-tags-scroll]') as HTMLElement
                           if (tagsContainer) {
                             tagsContainer.scrollLeft -= moveDeltaX
-                            // Complete tutorial if this is the first swipeable card
+                            // Track swipe distance and complete tutorial after meaningful swipe (50px)
                             if (isFirstSwipeable && showTutorial && !tutorialSuccess) {
-                              completeTutorial()
+                              const totalDistance = addSwipeDistance(moveDeltaX)
+                              if (totalDistance >= 50) {
+                                completeTutorial()
+                              }
                             }
                           }
                         }
@@ -554,18 +588,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         sizes="50vw"
                       />
 
-                      {/* Gradient overlay for text readability */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      {/* Gradient overlays for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent" />
 
-                      {/* Content at Bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3">
-                        {/* Name */}
-                        <h3 className="text-sm font-bold text-white drop-shadow-md mb-1.5">
-                          {displayName}
-                        </h3>
-
-                        {/* Swipeable Service Tags */}
-                        {memberCategories.length > 0 && (
+                      {/* Tags at Top */}
+                      {memberCategories.length > 0 && (
+                        <div className="absolute top-0 left-0 right-0 p-3">
                           <div
                             data-tags-scroll
                             className="overflow-x-auto scrollbar-hide -mx-1 px-1"
@@ -581,7 +610,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               ))}
                             </div>
                           </div>
-                        )}
+                        </div>
+                      )}
+
+                      {/* Name at Bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        <h3 className="text-sm font-bold text-white drop-shadow-md">
+                          {displayName}
+                        </h3>
                       </div>
 
                       {/* Highlight Ring */}
@@ -591,26 +627,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                       {/* Swipe Tutorial Hint */}
                       <AnimatePresence>
-                        {showTutorialOnThisCard && (
-                          <SwipeHint />
-                        )}
-                        {isFirstSwipeable && tutorialSuccess && (
-                          <motion.div
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-                            initial={{ opacity: 1 }}
-                            animate={{ opacity: 0 }}
-                            transition={{ duration: 0.8, delay: 0.6 }}
-                          >
-                            <motion.div
-                              className="bg-green-500/90 backdrop-blur-sm rounded-full p-3"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: [0, 1.2, 1] }}
-                              transition={{ duration: 0.4, ease: "backOut" }}
-                            >
-                              <ThumbsUp className="w-6 h-6 text-white" />
-                            </motion.div>
-                          </motion.div>
-                        )}
+                        {showTutorialOnThisCard && <SwipeHint />}
+                        {isFirstSwipeable && tutorialSuccess && <SwipeSuccess />}
                       </AnimatePresence>
                     </div>
                   </motion.div>
@@ -1070,8 +1088,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={selectedMember.id}
-                        className="flex-1 overflow-y-auto overscroll-contain"
-                        style={{ WebkitOverflowScrolling: 'touch' }}
+                        className="flex-1 overflow-y-auto"
+                        style={{
+                          WebkitOverflowScrolling: 'touch',
+                          overscrollBehaviorY: 'none'
+                        }}
                         initial={{ opacity: 0, x: swipeDirection === 'left' ? 100 : swipeDirection === 'right' ? -100 : 0 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0 }}

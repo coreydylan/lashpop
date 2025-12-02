@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
+import { Check, Hand } from 'lucide-react'
+import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
 
 // The 5 content cards with the new text
 const cardContent = [
@@ -39,6 +41,24 @@ export function MobileSwipeableWelcomeCards({
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // Swipe tutorial with confirmation
+  const {
+    showTutorial,
+    tutorialSuccess,
+    triggerTutorial,
+    resetSwipeDistance,
+    checkAndComplete
+  } = useSwipeTutorial({
+    storageKey: 'welcome-cards-swipe-tutorial',
+    completionThreshold: 60
+  })
+
+  // Show tutorial when component mounts (after small delay)
+  useEffect(() => {
+    const timer = setTimeout(() => triggerTutorial(), 800)
+    return () => clearTimeout(timer)
+  }, [triggerTutorial])
+
   // Swipe threshold
   const swipeThreshold = 80
   const swipeVelocityThreshold = 300
@@ -63,6 +83,19 @@ export function MobileSwipeableWelcomeCards({
       }, 200)
     },
     []
+  )
+
+  // Handle drag start - reset tutorial distance tracking
+  const handleDragStart = useCallback(() => {
+    resetSwipeDistance()
+  }, [resetSwipeDistance])
+
+  // Handle drag - track distance for tutorial
+  const handleDrag = useCallback(
+    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      checkAndComplete(Math.abs(info.delta.x))
+    },
+    [checkAndComplete]
   )
 
   // Handle drag end
@@ -122,7 +155,6 @@ export function MobileSwipeableWelcomeCards({
   }
 
   const currentCard = cardContent[currentIndex]
-  const [hasInteracted, setHasInteracted] = useState(false)
 
   return (
     <div ref={containerRef} className="relative w-full px-6" style={{ minHeight: '320px' }}>
@@ -160,8 +192,9 @@ export function MobileSwipeableWelcomeCards({
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.7}
+            onDragStart={handleDragStart}
+            onDrag={handleDrag}
             onDragEnd={handleDragEnd}
-            onDragStart={() => setHasInteracted(true)}
             className="absolute inset-0 cursor-grab active:cursor-grabbing touch-pan-y"
             style={{ zIndex: 10 }}
             whileDrag={{ scale: 1.01 }}
@@ -187,29 +220,43 @@ export function MobileSwipeableWelcomeCards({
                 {currentCard.text}
               </p>
 
-              {/* Swipe hint for first card - only show if user hasn't interacted */}
-              {currentIndex === 0 && !hasInteracted && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1.5 }}
-                  className="mt-4 flex items-center gap-2 text-xs text-dune/40"
-                >
-                  <motion.span
-                    animate={{ x: [-2, 2, -2] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
+              {/* Swipe tutorial hint - subtle icon only */}
+              <AnimatePresence>
+                {showTutorial && !tutorialSuccess && currentIndex === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ delay: 0.3, duration: 0.2 }}
+                    className="mt-4"
                   >
-                    ←
-                  </motion.span>
-                  <span>swipe</span>
-                  <motion.span
-                    animate={{ x: [2, -2, 2] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    <motion.div
+                      className="bg-dune/8 backdrop-blur-sm rounded-full p-2"
+                      animate={{ x: [0, 6, 0, -6, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Hand className="w-3.5 h-3.5 text-dune/40 rotate-90" />
+                    </motion.div>
+                  </motion.div>
+                )}
+                {tutorialSuccess && currentIndex === 0 && (
+                  <motion.div
+                    className="mt-4"
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ duration: 0.6, delay: 0.8 }}
                   >
-                    →
-                  </motion.span>
-                </motion.div>
-              )}
+                    <motion.div
+                      className="bg-dune/8 backdrop-blur-sm rounded-full p-2"
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ duration: 0.3, ease: "backOut" }}
+                    >
+                      <Check className="w-3.5 h-3.5 text-emerald-600/70" strokeWidth={3} />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         </AnimatePresence>
