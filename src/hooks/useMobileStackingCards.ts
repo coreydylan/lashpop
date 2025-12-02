@@ -10,6 +10,8 @@ interface UseMobileStackingCardsOptions {
  * A hook that creates a "sticky stack" effect by manually transforming elements
  * to counteract scroll movement. This mimics position: sticky/fixed but works
  * reliably in custom scroll containers and doesn't affect layout flow (so snap systems work).
+ *
+ * Updated: Now uses scroll event listener instead of continuous RAF loop for better performance.
  */
 export function useMobileStackingCards({
   enabled,
@@ -19,6 +21,7 @@ export function useMobileStackingCards({
   const containerRef = useRef<HTMLElement | null>(null);
   const itemsRef = useRef<HTMLElement[]>([]);
   const rafRef = useRef<number | null>(null);
+  const itemTopsRef = useRef<number[]>([]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -32,47 +35,51 @@ export function useMobileStackingCards({
     itemsRef.current = items;
 
     // Helper to get layout position relative to scroll container
-    // Must match the logic in useMobileGSAPScroll for consistency
     const getLayoutTop = (element: HTMLElement): number => {
-      // If container is positioned, it's the offsetParent
       if (element.offsetParent === container) {
         return element.offsetTop;
       }
-      // Otherwise calculate difference (fallback)
       return element.offsetTop - container.offsetTop;
     };
 
+    // Cache item tops on mount (recalculate on resize if needed)
+    itemTopsRef.current = items.map(item => getLayoutTop(item));
+
     const updatePositions = () => {
       if (!containerRef.current) return;
-      
+
       const scrollTop = containerRef.current.scrollTop;
-      
-      itemsRef.current.forEach(item => {
-        const itemTop = getLayoutTop(item);
-        
-        // Calculate how far we've scrolled past the start of the item
+
+      itemsRef.current.forEach((item, index) => {
+        const itemTop = itemTopsRef.current[index];
         const delta = scrollTop - itemTop;
-        
-        // If we've scrolled past it (delta > 0), translate it down by that amount
-        // to keep it visually fixed at the top.
-        // We only do this if we haven't scrolled WAY past it (optimization)
+
         if (delta > 0) {
-          // Check if we should stop pinning (optional optimization: stop if fully covered)
-          // For now, infinite pinning ensures it stays put until covered.
           item.style.transform = `translate3d(0, ${delta}px, 0)`;
         } else {
-          // Reset if we scroll back up above it
           item.style.transform = 'translate3d(0, 0, 0)';
         }
       });
-
-      rafRef.current = requestAnimationFrame(updatePositions);
     };
 
-    // Start loop
+    // Throttled scroll handler using RAF
+    const handleScroll = () => {
+      if (rafRef.current) return; // Skip if already scheduled
+
+      rafRef.current = requestAnimationFrame(() => {
+        updatePositions();
+        rafRef.current = null;
+      });
+    };
+
+    // Initial position update
     updatePositions();
 
+    // Listen to scroll events instead of continuous RAF loop
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
     return () => {
+      container.removeEventListener('scroll', handleScroll);
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }

@@ -242,13 +242,13 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     onSectionChange: handleSectionChange
   });
 
-  // Enable "Stacking Card" effect for Welcome Section
-  // This visually pins the Welcome section so the Founder section slides over it
-  useMobileStackingCards({
-    enabled: isMobile,
-    containerSelector: '.mobile-scroll-container',
-    itemSelector: '[data-effect="stack"]'
-  });
+  // Stacking Card effect DISABLED - was causing scroll stutter
+  // The arch from FounderLetterSection naturally slides over the welcome section via z-index
+  // useMobileStackingCards({
+  //   enabled: isMobile,
+  //   containerSelector: '.mobile-scroll-container',
+  //   itemSelector: '[data-effect="stack"]'
+  // });
 
   return (
     <DevModeProvider>

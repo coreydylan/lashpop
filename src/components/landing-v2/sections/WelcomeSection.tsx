@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { MobileSwipeableWelcomeCards } from '../MobileSwipeableWelcomeCards'
@@ -27,9 +27,6 @@ export function WelcomeSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-20%" })
   const [isMobile, setIsMobile] = useState(false)
-  const [isScrollLocked, setIsScrollLocked] = useState(false)
-  const [hasViewedAllCards, setHasViewedAllCards] = useState(false)
-  const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -38,146 +35,71 @@ export function WelcomeSection() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Handle scroll locking when cards section is in view
-  useEffect(() => {
-    if (!isMobile || hasViewedAllCards) return
-
-    const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
-    const section = sectionRef.current
-    if (!scrollContainer || !section) return
-
-    let isLocked = false
-
-    const handleScroll = () => {
-      if (hasViewedAllCards) return
-
-      const rect = section.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-
-      // Lock when section is centered in viewport (top portion visible)
-      const shouldLock = rect.top <= viewportHeight * 0.3 && rect.top >= -100 && !hasViewedAllCards
-
-      if (shouldLock && !isLocked) {
-        isLocked = true
-        setIsScrollLocked(true)
-        // Dispatch event to notify scroll system
-        window.dispatchEvent(new CustomEvent('welcome-cards-lock', { detail: { locked: true } }))
-      }
-    }
-
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-    return () => scrollContainer.removeEventListener('scroll', handleScroll)
-  }, [isMobile, hasViewedAllCards])
-
-  // Handle touch/wheel blocking when locked
-  useEffect(() => {
-    if (!isMobile || !isScrollLocked) return
-
-    const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
-    if (!scrollContainer) return
-
-    const preventWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault()
-      }
-    }
-
-    // Prevent scroll during card viewing
-    scrollContainer.style.overflow = 'hidden'
-
-    // Add wheel prevention
-    scrollContainer.addEventListener('wheel', preventWheel, { passive: false })
-
-    return () => {
-      scrollContainer.style.overflow = ''
-      scrollContainer.removeEventListener('wheel', preventWheel)
-    }
-  }, [isMobile, isScrollLocked])
-
-  // Callback when all cards have been viewed
-  const handleAllCardsViewed = useCallback(() => {
-    setHasViewedAllCards(true)
-    setIsScrollLocked(false)
-
-    const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
-    if (scrollContainer) {
-      scrollContainer.style.overflow = ''
-    }
-
-    // Dispatch event to notify scroll system
-    window.dispatchEvent(new CustomEvent('welcome-cards-lock', { detail: { locked: false } }))
-  }, [])
-
-  // Mobile-specific render with swipeable cards
+  // Mobile-specific render with swipeable cards over desk image background
   if (isMobile) {
     return (
       <section
-        ref={sectionRef}
-        className="mobile-section relative"
+        ref={ref}
+        className="mobile-section relative min-h-[115vh] overflow-hidden"
         data-section-id="welcome"
-        style={{
-          minHeight: '100dvh',
-          background: 'linear-gradient(to bottom, rgb(226, 182, 166) 0%, rgb(235, 224, 203) 30%, rgb(235, 224, 203) 100%)',
-        }}
       >
-        {/* Content container */}
-        <div className="relative z-10 flex flex-col items-center justify-start pt-12 pb-24">
-          {/* LP Logo */}
-          <motion.div
-            className="relative mx-auto mb-6"
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={isInView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
-          >
-            <div
-              className="h-14 w-32 mx-auto"
-              style={{
-                maskImage: 'url(/lashpop-images/lp-logo.png)',
-                maskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
-                WebkitMaskSize: 'contain',
-                WebkitMaskRepeat: 'no-repeat',
-                WebkitMaskPosition: 'center',
-                backgroundColor: '#8a5e55'
-              }}
-            />
-          </motion.div>
+        {/* Background Image - same desk image as desktop */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="/lashpop-images/frontdeskeditwgradientedit2.webp"
+            alt="LashPop Studio Desk"
+            quality={100}
+            fill
+            sizes="100vw"
+            className="object-cover object-[35%_center]"
+            priority
+          />
+        </div>
 
-          {/* Swipeable Cards */}
-          <motion.div
-            className="w-full"
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          >
-            <MobileSwipeableWelcomeCards
-              onAllCardsViewed={handleAllCardsViewed}
-            />
-          </motion.div>
-
-          {/* Scroll indicator after cards are done */}
-          {hasViewedAllCards && (
+        {/* Content Container with Safe Zone - matching original layout */}
+        <div className="relative z-10 min-h-screen flex flex-col">
+          {/* Text Area - Takes up top portion, leaving bottom 50% as safe zone for desk elements */}
+          <div className="flex-1 flex items-center justify-center px-4 pb-[50vh] pt-64">
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="mt-8 flex flex-col items-center gap-2"
+              className="container max-w-5xl text-center"
+              initial={{ opacity: 0, y: 40 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+              transition={{ duration: 1, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
             >
-              <span className="text-xs text-dune/40">Continue scrolling</span>
-              <motion.svg
-                animate={{ y: [0, 5, 0] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="w-5 h-5 text-dune/30"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              {/* LP Logo */}
+              <motion.div
+                className="relative mx-auto mb-4"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={isInView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </motion.svg>
+                <div
+                  className="h-16 sm:h-20 w-full mx-auto"
+                  style={{
+                    maskImage: 'url(/lashpop-images/lp-logo.png)',
+                    maskSize: 'contain',
+                    maskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
+                    WebkitMaskSize: 'contain',
+                    WebkitMaskRepeat: 'no-repeat',
+                    WebkitMaskPosition: 'center',
+                    backgroundColor: '#8a5e55'
+                  }}
+                />
+              </motion.div>
+
+              {/* Swipeable Cards */}
+              <motion.div
+                className="w-full"
+                initial={{ opacity: 0, y: 30 }}
+                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <MobileSwipeableWelcomeCards />
+              </motion.div>
             </motion.div>
-          )}
+          </div>
         </div>
       </section>
     )

@@ -29,12 +29,10 @@ const cardContent = [
 ]
 
 interface MobileSwipeableWelcomeCardsProps {
-  onAllCardsViewed?: () => void
   onCardChange?: (index: number, total: number) => void
 }
 
 export function MobileSwipeableWelcomeCards({
-  onAllCardsViewed,
   onCardChange,
 }: MobileSwipeableWelcomeCardsProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -52,7 +50,6 @@ export function MobileSwipeableWelcomeCards({
       if (currentIndex >= cardContent.length - 1) {
         // Last card - mark as completed
         setHasCompletedOnce(true)
-        onAllCardsViewed?.()
         return
       }
 
@@ -65,7 +62,7 @@ export function MobileSwipeableWelcomeCards({
         onCardChange?.(currentIndex + 1, cardContent.length)
       }, 200)
     },
-    [currentIndex, onAllCardsViewed, onCardChange]
+    [currentIndex, onCardChange]
   )
 
   // Handle drag end
@@ -161,9 +158,9 @@ export function MobileSwipeableWelcomeCards({
   const isLastCard = currentIndex === cardContent.length - 1
 
   return (
-    <div ref={containerRef} className="relative w-full px-6" style={{ minHeight: '280px' }}>
-      {/* Progress dots */}
-      <div className="flex justify-center gap-2 mb-4">
+    <div ref={containerRef} className="relative w-full px-6" style={{ minHeight: '380px' }}>
+      {/* Pill-style progress indicators */}
+      <div className="flex justify-center gap-1.5 mb-6">
         {cardContent.map((_, index) => (
           <button
             key={index}
@@ -172,21 +169,25 @@ export function MobileSwipeableWelcomeCards({
                 setCurrentIndex(index)
               }
             }}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              index === currentIndex
-                ? 'bg-dusty-rose w-6'
-                : index < currentIndex || hasCompletedOnce
-                  ? 'bg-dusty-rose/40 hover:bg-dusty-rose/60'
-                  : 'bg-dune/20'
-            }`}
+            className="group relative py-1"
             disabled={index > currentIndex && !hasCompletedOnce}
             aria-label={`Go to card ${index + 1}`}
-          />
+          >
+            <div
+              className={`h-1 rounded-full transition-all duration-300 ${
+                index === currentIndex
+                  ? 'w-8 bg-dusty-rose'
+                  : index < currentIndex || hasCompletedOnce
+                    ? 'w-3 bg-dusty-rose/40 group-hover:bg-dusty-rose/60 group-hover:w-5'
+                    : 'w-3 bg-dune/20'
+              }`}
+            />
+          </button>
         ))}
       </div>
 
-      {/* Card stack container */}
-      <div className="relative" style={{ height: '220px' }}>
+      {/* Card stack container - taller cards */}
+      <div className="relative" style={{ height: '320px' }}>
         {/* Background stacked cards */}
         {renderBackgroundCards()}
 
@@ -276,13 +277,6 @@ export function MobileSwipeableWelcomeCards({
             </div>
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      {/* Card counter */}
-      <div className="text-center mt-3">
-        <span className="text-xs font-medium text-dune/30">
-          {currentIndex + 1} / {cardContent.length}
-        </span>
       </div>
     </div>
   )
