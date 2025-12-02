@@ -58,7 +58,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   const ref = useRef(null)
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
-    align: 'center',
+    align: 0.4, // Slightly left of center to move active card up in viewport
     skipSnaps: false
   })
 
@@ -100,9 +100,21 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     emblaApi.on('select', onSelect)
     emblaApi.on('reInit', onSelect)
 
-    // Track dragging for auto-rotate pause
-    const onPointerDown = () => setIsDragging(true)
-    const onPointerUp = () => setIsDragging(false)
+    // Track dragging for auto-rotate pause and tutorial completion
+    let userInitiatedDrag = false
+
+    const onPointerDown = () => {
+      setIsDragging(true)
+      userInitiatedDrag = true
+    }
+    const onPointerUp = () => {
+      setIsDragging(false)
+      // Complete tutorial after user drags and releases
+      if (userInitiatedDrag && isMobile && showTutorial && !tutorialSuccess) {
+        checkAndComplete(100)
+      }
+      userInitiatedDrag = false
+    }
 
     emblaApi.on('pointerDown', onPointerDown)
     emblaApi.on('pointerUp', onPointerUp)
@@ -118,24 +130,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
       emblaApi.off('pointerDown', onPointerDown)
       emblaApi.off('pointerUp', onPointerUp)
     }
-  }, [emblaApi, onSelect, isInView, isMobile, triggerTutorial])
-
-  // Track user swipes for tutorial completion
-  useEffect(() => {
-    if (!emblaApi || !isMobile || !showTutorial) return
-
-    const onSettle = () => {
-      // Complete tutorial after user navigates
-      if (showTutorial && !tutorialSuccess) {
-        checkAndComplete(100) // Complete on any settle
-      }
-    }
-
-    emblaApi.on('settle', onSettle)
-    return () => {
-      emblaApi.off('settle', onSettle)
-    }
-  }, [emblaApi, isMobile, showTutorial, tutorialSuccess, checkAndComplete])
+  }, [emblaApi, onSelect, isInView, isMobile, triggerTutorial, showTutorial, tutorialSuccess, checkAndComplete])
 
   // Auto-rotate reviews - pause when hovering or dragging
   useEffect(() => {
