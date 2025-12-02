@@ -421,15 +421,16 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
       {/* Main Content */}
       <motion.div
         style={{ opacity }}
-        className="relative z-10 container-wide"
+        className="relative z-10 w-full flex justify-center"
       >
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-end h-full pb-0">
+        {/* Constrained width container to keep text + arch as a cohesive centered unit */}
+        <div className="grid lg:grid-cols-[minmax(300px,480px)_minmax(320px,500px)] gap-8 lg:gap-12 items-end h-full pb-0 max-w-[1100px] mx-auto px-6">
           {/* Left Content */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-6 mb-[28vh]"
+            className="space-y-6 mb-[28vh] justify-self-end"
           >
             {/* Location accent with live weather on hover */}
             <motion.div
@@ -558,7 +559,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative h-full flex items-end pl-[65px]"
+            className="relative h-full flex items-end justify-self-start"
           >
             <div className="relative w-full h-full flex items-end">
               <div
