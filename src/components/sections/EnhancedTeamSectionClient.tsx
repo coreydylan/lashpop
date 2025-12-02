@@ -4,13 +4,77 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, ThumbsUp } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
+
+// Swipe Tutorial Hint Component - just the wiggling animation
+function SwipeHint() {
+  return (
+    <motion.div
+      className="absolute inset-0 flex items-end justify-center pb-14 pointer-events-none z-20"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {/* Swipe hint hand animation */}
+      <motion.div
+        className="relative"
+        animate={{
+          x: [0, 20, 0, -20, 0],
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      >
+        <div className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2">
+          <motion.div
+            animate={{ x: [0, 4, 0, -4, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Hand className="w-4 h-4 text-white rotate-90" />
+          </motion.div>
+          <span className="text-[10px] text-white/90 font-medium">Swipe tags</span>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// Hook to check/set localStorage for tutorial completion
+function useSwipeTutorial() {
+  const [hasCompletedTutorial, setHasCompletedTutorial] = useState(true) // Default true to prevent flash
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [tutorialSuccess, setTutorialSuccess] = useState(false)
+
+  useEffect(() => {
+    const completed = localStorage.getItem('team-swipe-tutorial-completed') === 'true'
+    setHasCompletedTutorial(completed)
+  }, [])
+
+  const completeTutorial = useCallback(() => {
+    setTutorialSuccess(true)
+    localStorage.setItem('team-swipe-tutorial-completed', 'true')
+    setTimeout(() => {
+      setHasCompletedTutorial(true)
+      setShowTutorial(false)
+    }, 1400)
+  }, [])
+
+  const triggerTutorial = useCallback(() => {
+    if (!hasCompletedTutorial) {
+      setShowTutorial(true)
+    }
+  }, [hasCompletedTutorial])
+
+  return { hasCompletedTutorial, showTutorial, tutorialSuccess, completeTutorial, triggerTutorial }
+}
 
 interface TeamMember {
   id: number
@@ -33,6 +97,11 @@ interface TeamMember {
   favoriteServices?: string[]
   funFact?: string
   quickFacts?: QuickFact[]
+  // Photo crop URLs for different formats
+  cropSquareUrl?: string
+  cropCloseUpCircleUrl?: string
+  cropMediumCircleUrl?: string
+  cropFullVerticalUrl?: string
 }
 
 interface PortfolioImage {
@@ -80,6 +149,35 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const sectionRef = useRef<HTMLElement>(null)
   const expandedRowRef = useRef<HTMLDivElement>(null)
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null)
+  const firstCardRef = useRef<HTMLDivElement>(null)
+
+  // Swipe tutorial state
+  const { hasCompletedTutorial, showTutorial, tutorialSuccess, completeTutorial, triggerTutorial } = useSwipeTutorial()
+
+  // Observe first card entering top half of viewport
+  useEffect(() => {
+    if (!isMobile || hasCompletedTutorial || !firstCardRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Check if the card is in the top half of the viewport
+            const rect = entry.boundingClientRect
+            const viewportHeight = window.innerHeight
+            if (rect.top < viewportHeight / 2) {
+              triggerTutorial()
+              observer.disconnect()
+            }
+          }
+        })
+      },
+      { threshold: 0.5 }
+    )
+
+    observer.observe(firstCardRef.current)
+    return () => observer.disconnect()
+  }, [isMobile, hasCompletedTutorial, triggerTutorial])
 
   // Navigation functions for swiping between team members
   const goToNextMember = () => {
@@ -344,89 +442,182 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         ref={sectionRef}
         className="py-20 bg-cream overflow-x-hidden"
       >
-        {/* Mobile Carousel View */}
+        {/* Mobile Grid View with Squircle Cards */}
         {isMobile ? (
-          <div className="relative w-full">
-            {/* Embla Viewport - py-4 prevents card shadow/transform clipping */}
-            <div className="overflow-hidden py-4" ref={emblaRef}>
-              {/* Embla Container */}
-              <div className="flex touch-pan-y gap-4 px-4">
-                {teamMembers.map((member, index) => {
+          <div className="px-4">
+            {/* 2-column grid for all mobile sizes */}
+            <div className="grid grid-cols-2 gap-3">
+              {(() => {
+                // Find the first card with swipeable tags (2+ categories)
+                let firstSwipeableIndex = -1
+                return teamMembers.map((member, index) => {
                   // Use service categories from Vagaro, fallback to derived from specialties
-                  const memberCategories = member.serviceCategories?.length 
-                    ? member.serviceCategories 
+                  const memberCategories = member.serviceCategories?.length
+                    ? member.serviceCategories
                     : getTeamMemberCategories(member.specialties)
+
+                  // Track first card with 2+ categories (swipeable)
+                  const hasSwipeableTags = memberCategories.length >= 2
+                  const isFirstSwipeable = hasSwipeableTags && firstSwipeableIndex === -1
+                  if (isFirstSwipeable) firstSwipeableIndex = index
+
+                  // Use square crop for face-focused image, fallback to regular image
+                  const cardImage = member.cropSquareUrl || member.image
+
+                  // Format name as "First L."
+                  const nameParts = member.name.split(' ')
+                  const firstName = nameParts[0]
+                  const lastInitial = nameParts.length > 1 ? `${nameParts[nameParts.length - 1][0]}.` : ''
+                  const displayName = `${firstName} ${lastInitial}`.trim()
+
+                  // Show tutorial on first swipeable card
+                  const showTutorialOnThisCard = isFirstSwipeable && showTutorial && !tutorialSuccess
 
                   return (
                     <motion.div
                       key={member.id}
-                      className="flex-[0_0_auto] w-[330px] cursor-grab active:cursor-grabbing"
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
+                      ref={isFirstSwipeable ? firstCardRef : undefined}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                       transition={{
-                        duration: 0.6,
-                        delay: index * 0.1,
+                        duration: 0.4,
+                        delay: index * 0.05,
                         ease: [0.23, 1, 0.32, 1]
                       }}
-                      onClick={() => handleMemberClick(member, index)}
+                      className="cursor-pointer"
                     >
-                      {/* Clean Card Design - Taller format (~15% larger on mobile) */}
-                      <div className="relative h-[483px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
-                        {/* Clear Background Image */}
-                        <div className="absolute inset-0">
-                          <Image
-                            src={member.image}
-                            alt={member.name}
-                            fill
-                            className="object-cover"
-                          />
-                          {/* Gradient for readability at bottom */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                        </div>
+                      {/* Taller Card Container - 3:4 aspect like desktop */}
+                      <div
+                        className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150 rounded-[24px]"
+                        onTouchStart={(e) => {
+                        const touch = e.touches[0]
+                        const card = e.currentTarget
+                        card.dataset.touchStartX = touch.clientX.toString()
+                        card.dataset.touchStartY = touch.clientY.toString()
+                        card.dataset.touchCurrentX = touch.clientX.toString()
+                        card.dataset.touchType = 'undecided' // undecided, tap, scroll-tags, scroll-page
+                      }}
+                      onTouchMove={(e) => {
+                        const card = e.currentTarget
+                        const startX = parseFloat(card.dataset.touchStartX || '0')
+                        const startY = parseFloat(card.dataset.touchStartY || '0')
+                        const currentX = parseFloat(card.dataset.touchCurrentX || '0')
+                        const touch = e.touches[0]
+                        const totalDeltaX = Math.abs(touch.clientX - startX)
+                        const totalDeltaY = Math.abs(touch.clientY - startY)
+                        const moveDeltaX = touch.clientX - currentX
 
-                        {/* Content at Bottom */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          {/* Name */}
-                          <h3 className="text-lg font-bold text-white drop-shadow-lg mb-1.5">
-                            {member.name}
-                          </h3>
+                        // Threshold to decide touch type (12px)
+                        const threshold = 12
 
-                          {/* Services - Horizontal scrolling chips */}
-                          {memberCategories.length > 0 && (
-                            <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
-                              <div className="flex gap-1 min-w-max">
-                                {memberCategories.slice(0, 4).map((category) => (
-                                  <span
-                                    key={category}
-                                    className="px-2 py-0.5 text-[9px] font-medium bg-white/15 backdrop-blur-sm text-white/90 rounded-full whitespace-nowrap"
-                                  >
-                                    {category}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        // Once decided, stick with it
+                        if (card.dataset.touchType === 'undecided') {
+                          if (totalDeltaX > threshold || totalDeltaY > threshold) {
+                            // Decide based on dominant direction
+                            if (totalDeltaX > totalDeltaY) {
+                              card.dataset.touchType = 'scroll-tags'
+                            } else {
+                              card.dataset.touchType = 'scroll-page'
+                            }
+                          }
+                        }
 
-                        {/* Highlight Effect */}
-                        {isHighlighted(member.id) && (
-                          <div className="absolute inset-0 pointer-events-none">
-                            <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/30 to-transparent animate-pulse" />
-                            <div className="absolute top-4 right-4 bg-dusty-rose text-white px-3 py-1 rounded-full text-xs font-medium">
-                              Recommended
+                        // If scrolling tags, handle it
+                        if (card.dataset.touchType === 'scroll-tags') {
+                          const tagsContainer = card.querySelector('[data-tags-scroll]') as HTMLElement
+                          if (tagsContainer) {
+                            tagsContainer.scrollLeft -= moveDeltaX
+                            // Complete tutorial if this is the first swipeable card
+                            if (isFirstSwipeable && showTutorial && !tutorialSuccess) {
+                              completeTutorial()
+                            }
+                          }
+                        }
+
+                        // Update current position for next move
+                        card.dataset.touchCurrentX = touch.clientX.toString()
+                      }}
+                      onTouchEnd={(e) => {
+                        const card = e.currentTarget
+                        // Only trigger click if touch type was never decided (true tap with <12px movement)
+                        if (card.dataset.touchType === 'undecided') {
+                          handleMemberClick(member, index)
+                        }
+                      }}
+                    >
+                      {/* Background Image - face-cropped */}
+                      <Image
+                        src={cardImage}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                        sizes="50vw"
+                      />
+
+                      {/* Gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                      {/* Content at Bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        {/* Name */}
+                        <h3 className="text-sm font-bold text-white drop-shadow-md mb-1.5">
+                          {displayName}
+                        </h3>
+
+                        {/* Swipeable Service Tags */}
+                        {memberCategories.length > 0 && (
+                          <div
+                            data-tags-scroll
+                            className="overflow-x-auto scrollbar-hide -mx-1 px-1"
+                          >
+                            <div className="flex gap-1 min-w-max">
+                              {memberCategories.slice(0, 4).map((category) => (
+                                <span
+                                  key={category}
+                                  className="px-2 py-0.5 text-[9px] font-medium bg-white/20 backdrop-blur-sm text-white rounded-full whitespace-nowrap"
+                                >
+                                  {category}
+                                </span>
+                              ))}
                             </div>
                           </div>
                         )}
                       </div>
-                    </motion.div>
-                  )
-                })}
-              </div>
-            </div>
 
-            {/* Gradient edges for seamless look */}
-            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
+                      {/* Highlight Ring */}
+                      {isHighlighted(member.id) && (
+                        <div className="absolute inset-0 pointer-events-none rounded-[24px] ring-[3px] ring-inset ring-dusty-rose" />
+                      )}
+
+                      {/* Swipe Tutorial Hint */}
+                      <AnimatePresence>
+                        {showTutorialOnThisCard && (
+                          <SwipeHint />
+                        )}
+                        {isFirstSwipeable && tutorialSuccess && (
+                          <motion.div
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                            initial={{ opacity: 1 }}
+                            animate={{ opacity: 0 }}
+                            transition={{ duration: 0.8, delay: 0.6 }}
+                          >
+                            <motion.div
+                              className="bg-green-500/90 backdrop-blur-sm rounded-full p-3"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: [0, 1.2, 1] }}
+                              transition={{ duration: 0.4, ease: "backOut" }}
+                            >
+                              <ThumbsUp className="w-6 h-6 text-white" />
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                  )
+                })
+              })()}
+            </div>
           </div>
         ) : (
           <div className="container px-4">
