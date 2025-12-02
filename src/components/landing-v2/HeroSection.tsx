@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
+import WeatherLocationBadge from './WeatherLocationBadge'
 
 interface HeroSectionProps {
   reviewStats?: Array<{
@@ -14,17 +15,6 @@ interface HeroSectionProps {
     rating: string
     reviewCount: number
   }>
-}
-
-// Import the exact same icons from v1
-function SunIcon({ className = "w-6 h-6" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="12" cy="12" r="5" />
-      <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"
-        strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" />
-    </svg>
-  )
 }
 
 function CircleDecoration({ className = "w-full h-full" }: { className?: string }) {
@@ -185,10 +175,9 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                 Effortless Beauty for the Modern Woman
               </div>
 
-              {/* Oceanside California - ANCHORED at bottom of 100dvh */}
-              <div className="flex items-center justify-center gap-2 text-golden pt-3">
-                <SunIcon className="w-4 h-4" />
-                <span className="text-xs tracking-wide uppercase">Oceanside, California</span>
+              {/* Oceanside California with live weather - ANCHORED at bottom of 100dvh */}
+              <div className="flex items-center justify-center pt-3">
+                <WeatherLocationBadge size="sm" />
               </div>
             </motion.div>
           </div>
@@ -327,15 +316,13 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
             transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-6 mb-[28vh]"
           >
-            {/* Location accent */}
+            {/* Location accent with live weather on hover */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8 }}
-              className="flex items-center gap-2 text-golden"
             >
-              <SunIcon className="w-5 h-5" />
-              <span className="caption">Oceanside, California</span>
+              <WeatherLocationBadge size="md" />
             </motion.div>
 
             {/* Reviews Chip */}
