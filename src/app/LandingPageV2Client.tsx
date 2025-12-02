@@ -5,10 +5,12 @@ import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorConte
 import { PanelStackProvider } from '@/contexts/PanelStackContext';
 import { VagaroWidgetProvider } from '@/contexts/VagaroWidgetContext';
 import { DevModeProvider } from '@/contexts/DevModeContext';
+import { AskLashpopProvider } from '@/contexts/AskLashpopContext';
 import { DevModeOverlay } from '@/components/dev-mode';
 import { DrawerProvider } from '@/components/drawers/DrawerContext';
 import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
+import { AskLashpopSheet, AskLashpopPanel, AskLashpopDesktopButton } from '@/components/ask-lashpop';
 import { Navigation } from '@/components/sections/Navigation';
 import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
@@ -281,6 +283,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     <BookingOrchestratorProvider>
       <PanelStackProvider services={services}>
         <VagaroWidgetProvider>
+        <AskLashpopProvider>
         <DrawerProvider>
           <PanelManagerProvider>
             <div className={`min-h-screen relative theme-v2 ${isMobile ? '' : 'bg-cream'}`}>
@@ -421,8 +424,13 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
           </div>
         </PanelManagerProvider>
       </DrawerProvider>
+      {/* ASK LASHPOP AI Concierge */}
+      <AskLashpopSheet />
+      <AskLashpopPanel />
+      <AskLashpopDesktopButton />
       {/* Dev Mode Overlay - activated by clicking logo 5 times */}
       <DevModeOverlay />
+      </AskLashpopProvider>
       </VagaroWidgetProvider>
       </PanelStackProvider>
     </BookingOrchestratorProvider>

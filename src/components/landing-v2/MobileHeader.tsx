@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Sparkles } from 'lucide-react'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { useDevMode } from '@/contexts/DevModeContext'
+import { useAskLashpop } from '@/contexts/AskLashpopContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
 
 // Section mapping for display names and navigation
@@ -49,6 +51,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const { actions, state } = usePanelStack()
   const { registerLogoClick } = useDevMode()
+  const { toggle: toggleChat, state: chatState } = useAskLashpop()
 
   // Get current section label for display
   const currentSectionLabel = SECTIONS.find(s => s.id === currentSection)?.label || ''
@@ -276,12 +279,32 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 />
               </button>
 
+              {/* ASK LASHPOP Button - Center */}
+              <motion.button
+                onClick={toggleChat}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`
+                  flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                  transition-all duration-200
+                  ${chatState.isOpen
+                    ? 'bg-dusty-rose text-white shadow-md'
+                    : 'bg-dusty-rose/10 border border-dusty-rose/20 text-dusty-rose'
+                  }
+                `}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-semibold tracking-wider uppercase">
+                  ASK LASHPOP
+                </span>
+              </motion.button>
+
               {/* Section Indicator / Menu Trigger */}
               <button
                 ref={menuButtonRef}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={`
-                  flex items-center gap-1.5 py-1 px-2 -mr-2 rounded-lg
+                  flex items-center gap-1.5 py-1 px-2 -mr-1 rounded-lg
                   transition-all duration-150
                   ${isMenuOpen
                     ? 'bg-dusty-rose/10'
