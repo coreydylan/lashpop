@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 
 interface LPLogoLoaderProps {
   /** Optional message to display below the logos */
@@ -18,13 +17,13 @@ export function LPLogoLoader({ message, size = 40 }: LPLogoLoaderProps) {
   // Calculate aspect ratio for LP logo - original is 122.21x157
   const lpAspectRatio = 122.21 / 157;
   // Scale LP down to match Vagaro V height visually
-  const lpHeight = size * 0.75;
+  const lpHeight = size * 0.85;
   const lpWidth = lpHeight * lpAspectRatio;
 
   // Vagaro logo is roughly square - size to match LP visually
   const vagaroSize = size * 0.85;
 
-  const defaultMessage = "Preparing your booking experience...";
+  const defaultMessage = "Preparing booking experience\npowered by Vagaro";
 
   return (
     <div className="flex flex-col items-center justify-center gap-5">
@@ -73,25 +72,26 @@ export function LPLogoLoader({ message, size = 40 }: LPLogoLoaderProps) {
           <span className="lp-connecting-dot" style={{ animationDelay: '400ms' }} />
         </div>
 
-        {/* Vagaro Logo with matching colorization */}
+        {/* Vagaro V Logo - using PNG mask with animated gradient fill */}
         <div
-          className="flex-shrink-0 relative flex items-center justify-center"
+          className="flex-shrink-0 lp-vagaro-logo"
           style={{
             width: vagaroSize,
             height: vagaroSize,
+            maskImage: 'url(/lashpop-images/Vagaro_Logo.png)',
+            maskSize: 'contain',
+            maskRepeat: 'no-repeat',
+            maskPosition: 'center',
+            WebkitMaskImage: 'url(/lashpop-images/Vagaro_Logo.png)',
+            WebkitMaskSize: 'contain',
+            WebkitMaskRepeat: 'no-repeat',
+            WebkitMaskPosition: 'center',
           }}
-        >
-          <Image
-            src="/lashpop-images/Vagaro_Logo.png"
-            alt="Vagaro"
-            fill
-            className="object-contain lp-vagaro-logo"
-          />
-        </div>
+        />
       </div>
 
       {/* Loading message with gradient color */}
-      <p className="text-sm lp-loader-text text-center max-w-[260px]">
+      <p className="text-sm lp-loader-text text-center max-w-[260px] whitespace-pre-line">
         {message || defaultMessage}
       </p>
 
@@ -120,16 +120,29 @@ export function LPLogoLoader({ message, size = 40 }: LPLogoLoaderProps) {
           animation: lp-dot-flow 1.2s ease-in-out infinite;
         }
 
-        .lp-vagaro-logo {
-          /* Shift coral/salmon to dusty rose - desaturate and shift hue */
-          filter: saturate(0.5) sepia(0.3) hue-rotate(-20deg) brightness(0.9);
-        }
-
         .lp-loader-text {
           color: rgb(165, 130, 118);
           font-weight: 500;
           letter-spacing: 0.01em;
           line-height: 1.4;
+        }
+
+        @keyframes lp-gradient-shift {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+
+        .lp-vagaro-logo {
+          background: linear-gradient(135deg, rgb(205, 168, 158), rgb(189, 136, 120), rgb(212, 175, 117), rgb(205, 168, 158));
+          background-size: 300% 300%;
+          animation: lp-gradient-shift 3s ease infinite;
         }
       `}</style>
     </div>

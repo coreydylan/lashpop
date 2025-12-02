@@ -977,7 +977,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                     className="absolute inset-0 flex items-center justify-center bg-cream z-20 transition-opacity duration-500"
                     style={{ opacity: vagaroState.isLoaded ? 0 : 1 }}
                   >
-                    <LPLogoLoader message="Loading booking..." size={56} />
+                    <LPLogoLoader message={"Preparing booking experience\npowered by Vagaro"} size={56} />
                   </div>
                 )}
 

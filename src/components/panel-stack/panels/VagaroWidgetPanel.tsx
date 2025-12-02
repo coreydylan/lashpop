@@ -242,7 +242,7 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
               className="absolute inset-0 z-20 flex items-center justify-center bg-cream transition-opacity duration-500"
               style={{ opacity: isVisible ? 0 : 1, pointerEvents: isVisible ? 'none' : 'auto' }}
             >
-              <LPLogoLoader message="Loading booking..." size={56} />
+              <LPLogoLoader message={"Preparing booking experience\npowered by Vagaro"} size={56} />
             </div>
           )}
 
