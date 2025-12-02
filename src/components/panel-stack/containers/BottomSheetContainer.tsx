@@ -418,8 +418,8 @@ export function BottomSheetContainer() {
           const velocity = info.velocity.y;
           const offset = info.offset.y;
 
-          // Swipe down from fullScreen → collapse
-          if (velocity > 300 || offset > 100) {
+          // Swipe down from fullScreen → collapse (lower thresholds for stickier feel)
+          if (velocity > 150 || offset > 60) {
             animateToSnap('collapsed');
             actions.dockAll();
           } else {
@@ -428,7 +428,7 @@ export function BottomSheetContainer() {
           }
         }}
       >
-        {/* Collapsed State: Chip Bar */}
+        {/* Collapsed State: Chip Bar - entire area is swipeable */}
         <AnimatePresence mode="wait">
           {currentSnap === 'collapsed' && hasCategoryPicker && (
             <motion.div
@@ -437,14 +437,21 @@ export function BottomSheetContainer() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              onPanEnd={(_, info) => {
+              drag="y"
+              dragConstraints={{ top: 0, bottom: 0 }}
+              dragElastic={0.2}
+              dragDirectionLock
+              onDragEnd={(_, info) => {
                 const velocity = info.velocity.y;
-                if (velocity < -300 && state.hasUserInteracted) {
+                const offset = info.offset.y;
+                // Lower thresholds for stickier feel
+                if ((velocity < -150 || offset < -30) && state.hasUserInteracted) {
                   handleChipBarSwipe('up');
-                } else if (velocity > 300) {
+                } else if (velocity > 200 || offset > 40) {
                   handleChipBarSwipe('down');
                 }
               }}
+              style={{ touchAction: 'none' }}
             >
               <CollapsedChipBar
                 onCategorySelect={handleCategorySelect}
@@ -466,20 +473,27 @@ export function BottomSheetContainer() {
               transition={{ duration: 0.15 }}
               className="h-full flex flex-col"
             >
-              {/* Drag Handle - only draggable surface in fullScreen */}
+              {/* Drag Handle - large touch target for swipe down */}
               <div
-                className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
+                className="flex flex-col items-center justify-center cursor-grab active:cursor-grabbing select-none"
                 onPointerDown={handleDragHandlePointerDown}
-                style={{ touchAction: 'none' }}
+                style={{
+                  touchAction: 'none',
+                  minHeight: '56px',
+                  paddingTop: '12px',
+                  paddingBottom: '8px',
+                }}
               >
                 <motion.div
-                  className="w-10 h-1 rounded-full"
+                  className="w-12 h-1.5 rounded-full"
                   animate={{
-                    width: isDragging ? 48 : 40,
+                    width: isDragging ? 56 : 48,
                     backgroundColor: isDragging ? 'rgba(161, 151, 129, 0.7)' : 'rgba(161, 151, 129, 0.4)',
                   }}
                   transition={{ duration: 0.1 }}
                 />
+                {/* Invisible touch target extension */}
+                <div className="w-full h-6" />
               </div>
 
               {/* Panel Content - scrolls independently */}
