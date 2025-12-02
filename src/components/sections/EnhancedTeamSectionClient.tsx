@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, ThumbsUp } from 'lucide-react'
+import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
@@ -12,36 +12,43 @@ import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 
-// Swipe Tutorial Hint Component - just the wiggling animation
+// Swipe Tutorial Hint Component - subtle wiggling icon
 function SwipeHint() {
   return (
     <motion.div
-      className="absolute inset-0 flex items-end justify-center pb-14 pointer-events-none z-20"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      className="absolute top-3 right-3 pointer-events-none z-20"
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      transition={{ duration: 0.2 }}
     >
-      {/* Swipe hint hand animation */}
       <motion.div
-        className="relative"
-        animate={{
-          x: [0, 20, 0, -20, 0],
-        }}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        className="bg-white/30 backdrop-blur-sm rounded-full p-1.5"
+        animate={{ x: [0, 3, 0, -3, 0] }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <div className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2">
-          <motion.div
-            animate={{ x: [0, 4, 0, -4, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Hand className="w-4 h-4 text-white rotate-90" />
-          </motion.div>
-          <span className="text-[10px] text-white/90 font-medium">Swipe tags</span>
-        </div>
+        <Hand className="w-3 h-3 text-white/80 rotate-90" />
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// Swipe Success Component - subtle spinning check
+function SwipeSuccess() {
+  return (
+    <motion.div
+      className="absolute top-3 right-3 pointer-events-none z-20"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ duration: 0.6, delay: 0.8 }}
+    >
+      <motion.div
+        className="bg-white/40 backdrop-blur-sm rounded-full p-1.5"
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ duration: 0.3, ease: "backOut" }}
+      >
+        <Check className="w-3 h-3 text-emerald-600" strokeWidth={3} />
       </motion.div>
     </motion.div>
   )
@@ -620,26 +627,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                       {/* Swipe Tutorial Hint */}
                       <AnimatePresence>
-                        {showTutorialOnThisCard && (
-                          <SwipeHint />
-                        )}
-                        {isFirstSwipeable && tutorialSuccess && (
-                          <motion.div
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-                            initial={{ opacity: 1 }}
-                            animate={{ opacity: 0 }}
-                            transition={{ duration: 0.8, delay: 0.6 }}
-                          >
-                            <motion.div
-                              className="bg-green-500/90 backdrop-blur-sm rounded-full p-3"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: [0, 1.2, 1] }}
-                              transition={{ duration: 0.4, ease: "backOut" }}
-                            >
-                              <ThumbsUp className="w-6 h-6 text-white" />
-                            </motion.div>
-                          </motion.div>
-                        )}
+                        {showTutorialOnThisCard && <SwipeHint />}
+                        {isFirstSwipeable && tutorialSuccess && <SwipeSuccess />}
                       </AnimatePresence>
                     </div>
                   </motion.div>

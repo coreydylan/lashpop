@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
-import { ThumbsUp, Hand } from 'lucide-react'
+import { Check, Hand } from 'lucide-react'
 import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
 
 // The 5 content cards with the new text
@@ -220,30 +220,22 @@ export function MobileSwipeableWelcomeCards({
                 {currentCard.text}
               </p>
 
-              {/* Swipe tutorial hint with confirmation */}
+              {/* Swipe tutorial hint - subtle icon only */}
               <AnimatePresence>
                 {showTutorial && !tutorialSuccess && currentIndex === 0 && (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ delay: 0.5 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ delay: 0.3, duration: 0.2 }}
                     className="mt-4"
                   >
                     <motion.div
-                      className="flex items-center gap-2"
-                      animate={{ x: [0, 8, 0, -8, 0] }}
-                      transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                      className="bg-dune/8 backdrop-blur-sm rounded-full p-2"
+                      animate={{ x: [0, 6, 0, -6, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                     >
-                      <div className="bg-dune/10 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2">
-                        <motion.div
-                          animate={{ x: [0, 3, 0, -3, 0] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                        >
-                          <Hand className="w-3.5 h-3.5 text-dune/50 rotate-90" />
-                        </motion.div>
-                        <span className="text-[10px] text-dune/50 font-medium">Swipe to read more</span>
-                      </div>
+                      <Hand className="w-3.5 h-3.5 text-dune/40 rotate-90" />
                     </motion.div>
                   </motion.div>
                 )}
@@ -252,15 +244,15 @@ export function MobileSwipeableWelcomeCards({
                     className="mt-4"
                     initial={{ opacity: 1 }}
                     animate={{ opacity: 0 }}
-                    transition={{ duration: 0.8, delay: 0.6 }}
+                    transition={{ duration: 0.6, delay: 0.8 }}
                   >
                     <motion.div
-                      className="bg-green-500/90 backdrop-blur-sm rounded-full p-2"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: [0, 1.2, 1] }}
-                      transition={{ duration: 0.4, ease: "backOut" }}
+                      className="bg-dune/8 backdrop-blur-sm rounded-full p-2"
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ duration: 0.3, ease: "backOut" }}
                     >
-                      <ThumbsUp className="w-4 h-4 text-white" />
+                      <Check className="w-3.5 h-3.5 text-emerald-600/70" strokeWidth={3} />
                     </motion.div>
                   </motion.div>
                 )}

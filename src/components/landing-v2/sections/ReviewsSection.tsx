@@ -6,7 +6,7 @@ import { useInView } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
-import { Hand, ThumbsUp } from 'lucide-react'
+import { Hand, Check } from 'lucide-react'
 import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 
 // Custom CSS for hidden scrollbars
@@ -492,44 +492,39 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
             </div>
           </div>
 
-          {/* Mobile Swipe Tutorial Hint */}
+          {/* Mobile Swipe Tutorial Hint - subtle icon */}
           <AnimatePresence>
             {isMobile && showTutorial && !tutorialSuccess && (
               <motion.div
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
               >
                 <motion.div
-                  className="bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 shadow-lg border border-white/60"
-                  animate={{ x: [0, 12, 0, -12, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="bg-white/50 backdrop-blur-sm rounded-full p-2 shadow-sm border border-white/40"
+                  animate={{ x: [0, 6, 0, -6, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <motion.div
-                    animate={{ x: [0, 4, 0, -4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <Hand className="w-4 h-4 text-dune/60 rotate-90" />
-                  </motion.div>
-                  <span className="text-xs text-dune/70 font-medium">Swipe for more reviews</span>
+                  <Hand className="w-4 h-4 text-dune/50 rotate-90" />
                 </motion.div>
               </motion.div>
             )}
             {isMobile && tutorialSuccess && (
               <motion.div
-                className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
               >
                 <motion.div
-                  className="bg-green-500/90 backdrop-blur-sm rounded-full p-3 shadow-lg"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: [0, 1.2, 1] }}
-                  transition={{ duration: 0.4, ease: "backOut" }}
+                  className="bg-white/50 backdrop-blur-sm rounded-full p-2 shadow-sm border border-white/40"
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.3, ease: "backOut" }}
                 >
-                  <ThumbsUp className="w-5 h-5 text-white" />
+                  <Check className="w-4 h-4 text-emerald-600/70" strokeWidth={3} />
                 </motion.div>
               </motion.div>
             )}

@@ -7,7 +7,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
-import { Hand, ThumbsUp } from 'lucide-react'
+import { Hand, Check } from 'lucide-react'
 
 // Stub data using gallery images for now
 const galleryImages = [
@@ -258,27 +258,22 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
           <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
           <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
 
-          {/* Mobile Swipe Tutorial Hint */}
+          {/* Mobile Swipe Tutorial Hint - subtle icon */}
           <AnimatePresence>
             {isMobile && showTutorial && !tutorialSuccess && (
               <motion.div
                 className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
               >
                 <motion.div
-                  className="bg-black/60 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2"
-                  animate={{ x: [0, 12, 0, -12, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="bg-black/40 backdrop-blur-sm rounded-full p-2"
+                  animate={{ x: [0, 6, 0, -6, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                 >
-                  <motion.div
-                    animate={{ x: [0, 4, 0, -4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                  >
-                    <Hand className="w-4 h-4 text-white rotate-90" />
-                  </motion.div>
-                  <span className="text-xs text-white font-medium">Swipe to explore</span>
+                  <Hand className="w-4 h-4 text-white/70 rotate-90" />
                 </motion.div>
               </motion.div>
             )}
@@ -287,15 +282,15 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                 className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
                 initial={{ opacity: 1 }}
                 animate={{ opacity: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
               >
                 <motion.div
-                  className="bg-green-500/90 backdrop-blur-sm rounded-full p-3"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: [0, 1.2, 1] }}
-                  transition={{ duration: 0.4, ease: "backOut" }}
+                  className="bg-black/40 backdrop-blur-sm rounded-full p-2"
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ duration: 0.3, ease: "backOut" }}
                 >
-                  <ThumbsUp className="w-5 h-5 text-white" />
+                  <Check className="w-4 h-4 text-emerald-400" strokeWidth={3} />
                 </motion.div>
               </motion.div>
             )}
