@@ -41,9 +41,8 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     // Marker is at 85dvh, offset positions it so buttons area is centered
     'hero-buttons': { threshold: 0.3, anchorOffset: vh * 0.35 },
 
-    // Welcome: disable snap - the arch sliding up over it IS the transition
-    // Snapping here fights with the arch animation and causes stutter
-    'welcome': { threshold: 0.35, anchorOffset: 0, disableSnap: true },
+    // Welcome: enable snap with a moderate threshold for comfortable reading
+    'welcome': { threshold: 0.6, anchorOffset: vh * 0.08 },
 
     // Founder letter: position for comfortable reading
     'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
