@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { gsap, ScrollTrigger, initGSAP, initGSAPSync } from '@/lib/gsap'
@@ -50,13 +50,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  // Track scroll progress of the container (mobile)
-  const { scrollYProgress } = useScroll({
-    target: mobileContainerRef,
-    offset: ["start start", "end end"],
-    layoutEffect: false
-  } as any)
 
   // GSAP ScrollTrigger for desktop
   useEffect(() => {
@@ -134,75 +127,60 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     }
   }, [])
 
-  // GSAP ScrollTrigger for mobile arch zoom effect
+  // Mobile: Subtle zoom effect on arch as it scrolls up (card overlay effect)
+  // The arch section slides up over the pinned WelcomeSection
   useEffect(() => {
-    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current) return
+    if (!isMobile) return
 
-    // Initialize GSAP synchronously for mobile scroll
-    initGSAPSync()
-
-    // Get the scroll container (mobile uses .mobile-scroll-container)
     const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
-    if (!scrollContainer) return
+    const archImage = mobileArchImageRef.current
 
-    // Calculate the scale needed to fill viewport width
-    // The arch image is 280px wide but the actual arch base is narrower (~210px)
-    // We need to overshoot so the arch base fills the viewport
-    const viewportWidth = window.innerWidth
-    const archBaseWidth = 210 // Approximate width of the arch base (narrower than full image)
-    const targetScale = (viewportWidth / archBaseWidth) * 1.05 // Overshoot by 5% to ensure full coverage
+    if (!scrollContainer || !archImage) return
 
-    // Store ref for closure
-    const imageRef = mobileArchImageRef.current
-    const triggerRef = mobileArchRef.current
+    let rafId: number
+    let lastScrollTop = -1
 
-    // Set initial state
-    gsap.set(imageRef, { scale: 1 })
+    const handleScroll = () => {
+      if (rafId) cancelAnimationFrame(rafId)
 
-    // Create the scroll-triggered tween directly
-    // scrub: 1 means it takes 1 second to "catch up" - provides buttery smoothness
-    const tween = gsap.to(imageRef, {
-      scale: targetScale,
-      ease: 'none', // Linear progress mapping to scroll
-      scrollTrigger: {
-        trigger: triggerRef,
-        scroller: scrollContainer,
-        start: 'top 33%', // Start when TOP of arch container is 1/3 from top of viewport
-        end: 'bottom bottom', // End when bottom of arch aligns with bottom of viewport
-        scrub: 1, // 1 second smoothing - the key to buttery animation
-        invalidateOnRefresh: true,
-      }
-    })
+      rafId = requestAnimationFrame(() => {
+        const scrollTop = scrollContainer.scrollTop
 
-    // Handle resize to recalculate scale
-    const handleResize = () => {
-      const newViewportWidth = window.innerWidth
-      const newTargetScale = (newViewportWidth / archBaseWidth) * 1.05
-      // Kill old tween and create new one with updated scale
-      tween.scrollTrigger?.kill()
-      tween.kill()
+        // Skip if scroll hasn't changed meaningfully
+        if (Math.abs(scrollTop - lastScrollTop) < 0.5) return
+        lastScrollTop = scrollTop
 
-      gsap.set(imageRef, { scale: 1 })
-      gsap.to(imageRef, {
-        scale: newTargetScale,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: triggerRef,
-          scroller: scrollContainer,
-          start: 'top 33%',
-          end: 'bottom bottom',
-          scrub: 1,
-          invalidateOnRefresh: true,
-        }
+        const viewportHeight = window.innerHeight
+
+        // Get arch image position
+        const archRect = archImage.getBoundingClientRect()
+        const archTop = archRect.top
+
+        // Calculate progress based on how far into the viewport the arch has traveled
+        // 0 = arch just entering from bottom, 1 = arch at top of viewport
+        const progress = Math.max(0, Math.min(1, (viewportHeight - archTop) / viewportHeight))
+
+        // Subtle zoom: 1.0 → 1.08 (just 8% zoom for depth)
+        const scale = 1 + (progress * 0.08)
+
+        // Apply transform with GPU acceleration
+        archImage.style.transform = `scale3d(${scale}, ${scale}, 1)`
       })
     }
 
-    window.addEventListener('resize', handleResize)
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll()
+
+    const handleResize = () => {
+      lastScrollTop = -1
+      handleScroll()
+    }
+    window.addEventListener('resize', handleResize, { passive: true })
 
     return () => {
-      tween.scrollTrigger?.kill()
-      tween.kill()
+      scrollContainer.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleResize)
+      if (rafId) cancelAnimationFrame(rafId)
     }
   }, [isMobile])
 
@@ -279,107 +257,56 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
       </div>
 
-      {/* Mobile Layout - Simple, clean, snappable */}
+      {/* Mobile Layout - Card overlay effect */}
+      {/* This section scrolls up and covers the WelcomeSection below */}
       <div
         ref={mobileContainerRef}
-        className="md:hidden relative z-20 bg-cream"
+        className="md:hidden relative z-30 bg-cream"
       >
-        {/* Emily Arch Image - Centered at top with scroll-driven zoom */}
+        {/* Emily Arch Image - Full width, subtle zoom on scroll */}
         <div
           ref={mobileArchRef}
-          className="pt-8 pb-6 flex justify-center overflow-hidden"
+          className="relative w-full overflow-hidden"
         >
-          <motion.div
-            className="relative"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
+          <div
+            ref={mobileArchImageRef}
+            className="relative w-full will-change-transform"
+            style={{
+              transformOrigin: 'center center',
+              transform: 'scale3d(1, 1, 1)',
+              backfaceVisibility: 'hidden',
+            }}
           >
-            {/* Decorative background blur */}
-            <div className="absolute -inset-6 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
-
-            {/* Arch image container with zoom transform - GSAP controls scale */}
-            <div
-              ref={mobileArchImageRef}
-              className="relative will-change-transform"
-              style={{ transformOrigin: 'center bottom', transform: 'scale(1)' }}
-            >
-              <Image
-                src="/lashpop-images/emily-arch.png"
-                alt="Emily in decorative arch"
-                width={280}
-                height={360}
-                style={{ width: '280px', height: 'auto' }}
-                className="relative z-10 drop-shadow-xl"
-                priority
-              />
-            </div>
-
-            {/* Decorative elements */}
-            <motion.div
-              className="absolute -top-2 -right-2 w-12 h-12 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-xl"
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.4, 0.6, 0.4],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
+            <Image
+              src="/lashpop-images/emily-arch.png"
+              alt="Emily in decorative arch"
+              width={600}
+              height={720}
+              className="w-full h-auto"
+              priority
             />
-            <motion.div
-              className="absolute -bottom-2 -left-2 w-14 h-14 bg-gradient-to-tr from-orange-200/30 to-yellow-200/30 rounded-full blur-xl"
-              animate={{
-                scale: [1.1, 1, 1.1],
-                opacity: [0.4, 0.6, 0.4],
-              }}
-              transition={{
-                duration: 3.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.5
-              }}
-            />
-          </motion.div>
+          </div>
         </div>
 
         {/* Letter Content */}
-        <div className="px-6 pb-16">
-          <motion.div
-            className="text-[#8a5e55] text-lg leading-relaxed font-normal font-swanky max-w-lg mx-auto"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-          >
+        <div className="px-6 py-10 bg-cream">
+          <div className="text-[#8a5e55] text-lg leading-relaxed font-normal font-swanky max-w-lg mx-auto">
             <p className="mb-5">{letterContent.greeting}</p>
 
             {letterContent.paragraphs.map((paragraph, index) => (
-              <motion.p
+              <p
                 key={index}
                 className={index === letterContent.paragraphs.length - 1 ? "mb-8" : "mb-5"}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 * (index + 1), ease: [0.23, 1, 0.32, 1] }}
               >
                 {paragraph}
-              </motion.p>
+              </p>
             ))}
 
-            <motion.div
-              className="flex flex-col gap-2"
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
-            >
+            <div className="flex flex-col gap-2">
               <p>{letterContent.signOff}</p>
               <p className="text-xl">{letterContent.signature}</p>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
 
         {/* Hidden accessible text for screen readers */}

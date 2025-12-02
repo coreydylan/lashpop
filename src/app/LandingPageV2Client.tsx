@@ -26,7 +26,6 @@ import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { PanelStackRenderer } from '@/components/panel-stack/PanelStackRenderer';
 import { SectionTransition } from '@/components/landing-v2/transitions/SectionTransition';
 import { useMobileGSAPScroll } from '@/hooks/useMobileGSAPScroll';
-import { useMobileStackingCards } from '@/hooks/useMobileStackingCards';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -242,14 +241,6 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     onSectionChange: handleSectionChange
   });
 
-  // Enable "Stacking Card" effect for Welcome Section
-  // This visually pins the Welcome section so the Founder section slides over it
-  useMobileStackingCards({
-    enabled: isMobile,
-    containerSelector: '.mobile-scroll-container',
-    itemSelector: '[data-effect="stack"]'
-  });
-
   return (
     <DevModeProvider>
     <BookingOrchestratorProvider>
@@ -313,9 +304,8 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                   {/*
                     WELCOME SECTION: Has its own background image, works on both mobile/desktop.
-                    Uses data-effect="stack" to be pinned by useMobileStackingCards hook.
                   */}
-                  <div className={isMobile ? "mobile-section z-10" : ""} data-section-id="welcome" data-effect="stack">
+                  <div className={isMobile ? "mobile-section" : ""} data-section-id="welcome">
                     <WelcomeSection />
                   </div>
 
