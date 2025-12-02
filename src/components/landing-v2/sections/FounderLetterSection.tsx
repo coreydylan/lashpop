@@ -147,10 +147,12 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
     if (!scrollContainer) return
 
-    // Calculate the scale needed to fill viewport width
+    // Calculate scales based on viewport width
+    // Arch image is 280px wide - we want it to start at 110% viewport and end at 120%
     const viewportWidth = window.innerWidth
-    const archBaseWidth = 210 // Approximate width of the arch base
-    const targetScale = (viewportWidth / archBaseWidth) * 1.05 // Overshoot by 5%
+    const archImageWidth = 280
+    const startScale = (viewportWidth * 1.1) / archImageWidth  // 110% viewport width
+    const endScale = (viewportWidth * 1.2) / archImageWidth    // 120% viewport width (subtle growth)
 
     // Store refs for closure
     const imageRef = mobileArchImageRef.current
@@ -158,9 +160,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     const gradientRef = mobileGradientRef.current
     const triggerRef = mobileArchRef.current
 
-    // Set initial states - arch starts lower and more transparent
-    gsap.set(imageRef, { scale: 1 })
-    gsap.set(wrapperRef, { y: 80, opacity: 0.85 })
+    // Set initial states - arch starts large (110% viewport), lower, and slightly transparent
+    gsap.set(imageRef, { scale: startScale })
+    gsap.set(wrapperRef, { y: 100, opacity: 0.9 })
     if (gradientRef) gsap.set(gradientRef, { opacity: 0 })
 
     // Create a timeline for coordinated animations
@@ -169,66 +171,67 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         trigger: triggerRef,
         scroller: scrollContainer,
         // Start earlier - when section first enters viewport from bottom
-        start: 'top 95%',
+        start: 'top 100%',
         // End when arch is properly positioned
-        end: 'top 25%',
+        end: 'top 20%',
         // Smoother scrub for silkier animation
         scrub: 1.5,
         invalidateOnRefresh: true,
       }
     })
 
-    // Slide-up animation happens first (0% to 60% of scroll)
+    // Slide-up animation - arch rises over the welcome section
     tl.to(wrapperRef, {
       y: 0,
       opacity: 1,
       ease: 'power2.out',
-      duration: 0.6
+      duration: 0.7
     }, 0)
 
-    // Gradient fade-in (20% to 80% of scroll)
+    // Gradient fade-in (creates the cream background reveal)
     if (gradientRef) {
       tl.to(gradientRef, {
         opacity: 1,
         ease: 'power1.inOut',
         duration: 0.6
-      }, 0.2)
+      }, 0.15)
     }
 
-    // Zoom animation continues through entire scroll (overlaps with slide-up)
+    // Subtle zoom from 110% to 120% viewport width
     tl.to(imageRef, {
-      scale: targetScale,
+      scale: endScale,
       ease: 'power1.out',
       duration: 1
-    }, 0.1)
+    }, 0)
 
-    // Handle resize to recalculate scale
+    // Handle resize to recalculate scales
     const handleResize = () => {
       const newViewportWidth = window.innerWidth
-      const newTargetScale = (newViewportWidth / archBaseWidth) * 1.05
+      const newStartScale = (newViewportWidth * 1.1) / archImageWidth
+      const newEndScale = (newViewportWidth * 1.2) / archImageWidth
 
       // Kill and recreate timeline
       tl.scrollTrigger?.kill()
       tl.kill()
 
-      gsap.set(imageRef, { scale: 1 })
-      gsap.set(wrapperRef, { y: 80, opacity: 0.85 })
+      gsap.set(imageRef, { scale: newStartScale })
+      gsap.set(wrapperRef, { y: 100, opacity: 0.9 })
       if (gradientRef) gsap.set(gradientRef, { opacity: 0 })
 
       const newTl = gsap.timeline({
         scrollTrigger: {
           trigger: triggerRef,
           scroller: scrollContainer,
-          start: 'top 95%',
-          end: 'top 25%',
+          start: 'top 100%',
+          end: 'top 20%',
           scrub: 1.5,
           invalidateOnRefresh: true,
         }
       })
 
-      newTl.to(wrapperRef, { y: 0, opacity: 1, ease: 'power2.out', duration: 0.6 }, 0)
-      if (gradientRef) newTl.to(gradientRef, { opacity: 1, ease: 'power1.inOut', duration: 0.6 }, 0.2)
-      newTl.to(imageRef, { scale: newTargetScale, ease: 'power1.out', duration: 1 }, 0.1)
+      newTl.to(wrapperRef, { y: 0, opacity: 1, ease: 'power2.out', duration: 0.7 }, 0)
+      if (gradientRef) newTl.to(gradientRef, { opacity: 1, ease: 'power1.inOut', duration: 0.6 }, 0.15)
+      newTl.to(imageRef, { scale: newEndScale, ease: 'power1.out', duration: 1 }, 0)
     }
 
     window.addEventListener('resize', handleResize)
@@ -317,7 +320,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       <div
         ref={mobileContainerRef}
         className="md:hidden relative z-20"
-        style={{ marginTop: '-120px' }} // Overlap welcome section for smooth reveal
+        style={{ marginTop: '-180px' }} // Larger overlap so arch fully covers welcome section
       >
         {/* Gradient overlay - fades in as arch slides up */}
         <div
@@ -338,7 +341,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           <div
             ref={mobileArchWrapperRef}
             className="relative will-change-transform"
-            style={{ transform: 'translateY(80px)', opacity: 0.85 }}
+            style={{ transform: 'translateY(100px)', opacity: 0.9 }}
           >
             {/* Decorative background blur */}
             <div className="absolute -inset-6 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
