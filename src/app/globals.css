@@ -264,6 +264,7 @@ a,
 /* Horizontal scrollable tag container */
 .horizontal-scroll-tags {
   display: flex;
+  flex-wrap: nowrap;
   gap: 0.375rem;
   overflow-x: auto;
   overflow-y: hidden;
@@ -279,6 +280,7 @@ a,
 
 .horizontal-scroll-tags > * {
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* Fade gradient for horizontal scroll indication */
