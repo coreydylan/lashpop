@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { BottomSheetFrame } from '../frames/BottomSheetFrame';
 import type { Panel } from '@/types/panel-stack';
@@ -55,6 +56,8 @@ export function BottomSheetContainer() {
   const contentRef = useRef<HTMLDivElement>(null);
   const [currentSnap, setCurrentSnap] = useState<SnapPoint>('closed');
   const [isDragging, setIsDragging] = useState(false);
+  const [contentAtTop, setContentAtTop] = useState(true);
+  const [showDragHint, setShowDragHint] = useState(true);
   const dragStartY = useRef(0);
 
   // Track vagaro widget panels for persistence
@@ -88,12 +91,35 @@ export function BottomSheetContainer() {
 
   // Animate to a snap point
   const animateToSnap = useCallback((snap: SnapPoint) => {
+    // Add haptic feedback
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(10); // Short 10ms vibration
+    }
     controls.start({
       y: `${SNAP_POINTS[snap]}%`,
       transition: springConfig,
     });
     setCurrentSnap(snap);
   }, [controls]);
+
+  // Handle content scroll - track when at top for drag behavior
+  const handleContentScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = e.currentTarget.scrollTop;
+    setContentAtTop(scrollTop <= 0);
+  }, []);
+
+  // Reset content scroll position tracking when panels change or snap changes
+  useEffect(() => {
+    // Reset to top when snap changes to peek or closed
+    if (currentSnap === 'peek' || currentSnap === 'closed') {
+      setContentAtTop(true);
+    }
+    // Also reset when returning to comfortable/full from peek
+    if ((currentSnap === 'comfortable' || currentSnap === 'full') && contentRef.current) {
+      const scrollTop = contentRef.current.scrollTop;
+      setContentAtTop(scrollTop <= 0);
+    }
+  }, [currentSnap, sortedPanels.length]);
 
   // Sync snap point with panel state
   useEffect(() => {
@@ -106,6 +132,54 @@ export function BottomSheetContainer() {
       animateToSnap('peek');
     }
   }, [hasAnyPanel, hasExpandedPanel, animateToSnap]);
+
+  // Escape key support
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && hasAnyPanel) {
+        e.preventDefault();
+        if (currentSnap === 'comfortable' || currentSnap === 'full') {
+          animateToSnap('peek');
+          actions.dockAll();
+        } else if (currentSnap === 'peek') {
+          animateToSnap('closed');
+          actions.closeAll();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasAnyPanel, currentSnap, animateToSnap, actions]);
+
+  // Android back button (History API)
+  useEffect(() => {
+    if (!hasAnyPanel) return;
+
+    // Push a state when sheet opens
+    window.history.pushState({ bottomSheet: true }, '');
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (currentSnap !== 'closed') {
+        // Prevent navigation, collapse sheet instead
+        e.preventDefault();
+        window.history.pushState({ bottomSheet: true }, '');
+
+        if (currentSnap === 'comfortable' || currentSnap === 'full') {
+          animateToSnap('peek');
+          actions.dockAll();
+        } else {
+          animateToSnap('closed');
+          actions.closeAll();
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [hasAnyPanel, currentSnap, animateToSnap, actions]);
 
   // Handle drag start
   const handleDragStart = () => {
@@ -190,6 +264,15 @@ export function BottomSheetContainer() {
     };
   }, [hasAnyPanel, currentSnap]);
 
+  // Hide drag hint after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowDragHint(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // Don't render if no panels
   if (!hasAnyPanel) {
     return null;
@@ -233,19 +316,41 @@ export function BottomSheetContainer() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        {/* Drag Handle - Refined, minimal */}
+        {/* Drag Handle - Enhanced and prominent */}
         <div
-          className="flex justify-center pt-2.5 pb-1.5 cursor-grab active:cursor-grabbing"
+          className="flex flex-col items-center py-4 cursor-grab active:cursor-grabbing"
           style={{ touchAction: 'none' }}
         >
           <motion.div
-            className="w-9 h-1 bg-sage/30 rounded-full"
+            className="w-12 h-1.5 bg-sage/50 rounded-full"
             animate={{
-              width: isDragging ? 44 : 36,
-              backgroundColor: isDragging ? 'rgba(161, 151, 129, 0.6)' : 'rgba(161, 151, 129, 0.3)',
+              width: isDragging ? 56 : 48,
+              backgroundColor: isDragging ? 'rgba(161, 151, 129, 0.7)' : 'rgba(161, 151, 129, 0.5)',
+              scale: showDragHint && !isDragging ? [1, 1.05, 1] : 1,
             }}
-            transition={{ duration: 0.15 }}
+            transition={{
+              width: { duration: 0.15 },
+              backgroundColor: { duration: 0.15 },
+              scale: {
+                duration: 2,
+                repeat: showDragHint ? Infinity : 0,
+                repeatType: 'loop' as const
+              },
+            }}
           />
+          <AnimatePresence>
+            {showDragHint && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.3 }}
+                className="mt-1.5 text-xs text-sage/60 select-none"
+              >
+                Drag to resize
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Panel Content */}
@@ -254,9 +359,12 @@ export function BottomSheetContainer() {
           className="overflow-y-auto overscroll-contain"
           style={{
             height: 'calc(100dvh - 20px)',
-            touchAction: currentSnap === 'full' || currentSnap === 'comfortable' ? 'pan-y' : 'none',
+            touchAction: (currentSnap === 'full' || currentSnap === 'comfortable')
+              ? (contentAtTop ? 'none' : 'pan-y')
+              : 'none',
             overscrollBehavior: 'contain',
           }}
+          onScroll={handleContentScroll}
         >
           {/* Regular panels with AnimatePresence */}
           <AnimatePresence mode="popLayout">
@@ -323,6 +431,33 @@ export function BottomSheetContainer() {
           <div className="h-8 bg-cream" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />
         </div>
       </motion.div>
+
+      {/* Floating Minimize Button - appears at comfortable/full snap points */}
+      <AnimatePresence>
+        {(currentSnap === 'comfortable' || currentSnap === 'full') && (
+          <motion.button
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            transition={{
+              delay: 1,
+              duration: 0.3,
+              ease: [0.4, 0, 0.2, 1]
+            }}
+            onClick={() => {
+              animateToSnap('peek');
+              actions.dockAll();
+            }}
+            className="fixed left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-full bg-cream/95 backdrop-blur-md shadow-lg border border-sage/20 hover:bg-cream hover:shadow-xl active:scale-95 transition-all"
+            style={{
+              bottom: 'calc(env(safe-area-inset-bottom, 24px) + 24px)',
+            }}
+          >
+            <ChevronDown className="w-4 h-4 text-sage" />
+            <span className="text-sm font-medium text-dune">Minimize</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   );
 }
