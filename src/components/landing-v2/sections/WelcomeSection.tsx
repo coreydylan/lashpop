@@ -40,8 +40,7 @@ export function WelcomeSection() {
     return (
       <section
         ref={ref}
-        className="mobile-section relative min-h-[115vh] overflow-hidden"
-        data-section-id="welcome"
+        className="relative min-h-[115vh] overflow-hidden"
       >
         {/* Background Image - same desk image as desktop */}
         <div className="absolute inset-0 z-0">
