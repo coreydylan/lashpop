@@ -38,11 +38,11 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
 
     // Hero-buttons: soft snap when scrolling past initial hero
     // Positions the "welcome to LashPop" title near top, buttons centered
-    // Marker is at 85dvh, offset positions it so buttons area is centered
     'hero-buttons': { threshold: 0.3, anchorOffset: vh * 0.35 },
 
-    // Welcome: enable snap with a moderate threshold for comfortable reading
-    'welcome': { threshold: 0.6, anchorOffset: vh * 0.07 },
+    // Welcome: strong snap to lock LP logo + cards centered in viewport
+    // Higher offset pulls content down into center view
+    'welcome': { threshold: 0.7, anchorOffset: vh * 0.15 },
 
     // Founder letter: position for comfortable reading
     'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },

@@ -170,10 +170,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       scrollTrigger: {
         trigger: triggerRef,
         scroller: scrollContainer,
-        // Start earlier - when section first enters viewport from bottom
-        start: 'top 100%',
+        // Start LATER - give welcome section time to be viewed before arch appears
+        // top 50% means arch starts animating when founder section top is at viewport center
+        start: 'top 50%',
         // End when arch is properly positioned
-        end: 'top 20%',
+        end: 'top 15%',
         // Smoother scrub for silkier animation
         scrub: 1.5,
         invalidateOnRefresh: true,
@@ -222,8 +223,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         scrollTrigger: {
           trigger: triggerRef,
           scroller: scrollContainer,
-          start: 'top 100%',
-          end: 'top 20%',
+          start: 'top 50%',
+          end: 'top 15%',
           scrub: 1.5,
           invalidateOnRefresh: true,
         }
