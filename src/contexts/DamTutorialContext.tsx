@@ -90,6 +90,39 @@ const MOBILE_STEPS: MobileTutorialStep[] = [
   'completion'
 ]
 
+const TUTORIAL_STORAGE_KEY = 'lashpop-dam-tutorial'
+
+interface StoredTutorialState {
+  completedDesktop: boolean
+  completedMobile: boolean
+  dismissed: boolean
+  promptedDesktop: boolean
+  promptedMobile: boolean
+  completedSteps: string[]
+}
+
+function loadTutorialFromStorage(): Partial<StoredTutorialState> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const stored = localStorage.getItem(TUTORIAL_STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored)
+    }
+  } catch (error) {
+    console.error('Failed to load tutorial state from localStorage:', error)
+  }
+  return {}
+}
+
+function saveTutorialToStorage(state: StoredTutorialState) {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(TUTORIAL_STORAGE_KEY, JSON.stringify(state))
+  } catch (error) {
+    console.error('Failed to save tutorial state to localStorage:', error)
+  }
+}
+
 export function DamTutorialProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<TutorialState>({
     isActive: false,
@@ -108,60 +141,35 @@ export function DamTutorialProvider({ children }: { children: ReactNode }) {
     showPromptDialog: false
   })
 
-  // Load tutorial state from database on mount
+  // Load tutorial state from localStorage on mount (per-device tracking)
   useEffect(() => {
-    async function loadTutorialState() {
-      try {
-        const response = await fetch('/api/dam/settings')
-        if (response.ok) {
-          const data = await response.json()
-          const tutorial = data.settings?.tutorial
+    const stored = loadTutorialFromStorage()
 
-          if (tutorial) {
-            setState(prev => ({
-              ...prev,
-              completedSteps: new Set(tutorial.completedSteps || []),
-              completedDesktop: tutorial.completedDesktop || false,
-              completedMobile: tutorial.completedMobile || false,
-              dismissed: tutorial.dismissed || false,
-              promptedDesktop: tutorial.promptedDesktop || false,
-              promptedMobile: tutorial.promptedMobile || false
-            }))
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load tutorial state:', error)
-      }
+    if (Object.keys(stored).length > 0) {
+      setState(prev => ({
+        ...prev,
+        completedSteps: new Set(stored.completedSteps || []),
+        completedDesktop: stored.completedDesktop || false,
+        completedMobile: stored.completedMobile || false,
+        dismissed: stored.dismissed || false,
+        promptedDesktop: stored.promptedDesktop || false,
+        promptedMobile: stored.promptedMobile || false
+      }))
     }
-
-    loadTutorialState()
   }, [])
 
-  // Save tutorial state to database
-  const saveTutorialState = useCallback(async (updates: Partial<TutorialState>) => {
-    try {
-      const tutorial = {
-        completed: updates.completedDesktop && updates.completedMobile,
-        dismissed: updates.dismissed ?? state.dismissed,
-        completedDesktop: updates.completedDesktop ?? state.completedDesktop,
-        completedMobile: updates.completedMobile ?? state.completedMobile,
-        promptedDesktop: updates.promptedDesktop ?? state.promptedDesktop,
-        promptedMobile: updates.promptedMobile ?? state.promptedMobile,
-        currentStep: updates.currentStepIndex ?? state.currentStepIndex,
-        completedSteps: Array.from(updates.completedSteps ?? state.completedSteps),
-        lastStepAt: new Date().toISOString()
-      }
-
-      await fetch('/api/dam/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tutorial
-        })
-      })
-    } catch (error) {
-      console.error('Failed to save tutorial state:', error)
+  // Save tutorial state to localStorage (per-device tracking)
+  const saveTutorialState = useCallback((updates: Partial<TutorialState>) => {
+    const stateToSave: StoredTutorialState = {
+      dismissed: updates.dismissed ?? state.dismissed,
+      completedDesktop: updates.completedDesktop ?? state.completedDesktop,
+      completedMobile: updates.completedMobile ?? state.completedMobile,
+      promptedDesktop: updates.promptedDesktop ?? state.promptedDesktop,
+      promptedMobile: updates.promptedMobile ?? state.promptedMobile,
+      completedSteps: Array.from(updates.completedSteps ?? state.completedSteps)
     }
+
+    saveTutorialToStorage(stateToSave)
   }, [state])
 
   const startTutorial = useCallback((deviceType: 'desktop' | 'mobile') => {

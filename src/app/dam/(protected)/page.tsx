@@ -795,10 +795,11 @@ export default function DAMPage() {
   const syncActiveLightboxAsset = useCallback((updatedAssets?: Asset[]) => {
     setActiveLightboxAsset((prev) => {
       if (!prev) return prev
-      const source = updatedAssets || assets
+      // Prefer provided assets, then allAssets (includes optimistic updates), then filtered assets
+      const source = updatedAssets || allAssets || assets
       return source.find((asset) => asset.id === prev.id) || prev
     })
-  }, [assets])
+  }, [allAssets, assets])
 
   const handleSingleTagsChange = useCallback(async (tags: any[]) => {
     if (!activeLightboxAsset) return
@@ -829,20 +830,21 @@ export default function DAMPage() {
         })
       }, 1000)
 
-      // OPTIMISTIC UPDATE for Single Asset
+      // OPTIMISTIC UPDATE for Single Asset - update both allAssets and activeLightboxAsset immediately
+      const teamTag = normalized.find((t: any) => t.category?.name === "team")
+      const newRegularTags = normalized.filter((t: any) => t.category?.name !== "team")
+
       setAllAssets(currentAssets => {
         return currentAssets.map(asset => {
           if (asset.id === activeLightboxAsset.id) {
             const updatedAsset = { ...asset }
-            
+
             // Handle Team Member
-            const teamTag = normalized.find((t: any) => t.category?.name === "team")
             if (teamTag) {
               updatedAsset.teamMemberId = teamTag.id
             }
 
             // Handle Regular Tags
-            const newRegularTags = normalized.filter((t: any) => t.category?.name !== "team")
             if (newRegularTags.length > 0) {
                const existingTags = updatedAsset.tags || []
                const toAdd = newRegularTags.filter((nt: any) => !existingTags.some(et => et.id === nt.id))
@@ -852,6 +854,21 @@ export default function DAMPage() {
           }
           return asset
         })
+      })
+
+      // Also update activeLightboxAsset immediately for instant UI feedback
+      setActiveLightboxAsset(prev => {
+        if (!prev || prev.id !== activeLightboxAsset.id) return prev
+        const updatedAsset = { ...prev }
+        if (teamTag) {
+          updatedAsset.teamMemberId = teamTag.id
+        }
+        if (newRegularTags.length > 0) {
+          const existingTags = updatedAsset.tags || []
+          const toAdd = newRegularTags.filter((nt: any) => !existingTags.some(et => et.id === nt.id))
+          updatedAsset.tags = [...existingTags, ...toAdd]
+        }
+        return updatedAsset
       })
 
       await applyTagsToAssetIds([activeLightboxAsset.id], normalized)

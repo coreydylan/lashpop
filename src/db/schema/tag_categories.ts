@@ -13,12 +13,19 @@ export const tagCategories = pgTable("tag_categories", {
   icon: text("icon"), // Optional icon identifier
   sortOrder: integer("sort_order").notNull().default(0), // Order in which to display
 
+  // Selection mode: how many tags from this category can be applied to an asset
+  // 'single' = only one tag allowed (replaces existing)
+  // 'multi' = unlimited tags allowed
+  // 'limited' = up to selectionLimit tags allowed
+  selectionMode: text("selection_mode").notNull().default("multi"), // 'single' | 'multi' | 'limited'
+  selectionLimit: integer("selection_limit"), // Only used when selectionMode is 'limited'
+
   // Collection-specific fields
   isCollection: boolean("is_collection").notNull().default(false), // Marks this category as a collection
   permissions: jsonb("permissions"), // Permission rules per tag value: { "tagName": { viewers: [], editors: [] } }
   defaultViewConfig: jsonb("default_view_config"), // Default view settings per tag value: { "tagName": { groupBy, hideTags, showTags } }
 
-  // Rating-specific fields
+  // Rating-specific fields (deprecated - use selectionMode: 'single' instead)
   isRating: boolean("is_rating").notNull().default(false), // Marks this category as a star rating system
 
   // Timestamps

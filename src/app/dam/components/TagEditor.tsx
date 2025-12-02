@@ -14,7 +14,8 @@ import {
   Tag as TagIcon,
   GripVertical,
   Link,
-  Lock
+  Lock,
+  Settings
 } from "lucide-react"
 
 interface TagData {
@@ -35,6 +36,8 @@ interface TagCategory {
   color: string
   tags?: TagData[]
   hierarchicalTags?: TagData[]
+  selectionMode?: 'single' | 'multi' | 'limited'
+  selectionLimit?: number | null
 }
 
 interface TagEditorProps {
@@ -61,6 +64,9 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
   const [draggedTagId, setDraggedTagId] = useState<string | null>(null)
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null)
   const [dragOverTagId, setDragOverTagId] = useState<string | null>(null)
+
+  // Category settings popover
+  const [settingsOpenFor, setSettingsOpenFor] = useState<string | null>(null)
 
   useEffect(() => {
     searchInputRef.current?.focus()
@@ -206,6 +212,16 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
       }
       return next
     })
+  }
+
+  const updateCategorySelectionMode = (categoryId: string, mode: 'single' | 'multi' | 'limited', limit?: number) => {
+    setEditedCategories(prev =>
+      prev.map(cat =>
+        cat.id === categoryId
+          ? { ...cat, selectionMode: mode, selectionLimit: mode === 'limited' ? (limit || 3) : null }
+          : cat
+      )
+    )
   }
 
   const toggleExpanded = (categoryId: string) => {
@@ -399,12 +415,110 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                     <span className="text-xs text-sage/60">
                       {category.tags?.length || 0} tags
                     </span>
+                    {/* Selection mode indicator */}
+                    <span className={clsx(
+                      "text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                      category.selectionMode === 'single' && "bg-amber-100 text-amber-700",
+                      category.selectionMode === 'limited' && "bg-blue-100 text-blue-700",
+                      (!category.selectionMode || category.selectionMode === 'multi') && "bg-green-100 text-green-700"
+                    )}>
+                      {category.selectionMode === 'single' ? 'Single' :
+                       category.selectionMode === 'limited' ? `Max ${category.selectionLimit || 3}` :
+                       'Multi'}
+                    </span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 relative">
                   {selectedItems.has(`cat-${category.id}`) && (
                     <Check className="w-4 h-4 text-dusty-rose" />
+                  )}
+                  {/* Settings button with dropdown */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSettingsOpenFor(settingsOpenFor === category.id ? null : category.id)
+                    }}
+                    className={clsx(
+                      "p-1.5 rounded transition",
+                      settingsOpenFor === category.id ? "bg-sage/20" : "hover:bg-sage/10"
+                    )}
+                    title="Selection mode settings"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-sage/70" />
+                  </button>
+                  {/* Settings dropdown */}
+                  {settingsOpenFor === category.id && (
+                    <div
+                      className="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-sage/20 z-50 py-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="px-3 py-2 border-b border-sage/10">
+                        <span className="text-xs font-semibold text-sage uppercase tracking-wide">Selection Mode</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          updateCategorySelectionMode(category.id, 'multi')
+                          setSettingsOpenFor(null)
+                        }}
+                        className={clsx(
+                          "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-sage/5",
+                          (!category.selectionMode || category.selectionMode === 'multi') && "bg-green-50"
+                        )}
+                      >
+                        <span>Multi (unlimited)</span>
+                        {(!category.selectionMode || category.selectionMode === 'multi') && (
+                          <Check className="w-4 h-4 text-green-600" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          updateCategorySelectionMode(category.id, 'single')
+                          setSettingsOpenFor(null)
+                        }}
+                        className={clsx(
+                          "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-sage/5",
+                          category.selectionMode === 'single' && "bg-amber-50"
+                        )}
+                      >
+                        <span>Single (one only)</span>
+                        {category.selectionMode === 'single' && (
+                          <Check className="w-4 h-4 text-amber-600" />
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          updateCategorySelectionMode(category.id, 'limited', category.selectionLimit || 3)
+                          setSettingsOpenFor(null)
+                        }}
+                        className={clsx(
+                          "w-full px-3 py-2 text-left text-sm flex items-center justify-between hover:bg-sage/5",
+                          category.selectionMode === 'limited' && "bg-blue-50"
+                        )}
+                      >
+                        <span>Limited (max {category.selectionLimit || 3})</span>
+                        {category.selectionMode === 'limited' && (
+                          <Check className="w-4 h-4 text-blue-600" />
+                        )}
+                      </button>
+                      {category.selectionMode === 'limited' && (
+                        <div className="px-3 py-2 border-t border-sage/10">
+                          <label className="text-xs text-sage block mb-1">Max tags:</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="99"
+                            value={category.selectionLimit || 3}
+                            onChange={(e) => {
+                              const limit = parseInt(e.target.value) || 3
+                              updateCategorySelectionMode(category.id, 'limited', limit)
+                            }}
+                            className="w-full px-2 py-1 text-sm border border-sage/20 rounded"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      )}
+                    </div>
                   )}
                   <button
                     onClick={(e) => {

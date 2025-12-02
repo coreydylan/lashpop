@@ -150,7 +150,9 @@ export async function POST(request: NextRequest) {
             sortOrder: category.sortOrder ?? 0,
             isCollection: category.isCollection ?? false,
             isRating: category.isRating ?? false,
-            description: category.description
+            description: category.description,
+            selectionMode: category.selectionMode ?? 'multi',
+            selectionLimit: category.selectionLimit ?? null
           }).returning()
           categoryId = newCat.id
         }
@@ -193,6 +195,8 @@ export async function POST(request: NextRequest) {
           .set({
             displayName: category.displayName,
             color: category.color,
+            selectionMode: category.selectionMode ?? 'multi',
+            selectionLimit: category.selectionLimit ?? null,
             updatedAt: new Date()
           })
           .where(eq(tagCategories.id, category.id))
