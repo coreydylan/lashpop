@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
+import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
+import { Hand, ThumbsUp } from 'lucide-react'
 import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 
 // Custom CSS for hidden scrollbars
@@ -67,6 +69,27 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const [isMobileExpanded, setIsMobileExpanded] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Swipe tutorial for mobile
+  const {
+    showTutorial,
+    tutorialSuccess,
+    triggerTutorial,
+    checkAndComplete,
+    resetSwipeDistance
+  } = useSwipeTutorial({
+    storageKey: 'reviews-swipe-tutorial',
+    completionThreshold: 80
+  })
   
   const onSelect = useCallback((api: any) => {
     setCurrentIndex(api.selectedScrollSnap())
@@ -79,14 +102,28 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     emblaApi.on('reInit', onSelect)
 
     // Embla handles dragging state internally, but we track it for our auto-rotate logic
-    const onPointerDown = () => setIsDragging(true)
+    const onPointerDown = () => {
+      setIsDragging(true)
+      resetSwipeDistance()
+    }
     const onPointerUp = () => setIsDragging(false)
+
+    // Track scroll for swipe tutorial
+    const onScroll = () => {
+      if (isMobile && showTutorial) {
+        checkAndComplete(15)
+      }
+    }
 
     emblaApi.rootNode().addEventListener('pointerdown', onPointerDown)
     window.addEventListener('pointerup', onPointerUp) // Window to catch release outside
+    emblaApi.on('scroll', onScroll)
 
     // Add subtle nudge animation when carousel comes into view
-    if (isInView && window.innerWidth < 768) {
+    if (isInView && isMobile) {
+      // Trigger swipe tutorial
+      triggerTutorial()
+
       setTimeout(() => {
         emblaApi.scrollTo(0.2, false)
         setTimeout(() => {
@@ -98,10 +135,11 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     return () => {
         emblaApi.off('select', onSelect)
         emblaApi.off('reInit', onSelect)
+        emblaApi.off('scroll', onScroll)
         emblaApi.rootNode().removeEventListener('pointerdown', onPointerDown)
         window.removeEventListener('pointerup', onPointerUp)
     }
-  }, [emblaApi, onSelect, isInView])
+  }, [emblaApi, onSelect, isInView, isMobile, triggerTutorial, resetSwipeDistance, checkAndComplete, showTutorial])
 
   // Auto-rotate reviews - pause when hovering or dragging
   useEffect(() => {
@@ -453,6 +491,49 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
               ))}
             </div>
           </div>
+
+          {/* Mobile Swipe Tutorial Hint */}
+          <AnimatePresence>
+            {isMobile && showTutorial && !tutorialSuccess && (
+              <motion.div
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+              >
+                <motion.div
+                  className="bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 shadow-lg border border-white/60"
+                  animate={{ x: [0, 12, 0, -12, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <motion.div
+                    animate={{ x: [0, 4, 0, -4, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <Hand className="w-4 h-4 text-dune/60 rotate-90" />
+                  </motion.div>
+                  <span className="text-xs text-dune/70 font-medium">Swipe for more reviews</span>
+                </motion.div>
+              </motion.div>
+            )}
+            {isMobile && tutorialSuccess && (
+              <motion.div
+                className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+              >
+                <motion.div
+                  className="bg-green-500/90 backdrop-blur-sm rounded-full p-3 shadow-lg"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ duration: 0.4, ease: "backOut" }}
+                >
+                  <ThumbsUp className="w-5 h-5 text-white" />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Ultra Minimal Morphing Line Indicator - Commented out as requested */}
           {/* <motion.div

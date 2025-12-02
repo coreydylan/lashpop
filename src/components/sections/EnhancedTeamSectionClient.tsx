@@ -52,10 +52,20 @@ function useSwipeTutorial() {
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(true) // Default true to prevent flash
   const [showTutorial, setShowTutorial] = useState(false)
   const [tutorialSuccess, setTutorialSuccess] = useState(false)
+  const swipeDistanceRef = useRef(0)
 
   useEffect(() => {
     const completed = localStorage.getItem('team-swipe-tutorial-completed') === 'true'
     setHasCompletedTutorial(completed)
+  }, [])
+
+  const resetSwipeDistance = useCallback(() => {
+    swipeDistanceRef.current = 0
+  }, [])
+
+  const addSwipeDistance = useCallback((distance: number) => {
+    swipeDistanceRef.current += Math.abs(distance)
+    return swipeDistanceRef.current
   }, [])
 
   const completeTutorial = useCallback(() => {
@@ -73,7 +83,15 @@ function useSwipeTutorial() {
     }
   }, [hasCompletedTutorial])
 
-  return { hasCompletedTutorial, showTutorial, tutorialSuccess, completeTutorial, triggerTutorial }
+  return {
+    hasCompletedTutorial,
+    showTutorial,
+    tutorialSuccess,
+    completeTutorial,
+    triggerTutorial,
+    addSwipeDistance,
+    resetSwipeDistance
+  }
 }
 
 interface TeamMember {
@@ -152,9 +170,17 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const firstCardRef = useRef<HTMLDivElement>(null)
 
   // Swipe tutorial state
-  const { hasCompletedTutorial, showTutorial, tutorialSuccess, completeTutorial, triggerTutorial } = useSwipeTutorial()
+  const {
+    hasCompletedTutorial,
+    showTutorial,
+    tutorialSuccess,
+    completeTutorial,
+    triggerTutorial,
+    addSwipeDistance,
+    resetSwipeDistance
+  } = useSwipeTutorial()
 
-  // Observe first card entering top half of viewport
+  // Observe first card - trigger tutorial immediately when visible
   useEffect(() => {
     if (!isMobile || hasCompletedTutorial || !firstCardRef.current) return
 
@@ -162,17 +188,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            // Check if the card is in the top half of the viewport
-            const rect = entry.boundingClientRect
-            const viewportHeight = window.innerHeight
-            if (rect.top < viewportHeight / 2) {
-              triggerTutorial()
-              observer.disconnect()
-            }
+            // Trigger immediately when card becomes visible
+            triggerTutorial()
+            observer.disconnect()
           }
         })
       },
-      { threshold: 0.5 }
+      { threshold: 0.1 } // Trigger when just 10% visible
     )
 
     observer.observe(firstCardRef.current)
@@ -496,6 +518,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         card.dataset.touchStartY = touch.clientY.toString()
                         card.dataset.touchCurrentX = touch.clientX.toString()
                         card.dataset.touchType = 'undecided' // undecided, tap, scroll-tags, scroll-page
+                        // Reset swipe distance tracking for tutorial
+                        if (isFirstSwipeable) resetSwipeDistance()
                       }}
                       onTouchMove={(e) => {
                         const card = e.currentTarget
@@ -527,9 +551,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           const tagsContainer = card.querySelector('[data-tags-scroll]') as HTMLElement
                           if (tagsContainer) {
                             tagsContainer.scrollLeft -= moveDeltaX
-                            // Complete tutorial if this is the first swipeable card
+                            // Track swipe distance and complete tutorial after meaningful swipe (50px)
                             if (isFirstSwipeable && showTutorial && !tutorialSuccess) {
-                              completeTutorial()
+                              const totalDistance = addSwipeDistance(moveDeltaX)
+                              if (totalDistance >= 50) {
+                                completeTutorial()
+                              }
                             }
                           }
                         }

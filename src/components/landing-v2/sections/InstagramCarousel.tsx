@@ -2,10 +2,12 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
-import { motion, useInView } from 'framer-motion'
+import { motion, useInView, AnimatePresence } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
+import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
+import { Hand, ThumbsUp } from 'lucide-react'
 
 // Stub data using gallery images for now
 const galleryImages = [
@@ -39,6 +41,27 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-20%" })
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Swipe tutorial for mobile
+  const {
+    showTutorial,
+    tutorialSuccess,
+    triggerTutorial,
+    checkAndComplete,
+    resetSwipeDistance
+  } = useSwipeTutorial({
+    storageKey: 'gallery-swipe-tutorial',
+    completionThreshold: 80
+  })
 
   // Initialize Embla with AutoScroll (wheel gestures handled by useCarouselWheelScroll)
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -68,11 +91,23 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   useEffect(() => {
     if (!emblaApi) return
 
-    // Wheel gestures are now handled by the WheelGesturesPlugin
-    // which provides natural momentum and drag physics
+    // Track pointer interactions for swipe tutorial
+    const onPointerDown = () => resetSwipeDistance()
+    const onScroll = () => {
+      if (isMobile && showTutorial) {
+        // Each scroll event contributes to the swipe distance
+        checkAndComplete(15)
+      }
+    }
+
+    emblaApi.on('pointerDown', onPointerDown)
+    emblaApi.on('scroll', onScroll)
 
     // Add subtle nudge animation when carousel comes into view on mobile
-    if (isInView && typeof window !== 'undefined' && window.innerWidth < 768) {
+    if (isInView && isMobile) {
+      // Trigger swipe tutorial
+      triggerTutorial()
+
       // Pause the auto-scroll briefly
       const autoScrollPlugin = emblaApi.plugins().autoScroll
       if (autoScrollPlugin) {
@@ -91,7 +126,12 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
         }, 600)
       }
     }
-  }, [emblaApi, isInView])
+
+    return () => {
+      emblaApi.off('pointerDown', onPointerDown)
+      emblaApi.off('scroll', onScroll)
+    }
+  }, [emblaApi, isInView, isMobile, triggerTutorial, resetSwipeDistance, checkAndComplete, showTutorial])
 
   // Use provided posts or fallback to gallery images
   // We duplicate them once to ensure smooth looping even on wide screens
@@ -217,6 +257,49 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
           {/* Gradient edges for seamless look */}
           <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
           <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
+
+          {/* Mobile Swipe Tutorial Hint */}
+          <AnimatePresence>
+            {isMobile && showTutorial && !tutorialSuccess && (
+              <motion.div
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+              >
+                <motion.div
+                  className="bg-black/60 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2"
+                  animate={{ x: [0, 12, 0, -12, 0] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <motion.div
+                    animate={{ x: [0, 4, 0, -4, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <Hand className="w-4 h-4 text-white rotate-90" />
+                  </motion.div>
+                  <span className="text-xs text-white font-medium">Swipe to explore</span>
+                </motion.div>
+              </motion.div>
+            )}
+            {isMobile && tutorialSuccess && (
+              <motion.div
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: 0 }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+              >
+                <motion.div
+                  className="bg-green-500/90 backdrop-blur-sm rounded-full p-3"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.2, 1] }}
+                  transition={{ duration: 0.4, ease: "backOut" }}
+                >
+                  <ThumbsUp className="w-5 h-5 text-white" />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </section>
 
