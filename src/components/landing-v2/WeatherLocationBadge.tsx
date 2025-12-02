@@ -47,22 +47,30 @@ function WeatherIcon({ condition, className }: { condition: WeatherCondition; cl
 
 export default function WeatherLocationBadge({ size = 'md', className = '' }: WeatherLocationBadgeProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [isTapped, setIsTapped] = useState(false)
   const { weather, isLoading } = useWeather()
 
   const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
   const textSize = size === 'sm' ? 'text-xs' : 'caption'
 
+  const isActive = isHovered || isTapped
+
+  const handleTap = () => {
+    setIsTapped(prev => !prev)
+  }
+
   return (
     <motion.div
-      className={`inline-flex items-center gap-2 text-golden cursor-default select-none ${className}`}
+      className={`inline-flex items-center gap-2 text-golden cursor-default select-none -m-3 p-3 ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onTap={handleTap}
       initial={false}
     >
       {/* Icon container with animation */}
       <div className="relative">
         <AnimatePresence mode="wait">
-          {!isHovered || isLoading ? (
+          {!isActive || isLoading ? (
             // Default sun icon with subtle pulse animation on hover
             <motion.div
               key="sun"
@@ -77,7 +85,7 @@ export default function WeatherLocationBadge({ size = 'md', className = '' }: We
               className="relative"
             >
               <motion.div
-                animate={isHovered && !isLoading ? {
+                animate={isActive && !isLoading ? {
                   rotate: [0, 15, -15, 0],
                   scale: [1, 1.1, 1],
                 } : {}}
@@ -104,7 +112,7 @@ export default function WeatherLocationBadge({ size = 'md', className = '' }: We
       {/* Text container with smooth width animation */}
       <div className="relative overflow-hidden">
         <AnimatePresence mode="wait">
-          {!isHovered || isLoading ? (
+          {!isActive || isLoading ? (
             <motion.span
               key="location"
               initial={{ opacity: 0, x: -10 }}
