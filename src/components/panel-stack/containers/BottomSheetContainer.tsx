@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence, PanInfo, useAnimation } from 'framer-motion';
-import { ChevronDown, X } from 'lucide-react';
+import { motion, AnimatePresence, useAnimation, useDragControls } from 'framer-motion';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { BottomSheetFrame } from '../frames/BottomSheetFrame';
 import { CollapsedChipBar } from './CollapsedChipBar';
@@ -24,11 +23,11 @@ const SNAP_POINTS = {
 
 type SnapPoint = keyof typeof SNAP_POINTS;
 
-// Spring animation config for natural feel
+// Smooth spring for state transitions
 const springConfig = {
   type: 'spring' as const,
-  damping: 30,
-  stiffness: 300,
+  damping: 35,
+  stiffness: 400,
 };
 
 /**
@@ -69,24 +68,21 @@ interface Category {
  * States:
  * - hidden: Not visible
  * - collapsed: Compact chip bar docked at bottom
- * - fullScreen: Full viewport content display
+ * - fullScreen: Full viewport, locked in place
  *
- * Behaviors:
- * - Tap category chip → fullScreen with ServicePanel
- * - Tap Discover chip → fullScreen with DiscoveryPanel
- * - Swipe up (only after first interaction) → fullScreen
- * - Swipe down / tap minimize → collapsed
- * - Close all → hidden
+ * Drag surfaces:
+ * - Collapsed: Entire chip bar is draggable (swipe up after interaction)
+ * - FullScreen: Only the drag handle at top is draggable (swipe down to collapse)
+ * - Content area scrolls independently, never triggers sheet drag
  */
 export function BottomSheetContainer() {
   const { state, actions } = usePanelStack();
   const controls = useAnimation();
+  const dragControls = useDragControls();
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [currentSnap, setCurrentSnap] = useState<SnapPoint>('hidden');
   const [isDragging, setIsDragging] = useState(false);
-  const [contentAtTop, setContentAtTop] = useState(true);
-  const dragStartY = useRef(0);
 
   // Track vagaro widget panels for persistence
   const [persistedVagaroPanels, setPersistedVagaroPanels] = useState<Panel[]>([]);
@@ -173,9 +169,9 @@ export function BottomSheetContainer() {
 
   // Animate to a snap point
   const animateToSnap = useCallback((snap: SnapPoint) => {
-    // Haptic feedback
+    // Haptic feedback on state change
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(10);
+      navigator.vibrate(8);
     }
     controls.start({
       y: `${SNAP_POINTS[snap]}%`,
@@ -184,28 +180,13 @@ export function BottomSheetContainer() {
     setCurrentSnap(snap);
   }, [controls]);
 
-  // Handle content scroll
-  const handleContentScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    setContentAtTop(scrollTop <= 0);
-  }, []);
-
-  // Reset scroll tracking on snap change
-  useEffect(() => {
-    if (currentSnap === 'collapsed' || currentSnap === 'hidden') {
-      setContentAtTop(true);
-    }
-  }, [currentSnap]);
-
   // Sync snap point with panel state
   useEffect(() => {
     if (!hasAnyPanel) {
       animateToSnap('hidden');
     } else if (hasExpandedPanel) {
-      // Has expanded panel → fullScreen
       animateToSnap('fullScreen');
     } else {
-      // Has panels but none expanded → collapsed (chip bar)
       animateToSnap('collapsed');
     }
   }, [hasAnyPanel, hasExpandedPanel, animateToSnap]);
@@ -216,11 +197,9 @@ export function BottomSheetContainer() {
       if (e.key === 'Escape' && hasAnyPanel) {
         e.preventDefault();
         if (currentSnap === 'fullScreen') {
-          // Go to collapsed
           animateToSnap('collapsed');
           actions.dockAll();
         } else if (currentSnap === 'collapsed') {
-          // Close all
           animateToSnap('hidden');
           actions.closeAll();
         }
@@ -255,60 +234,28 @@ export function BottomSheetContainer() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [hasAnyPanel, currentSnap, animateToSnap, actions]);
 
-  // Handle drag start
-  const handleDragStart = () => {
-    setIsDragging(true);
-    dragStartY.current = SNAP_POINTS[currentSnap];
+  // Handle drag on the drag handle (fullScreen state)
+  const handleDragHandlePointerDown = (e: React.PointerEvent) => {
+    if (currentSnap === 'fullScreen') {
+      dragControls.start(e);
+    }
   };
 
-  // Handle drag end
-  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setIsDragging(false);
-
-    const velocity = info.velocity.y;
-    const containerHeight = window.innerHeight;
-    const dragDistance = info.offset.y;
-    const dragPercentage = (dragDistance / containerHeight) * 100;
-    const currentPercentage = dragStartY.current + dragPercentage;
-
-    // Fast swipe down → collapse or close
-    if (velocity > 500) {
-      if (currentSnap === 'fullScreen') {
-        animateToSnap('collapsed');
-        actions.dockAll();
-      } else {
-        animateToSnap('hidden');
-        actions.closeAll();
+  // Handle swipe on collapsed chip bar
+  const handleChipBarSwipe = useCallback((direction: 'up' | 'down') => {
+    if (direction === 'up' && state.hasUserInteracted) {
+      // Expand first docked panel
+      const firstPanel = sortedPanels.find(p => p.state === 'docked');
+      if (firstPanel) {
+        actions.expandPanel(firstPanel.id);
       }
-      return;
-    }
-
-    // Fast swipe up → expand (only if user has interacted)
-    if (velocity < -500 && state.hasUserInteracted) {
-      if (currentSnap === 'collapsed') {
-        animateToSnap('fullScreen');
-        // Expand first docked panel
-        const firstPanel = sortedPanels.find(p => p.state === 'docked');
-        if (firstPanel) {
-          actions.expandPanel(firstPanel.id);
-        }
-      }
-      return;
-    }
-
-    // Slow drag - snap based on position
-    if (currentPercentage > 95) {
+    } else if (direction === 'down') {
       animateToSnap('hidden');
       actions.closeAll();
-    } else if (currentPercentage > 50) {
-      animateToSnap('collapsed');
-      actions.dockAll();
-    } else {
-      animateToSnap('fullScreen');
     }
-  };
+  }, [state.hasUserInteracted, sortedPanels, actions, animateToSnap]);
 
-  // Handle backdrop click
+  // Handle backdrop click - collapse to chip bar
   const handleBackdropClick = () => {
     if (currentSnap === 'fullScreen') {
       animateToSnap('collapsed');
@@ -316,31 +263,26 @@ export function BottomSheetContainer() {
     }
   };
 
-  // Lock body scroll when sheet is expanded
+  // Lock body scroll when sheet is in fullScreen
   useEffect(() => {
-    if (hasAnyPanel && currentSnap === 'fullScreen') {
+    if (currentSnap === 'fullScreen') {
       document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
     } else {
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
     }
 
     return () => {
       document.body.style.overflow = '';
-      document.body.style.touchAction = '';
     };
-  }, [hasAnyPanel, currentSnap]);
+  }, [currentSnap]);
 
   // Handle category selection from chip bar
   const handleCategorySelect = useCallback((category: Category) => {
-    // Mark user as having interacted
     actions.setUserInteracted();
 
     const isSelected = state.categorySelections.some(c => c.categoryId === category.id);
 
     if (isSelected) {
-      // Deselect: close the service panel
       actions.deselectCategory(category.id);
       const servicePanel = state.panels.find(
         p => p.type === 'service-panel' && p.data.categoryId === category.id
@@ -349,7 +291,6 @@ export function BottomSheetContainer() {
         actions.closePanel(servicePanel.id);
       }
     } else {
-      // Select: open service panel and expand
       actions.selectCategory(category.id, category.name);
 
       const categoryPickerPanel = state.panels.find(p => p.type === 'category-picker');
@@ -373,17 +314,13 @@ export function BottomSheetContainer() {
 
   // Handle Discover selection
   const handleDiscoverSelect = useCallback(() => {
-    // Mark user as having interacted
     actions.setUserInteracted();
 
-    // Check if discovery panel already exists
     const existingDiscovery = state.panels.find(p => p.type === 'discovery');
 
     if (existingDiscovery) {
-      // Expand existing
       actions.expandPanel(existingDiscovery.id);
     } else {
-      // Open new discovery panel
       actions.openPanel(
         'discovery',
         { entryPoint: 'chip-bar' },
@@ -391,12 +328,6 @@ export function BottomSheetContainer() {
       );
     }
   }, [state.panels, actions]);
-
-  // Handle close all
-  const handleClose = useCallback(() => {
-    animateToSnap('hidden');
-    actions.closeAll();
-  }, [animateToSnap, actions]);
 
   // Don't render if no panels
   if (!hasAnyPanel) {
@@ -416,8 +347,8 @@ export function BottomSheetContainer() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 bg-dune/40 backdrop-blur-sm z-40"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-dune/30 backdrop-blur-sm z-40"
             onClick={handleBackdropClick}
           />
         )}
@@ -429,19 +360,31 @@ export function BottomSheetContainer() {
         data-panel-mode="bottom"
         className={`
           fixed inset-x-0 bottom-0 z-50 bg-cream will-change-transform
-          ${currentSnap === 'fullScreen' ? 'rounded-t-[20px] shadow-2xl' : 'shadow-lg'}
+          ${currentSnap === 'fullScreen' ? 'rounded-t-[24px] shadow-2xl' : ''}
         `}
-        style={{
-          height: '100dvh',
-          touchAction: 'none',
-        }}
+        style={{ height: '100dvh' }}
         initial={{ y: '100%' }}
         animate={controls}
-        drag={currentSnap === 'fullScreen' || (currentSnap === 'collapsed' && state.hasUserInteracted) ? 'y' : false}
+        drag={currentSnap === 'fullScreen' ? 'y' : false}
+        dragControls={dragControls}
+        dragListener={false}
         dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0.1, bottom: 0.3 }}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
+        dragElastic={0.1}
+        onDragStart={() => setIsDragging(true)}
+        onDragEnd={(_, info) => {
+          setIsDragging(false);
+          const velocity = info.velocity.y;
+          const offset = info.offset.y;
+
+          // Swipe down from fullScreen → collapse
+          if (velocity > 300 || offset > 100) {
+            animateToSnap('collapsed');
+            actions.dockAll();
+          } else {
+            // Snap back to fullScreen
+            animateToSnap('fullScreen');
+          }
+        }}
       >
         {/* Collapsed State: Chip Bar */}
         <AnimatePresence mode="wait">
@@ -451,7 +394,15 @@ export function BottomSheetContainer() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
+              onPanEnd={(_, info) => {
+                const velocity = info.velocity.y;
+                if (velocity < -300 && state.hasUserInteracted) {
+                  handleChipBarSwipe('up');
+                } else if (velocity > 300) {
+                  handleChipBarSwipe('down');
+                }
+              }}
             >
               <CollapsedChipBar
                 onCategorySelect={handleCategorySelect}
@@ -470,33 +421,30 @@ export function BottomSheetContainer() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
               className="h-full flex flex-col"
             >
-              {/* Drag Handle */}
+              {/* Drag Handle - only draggable surface in fullScreen */}
               <div
-                className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+                className="flex flex-col items-center pt-3 pb-2 cursor-grab active:cursor-grabbing select-none"
+                onPointerDown={handleDragHandlePointerDown}
                 style={{ touchAction: 'none' }}
               >
                 <motion.div
-                  className="w-10 h-1 bg-sage/40 rounded-full"
+                  className="w-10 h-1 rounded-full"
                   animate={{
                     width: isDragging ? 48 : 40,
-                    backgroundColor: isDragging ? 'rgba(161, 151, 129, 0.6)' : 'rgba(161, 151, 129, 0.4)',
+                    backgroundColor: isDragging ? 'rgba(161, 151, 129, 0.7)' : 'rgba(161, 151, 129, 0.4)',
                   }}
-                  transition={{ duration: 0.15 }}
+                  transition={{ duration: 0.1 }}
                 />
               </div>
 
-              {/* Panel Content */}
+              {/* Panel Content - scrolls independently */}
               <div
                 ref={contentRef}
                 className="flex-1 overflow-y-auto overscroll-contain"
-                style={{
-                  touchAction: contentAtTop ? 'none' : 'pan-y',
-                  overscrollBehavior: 'contain',
-                }}
-                onScroll={handleContentScroll}
+                style={{ touchAction: 'pan-y' }}
               >
                 {/* Regular panels */}
                 <AnimatePresence mode="popLayout">
@@ -548,35 +496,12 @@ export function BottomSheetContainer() {
                 })}
 
                 {/* Bottom safe area padding */}
-                <div className="h-20 bg-cream" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />
+                <div className="h-16" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} />
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </motion.div>
-
-      {/* Floating Minimize Button - fullScreen only */}
-      <AnimatePresence>
-        {currentSnap === 'fullScreen' && (
-          <motion.button
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            transition={{ delay: 0.8, duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            onClick={() => {
-              animateToSnap('collapsed');
-              actions.dockAll();
-            }}
-            className="fixed left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-full bg-cream/95 backdrop-blur-md shadow-lg border border-sage/20 hover:bg-cream hover:shadow-xl active:scale-95 transition-all"
-            style={{
-              bottom: 'calc(env(safe-area-inset-bottom, 24px) + 24px)',
-            }}
-          >
-            <ChevronDown className="w-4 h-4 text-sage" />
-            <span className="text-sm font-medium text-dune">Minimize</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
     </>
   );
 }
