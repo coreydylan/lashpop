@@ -383,13 +383,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     className="cursor-pointer"
                   >
                     {/* Taller Card Container - 3:4 aspect like desktop */}
-                    <div
-                      className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150"
-                      style={{
-                        borderRadius: '22%',
-                        WebkitMaskImage: '-webkit-radial-gradient(white, black)',
-                      }}
-                    >
+                    <div className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150 rounded-[24px]">
                       {/* Background Image - face-cropped */}
                       <Image
                         src={cardImage}
@@ -431,13 +425,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                       {/* Highlight Ring */}
                       {isHighlighted(member.id) && (
-                        <div
-                          className="absolute inset-0 pointer-events-none"
-                          style={{
-                            borderRadius: '22%',
-                            boxShadow: 'inset 0 0 0 3px rgb(205, 168, 158)',
-                          }}
-                        />
+                        <div className="absolute inset-0 pointer-events-none rounded-[24px] ring-[3px] ring-inset ring-dusty-rose" />
                       )}
                     </div>
                   </motion.div>
