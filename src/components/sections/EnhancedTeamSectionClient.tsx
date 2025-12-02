@@ -389,33 +389,49 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         const card = e.currentTarget
                         card.dataset.touchStartX = touch.clientX.toString()
                         card.dataset.touchStartY = touch.clientY.toString()
-                        card.dataset.touchMoved = 'false'
+                        card.dataset.touchCurrentX = touch.clientX.toString()
+                        card.dataset.touchType = 'undecided' // undecided, tap, scroll-tags, scroll-page
                       }}
                       onTouchMove={(e) => {
                         const card = e.currentTarget
                         const startX = parseFloat(card.dataset.touchStartX || '0')
                         const startY = parseFloat(card.dataset.touchStartY || '0')
+                        const currentX = parseFloat(card.dataset.touchCurrentX || '0')
                         const touch = e.touches[0]
-                        const deltaX = touch.clientX - startX
-                        const deltaY = touch.clientY - startY
+                        const totalDeltaX = Math.abs(touch.clientX - startX)
+                        const totalDeltaY = Math.abs(touch.clientY - startY)
+                        const moveDeltaX = touch.clientX - currentX
 
-                        // If horizontal movement is greater, scroll the tags
-                        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
-                          card.dataset.touchMoved = 'true'
-                          const tagsContainer = card.querySelector('[data-tags-scroll]') as HTMLElement
-                          if (tagsContainer) {
-                            // Scroll in opposite direction of swipe
-                            tagsContainer.scrollLeft -= deltaX * 0.5
-                            // Update start position for continuous scroll
-                            card.dataset.touchStartX = touch.clientX.toString()
+                        // Threshold to decide touch type (12px)
+                        const threshold = 12
+
+                        // Once decided, stick with it
+                        if (card.dataset.touchType === 'undecided') {
+                          if (totalDeltaX > threshold || totalDeltaY > threshold) {
+                            // Decide based on dominant direction
+                            if (totalDeltaX > totalDeltaY) {
+                              card.dataset.touchType = 'scroll-tags'
+                            } else {
+                              card.dataset.touchType = 'scroll-page'
+                            }
                           }
                         }
+
+                        // If scrolling tags, handle it
+                        if (card.dataset.touchType === 'scroll-tags') {
+                          const tagsContainer = card.querySelector('[data-tags-scroll]') as HTMLElement
+                          if (tagsContainer) {
+                            tagsContainer.scrollLeft -= moveDeltaX
+                          }
+                        }
+
+                        // Update current position for next move
+                        card.dataset.touchCurrentX = touch.clientX.toString()
                       }}
                       onTouchEnd={(e) => {
                         const card = e.currentTarget
-                        const moved = card.dataset.touchMoved === 'true'
-                        // Only trigger click if we didn't swipe
-                        if (!moved) {
+                        // Only trigger click if touch type was never decided (true tap with <12px movement)
+                        if (card.dataset.touchType === 'undecided') {
                           handleMemberClick(member, index)
                         }
                       }}
