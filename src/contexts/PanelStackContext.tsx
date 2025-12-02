@@ -34,6 +34,7 @@ const getInitialState = (services: any[] = []): PanelStackState => ({
   visiblePanelIds: [],
   maxVisiblePanels: 8, // Will be updated based on viewport
   isUserInteracting: false,
+  hasUserInteracted: false, // Enables swipe-up after first category click or quiz start
   services,
 });
 
@@ -55,7 +56,8 @@ type Action =
   | { type: 'UPDATE_PANEL_SUMMARY'; payload: { panelId: string; summary: string } }
   | { type: 'UPDATE_PANEL_BREADCRUMBS'; payload: { panelId: string; breadcrumbs: BreadcrumbStep[] } }
   | { type: 'UPDATE_TOTAL_HEIGHT'; payload: number }
-  | { type: 'SET_INTERACTING'; payload: boolean };
+  | { type: 'SET_INTERACTING'; payload: boolean }
+  | { type: 'SET_USER_INTERACTED' };
 
 // ============================================================================
 // Reducer
@@ -298,6 +300,14 @@ function panelStackReducer(state: PanelStackState, action: Action): PanelStackSt
       return {
         ...state,
         isUserInteracting: action.payload,
+      };
+
+    case 'SET_USER_INTERACTED':
+      // Once set to true, stays true (enables swipe-up on collapsed sheet)
+      if (state.hasUserInteracted) return state;
+      return {
+        ...state,
+        hasUserInteracted: true,
       };
 
     default:
@@ -560,6 +570,10 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     dispatch({ type: 'UPDATE_PANEL_BREADCRUMBS', payload: { panelId, breadcrumbs } });
   }, []);
 
+  const setUserInteracted = useCallback(() => {
+    dispatch({ type: 'SET_USER_INTERACTED' });
+  }, []);
+
   const actions: PanelStackActions = useMemo(() => ({
     openPanel,
     closePanel,
@@ -579,6 +593,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     updatePanelData,
     updatePanelSummary,
     updatePanelBreadcrumbs,
+    setUserInteracted,
   }), [
     openPanel,
     closePanel,
@@ -598,6 +613,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     updatePanelData,
     updatePanelSummary,
     updatePanelBreadcrumbs,
+    setUserInteracted,
   ]);
 
   const value: PanelStackContextValue = useMemo(() => ({

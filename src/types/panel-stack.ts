@@ -96,6 +96,10 @@ export interface PanelStackState {
   // Interaction state
   isUserInteracting: boolean;
 
+  // Has user made first interaction (clicked category or started quiz)?
+  // Used to enable swipe-up gesture on collapsed bottom sheet
+  hasUserInteracted: boolean;
+
   // Service data (from database)
   services: any[];
 }
@@ -186,6 +190,9 @@ export interface PanelStackActions {
   updatePanelData: (panelId: string, data: any) => void;
   updatePanelSummary: (panelId: string, summary: string) => void;
   updatePanelBreadcrumbs: (panelId: string, breadcrumbs: BreadcrumbStep[]) => void;
+
+  // Bottom sheet interaction tracking
+  setUserInteracted: () => void;
 }
 
 // ============================================================================
@@ -207,12 +214,12 @@ export const PANEL_MAX_HEIGHT_DESKTOP = '60vh';
 export const PANEL_MAX_HEIGHT_MOBILE = '80vh';
 export const HEADER_HEIGHT = 80; // Match Header.tsx height
 
-// Bottom sheet snap points (percentage from bottom, 0 = bottom of screen)
+// Bottom sheet snap points (percentage from top, 0 = top of screen)
+// Simplified 3-state design: hidden, collapsed (chip bar), full screen
 export const BOTTOM_SHEET_SNAP_POINTS = {
-  closed: 100,  // Off screen
-  peek: 88,     // Just handle + header visible
-  half: 45,     // Half screen
-  full: 8,      // Nearly full screen
+  hidden: 100,     // Off screen (translateY 100%)
+  collapsed: 92,   // Compact chip bar docked at bottom (~8% = ~64px visible)
+  fullScreen: 5,   // Full takeover (leaves status bar)
 } as const;
 
 export type BottomSheetSnapPoint = keyof typeof BOTTOM_SHEET_SNAP_POINTS;
