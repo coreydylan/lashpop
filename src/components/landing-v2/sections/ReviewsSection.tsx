@@ -101,16 +101,23 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     emblaApi.on('select', onSelect)
     emblaApi.on('reInit', onSelect)
 
+    // Track if user is actively interacting (not auto-rotate)
+    let isUserInteracting = false
+
     // Embla handles dragging state internally, but we track it for our auto-rotate logic
     const onPointerDown = () => {
       setIsDragging(true)
+      isUserInteracting = true
       resetSwipeDistance()
     }
-    const onPointerUp = () => setIsDragging(false)
+    const onPointerUp = () => {
+      setIsDragging(false)
+      isUserInteracting = false
+    }
 
-    // Track scroll for swipe tutorial
+    // Track scroll for swipe tutorial - only user-initiated
     const onScroll = () => {
-      if (isMobile && showTutorial) {
+      if (isMobile && showTutorial && isUserInteracting) {
         checkAndComplete(15)
       }
     }

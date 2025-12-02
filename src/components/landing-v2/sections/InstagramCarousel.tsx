@@ -91,16 +91,25 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   useEffect(() => {
     if (!emblaApi) return
 
+    let isUserInteracting = false
+
     // Track pointer interactions for swipe tutorial
-    const onPointerDown = () => resetSwipeDistance()
+    const onPointerDown = () => {
+      isUserInteracting = true
+      resetSwipeDistance()
+    }
+    const onPointerUp = () => {
+      isUserInteracting = false
+    }
     const onScroll = () => {
-      if (isMobile && showTutorial) {
-        // Each scroll event contributes to the swipe distance
+      // Only count user-initiated scrolls, not auto-scroll
+      if (isMobile && showTutorial && isUserInteracting) {
         checkAndComplete(15)
       }
     }
 
     emblaApi.on('pointerDown', onPointerDown)
+    emblaApi.on('pointerUp', onPointerUp)
     emblaApi.on('scroll', onScroll)
 
     // Add subtle nudge animation when carousel comes into view on mobile
@@ -129,6 +138,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
 
     return () => {
       emblaApi.off('pointerDown', onPointerDown)
+      emblaApi.off('pointerUp', onPointerUp)
       emblaApi.off('scroll', onScroll)
     }
   }, [emblaApi, isInView, isMobile, triggerTutorial, resetSwipeDistance, checkAndComplete, showTutorial])
