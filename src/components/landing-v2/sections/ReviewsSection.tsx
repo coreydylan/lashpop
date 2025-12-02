@@ -6,7 +6,7 @@ import { useInView } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
-import { Hand, Check } from 'lucide-react'
+import { Hand, Check, ChevronUp } from 'lucide-react'
 import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 
 // Custom CSS for hidden scrollbars
@@ -70,6 +70,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   const [isMobileExpanded, setIsMobileExpanded] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [hasScrolledText, setHasScrolledText] = useState(false)
 
   // Check if mobile
   useEffect(() => {
@@ -469,11 +470,44 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                         </div>
 
                         {/* Review Text - Scrollable */}
-                        <div className="flex-1 overflow-y-auto review-text-scroll pr-2">
+                        <div
+                          className="flex-1 overflow-y-auto review-text-scroll pr-2 relative"
+                          onScroll={(e) => {
+                            if (index === 0 && !hasScrolledText && (e.target as HTMLElement).scrollTop > 10) {
+                              setHasScrolledText(true)
+                            }
+                          }}
+                        >
                           <p className="text-dune/85 leading-relaxed text-[15px]">
                             &quot;{review.reviewText}&quot;
                           </p>
                         </div>
+
+                        {/* Scroll hint for first card on mobile - shows fade gradient and subtle icon */}
+                        {index === 0 && isMobile && !hasScrolledText && review.reviewText.length > 200 && (
+                          <div
+                            className="absolute bottom-0 left-0 right-0 pointer-events-none"
+                            style={{ bottom: 0 }}
+                          >
+                            {/* Fade gradient */}
+                            <div className="h-16 bg-gradient-to-t from-white/80 via-white/40 to-transparent rounded-b-2xl" />
+                            {/* Scroll up hint */}
+                            <motion.div
+                              className="absolute bottom-3 left-1/2 -translate-x-1/2"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 1 }}
+                            >
+                              <motion.div
+                                className="bg-dune/10 backdrop-blur-sm rounded-full p-1.5"
+                                animate={{ y: [0, -3, 0] }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                              >
+                                <ChevronUp className="w-3.5 h-3.5 text-dune/40" />
+                              </motion.div>
+                            </motion.div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </motion.div>
