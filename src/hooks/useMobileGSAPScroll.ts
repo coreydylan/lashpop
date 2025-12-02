@@ -155,7 +155,7 @@ export function useMobileGSAPScroll({
         snapCooldownRef.current = true
         setTimeout(() => {
           snapCooldownRef.current = false
-        }, 400) // 400ms cooldown after snap completes
+        }, 700) // 700ms cooldown after snap completes - longer to prevent bounce-back
       }
     })
   }, [snapDuration, onSectionChange, dispatchSectionLocked, getConfigForSection])
@@ -288,9 +288,9 @@ export function useMobileGSAPScroll({
       const thresholdPx = viewportHeight * config.threshold
 
       // Only snap if we're within the threshold AND scroll velocity is low
-      // Higher velocity threshold (0.8 px/ms) = only snap when scroll has nearly stopped
+      // Lower velocity threshold = only snap when scroll has nearly stopped
       // This prevents the "fighting" sensation when trying to scroll past a section
-      if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 5 && Math.abs(scrollVelocity) < 0.8) {
+      if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 5 && Math.abs(scrollVelocity) < 0.4) {
         snapToSection(closestIndex, sections)
       } else if (distanceFromSnapPoint <= 5) {
         // Already at snap point, just dispatch event
