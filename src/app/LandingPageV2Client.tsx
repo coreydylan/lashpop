@@ -129,6 +129,19 @@ interface FounderLetterContent {
   signature: string;
 }
 
+interface HeroArchwayImage {
+  assetId: string;
+  url: string;
+  fileName: string;
+  position: { x: number; y: number };
+  objectFit: 'cover' | 'contain';
+}
+
+interface HeroArchwayConfig {
+  desktop: HeroArchwayImage;
+  mobile: HeroArchwayImage;
+}
+
 interface LandingPageV2ClientProps {
   services: Service[];
   teamMembers: TeamMember[];
@@ -138,6 +151,7 @@ interface LandingPageV2ClientProps {
   serviceCategories?: ServiceCategory[];
   faqData?: FAQData;
   founderLetterContent?: FounderLetterContent;
+  heroArchwayConfig?: HeroArchwayConfig;
 }
 
 // Minimal mobile styles - GSAP handles the scroll behavior
@@ -192,7 +206,7 @@ const mobileScrollStyles = `
   }
 `;
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroArchwayConfig }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -242,7 +256,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 It's at z-0, everything else is z-10+.
                 Contains: gradient, arch image, logo, decorative circles.
               */}
-              {isMobile && <MobileHeroBackground />}
+              {isMobile && <MobileHeroBackground archImage={heroArchwayConfig?.mobile} />}
 
               {/*
                 =====================================================
@@ -281,20 +295,21 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     data-section-id="hero"
                     style={isMobile ? { background: 'transparent' } : undefined}
                   >
-                    <HeroSection reviewStats={reviewStats} />
+                    <HeroSection reviewStats={reviewStats} archImage={heroArchwayConfig?.desktop} />
                   </div>
 
                   {/*
                     WELCOME SECTION: Has its own background image, works on both mobile/desktop.
                   */}
-                  <div className={isMobile ? "mobile-section" : ""} data-section-id="welcome">
+                  <div className={isMobile ? "mobile-section sticky top-0 z-10" : ""} data-section-id="welcome">
                     <WelcomeSection />
                   </div>
 
                 {/* Services panel trigger removed - users open via menu/buttons */}
 
                 {/* Continuous cream background wrapper for all sections from founder onwards */}
-                <div className="bg-cream relative">
+                {/* z-20 ensures this scrolls over the sticky WelcomeSection (z-10) on mobile */}
+                <div className="bg-cream relative z-20">
                   {/* Founder Letter Section */}
                   <div className={isMobile ? "mobile-section" : ""} data-section-id="founder">
                     <FounderLetterSection content={founderLetterContent} />

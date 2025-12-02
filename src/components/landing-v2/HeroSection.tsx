@@ -8,6 +8,14 @@ import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/compone
 import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
 import WeatherLocationBadge from './WeatherLocationBadge'
 
+interface HeroArchwayImage {
+  assetId: string
+  url: string
+  fileName: string
+  position: { x: number; y: number }
+  objectFit: 'cover' | 'contain'
+}
+
 interface HeroSectionProps {
   reviewStats?: Array<{
     id: string
@@ -15,6 +23,7 @@ interface HeroSectionProps {
     rating: string
     reviewCount: number
   }>
+  archImage?: HeroArchwayImage
 }
 
 function CircleDecoration({ className = "w-full h-full" }: { className?: string }) {
@@ -27,7 +36,16 @@ function CircleDecoration({ className = "w-full h-full" }: { className?: string 
   )
 }
 
-export default function HeroSection({ reviewStats }: HeroSectionProps) {
+// Default arch image when none provided
+const defaultArchImage: HeroArchwayImage = {
+  assetId: 'default',
+  url: '/lashpop-images/studio/studio-photos-by-salome.jpg',
+  fileName: 'studio-photos-by-salome.jpg',
+  position: { x: 50, y: 50 },
+  objectFit: 'cover'
+}
+
+export default function HeroSection({ reviewStats, archImage = defaultArchImage }: HeroSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const imageContainerRef = useRef<HTMLDivElement>(null)
@@ -207,11 +225,20 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               >
                 lashes + beauty
               </div>
-              <div
-                className="font-serif text-dusty-rose mt-0.5"
-                style={{ fontSize: '1.1rem', fontWeight: 500, letterSpacing: '0.03em' }}
-              >
-                for the modern woman
+              <div className="-mt-0.5">
+                <span
+                  className="font-serif text-dusty-rose"
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 500,
+                    letterSpacing: '0.03em',
+                    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+                    padding: '0.1em 0.4em',
+                    boxDecorationBreak: 'clone',
+                  }}
+                >
+                  for the modern woman
+                </span>
               </div>
 
               {/* Oceanside California with live weather - ANCHORED at bottom of 100dvh */}
@@ -467,22 +494,31 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               className="relative -mt-2"
             >
               <h1
-                className="font-league-script text-dune leading-none pl-2"
+                className="font-licorice text-dune leading-none"
                 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}
               >
-                welcome to
+                naturally effortless
               </h1>
               <div
-                className="font-serif text-dune -mt-6 relative z-10"
-                style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400 }}
+                className="font-serif text-dune -mt-2 relative z-10"
+                style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, letterSpacing: '0.05em' }}
               >
-                LashPop Studios
+                lashes + beauty
               </div>
-              <div
-                className="font-serif text-dusty-rose italic mt-2"
-                style={{ fontSize: 'clamp(1rem, 2.5vw, 1.75rem)' }}
-              >
-                Effortless Beauty for the Modern Woman
+              <div className="-mt-1">
+                <span
+                  className="font-serif text-dusty-rose"
+                  style={{
+                    fontSize: 'clamp(1rem, 2.5vw, 1.75rem)',
+                    fontWeight: 500,
+                    letterSpacing: '0.03em',
+                    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+                    padding: '0.1em 0.4em',
+                    boxDecorationBreak: 'clone',
+                  }}
+                >
+                  for the modern woman
+                </span>
               </div>
             </motion.div>
 
@@ -528,13 +564,17 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                 <div className="relative w-full h-full overflow-hidden">
                   <Image
                     ref={imageRef}
-                    src="/lashpop-images/studio/studio-photos-by-salome.jpg"
+                    src={archImage.url}
                     alt="LashPop Studio Interior"
                     fill
-                    className="object-cover object-right"
+                    className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
                     priority
                     quality={85}
-                    style={{ transform: "scale(1.4) translateX(0%)", transformOrigin: "center center" }}
+                    style={{
+                      transform: "scale(1.4) translateX(0%)",
+                      transformOrigin: "center center",
+                      objectPosition: `${archImage.position.x}% ${archImage.position.y}%`
+                    }}
                   />
                 </div>
 

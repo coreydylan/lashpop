@@ -4,6 +4,7 @@ import { getHomepageReviews, getReviewStats } from "@/actions/reviews"
 import { getInstagramPosts } from "@/actions/instagram"
 import { getServiceCategories } from "@/actions/categories"
 import { getFAQsGroupedByCategory } from "@/actions/faqs"
+import { getHeroArchwayConfig } from "@/actions/hero-archway"
 import LandingPageV2Client from "./LandingPageV2Client"
 
 // Ensure fresh data on each request (for admin-managed content)
@@ -71,6 +72,9 @@ export default async function HomePage() {
   // Fetch FAQs
   const faqData = await getFAQsGroupedByCategory()
 
+  // Fetch hero archway settings
+  const heroArchwayConfig = await getHeroArchwayConfig()
+
   return <LandingPageV2Client
     services={formattedServices}
     teamMembers={formattedTeamMembers}
@@ -79,5 +83,6 @@ export default async function HomePage() {
     instagramPosts={instagramPosts}
     serviceCategories={serviceCategories}
     faqData={faqData}
+    heroArchwayConfig={heroArchwayConfig}
   />
 }

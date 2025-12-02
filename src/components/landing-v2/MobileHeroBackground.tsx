@@ -3,6 +3,27 @@
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 
+interface HeroArchwayImage {
+  assetId: string
+  url: string
+  fileName: string
+  position: { x: number; y: number }
+  objectFit: 'cover' | 'contain'
+}
+
+interface MobileHeroBackgroundProps {
+  archImage?: HeroArchwayImage
+}
+
+// Default arch image when none provided
+const defaultArchImage: HeroArchwayImage = {
+  assetId: 'default',
+  url: '/lashpop-images/studio/studio-photos-by-salome.jpg',
+  fileName: 'studio-photos-by-salome.jpg',
+  position: { x: 50, y: 50 },
+  objectFit: 'cover'
+}
+
 /**
  * MobileHeroBackground
  *
@@ -28,7 +49,7 @@ function CircleDecoration({ className = "w-full h-full" }: { className?: string 
   )
 }
 
-export function MobileHeroBackground() {
+export function MobileHeroBackground({ archImage = defaultArchImage }: MobileHeroBackgroundProps) {
   const archRef = useRef<HTMLDivElement>(null)
   const logoRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(true)
@@ -110,10 +131,11 @@ export function MobileHeroBackground() {
           }}
         >
           <Image
-            src="/lashpop-images/studio/studio-photos-by-salome.jpg"
+            src={archImage.url}
             alt="LashPop Studio Interior"
             fill
-            className="object-cover object-center"
+            className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+            style={{ objectPosition: `${archImage.position.x}% ${archImage.position.y}%` }}
             priority
             quality={85}
           />
