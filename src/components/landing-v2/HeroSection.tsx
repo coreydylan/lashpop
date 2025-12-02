@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
@@ -67,13 +67,25 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   // Mobile - no longer need internal scroll state
   const heroContentRef = useRef<HTMLDivElement>(null)
 
-  const { actions: panelActions } = usePanelStack()
+  const { actions: panelActions, state: panelState } = usePanelStack()
   const [isMobile, setIsMobile] = useState(false)
   const [awardExpanded, setAwardExpanded] = useState(false)
   const awardBadgeRef = useRef<HTMLDivElement>(null)
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
+
+  // Handle Book Now click - open panel or bounce if already visible
+  const handleBookNowClick = useCallback((entryPoint: string) => {
+    const hasCategoryPicker = panelState.panels.some(p => p.type === 'category-picker')
+    if (hasCategoryPicker) {
+      // Chip bar already visible - trigger attention bounce
+      panelActions.triggerAttentionBounce()
+    } else {
+      // Open the category picker panel
+      panelActions.openPanel('category-picker', { entryPoint })
+    }
+  }, [panelState.panels, panelActions])
 
   // GSAP Animation for Background Pan (Desktop only)
   useEffect(() => {
@@ -281,7 +293,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             >
               {/* Book Now - Primary frosted glass button with dusty rose fill */}
               <button
-                onClick={() => panelActions.openPanel('category-picker', { entryPoint: 'hero-mobile' })}
+                onClick={() => handleBookNowClick('hero-mobile')}
                 className="relative group w-full"
               >
                 <div className="absolute inset-0 rounded-full bg-dusty-rose/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
@@ -543,7 +555,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 onClick={() => {
                   const offset = 64
                   window.scrollTo({ top: window.innerHeight - offset, behavior: 'smooth' })
-                  panelActions.openPanel('category-picker', { entryPoint: 'hero' })
+                  handleBookNowClick('hero')
                 }}
                 className="btn btn-primary"
               >

@@ -50,10 +50,13 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
   const handleCardChange = useCallback((index: number) => {
     // Card 4 mentions the "service bar above" - trigger chip bar here
     if (index === 3 && !hasTriggeredChipBar.current) {
+      hasTriggeredChipBar.current = true
       // Check if category-picker panel already exists
       const hasCategoryPicker = panelState.panels.some(p => p.type === 'category-picker')
-      if (!hasCategoryPicker) {
-        hasTriggeredChipBar.current = true
+      if (hasCategoryPicker) {
+        // Already visible - trigger attention bounce
+        panelActions.triggerAttentionBounce()
+      } else {
         // Open in docked state so it appears as chip bar (not full screen)
         panelActions.openPanel('category-picker', { entryPoint: 'welcome-card' }, { autoExpand: false })
       }

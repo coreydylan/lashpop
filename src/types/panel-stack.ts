@@ -100,6 +100,9 @@ export interface PanelStackState {
   // Used to enable swipe-up gesture on collapsed bottom sheet
   hasUserInteracted: boolean;
 
+  // Counter to trigger attention bounce on chip bar (increments on each trigger)
+  attentionBounceCount: number;
+
   // Service data (from database)
   services: any[];
 }
@@ -193,6 +196,9 @@ export interface PanelStackActions {
 
   // Bottom sheet interaction tracking
   setUserInteracted: () => void;
+
+  // Trigger attention bounce on collapsed chip bar
+  triggerAttentionBounce: () => void;
 }
 
 // ============================================================================
