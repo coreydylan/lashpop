@@ -47,6 +47,7 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
   const { actions: panelActions } = usePanelStack()
   const [isMobile, setIsMobile] = useState(false)
   const [awardExpanded, setAwardExpanded] = useState(false)
+  const awardBadgeRef = useRef<HTMLDivElement>(null)
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
@@ -123,6 +124,43 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Handle award badge expansion - dispatch event and scroll to show full badge
+  useEffect(() => {
+    if (!isMobile) return
+
+    // Dispatch event so scroll system knows about the state change
+    window.dispatchEvent(new CustomEvent('hero-award-toggle', {
+      detail: { expanded: awardExpanded }
+    }))
+
+    // If expanded and we have a ref, scroll to ensure badge is visible
+    if (awardExpanded && awardBadgeRef.current) {
+      // Small delay to let the animation start
+      setTimeout(() => {
+        const container = document.querySelector('.mobile-scroll-container')
+        if (!container || !awardBadgeRef.current) return
+
+        const badgeRect = awardBadgeRef.current.getBoundingClientRect()
+        const containerRect = container.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+
+        // Check if badge bottom is below viewport (with some padding)
+        const padding = 40
+        if (badgeRect.bottom > viewportHeight - padding) {
+          // Calculate how much to scroll to show the full badge
+          const scrollAmount = badgeRect.bottom - viewportHeight + padding + 60 // extra for expanded content
+          const currentScroll = container.scrollTop
+
+          // Smooth scroll to show the badge
+          container.scrollTo({
+            top: currentScroll + scrollAmount,
+            behavior: 'smooth'
+          })
+        }
+      }, 50)
+    }
+  }, [awardExpanded, isMobile])
+
   // No more custom scroll handling needed - page scrolls naturally
   // Mobile background (arch, gradient, logo) is now handled by MobileHeroBackground component
 
@@ -158,22 +196,22 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               className="text-center pb-8"
             >
               <h1
-                className="font-league-script text-dune leading-none mb-[-0.25rem]"
+                className="font-licorice text-dune leading-none"
                 style={{ fontSize: '2.5rem' }}
               >
-                welcome to
+                naturally effortless
               </h1>
               <div
-                className="font-serif text-dune"
-                style={{ fontSize: '1.875rem', fontWeight: 400 }}
+                className="font-serif text-dune -mt-1"
+                style={{ fontSize: '2rem', fontWeight: 400, letterSpacing: '0.05em' }}
               >
-                LashPop Studios
+                lashes + beauty
               </div>
               <div
-                className="font-serif text-dusty-rose italic mt-2"
-                style={{ fontSize: '1rem' }}
+                className="font-serif text-dusty-rose mt-0.5"
+                style={{ fontSize: '1.1rem', fontWeight: 500, letterSpacing: '0.03em' }}
               >
-                Effortless Beauty for the Modern Woman
+                for the modern woman
               </div>
 
               {/* Oceanside California with live weather - ANCHORED at bottom of 100dvh */}
@@ -261,7 +299,7 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
               )}
 
               {/* Award badge - Frosted glass chip with expandable Reader logo */}
-              <div className="relative w-full flex flex-col items-center">
+              <div ref={awardBadgeRef} className="relative w-full flex flex-col items-center">
                 <button
                   onClick={() => setAwardExpanded(!awardExpanded)}
                   className="relative group w-full"

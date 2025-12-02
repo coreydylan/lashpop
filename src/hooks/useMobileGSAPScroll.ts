@@ -36,8 +36,14 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     // Hero: snap to top of section (no offset needed)
     'hero': { threshold: 0.7, anchorOffset: 0 },
 
-    // Welcome: larger negative offset scrolls MORE = content appears HIGHER on screen
-    'welcome': { threshold: 0.6, anchorOffset: vh * -0.18 },
+    // Hero-buttons: soft snap when scrolling past initial hero
+    // Positions the "welcome to LashPop" title near top, buttons centered
+    // Marker is at 85dvh, offset positions it so buttons area is centered
+    'hero-buttons': { threshold: 0.3, anchorOffset: vh * 0.35 },
+
+    // Welcome: gentler threshold to make it easier to scroll past
+    // Lower threshold (0.35) = only snap when very close to the anchor point
+    'welcome': { threshold: 0.35, anchorOffset: vh * -0.12 },
 
     // Founder letter: position for comfortable reading
     'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
@@ -74,6 +80,8 @@ export function useMobileGSAPScroll({
   const currentSectionRef = useRef<number>(0)
   const isSnappingRef = useRef(false)
   const containerRef = useRef<HTMLElement | null>(null)
+  const snapCooldownRef = useRef(false) // Prevent immediate re-snap after a snap completes
+  const heroAwardExpandedRef = useRef(false) // Track if hero award badge is expanded
 
   // Merge default configs with custom configs
   const mergedConfigs = { ...getDefaultSectionConfigs(), ...sectionConfigs }
@@ -82,9 +90,18 @@ export function useMobileGSAPScroll({
   const getConfigForSection = useCallback((section: HTMLElement) => {
     const sectionId = section.getAttribute('data-section-id') || ''
     const config = mergedConfigs[sectionId]
+    let anchorOffset = config?.anchorOffset ?? 0
+
+    // Dynamic offset for hero-buttons when award badge is expanded
+    // Scroll up more (larger offset) to show the full badge
+    if (sectionId === 'hero-buttons' && heroAwardExpandedRef.current) {
+      const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+      anchorOffset = vh * 0.18 // Less offset = scroll more = content higher on screen
+    }
+
     return {
       threshold: config?.threshold ?? snapThreshold,
-      anchorOffset: config?.anchorOffset ?? 0,
+      anchorOffset,
       disableSnap: config?.disableSnap ?? false
     }
   }, [mergedConfigs, snapThreshold])
@@ -133,6 +150,13 @@ export function useMobileGSAPScroll({
       onComplete: () => {
         isSnappingRef.current = false
         dispatchSectionLocked(section)
+
+        // Start cooldown period to prevent immediate re-snap
+        // This gives user time to continue scrolling without fighting the snap
+        snapCooldownRef.current = true
+        setTimeout(() => {
+          snapCooldownRef.current = false
+        }, 400) // 400ms cooldown after snap completes
       }
     })
   }, [snapDuration, onSectionChange, dispatchSectionLocked, getConfigForSection])
@@ -207,7 +231,8 @@ export function useMobileGSAPScroll({
     }
 
     const checkForSnap = () => {
-      if (isSnappingRef.current) return
+      // Don't snap if already snapping or in cooldown period
+      if (isSnappingRef.current || snapCooldownRef.current) return
 
       const scrollTop = container.scrollTop
       const viewportHeight = window.innerHeight
@@ -264,8 +289,9 @@ export function useMobileGSAPScroll({
       const thresholdPx = viewportHeight * config.threshold
 
       // Only snap if we're within the threshold AND scroll velocity is low
-      // Velocity threshold of 1.5 px/ms allows snapping during slightly faster scrolls for more responsive feel
-      if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 5 && Math.abs(scrollVelocity) < 1.5) {
+      // Higher velocity threshold (0.8 px/ms) = only snap when scroll has nearly stopped
+      // This prevents the "fighting" sensation when trying to scroll past a section
+      if (distanceFromSnapPoint < thresholdPx && distanceFromSnapPoint > 5 && Math.abs(scrollVelocity) < 0.8) {
         snapToSection(closestIndex, sections)
       } else if (distanceFromSnapPoint <= 5) {
         // Already at snap point, just dispatch event
@@ -295,21 +321,30 @@ export function useMobileGSAPScroll({
         clearTimeout(scrollEndTimer)
       }
 
-      // Check for snap after scrolling stops - reduced delay for more responsive snapping
-      scrollEndTimer = setTimeout(checkForSnap, 100)
+      // Check for snap after scrolling stops
+      // 180ms delay gives user time to continue scrolling without interruption
+      // but still feels responsive when they actually stop
+      scrollEndTimer = setTimeout(checkForSnap, 180)
     }
 
     // Handle touch end for more responsive snapping on mobile
     const handleTouchEnd = () => {
-      // Reduced delay for more responsive snapping after touch
+      // Slightly longer delay after touch to let momentum settle
       if (scrollEndTimer) {
         clearTimeout(scrollEndTimer)
       }
-      scrollEndTimer = setTimeout(checkForSnap, 120)
+      scrollEndTimer = setTimeout(checkForSnap, 200)
     }
 
     container.addEventListener('scroll', handleScroll, { passive: true })
     container.addEventListener('touchend', handleTouchEnd, { passive: true })
+
+    // Listen for hero award badge toggle
+    const handleAwardToggle = (e: Event) => {
+      const customEvent = e as CustomEvent<{ expanded: boolean }>
+      heroAwardExpandedRef.current = customEvent.detail.expanded
+    }
+    window.addEventListener('hero-award-toggle', handleAwardToggle)
 
     // Initial section detection
     setTimeout(() => {
@@ -319,6 +354,7 @@ export function useMobileGSAPScroll({
     return () => {
       container.removeEventListener('scroll', handleScroll)
       container.removeEventListener('touchend', handleTouchEnd)
+      window.removeEventListener('hero-award-toggle', handleAwardToggle)
       if (scrollEndTimer) {
         clearTimeout(scrollEndTimer)
       }

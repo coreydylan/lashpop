@@ -37,6 +37,7 @@ const config: Config = {
         andika: ['var(--font-andika)', 'sans-serif'],
         'league-script': ['var(--font-league-script)', 'cursive'],
         swanky: ['var(--font-swanky)', 'cursive'],
+        licorice: ['var(--font-licorice)', 'cursive'],
         corey: ['Corey Nice', 'cursive'],
       },
       animation: {
