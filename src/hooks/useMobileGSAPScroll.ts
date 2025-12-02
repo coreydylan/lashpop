@@ -44,8 +44,8 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     // Higher offset pulls content down into center view
     'welcome': { threshold: 0.7, anchorOffset: vh * 0.15 },
 
-    // Founder letter: position for comfortable reading
-    'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
+    // Founder letter: DISABLED - negative margin may cause snap point conflict with welcome
+    'founder': { threshold: 0.7, anchorOffset: vh * 0.10, disableSnap: true },
 
     // Team: higher threshold, moderate offset for card visibility
     'team': { threshold: 0.7, anchorOffset: vh * 0.12 },
