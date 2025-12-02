@@ -41,6 +41,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   const mobileContainerRef = useRef<HTMLDivElement>(null)
   const mobileArchRef = useRef<HTMLDivElement>(null)
   const mobileArchImageRef = useRef<HTMLDivElement>(null)
+  const mobileArchWrapperRef = useRef<HTMLDivElement>(null)
+  const mobileGradientRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
 
   // Check if mobile
@@ -134,9 +136,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     }
   }, [])
 
-  // GSAP ScrollTrigger for mobile arch zoom effect
+  // GSAP ScrollTrigger for mobile arch slide-up + zoom effect
   useEffect(() => {
-    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current) return
+    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileArchWrapperRef.current) return
 
     // Initialize GSAP synchronously for mobile scroll
     initGSAPSync()
@@ -146,68 +148,100 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     if (!scrollContainer) return
 
     // Calculate the scale needed to fill viewport width
-    // The arch image is 280px wide but the actual arch base is narrower (~210px)
-    // We need to overshoot so the arch base fills the viewport
     const viewportWidth = window.innerWidth
-    const archBaseWidth = 210 // Approximate width of the arch base (narrower than full image)
-    const targetScale = (viewportWidth / archBaseWidth) * 1.05 // Overshoot by 5% to ensure full coverage
+    const archBaseWidth = 210 // Approximate width of the arch base
+    const targetScale = (viewportWidth / archBaseWidth) * 1.05 // Overshoot by 5%
 
-    // Store ref for closure
+    // Store refs for closure
     const imageRef = mobileArchImageRef.current
+    const wrapperRef = mobileArchWrapperRef.current
+    const gradientRef = mobileGradientRef.current
     const triggerRef = mobileArchRef.current
 
-    // Set initial state
+    // Set initial states - arch starts lower and more transparent
     gsap.set(imageRef, { scale: 1 })
+    gsap.set(wrapperRef, { y: 80, opacity: 0.85 })
+    if (gradientRef) gsap.set(gradientRef, { opacity: 0 })
 
-    // Create the scroll-triggered tween directly
-    // scrub: 1 means it takes 1 second to "catch up" - provides buttery smoothness
-    const tween = gsap.to(imageRef, {
-      scale: targetScale,
-      ease: 'none', // Linear progress mapping to scroll
+    // Create a timeline for coordinated animations
+    const tl = gsap.timeline({
       scrollTrigger: {
         trigger: triggerRef,
         scroller: scrollContainer,
-        start: 'top 33%', // Start when TOP of arch container is 1/3 from top of viewport
-        end: 'bottom bottom', // End when bottom of arch aligns with bottom of viewport
-        scrub: 1, // 1 second smoothing - the key to buttery animation
+        // Start earlier - when section first enters viewport from bottom
+        start: 'top 95%',
+        // End when arch is properly positioned
+        end: 'top 25%',
+        // Smoother scrub for silkier animation
+        scrub: 1.5,
         invalidateOnRefresh: true,
       }
     })
+
+    // Slide-up animation happens first (0% to 60% of scroll)
+    tl.to(wrapperRef, {
+      y: 0,
+      opacity: 1,
+      ease: 'power2.out',
+      duration: 0.6
+    }, 0)
+
+    // Gradient fade-in (20% to 80% of scroll)
+    if (gradientRef) {
+      tl.to(gradientRef, {
+        opacity: 1,
+        ease: 'power1.inOut',
+        duration: 0.6
+      }, 0.2)
+    }
+
+    // Zoom animation continues through entire scroll (overlaps with slide-up)
+    tl.to(imageRef, {
+      scale: targetScale,
+      ease: 'power1.out',
+      duration: 1
+    }, 0.1)
 
     // Handle resize to recalculate scale
     const handleResize = () => {
       const newViewportWidth = window.innerWidth
       const newTargetScale = (newViewportWidth / archBaseWidth) * 1.05
-      // Kill old tween and create new one with updated scale
-      tween.scrollTrigger?.kill()
-      tween.kill()
+
+      // Kill and recreate timeline
+      tl.scrollTrigger?.kill()
+      tl.kill()
 
       gsap.set(imageRef, { scale: 1 })
-      gsap.to(imageRef, {
-        scale: newTargetScale,
-        ease: 'none',
+      gsap.set(wrapperRef, { y: 80, opacity: 0.85 })
+      if (gradientRef) gsap.set(gradientRef, { opacity: 0 })
+
+      const newTl = gsap.timeline({
         scrollTrigger: {
           trigger: triggerRef,
           scroller: scrollContainer,
-          start: 'top 33%',
-          end: 'bottom bottom',
-          scrub: 1,
+          start: 'top 95%',
+          end: 'top 25%',
+          scrub: 1.5,
           invalidateOnRefresh: true,
         }
       })
+
+      newTl.to(wrapperRef, { y: 0, opacity: 1, ease: 'power2.out', duration: 0.6 }, 0)
+      if (gradientRef) newTl.to(gradientRef, { opacity: 1, ease: 'power1.inOut', duration: 0.6 }, 0.2)
+      newTl.to(imageRef, { scale: newTargetScale, ease: 'power1.out', duration: 1 }, 0.1)
     }
 
     window.addEventListener('resize', handleResize)
 
     return () => {
-      tween.scrollTrigger?.kill()
-      tween.kill()
+      tl.scrollTrigger?.kill()
+      tl.kill()
       window.removeEventListener('resize', handleResize)
     }
   }, [isMobile])
 
   return (
-    <section className="relative w-full bg-cream">
+    <section className="relative w-full bg-cream md:bg-cream overflow-visible">
 
       {/* Desktop/Tablet Layout - GSAP ScrollTrigger pinning */}
       <div ref={desktopSectionRef} className="hidden md:block relative z-20 overflow-hidden">
@@ -279,22 +313,32 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
       </div>
 
-      {/* Mobile Layout - Simple, clean, snappable */}
+      {/* Mobile Layout - Slides up over welcome section */}
       <div
         ref={mobileContainerRef}
-        className="md:hidden relative z-20 bg-cream"
+        className="md:hidden relative z-20"
+        style={{ marginTop: '-120px' }} // Overlap welcome section for smooth reveal
       >
-        {/* Emily Arch Image - Centered at top with scroll-driven zoom */}
+        {/* Gradient overlay - fades in as arch slides up */}
+        <div
+          ref={mobileGradientRef}
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, #faf8f5 15%, #faf8f5 100%)',
+            opacity: 0,
+          }}
+        />
+
+        {/* Emily Arch Image - Centered at top with scroll-driven slide-up + zoom */}
         <div
           ref={mobileArchRef}
-          className="pt-8 pb-6 flex justify-center overflow-hidden"
+          className="pt-8 pb-6 flex justify-center overflow-visible relative z-10"
         >
-          <motion.div
-            className="relative"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
+          {/* Wrapper for slide-up animation - GSAP controls y and opacity */}
+          <div
+            ref={mobileArchWrapperRef}
+            className="relative will-change-transform"
+            style={{ transform: 'translateY(80px)', opacity: 0.85 }}
           >
             {/* Decorative background blur */}
             <div className="absolute -inset-6 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
@@ -342,11 +386,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 delay: 0.5
               }}
             />
-          </motion.div>
+          </div>
         </div>
 
-        {/* Letter Content */}
-        <div className="px-6 pb-16">
+        {/* Letter Content - with cream background */}
+        <div className="px-6 pb-16 bg-cream relative z-10">
           <motion.div
             className="text-[#8a5e55] text-lg leading-relaxed font-normal font-swanky max-w-lg mx-auto"
             initial={{ opacity: 0, y: 30 }}
