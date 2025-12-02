@@ -352,13 +352,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         {/* Mobile Grid View with Squircle Cards */}
         {isMobile ? (
           <div className="px-4">
-            {/*
-              Responsive grid:
-              - 2 columns on smaller iPhones (< 390px width)
-              - 3 columns on larger iPhones (>= 390px width)
-              Using min-width media query via Tailwind's custom breakpoint
-            */}
-            <div className="grid grid-cols-2 min-[390px]:grid-cols-3 gap-3">
+            {/* 2-column grid for all mobile sizes */}
+            <div className="grid grid-cols-2 gap-3">
               {teamMembers.map((member, index) => {
                 // Use service categories from Vagaro, fallback to derived from specialties
                 const memberCategories = member.serviceCategories?.length
@@ -367,6 +362,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                 // Use square crop for face-focused image, fallback to regular image
                 const cardImage = member.cropSquareUrl || member.image
+
+                // Format name as "First L."
+                const nameParts = member.name.split(' ')
+                const firstName = nameParts[0]
+                const lastInitial = nameParts.length > 1 ? `${nameParts[nameParts.length - 1][0]}.` : ''
+                const displayName = `${firstName} ${lastInitial}`.trim()
 
                 return (
                   <motion.div
@@ -381,57 +382,63 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     onClick={() => handleMemberClick(member, index)}
                     className="cursor-pointer"
                   >
-                    {/* Squircle Card Container */}
-                    <div className="relative">
-                      {/*
-                        Squircle shape using iOS-style continuous corner radius
-                        The squircle is achieved with ~22% border-radius on a square aspect ratio
-                        This creates the smooth superellipse appearance Apple uses
-                      */}
-                      <div
-                        className="relative aspect-square overflow-hidden shadow-md active:scale-[0.97] transition-transform duration-150"
-                        style={{
-                          borderRadius: '22%',
-                          // Smooth corners like iOS app icons
-                          WebkitMaskImage: '-webkit-radial-gradient(white, black)',
-                        }}
-                      >
-                        {/* Background Image - face-cropped */}
-                        <Image
-                          src={cardImage}
-                          alt={member.name}
-                          fill
-                          className="object-cover"
-                          sizes="(min-width: 390px) 33vw, 50vw"
-                        />
+                    {/* Taller Card Container - 3:4 aspect like desktop */}
+                    <div
+                      className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150"
+                      style={{
+                        borderRadius: '22%',
+                        WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+                      }}
+                    >
+                      {/* Background Image - face-cropped */}
+                      <Image
+                        src={cardImage}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                        sizes="50vw"
+                      />
 
-                        {/* Subtle gradient overlay for depth */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                      {/* Gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-                        {/* Highlight Ring */}
-                        {isHighlighted(member.id) && (
-                          <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                              borderRadius: '22%',
-                              boxShadow: 'inset 0 0 0 3px rgb(205, 168, 158)',
-                            }}
-                          />
-                        )}
-                      </div>
-
-                      {/* Name Label Below Card */}
-                      <div className="mt-2 text-center">
-                        <h3 className="text-sm font-semibold text-dune leading-tight truncate px-1">
-                          {member.name.split(' ')[0]}
+                      {/* Content at Bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        {/* Name */}
+                        <h3 className="text-sm font-bold text-white drop-shadow-md mb-1.5">
+                          {displayName}
                         </h3>
-                        {/* Show first service category as subtitle */}
+
+                        {/* Swipeable Service Tags */}
                         {memberCategories.length > 0 && (
-                          <p className="text-[10px] text-sage truncate px-1">
-                            {memberCategories[0]}
-                          </p>
+                          <div
+                            className="overflow-x-auto scrollbar-hide -mx-1 px-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex gap-1 min-w-max">
+                              {memberCategories.slice(0, 4).map((category) => (
+                                <span
+                                  key={category}
+                                  className="px-2 py-0.5 text-[9px] font-medium bg-white/20 backdrop-blur-sm text-white rounded-full whitespace-nowrap"
+                                >
+                                  {category}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
                         )}
                       </div>
+
+                      {/* Highlight Ring */}
+                      {isHighlighted(member.id) && (
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{
+                            borderRadius: '22%',
+                            boxShadow: 'inset 0 0 0 3px rgb(205, 168, 158)',
+                          }}
+                        />
+                      )}
                     </div>
                   </motion.div>
                 )
