@@ -563,7 +563,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             <div className="relative w-full h-full flex items-end">
               <div
                 ref={imageContainerRef}
-                className="relative w-full h-[85vh] rounded-[200px_200px_0_0] overflow-hidden"
+                className="relative w-full max-w-[500px] h-[85vh] rounded-[200px_200px_0_0] overflow-hidden"
                 style={{ transformOrigin: 'bottom center', zIndex: 20 }}
               >
                 {hasSlideshow && heroConfig?.preset ? (
