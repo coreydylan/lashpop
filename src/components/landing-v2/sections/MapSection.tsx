@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
-
-// Studio location - Oceanside, CA (you can update with exact coordinates)
-const STUDIO_LOCATION: [number, number] = [-117.3795, 33.1959]
-
-// Google Maps directions link (shared from Google Maps)
-const GOOGLE_MAPS_DIRECTIONS_URL = 'https://maps.app.goo.gl/mozm5VjGqw8qCuzL8'
+import {
+  BusinessLocationSettings,
+  BusinessHoursSettings,
+  BrandingSettings,
+  defaultSiteSettings
+} from '@/db/schema/site_settings'
 
 export function MapSection() {
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -18,9 +18,31 @@ export function MapSection() {
   const [mapLoaded, setMapLoaded] = useState(false)
   const mapInitializedRef = useRef(false)
 
+  // Settings state
+  const [location, setLocation] = useState<BusinessLocationSettings>(defaultSiteSettings.business.location)
+  const [hours, setHours] = useState<BusinessHoursSettings>(defaultSiteSettings.business.hours)
+  const [branding, setBranding] = useState<BrandingSettings>(defaultSiteSettings.branding)
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
+
+  // Fetch settings
   useEffect(() => {
-    // Only initialize if container exists, visible, and map not yet initialized
-    if (!mapContainer.current || !isInView || mapInitializedRef.current) return
+    fetch('/api/admin/website/site-settings')
+      .then(res => res.json())
+      .then(settings => {
+        if (settings.business?.location) setLocation(settings.business.location)
+        if (settings.business?.hours) setHours(settings.business.hours)
+        if (settings.branding) setBranding(settings.branding)
+        setSettingsLoaded(true)
+      })
+      .catch(err => {
+        console.error('Error fetching map settings:', err)
+        setSettingsLoaded(true) // Use defaults on error
+      })
+  }, [])
+
+  useEffect(() => {
+    // Only initialize if container exists, visible, settings loaded, and map not yet initialized
+    if (!mapContainer.current || !isInView || mapInitializedRef.current || !settingsLoaded) return
 
     // Mark as initialized to prevent re-runs
     mapInitializedRef.current = true
@@ -44,49 +66,45 @@ export function MapSection() {
         if (!isMounted || !mapContainer.current) return
 
         // Set Mapbox access token
-        mapboxgl.default.accessToken = 'pk.eyJ1IjoiY29yZXlkeWxhbiIsImEiOiJjbWk5a2E1Z2YwbjNsMmtvZzBxeTZxNnhqIn0.b92WsE5LmoVB7wVXNQGeiw'
+        mapboxgl.default.accessToken = location.mapboxAccessToken || 'pk.eyJ1IjoiY29yZXlkeWxhbiIsImEiOiJjbWk5a2E1Z2YwbjNsMmtvZzBxeTZxNnhqIn0.b92WsE5LmoVB7wVXNQGeiw'
+
+        // Get coordinates from settings
+        const studioLocation: [number, number] = [location.coordinates.lng, location.coordinates.lat]
 
         // Initialize map
         const newMap = new mapboxgl.default.Map({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/light-v11',
-          center: STUDIO_LOCATION,
+          center: studioLocation,
           zoom: 14,
           interactive: true,
-          scrollZoom: false, // Disable scroll zoom by default to prevent page scroll blocking
-          cooperativeGestures: true // Requires two fingers to move map on mobile, allows page scroll
+          scrollZoom: false,
+          cooperativeGestures: true
         })
 
         // Custom styling via map load event to match theme
         newMap.on('style.load', () => {
           // Set water color
-          newMap.setPaintProperty('water', 'fill-color', '#e8f4f8') // ocean-mist like
+          newMap.setPaintProperty('water', 'fill-color', '#e8f4f8')
 
           // Set land/background color (cream)
           const creamColor = '#fbf9f5'
-          // Check if background layer exists (it's a specific layer type, not always present as 'background' ID)
           if (newMap.getLayer('background')) {
             newMap.setPaintProperty('background', 'background-color', creamColor)
           }
-
-          // Also try to target landuse layers if available for more coverage
           if (newMap.getLayer('landuse')) {
             newMap.setPaintProperty('landuse', 'fill-color', creamColor)
           }
           if (newMap.getLayer('land')) {
             newMap.setPaintProperty('land', 'background-color', creamColor)
           }
-
-          // Colorize roads
           if (newMap.getLayer('road-simple')) {
             newMap.setPaintProperty('road-simple', 'line-color', '#ffffff')
           }
-
-          // Adjust poi labels color
           const labelLayers = ['poi-label', 'road-label', 'waterway-label']
           labelLayers.forEach(layer => {
             if (newMap.getLayer(layer)) {
-              newMap.setPaintProperty(layer, 'text-color', '#8a7c69') // dune color
+              newMap.setPaintProperty(layer, 'text-color', '#8a7c69')
             }
           })
         })
@@ -115,20 +133,20 @@ export function MapSection() {
 
         // Add marker with popup
         const marker = new mapboxgl.default.Marker(el)
-          .setLngLat(STUDIO_LOCATION)
+          .setLngLat(studioLocation)
           .setPopup(
             new mapboxgl.default.Popup({ offset: 25 })
               .setHTML(`
                 <div style="text-align: center; padding: 10px;">
-                  <h3 style="margin: 0 0 5px; color: #4a4a4a;">LashPop Studios</h3>
-                  <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Oceanside, CA</p>
+                  <h3 style="margin: 0 0 5px; color: #4a4a4a;">${branding.companyName}</h3>
+                  <p style="margin: 0 0 10px; color: #666; font-size: 14px;">${location.city}, ${location.state}</p>
                   <a
-                    href="${GOOGLE_MAPS_DIRECTIONS_URL}"
+                    href="${location.googleMapsUrl}"
                     target="_blank"
                     rel="noopener noreferrer"
                     style="color: #d4907e; text-decoration: none; font-weight: 500;"
                   >
-                    Get Directions →
+                    Get Directions
                   </a>
                 </div>
               `)
@@ -155,7 +173,7 @@ export function MapSection() {
         setMapLoaded(false)
       }
     }
-  }, [isInView])
+  }, [isInView, settingsLoaded, location, branding])
 
   return (
     <section ref={ref} className="relative h-[100dvh] md:h-auto">
@@ -189,22 +207,24 @@ export function MapSection() {
           animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <h3 className="heading-4 text-dune mb-3">LashPop Studios</h3>
+          <h3 className="heading-4 text-dune mb-3">{branding.companyName}</h3>
           <address className="body-text text-dune/70 not-italic mb-4">
-            429 S Coast Hwy<br />
-            Oceanside, CA 92054
+            {location.streetAddress}<br />
+            {location.city}, {location.state} {location.zipCode}
           </address>
           <div className="space-y-1">
             <p className="caption text-dune/70">
-              <span className="caption-bold">Open Daily:</span> 8:00 AM – 7:30 PM
+              <span className="caption-bold">Open Daily:</span> {hours.regularHours.replace('every day', '').trim()}
             </p>
-            <p className="caption text-dune/50 text-sm">
-              By Appointment Only
-            </p>
+            {hours.appointmentOnly && (
+              <p className="caption text-dune/50 text-sm">
+                {hours.specialNote || 'By Appointment Only'}
+              </p>
+            )}
           </div>
           <div className="mt-4 pt-4 border-t border-sage/10">
             <a
-              href={GOOGLE_MAPS_DIRECTIONS_URL}
+              href={location.googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-dusty-rose hover:text-dusty-rose/80 transition-colors"
@@ -218,7 +238,7 @@ export function MapSection() {
           </div>
         </motion.div>
 
-        {/* Address Card Overlay - Mobile, positioned at bottom of map */}
+        {/* Address Card Overlay - Mobile */}
         <motion.div
           className="md:hidden absolute bottom-32 left-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl z-10"
           initial={{ opacity: 0, y: 20 }}
@@ -227,13 +247,13 @@ export function MapSection() {
         >
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="heading-4 text-dune leading-tight">LashPop Studios</h3>
+              <h3 className="heading-4 text-dune leading-tight">{branding.companyName}</h3>
               <address className="caption text-dune/70 not-italic mt-1">
-                429 S Coast Hwy, Oceanside, CA 92054
+                {location.fullAddress || `${location.streetAddress}, ${location.city}, ${location.state} ${location.zipCode}`}
               </address>
             </div>
             <a
-              href={GOOGLE_MAPS_DIRECTIONS_URL}
+              href={location.googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-shrink-0 inline-flex items-center gap-1.5 text-dusty-rose hover:text-dusty-rose/80 transition-colors"
@@ -247,11 +267,13 @@ export function MapSection() {
           </div>
           <div className="mt-2">
             <p className="caption text-dune/70">
-              <span className="caption-bold">Open Daily</span> 8A–7:30P
+              <span className="caption-bold">Open Daily</span> {hours.regularHours.replace('every day', '').trim()}
             </p>
-            <p className="caption text-dune/50 text-xs mt-0.5">
-              By Appointment Only
-            </p>
+            {hours.appointmentOnly && (
+              <p className="caption text-dune/50 text-xs mt-0.5">
+                {hours.specialNote || 'By Appointment Only'}
+              </p>
+            )}
           </div>
         </motion.div>
       </motion.div>

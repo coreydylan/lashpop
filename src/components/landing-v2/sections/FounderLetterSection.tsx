@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { gsap, ScrollTrigger, initGSAP, initGSAPSync } from '@/lib/gsap'
+import { FounderLetterSettings, defaultSiteSettings } from '@/db/schema/site_settings'
 
 interface FounderLetterContent {
   greeting: string
@@ -18,19 +19,41 @@ interface FounderLetterSectionProps {
 
 // Default content fallback
 const defaultContent: FounderLetterContent = {
-  greeting: 'Dear Beautiful Soul,',
-  paragraphs: [
-    'When I started LashPop, I wanted to build something simple: a place where you actually feel taken care of.',
-    'We\'re all united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that "just woke up from eight blissful hours" look with little effort (even if your reality looks more like five). We\'re not here to judge ;)',
-    'Thank you for trusting us. We can\'t wait to see you.'
-  ],
-  signOff: 'With love and lashes,',
-  signature: 'Emily and the LashPop Family'
+  greeting: defaultSiteSettings.founderLetter.greeting,
+  paragraphs: defaultSiteSettings.founderLetter.paragraphs,
+  signOff: defaultSiteSettings.founderLetter.signOff,
+  signature: defaultSiteSettings.founderLetter.signature
 }
 
 export function FounderLetterSection({ content }: FounderLetterSectionProps) {
-  // Use provided content or fallback to defaults
-  const letterContent = content || defaultContent
+  // State for fetched content
+  const [letterContent, setLetterContent] = useState<FounderLetterContent>(content || defaultContent)
+  const [isEnabled, setIsEnabled] = useState(true)
+
+  // Fetch settings from API
+  useEffect(() => {
+    if (content) return // Skip if content was passed as prop
+
+    fetch('/api/admin/website/site-settings')
+      .then(res => res.json())
+      .then(settings => {
+        if (settings.founderLetter) {
+          const fl = settings.founderLetter as FounderLetterSettings
+          setIsEnabled(fl.enabled)
+          setLetterContent({
+            greeting: fl.greeting,
+            paragraphs: fl.paragraphs,
+            signOff: fl.signOff,
+            signature: fl.signature
+          })
+        }
+      })
+      .catch(err => console.error('Error fetching founder letter settings:', err))
+  }, [content])
+
+  // Don't render if disabled
+  if (!isEnabled) return null
+
   // Desktop refs
   const desktopSectionRef = useRef<HTMLDivElement>(null)
   const desktopContentRef = useRef<HTMLDivElement>(null)

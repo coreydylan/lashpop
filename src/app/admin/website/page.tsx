@@ -2,33 +2,31 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { 
-  Image, 
-  Users, 
-  Star, 
-  Instagram, 
-  FileText, 
+import {
+  Image,
+  Users,
+  Star,
+  Instagram,
+  FileText,
   HelpCircle,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Building2,
+  Palette,
+  Navigation,
+  Globe
 } from 'lucide-react'
 
 const sections = [
+  // Content Sections
   {
     id: 'hero',
     label: 'Hero Section',
     icon: Image,
     description: 'Manage the above-the-fold hero image displayed in the arch shape',
     color: 'dusty-rose',
-    stats: 'DAM Integration'
-  },
-  {
-    id: 'services',
-    label: 'Services Manager',
-    icon: Sparkles,
-    description: 'Manage service images, demo mode, and Vagaro sync status',
-    color: 'ocean-mist',
-    stats: 'Database + DAM'
+    stats: 'DAM Integration',
+    category: 'content'
   },
   {
     id: 'founder-letter',
@@ -36,39 +34,81 @@ const sections = [
     icon: FileText,
     description: 'Emily\'s welcome message and signature section',
     color: 'sage',
-    stats: 'HTML Source'
+    stats: 'Editable Content',
+    category: 'content'
   },
-  { 
-    id: 'team', 
-    label: 'Team Members', 
-    icon: Users, 
+  {
+    id: 'services',
+    label: 'Services Manager',
+    icon: Sparkles,
+    description: 'Manage service images, demo mode, and Vagaro sync status',
+    color: 'ocean-mist',
+    stats: 'Database + DAM',
+    category: 'content'
+  },
+  {
+    id: 'team',
+    label: 'Team Members',
+    icon: Users,
     description: 'Manage team visibility, order, and profile information',
     color: 'ocean-mist',
-    stats: 'Database + Vagaro'
+    stats: 'Database + Vagaro',
+    category: 'content'
   },
-  { 
-    id: 'instagram', 
-    label: 'Instagram Carousel', 
-    icon: Instagram, 
+  {
+    id: 'instagram',
+    label: 'Instagram Carousel',
+    icon: Instagram,
     description: 'Set the number of posts and display settings',
     color: 'terracotta',
-    stats: 'DAM Integration'
+    stats: 'DAM Integration',
+    category: 'content'
   },
-  { 
-    id: 'reviews', 
-    label: 'Reviews', 
-    icon: Star, 
+  {
+    id: 'reviews',
+    label: 'Reviews',
+    icon: Star,
     description: 'Select and order which reviews appear on the homepage',
     color: 'golden',
-    stats: 'Database'
+    stats: 'Database',
+    category: 'content'
   },
-  { 
-    id: 'faq', 
-    label: 'FAQ Manager', 
-    icon: HelpCircle, 
+  {
+    id: 'faq',
+    label: 'FAQ Manager',
+    icon: HelpCircle,
     description: 'Manage FAQ categories, questions, and featured items',
     color: 'sage',
-    stats: 'Database'
+    stats: 'Database',
+    category: 'content'
+  },
+  // Site Settings
+  {
+    id: 'business-info',
+    label: 'Business Info',
+    icon: Building2,
+    description: 'Contact details, location, hours, and social media links',
+    color: 'ocean-mist',
+    stats: 'Site Settings',
+    category: 'settings'
+  },
+  {
+    id: 'branding',
+    label: 'Branding & SEO',
+    icon: Palette,
+    description: 'Company name, tagline, and search engine optimization',
+    color: 'dusty-rose',
+    stats: 'Site Settings',
+    category: 'settings'
+  },
+  {
+    id: 'navigation',
+    label: 'Navigation & Footer',
+    icon: Navigation,
+    description: 'Header links, footer content, and policy pages',
+    color: 'golden',
+    stats: 'Site Settings',
+    category: 'settings'
   },
 ]
 
@@ -109,46 +149,103 @@ export default function WebsiteAdminPage() {
         </div>
       </motion.div>
 
-      {/* Section Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {sections.map((section, index) => (
-          <motion.div
-            key={section.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <Link href={`/admin/website/${section.id}`}>
-              <div 
-                className={`group relative h-full p-6 rounded-3xl bg-gradient-to-br ${colorMap[section.color]} border backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}
-              >
-                {/* Icon */}
-                <div className={`w-12 h-12 rounded-2xl bg-cream/80 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform`}>
-                  <section.icon className={`w-6 h-6 ${iconColorMap[section.color]}`} />
-                </div>
+      {/* Content Sections */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="mb-8"
+      >
+        <h2 className="text-sm font-medium text-dune/50 uppercase tracking-wider mb-4">Page Sections</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {sections.filter(s => s.category === 'content').map((section, index) => (
+            <motion.div
+              key={section.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 + index * 0.05 }}
+            >
+              <Link href={`/admin/website/${section.id}`}>
+                <div
+                  className={`group relative h-full p-6 rounded-3xl bg-gradient-to-br ${colorMap[section.color]} border backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}
+                >
+                  {/* Icon */}
+                  <div className={`w-12 h-12 rounded-2xl bg-cream/80 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform`}>
+                    <section.icon className={`w-6 h-6 ${iconColorMap[section.color]}`} />
+                  </div>
 
-                {/* Content */}
-                <h2 className="font-serif text-lg text-dune font-medium mb-2">
-                  {section.label}
-                </h2>
-                <p className="text-sm text-dune/60 mb-4 leading-relaxed">
-                  {section.description}
-                </p>
+                  {/* Content */}
+                  <h2 className="font-serif text-lg text-dune font-medium mb-2">
+                    {section.label}
+                  </h2>
+                  <p className="text-sm text-dune/60 mb-4 leading-relaxed">
+                    {section.description}
+                  </p>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-dune/40 uppercase tracking-wider font-medium">
-                    {section.stats}
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-cream/50 flex items-center justify-center group-hover:bg-cream transition-colors">
-                    <ArrowRight className="w-4 h-4 text-dune/60 group-hover:text-dune group-hover:translate-x-0.5 transition-all" />
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-dune/40 uppercase tracking-wider font-medium">
+                      {section.stats}
+                    </span>
+                    <div className="w-8 h-8 rounded-full bg-cream/50 flex items-center justify-center group-hover:bg-cream transition-colors">
+                      <ArrowRight className="w-4 h-4 text-dune/60 group-hover:text-dune group-hover:translate-x-0.5 transition-all" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Site Settings */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="mb-8"
+      >
+        <h2 className="text-sm font-medium text-dune/50 uppercase tracking-wider mb-4">Site Settings</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {sections.filter(s => s.category === 'settings').map((section, index) => (
+            <motion.div
+              key={section.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 + index * 0.05 }}
+            >
+              <Link href={`/admin/website/${section.id}`}>
+                <div
+                  className={`group relative h-full p-6 rounded-3xl bg-gradient-to-br ${colorMap[section.color]} border backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}
+                >
+                  {/* Icon */}
+                  <div className={`w-12 h-12 rounded-2xl bg-cream/80 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform`}>
+                    <section.icon className={`w-6 h-6 ${iconColorMap[section.color]}`} />
+                  </div>
+
+                  {/* Content */}
+                  <h2 className="font-serif text-lg text-dune font-medium mb-2">
+                    {section.label}
+                  </h2>
+                  <p className="text-sm text-dune/60 mb-4 leading-relaxed">
+                    {section.description}
+                  </p>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-dune/40 uppercase tracking-wider font-medium">
+                      {section.stats}
+                    </span>
+                    <div className="w-8 h-8 rounded-full bg-cream/50 flex items-center justify-center group-hover:bg-cream transition-colors">
+                      <ArrowRight className="w-4 h-4 text-dune/60 group-hover:text-dune group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
 
       {/* Quick Tips */}
       <motion.div
