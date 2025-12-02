@@ -35,6 +35,7 @@ const getInitialState = (services: any[] = []): PanelStackState => ({
   maxVisiblePanels: 8, // Will be updated based on viewport
   isUserInteracting: false,
   hasUserInteracted: false, // Enables swipe-up after first category click or quiz start
+  attentionBounceCount: 0, // Increments to trigger attention bounce on chip bar
   services,
 });
 
@@ -57,7 +58,8 @@ type Action =
   | { type: 'UPDATE_PANEL_BREADCRUMBS'; payload: { panelId: string; breadcrumbs: BreadcrumbStep[] } }
   | { type: 'UPDATE_TOTAL_HEIGHT'; payload: number }
   | { type: 'SET_INTERACTING'; payload: boolean }
-  | { type: 'SET_USER_INTERACTED' };
+  | { type: 'SET_USER_INTERACTED' }
+  | { type: 'TRIGGER_ATTENTION_BOUNCE' };
 
 // ============================================================================
 // Reducer
@@ -308,6 +310,12 @@ function panelStackReducer(state: PanelStackState, action: Action): PanelStackSt
       return {
         ...state,
         hasUserInteracted: true,
+      };
+
+    case 'TRIGGER_ATTENTION_BOUNCE':
+      return {
+        ...state,
+        attentionBounceCount: state.attentionBounceCount + 1,
       };
 
     default:
@@ -574,6 +582,10 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     dispatch({ type: 'SET_USER_INTERACTED' });
   }, []);
 
+  const triggerAttentionBounce = useCallback(() => {
+    dispatch({ type: 'TRIGGER_ATTENTION_BOUNCE' });
+  }, []);
+
   const actions: PanelStackActions = useMemo(() => ({
     openPanel,
     closePanel,
@@ -594,6 +606,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     updatePanelSummary,
     updatePanelBreadcrumbs,
     setUserInteracted,
+    triggerAttentionBounce,
   }), [
     openPanel,
     closePanel,
@@ -614,6 +627,7 @@ export function PanelStackProvider({ children, services = [] }: PanelStackProvid
     updatePanelSummary,
     updatePanelBreadcrumbs,
     setUserInteracted,
+    triggerAttentionBounce,
   ]);
 
   const value: PanelStackContextValue = useMemo(() => ({

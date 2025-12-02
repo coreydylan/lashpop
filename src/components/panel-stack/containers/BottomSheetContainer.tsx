@@ -38,6 +38,16 @@ const bounceConfig = {
   mass: 0.8,
 };
 
+// Quick attention bounce (subtle nudge)
+const attentionBounceKeyframes = {
+  y: ['92%', '88%', '92%'],
+  transition: {
+    duration: 0.4,
+    ease: [0.22, 1, 0.36, 1],
+    times: [0, 0.4, 1],
+  },
+};
+
 /**
  * Renders panel content based on type.
  */
@@ -208,6 +218,20 @@ export function BottomSheetContainer() {
       setIsFirstAppearance(false);
     }
   }, [hasAnyPanel, hasExpandedPanel, animateToSnap, isFirstAppearance]);
+
+  // Attention bounce when triggered (e.g., Book Now clicked when chip bar already visible)
+  const lastBounceCount = useRef(state.attentionBounceCount);
+  useEffect(() => {
+    if (state.attentionBounceCount > lastBounceCount.current && currentSnap === 'collapsed') {
+      // Haptic feedback
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate([10, 50, 10]);
+      }
+      // Trigger attention bounce animation
+      controls.start(attentionBounceKeyframes);
+    }
+    lastBounceCount.current = state.attentionBounceCount;
+  }, [state.attentionBounceCount, currentSnap, controls]);
 
   // Escape key support
   useEffect(() => {
