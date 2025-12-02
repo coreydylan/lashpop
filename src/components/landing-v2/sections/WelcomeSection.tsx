@@ -2,10 +2,11 @@
 
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { MobileSwipeableWelcomeCards } from '../MobileSwipeableWelcomeCards'
+import { usePanelStack } from '@/contexts/PanelStackContext'
 
 // Dynamically import ParallaxImage to avoid SSR issues with Three.js
 const ParallaxImage = dynamic(() => import('@/components/three/ParallaxImage'), {
@@ -27,6 +28,8 @@ export function WelcomeSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-20%" })
   const [isMobile, setIsMobile] = useState(false)
+  const { actions: panelActions, state: panelState } = usePanelStack()
+  const hasTriggeredChipBar = useRef(false)
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -34,6 +37,20 @@ export function WelcomeSection() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Handle card change - trigger chip bar when card 4 (index 3) becomes visible
+  const handleCardChange = useCallback((index: number) => {
+    // Card 4 mentions the "service bar above" - trigger chip bar here
+    if (index === 3 && !hasTriggeredChipBar.current) {
+      // Check if category-picker panel already exists
+      const hasCategoryPicker = panelState.panels.some(p => p.type === 'category-picker')
+      if (!hasCategoryPicker) {
+        hasTriggeredChipBar.current = true
+        // Open in docked state so it appears as chip bar (not full screen)
+        panelActions.openPanel('category-picker', { entryPoint: 'welcome-card' }, { autoExpand: false })
+      }
+    }
+  }, [panelActions, panelState.panels])
 
   // Mobile-specific render with swipeable cards over desk image background
   if (isMobile) {
@@ -96,7 +113,7 @@ export function WelcomeSection() {
                 animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
                 transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
               >
-                <MobileSwipeableWelcomeCards />
+                <MobileSwipeableWelcomeCards onCardChange={handleCardChange} />
               </motion.div>
             </motion.div>
           </div>
