@@ -236,14 +236,14 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
             transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
             className="fixed top-0 left-0 right-0 z-50 md:hidden"
             style={{
-              height: 'var(--mobile-header-height)',
+              paddingTop: 'env(safe-area-inset-top, 0px)',
               background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 247, 244, 0.92) 100%)',
               backdropFilter: 'blur(16px)',
               WebkitBackdropFilter: 'blur(16px)',
               borderBottom: '1px solid rgba(161, 151, 129, 0.08)',
             }}
           >
-            <div className="h-full px-5 flex items-center justify-between">
+            <div className="px-5 flex items-center justify-between" style={{ height: 'var(--mobile-header-height)' }}>
               {/* LP Logo - subtle, balanced size */}
               <button
                 onClick={handleLogoClick}

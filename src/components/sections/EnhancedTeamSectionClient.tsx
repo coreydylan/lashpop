@@ -554,18 +554,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         sizes="50vw"
                       />
 
-                      {/* Gradient overlay for text readability */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      {/* Gradient overlays for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent" />
 
-                      {/* Content at Bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3">
-                        {/* Name */}
-                        <h3 className="text-sm font-bold text-white drop-shadow-md mb-1.5">
-                          {displayName}
-                        </h3>
-
-                        {/* Swipeable Service Tags */}
-                        {memberCategories.length > 0 && (
+                      {/* Tags at Top */}
+                      {memberCategories.length > 0 && (
+                        <div className="absolute top-0 left-0 right-0 p-3">
                           <div
                             data-tags-scroll
                             className="overflow-x-auto scrollbar-hide -mx-1 px-1"
@@ -581,7 +576,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               ))}
                             </div>
                           </div>
-                        )}
+                        </div>
+                      )}
+
+                      {/* Name at Bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3">
+                        <h3 className="text-sm font-bold text-white drop-shadow-md">
+                          {displayName}
+                        </h3>
                       </div>
 
                       {/* Highlight Ring */}
