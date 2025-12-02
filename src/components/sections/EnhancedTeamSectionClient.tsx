@@ -1088,8 +1088,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={selectedMember.id}
-                        className="flex-1 overflow-y-auto overscroll-contain"
-                        style={{ WebkitOverflowScrolling: 'touch' }}
+                        className="flex-1 overflow-y-auto"
+                        style={{
+                          WebkitOverflowScrolling: 'touch',
+                          overscrollBehaviorY: 'none'
+                        }}
                         initial={{ opacity: 0, x: swipeDirection === 'left' ? 100 : swipeDirection === 'right' ? -100 : 0 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0 }}
