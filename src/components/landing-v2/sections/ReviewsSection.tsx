@@ -84,8 +84,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     showTutorial,
     tutorialSuccess,
     triggerTutorial,
-    checkAndComplete,
-    resetSwipeDistance
+    checkAndComplete
   } = useSwipeTutorial({
     storageKey: 'reviews-swipe-tutorial',
     completionThreshold: 80
@@ -101,52 +100,40 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     emblaApi.on('select', onSelect)
     emblaApi.on('reInit', onSelect)
 
-    // Track if user is actively interacting (not auto-rotate)
-    let isUserInteracting = false
+    // Track dragging for auto-rotate pause
+    const onPointerDown = () => setIsDragging(true)
+    const onPointerUp = () => setIsDragging(false)
 
-    // Embla handles dragging state internally, but we track it for our auto-rotate logic
-    const onPointerDown = () => {
-      setIsDragging(true)
-      isUserInteracting = true
-      resetSwipeDistance()
-    }
-    const onPointerUp = () => {
-      setIsDragging(false)
-      isUserInteracting = false
-    }
+    emblaApi.on('pointerDown', onPointerDown)
+    emblaApi.on('pointerUp', onPointerUp)
 
-    // Track scroll for swipe tutorial - only user-initiated
-    const onScroll = () => {
-      if (isMobile && showTutorial && isUserInteracting) {
-        checkAndComplete(15)
-      }
-    }
-
-    emblaApi.rootNode().addEventListener('pointerdown', onPointerDown)
-    window.addEventListener('pointerup', onPointerUp) // Window to catch release outside
-    emblaApi.on('scroll', onScroll)
-
-    // Add subtle nudge animation when carousel comes into view
+    // Trigger swipe tutorial when in view on mobile
     if (isInView && isMobile) {
-      // Trigger swipe tutorial
       triggerTutorial()
-
-      setTimeout(() => {
-        emblaApi.scrollTo(0.2, false)
-        setTimeout(() => {
-          emblaApi.scrollTo(0, true)
-        }, 300)
-      }, 800)
     }
 
     return () => {
-        emblaApi.off('select', onSelect)
-        emblaApi.off('reInit', onSelect)
-        emblaApi.off('scroll', onScroll)
-        emblaApi.rootNode().removeEventListener('pointerdown', onPointerDown)
-        window.removeEventListener('pointerup', onPointerUp)
+      emblaApi.off('select', onSelect)
+      emblaApi.off('reInit', onSelect)
+      emblaApi.off('pointerDown', onPointerDown)
+      emblaApi.off('pointerUp', onPointerUp)
     }
-  }, [emblaApi, onSelect, isInView, isMobile, triggerTutorial, resetSwipeDistance, checkAndComplete, showTutorial])
+  }, [emblaApi, onSelect, isInView, isMobile, triggerTutorial])
+
+  // Track user swipes for tutorial completion
+  useEffect(() => {
+    if (!emblaApi || !isMobile || !showTutorial) return
+
+    const onSettle = () => {
+      // Complete tutorial after user navigates
+      if (showTutorial && !tutorialSuccess) {
+        checkAndComplete(100) // Complete on any settle
+      }
+    }
+
+    emblaApi.on('settle', onSettle)
+    return () => emblaApi.off('settle', onSettle)
+  }, [emblaApi, isMobile, showTutorial, tutorialSuccess, checkAndComplete])
 
   // Auto-rotate reviews - pause when hovering or dragging
   useEffect(() => {
@@ -426,9 +413,9 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
           {/* Instagram-style Snap Carousel */}
           <div
             ref={emblaRef}
-            className="review-carousel overflow-hidden cursor-grab active:cursor-grabbing"
+            className="review-carousel overflow-visible cursor-grab active:cursor-grabbing"
           >
-            <div className="flex touch-pan-y pl-4 lg:pl-[calc(50vw-240px)] py-4 md:py-10">
+            <div className="flex touch-pan-y pl-4 lg:pl-[calc(50vw-240px)] py-6 md:py-12">
               {reviews.map((review, index) => (
                 <div 
                   key={review.id} 

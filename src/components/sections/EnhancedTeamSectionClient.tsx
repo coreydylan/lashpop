@@ -12,43 +12,43 @@ import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 
-// Swipe Tutorial Hint Component - subtle wiggling icon
+// Swipe Tutorial Hint Component - subtle wiggling icon in center
 function SwipeHint() {
   return (
     <motion.div
-      className="absolute top-3 right-3 pointer-events-none z-20"
+      className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ duration: 0.2 }}
     >
       <motion.div
-        className="bg-white/30 backdrop-blur-sm rounded-full p-1.5"
-        animate={{ x: [0, 3, 0, -3, 0] }}
+        className="bg-white/30 backdrop-blur-sm rounded-full p-2"
+        animate={{ x: [0, 4, 0, -4, 0] }}
         transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <Hand className="w-3 h-3 text-white/80 rotate-90" />
+        <Hand className="w-4 h-4 text-white/80 rotate-90" />
       </motion.div>
     </motion.div>
   )
 }
 
-// Swipe Success Component - subtle spinning check
+// Swipe Success Component - subtle spinning check in center
 function SwipeSuccess() {
   return (
     <motion.div
-      className="absolute top-3 right-3 pointer-events-none z-20"
+      className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
       initial={{ opacity: 1 }}
       animate={{ opacity: 0 }}
       transition={{ duration: 0.6, delay: 0.8 }}
     >
       <motion.div
-        className="bg-white/40 backdrop-blur-sm rounded-full p-1.5"
+        className="bg-white/40 backdrop-blur-sm rounded-full p-2"
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ duration: 0.3, ease: "backOut" }}
       >
-        <Check className="w-3 h-3 text-emerald-600" strokeWidth={3} />
+        <Check className="w-4 h-4 text-emerald-500" strokeWidth={3} />
       </motion.div>
     </motion.div>
   )
