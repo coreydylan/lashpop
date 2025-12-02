@@ -36,9 +36,8 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     // Hero: DISABLED - was creating extra snap point fighting with welcome
     'hero': { threshold: 0.7, anchorOffset: 0, disableSnap: true },
 
-    // Hero-buttons: soft snap when scrolling past initial hero
-    // Positions the "welcome to LashPop" title near top, buttons centered
-    'hero-buttons': { threshold: 0.3, anchorOffset: vh * 0.35 },
+    // Hero-buttons: DISABLED for testing
+    'hero-buttons': { threshold: 0.3, anchorOffset: vh * 0.35, disableSnap: true },
 
     // Welcome: strong snap to lock LP logo + cards centered in viewport
     // Higher offset pulls content down into center view
