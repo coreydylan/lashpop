@@ -26,6 +26,7 @@ import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { PanelStackRenderer } from '@/components/panel-stack/PanelStackRenderer';
 import { SectionTransition } from '@/components/landing-v2/transitions/SectionTransition';
 import { useMobileGSAPScroll } from '@/hooks/useMobileGSAPScroll';
+import { useMobileStackingCards } from '@/hooks/useMobileStackingCards';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -129,17 +130,21 @@ interface FounderLetterContent {
   signature: string;
 }
 
-interface HeroArchwayImage {
-  assetId: string;
-  url: string;
-  fileName: string;
-  position: { x: number; y: number };
-  objectFit: 'cover' | 'contain';
+// Hero slideshow/image config types
+import type { SlideshowPreset, SlideshowImage } from '@/types/hero-slideshow';
+
+interface HeroSlideshowConfig {
+  preset: SlideshowPreset | null;
+  fallbackImage: {
+    url: string;
+    position: { x: number; y: number };
+    objectFit: 'cover' | 'contain';
+  } | null;
 }
 
-interface HeroArchwayConfig {
-  desktop: HeroArchwayImage;
-  mobile: HeroArchwayImage;
+interface HeroConfig {
+  desktop: HeroSlideshowConfig;
+  mobile: HeroSlideshowConfig;
 }
 
 interface LandingPageV2ClientProps {
@@ -151,7 +156,7 @@ interface LandingPageV2ClientProps {
   serviceCategories?: ServiceCategory[];
   faqData?: FAQData;
   founderLetterContent?: FounderLetterContent;
-  heroArchwayConfig?: HeroArchwayConfig;
+  heroConfig?: HeroConfig;
 }
 
 // Minimal mobile styles - GSAP handles the scroll behavior
@@ -206,7 +211,7 @@ const mobileScrollStyles = `
   }
 `;
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroArchwayConfig }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -237,6 +242,14 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     onSectionChange: handleSectionChange
   });
 
+  // Enable "Stacking Card" effect for Welcome Section
+  // This visually pins the Welcome section so the Founder section slides over it
+  useMobileStackingCards({
+    enabled: isMobile,
+    containerSelector: '.mobile-scroll-container',
+    itemSelector: '[data-effect="stack"]'
+  });
+
   return (
     <DevModeProvider>
     <BookingOrchestratorProvider>
@@ -256,7 +269,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 It's at z-0, everything else is z-10+.
                 Contains: gradient, arch image, logo, decorative circles.
               */}
-              {isMobile && <MobileHeroBackground archImage={heroArchwayConfig?.mobile} />}
+              {isMobile && <MobileHeroBackground heroConfig={heroConfig?.mobile} />}
 
               {/*
                 =====================================================
@@ -295,13 +308,14 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     data-section-id="hero"
                     style={isMobile ? { background: 'transparent' } : undefined}
                   >
-                    <HeroSection reviewStats={reviewStats} archImage={heroArchwayConfig?.desktop} />
+                    <HeroSection reviewStats={reviewStats} heroConfig={heroConfig?.desktop} />
                   </div>
 
                   {/*
                     WELCOME SECTION: Has its own background image, works on both mobile/desktop.
+                    Uses data-effect="stack" to be pinned by useMobileStackingCards hook.
                   */}
-                  <div className={isMobile ? "mobile-section sticky top-0 z-10" : ""} data-section-id="welcome">
+                  <div className={isMobile ? "mobile-section z-10" : ""} data-section-id="welcome" data-effect="stack">
                     <WelcomeSection />
                   </div>
 

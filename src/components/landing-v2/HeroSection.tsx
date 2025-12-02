@@ -7,13 +7,17 @@ import { usePanelStack } from '@/contexts/PanelStackContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
 import WeatherLocationBadge from './WeatherLocationBadge'
+import { HeroArchSlideshow } from './slideshow'
+import type { SlideshowPreset } from '@/types/hero-slideshow'
 
-interface HeroArchwayImage {
-  assetId: string
-  url: string
-  fileName: string
-  position: { x: number; y: number }
-  objectFit: 'cover' | 'contain'
+// New config format from slideshow system
+interface HeroSlideshowConfig {
+  preset: SlideshowPreset | null
+  fallbackImage: {
+    url: string
+    position: { x: number; y: number }
+    objectFit: 'cover' | 'contain'
+  } | null
 }
 
 interface HeroSectionProps {
@@ -23,7 +27,7 @@ interface HeroSectionProps {
     rating: string
     reviewCount: number
   }>
-  archImage?: HeroArchwayImage
+  heroConfig?: HeroSlideshowConfig
 }
 
 function CircleDecoration({ className = "w-full h-full" }: { className?: string }) {
@@ -36,16 +40,17 @@ function CircleDecoration({ className = "w-full h-full" }: { className?: string 
   )
 }
 
-// Default arch image when none provided
-const defaultArchImage: HeroArchwayImage = {
-  assetId: 'default',
+// Default fallback image when no config provided
+const defaultFallbackImage = {
   url: '/lashpop-images/studio/studio-photos-by-salome.jpg',
-  fileName: 'studio-photos-by-salome.jpg',
   position: { x: 50, y: 50 },
-  objectFit: 'cover'
+  objectFit: 'cover' as const
 }
 
-export default function HeroSection({ reviewStats, archImage = defaultArchImage }: HeroSectionProps) {
+export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProps) {
+  // Determine what to render: slideshow preset or single image
+  const hasSlideshow = heroConfig?.preset && heroConfig.preset.images.length > 0
+  const archImage = heroConfig?.fallbackImage || defaultFallbackImage
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const imageContainerRef = useRef<HTMLDivElement>(null)
@@ -548,7 +553,7 @@ export default function HeroSection({ reviewStats, archImage = defaultArchImage 
             </motion.div>
           </motion.div>
 
-          {/* Right Content - Arch Image */}
+          {/* Right Content - Arch Image or Slideshow */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -561,22 +566,28 @@ export default function HeroSection({ reviewStats, archImage = defaultArchImage 
                 className="relative w-full h-[85vh] rounded-[200px_200px_0_0] overflow-hidden"
                 style={{ transformOrigin: 'bottom center', zIndex: 20 }}
               >
-                <div className="relative w-full h-full overflow-hidden">
-                  <Image
-                    ref={imageRef}
-                    src={archImage.url}
-                    alt="LashPop Studio Interior"
-                    fill
-                    className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
-                    priority
-                    quality={85}
-                    style={{
-                      transform: "scale(1.4) translateX(0%)",
-                      transformOrigin: "center center",
-                      objectPosition: `${archImage.position.x}% ${archImage.position.y}%`
-                    }}
-                  />
-                </div>
+                {hasSlideshow && heroConfig?.preset ? (
+                  /* Slideshow Mode - render the carousel */
+                  <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
+                ) : (
+                  /* Single Image Mode - original behavior */
+                  <div className="relative w-full h-full overflow-hidden">
+                    <Image
+                      ref={imageRef}
+                      src={archImage.url}
+                      alt="LashPop Studio Interior"
+                      fill
+                      className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+                      priority
+                      quality={85}
+                      style={{
+                        transform: "scale(1.4) translateX(0%)",
+                        transformOrigin: "center center",
+                        objectPosition: `${archImage.position.x}% ${archImage.position.y}%`
+                      }}
+                    />
+                  </div>
+                )}
 
                 <div className="absolute inset-0 bg-gradient-to-t from-ocean-mist/20 to-transparent pointer-events-none" />
 

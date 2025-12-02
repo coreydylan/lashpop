@@ -2,26 +2,28 @@
 
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
+import { HeroArchSlideshow } from './slideshow'
+import type { SlideshowPreset } from '@/types/hero-slideshow'
 
-interface HeroArchwayImage {
-  assetId: string
-  url: string
-  fileName: string
-  position: { x: number; y: number }
-  objectFit: 'cover' | 'contain'
+// New config format from slideshow system
+interface HeroSlideshowConfig {
+  preset: SlideshowPreset | null
+  fallbackImage: {
+    url: string
+    position: { x: number; y: number }
+    objectFit: 'cover' | 'contain'
+  } | null
 }
 
 interface MobileHeroBackgroundProps {
-  archImage?: HeroArchwayImage
+  heroConfig?: HeroSlideshowConfig
 }
 
-// Default arch image when none provided
-const defaultArchImage: HeroArchwayImage = {
-  assetId: 'default',
+// Default fallback image when no config provided
+const defaultFallbackImage = {
   url: '/lashpop-images/studio/studio-photos-by-salome.jpg',
-  fileName: 'studio-photos-by-salome.jpg',
   position: { x: 50, y: 50 },
-  objectFit: 'cover'
+  objectFit: 'cover' as const
 }
 
 /**
@@ -49,7 +51,11 @@ function CircleDecoration({ className = "w-full h-full" }: { className?: string 
   )
 }
 
-export function MobileHeroBackground({ archImage = defaultArchImage }: MobileHeroBackgroundProps) {
+export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) {
+  // Determine what to render: slideshow preset or single image
+  const hasSlideshow = heroConfig?.preset && heroConfig.preset.images.length > 0
+  const archImage = heroConfig?.fallbackImage || defaultFallbackImage
+
   const archRef = useRef<HTMLDivElement>(null)
   const logoRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(true)
@@ -117,7 +123,7 @@ export function MobileHeroBackground({ archImage = defaultArchImage }: MobileHer
         <CircleDecoration className="text-sage" />
       </div>
 
-      {/* Arch Image - full height container, arch is 85dvh tall aligned to bottom */}
+      {/* Arch Image/Slideshow - full height container, arch is 85dvh tall aligned to bottom */}
       <div className="absolute inset-0 flex justify-center items-end overflow-hidden" style={{ zIndex: 10 }}>
         <div
           ref={archRef}
@@ -130,15 +136,21 @@ export function MobileHeroBackground({ archImage = defaultArchImage }: MobileHer
             backfaceVisibility: 'hidden',
           }}
         >
-          <Image
-            src={archImage.url}
-            alt="LashPop Studio Interior"
-            fill
-            className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
-            style={{ objectPosition: `${archImage.position.x}% ${archImage.position.y}%` }}
-            priority
-            quality={85}
-          />
+          {hasSlideshow && heroConfig?.preset ? (
+            /* Slideshow Mode - render the carousel */
+            <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
+          ) : (
+            /* Single Image Mode - original behavior */
+            <Image
+              src={archImage.url}
+              alt="LashPop Studio Interior"
+              fill
+              className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+              style={{ objectPosition: `${archImage.position.x}% ${archImage.position.y}%` }}
+              priority
+              quality={85}
+            />
+          )}
         </div>
       </div>
 
