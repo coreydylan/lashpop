@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { usePanelStack } from '@/contexts/PanelStackContext'
@@ -46,6 +46,7 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
 
   const { actions: panelActions } = usePanelStack()
   const [isMobile, setIsMobile] = useState(false)
+  const [awardExpanded, setAwardExpanded] = useState(false)
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
@@ -183,6 +184,13 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
           </div>
 
           {/* BELOW THE FOLD - gradient from cream to pink to match next section */}
+          {/* Snap marker: when snapped here, title is near top, buttons centered */}
+          <div
+            className="mobile-section"
+            data-section-id="hero-buttons"
+            aria-hidden="true"
+            style={{ position: 'absolute', top: '85dvh', height: '1px', width: '1px', pointerEvents: 'none' }}
+          />
           <div
             ref={heroContentRef}
             className="relative px-6 py-6"
@@ -233,10 +241,10 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                   <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
                   <div className="relative py-3 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all group-hover:bg-white/60">
                     <div className="flex items-center justify-center gap-2.5">
-                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10">
-                        <GoogleLogoCompact />
-                        <YelpLogoCompact />
-                        <VagaroLogoCompact />
+                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10 text-dusty-rose">
+                        <GoogleLogoCompact monochrome />
+                        <YelpLogoCompact monochrome />
+                        <VagaroLogoCompact monochrome />
                       </div>
                       <span className="font-semibold text-sm text-dune">{totalReviews.toLocaleString()}</span>
                       <div className="flex items-center -space-x-0.5">
@@ -252,16 +260,53 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                 </button>
               )}
 
-              {/* Award badge - Frosted glass chip */}
-              <div className="relative group w-full">
-                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
-                <div className="relative py-2.5 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)]">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="text-sm font-medium text-terracotta">Award Winning</span>
-                    <div className="h-3.5 w-px bg-gradient-to-b from-transparent via-dune/20 to-transparent" />
-                    <span className="text-sm font-medium text-dune/80">Best Lash Studio</span>
+              {/* Award badge - Frosted glass chip with expandable Reader logo */}
+              <div className="relative w-full flex flex-col items-center">
+                <button
+                  onClick={() => setAwardExpanded(!awardExpanded)}
+                  className="relative group w-full"
+                >
+                  <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
+                  <div className="relative py-2.5 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all group-hover:bg-white/60">
+                    <div className="flex flex-col items-center justify-center gap-0.5">
+                      <span className="text-sm font-medium text-dusty-rose">Voted Best Lash Studio</span>
+                      <span className="text-xs font-medium text-dune/70">San Diego Reader</span>
+                    </div>
                   </div>
-                </div>
+                </button>
+
+                {/* Expandable Reader logo */}
+                <AnimatePresence>
+                  {awardExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <motion.a
+                        href="https://2024.northcountybestof.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0.8 }}
+                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                        className="block w-[60%] mx-auto"
+                        style={{ maxWidth: '180px' }}
+                      >
+                        <Image
+                          src="/lashpop-images/reader-best-of-2024.webp"
+                          alt="North County Reader Best of 2024"
+                          width={183}
+                          height={205}
+                          className="w-full h-auto"
+                        />
+                      </motion.a>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </div>
@@ -461,10 +506,44 @@ export default function HeroSection({ reviewStats }: HeroSectionProps) {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1, duration: 0.8 }}
-                  className="absolute bottom-8 left-8 right-8 glass rounded-2xl p-6 z-30"
+                  className="absolute bottom-8 left-8 right-8 z-30"
                 >
-                  <p className="caption text-terracotta mb-2">Award Winning</p>
-                  <p className="text-lg font-light text-dune">Best Lash Studio • North County SD</p>
+                  <div
+                    className="glass rounded-2xl p-6 cursor-pointer group transition-all duration-300 hover:bg-white/50"
+                    onMouseEnter={() => setAwardExpanded(true)}
+                    onMouseLeave={() => setAwardExpanded(false)}
+                    onClick={() => setAwardExpanded(!awardExpanded)}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-dusty-rose font-medium mb-1">Voted Best Lash Studio</p>
+                        <p className="text-sm text-dune/70">San Diego Reader</p>
+                      </div>
+                      <AnimatePresence>
+                        {awardExpanded && (
+                          <motion.a
+                            href="https://2024.northcountybestof.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            initial={{ opacity: 0, scale: 0.8, width: 0 }}
+                            animate={{ opacity: 1, scale: 1, width: 80 }}
+                            exit={{ opacity: 0, scale: 0.8, width: 0 }}
+                            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            className="flex-shrink-0 overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Image
+                              src="/lashpop-images/reader-best-of-2024.webp"
+                              alt="North County Reader Best of 2024"
+                              width={80}
+                              height={89}
+                              className="w-full h-auto"
+                            />
+                          </motion.a>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
                 </motion.div>
 
                 <motion.div
