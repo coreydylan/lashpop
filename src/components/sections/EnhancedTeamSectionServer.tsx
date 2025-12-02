@@ -32,7 +32,12 @@ export async function EnhancedTeamSection() {
       value: fact.value,
       customIcon: fact.customIcon,
       displayOrder: fact.displayOrder
-    })) || []
+    })) || [],
+    // Photo crop URLs for different formats
+    cropSquareUrl: member.cropSquareUrl || undefined,
+    cropCloseUpCircleUrl: member.cropCloseUpCircleUrl || undefined,
+    cropMediumCircleUrl: member.cropMediumCircleUrl || undefined,
+    cropFullVerticalUrl: member.cropFullVerticalUrl || undefined,
   }))
 
   return <EnhancedTeamSectionClient teamMembers={formattedTeamMembers} />

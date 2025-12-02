@@ -3,6 +3,7 @@
 import { getDb } from "@/db"
 import { teamMembers } from "@/db/schema/team_members"
 import { teamQuickFacts } from "@/db/schema/team_quick_facts"
+import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { services } from "@/db/schema/services"
 import { and, eq, inArray, isNotNull, asc } from "drizzle-orm"
 
@@ -115,6 +116,36 @@ export async function getTeamMembersWithServices() {
     return acc
   }, {} as Record<string, typeof allQuickFacts>)
 
+  // Fetch primary photos with crop URLs for all members
+  const primaryPhotos = memberIds.length > 0
+    ? await db
+        .select({
+          teamMemberId: teamMemberPhotos.teamMemberId,
+          cropSquareUrl: teamMemberPhotos.cropSquareUrl,
+          cropCloseUpCircleUrl: teamMemberPhotos.cropCloseUpCircleUrl,
+          cropMediumCircleUrl: teamMemberPhotos.cropMediumCircleUrl,
+          cropFullVerticalUrl: teamMemberPhotos.cropFullVerticalUrl,
+        })
+        .from(teamMemberPhotos)
+        .where(
+          and(
+            inArray(teamMemberPhotos.teamMemberId, memberIds),
+            eq(teamMemberPhotos.isPrimary, true)
+          )
+        )
+    : []
+
+  // Create a map of member ID to photo crops
+  const photoCropsByMember = primaryPhotos.reduce((acc, photo) => {
+    acc[photo.teamMemberId] = {
+      cropSquareUrl: photo.cropSquareUrl,
+      cropCloseUpCircleUrl: photo.cropCloseUpCircleUrl,
+      cropMediumCircleUrl: photo.cropMediumCircleUrl,
+      cropFullVerticalUrl: photo.cropFullVerticalUrl,
+    }
+    return acc
+  }, {} as Record<string, { cropSquareUrl: string | null; cropCloseUpCircleUrl: string | null; cropMediumCircleUrl: string | null; cropFullVerticalUrl: string | null }>)
+
   // Fetch service categories for all members in parallel
   const membersWithServices = await Promise.all(
     members.map(async (member) => {
@@ -132,12 +163,20 @@ export async function getTeamMembersWithServices() {
         }
       }
 
+      // Get photo crops for this member
+      const photoCrops = photoCropsByMember[member.id] || {}
+
       return {
         ...member,
         serviceCategories: allCategories.slice(0, 4), // Max 4 tags
         vagaroServiceCategories: vagaroCategories, // Keep track of which came from Vagaro
         manualServiceCategories: manualCategories, // Keep track of manual ones
-        quickFacts: quickFactsByMember[member.id] || [] // Add quick facts
+        quickFacts: quickFactsByMember[member.id] || [], // Add quick facts
+        // Photo crop URLs for different formats
+        cropSquareUrl: photoCrops.cropSquareUrl || null,
+        cropCloseUpCircleUrl: photoCrops.cropCloseUpCircleUrl || null,
+        cropMediumCircleUrl: photoCrops.cropMediumCircleUrl || null,
+        cropFullVerticalUrl: photoCrops.cropFullVerticalUrl || null,
       }
     })
   )

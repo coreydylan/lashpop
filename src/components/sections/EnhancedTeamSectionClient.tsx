@@ -33,6 +33,11 @@ interface TeamMember {
   favoriteServices?: string[]
   funFact?: string
   quickFacts?: QuickFact[]
+  // Photo crop URLs for different formats
+  cropSquareUrl?: string
+  cropCloseUpCircleUrl?: string
+  cropMediumCircleUrl?: string
+  cropFullVerticalUrl?: string
 }
 
 interface PortfolioImage {
@@ -344,89 +349,94 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         ref={sectionRef}
         className="py-20 bg-cream overflow-x-hidden"
       >
-        {/* Mobile Carousel View */}
+        {/* Mobile Grid View with Squircle Cards */}
         {isMobile ? (
-          <div className="relative w-full">
-            {/* Embla Viewport - py-4 prevents card shadow/transform clipping */}
-            <div className="overflow-hidden py-4" ref={emblaRef}>
-              {/* Embla Container */}
-              <div className="flex touch-pan-y gap-4 px-4">
-                {teamMembers.map((member, index) => {
-                  // Use service categories from Vagaro, fallback to derived from specialties
-                  const memberCategories = member.serviceCategories?.length 
-                    ? member.serviceCategories 
-                    : getTeamMemberCategories(member.specialties)
+          <div className="px-4">
+            {/*
+              Responsive grid:
+              - 2 columns on smaller iPhones (< 390px width)
+              - 3 columns on larger iPhones (>= 390px width)
+              Using min-width media query via Tailwind's custom breakpoint
+            */}
+            <div className="grid grid-cols-2 min-[390px]:grid-cols-3 gap-3">
+              {teamMembers.map((member, index) => {
+                // Use service categories from Vagaro, fallback to derived from specialties
+                const memberCategories = member.serviceCategories?.length
+                  ? member.serviceCategories
+                  : getTeamMemberCategories(member.specialties)
 
-                  return (
-                    <motion.div
-                      key={member.id}
-                      className="flex-[0_0_auto] w-[330px] cursor-grab active:cursor-grabbing"
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
-                      transition={{
-                        duration: 0.6,
-                        delay: index * 0.1,
-                        ease: [0.23, 1, 0.32, 1]
-                      }}
-                      onClick={() => handleMemberClick(member, index)}
-                    >
-                      {/* Clean Card Design - Taller format (~15% larger on mobile) */}
-                      <div className="relative h-[483px] rounded-3xl overflow-hidden transform transition-all duration-300 hover:scale-[1.02] group shadow-lg">
-                        {/* Clear Background Image */}
-                        <div className="absolute inset-0">
-                          <Image
-                            src={member.image}
-                            alt={member.name}
-                            fill
-                            className="object-cover"
-                          />
-                          {/* Gradient for readability at bottom */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                        </div>
+                // Use square crop for face-focused image, fallback to regular image
+                const cardImage = member.cropSquareUrl || member.image
 
-                        {/* Content at Bottom */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          {/* Name */}
-                          <h3 className="text-lg font-bold text-white drop-shadow-lg mb-1.5">
-                            {member.name}
-                          </h3>
+                return (
+                  <motion.div
+                    key={member.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                    transition={{
+                      duration: 0.4,
+                      delay: index * 0.05,
+                      ease: [0.23, 1, 0.32, 1]
+                    }}
+                    onClick={() => handleMemberClick(member, index)}
+                    className="cursor-pointer"
+                  >
+                    {/* Squircle Card Container */}
+                    <div className="relative">
+                      {/*
+                        Squircle shape using iOS-style continuous corner radius
+                        The squircle is achieved with ~22% border-radius on a square aspect ratio
+                        This creates the smooth superellipse appearance Apple uses
+                      */}
+                      <div
+                        className="relative aspect-square overflow-hidden shadow-md active:scale-[0.97] transition-transform duration-150"
+                        style={{
+                          borderRadius: '22%',
+                          // Smooth corners like iOS app icons
+                          WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+                        }}
+                      >
+                        {/* Background Image - face-cropped */}
+                        <Image
+                          src={cardImage}
+                          alt={member.name}
+                          fill
+                          className="object-cover"
+                          sizes="(min-width: 390px) 33vw, 50vw"
+                        />
 
-                          {/* Services - Horizontal scrolling chips */}
-                          {memberCategories.length > 0 && (
-                            <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
-                              <div className="flex gap-1 min-w-max">
-                                {memberCategories.slice(0, 4).map((category) => (
-                                  <span
-                                    key={category}
-                                    className="px-2 py-0.5 text-[9px] font-medium bg-white/15 backdrop-blur-sm text-white/90 rounded-full whitespace-nowrap"
-                                  >
-                                    {category}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        {/* Subtle gradient overlay for depth */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-                        {/* Highlight Effect */}
+                        {/* Highlight Ring */}
                         {isHighlighted(member.id) && (
-                          <div className="absolute inset-0 pointer-events-none">
-                            <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/30 to-transparent animate-pulse" />
-                            <div className="absolute top-4 right-4 bg-dusty-rose text-white px-3 py-1 rounded-full text-xs font-medium">
-                              Recommended
-                            </div>
-                          </div>
+                          <div
+                            className="absolute inset-0 pointer-events-none"
+                            style={{
+                              borderRadius: '22%',
+                              boxShadow: 'inset 0 0 0 3px rgb(205, 168, 158)',
+                            }}
+                          />
                         )}
                       </div>
-                    </motion.div>
-                  )
-                })}
-              </div>
-            </div>
 
-            {/* Gradient edges for seamless look */}
-            <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
-            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
+                      {/* Name Label Below Card */}
+                      <div className="mt-2 text-center">
+                        <h3 className="text-sm font-semibold text-dune leading-tight truncate px-1">
+                          {member.name.split(' ')[0]}
+                        </h3>
+                        {/* Show first service category as subtitle */}
+                        {memberCategories.length > 0 && (
+                          <p className="text-[10px] text-sage truncate px-1">
+                            {memberCategories[0]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
           </div>
         ) : (
           <div className="container px-4">
