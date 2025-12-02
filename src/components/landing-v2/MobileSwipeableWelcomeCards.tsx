@@ -115,7 +115,7 @@ export function MobileSwipeableWelcomeCards({
       x: 0,
       rotate: 0,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 400,
         damping: 30,
       },
@@ -125,7 +125,7 @@ export function MobileSwipeableWelcomeCards({
       rotate: direction === 'left' ? -15 : 15,
       opacity: 0,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 400,
         damping: 30,
       },
