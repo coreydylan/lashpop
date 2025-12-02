@@ -58,7 +58,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   const ref = useRef(null)
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
-    align: 0.4, // Slightly left of center to move active card up in viewport
+    align: 'center',
     skipSnaps: false
   })
 
@@ -206,7 +206,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   return (
     <>
       <style jsx>{scrollbarStyles}</style>
-      <section ref={ref} className="relative py-20 overflow-hidden bg-cream">
+      <section ref={ref} className="relative py-20 overflow-hidden bg-cream scroll-mt-[-40px]">
         <div className="relative">
 
         {/* Review Platform Stats - Above Cards */}
