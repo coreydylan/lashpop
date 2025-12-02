@@ -379,11 +379,47 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       delay: index * 0.05,
                       ease: [0.23, 1, 0.32, 1]
                     }}
-                    onClick={() => handleMemberClick(member, index)}
                     className="cursor-pointer"
                   >
                     {/* Taller Card Container - 3:4 aspect like desktop */}
-                    <div className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150 rounded-[24px]">
+                    <div
+                      className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150 rounded-[24px]"
+                      onTouchStart={(e) => {
+                        const touch = e.touches[0]
+                        const card = e.currentTarget
+                        card.dataset.touchStartX = touch.clientX.toString()
+                        card.dataset.touchStartY = touch.clientY.toString()
+                        card.dataset.touchMoved = 'false'
+                      }}
+                      onTouchMove={(e) => {
+                        const card = e.currentTarget
+                        const startX = parseFloat(card.dataset.touchStartX || '0')
+                        const startY = parseFloat(card.dataset.touchStartY || '0')
+                        const touch = e.touches[0]
+                        const deltaX = touch.clientX - startX
+                        const deltaY = touch.clientY - startY
+
+                        // If horizontal movement is greater, scroll the tags
+                        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 5) {
+                          card.dataset.touchMoved = 'true'
+                          const tagsContainer = card.querySelector('[data-tags-scroll]') as HTMLElement
+                          if (tagsContainer) {
+                            // Scroll in opposite direction of swipe
+                            tagsContainer.scrollLeft -= deltaX * 0.5
+                            // Update start position for continuous scroll
+                            card.dataset.touchStartX = touch.clientX.toString()
+                          }
+                        }
+                      }}
+                      onTouchEnd={(e) => {
+                        const card = e.currentTarget
+                        const moved = card.dataset.touchMoved === 'true'
+                        // Only trigger click if we didn't swipe
+                        if (!moved) {
+                          handleMemberClick(member, index)
+                        }
+                      }}
+                    >
                       {/* Background Image - face-cropped */}
                       <Image
                         src={cardImage}
@@ -406,8 +442,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         {/* Swipeable Service Tags */}
                         {memberCategories.length > 0 && (
                           <div
+                            data-tags-scroll
                             className="overflow-x-auto scrollbar-hide -mx-1 px-1"
-                            onClick={(e) => e.stopPropagation()}
                           >
                             <div className="flex gap-1 min-w-max">
                               {memberCategories.slice(0, 4).map((category) => (
