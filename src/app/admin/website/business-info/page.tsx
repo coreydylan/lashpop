@@ -414,7 +414,7 @@ export default function BusinessInfoEditor() {
               <div className="flex items-center justify-between p-4 bg-cream/50 border border-sage/20 rounded-xl">
                 <div>
                   <p className="text-sm text-dune font-medium">By Appointment Only</p>
-                  <p className="text-xs text-dune/50">Show "by appointment only" notice</p>
+                  <p className="text-xs text-dune/50">Show &quot;by appointment only&quot; notice</p>
                 </div>
                 <div
                   onClick={() => updateHours('appointmentOnly', !hours.appointmentOnly)}

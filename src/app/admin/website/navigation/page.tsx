@@ -383,7 +383,7 @@ export default function NavigationFooterEditor() {
 
             <div className="p-4 bg-golden/10 rounded-xl border border-golden/20">
               <p className="text-xs text-dune/70">
-                <strong>Tip:</strong> These links appear under "Services" in the footer.
+                <strong>Tip:</strong> These links appear under &quot;Services&quot; in the footer.
                 Link to specific sections or external pages.
               </p>
             </div>

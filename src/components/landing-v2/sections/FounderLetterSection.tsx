@@ -30,6 +30,25 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   const [letterContent, setLetterContent] = useState<FounderLetterContent>(content || defaultContent)
   const [isEnabled, setIsEnabled] = useState(true)
 
+  // Desktop refs - must be declared before any conditional returns
+  const desktopSectionRef = useRef<HTMLDivElement>(null)
+  const desktopContentRef = useRef<HTMLDivElement>(null)
+  const archRef = useRef<HTMLDivElement>(null)
+  const letterRef = useRef<HTMLDivElement>(null)
+
+  // Mobile scroll logic - using container ref properly
+  const mobileContainerRef = useRef<HTMLDivElement>(null)
+  const mobileArchRef = useRef<HTMLDivElement>(null)
+  const mobileArchImageRef = useRef<HTMLDivElement>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Track scroll progress of the container (mobile)
+  const { scrollYProgress } = useScroll({
+    target: mobileContainerRef,
+    offset: ["start start", "end end"],
+    layoutEffect: false
+  } as any)
+
   // Fetch settings from API
   useEffect(() => {
     if (content) return // Skip if content was passed as prop
@@ -51,21 +70,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       .catch(err => console.error('Error fetching founder letter settings:', err))
   }, [content])
 
-  // Don't render if disabled
-  if (!isEnabled) return null
-
-  // Desktop refs
-  const desktopSectionRef = useRef<HTMLDivElement>(null)
-  const desktopContentRef = useRef<HTMLDivElement>(null)
-  const archRef = useRef<HTMLDivElement>(null)
-  const letterRef = useRef<HTMLDivElement>(null)
-
-  // Mobile scroll logic - using container ref properly
-  const mobileContainerRef = useRef<HTMLDivElement>(null)
-  const mobileArchRef = useRef<HTMLDivElement>(null)
-  const mobileArchImageRef = useRef<HTMLDivElement>(null)
-  const [isMobile, setIsMobile] = useState(false)
-
   // Check if mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -73,13 +77,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  // Track scroll progress of the container (mobile)
-  const { scrollYProgress } = useScroll({
-    target: mobileContainerRef,
-    offset: ["start start", "end end"],
-    layoutEffect: false
-  } as any)
 
   // GSAP ScrollTrigger for desktop
   useEffect(() => {
@@ -228,6 +225,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       window.removeEventListener('resize', handleResize)
     }
   }, [isMobile])
+
+  // Don't render if disabled
+  if (!isEnabled) return null
 
   return (
     <section className="relative w-full bg-cream">
