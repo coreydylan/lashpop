@@ -24,7 +24,7 @@ interface Category {
 interface CollapsedChipBarProps {
   onCategorySelect: (category: Category) => void;
   onDiscoverSelect: () => void;
-  showDragIndicator?: boolean;
+  showDragIndicator?: boolean; // Legacy prop - indicator now always shows
 }
 
 /**
@@ -81,24 +81,23 @@ export function CollapsedChipBar({
 
   return (
     <div className="bg-cream/98 backdrop-blur-md">
-      {/* Tiny drag indicator - only visible after user interaction */}
-      {showDragIndicator && (
-        <div className="flex justify-center pt-2 pb-1">
-          <motion.div
-            className="w-8 h-0.5 bg-sage/30 rounded-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          />
-        </div>
-      )}
+      {/* Drag indicator - dusty rose, always visible */}
+      <div className="flex justify-center pt-3 pb-1">
+        <motion.div
+          className="w-10 h-1 bg-dusty-rose/50 rounded-full"
+          initial={{ opacity: 0, scaleX: 0.5 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 0.1, duration: 0.2 }}
+        />
+      </div>
 
-      {/* Chip scroll container */}
+      {/* Chip scroll container - horizontal scroll doesn't block vertical swipe */}
       <div
         className="flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide"
         style={{
-          paddingTop: showDragIndicator ? '0' : '0.5rem',
-          paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))',
+          paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))',
+          // Allow horizontal scroll but don't capture vertical
+          touchAction: 'pan-x',
         }}
       >
         {/* Discover chip - first position */}

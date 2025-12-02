@@ -285,17 +285,21 @@ export function BottomSheetContainer() {
 
   // Handle swipe on collapsed chip bar
   const handleChipBarSwipe = useCallback((direction: 'up' | 'down') => {
-    if (direction === 'up' && state.hasUserInteracted) {
-      // Expand first docked panel
-      const firstPanel = sortedPanels.find(p => p.state === 'docked');
-      if (firstPanel) {
-        actions.expandPanel(firstPanel.id);
+    if (direction === 'up') {
+      // Mark as interacted on swipe up
+      actions.setUserInteracted();
+      // Expand first docked panel (or the service panel if exists)
+      const servicePanel = sortedPanels.find(p => p.type === 'service-panel');
+      const firstDockedPanel = sortedPanels.find(p => p.state === 'docked');
+      const panelToExpand = servicePanel || firstDockedPanel;
+      if (panelToExpand) {
+        actions.expandPanel(panelToExpand.id);
       }
     } else if (direction === 'down') {
       animateToSnap('hidden');
       actions.closeAll();
     }
-  }, [state.hasUserInteracted, sortedPanels, actions, animateToSnap]);
+  }, [sortedPanels, actions, animateToSnap]);
 
   // Handle backdrop click - collapse to chip bar
   const handleBackdropClick = () => {
@@ -319,38 +323,56 @@ export function BottomSheetContainer() {
   }, [currentSnap]);
 
   // Handle category selection from chip bar
+  // Single surface model: clicking a category switches the view, doesn't open/close panels
   const handleCategorySelect = useCallback((category: Category) => {
     actions.setUserInteracted();
 
     const isSelected = state.categorySelections.some(c => c.categoryId === category.id);
+    const existingServicePanel = state.panels.find(p => p.type === 'service-panel');
 
     if (isSelected) {
+      // Clicking already selected category - deselect and collapse to chip bar
       actions.deselectCategory(category.id);
-      const servicePanel = state.panels.find(
-        p => p.type === 'service-panel' && p.data.categoryId === category.id
-      );
-      if (servicePanel) {
-        actions.closePanel(servicePanel.id);
+      if (existingServicePanel) {
+        actions.dockPanel(existingServicePanel.id);
       }
     } else {
+      // Clear any existing category selections first (single selection model)
+      state.categorySelections.forEach(sel => {
+        actions.deselectCategory(sel.categoryId);
+      });
+
+      // Select new category
       actions.selectCategory(category.id, category.name);
 
-      const categoryPickerPanel = state.panels.find(p => p.type === 'category-picker');
-
-      actions.openPanel(
-        'service-panel',
-        {
+      if (existingServicePanel) {
+        // Update existing panel's data instead of opening a new one
+        actions.updatePanelData(existingServicePanel.id, {
           categoryId: category.id,
           categoryName: category.name,
           subcategories: getSubcategories(category.id),
           services: state.services.filter(s => s.categorySlug === category.id),
-        },
-        {
-          parentId: categoryPickerPanel?.id,
-          autoExpand: true,
-          scrollToTop: true,
-        }
-      );
+        });
+        actions.expandPanel(existingServicePanel.id);
+      } else {
+        // No existing panel - open new one
+        const categoryPickerPanel = state.panels.find(p => p.type === 'category-picker');
+
+        actions.openPanel(
+          'service-panel',
+          {
+            categoryId: category.id,
+            categoryName: category.name,
+            subcategories: getSubcategories(category.id),
+            services: state.services.filter(s => s.categorySlug === category.id),
+          },
+          {
+            parentId: categoryPickerPanel?.id,
+            autoExpand: true,
+            scrollToTop: true,
+          }
+        );
+      }
     }
   }, [state.categorySelections, state.panels, state.services, actions, getSubcategories]);
 
@@ -439,24 +461,24 @@ export function BottomSheetContainer() {
               transition={{ duration: 0.15 }}
               drag="y"
               dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={0.2}
+              dragElastic={0.15}
               dragDirectionLock
               onDragEnd={(_, info) => {
                 const velocity = info.velocity.y;
                 const offset = info.offset.y;
-                // Lower thresholds for stickier feel
-                if ((velocity < -150 || offset < -30) && state.hasUserInteracted) {
+                // Swipe up to expand (always works now, not just after interaction)
+                if (velocity < -100 || offset < -20) {
                   handleChipBarSwipe('up');
-                } else if (velocity > 200 || offset > 40) {
+                } else if (velocity > 150 || offset > 30) {
+                  // Swipe down to close
                   handleChipBarSwipe('down');
                 }
               }}
-              style={{ touchAction: 'none' }}
+              className="cursor-grab active:cursor-grabbing"
             >
               <CollapsedChipBar
                 onCategorySelect={handleCategorySelect}
                 onDiscoverSelect={handleDiscoverSelect}
-                showDragIndicator={state.hasUserInteracted}
               />
             </motion.div>
           )}
