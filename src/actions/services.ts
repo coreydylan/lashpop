@@ -4,6 +4,7 @@ import { getDb } from "@/db"
 import { services } from "@/db/schema/services"
 import { serviceCategories } from "@/db/schema/service_categories"
 import { serviceSubcategories } from "@/db/schema/service_subcategories"
+import { assetServices } from "@/db/schema/asset_services"
 import { and, eq, asc } from "drizzle-orm"
 
 export async function getServices() {
@@ -231,6 +232,59 @@ export async function updateServiceSubcategoryImage(
       updatedAt: new Date()
     })
     .where(eq(serviceSubcategories.id, subcategoryId))
+
+  return { success: true }
+}
+
+// Tag an asset with a service (many-to-many relationship)
+// This is called when selecting an image from "all images" view
+// to auto-tag it for the service
+export async function tagAssetWithService(
+  assetId: string,
+  serviceId: string
+) {
+  const db = getDb()
+
+  // Check if already tagged
+  const existing = await db
+    .select()
+    .from(assetServices)
+    .where(
+      and(
+        eq(assetServices.assetId, assetId),
+        eq(assetServices.serviceId, serviceId)
+      )
+    )
+    .limit(1)
+
+  // Only insert if not already tagged
+  if (existing.length === 0) {
+    await db
+      .insert(assetServices)
+      .values({
+        assetId,
+        serviceId
+      })
+  }
+
+  return { success: true }
+}
+
+// Remove service tag from an asset
+export async function untagAssetFromService(
+  assetId: string,
+  serviceId: string
+) {
+  const db = getDb()
+
+  await db
+    .delete(assetServices)
+    .where(
+      and(
+        eq(assetServices.assetId, assetId),
+        eq(assetServices.serviceId, serviceId)
+      )
+    )
 
   return { success: true }
 }

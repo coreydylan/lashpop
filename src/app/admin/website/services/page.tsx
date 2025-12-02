@@ -28,12 +28,14 @@ import {
 } from 'lucide-react'
 import clsx from 'clsx'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
+import { ServiceHeroImagePicker } from '@/components/admin/ServiceHeroImagePicker'
 import {
   getAllServicesAdmin,
   getServiceCategoriesWithSubcategories,
   updateServiceImage,
   updateServiceCategoryImage,
-  updateServiceSubcategoryImage
+  updateServiceSubcategoryImage,
+  tagAssetWithService
 } from '@/actions/services'
 
 // Types
@@ -103,12 +105,20 @@ export default function ServicesAdminPage() {
   const [showOnlyWithImages, setShowOnlyWithImages] = useState(false)
   const [showOnlyWithDemoMode, setShowOnlyWithDemoMode] = useState(false)
 
-  // Image picker state
+  // Image picker state (for categories and subcategories - uses MiniDamExplorer)
   const [imagePicker, setImagePicker] = useState<{
     isOpen: boolean
-    type: 'service' | 'category' | 'subcategory'
+    type: 'category' | 'subcategory'
     itemId: string
     itemName: string
+    currentAssetId: string | null
+  } | null>(null)
+
+  // Service hero image picker state (uses ServiceHeroImagePicker with two-tier filtering)
+  const [serviceImagePicker, setServiceImagePicker] = useState<{
+    isOpen: boolean
+    serviceId: string
+    serviceName: string
     currentAssetId: string | null
   } | null>(null)
 
@@ -281,23 +291,13 @@ export default function ServicesAdminPage() {
     return grouped
   }, [categories, filteredServices])
 
-  // Handle image selection
+  // Handle image selection for categories/subcategories (MiniDamExplorer)
   const handleImageSelect = async (asset: Asset) => {
     if (!imagePicker) return
 
     setSaving(imagePicker.itemId)
     try {
-      if (imagePicker.type === 'service') {
-        await updateServiceImage(imagePicker.itemId, {
-          keyImageAssetId: asset.id,
-          imageUrl: asset.filePath
-        })
-        setServices(prev => prev.map(s =>
-          s.id === imagePicker.itemId
-            ? { ...s, keyImageAssetId: asset.id, imageUrl: asset.filePath }
-            : s
-        ))
-      } else if (imagePicker.type === 'category') {
+      if (imagePicker.type === 'category') {
         await updateServiceCategoryImage(imagePicker.itemId, asset.id)
         setCategories(prev => prev.map(c =>
           c.id === imagePicker.itemId
@@ -327,6 +327,43 @@ export default function ServicesAdminPage() {
     } finally {
       setSaving(null)
       setImagePicker(null)
+    }
+  }
+
+  // Handle service hero image selection (ServiceHeroImagePicker)
+  const handleServiceHeroImageSelect = async (asset: Asset, shouldTagForService: boolean) => {
+    if (!serviceImagePicker) return
+
+    setSaving(serviceImagePicker.serviceId)
+    try {
+      // If selecting from "all images" and not already tagged, auto-tag for this service
+      if (shouldTagForService) {
+        await tagAssetWithService(asset.id, serviceImagePicker.serviceId)
+      }
+
+      // Update the service's key image
+      await updateServiceImage(serviceImagePicker.serviceId, {
+        keyImageAssetId: asset.id,
+        imageUrl: asset.filePath
+      })
+
+      setServices(prev => prev.map(s =>
+        s.id === serviceImagePicker.serviceId
+          ? { ...s, keyImageAssetId: asset.id, imageUrl: asset.filePath }
+          : s
+      ))
+
+      // Update asset lookup
+      setAssetLookup(prev => {
+        const next = new Map(prev)
+        next.set(asset.id, { filePath: asset.filePath, fileName: asset.fileName })
+        return next
+      })
+    } catch (error) {
+      console.error('Error updating service hero image:', error)
+    } finally {
+      setSaving(null)
+      setServiceImagePicker(null)
     }
   }
 
@@ -375,9 +412,9 @@ export default function ServicesAdminPage() {
     }
   }
 
-  // Render image thumbnail with picker button
+  // Render image thumbnail with picker button for categories/subcategories
   const renderImageCell = (
-    type: 'service' | 'category' | 'subcategory',
+    type: 'category' | 'subcategory',
     itemId: string,
     itemName: string,
     assetId: string | null,
@@ -431,6 +468,71 @@ export default function ServicesAdminPage() {
         {asset && (
           <button
             onClick={() => handleRemoveImage(type, itemId)}
+            disabled={isSaving}
+            className="p-1 rounded-md hover:bg-terracotta/10 text-terracotta/60 hover:text-terracotta transition-colors"
+            title="Remove image"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // Render service image cell with the enhanced two-tier picker
+  const renderServiceImageCell = (
+    serviceId: string,
+    serviceName: string,
+    assetId: string | null,
+    size: 'sm' | 'md' = 'md'
+  ) => {
+    const asset = assetId ? assetLookup.get(assetId) : null
+    const isSaving = saving === serviceId
+    const dimensions = size === 'sm' ? 'w-12 h-12' : 'w-16 h-16'
+
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setServiceImagePicker({
+            isOpen: true,
+            serviceId,
+            serviceName,
+            currentAssetId: assetId
+          })}
+          disabled={isSaving}
+          className={clsx(
+            dimensions,
+            "rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 group relative",
+            asset
+              ? "border-dusty-rose/30 hover:border-dusty-rose"
+              : "border-dashed border-sage/30 hover:border-sage/60 bg-sage/5"
+          )}
+        >
+          {asset ? (
+            <>
+              <Image
+                src={asset.filePath}
+                alt={asset.fileName}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-dune/0 group-hover:bg-dune/30 transition-colors flex items-center justify-center">
+                <ImageIcon className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              {isSaving ? (
+                <RefreshCw className="w-4 h-4 text-sage/40 animate-spin" />
+              ) : (
+                <ImageIcon className="w-4 h-4 text-sage/40 group-hover:text-sage/60 transition-colors" />
+              )}
+            </div>
+          )}
+        </button>
+        {asset && (
+          <button
+            onClick={() => handleRemoveImage('service', serviceId)}
             disabled={isSaving}
             className="p-1 rounded-md hover:bg-terracotta/10 text-terracotta/60 hover:text-terracotta transition-colors"
             title="Remove image"
@@ -753,7 +855,7 @@ export default function ServicesAdminPage() {
                                           key={service.id}
                                           className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/50 transition-colors"
                                         >
-                                          {renderImageCell('service', service.id, service.name, service.keyImageAssetId, 'sm')}
+                                          {renderServiceImageCell(service.id, service.name, service.keyImageAssetId, 'sm')}
 
                                           <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-dune truncate">{service.name}</p>
@@ -812,7 +914,7 @@ export default function ServicesAdminPage() {
                                   key={service.id}
                                   className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/50 transition-colors"
                                 >
-                                  {renderImageCell('service', service.id, service.name, service.keyImageAssetId, 'sm')}
+                                  {renderServiceImageCell(service.id, service.name, service.keyImageAssetId, 'sm')}
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-dune truncate">{service.name}</p>
                                   </div>
@@ -852,7 +954,7 @@ export default function ServicesAdminPage() {
                     )}
                   >
                     <td className="px-4 py-3">
-                      {renderImageCell('service', service.id, service.name, service.keyImageAssetId)}
+                      {renderServiceImageCell(service.id, service.name, service.keyImageAssetId)}
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-dune text-sm">{service.name}</p>
@@ -947,7 +1049,7 @@ export default function ServicesAdminPage() {
         </ul>
       </motion.div>
 
-      {/* Image Picker Modal */}
+      {/* Image Picker Modal (for categories/subcategories) */}
       <MiniDamExplorer
         isOpen={imagePicker?.isOpen ?? false}
         onClose={() => setImagePicker(null)}
@@ -955,6 +1057,21 @@ export default function ServicesAdminPage() {
         selectedAssetId={imagePicker?.currentAssetId}
         title={`Select Image for ${imagePicker?.itemName || 'Item'}`}
         subtitle="Choose a key image from your media library"
+      />
+
+      {/* Service Hero Image Picker (two-tier: service-tagged first, then all) */}
+      <ServiceHeroImagePicker
+        isOpen={serviceImagePicker?.isOpen ?? false}
+        onClose={() => setServiceImagePicker(null)}
+        onSelect={handleServiceHeroImageSelect}
+        onClearImage={async () => {
+          if (serviceImagePicker?.serviceId) {
+            await handleRemoveImage('service', serviceImagePicker.serviceId)
+          }
+        }}
+        selectedAssetId={serviceImagePicker?.currentAssetId}
+        serviceId={serviceImagePicker?.serviceId ?? ''}
+        serviceName={serviceImagePicker?.serviceName ?? ''}
       />
     </div>
   )
