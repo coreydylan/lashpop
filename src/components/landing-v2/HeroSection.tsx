@@ -571,15 +571,17 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
                 ) : (
                   /* Single Image Mode - original behavior */
-                  <div className="relative w-full h-full overflow-hidden">
+                  /* Use absolute positioning with negative inset to ensure full coverage at all screen widths */
+                  <div className="absolute inset-0 overflow-hidden">
                     <Image
                       ref={imageRef}
                       src={archImage.url}
                       alt="LashPop Studio Interior"
                       fill
-                      className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+                      className="object-cover"
                       priority
                       quality={85}
+                      sizes="(max-width: 768px) 100vw, 50vw"
                       style={{
                         transform: "scale(1.4) translateX(0%)",
                         transformOrigin: "center center",
