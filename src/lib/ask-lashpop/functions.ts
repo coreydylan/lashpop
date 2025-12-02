@@ -1,0 +1,296 @@
+// ASK LASHPOP - GPT Function Definitions
+
+import type { GPTFunction, ChatAction, FormField } from './types'
+
+// Service category mapping
+export const CATEGORY_MAP: Record<string, { id: string; name: string }> = {
+  lashes: { id: 'lashes', name: 'Lashes' },
+  brows: { id: 'brows', name: 'Brows' },
+  facials: { id: 'facials', name: 'Facials' },
+  'permanent-makeup': { id: 'permanent-makeup', name: 'Permanent Makeup' },
+  waxing: { id: 'waxing', name: 'Waxing' },
+  bundles: { id: 'bundles', name: 'Bundles' },
+  specialty: { id: 'specialty', name: 'Specialty' },
+}
+
+// Section mapping
+export const SECTION_MAP: Record<string, string> = {
+  team: '#team',
+  gallery: '#gallery',
+  reviews: '#reviews',
+  faq: '#faq',
+  'find-us': '#find-us',
+  map: '#find-us',
+  top: '#hero',
+  home: '#hero',
+}
+
+// Contact form field templates
+export const FORM_FIELDS: Record<string, FormField[]> = {
+  general: [
+    { name: 'name', label: 'Your Name', type: 'text', required: true, placeholder: 'Jane Doe' },
+    { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'jane@example.com' },
+    { name: 'phone', label: 'Phone (optional)', type: 'phone', required: false, placeholder: '(555) 123-4567' },
+    { name: 'message', label: 'Your Question', type: 'textarea', required: true, placeholder: 'How can we help?' },
+  ],
+  bridal: [
+    { name: 'name', label: 'Your Name', type: 'text', required: true, placeholder: 'Jane Doe' },
+    { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'jane@example.com' },
+    { name: 'phone', label: 'Phone', type: 'phone', required: true, placeholder: '(555) 123-4567' },
+    { name: 'weddingDate', label: 'Wedding Date', type: 'date', required: true },
+    { name: 'message', label: 'Tell us about your vision', type: 'textarea', required: true, placeholder: 'Services you\'re interested in, wedding party size, etc.' },
+  ],
+  complaint: [
+    { name: 'name', label: 'Your Name', type: 'text', required: true, placeholder: 'Jane Doe' },
+    { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'jane@example.com' },
+    { name: 'phone', label: 'Phone', type: 'phone', required: true, placeholder: '(555) 123-4567' },
+    { name: 'message', label: 'What happened?', type: 'textarea', required: true, placeholder: 'Please describe your experience so we can make it right' },
+  ],
+  callback: [
+    { name: 'name', label: 'Your Name', type: 'text', required: true, placeholder: 'Jane Doe' },
+    { name: 'phone', label: 'Phone Number', type: 'phone', required: true, placeholder: '(555) 123-4567' },
+    { name: 'email', label: 'Email (optional)', type: 'email', required: false, placeholder: 'jane@example.com' },
+    { name: 'message', label: 'What can we help with?', type: 'textarea', required: false, placeholder: 'Brief description (optional)' },
+  ],
+}
+
+// GPT Function Definitions
+export const GPT_FUNCTIONS: GPTFunction[] = [
+  {
+    name: 'scroll_to_section',
+    description: 'Scroll the page to a specific section. Use this when users ask about location, reviews, team, etc.',
+    parameters: {
+      type: 'object',
+      properties: {
+        section: {
+          type: 'string',
+          enum: ['team', 'gallery', 'reviews', 'faq', 'find-us', 'top'],
+          description: 'The section to scroll to',
+        },
+        button_label: {
+          type: 'string',
+          description: 'Label for the action button (e.g., "Take me to the map")',
+        },
+      },
+      required: ['section', 'button_label'],
+    },
+  },
+  {
+    name: 'show_services',
+    description: 'Open the service browser/explorer for a specific category. Use when users want to see services.',
+    parameters: {
+      type: 'object',
+      properties: {
+        category: {
+          type: 'string',
+          enum: ['lashes', 'brows', 'facials', 'permanent-makeup', 'waxing', 'bundles'],
+          description: 'The service category to show',
+        },
+        button_label: {
+          type: 'string',
+          description: 'Label for the action button (e.g., "Browse Lash Services")',
+        },
+      },
+      required: ['category', 'button_label'],
+    },
+  },
+  {
+    name: 'book_service',
+    description: 'Load the booking widget for a specific service. Use when users want to book a particular service.',
+    parameters: {
+      type: 'object',
+      properties: {
+        service_slug: {
+          type: 'string',
+          description: 'The slug/ID of the service to book (e.g., "lash-lift", "classic-extensions")',
+        },
+        service_name: {
+          type: 'string',
+          description: 'Display name of the service',
+        },
+        button_label: {
+          type: 'string',
+          description: 'Label for the action button (e.g., "Book Lash Lift")',
+        },
+      },
+      required: ['service_slug', 'service_name', 'button_label'],
+    },
+  },
+  {
+    name: 'collect_contact_info',
+    description: 'Show a form to collect user contact info for human follow-up. Use for complex requests, complaints, or bridal inquiries.',
+    parameters: {
+      type: 'object',
+      properties: {
+        reason: {
+          type: 'string',
+          enum: ['general', 'bridal', 'complaint', 'callback'],
+          description: 'The type of inquiry',
+        },
+        button_label: {
+          type: 'string',
+          description: 'Label for the action button (e.g., "Connect me with the team")',
+        },
+      },
+      required: ['reason', 'button_label'],
+    },
+  },
+  {
+    name: 'display_buttons',
+    description: 'Show multiple action buttons. Use when offering several options to the user.',
+    parameters: {
+      type: 'object',
+      properties: {
+        buttons: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              label: { type: 'string', description: 'Button text' },
+              type: {
+                type: 'string',
+                enum: ['scroll', 'services', 'book', 'call', 'email', 'external'],
+                description: 'Type of action',
+              },
+              value: { type: 'string', description: 'Value for the action (section name, category, service slug, URL, etc.)' },
+              icon: { type: 'string', description: 'Icon name (map-pin, calendar, phone, mail, eye, sparkles)' },
+            },
+            required: ['label', 'type', 'value'],
+          },
+          description: 'Array of buttons to display',
+        },
+      },
+      required: ['buttons'],
+    },
+  },
+]
+
+// Convert GPT function call to ChatAction
+export function functionCallToAction(
+  functionName: string,
+  args: Record<string, unknown>,
+  servicesMap?: Map<string, { vagaroServiceCode: string; priceStarting: number; durationMinutes: number; categoryName: string }>
+): ChatAction | ChatAction[] | null {
+  switch (functionName) {
+    case 'scroll_to_section': {
+      return {
+        type: 'scroll_to_section',
+        target: args.section as string,
+        thenCollapse: true,
+        label: args.button_label as string,
+        icon: 'map-pin',
+      }
+    }
+
+    case 'show_services': {
+      const category = CATEGORY_MAP[args.category as string]
+      if (!category) return null
+      return {
+        type: 'open_panel',
+        panelType: 'service-panel',
+        data: { categoryId: category.id, categoryName: category.name },
+        thenCollapse: true,
+        label: args.button_label as string,
+        icon: 'eye',
+      }
+    }
+
+    case 'book_service': {
+      const slug = args.service_slug as string
+      const serviceInfo = servicesMap?.get(slug)
+
+      return {
+        type: 'load_vagaro_inline',
+        service: {
+          id: slug,
+          name: args.service_name as string,
+          vagaroServiceCode: serviceInfo?.vagaroServiceCode || '',
+          priceStarting: serviceInfo?.priceStarting || 0,
+          durationMinutes: serviceInfo?.durationMinutes || 60,
+          categoryName: serviceInfo?.categoryName,
+        },
+        label: args.button_label as string,
+        icon: 'calendar',
+      }
+    }
+
+    case 'collect_contact_info': {
+      const reason = args.reason as keyof typeof FORM_FIELDS
+      return {
+        type: 'show_form',
+        formType: reason as 'contact' | 'callback' | 'bridal' | 'complaint',
+        fields: FORM_FIELDS[reason] || FORM_FIELDS.general,
+        label: args.button_label as string,
+        icon: 'mail',
+      }
+    }
+
+    case 'display_buttons': {
+      const buttons = args.buttons as Array<{ label: string; type: string; value: string; icon?: string }>
+      return buttons.map((btn): ChatAction => {
+        switch (btn.type) {
+          case 'scroll':
+            return {
+              type: 'scroll_to_section',
+              target: btn.value,
+              thenCollapse: true,
+              label: btn.label,
+              icon: btn.icon || 'map-pin',
+            }
+          case 'services': {
+            const cat = CATEGORY_MAP[btn.value]
+            return {
+              type: 'open_panel',
+              panelType: 'service-panel',
+              data: { categoryId: cat?.id || btn.value, categoryName: cat?.name || btn.value },
+              thenCollapse: true,
+              label: btn.label,
+              icon: btn.icon || 'eye',
+            }
+          }
+          case 'book': {
+            const svc = servicesMap?.get(btn.value)
+            return {
+              type: 'load_vagaro_inline',
+              service: {
+                id: btn.value,
+                name: btn.label.replace('Book ', ''),
+                vagaroServiceCode: svc?.vagaroServiceCode || '',
+                priceStarting: svc?.priceStarting || 0,
+                durationMinutes: svc?.durationMinutes || 60,
+                categoryName: svc?.categoryName,
+              },
+              label: btn.label,
+              icon: btn.icon || 'calendar',
+            }
+          }
+          case 'call':
+            return {
+              type: 'call_phone',
+              number: btn.value || '+17602120448',
+              label: btn.label,
+              icon: btn.icon || 'phone',
+            }
+          case 'email':
+            return {
+              type: 'open_external',
+              url: `mailto:${btn.value || 'hello@lashpopstudios.com'}`,
+              label: btn.label,
+              icon: btn.icon || 'mail',
+            }
+          case 'external':
+          default:
+            return {
+              type: 'open_external',
+              url: btn.value,
+              label: btn.label,
+              icon: btn.icon || 'external',
+            }
+        }
+      })
+    }
+
+    default:
+      return null
+  }
+}
