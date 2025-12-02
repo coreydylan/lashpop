@@ -18,14 +18,15 @@ interface FounderLetterSectionProps {
 
 // Default content fallback
 const defaultContent: FounderLetterContent = {
-  greeting: 'Dear Beautiful Soul,',
+  greeting: 'Welcome to LashPop Studios — I\'m so glad you\'re here. 🤎',
   paragraphs: [
-    'When I started LashPop, I wanted to build something simple: a place where you actually feel taken care of.',
-    'We\'re all united by the same mission—helping you feel effortlessly beautiful and confident, with a few less things to worry about during your busy week. We might be able to give you that "just woke up from eight blissful hours" look with little effort (even if your reality looks more like five). We\'re not here to judge ;)',
-    'Thank you for trusting us. We can\'t wait to see you.'
+    'When I launched LashPop in 2016, I wanted something simple: a place where women actually feel cared for and walk out looking refreshed without the long routine.',
+    'That vision eventually grew into the beauty collective we have today—artists offering lashes, brows, skincare, injectables, waxing, permanent jewelry, and more—all with one goal in mind: helping you feel effortlessly beautiful and confident.',
+    'We\'re here to make your week a little easier. If we can give you that "just woke up from eight blissful hours" feeling with almost no effort—even if you\'re running on five—we\'re doing our job.',
+    'We can\'t wait to see you soon!'
   ],
-  signOff: 'With love and lashes,',
-  signature: 'Emily and the LashPop Family'
+  signOff: 'Xo',
+  signature: 'Emily'
 }
 
 export function FounderLetterSection({ content }: FounderLetterSectionProps) {
@@ -222,7 +223,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               className="max-w-2xl z-30 pb-[16vh]"
             >
               {/* Letter Content */}
-              <div className="relative w-full text-[#8a5e55] text-[clamp(1.1rem,1.6vw,1.6rem)] leading-relaxed font-normal font-swanky">
+              <div className="relative w-full text-[#8a5e55] text-[clamp(0.95rem,1.4vw,1.4rem)] leading-relaxed font-normal font-swanky">
                 <p className="mb-[1.5vh]">{letterContent.greeting}</p>
 
                 {letterContent.paragraphs.map((paragraph, index) => (
@@ -233,7 +234,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
                 <div className="flex flex-col gap-[0.5vh]">
                   <p>{letterContent.signOff}</p>
-                  <p className="text-[clamp(1.35rem,2.2vw,2rem)]">{letterContent.signature}</p>
+                  <p className="text-[clamp(1.2rem,1.8vw,1.7rem)]">{letterContent.signature}</p>
                 </div>
               </div>
 
@@ -348,7 +349,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         {/* Letter Content */}
         <div className="px-6 pb-16">
           <motion.div
-            className="text-[#8a5e55] text-lg leading-relaxed font-normal font-swanky max-w-lg mx-auto"
+            className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-50px" }}
@@ -377,7 +378,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               transition={{ duration: 0.5, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
             >
               <p>{letterContent.signOff}</p>
-              <p className="text-xl">{letterContent.signature}</p>
+              <p className="text-lg">{letterContent.signature}</p>
             </motion.div>
           </motion.div>
         </div>
