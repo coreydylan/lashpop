@@ -315,8 +315,8 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     WELCOME SECTION: Has its own background image, works on both mobile/desktop.
                     Uses data-effect="stack" to be pinned by useMobileStackingCards hook.
                   */}
-                  <div className={isMobile ? "mobile-section z-10" : ""} data-section-id="welcome" data-effect="stack">
-                    <WelcomeSection />
+                  <div className={isMobile ? "z-10" : ""} data-section-id="welcome" data-effect="stack">
+                    <WelcomeSection isMobile={isMobile} />
                   </div>
 
                 {/* Services panel trigger removed - users open via menu/buttons */}
@@ -324,7 +324,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 {/* Continuous cream background wrapper for all sections from founder onwards */}
                 {/* z-20 ensures this scrolls over the sticky WelcomeSection (z-10) on mobile */}
                 {/* negative margin pulls it UP so it overlaps the sticky Welcome Section while it's "pausing" */}
-                <div className={`bg-cream relative z-20 ${isMobile ? '-mt-[100vh]' : ''}`}>
+                <div className={`bg-cream relative z-20 ${isMobile ? '-mt-[100dvh]' : ''}`}>
                   {/* Founder Letter Section */}
                   <div className={isMobile ? "mobile-section" : ""} data-section-id="founder">
                     <FounderLetterSection content={founderLetterContent} />

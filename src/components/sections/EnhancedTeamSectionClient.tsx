@@ -1178,32 +1178,33 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         {/* Spacer to position content below the image initially */}
                         <div className="h-[50vh] pointer-events-none" />
 
-                        {/* All content wrapped together with cream background that starts after gradient */}
+                        {/* All content wrapped together */}
                         <div className="relative">
-                          {/* Gradient overlay - sits on top, fades to transparent */}
-                          <div className="h-40 bg-gradient-to-t from-cream via-cream/80 to-transparent" />
+                          {/* Gradient - absolutely positioned, extends from top down past the card */}
+                          <div className="absolute inset-x-0 top-0 h-72 bg-gradient-to-t from-cream from-40% via-cream/70 via-70% to-transparent pointer-events-none z-0" />
 
-                          {/* Cream background layer - extends from bottom of gradient down */}
-                          <div className="bg-cream">
-                            {/* Info Card - pulled up into gradient area */}
-                            <div className="relative -mt-16 px-5 pointer-events-auto">
-                              <div className="bg-white rounded-3xl shadow-xl p-5 border border-sage/5">
-                                {/* Name and affiliation */}
-                                <div>
-                                  <h1 className="font-serif text-2xl text-dune leading-tight">
-                                    {selectedMember.name}
-                                  </h1>
-                                  <p className="text-dusty-rose font-medium text-sm mt-0.5">
-                                    {selectedMember.type === 'independent' && selectedMember.businessName
-                                      ? selectedMember.businessName
-                                      : 'LashPop Artist'}
-                                  </p>
-                                </div>
+                          {/* Spacer to push content down where gradient starts being solid */}
+                          <div className="h-32" />
+
+                          {/* Info Card */}
+                          <div className="relative px-5 pointer-events-auto z-10">
+                            <div className="bg-white rounded-3xl shadow-xl p-5 border border-sage/5">
+                              {/* Name and affiliation */}
+                              <div>
+                                <h1 className="font-serif text-2xl text-dune leading-tight">
+                                  {selectedMember.name}
+                                </h1>
+                                <p className="text-dusty-rose font-medium text-sm mt-0.5">
+                                  {selectedMember.type === 'independent' && selectedMember.businessName
+                                    ? selectedMember.businessName
+                                    : 'LashPop Artist'}
+                                </p>
                               </div>
                             </div>
+                          </div>
 
-                            {/* Content Sections */}
-                            <div className="px-5 py-6 space-y-6 pointer-events-auto">
+                          {/* Content Sections - pulled up to tuck behind card */}
+                          <div className="relative -mt-4 px-5 pt-8 pb-6 space-y-6 bg-cream pointer-events-auto z-0">
                           {/* Bio Section */}
                           {selectedMember.bio && (
                             <div>
@@ -1251,9 +1252,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             </div>
                           )}
 
-                              {/* Bottom spacer for safe area */}
-                              <div className="h-8 safe-area-bottom" />
-                            </div>
+                            {/* Bottom spacer for safe area */}
+                            <div className="h-8 safe-area-bottom" />
                           </div>
                         </div>
                       </motion.div>
