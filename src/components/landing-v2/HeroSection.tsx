@@ -423,7 +423,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
         style={{ opacity }}
         className="relative z-10 container-wide"
       >
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-end h-full pb-0">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-end h-full pb-0">
           {/* Left Content */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -558,7 +558,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative h-full flex items-end pl-[65px]"
+            className="relative h-full flex items-end pl-8"
           >
             <div className="relative w-full h-full flex items-end">
               <div
