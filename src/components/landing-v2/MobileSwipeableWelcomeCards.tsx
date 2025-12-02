@@ -37,32 +37,32 @@ export function MobileSwipeableWelcomeCards({
 }: MobileSwipeableWelcomeCardsProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null)
-  const [hasCompletedOnce, setHasCompletedOnce] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Swipe threshold
   const swipeThreshold = 80
   const swipeVelocityThreshold = 300
 
-  // Handle swipe completion
+  // Handle swipe completion - infinite loop in both directions
   const handleSwipe = useCallback(
     (direction: 'left' | 'right') => {
-      if (currentIndex >= cardContent.length - 1) {
-        // Last card - mark as completed
-        setHasCompletedOnce(true)
-        return
-      }
-
       setExitDirection(direction)
 
       // Small delay to let exit animation start, then update index
       setTimeout(() => {
-        setCurrentIndex((prev: number) => Math.min(prev + 1, cardContent.length - 1))
+        setCurrentIndex((prev: number) => {
+          if (direction === 'left') {
+            // Swipe left = go to next card (loop to start if at end)
+            return (prev + 1) % cardContent.length
+          } else {
+            // Swipe right = go to previous card (loop to end if at start)
+            return prev === 0 ? cardContent.length - 1 : prev - 1
+          }
+        })
         setExitDirection(null)
-        onCardChange?.(currentIndex + 1, cardContent.length)
       }, 200)
     },
-    [currentIndex, onCardChange]
+    []
   )
 
   // Handle drag end
@@ -86,13 +86,6 @@ export function MobileSwipeableWelcomeCards({
     [handleSwipe]
   )
 
-  // Reset cards to beginning
-  const handleReset = useCallback(() => {
-    setCurrentIndex(0)
-    setExitDirection(null)
-    onCardChange?.(0, cardContent.length)
-  }, [onCardChange])
-
   // Notify on card change
   useEffect(() => {
     onCardChange?.(currentIndex, cardContent.length)
@@ -100,15 +93,14 @@ export function MobileSwipeableWelcomeCards({
 
   // Card variants for animation
   const cardVariants = {
-    enter: {
+    enter: (direction: 'left' | 'right' | null) => ({
       scale: 0.95,
       opacity: 0,
-      y: 20,
-    },
+      x: direction === 'left' ? 100 : direction === 'right' ? -100 : 0,
+    }),
     center: {
       scale: 1,
       opacity: 1,
-      y: 0,
       x: 0,
       rotate: 0,
       transition: {
@@ -117,9 +109,9 @@ export function MobileSwipeableWelcomeCards({
         damping: 30,
       },
     },
-    exit: (direction: 'left' | 'right') => ({
+    exit: (direction: 'left' | 'right' | null) => ({
       x: direction === 'left' ? -300 : 300,
-      rotate: direction === 'left' ? -15 : 15,
+      rotate: direction === 'left' ? -10 : 10,
       opacity: 0,
       transition: {
         type: 'spring' as const,
@@ -129,68 +121,33 @@ export function MobileSwipeableWelcomeCards({
     }),
   }
 
-  // Background cards (stacked effect)
-  const renderBackgroundCards = () => {
-    const remainingCards = cardContent.length - currentIndex - 1
-    const cardsToShow = Math.min(remainingCards, 2)
-
-    return Array.from({ length: cardsToShow }).map((_, i) => {
-      const offset = i + 1
-      return (
-        <div
-          key={`bg-card-${offset}`}
-          className="absolute inset-0 rounded-3xl"
-          style={{
-            transform: `translateY(${offset * 8}px) scale(${1 - offset * 0.03})`,
-            opacity: 1 - offset * 0.2,
-            zIndex: -offset,
-            background: 'rgba(255, 255, 255, 0.25)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255, 255, 255, 0.4)',
-          }}
-        />
-      )
-    })
-  }
-
   const currentCard = cardContent[currentIndex]
-  const isLastCard = currentIndex === cardContent.length - 1
+  const [hasInteracted, setHasInteracted] = useState(false)
 
   return (
-    <div ref={containerRef} className="relative w-full px-6" style={{ minHeight: '380px' }}>
-      {/* Pill-style progress indicators */}
-      <div className="flex justify-center gap-1.5 mb-6">
+    <div ref={containerRef} className="relative w-full px-6" style={{ minHeight: '320px' }}>
+      {/* Dot indicators - matching team member detail panel style */}
+      <div className="flex justify-center items-center gap-1.5 mb-5">
         {cardContent.map((_, index) => (
           <button
             key={index}
-            onClick={() => {
-              if (index <= currentIndex || hasCompletedOnce) {
-                setCurrentIndex(index)
-              }
-            }}
-            className="group relative py-1"
-            disabled={index > currentIndex && !hasCompletedOnce}
+            onClick={() => setCurrentIndex(index)}
+            className="p-1"
             aria-label={`Go to card ${index + 1}`}
           >
             <div
-              className={`h-1 rounded-full transition-all duration-300 ${
+              className={`h-1.5 rounded-full transition-all duration-300 ${
                 index === currentIndex
-                  ? 'w-8 bg-dusty-rose'
-                  : index < currentIndex || hasCompletedOnce
-                    ? 'w-3 bg-dusty-rose/40 group-hover:bg-dusty-rose/60 group-hover:w-5'
-                    : 'w-3 bg-dune/20'
+                  ? 'w-4 bg-dusty-rose'
+                  : 'w-1.5 bg-dusty-rose/40'
               }`}
             />
           </button>
         ))}
       </div>
 
-      {/* Card stack container - taller cards */}
-      <div className="relative" style={{ height: '320px' }}>
-        {/* Background stacked cards */}
-        {renderBackgroundCards()}
-
+      {/* Card container - minimal single card */}
+      <div className="relative" style={{ height: '260px' }}>
         {/* Active card */}
         <AnimatePresence mode="popLayout" custom={exitDirection}>
           <motion.div
@@ -200,45 +157,42 @@ export function MobileSwipeableWelcomeCards({
             initial="enter"
             animate="center"
             exit="exit"
-            drag={!isLastCard || !hasCompletedOnce ? 'x' : false}
+            drag="x"
             dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.8}
+            dragElastic={0.7}
             onDragEnd={handleDragEnd}
+            onDragStart={() => setHasInteracted(true)}
             className="absolute inset-0 cursor-grab active:cursor-grabbing touch-pan-y"
             style={{ zIndex: 10 }}
-            whileDrag={{ scale: 1.02 }}
+            whileDrag={{ scale: 1.01 }}
           >
-            {/* Card content */}
+            {/* Minimal card content */}
             <div
-              className="h-full rounded-3xl p-6 flex flex-col justify-center items-center text-center"
+              className="h-full rounded-2xl p-6 flex flex-col justify-center items-center text-center"
               style={{
-                background: 'rgba(255, 255, 255, 0.45)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255, 255, 255, 0.6)',
-                boxShadow: `
-                  0 4px 24px rgba(138, 94, 85, 0.08),
-                  inset 0 1px 1px rgba(255, 255, 255, 0.6)
-                `,
+                background: 'rgba(255, 255, 255, 0.35)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255, 255, 255, 0.5)',
               }}
             >
               <p
-                className={`font-sans font-light leading-relaxed ${
+                className={`font-sans leading-relaxed ${
                   currentCard.isLast
-                    ? 'text-xl font-medium'
-                    : 'text-sm'
+                    ? 'text-lg font-medium'
+                    : 'text-sm font-light'
                 }`}
                 style={{ color: '#8a5e55' }}
               >
                 {currentCard.text}
               </p>
 
-              {/* Swipe hint for first card */}
-              {currentIndex === 0 && !hasCompletedOnce && (
+              {/* Swipe hint for first card - only show if user hasn't interacted */}
+              {currentIndex === 0 && !hasInteracted && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 1 }}
+                  transition={{ delay: 1.5 }}
                   className="mt-4 flex items-center gap-2 text-xs text-dune/40"
                 >
                   <motion.span
@@ -255,24 +209,6 @@ export function MobileSwipeableWelcomeCards({
                     →
                   </motion.span>
                 </motion.div>
-              )}
-
-              {/* Reset button on last card after completion */}
-              {isLastCard && hasCompletedOnce && (
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  onClick={handleReset}
-                  className="mt-4 px-4 py-2 rounded-full text-xs font-medium transition-all"
-                  style={{
-                    background: 'rgba(138, 94, 85, 0.1)',
-                    color: '#8a5e55',
-                    border: '1px solid rgba(138, 94, 85, 0.2)',
-                  }}
-                >
-                  Read again ↻
-                </motion.button>
               )}
             </div>
           </motion.div>
