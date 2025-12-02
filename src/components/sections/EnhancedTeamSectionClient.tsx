@@ -4,13 +4,77 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, ThumbsUp } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
+
+// Swipe Tutorial Hint Component - just the wiggling animation
+function SwipeHint() {
+  return (
+    <motion.div
+      className="absolute inset-0 flex items-end justify-center pb-14 pointer-events-none z-20"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {/* Swipe hint hand animation */}
+      <motion.div
+        className="relative"
+        animate={{
+          x: [0, 20, 0, -20, 0],
+        }}
+        transition={{
+          duration: 1.5,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      >
+        <div className="bg-black/60 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2">
+          <motion.div
+            animate={{ x: [0, 4, 0, -4, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Hand className="w-4 h-4 text-white rotate-90" />
+          </motion.div>
+          <span className="text-[10px] text-white/90 font-medium">Swipe tags</span>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// Hook to check/set localStorage for tutorial completion
+function useSwipeTutorial() {
+  const [hasCompletedTutorial, setHasCompletedTutorial] = useState(true) // Default true to prevent flash
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [tutorialSuccess, setTutorialSuccess] = useState(false)
+
+  useEffect(() => {
+    const completed = localStorage.getItem('team-swipe-tutorial-completed') === 'true'
+    setHasCompletedTutorial(completed)
+  }, [])
+
+  const completeTutorial = useCallback(() => {
+    setTutorialSuccess(true)
+    localStorage.setItem('team-swipe-tutorial-completed', 'true')
+    setTimeout(() => {
+      setHasCompletedTutorial(true)
+      setShowTutorial(false)
+    }, 1400)
+  }, [])
+
+  const triggerTutorial = useCallback(() => {
+    if (!hasCompletedTutorial) {
+      setShowTutorial(true)
+    }
+  }, [hasCompletedTutorial])
+
+  return { hasCompletedTutorial, showTutorial, tutorialSuccess, completeTutorial, triggerTutorial }
+}
 
 interface TeamMember {
   id: number
@@ -85,6 +149,35 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const sectionRef = useRef<HTMLElement>(null)
   const expandedRowRef = useRef<HTMLDivElement>(null)
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null)
+  const firstCardRef = useRef<HTMLDivElement>(null)
+
+  // Swipe tutorial state
+  const { hasCompletedTutorial, showTutorial, tutorialSuccess, completeTutorial, triggerTutorial } = useSwipeTutorial()
+
+  // Observe first card entering top half of viewport
+  useEffect(() => {
+    if (!isMobile || hasCompletedTutorial || !firstCardRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Check if the card is in the top half of the viewport
+            const rect = entry.boundingClientRect
+            const viewportHeight = window.innerHeight
+            if (rect.top < viewportHeight / 2) {
+              triggerTutorial()
+              observer.disconnect()
+            }
+          }
+        })
+      },
+      { threshold: 0.5 }
+    )
+
+    observer.observe(firstCardRef.current)
+    return () => observer.disconnect()
+  }, [isMobile, hasCompletedTutorial, triggerTutorial])
 
   // Navigation functions for swiping between team members
   const goToNextMember = () => {
@@ -354,37 +447,49 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           <div className="px-4">
             {/* 2-column grid for all mobile sizes */}
             <div className="grid grid-cols-2 gap-3">
-              {teamMembers.map((member, index) => {
-                // Use service categories from Vagaro, fallback to derived from specialties
-                const memberCategories = member.serviceCategories?.length
-                  ? member.serviceCategories
-                  : getTeamMemberCategories(member.specialties)
+              {(() => {
+                // Find the first card with swipeable tags (2+ categories)
+                let firstSwipeableIndex = -1
+                return teamMembers.map((member, index) => {
+                  // Use service categories from Vagaro, fallback to derived from specialties
+                  const memberCategories = member.serviceCategories?.length
+                    ? member.serviceCategories
+                    : getTeamMemberCategories(member.specialties)
 
-                // Use square crop for face-focused image, fallback to regular image
-                const cardImage = member.cropSquareUrl || member.image
+                  // Track first card with 2+ categories (swipeable)
+                  const hasSwipeableTags = memberCategories.length >= 2
+                  const isFirstSwipeable = hasSwipeableTags && firstSwipeableIndex === -1
+                  if (isFirstSwipeable) firstSwipeableIndex = index
 
-                // Format name as "First L."
-                const nameParts = member.name.split(' ')
-                const firstName = nameParts[0]
-                const lastInitial = nameParts.length > 1 ? `${nameParts[nameParts.length - 1][0]}.` : ''
-                const displayName = `${firstName} ${lastInitial}`.trim()
+                  // Use square crop for face-focused image, fallback to regular image
+                  const cardImage = member.cropSquareUrl || member.image
 
-                return (
-                  <motion.div
-                    key={member.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: index * 0.05,
-                      ease: [0.23, 1, 0.32, 1]
-                    }}
-                    className="cursor-pointer"
-                  >
-                    {/* Taller Card Container - 3:4 aspect like desktop */}
-                    <div
-                      className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150 rounded-[24px]"
-                      onTouchStart={(e) => {
+                  // Format name as "First L."
+                  const nameParts = member.name.split(' ')
+                  const firstName = nameParts[0]
+                  const lastInitial = nameParts.length > 1 ? `${nameParts[nameParts.length - 1][0]}.` : ''
+                  const displayName = `${firstName} ${lastInitial}`.trim()
+
+                  // Show tutorial on first swipeable card
+                  const showTutorialOnThisCard = isFirstSwipeable && showTutorial && !tutorialSuccess
+
+                  return (
+                    <motion.div
+                      key={member.id}
+                      ref={isFirstSwipeable ? firstCardRef : undefined}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                      transition={{
+                        duration: 0.4,
+                        delay: index * 0.05,
+                        ease: [0.23, 1, 0.32, 1]
+                      }}
+                      className="cursor-pointer"
+                    >
+                      {/* Taller Card Container - 3:4 aspect like desktop */}
+                      <div
+                        className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150 rounded-[24px]"
+                        onTouchStart={(e) => {
                         const touch = e.touches[0]
                         const card = e.currentTarget
                         card.dataset.touchStartX = touch.clientX.toString()
@@ -422,6 +527,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           const tagsContainer = card.querySelector('[data-tags-scroll]') as HTMLElement
                           if (tagsContainer) {
                             tagsContainer.scrollLeft -= moveDeltaX
+                            // Complete tutorial if this is the first swipeable card
+                            if (isFirstSwipeable && showTutorial && !tutorialSuccess) {
+                              completeTutorial()
+                            }
                           }
                         }
 
@@ -479,10 +588,35 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       {isHighlighted(member.id) && (
                         <div className="absolute inset-0 pointer-events-none rounded-[24px] ring-[3px] ring-inset ring-dusty-rose" />
                       )}
+
+                      {/* Swipe Tutorial Hint */}
+                      <AnimatePresence>
+                        {showTutorialOnThisCard && (
+                          <SwipeHint />
+                        )}
+                        {isFirstSwipeable && tutorialSuccess && (
+                          <motion.div
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
+                            initial={{ opacity: 1 }}
+                            animate={{ opacity: 0 }}
+                            transition={{ duration: 0.8, delay: 0.6 }}
+                          >
+                            <motion.div
+                              className="bg-green-500/90 backdrop-blur-sm rounded-full p-3"
+                              initial={{ scale: 0 }}
+                              animate={{ scale: [0, 1.2, 1] }}
+                              transition={{ duration: 0.4, ease: "backOut" }}
+                            >
+                              <ThumbsUp className="w-6 h-6 text-white" />
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </motion.div>
-                )
-              })}
+                  )
+                })
+              })()}
             </div>
           </div>
         ) : (
