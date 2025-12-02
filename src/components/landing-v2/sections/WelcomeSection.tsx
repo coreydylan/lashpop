@@ -2,10 +2,11 @@
 
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { MobileSwipeableWelcomeCards } from '../MobileSwipeableWelcomeCards'
+import { usePanelStack } from '@/contexts/PanelStackContext'
 
 // Dynamically import ParallaxImage to avoid SSR issues with Three.js
 const ParallaxImage = dynamic(() => import('@/components/three/ParallaxImage'), {
@@ -32,7 +33,9 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-20%" })
   const [stateIsMobile, setIsMobile] = useState(false)
-  
+  const { actions: panelActions, state: panelState } = usePanelStack()
+  const hasTriggeredChipBar = useRef(false)
+
   // Use prop if available, otherwise fall back to internal state
   const isMobile = propIsMobile ?? stateIsMobile;
 
@@ -42,6 +45,20 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Handle card change - trigger chip bar when card 4 (index 3) becomes visible
+  const handleCardChange = useCallback((index: number) => {
+    // Card 4 mentions the "service bar above" - trigger chip bar here
+    if (index === 3 && !hasTriggeredChipBar.current) {
+      // Check if category-picker panel already exists
+      const hasCategoryPicker = panelState.panels.some(p => p.type === 'category-picker')
+      if (!hasCategoryPicker) {
+        hasTriggeredChipBar.current = true
+        // Open in docked state so it appears as chip bar (not full screen)
+        panelActions.openPanel('category-picker', { entryPoint: 'welcome-card' }, { autoExpand: false })
+      }
+    }
+  }, [panelActions, panelState.panels])
 
   // Mobile-specific render with swipeable cards over desk image background
   if (isMobile) {
@@ -109,7 +126,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
                   className="w-full"
                   initial={{ opacity: 1, y: 0 }}
                 >
-                  <MobileSwipeableWelcomeCards />
+                  <MobileSwipeableWelcomeCards onCardChange={handleCardChange} />
                 </motion.div>
               </div>
             </div>

@@ -30,6 +30,14 @@ const springConfig = {
   stiffness: 400,
 };
 
+// Bouncy spring for initial appearance
+const bounceConfig = {
+  type: 'spring' as const,
+  damping: 12,
+  stiffness: 200,
+  mass: 0.8,
+};
+
 /**
  * Renders panel content based on type.
  */
@@ -83,6 +91,7 @@ export function BottomSheetContainer() {
   const contentRef = useRef<HTMLDivElement>(null);
   const [currentSnap, setCurrentSnap] = useState<SnapPoint>('hidden');
   const [isDragging, setIsDragging] = useState(false);
+  const [isFirstAppearance, setIsFirstAppearance] = useState(true);
 
   // Track vagaro widget panels for persistence
   const [persistedVagaroPanels, setPersistedVagaroPanels] = useState<Panel[]>([]);
@@ -168,14 +177,18 @@ export function BottomSheetContainer() {
   }, [state.panels]);
 
   // Animate to a snap point
-  const animateToSnap = useCallback((snap: SnapPoint) => {
+  const animateToSnap = useCallback((snap: SnapPoint, useBounce = false) => {
     // Haptic feedback on state change
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(8);
     }
+
+    // Use bounce animation for first appearance of collapsed state
+    const transition = useBounce ? bounceConfig : springConfig;
+
     controls.start({
       y: `${SNAP_POINTS[snap]}%`,
-      transition: springConfig,
+      transition,
     });
     setCurrentSnap(snap);
   }, [controls]);
@@ -184,12 +197,17 @@ export function BottomSheetContainer() {
   useEffect(() => {
     if (!hasAnyPanel) {
       animateToSnap('hidden');
+      // Reset first appearance when sheet is hidden
+      setIsFirstAppearance(true);
     } else if (hasExpandedPanel) {
       animateToSnap('fullScreen');
+      setIsFirstAppearance(false);
     } else {
-      animateToSnap('collapsed');
+      // Collapsed state - use bounce on first appearance
+      animateToSnap('collapsed', isFirstAppearance);
+      setIsFirstAppearance(false);
     }
-  }, [hasAnyPanel, hasExpandedPanel, animateToSnap]);
+  }, [hasAnyPanel, hasExpandedPanel, animateToSnap, isFirstAppearance]);
 
   // Escape key support
   useEffect(() => {
