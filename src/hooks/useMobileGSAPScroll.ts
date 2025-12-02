@@ -82,6 +82,7 @@ export function useMobileGSAPScroll({
   const containerRef = useRef<HTMLElement | null>(null)
   const snapCooldownRef = useRef(false) // Prevent immediate re-snap after a snap completes
   const heroAwardExpandedRef = useRef(false) // Track if hero award badge is expanded
+  const welcomeCardsLockedRef = useRef(false) // Track if welcome cards are being viewed
 
   // Merge default configs with custom configs
   const mergedConfigs = { ...getDefaultSectionConfigs(), ...sectionConfigs }
@@ -231,8 +232,8 @@ export function useMobileGSAPScroll({
     }
 
     const checkForSnap = () => {
-      // Don't snap if already snapping or in cooldown period
-      if (isSnappingRef.current || snapCooldownRef.current) return
+      // Don't snap if already snapping, in cooldown period, or welcome cards are locked
+      if (isSnappingRef.current || snapCooldownRef.current || welcomeCardsLockedRef.current) return
 
       const scrollTop = container.scrollTop
       const viewportHeight = window.innerHeight
@@ -346,6 +347,13 @@ export function useMobileGSAPScroll({
     }
     window.addEventListener('hero-award-toggle', handleAwardToggle)
 
+    // Listen for welcome cards lock toggle
+    const handleWelcomeCardsLock = (e: Event) => {
+      const customEvent = e as CustomEvent<{ locked: boolean }>
+      welcomeCardsLockedRef.current = customEvent.detail.locked
+    }
+    window.addEventListener('welcome-cards-lock', handleWelcomeCardsLock)
+
     // Initial section detection
     setTimeout(() => {
       updateCurrentSection()
@@ -355,6 +363,7 @@ export function useMobileGSAPScroll({
       container.removeEventListener('scroll', handleScroll)
       container.removeEventListener('touchend', handleTouchEnd)
       window.removeEventListener('hero-award-toggle', handleAwardToggle)
+      window.removeEventListener('welcome-cards-lock', handleWelcomeCardsLock)
       if (scrollEndTimer) {
         clearTimeout(scrollEndTimer)
       }
