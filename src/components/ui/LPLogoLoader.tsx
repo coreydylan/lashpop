@@ -17,10 +17,11 @@ interface LPLogoLoaderProps {
 export function LPLogoLoader({ message, size = 40 }: LPLogoLoaderProps) {
   // Calculate aspect ratio for LP logo - original is 122.21x157
   const lpAspectRatio = 122.21 / 157;
-  const lpWidth = size * lpAspectRatio;
-  const lpHeight = size;
+  // Scale LP down to match Vagaro V height visually
+  const lpHeight = size * 0.75;
+  const lpWidth = lpHeight * lpAspectRatio;
 
-  // Vagaro logo is roughly square - match the LP logo height for visual balance
+  // Vagaro logo is roughly square - size to match LP visually
   const vagaroSize = size * 0.85;
 
   const defaultMessage = "Preparing your booking experience...";

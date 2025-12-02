@@ -580,6 +580,21 @@ export default function DAMPage() {
     }
   }, [initialData])
 
+  // Sync activeLightboxAsset whenever allAssets changes to keep tags in sync
+  useEffect(() => {
+    if (activeLightboxAsset && allAssets.length > 0) {
+      const updatedAsset = allAssets.find(a => a.id === activeLightboxAsset.id)
+      if (updatedAsset && updatedAsset !== activeLightboxAsset) {
+        // Only update if the asset data actually changed (avoid infinite loops)
+        const tagsChanged = JSON.stringify(updatedAsset.tags) !== JSON.stringify(activeLightboxAsset.tags)
+        const teamMemberChanged = updatedAsset.teamMemberId !== activeLightboxAsset.teamMemberId
+        if (tagsChanged || teamMemberChanged) {
+          setActiveLightboxAsset(updatedAsset)
+        }
+      }
+    }
+  }, [allAssets, activeLightboxAsset])
+
   // Log any errors from React Query
   useEffect(() => {
     if (dataError) {
