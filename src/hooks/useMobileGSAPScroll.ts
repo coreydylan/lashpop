@@ -42,7 +42,7 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     'hero-buttons': { threshold: 0.3, anchorOffset: vh * 0.35 },
 
     // Welcome: enable snap with a moderate threshold for comfortable reading
-    'welcome': { threshold: 0.6, anchorOffset: vh * 0.08 },
+    'welcome': { threshold: 0.6, anchorOffset: vh * 0.05 },
 
     // Founder letter: position for comfortable reading
     'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
