@@ -23,6 +23,7 @@ const ParallaxImage = dynamic(() => import('@/components/three/ParallaxImage'), 
   ),
 })
 
+
 export function WelcomeSection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-20%" })
@@ -40,65 +41,77 @@ export function WelcomeSection() {
     return (
       <section
         ref={ref}
-        className="mobile-section relative min-h-[115vh] overflow-hidden"
+        // Ghost spacer height defines how long the Welcome section stays "pinned"
+        // 200vh gives us: 100vh for entry + 100vh for "dwell time"
+        // The negative margin on the next section will overlap this dwell time
+        className="mobile-section relative min-h-[200vh]"
         data-section-id="welcome"
       >
-        {/* Background Image - same desk image as desktop */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/lashpop-images/frontdeskeditwgradientedit2.webp"
-            alt="LashPop Studio Desk"
-            quality={100}
-            fill
-            sizes="100vw"
-            className="object-cover object-[35%_center]"
-            priority
-          />
-        </div>
-
-        {/* Content Container with Safe Zone - matching original layout */}
-        <div className="relative z-10 min-h-screen flex flex-col">
-          {/* Text Area - Takes up top portion, leaving bottom 50% as safe zone for desk elements */}
-          <div className="flex-1 flex items-center justify-center px-4 pb-[50vh] pt-64">
-            <motion.div
-              className="container max-w-5xl text-center"
-              initial={{ opacity: 0, y: 40 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-              transition={{ duration: 1, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
-            >
-              {/* LP Logo */}
+        {/* Sticky Content Container 
+            - sticky top-0: Sticks to viewport top
+            - h-screen: Occupies full viewport
+            - flex/flex-col: Layout matching original
+        */}
+        <div 
+          className="sticky top-0 h-screen w-full flex flex-col z-10 overflow-hidden"
+        >
+          {/* Background Image - Restored for seamless scroll from Hero */}
+          <div className="absolute inset-0 z-0">
+            <Image
+              src="/lashpop-images/frontdeskeditwgradientedit2.webp"
+              alt="LashPop Studio Desk"
+              quality={100}
+              fill
+              sizes="100vw"
+              className="object-cover object-[35%_center]"
+              priority
+            />
+          </div>
+          
+          {/* Content Container with Safe Zone - matching original layout */}
+          <div className="relative z-10 w-full h-full flex flex-col">
+            {/* Text Area - Takes up top portion, leaving bottom 50% as safe zone for desk elements */}
+            <div className="flex-1 flex items-center justify-center px-4 pb-[50vh] pt-64">
               <motion.div
-                className="relative mx-auto mb-4"
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={isInView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
-                transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                className="container max-w-5xl text-center"
+                initial={{ opacity: 0 }}
+                animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                transition={{ duration: 1, delay: 0.1 }}
               >
-                <div
-                  className="h-16 sm:h-20 w-full mx-auto"
-                  style={{
-                    maskImage: 'url(/lashpop-images/lp-logo.png)',
-                    maskSize: 'contain',
-                    maskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
-                    WebkitMaskSize: 'contain',
-                    WebkitMaskRepeat: 'no-repeat',
-                    WebkitMaskPosition: 'center',
-                    backgroundColor: '#8a5e55'
-                  }}
-                />
-              </motion.div>
+                {/* LP Logo */}
+                <motion.div
+                  className="relative mx-auto mb-4"
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={isInView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
+                  transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <div
+                    className="h-16 sm:h-20 w-full mx-auto"
+                    style={{
+                      maskImage: 'url(/lashpop-images/lp-logo.png)',
+                      maskSize: 'contain',
+                      maskRepeat: 'no-repeat',
+                      maskPosition: 'center',
+                      WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
+                      WebkitMaskSize: 'contain',
+                      WebkitMaskRepeat: 'no-repeat',
+                      WebkitMaskPosition: 'center',
+                      backgroundColor: '#8a5e55'
+                    }}
+                  />
+                </motion.div>
 
-              {/* Swipeable Cards */}
-              <motion.div
-                className="w-full"
-                initial={{ opacity: 0, y: 30 }}
-                animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-                transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              >
-                <MobileSwipeableWelcomeCards />
+                {/* Swipeable Cards */}
+                <motion.div
+                  className="w-full"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                  transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <MobileSwipeableWelcomeCards />
+                </motion.div>
               </motion.div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

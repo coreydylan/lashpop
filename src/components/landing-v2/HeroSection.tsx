@@ -77,7 +77,8 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
 
   // GSAP Animation for Background Pan (Desktop only)
   useEffect(() => {
-    if (!imageRef.current || !imageContainerRef.current) return
+    // Only require imageContainerRef for pinning - imageRef is optional (only used in single image mode)
+    if (!imageContainerRef.current) return
 
     let mm: gsap.MatchMedia | null = null
 
@@ -89,21 +90,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
         const image = imageRef.current
         const container = imageContainerRef.current
 
-        if (!image || !container) return
-
-        // Initial pan animation on load
-        gsap.fromTo(image,
-          {
-            scale: 1.4,
-            xPercent: 0,
-          },
-          {
-            scale: 1.2,
-            xPercent: 20,
-            duration: 4,
-            ease: "power2.out"
-          }
-        )
+        if (!container) return
 
         // Pin the arch container so it stays at the bottom of the viewport while fading out
         ScrollTrigger.create({
@@ -115,20 +102,37 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
           anticipatePin: 1,
         })
 
-        // Scroll-triggered pan animation (parallax)
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: container,
-            start: "top center",
-            end: "bottom top",
-            scrub: 1,
-          }
-        })
+        // Only apply image animations if we have a single image (not slideshow)
+        if (image) {
+          // Initial pan animation on load
+          gsap.fromTo(image,
+            {
+              scale: 1.4,
+              xPercent: 0,
+            },
+            {
+              scale: 1.2,
+              xPercent: 20,
+              duration: 4,
+              ease: "power2.out"
+            }
+          )
 
-        tl.to(image, {
-          xPercent: 25,
-          ease: "none"
-        }, 0)
+          // Scroll-triggered pan animation (parallax)
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: container,
+              start: "top center",
+              end: "bottom top",
+              scrub: 1,
+            }
+          })
+
+          tl.to(image, {
+            xPercent: 25,
+            ease: "none"
+          }, 0)
+        }
       })
     })
 
@@ -564,7 +568,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             <div className="relative w-full h-full flex items-end">
               <div
                 ref={imageContainerRef}
-                className="relative w-full max-w-[500px] h-[85vh] rounded-[200px_200px_0_0] overflow-hidden"
+                className="relative w-full max-w-[500px] h-[90vh] rounded-[200px_200px_0_0] overflow-hidden"
                 style={{ transformOrigin: 'bottom center', zIndex: 20 }}
               >
                 {hasSlideshow && heroConfig?.preset ? (

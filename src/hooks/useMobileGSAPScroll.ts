@@ -47,20 +47,20 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     // Founder letter: position for comfortable reading
     'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
 
-    // Team: higher threshold, moderate offset for card visibility
-    'team': { threshold: 0.7, anchorOffset: vh * 0.12 },
+    // Team: disable snap so user can freely scroll through team cards
+    'team': { threshold: 0.7, anchorOffset: vh * 0.03, disableSnap: true },
 
     // Instagram: gallery section - position header and "Follow" button visible
     'instagram': { threshold: 0.65, anchorOffset: vh * 0.08 },
 
     // Reviews: position so review stats and first card are clearly visible
-    'reviews': { threshold: 0.65, anchorOffset: vh * 0.10 },
+    'reviews': { threshold: 0.65, anchorOffset: vh * 0.04 },
 
     // FAQ: disabled from global snap - uses its own IntersectionObserver entry snap
     'faq': { threshold: 0.5, anchorOffset: headerHeight, disableSnap: true },
 
     // Map: snap with small offset so map + card visible
-    'map': { threshold: 0.7, anchorOffset: vh * 0.05 },
+    'map': { threshold: 0.7, anchorOffset: vh * -0.04 },
 
     // Footer: add config so it can snap
     'footer': { threshold: 0.5, anchorOffset: 0 },

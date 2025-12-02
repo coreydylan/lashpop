@@ -323,7 +323,8 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                 {/* Continuous cream background wrapper for all sections from founder onwards */}
                 {/* z-20 ensures this scrolls over the sticky WelcomeSection (z-10) on mobile */}
-                <div className="bg-cream relative z-20">
+                {/* negative margin pulls it UP so it overlaps the sticky Welcome Section while it's "pausing" */}
+                <div className={`bg-cream relative z-20 ${isMobile ? '-mt-[100vh]' : ''}`}>
                   {/* Founder Letter Section */}
                   <div className={isMobile ? "mobile-section" : ""} data-section-id="founder">
                     <FounderLetterSection content={founderLetterContent} />

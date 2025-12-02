@@ -283,7 +283,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       {/* Mobile Layout - Simple, clean, snappable */}
       <div
         ref={mobileContainerRef}
-        className="md:hidden relative z-20 bg-cream"
+        className="md:hidden relative z-20"
       >
         {/* Emily Arch Image - Centered at top with scroll-driven zoom */}
         <div
@@ -347,7 +347,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
 
         {/* Letter Content */}
-        <div className="px-6 pb-16">
+        <div className="px-6 pb-16 bg-cream">
           <motion.div
             className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
             initial={{ opacity: 0, y: 30 }}

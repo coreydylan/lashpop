@@ -59,7 +59,8 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
-    skipSnaps: false
+    skipSnaps: false,
+    dragFree: false
   })
 
   // Hover-based wheel scroll - only captures wheel events when hovering
@@ -207,7 +208,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   return (
     <>
       <style jsx>{scrollbarStyles}</style>
-      <section ref={ref} className="relative py-20 overflow-hidden bg-cream scroll-mt-[-40px]">
+      <section ref={ref} className="relative py-20 overflow-hidden bg-cream">
         <div className="relative">
 
         {/* Review Platform Stats - Above Cards */}
@@ -413,7 +414,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
             ref={emblaRef}
             className="review-carousel overflow-visible cursor-grab active:cursor-grabbing"
           >
-            <div className="flex touch-pan-x py-4 md:py-10">
+            <div className="flex touch-pan-x pt-4 pb-16 md:py-10 px-4">
               {reviews.map((review, index) => (
                 <div
                   key={review.id}

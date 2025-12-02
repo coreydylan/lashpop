@@ -175,6 +175,57 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const expandedRowRef = useRef<HTMLDivElement>(null)
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null)
   const firstCardRef = useRef<HTMLDivElement>(null)
+  const hasSnappedOnEntryRef = useRef(false)
+
+  // Entry snap for mobile - snap when entering section, but allow free scroll within
+  useEffect(() => {
+    // Check mobile directly instead of relying on state
+    const checkIsMobile = window.innerWidth < 768
+    if (!checkIsMobile || !sectionRef.current) return
+
+    const section = sectionRef.current
+    const container = document.querySelector('.mobile-scroll-container') as HTMLElement
+    if (!container) return
+
+    const mobileHeaderHeight = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height') || '44'
+    )
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Snap when entering viewport and haven't snapped yet
+          if (entry.isIntersecting && !hasSnappedOnEntryRef.current) {
+            const rect = section.getBoundingClientRect()
+            // Only snap if section top is near viewport top (scrolling down into section)
+            if (rect.top > -100 && rect.top < 200) {
+              hasSnappedOnEntryRef.current = true
+
+              // Calculate snap position with anchor offset (vh * 0.03)
+              const anchorOffset = window.innerHeight * 0.03
+              const sectionTop = container.scrollTop + rect.top
+              const targetScrollY = sectionTop - anchorOffset
+
+              container.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+            }
+          }
+
+          // Reset flag when section leaves viewport (allows snap on re-entry)
+          if (!entry.isIntersecting) {
+            hasSnappedOnEntryRef.current = false
+          }
+        })
+      },
+      {
+        root: container,
+        threshold: [0, 0.1],
+        rootMargin: `-${mobileHeaderHeight}px 0px 0px 0px`
+      }
+    )
+
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [])
 
   // Swipe tutorial state
   const {
@@ -1084,106 +1135,129 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       </div>
                     </div>
 
-                    {/* Scrollable Content with swipe animation */}
+                    {/* Fixed Hero Image - stays in place while content scrolls over it */}
                     <AnimatePresence mode="wait">
                       <motion.div
-                        key={selectedMember.id}
-                        className="flex-1 overflow-y-auto"
-                        style={{
-                          WebkitOverflowScrolling: 'touch',
-                          overscrollBehaviorY: 'none'
-                        }}
+                        key={`image-${selectedMember.id}`}
+                        className="absolute inset-0 z-0"
                         initial={{ opacity: 0, x: swipeDirection === 'left' ? 100 : swipeDirection === 'right' ? -100 : 0 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0 }}
                         transition={{ duration: 0.25, ease: 'easeOut' }}
                       >
-                        {/* Hero Image Section */}
-                        <div className="relative">
-                          <div className="relative aspect-[3/4] overflow-hidden">
-                            <Image
-                              src={selectedMember.image}
-                              alt={selectedMember.name}
-                              fill
-                              className="object-cover"
-                              priority
-                            />
-                            {/* Gradient overlay */}
-                            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-cream via-cream/80 to-transparent" />
-                          </div>
+                        <div className="relative h-[70vh] overflow-hidden">
+                          <Image
+                            src={selectedMember.image}
+                            alt={selectedMember.name}
+                            fill
+                            className="object-cover object-top"
+                            priority
+                          />
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
 
-                        {/* Info Card - Overlapping the photo */}
-                        <div className="relative -mt-16 px-5">
-                          <div className="bg-white rounded-3xl shadow-xl p-5 border border-sage/5">
-                            {/* Name and affiliation */}
+                    {/* Scrollable Content Overlay - scrolls up to reveal content */}
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={`content-${selectedMember.id}`}
+                        className="relative z-10 flex-1 overflow-y-auto overscroll-none"
+                        style={{ WebkitOverflowScrolling: 'touch' }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onScroll={(e) => {
+                          // Prevent scrolling past the top (which would show gap above image)
+                          const target = e.currentTarget
+                          if (target.scrollTop < 0) {
+                            target.scrollTop = 0
+                          }
+                        }}
+                      >
+                        {/* Spacer to position content below the image initially */}
+                        <div className="h-[50vh] pointer-events-none" />
+
+                        {/* All content wrapped together with cream background that starts after gradient */}
+                        <div className="relative">
+                          {/* Gradient overlay - sits on top, fades to transparent */}
+                          <div className="h-40 bg-gradient-to-t from-cream via-cream/80 to-transparent" />
+
+                          {/* Cream background layer - extends from bottom of gradient down */}
+                          <div className="bg-cream">
+                            {/* Info Card - pulled up into gradient area */}
+                            <div className="relative -mt-16 px-5 pointer-events-auto">
+                              <div className="bg-white rounded-3xl shadow-xl p-5 border border-sage/5">
+                                {/* Name and affiliation */}
+                                <div>
+                                  <h1 className="font-serif text-2xl text-dune leading-tight">
+                                    {selectedMember.name}
+                                  </h1>
+                                  <p className="text-dusty-rose font-medium text-sm mt-0.5">
+                                    {selectedMember.type === 'independent' && selectedMember.businessName
+                                      ? selectedMember.businessName
+                                      : 'LashPop Artist'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Content Sections */}
+                            <div className="px-5 py-6 space-y-6 pointer-events-auto">
+                          {/* Bio Section */}
+                          {selectedMember.bio && (
                             <div>
-                              <h1 className="font-serif text-2xl text-dune leading-tight">
-                                {selectedMember.name}
-                              </h1>
-                              <p className="text-dusty-rose font-medium text-sm mt-0.5">
-                                {selectedMember.type === 'independent' && selectedMember.businessName
-                                  ? selectedMember.businessName
-                                  : 'LashPop Artist'}
-                              </p>
+                              <h3 className="font-serif text-lg text-dune mb-3">About</h3>
+                              <p className="text-sage leading-relaxed text-sm">{selectedMember.bio}</p>
+                            </div>
+                          )}
+
+                          {/* Services */}
+                          {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
+                            <div>
+                              <h3 className="font-serif text-lg text-dune mb-3">Services</h3>
+                              <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+                                <div className="flex gap-1.5 min-w-max">
+                                  {(selectedMember.serviceCategories?.length
+                                    ? selectedMember.serviceCategories
+                                    : getTeamMemberCategories(selectedMember.specialties)
+                                  ).map((category, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-3 py-1.5 text-xs font-medium bg-sage/10 text-sage rounded-full whitespace-nowrap"
+                                    >
+                                      {category}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Quick Facts Grid (Mobile) */}
+                          {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
+                            <div>
+                              <h3 className="font-serif text-lg text-dune mb-3">Quick Facts</h3>
+                              <QuickFactsGrid facts={selectedMember.quickFacts} />
+                            </div>
+                          ) : selectedMember.funFact && (
+                            /* Fallback to single Fun Fact if no quick facts */
+                            <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
+                              <h3 className="font-serif text-lg text-dune mb-2 flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-dusty-rose" />
+                                Fun Fact
+                              </h3>
+                              <p className="text-dune/80 text-sm leading-relaxed">{selectedMember.funFact}</p>
+                            </div>
+                          )}
+
+                              {/* Bottom spacer for safe area */}
+                              <div className="h-8 safe-area-bottom" />
                             </div>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Content Sections */}
-                      <div className="px-5 py-6 space-y-6">
-                        {/* Bio Section */}
-                        {selectedMember.bio && (
-                          <div>
-                            <h3 className="font-serif text-lg text-dune mb-3">About</h3>
-                            <p className="text-sage leading-relaxed text-sm">{selectedMember.bio}</p>
-                          </div>
-                        )}
-
-                        {/* Services */}
-                        {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
-                          <div>
-                            <h3 className="font-serif text-lg text-dune mb-3">Services</h3>
-                            <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
-                              <div className="flex gap-1.5 min-w-max">
-                                {(selectedMember.serviceCategories?.length
-                                  ? selectedMember.serviceCategories
-                                  : getTeamMemberCategories(selectedMember.specialties)
-                                ).map((category, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="px-3 py-1.5 text-xs font-medium bg-sage/10 text-sage rounded-full whitespace-nowrap"
-                                  >
-                                    {category}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Quick Facts Grid (Mobile) */}
-                        {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
-                          <div>
-                            <h3 className="font-serif text-lg text-dune mb-3">Quick Facts</h3>
-                            <QuickFactsGrid facts={selectedMember.quickFacts} />
-                          </div>
-                        ) : selectedMember.funFact && (
-                          /* Fallback to single Fun Fact if no quick facts */
-                          <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
-                            <h3 className="font-serif text-lg text-dune mb-2 flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-dusty-rose" />
-                              Fun Fact
-                            </h3>
-                            <p className="text-dune/80 text-sm leading-relaxed">{selectedMember.funFact}</p>
-                          </div>
-                        )}
-
-                        {/* Bottom spacer for safe area */}
-                        <div className="h-8 safe-area-bottom" />
-                      </div>
-                    </motion.div>
-                  </AnimatePresence>
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 ) : (
                   /* ===== DESKTOP LAYOUT (Original) ===== */
