@@ -17,13 +17,9 @@ export function InlineVagaroWidget() {
   const [isVisible, setIsVisible] = useState(false)
 
   const service = state.inlineService
-  if (!service) return null
-
   const isWidgetReady = widgetState.isLoaded
   const showLoading = !isWidgetReady && !hasError
-
-  // Get widget URL from service code
-  const widgetScriptUrl = getVagaroWidgetUrl(service.vagaroServiceCode)
+  const widgetScriptUrl = service ? getVagaroWidgetUrl(service.vagaroServiceCode) : ''
 
   // Fade in when ready
   useEffect(() => {
@@ -35,7 +31,7 @@ export function InlineVagaroWidget() {
 
   // Load Vagaro widget script
   useEffect(() => {
-    if (!containerRef.current || scriptLoadedRef.current) return
+    if (!service || !containerRef.current || scriptLoadedRef.current) return
 
     const container = containerRef.current
     scriptLoadedRef.current = true
@@ -72,7 +68,10 @@ export function InlineVagaroWidget() {
       }
       scriptLoadedRef.current = false
     }
-  }, [widgetScriptUrl])
+  }, [service, widgetScriptUrl, widgetState.isLoaded])
+
+  // Early return AFTER all hooks have been called
+  if (!service) return null
 
   const priceDisplay = `$${(service.priceStarting / 100).toFixed(0)}+`
 
