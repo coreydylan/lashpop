@@ -107,7 +107,7 @@ export const EVENT_TO_STEP: Partial<Record<VagaroEventName, BookingFlowStep>> = 
 // ============================================================================
 
 /**
- * Crop settings for each booking flow step.
+ * Crop settings for each booking flow step (DESKTOP).
  *
  * These values control how much of the Vagaro widget header is hidden
  * and the minimum height of the widget container.
@@ -153,6 +153,57 @@ export const CROP_CONFIG: Record<BookingFlowStep, CropSettings> = {
   completed: {
     marginTop: -150,
     minHeight: 400,
+    maskHeight: 5,
+  },
+};
+
+/**
+ * Crop settings for each booking flow step (MOBILE).
+ *
+ * Mobile screens need less aggressive cropping because:
+ * 1. Less vertical space means less header to hide
+ * 2. Content needs to be visible without excessive scrolling
+ * 3. Touch targets need to remain accessible
+ */
+export const CROP_CONFIG_MOBILE: Record<BookingFlowStep, CropSettings> = {
+  idle: {
+    marginTop: -180,
+    minHeight: 600,
+    maskHeight: 20,
+  },
+  widget_loaded: {
+    marginTop: -180,
+    minHeight: 600,
+    maskHeight: 20,
+  },
+  service_selected: {
+    marginTop: -150,
+    minHeight: 550,
+    maskHeight: 15,
+  },
+  calendar_view: {
+    marginTop: -130,
+    minHeight: 700,
+    maskHeight: 15,
+  },
+  login_view: {
+    marginTop: -100,
+    minHeight: 450,
+    maskHeight: 10,
+  },
+  form_view: {
+    marginTop: -120,
+    minHeight: 550,
+    maskHeight: 10,
+  },
+  payment_view: {
+    marginTop: -100,
+    minHeight: 400,
+    maskHeight: 8,
+  },
+  completed: {
+    marginTop: -80,
+    minHeight: 350,
     maskHeight: 5,
   },
 };

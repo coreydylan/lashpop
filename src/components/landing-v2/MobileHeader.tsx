@@ -47,7 +47,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const [menuPosition, setMenuPosition] = useState({ top: 56, right: 20 })
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const { actions } = usePanelStack()
+  const { actions, state } = usePanelStack()
   const { registerLogoClick } = useDevMode()
 
   // Get current section label for display
@@ -150,7 +150,17 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     setIsMenuOpen(false)
 
     if (item.action === 'open-services') {
-      actions.openPanel('category-picker', { entryPoint: 'page' })
+      const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
+      if (hasCategoryPicker) {
+        // Chip bar already visible - trigger attention bounce
+        actions.triggerAttentionBounce()
+      } else {
+        // Open in collapsed state (chip bar) with bounce
+        actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
+        setTimeout(() => {
+          actions.triggerAttentionBounce()
+        }, 400)
+      }
     } else if (item.href) {
       if (item.href === '#gallery' || item.href === '#reviews') {
         smoothScrollToElement(item.href, 60, 800, 'center')
@@ -160,7 +170,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
         smoothScrollToElement(item.href, 60, 800, 'top')
       }
     }
-  }, [actions])
+  }, [actions, state.panels])
 
   // Render the dropdown menu (inline, not portal - portal was breaking on mobile)
   const renderMenu = () => {
