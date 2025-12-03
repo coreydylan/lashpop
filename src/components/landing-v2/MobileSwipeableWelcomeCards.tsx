@@ -159,7 +159,7 @@ export function MobileSwipeableWelcomeCards({
   return (
     <div ref={containerRef} className="flex flex-col items-center w-full">
       {/* Pagination dots - tightly grouped */}
-      <div className="flex justify-center items-center gap-1.5 mb-5">
+      <div className="flex justify-center items-center gap-1 mb-5">
         {cardContent.map((_, index) => (
           <button
             key={index}
@@ -218,49 +218,49 @@ export function MobileSwipeableWelcomeCards({
 
               {/* Swipe hint - chevrons that animate left/right */}
               <AnimatePresence>
-                {showTutorial && !tutorialSuccess && currentIndex === 0 && (
+                {showTutorial && !tutorialSuccess && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ delay: 0.5, duration: 0.3 }}
-                    className="mt-6 flex items-center gap-3"
+                    transition={{ delay: 0.3, duration: 0.3 }}
+                    className="mt-5 flex items-center gap-2"
                   >
                     {/* Left chevron - pulses left */}
                     <motion.div
-                      animate={{ x: [0, -4, 0] }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                      animate={{ x: [0, -3, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                     >
-                      <ChevronLeft className="w-4 h-4 text-[#8a5e55]/40" strokeWidth={1.5} />
+                      <ChevronLeft className="w-3.5 h-3.5 text-[#8a5e55]/40" strokeWidth={1.5} />
                     </motion.div>
 
                     {/* Swipe text */}
-                    <span className="text-xs text-[#8a5e55]/50 font-light tracking-wide">
+                    <span className="text-[10px] text-[#8a5e55]/45 font-light tracking-wider uppercase">
                       swipe
                     </span>
 
                     {/* Right chevron - pulses right */}
                     <motion.div
-                      animate={{ x: [0, 4, 0] }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                      animate={{ x: [0, 3, 0] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                     >
-                      <ChevronRight className="w-4 h-4 text-[#8a5e55]/40" strokeWidth={1.5} />
+                      <ChevronRight className="w-3.5 h-3.5 text-[#8a5e55]/40" strokeWidth={1.5} />
                     </motion.div>
                   </motion.div>
                 )}
-                {tutorialSuccess && currentIndex === 0 && (
+                {tutorialSuccess && (
                   <motion.div
-                    className="mt-6"
+                    className="mt-5"
                     initial={{ opacity: 1 }}
                     animate={{ opacity: 0 }}
-                    transition={{ duration: 0.5, delay: 0.6 }}
+                    transition={{ duration: 0.8, delay: 1 }}
                   >
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ duration: 0.2, ease: "backOut" }}
+                      transition={{ duration: 0.25, ease: "backOut" }}
                     >
-                      <Check className="w-4 h-4 text-emerald-600/60" strokeWidth={2} />
+                      <Check className="w-4 h-4 text-emerald-600/70" strokeWidth={2.5} />
                     </motion.div>
                   </motion.div>
                 )}

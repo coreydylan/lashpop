@@ -95,7 +95,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               quality={100}
               fill
               sizes="100vw"
-              className="object-cover object-[35%_center]"
+              className="object-cover object-[45%_center]"
               priority
             />
           </div>
