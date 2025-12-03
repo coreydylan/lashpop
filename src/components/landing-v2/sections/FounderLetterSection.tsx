@@ -42,7 +42,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   const mobileContainerRef = useRef<HTMLDivElement>(null)
   const mobileArchRef = useRef<HTMLDivElement>(null)
   const mobileArchImageRef = useRef<HTMLDivElement>(null)
-  const mobileArchClipRef = useRef<HTMLDivElement>(null)
+  const mobileArchMaskRef = useRef<HTMLDivElement>(null) // Cream mask that slides up to crop
   const mobileLetterRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -139,11 +139,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
   // GSAP ScrollTrigger for mobile arch animation
   // Phase 1: Soft zoom (105% -> 115%) as arch scrolls up
-  // Phase 2: Arch sticks when it reaches top of viewport
-  // Phase 3: Letter content pushes up, cropping arch from bottom ("roll-up")
-  // Phase 4: Release sticky when letter content ends
+  // Phase 2: Arch sticks when top reaches viewport (via CSS sticky)
+  // Phase 3: Cream mask slides UP to cover bottom 85% of arch (GPU-accelerated translateY)
+  // Phase 4: Letter content scrolls under the cropped arch (z-index layering)
   useEffect(() => {
-    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileArchClipRef.current || !mobileLetterRef.current) return
+    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileArchMaskRef.current || !mobileLetterRef.current) return
 
     // Initialize GSAP synchronously for mobile scroll
     initGSAPSync()
@@ -152,17 +152,14 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
     if (!scrollContainer) return
 
-    // The minimum visible height for the face crop banner (percentage from top)
-    const minVisiblePercent = 15
-
     // Store refs for closure
     const imageRef = mobileArchImageRef.current
-    const clipRef = mobileArchClipRef.current
+    const maskRef = mobileArchMaskRef.current
     const archContainerRef = mobileArchRef.current
     const letterRef = mobileLetterRef.current
 
-    // Set initial state - no scale transform needed, width is set via CSS (105vw)
-    gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
+    // Set initial state - mask starts hidden below (translateY: 100%)
+    gsap.set(maskRef, { yPercent: 100 })
 
     const triggers: ScrollTrigger[] = []
 
@@ -181,41 +178,28 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     })
     if (zoomTween.scrollTrigger) triggers.push(zoomTween.scrollTrigger)
 
-    // Phase 2 & 3: Roll-up crop driven by letter position
-    // Crop from bottom as letter scrolls up and overlaps with arch
-    const cropTrigger = ScrollTrigger.create({
-      trigger: letterRef,
-      scroller: scrollContainer,
-      start: 'top bottom', // When letter top enters viewport bottom
-      end: 'bottom top', // When letter bottom exits viewport top
-      invalidateOnRefresh: true,
-      onUpdate: () => {
-        // Get actual bounding rects
-        const archRect = clipRef.getBoundingClientRect()
-        const letterRect = letterRef.getBoundingClientRect()
-
-        // Calculate overlap between letter top and arch bottom
-        const overlap = archRect.bottom - letterRect.top
-
-        if (overlap > 0 && archRect.height > 0) {
-          // Letter is overlapping - calculate crop percentage
-          const maxCrop = 100 - minVisiblePercent // 85%
-          const cropPercent = Math.min(maxCrop, (overlap / archRect.height) * 100)
-
-          gsap.set(clipRef, {
-            clipPath: `inset(0 0 ${cropPercent}% 0)`,
-          })
-        } else {
-          // No overlap yet
-          gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
-        }
+    // Phase 3: Mask slides up as letter approaches
+    // The mask covers the bottom 85% of the arch, leaving top 15% visible
+    // Timeline: mask goes from yPercent: 100 (hidden) to yPercent: 0 (covering)
+    const maskTween = gsap.to(maskRef, {
+      yPercent: 0,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: letterRef,
+        scroller: scrollContainer,
+        // Start when letter top hits bottom of viewport
+        start: 'top bottom',
+        // End when letter has scrolled up enough to fully crop the arch
+        // This creates a smooth scrub over the letter's scroll distance
+        end: 'top 15%', // Letter top reaches 15% from viewport top = full crop
+        scrub: 0.1, // Very tight scrub for responsive feel, no lag
+        invalidateOnRefresh: true,
       }
     })
-    triggers.push(cropTrigger)
+    if (maskTween.scrollTrigger) triggers.push(maskTween.scrollTrigger)
 
     // Handle resize
     const handleResize = () => {
-      gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
       ScrollTrigger.refresh()
     }
 
@@ -224,6 +208,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     return () => {
       triggers.forEach(t => t.kill())
       zoomTween.kill()
+      maskTween.kill()
       window.removeEventListener('resize', handleResize)
     }
   }, [isMobile])
@@ -311,42 +296,46 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         {/* 40% of 195vw = ~78vw, so top: -78vw lets 40% scroll off before sticking */}
         <div
           ref={mobileArchRef}
-          className="sticky w-screen z-40 flex justify-center"
+          className="sticky w-screen z-40 flex justify-center overflow-hidden"
           style={{
             background: 'transparent',
             top: '-78vw',
           }}
         >
-          {/* Clip container - clip-path crops from bottom as letter pushes up */}
+          {/* Arch image - width set via style, GSAP controls scale */}
           <div
-            ref={mobileArchClipRef}
-            className="relative will-change-transform"
-            style={{ clipPath: 'inset(0 0 0 0)' }}
+            ref={mobileArchImageRef}
+            className="relative"
+            style={{
+              transformOrigin: 'center top',
+              width: '105vw',
+            }}
           >
-            {/* Arch image - width set via style, GSAP controls scale */}
-            <div
-              ref={mobileArchImageRef}
-              className="relative will-change-transform"
+            <img
+              src="/lashpop-images/emily-arch.png"
+              alt="Emily in decorative arch"
               style={{
-                transformOrigin: 'center top',
-                width: '105vw',
+                width: '100%',
+                height: 'auto',
+                filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
               }}
-            >
-              <Image
-                src="/lashpop-images/emily-arch.png"
-                alt="Emily in decorative arch"
-                width={280}
-                height={522}
-                style={{ width: '100%', height: 'auto', opacity: 1 }}
-                className="relative z-10 drop-shadow-xl !opacity-100"
-                priority
-              />
-            </div>
+            />
+            {/* Cream mask - slides up from bottom to cover 85% of arch */}
+            {/* Height is 85% of image, positioned at bottom, GSAP animates yPercent */}
+            <div
+              ref={mobileArchMaskRef}
+              className="absolute bottom-0 left-0 right-0 bg-cream pointer-events-none"
+              style={{
+                height: '85%',
+                transform: 'translateY(100%)', // Initial state: hidden below
+                willChange: 'transform',
+              }}
+            />
           </div>
         </div>
 
-        {/* Letter Content */}
-        <div ref={mobileLetterRef} className="px-6 pb-16 bg-cream relative z-50">
+        {/* Letter Content - z-30 so it scrolls UNDER the sticky arch (z-40) */}
+        <div ref={mobileLetterRef} className="px-6 pb-16 bg-cream relative z-30">
           <motion.div
             className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
             initial={{ opacity: 0, y: 30 }}
