@@ -13,6 +13,7 @@ import type {
   ShowFormAction,
   ScrollAction,
   OpenPanelAction,
+  SubmitTeamMessageAction,
 } from '@/lib/ask-lashpop/types'
 
 // ============================================================================
@@ -44,13 +45,12 @@ function askLashpopReducer(state: AskLashpopState, action: AskLashpopAction): As
         const welcomeMessage: ChatMessage = {
           id: generateId(),
           role: 'assistant',
-          content: "Hi! I'm your Lashpop beauty concierge. How can I help you today?",
+          content: "Hey! ✨ Got a question? I'll do my best to help - or if you need our team, just let me know what you'd like to tell them and I'll pass it along. What's up?",
           timestamp: Date.now(),
           quickReplies: [
-            'Book an appointment',
-            'What services do you offer?',
-            'Where are you located?',
-            'Pricing info',
+            'I have a question',
+            'Send a message to the team',
+            'Help me book',
           ],
         }
         return { ...state, isOpen: true, messages: [welcomeMessage] }
@@ -65,13 +65,12 @@ function askLashpopReducer(state: AskLashpopState, action: AskLashpopAction): As
         const welcomeMessage: ChatMessage = {
           id: generateId(),
           role: 'assistant',
-          content: "Hi! I'm your Lashpop beauty concierge. How can I help you today?",
+          content: "Hey! ✨ Got a question? I'll do my best to help - or if you need our team, just let me know what you'd like to tell them and I'll pass it along. What's up?",
           timestamp: Date.now(),
           quickReplies: [
-            'Book an appointment',
-            'What services do you offer?',
-            'Where are you located?',
-            'Pricing info',
+            'I have a question',
+            'Send a message to the team',
+            'Help me book',
           ],
         }
         return { ...state, isOpen: true, messages: [welcomeMessage] }
@@ -251,6 +250,57 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
 
       case 'open_external': {
         window.open(action.url, '_blank')
+        break
+      }
+
+      case 'submit_team_message': {
+        const msgAction = action as SubmitTeamMessageAction
+        try {
+          // Get conversation summary
+          const currentState = stateRef.current
+          const conversationSummary = currentState.messages
+            .map((msg) => `${msg.role === 'user' ? 'Customer' : 'AI'}: ${msg.content}`)
+            .join('\n\n')
+
+          // Send the message to the team
+          const response = await fetch('/api/ask-lashpop/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              template: msgAction.data.inquiryType,
+              contactInfo: {
+                email: msgAction.data.email,
+                phone: msgAction.data.phone,
+                name: msgAction.data.name,
+              },
+              additionalData: { message: msgAction.data.message },
+              conversationSummary,
+            }),
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to send message')
+          }
+
+          // Add success message
+          const successMessage: ChatMessage = {
+            id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            role: 'assistant',
+            content: "Done! I've sent your message to the team. They'll get back to you within a day (usually much faster). Is there anything else I can help with?",
+            timestamp: Date.now(),
+            quickReplies: ['Browse services', 'Check hours', "No, that's all!"],
+          }
+          dispatch({ type: 'ADD_MESSAGE', payload: successMessage })
+        } catch (error) {
+          console.error('Error sending team message:', error)
+          const errorMessage: ChatMessage = {
+            id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            role: 'assistant',
+            content: "I couldn't send your message. You can reach us directly at hello@lashpopstudios.com or call (760) 212-0448.",
+            timestamp: Date.now(),
+          }
+          dispatch({ type: 'ADD_MESSAGE', payload: errorMessage })
+        }
         break
       }
 

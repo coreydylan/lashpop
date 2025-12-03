@@ -118,7 +118,7 @@ export const GPT_FUNCTIONS: GPTFunction[] = [
   },
   {
     name: 'collect_contact_info',
-    description: 'Show a form to collect user contact info for human follow-up. Use for complex requests, complaints, or bridal inquiries.',
+    description: 'DEPRECATED - Do NOT use this. Instead, collect message and contact info through conversation, then use send_message_to_team.',
     parameters: {
       type: 'object',
       properties: {
@@ -129,10 +129,41 @@ export const GPT_FUNCTIONS: GPTFunction[] = [
         },
         button_label: {
           type: 'string',
-          description: 'Label for the action button (e.g., "Connect me with the team")',
+          description: 'Label for the action button',
         },
       },
       required: ['reason', 'button_label'],
+    },
+  },
+  {
+    name: 'send_message_to_team',
+    description: 'Submit a message to the LashPop team after collecting info conversationally. Only call this AFTER you have: 1) their message/question, 2) their name, 3) their email or phone.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Customer name',
+        },
+        email: {
+          type: 'string',
+          description: 'Customer email address (optional if phone provided)',
+        },
+        phone: {
+          type: 'string',
+          description: 'Customer phone number (optional if email provided)',
+        },
+        message: {
+          type: 'string',
+          description: 'The message/question to send to the team',
+        },
+        inquiry_type: {
+          type: 'string',
+          enum: ['general', 'bridal', 'complaint', 'booking_help'],
+          description: 'Type of inquiry',
+        },
+      },
+      required: ['name', 'message'],
     },
   },
   {
@@ -222,6 +253,21 @@ export function functionCallToAction(
         fields: FORM_FIELDS[reason] || FORM_FIELDS.general,
         label: args.button_label as string,
         icon: 'mail',
+      }
+    }
+
+    case 'send_message_to_team': {
+      return {
+        type: 'submit_team_message',
+        data: {
+          name: args.name as string,
+          email: args.email as string | undefined,
+          phone: args.phone as string | undefined,
+          message: args.message as string,
+          inquiryType: args.inquiry_type as string || 'general',
+        },
+        label: 'Message sent!',
+        icon: 'check',
       }
     }
 

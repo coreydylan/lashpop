@@ -222,25 +222,28 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Generate contextual quick replies
+// Generate contextual quick replies (keep them conversational, not action-heavy)
 function generateQuickReplies(userMessage: string, response: string): string[] {
   const lowerMessage = userMessage.toLowerCase()
   const lowerResponse = response.toLowerCase()
 
-  // Based on conversation context, suggest relevant follow-ups
+  // Based on conversation context, suggest natural follow-ups
   if (lowerMessage.includes('lash') || lowerResponse.includes('lash')) {
-    return ['Book lash appointment', 'Lash aftercare tips', 'Pricing info']
+    return ['How do I prepare?', 'How often do I need fills?', 'Help me book']
   }
   if (lowerMessage.includes('brow') || lowerResponse.includes('brow')) {
-    return ['Book brow service', 'Microblading vs lamination', 'See brow services']
+    return ['What\'s the difference between services?', 'How long does it last?', 'Help me book']
   }
   if (lowerMessage.includes('book') || lowerMessage.includes('appointment')) {
-    return ['Browse all services', 'Where are you located?', 'What are your hours?']
+    return ['What should I expect?', 'Where are you located?', 'Browse services']
   }
   if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
-    return ['Book now', 'See all services', 'Talk to someone']
+    return ['Browse services', 'Help me book', 'Talk to the team']
+  }
+  if (lowerMessage.includes('team') || lowerMessage.includes('message') || lowerMessage.includes('talk')) {
+    return ['I have a question', 'I need help booking', 'Something else']
   }
 
-  // Default replies
-  return ['Browse services', 'Find us', 'Contact team']
+  // Default - conversational options
+  return ['Tell me about services', 'Where are you located?', 'Talk to the team']
 }

@@ -9,7 +9,8 @@ import {
   ExternalLink,
   ChevronRight,
   Sparkles,
-  Eye
+  Eye,
+  Check
 } from 'lucide-react'
 import { useAskLashpop } from '@/contexts/AskLashpopContext'
 import type { ChatMessage, ChatAction } from '@/lib/ask-lashpop/types'
@@ -33,11 +34,37 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'sparkles': Sparkles,
   'eye': Eye,
   'view': Eye,
+  'check': Check,
+  'success': Check,
 }
 
 function getIcon(iconName?: string) {
   if (!iconName) return ChevronRight
   return iconMap[iconName.toLowerCase()] || ChevronRight
+}
+
+// Strip markdown formatting from AI responses
+function stripMarkdown(text: string): string {
+  return text
+    // Remove bold/italic markers
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    // Remove headers
+    .replace(/^#{1,6}\s+/gm, '')
+    // Remove bullet points and convert to sentence flow
+    .replace(/^[\s]*[-*+]\s+/gm, '')
+    // Remove numbered lists formatting
+    .replace(/^\d+\.\s+/gm, '')
+    // Remove code blocks
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove links but keep text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    // Clean up extra whitespace
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 export function AIMessage({ message }: AIMessageProps) {
@@ -58,7 +85,7 @@ export function AIMessage({ message }: AIMessageProps) {
         {/* Message Bubble */}
         <div className="bg-white rounded-2xl rounded-tl-md px-4 py-3 shadow-sm border border-sage/10">
           <p className="text-sm text-dune whitespace-pre-wrap leading-relaxed">
-            {message.content}
+            {stripMarkdown(message.content)}
           </p>
         </div>
 
