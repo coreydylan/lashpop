@@ -42,7 +42,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   const mobileContainerRef = useRef<HTMLDivElement>(null)
   const mobileArchRef = useRef<HTMLDivElement>(null)
   const mobileArchImageRef = useRef<HTMLDivElement>(null)
-  const mobileArchMaskRef = useRef<HTMLDivElement>(null) // Cream mask that slides up to crop
   const mobileLetterRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -138,12 +137,12 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   }, [])
 
   // GSAP ScrollTrigger for mobile arch animation
-  // Phase 1: Soft zoom (105% -> 115%) as arch scrolls up
-  // Phase 2: Arch sticks when top reaches viewport (via CSS sticky)
-  // Phase 3: Cream mask slides UP to cover bottom 85% of arch (GPU-accelerated translateY)
-  // Phase 4: Letter content scrolls under the cropped arch (z-index layering)
+  // Phase 1: Arch is fully visible as it scrolls into view (with soft zoom)
+  // Phase 2: Welcome letter pushes up and crops the arch from the BOTTOM
+  // Phase 3: Crop stops at maximum (~55% from bottom), content scrolls UNDER the cropped arch
+  // Phase 4: Team section eventually pushes the arch off screen
   useEffect(() => {
-    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileArchMaskRef.current || !mobileLetterRef.current) return
+    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileLetterRef.current) return
 
     // Initialize GSAP synchronously for mobile scroll
     initGSAPSync()
@@ -154,49 +153,48 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
     // Store refs for closure
     const imageRef = mobileArchImageRef.current
-    const maskRef = mobileArchMaskRef.current
     const archContainerRef = mobileArchRef.current
     const letterRef = mobileLetterRef.current
 
-    // Set initial state - mask starts hidden below (translateY: 100%)
-    gsap.set(maskRef, { yPercent: 100 })
+    // Set initial state - clip-path shows full image
+    gsap.set(imageRef, { clipPath: 'inset(0% 0 0 0)' })
 
     const triggers: ScrollTrigger[] = []
 
-    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.095 = 105vw -> 115vw)
+    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.05)
     const zoomTween = gsap.to(imageRef, {
-      scale: 1.095, // 115/105 = 1.095
+      scale: 1.05,
       ease: 'none',
       scrollTrigger: {
         trigger: archContainerRef,
         scroller: scrollContainer,
         start: 'top 100%', // Start when arch enters viewport from bottom
-        end: 'top 0%', // End when arch top reaches top of viewport
+        end: 'top 50%', // End when arch is half-way up
         scrub: 1.5,
         invalidateOnRefresh: true,
       }
     })
     if (zoomTween.scrollTrigger) triggers.push(zoomTween.scrollTrigger)
 
-    // Phase 3: Mask slides up as letter approaches
-    // The mask covers the bottom 85% of the arch, leaving top 15% visible
-    // Timeline: mask goes from yPercent: 100 (hidden) to yPercent: 0 (covering)
-    const maskTween = gsap.to(maskRef, {
-      yPercent: 0,
+    // Phase 2: Clip from BOTTOM as the welcome letter pushes up
+    // The letter scrolls up from below, "pushing" against the arch
+    // This crops the bottom of the arch: inset(0 0 X% 0) where X increases
+    // Result: Emily's face/upper body remains visible as lower portion gets cropped
+    const clipTween = gsap.to(imageRef, {
+      clipPath: 'inset(0 0 55% 0)', // Crop 55% from the bottom, leaving Emily's face visible
       ease: 'none',
       scrollTrigger: {
         trigger: letterRef,
         scroller: scrollContainer,
-        // Start when letter top hits bottom of viewport
+        // Start when letter top is at bottom of viewport
         start: 'top bottom',
-        // End when letter has scrolled up enough to fully crop the arch
-        // This creates a smooth scrub over the letter's scroll distance
-        end: 'top 15%', // Letter top reaches 15% from viewport top = full crop
-        scrub: 0.1, // Very tight scrub for responsive feel, no lag
+        // End when letter top reaches 35% from viewport top (crop stops here)
+        end: 'top 35%',
+        scrub: 0.3, // Smooth but responsive
         invalidateOnRefresh: true,
       }
     })
-    if (maskTween.scrollTrigger) triggers.push(maskTween.scrollTrigger)
+    if (clipTween.scrollTrigger) triggers.push(clipTween.scrollTrigger)
 
     // Handle resize
     const handleResize = () => {
@@ -208,7 +206,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     return () => {
       triggers.forEach(t => t.kill())
       zoomTween.kill()
-      maskTween.kill()
+      clipTween.kill()
       window.removeEventListener('resize', handleResize)
     }
   }, [isMobile])
@@ -286,29 +284,31 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
       </div>
 
-      {/* Mobile Layout - Arch with scroll-driven zoom and crop animation */}
+      {/* Mobile Layout - Arch with scroll-driven zoom and BOTTOM crop animation */}
       <div
         ref={mobileContainerRef}
         className="md:hidden relative"
       >
-        {/* Emily Arch Image Container - sticky after ~40% of image scrolls off */}
-        {/* Image is 105vw wide, aspect ratio ~1.86, so height is ~195vw */}
-        {/* 40% of 195vw = ~78vw, so top: -78vw lets 40% scroll off before sticking */}
+        {/* Emily Arch Image Container - sticky at top of viewport */}
+        {/* The arch starts fully visible, then gets cropped from the BOTTOM as user scrolls */}
+        {/* The letter "pushes up" against the arch, cropping Emily's lower body first */}
+        {/* Content scrolls UNDER the cropped arch (z-index layering) */}
         <div
           ref={mobileArchRef}
-          className="sticky w-screen z-40 flex justify-center overflow-hidden"
+          className="sticky w-screen z-40 flex justify-center overflow-visible"
           style={{
             background: 'transparent',
-            top: '-78vw',
+            top: '0', // Stick at viewport top - arch is fully visible initially
           }}
         >
-          {/* Arch image - width set via style, GSAP controls scale */}
+          {/* Arch image - width set via style, GSAP controls scale and clip-path */}
           <div
             ref={mobileArchImageRef}
             className="relative"
             style={{
-              transformOrigin: 'center top',
-              width: '105vw',
+              transformOrigin: 'center top', // Anchor to top (Emily's face) while cropping from bottom
+              width: '100vw',
+              willChange: 'transform, clip-path',
             }}
           >
             <img
@@ -320,22 +320,12 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
               }}
             />
-            {/* Cream mask - slides up from bottom to cover 85% of arch */}
-            {/* Height is 85% of image, positioned at bottom, GSAP animates yPercent */}
-            <div
-              ref={mobileArchMaskRef}
-              className="absolute bottom-0 left-0 right-0 bg-cream pointer-events-none"
-              style={{
-                height: '85%',
-                transform: 'translateY(100%)', // Initial state: hidden below
-                willChange: 'transform',
-              }}
-            />
           </div>
         </div>
 
         {/* Letter Content - z-30 so it scrolls UNDER the sticky arch (z-40) */}
-        <div ref={mobileLetterRef} className="px-6 pb-16 bg-cream relative z-30">
+        {/* Top padding creates space for the arch to be visible before letter starts cropping it */}
+        <div ref={mobileLetterRef} className="px-6 pt-8 pb-16 bg-cream relative z-30">
           <motion.div
             className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
             initial={{ opacity: 0, y: 30 }}
