@@ -10,7 +10,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
-import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
+import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team/QuickFactCard'
 
 // Swipe Tutorial Hint Component - subtle wiggling icon in center
 function SwipeHint() {
@@ -1135,38 +1135,45 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       </div>
                     </div>
 
-                    {/* Fixed Hero Image - stays in place while content scrolls over it */}
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={`image-${selectedMember.id}`}
-                        className="absolute inset-0 z-0"
-                        initial={{ opacity: 0, x: swipeDirection === 'left' ? 100 : swipeDirection === 'right' ? -100 : 0 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: swipeDirection === 'left' ? -100 : swipeDirection === 'right' ? 100 : 0 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
-                      >
-                        <div className="relative h-[70vh] overflow-hidden">
-                          <Image
-                            src={selectedMember.image}
-                            alt={selectedMember.name}
-                            fill
-                            className="object-cover object-top"
-                            priority
-                          />
-                        </div>
-                      </motion.div>
-                    </AnimatePresence>
+                    {/* Base background - prevents flash during image swap */}
+                    <div className="absolute inset-0 z-0 bg-cream" />
 
-                    {/* Scrollable Content Overlay - scrolls up to reveal content */}
+                    {/* Fixed Hero Image - crossfades between team members */}
+                    <div className="absolute inset-0 z-[1]">
+                      <AnimatePresence mode="popLayout">
+                        <motion.div
+                          key={selectedMember.id}
+                          className="absolute inset-0"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.5, ease: 'easeInOut' }}
+                        >
+                          <div className="relative h-[70vh] overflow-hidden">
+                            <Image
+                              src={selectedMember.image}
+                              alt={selectedMember.name}
+                              fill
+                              className="object-cover object-top"
+                              priority
+                            />
+                            {/* Gradient overlay on photo - positioned to align with content gradient */}
+                            <div className="absolute inset-x-0 bottom-[-5vh] h-32 bg-gradient-to-t from-cream from-30% via-cream/90 via-60% to-transparent" />
+                          </div>
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Scrollable Content Overlay - swipes left/right */}
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={`content-${selectedMember.id}`}
                         className="relative z-10 flex-1 overflow-y-auto overscroll-none"
                         style={{ WebkitOverflowScrolling: 'touch' }}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
+                        initial={{ opacity: 0, x: swipeDirection === 'left' ? 80 : swipeDirection === 'right' ? -80 : 0 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: swipeDirection === 'left' ? -80 : swipeDirection === 'right' ? 80 : 0 }}
+                        transition={{ duration: 0.25, ease: 'easeOut' }}
                         onScroll={(e) => {
                           // Prevent scrolling past the top (which would show gap above image)
                           const target = e.currentTarget
@@ -1176,35 +1183,45 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         }}
                       >
                         {/* Spacer to position content below the image initially */}
-                        <div className="h-[50vh] pointer-events-none" />
+                        <div className="h-[65vh] pointer-events-none" />
 
                         {/* All content wrapped together */}
                         <div className="relative">
                           {/* Gradient - absolutely positioned, extends from top down past the card */}
-                          <div className="absolute inset-x-0 top-0 h-72 bg-gradient-to-t from-cream from-40% via-cream/70 via-70% to-transparent pointer-events-none z-0" />
+                          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-t from-cream from-50% via-cream/90 via-75% to-transparent pointer-events-none z-0" />
 
-                          {/* Spacer to push content down where gradient starts being solid */}
-                          <div className="h-32" />
+                          {/* Spacer - none needed now */}
 
-                          {/* Info Card */}
-                          <div className="relative px-5 pointer-events-auto z-10">
-                            <div className="bg-white rounded-3xl shadow-xl p-5 border border-sage/5">
-                              {/* Name and affiliation */}
-                              <div>
-                                <h1 className="font-serif text-2xl text-dune leading-tight">
-                                  {selectedMember.name}
-                                </h1>
-                                <p className="text-dusty-rose font-medium text-sm mt-0.5">
+                          {/* Name and biz - no card, just floating on gradient */}
+                          <div className="relative px-5 pb-4 pointer-events-auto z-10">
+                            <h1 className="font-serif text-3xl text-dune leading-tight">
+                              <span className="font-bold">{selectedMember.name.split(' ')[0]}</span>{selectedMember.name.includes(' ') ? ` ${selectedMember.name.split(' ').slice(1).join(' ')}` : ''}
+                            </h1>
+                            {selectedMember.instagram ? (
+                              <a
+                                href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 mt-1.5 text-dusty-rose hover:text-dusty-rose/80 transition-colors"
+                              >
+                                <Instagram className="w-3.5 h-3.5" />
+                                <span className="text-xs uppercase tracking-wider font-medium">
                                   {selectedMember.type === 'independent' && selectedMember.businessName
                                     ? selectedMember.businessName
                                     : 'LashPop Artist'}
-                                </p>
-                              </div>
-                            </div>
+                                </span>
+                              </a>
+                            ) : (
+                              <p className="text-xs uppercase tracking-wider font-medium text-dusty-rose mt-1.5">
+                                {selectedMember.type === 'independent' && selectedMember.businessName
+                                  ? selectedMember.businessName
+                                  : 'LashPop Artist'}
+                              </p>
+                            )}
                           </div>
 
-                          {/* Content Sections - pulled up to tuck behind card */}
-                          <div className="relative -mt-4 px-5 pt-8 pb-6 space-y-6 bg-cream pointer-events-auto z-0">
+                          {/* Content Sections */}
+                          <div className="relative px-5 pb-6 space-y-6 bg-cream pointer-events-auto z-0">
                           {/* Bio Section */}
                           {selectedMember.bio && (
                             <div>
@@ -1235,18 +1252,45 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             </div>
                           )}
 
-                          {/* Quick Facts Grid (Mobile) */}
+                          {/* Quick Facts (Mobile) - swipeable if multiple */}
                           {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
                             <div>
-                              <h3 className="font-serif text-lg text-dune mb-3">Quick Facts</h3>
-                              <QuickFactsGrid facts={selectedMember.quickFacts} />
+                              <h3 className="font-serif text-lg text-dune mb-3">
+                                Get to know {selectedMember.name.split(' ')[0]}
+                              </h3>
+                              {selectedMember.quickFacts.length === 1 ? (
+                                /* Single fact - full width */
+                                <QuickFactsGrid facts={selectedMember.quickFacts} />
+                              ) : (
+                                /* Multiple facts - swipeable row with expanded touch area */
+                                <div
+                                  className="overflow-x-auto overflow-y-visible scrollbar-hide -mx-5 touch-pan-x"
+                                  onTouchStart={(e) => e.stopPropagation()}
+                                  onTouchMove={(e) => e.stopPropagation()}
+                                >
+                                  <div className="flex gap-3 px-5 py-4" style={{ width: 'max-content' }}>
+                                    {[...selectedMember.quickFacts]
+                                      .sort((a, b) => a.displayOrder - b.displayOrder)
+                                      .map((fact, index) => (
+                                        <div
+                                          key={fact.id}
+                                          className="w-[75vw] max-w-[300px] flex-shrink-0"
+                                        >
+                                          <QuickFactCard fact={fact} index={index} />
+                                        </div>
+                                      ))}
+                                    {/* End spacer for last card visibility */}
+                                    <div className="w-5 flex-shrink-0" />
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ) : selectedMember.funFact && (
                             /* Fallback to single Fun Fact if no quick facts */
-                            <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
+                            <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-5 border border-white/60 shadow-lg">
                               <h3 className="font-serif text-lg text-dune mb-2 flex items-center gap-2">
                                 <Sparkles className="w-4 h-4 text-dusty-rose" />
-                                Fun Fact
+                                Get to know {selectedMember.name.split(' ')[0]}
                               </h3>
                               <p className="text-dune/80 text-sm leading-relaxed">{selectedMember.funFact}</p>
                             </div>

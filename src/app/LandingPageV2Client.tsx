@@ -52,8 +52,18 @@ interface Service {
   vagaroServiceCode?: string | null;
 }
 
+interface QuickFact {
+  id: string;
+  factType: string;
+  customLabel?: string | null;
+  value: string;
+  customIcon?: string | null;
+  displayOrder: number;
+}
+
 interface TeamMember {
   id: number;
+  uuid?: string;
   name: string;
   role: string;
   type: 'employee' | 'independent';
@@ -61,6 +71,7 @@ interface TeamMember {
   image: string;
   phone: string;
   specialties: string[];
+  serviceCategories?: string[];
   bio?: string;
   quote?: string;
   availability?: string;
@@ -68,6 +79,11 @@ interface TeamMember {
   bookingUrl: string;
   favoriteServices?: string[];
   funFact?: string;
+  quickFacts?: QuickFact[];
+  cropSquareUrl?: string;
+  cropCloseUpCircleUrl?: string;
+  cropMediumCircleUrl?: string;
+  cropFullVerticalUrl?: string;
 }
 
 interface Review {

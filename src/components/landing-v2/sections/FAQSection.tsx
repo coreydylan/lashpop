@@ -199,12 +199,14 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           ref={stickyHeaderRef}
           className="mb-4 md:mb-12 sticky md:static top-[44px] z-40 md:top-0 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
           style={isMobile ? {
-            background: 'linear-gradient(180deg, rgba(250, 247, 244, 0.95) 0%, rgba(250, 247, 244, 0.9) 60%, rgba(250, 247, 244, 0) 100%)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
+            background: 'linear-gradient(180deg, rgba(250, 247, 244, 0.98) 0%, rgba(250, 247, 244, 0.95) 60%, rgba(250, 247, 244, 0) 100%)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
             paddingTop: '16px',
             paddingBottom: '24px',
             marginTop: '-4px',
+            willChange: 'transform',
+            transform: 'translateZ(0)',
           } : undefined}
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -262,16 +264,14 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
         </motion.div>
 
         {/* FAQ Items */}
-        <motion.div
+        <div
           ref={faqListRef}
           className="space-y-3 md:space-y-4"
-          layout
         >
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="sync">
             {filteredFAQs.map((faq) => (
               <motion.div
                 key={faq.id}
-                layout
                 className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-sage/10"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -324,7 +324,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
               </motion.div>
             ))}
           </AnimatePresence>
-        </motion.div>
+        </div>
 
         {/* CTA */}
         <motion.div

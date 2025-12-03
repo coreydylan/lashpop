@@ -40,6 +40,7 @@ export default async function HomePage() {
   // Transform database format to component format
   const formattedTeamMembers = teamMembers.map((member, index) => ({
     id: index, // Use index as ID since UUID can't be converted to number
+    uuid: member.id, // Keep UUID for API calls
     name: member.name,
     role: member.role,
     type: member.type as 'employee' | 'independent',
@@ -54,7 +55,21 @@ export default async function HomePage() {
     instagram: member.instagram || undefined,
     bookingUrl: member.bookingUrl,
     favoriteServices: member.favoriteServices as string[] | undefined,
-    funFact: member.funFact || undefined
+    funFact: member.funFact || undefined,
+    // Quick facts from database
+    quickFacts: member.quickFacts?.map(fact => ({
+      id: fact.id,
+      factType: fact.factType,
+      customLabel: fact.customLabel,
+      value: fact.value,
+      customIcon: fact.customIcon,
+      displayOrder: fact.displayOrder
+    })) || [],
+    // Photo crop URLs
+    cropSquareUrl: member.cropSquareUrl || undefined,
+    cropCloseUpCircleUrl: member.cropCloseUpCircleUrl || undefined,
+    cropMediumCircleUrl: member.cropMediumCircleUrl || undefined,
+    cropFullVerticalUrl: member.cropFullVerticalUrl || undefined,
   }))
 
   // Fetch reviews from database (uses admin-selected reviews if available)
