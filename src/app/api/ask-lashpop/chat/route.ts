@@ -128,16 +128,20 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: message },
     ]
 
-    // Call OpenAI
+    // Call OpenAI with GPT-5.1 tools API (modern agentic format)
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o', // Use GPT-4o or GPT-5 when available
+      model: process.env.OPENAI_MODEL || 'gpt-5.1',
       messages,
-      functions: GPT_FUNCTIONS.map((f) => ({
-        name: f.name,
-        description: f.description,
-        parameters: f.parameters,
+      tools: GPT_FUNCTIONS.map((f) => ({
+        type: 'function' as const,
+        function: {
+          name: f.name,
+          description: f.description,
+          parameters: f.parameters,
+        },
       })),
-      function_call: 'auto',
+      tool_choice: 'auto',
+      parallel_tool_calls: true, // GPT-5.1 can call multiple tools in one response
       temperature: 0.7,
       max_tokens: 500,
     })
@@ -152,27 +156,31 @@ export async function POST(request: NextRequest) {
     let actions: ChatAction[] = []
     let quickReplies: string[] = []
 
-    // Handle function calls
-    if (responseMessage.function_call) {
-      const { name, arguments: argsString } = responseMessage.function_call
-      try {
-        const args = JSON.parse(argsString || '{}')
-        const action = functionCallToAction(name, args, context.servicesMap)
+    // Handle tool calls (GPT-5.1 modern format - supports parallel tool calls)
+    if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+      for (const toolCall of responseMessage.tool_calls) {
+        if (toolCall.type === 'function') {
+          const { name, arguments: argsString } = toolCall.function
+          try {
+            const args = JSON.parse(argsString || '{}')
+            const action = functionCallToAction(name, args, context.servicesMap)
 
-        if (action) {
-          if (Array.isArray(action)) {
-            actions = action
-          } else {
-            actions = [action]
+            if (action) {
+              if (Array.isArray(action)) {
+                actions.push(...action)
+              } else {
+                actions.push(action)
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse tool arguments:', e)
           }
         }
-      } catch (e) {
-        console.error('Failed to parse function arguments:', e)
       }
     }
 
-    // Generate contextual quick replies if none provided by function
-    if (actions.length === 0 && !responseMessage.function_call) {
+    // Generate contextual quick replies if no actions from tools
+    if (actions.length === 0 && (!responseMessage.tool_calls || responseMessage.tool_calls.length === 0)) {
       // Add some default quick replies based on context
       quickReplies = generateQuickReplies(message, responseText)
     }
