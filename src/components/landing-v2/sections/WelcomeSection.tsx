@@ -79,7 +79,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
           {/* Content Container with Safe Zone - matching original layout */}
           <div className="relative z-10 w-full h-full flex flex-col">
             {/* Text Area - Takes up top portion, leaving bottom 50% as safe zone for desk elements */}
-            <div className="flex-1 flex items-center justify-center px-4 pb-[50dvh] pt-64">
+            <div className="flex-1 flex items-center justify-center px-4 pb-[50dvh] pt-32">
               <div
                 className="container max-w-5xl text-center"
               >

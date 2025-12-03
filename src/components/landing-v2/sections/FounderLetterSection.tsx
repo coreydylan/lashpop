@@ -208,7 +208,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   }, [isMobile])
 
   return (
-    <section className="relative w-full bg-cream">
+    <section className="relative w-full md:bg-cream">
 
       {/* Desktop/Tablet Layout - GSAP ScrollTrigger pinning */}
       <div ref={desktopSectionRef} className="hidden md:block relative z-20 overflow-hidden">
@@ -286,9 +286,13 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         className="md:hidden relative z-20"
       >
         {/* Emily Arch Image - Centered at top with scroll-driven zoom */}
+        {/* Transparent to cream gradient so arch PNG transparency shows the welcome section behind */}
         <div
           ref={mobileArchRef}
           className="pt-8 pb-6 flex justify-center overflow-hidden"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, transparent 60%, var(--color-cream, #FAF7F2) 100%)'
+          }}
         >
           <motion.div
             className="relative"
@@ -297,8 +301,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
           >
-            {/* Decorative background blur */}
-            <div className="absolute -inset-6 bg-gradient-to-br from-pink-100/40 to-orange-100/40 rounded-full blur-2xl" />
+            {/* Decorative background blur - removed to keep arch transparent */}
 
             {/* Arch image container with zoom transform - GSAP controls scale */}
             <div

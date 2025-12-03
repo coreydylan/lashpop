@@ -340,64 +340,68 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 {/* Continuous cream background wrapper for all sections from founder onwards */}
                 {/* z-20 ensures this scrolls over the sticky WelcomeSection (z-10) on mobile */}
                 {/* negative margin pulls it UP so it overlaps the sticky Welcome Section while it's "pausing" */}
-                <div className={`bg-cream relative z-20 ${isMobile ? '-mt-[100dvh]' : ''}`}>
-                  {/* Founder Letter Section */}
+                {/* On mobile, bg is transparent initially so arch PNG transparency shows through, then cream kicks in */}
+                <div className={`relative z-20 ${isMobile ? '-mt-[100dvh]' : 'bg-cream'}`}>
+                  {/* Founder Letter Section - handles its own cream background transition on mobile */}
                   <div className={isMobile ? "mobile-section" : ""} data-section-id="founder">
                     <FounderLetterSection content={founderLetterContent} />
                   </div>
 
-                  {/* Team Section - Adjusted trigger margin for earlier loading */}
-                  <div className={isMobile ? "mobile-section" : ""} data-section-id="team">
-                    <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
-                      <div id="team">
-                        <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
-                      </div>
-                    </SectionTransition>
-                  </div>
+                  {/* Cream background container for all sections after founder arch on mobile */}
+                  <div className={isMobile ? 'bg-cream' : ''}>
+                    {/* Team Section - Adjusted trigger margin for earlier loading */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="team">
+                      <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
+                        <div id="team">
+                          <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
+                        </div>
+                      </SectionTransition>
+                    </div>
 
-                  {/* Instagram Carousel */}
-                  <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
-                    <SectionTransition variant="scaleIn">
-                      <div id="gallery">
-                        <InstagramCarousel posts={instagramPosts} />
-                      </div>
-                    </SectionTransition>
-                  </div>
+                    {/* Instagram Carousel */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
+                      <SectionTransition variant="scaleIn">
+                        <div id="gallery">
+                          <InstagramCarousel posts={instagramPosts} />
+                        </div>
+                      </SectionTransition>
+                    </div>
 
-                  {/* Reviews Section */}
-                  <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews">
-                    <SectionTransition variant="slideUp">
-                      <div id="reviews">
-                        <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
-                      </div>
-                    </SectionTransition>
-                  </div>
+                    {/* Reviews Section */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews">
+                      <SectionTransition variant="slideUp">
+                        <div id="reviews">
+                          <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
+                        </div>
+                      </SectionTransition>
+                    </div>
 
-                  {/* FAQ Section */}
-                  <div className={isMobile ? "mobile-section" : ""} data-section-id="faq">
-                    <SectionTransition variant="fade">
-                      <div id="faq">
-                        <FAQSection
-                          categories={faqData?.categories || []}
-                          itemsByCategory={faqData?.itemsByCategory || {}}
-                          featuredItems={faqData?.featuredItems || []}
-                        />
-                      </div>
-                    </SectionTransition>
-                  </div>
+                    {/* FAQ Section */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="faq">
+                      <SectionTransition variant="fade">
+                        <div id="faq">
+                          <FAQSection
+                            categories={faqData?.categories || []}
+                            itemsByCategory={faqData?.itemsByCategory || {}}
+                            featuredItems={faqData?.featuredItems || []}
+                          />
+                        </div>
+                      </SectionTransition>
+                    </div>
 
-                  {/* Map Section */}
-                  <div className={isMobile ? "mobile-section" : ""} data-section-id="map">
-                    <SectionTransition variant="scaleIn" delay={0.2}>
-                      <div id="find-us" className="pt-20">
-                        <MapSection />
-                      </div>
-                    </SectionTransition>
-                  </div>
+                    {/* Map Section */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="map">
+                      <SectionTransition variant="scaleIn" delay={0.2}>
+                        <div id="find-us" className="pt-20">
+                          <MapSection />
+                        </div>
+                      </SectionTransition>
+                    </div>
 
-                  {/* Footer */}
-                  <div className={isMobile ? "mobile-section" : ""} data-section-id="footer">
-                    <FooterV2 />
+                    {/* Footer */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="footer">
+                      <FooterV2 />
+                    </div>
                   </div>
                 </div>
               </main>
