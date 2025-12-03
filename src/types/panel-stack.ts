@@ -224,7 +224,7 @@ export const HEADER_HEIGHT = 80; // Match Header.tsx height
 // Simplified 3-state design: hidden, collapsed (chip bar), full screen
 export const BOTTOM_SHEET_SNAP_POINTS = {
   hidden: 100,     // Off screen (translateY 100%)
-  collapsed: 92,   // Compact chip bar docked at bottom (~8% = ~64px visible)
+  collapsed: 88,   // Compact chip bar docked at bottom (~12% = ~96px visible, clears safe area)
   fullScreen: 5,   // Full takeover (leaves status bar)
 } as const;
 

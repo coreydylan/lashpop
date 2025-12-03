@@ -17,7 +17,7 @@ import { VagaroWidgetPanel } from '../panels/VagaroWidgetPanel';
 // Simplified 3-state snap points
 const SNAP_POINTS = {
   hidden: 100,      // Off screen (translateY 100%)
-  collapsed: 92,    // Compact chip bar at bottom (~8% = ~64px visible)
+  collapsed: 88,    // Compact chip bar at bottom (~12% = ~96px visible, clears safe area)
   fullScreen: 5,    // Full takeover (leaves status bar)
 } as const;
 
@@ -40,7 +40,7 @@ const bounceConfig = {
 
 // Quick attention bounce (subtle nudge)
 const attentionBounceKeyframes = {
-  y: ['92%', '88%', '92%'],
+  y: ['88%', '84%', '88%'],
   transition: {
     duration: 0.4,
     ease: [0.22, 1, 0.36, 1] as const,
