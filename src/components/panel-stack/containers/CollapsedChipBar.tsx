@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import { Check, Sparkles } from 'lucide-react';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { getCategoryColors } from '@/lib/category-colors';
-import { getCategoryIcon } from '@/components/icons/CategoryIcons';
 
 interface Category {
   id: string;
@@ -115,10 +114,9 @@ export function CollapsedChipBar({
           <span className="whitespace-nowrap">Discover</span>
         </motion.button>
 
-        {/* Category chips */}
+        {/* Category chips - text only, no icons */}
         {categories.map((category, index) => {
           const selected = isSelected(category.id);
-          const IconComponent = getCategoryIcon(category.iconName);
 
           return (
             <motion.button
@@ -130,7 +128,7 @@ export function CollapsedChipBar({
               onClick={() => onCategorySelect(category)}
               className={`
                 flex-shrink-0 px-3 py-1.5 rounded-full font-medium
-                text-[11px] flex items-center gap-1.5
+                text-[11px] flex items-center gap-1
                 transition-all duration-150
                 ${
                   selected
@@ -144,7 +142,6 @@ export function CollapsedChipBar({
                 color: selected ? 'white' : category.colors.primary,
               }}
             >
-              <IconComponent className="w-3 h-3 flex-shrink-0" />
               <span className="whitespace-nowrap">{category.name}</span>
               {selected && (
                 <motion.span

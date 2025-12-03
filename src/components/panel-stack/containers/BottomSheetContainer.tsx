@@ -423,8 +423,8 @@ export function BottomSheetContainer() {
         ref={containerRef}
         data-panel-mode="bottom"
         className={`
-          fixed inset-x-0 bottom-0 z-50 bg-cream will-change-transform
-          ${currentSnap === 'fullScreen' ? 'rounded-t-[24px] shadow-2xl' : ''}
+          fixed inset-x-0 bottom-0 z-50 bg-cream will-change-transform rounded-t-[24px]
+          ${currentSnap === 'fullScreen' ? 'shadow-2xl' : 'shadow-lg'}
         `}
         style={{ height: '100dvh' }}
         initial={{ y: '100%' }}
@@ -495,15 +495,15 @@ export function BottomSheetContainer() {
               transition={{ duration: 0.15 }}
               className="h-full flex flex-col"
             >
-              {/* Drag Handle - large touch target for swipe down */}
+              {/* Drag Handle - compact touch target for swipe down */}
               <div
                 className="flex flex-col items-center justify-center cursor-grab active:cursor-grabbing select-none"
                 onPointerDown={handleDragHandlePointerDown}
                 style={{
                   touchAction: 'none',
-                  minHeight: '56px',
+                  minHeight: '40px',
                   paddingTop: '12px',
-                  paddingBottom: '8px',
+                  paddingBottom: '4px',
                 }}
               >
                 <motion.div
@@ -514,8 +514,6 @@ export function BottomSheetContainer() {
                   }}
                   transition={{ duration: 0.1 }}
                 />
-                {/* Invisible touch target extension */}
-                <div className="w-full h-6" />
               </div>
 
               {/* Panel Content - scrolls independently */}
