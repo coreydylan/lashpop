@@ -159,15 +159,15 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
     // Crop from BOTTOM as welcome content scrolls up (after its sticky phase ends)
     // The welcome content's top edge "pushes" against Emily, cropping her from below
-    // Timeline: starts when welcome sticky phase ends, continues as welcome scrolls up
+    // Timeline: starts when welcome sticky phase ends (section center at viewport top)
     const clipTween = gsap.to(imageRef, {
       clipPath: 'inset(0 0 65% 0)', // Crop 65% from bottom, leaving Emily's face/upper body
       ease: 'none',
       scrollTrigger: {
         trigger: welcomeSection,
         scroller: scrollContainer,
-        // Start when welcome section bottom reaches viewport top (sticky phase ends, content starts scrolling)
-        start: 'bottom top',
+        // Start when welcome section center reaches viewport top (this is when sticky phase ends)
+        start: 'center top',
         // End after scrolling another 60% of viewport (crop stops, welcome continues under)
         end: '+=60%',
         scrub: 0.3,
