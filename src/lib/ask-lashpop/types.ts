@@ -28,6 +28,7 @@ export type ChatAction =
   | SendEmailAction
   | CallPhoneAction
   | OpenExternalAction
+  | SubmitTeamMessageAction
 
 export interface ScrollAction {
   type: 'scroll_to_section'
@@ -99,6 +100,19 @@ export interface CallPhoneAction {
 export interface OpenExternalAction {
   type: 'open_external'
   url: string
+  label: string
+  icon?: string
+}
+
+export interface SubmitTeamMessageAction {
+  type: 'submit_team_message'
+  data: {
+    name: string
+    email?: string
+    phone?: string
+    message: string
+    inquiryType: string
+  }
   label: string
   icon?: string
 }
