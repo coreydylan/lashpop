@@ -8,8 +8,22 @@
 
 import { createAuthClient } from 'better-auth/react'
 
+// Determine base URL: use env var if set, otherwise detect from browser in production
+function getBaseURL(): string {
+  // Server-side or env var explicitly set
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL
+  }
+  // Client-side: use current origin (works in production)
+  if (typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  // Fallback for SSR during dev
+  return 'http://localhost:3000'
+}
+
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+  baseURL: getBaseURL()
 })
 
 // Export hooks and utilities
