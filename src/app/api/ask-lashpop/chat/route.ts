@@ -15,10 +15,20 @@ import {
 import { GPT_FUNCTIONS, functionCallToAction } from '@/lib/ask-lashpop/functions'
 import type { ChatAction } from '@/lib/ask-lashpop/types'
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy-initialized OpenAI client (avoids build-time initialization error)
+let openai: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable is not set')
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+  return openai
+}
 
 // Cache for context data (simple in-memory, refreshes on cold start)
 let cachedContext: {
@@ -129,7 +139,8 @@ export async function POST(request: NextRequest) {
     ]
 
     // Call OpenAI with GPT-5.1 tools API (modern agentic format)
-    const completion = await openai.chat.completions.create({
+    const client = getOpenAIClient()
+    const completion = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-5.1',
       messages,
       tools: GPT_FUNCTIONS.map((f) => ({
