@@ -42,6 +42,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   const mobileContainerRef = useRef<HTMLDivElement>(null)
   const mobileArchRef = useRef<HTMLDivElement>(null)
   const mobileArchImageRef = useRef<HTMLDivElement>(null)
+  const mobileArchClipRef = useRef<HTMLDivElement>(null)
+  const mobileLetterRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
 
   // Check if mobile
@@ -135,9 +137,13 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     }
   }, [])
 
-  // GSAP ScrollTrigger for mobile arch zoom effect
+  // GSAP ScrollTrigger for mobile arch animation
+  // Phase 1: Soft zoom (105% -> 115%) as arch scrolls up
+  // Phase 2: Arch sticks when it reaches top of viewport
+  // Phase 3: Letter content pushes up, cropping arch from bottom ("roll-up")
+  // Phase 4: Release sticky when letter content ends
   useEffect(() => {
-    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current) return
+    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileArchClipRef.current || !mobileLetterRef.current) return
 
     // Initialize GSAP synchronously for mobile scroll
     initGSAPSync()
@@ -146,63 +152,98 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
     if (!scrollContainer) return
 
-    // Calculate the scale needed to fill viewport width
-    // The arch image is 280px wide but the actual arch base is narrower (~210px)
-    // We need to overshoot so the arch base fills the viewport
     const viewportWidth = window.innerWidth
-    const archBaseWidth = 210 // Approximate width of the arch base (narrower than full image)
-    const targetScale = (viewportWidth / archBaseWidth) * 1.05 // Overshoot by 5% to ensure full coverage
 
-    // Store ref for closure
+    // Scale calculations - start at 105% of viewport width, end at 115%
+    const archImageWidth = 280 // Base image width in px
+    const startScale = (viewportWidth * 1.05) / archImageWidth
+    const endScale = (viewportWidth * 1.15) / archImageWidth
+
+    // The minimum visible height for the face crop banner (percentage)
+    const minVisiblePercent = 15
+
+    // Store refs for closure
     const imageRef = mobileArchImageRef.current
-    const triggerRef = mobileArchRef.current
+    const clipRef = mobileArchClipRef.current
+    const archContainerRef = mobileArchRef.current
+    const letterRef = mobileLetterRef.current
 
-    // Set initial state
-    gsap.set(imageRef, { scale: 1 })
+    // Set initial state - start at 105% scale, no crop
+    gsap.set(imageRef, { scale: startScale })
+    gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
 
-    // Create the scroll-triggered tween directly
-    // scrub: 1 means it takes 1 second to "catch up" - provides buttery smoothness
-    const tween = gsap.to(imageRef, {
-      scale: targetScale,
-      ease: 'none', // Linear progress mapping to scroll
+    const triggers: ScrollTrigger[] = []
+
+    // Phase 1: Soft zoom as arch scrolls into view (105% -> 115%)
+    const zoomTween = gsap.to(imageRef, {
+      scale: endScale,
+      ease: 'none',
       scrollTrigger: {
-        trigger: triggerRef,
+        trigger: archContainerRef,
         scroller: scrollContainer,
-        start: 'top 33%', // Start when TOP of arch container is 1/3 from top of viewport
-        end: 'bottom bottom', // End when bottom of arch aligns with bottom of viewport
-        scrub: 1, // 1 second smoothing - the key to buttery animation
+        start: 'top 100%', // Start when arch enters viewport from bottom
+        end: 'top 20%', // End when arch top is near top of viewport
+        scrub: 1.5,
         invalidateOnRefresh: true,
       }
     })
+    if (zoomTween.scrollTrigger) triggers.push(zoomTween.scrollTrigger)
 
-    // Handle resize to recalculate scale
+    // Phase 2 & 3: Sticky + Roll-up crop
+    // The arch container is set to sticky via CSS, and we control the clip-path
+    // based on where the letter content is relative to the sticky arch
+    const cropTrigger = ScrollTrigger.create({
+      trigger: letterRef,
+      scroller: scrollContainer,
+      start: 'top bottom', // When letter top enters viewport bottom
+      end: 'bottom top', // When letter bottom exits viewport top
+      invalidateOnRefresh: true,
+      onUpdate: () => {
+        // Get positions - archContainerRef is sticky so its position is fixed when stuck
+        const archRect = archContainerRef.getBoundingClientRect()
+        const letterRect = letterRef.getBoundingClientRect()
+
+        // The bottom of where the arch image appears (accounting for the container)
+        const archBottom = archRect.bottom
+        // The top of the letter content
+        const letterTop = letterRect.top
+
+        // Calculate overlap - how much the letter has "pushed" into the arch space
+        // When letterTop < archBottom, there's overlap
+        const overlap = archBottom - letterTop
+
+        if (overlap > 0) {
+          // Letter is pushing into the arch - calculate crop percentage
+          const archHeight = archRect.height
+          if (archHeight > 0) {
+            // Crop from bottom, but keep at least minVisiblePercent visible
+            const cropPercent = Math.min(100 - minVisiblePercent, (overlap / archHeight) * 100)
+            gsap.set(clipRef, {
+              clipPath: `inset(0 0 ${cropPercent}% 0)`,
+            })
+          }
+        } else {
+          // No overlap yet - show full arch
+          gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
+        }
+      }
+    })
+    triggers.push(cropTrigger)
+
+    // Handle resize
     const handleResize = () => {
       const newViewportWidth = window.innerWidth
-      const newTargetScale = (newViewportWidth / archBaseWidth) * 1.05
-      // Kill old tween and create new one with updated scale
-      tween.scrollTrigger?.kill()
-      tween.kill()
-
-      gsap.set(imageRef, { scale: 1 })
-      gsap.to(imageRef, {
-        scale: newTargetScale,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: triggerRef,
-          scroller: scrollContainer,
-          start: 'top 33%',
-          end: 'bottom bottom',
-          scrub: 1,
-          invalidateOnRefresh: true,
-        }
-      })
+      const newStartScale = (newViewportWidth * 1.05) / archImageWidth
+      gsap.set(imageRef, { scale: newStartScale })
+      gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
+      ScrollTrigger.refresh()
     }
 
     window.addEventListener('resize', handleResize)
 
     return () => {
-      tween.scrollTrigger?.kill()
-      tween.kill()
+      triggers.forEach(t => t.kill())
+      zoomTween.kill()
       window.removeEventListener('resize', handleResize)
     }
   }, [isMobile])
@@ -280,34 +321,33 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
       </div>
 
-      {/* Mobile Layout - Simple, clean, snappable */}
+      {/* Mobile Layout - Arch with scroll-driven zoom and crop animation */}
       <div
         ref={mobileContainerRef}
-        className="md:hidden relative z-20"
+        className="md:hidden relative z-30"
       >
-        {/* Emily Arch Image - Centered at top with scroll-driven zoom */}
-        {/* Transparent to cream gradient so arch PNG transparency shows the welcome section behind */}
+        {/* Emily Arch Image Container - FULL WIDTH to allow scale expansion */}
+        {/* sticky top-0 makes it stick when reaching top of viewport */}
+        {/* overflow-hidden clips the scaled image to viewport width */}
         <div
           ref={mobileArchRef}
-          className="pt-8 pb-6 flex justify-center overflow-hidden"
+          className="sticky top-0 w-screen overflow-hidden"
           style={{
-            background: 'linear-gradient(to bottom, transparent 0%, transparent 60%, var(--color-cream, #FAF7F2) 100%)'
+            background: 'transparent',
           }}
         >
-          <motion.div
-            className="relative"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
+          {/* Clip container - handles the bottom crop effect via clip-path */}
+          <div
+            ref={mobileArchClipRef}
+            className="relative w-full flex justify-center will-change-transform"
+            style={{ clipPath: 'inset(0 0 0 0)' }}
           >
-            {/* Decorative background blur - removed to keep arch transparent */}
-
             {/* Arch image container with zoom transform - GSAP controls scale */}
+            {/* Transform origin at center-bottom so zoom expands upward and outward */}
             <div
               ref={mobileArchImageRef}
               className="relative will-change-transform"
-              style={{ transformOrigin: 'center bottom', transform: 'scale(1)' }}
+              style={{ transformOrigin: 'center bottom' }}
             >
               <Image
                 src="/lashpop-images/emily-arch.png"
@@ -319,38 +359,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 priority
               />
             </div>
-
-            {/* Decorative elements */}
-            <motion.div
-              className="absolute -top-2 -right-2 w-12 h-12 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-xl"
-              animate={{
-                scale: [1, 1.1, 1],
-                opacity: [0.4, 0.6, 0.4],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            />
-            <motion.div
-              className="absolute -bottom-2 -left-2 w-14 h-14 bg-gradient-to-tr from-orange-200/30 to-yellow-200/30 rounded-full blur-xl"
-              animate={{
-                scale: [1.1, 1, 1.1],
-                opacity: [0.4, 0.6, 0.4],
-              }}
-              transition={{
-                duration: 3.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.5
-              }}
-            />
-          </motion.div>
+          </div>
         </div>
 
-        {/* Letter Content */}
-        <div className="px-6 pb-16 bg-cream">
+        {/* Letter Content - this "pushes" the arch crop as it scrolls up */}
+        <div ref={mobileLetterRef} className="px-6 pb-16 bg-cream relative z-40">
           <motion.div
             className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
             initial={{ opacity: 0, y: 30 }}
