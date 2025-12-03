@@ -100,43 +100,26 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
             />
           </div>
           
-          {/* Content Container with Safe Zone - matching original layout */}
-          <div className="relative z-10 w-full h-full flex flex-col">
-            {/* Text Area - Takes up top portion, leaving bottom 50% as safe zone for desk elements */}
-            <div className="flex-1 flex items-center justify-center px-4 pb-[50dvh] pt-32">
-              <div
-                className="container max-w-5xl text-center"
-              >
-                {/* LP Logo */}
-                <motion.div
-                  className="relative mx-auto mb-4"
-                  initial={{ opacity: 1, scale: 1, y: 0 }}
-                >
-                  <div
-                    className="h-16 sm:h-20 w-full mx-auto"
-                    style={{
-                      maskImage: 'url(/lashpop-images/lp-logo.png)',
-                      maskSize: 'contain',
-                      maskRepeat: 'no-repeat',
-                      maskPosition: 'center',
-                      WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
-                      WebkitMaskSize: 'contain',
-                      WebkitMaskRepeat: 'no-repeat',
-                      WebkitMaskPosition: 'center',
-                      backgroundColor: '#8a5e55'
-                    }}
-                  />
-                </motion.div>
+          {/* Content Container with Safe Zone */}
+          <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pb-[45dvh] pt-16 px-6">
+            {/* LP Logo - bigger size */}
+            <div
+              className="h-20 w-48 mb-5 flex-shrink-0"
+              style={{
+                maskImage: 'url(/lashpop-images/lp-logo.png)',
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
+                WebkitMaskSize: 'contain',
+                WebkitMaskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
+                backgroundColor: '#8a5e55'
+              }}
+            />
 
-                {/* Swipeable Cards */}
-                <motion.div
-                  className="w-full"
-                  initial={{ opacity: 1, y: 0 }}
-                >
-                  <MobileSwipeableWelcomeCards onCardChange={handleCardChange} />
-                </motion.div>
-              </div>
-            </div>
+            {/* Swipeable Welcome Cards */}
+            <MobileSwipeableWelcomeCards onCardChange={handleCardChange} />
           </div>
         </div>
       </section>

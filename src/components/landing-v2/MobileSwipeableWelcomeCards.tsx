@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
-import { Check, Hand } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
 
 // The 5 content cards with the new text
@@ -157,30 +157,31 @@ export function MobileSwipeableWelcomeCards({
   const currentCard = cardContent[currentIndex]
 
   return (
-    <div ref={containerRef} className="relative w-full px-6" style={{ minHeight: '320px' }}>
-      {/* Dot indicators - matching team member detail panel style */}
+    <div ref={containerRef} className="flex flex-col items-center w-full">
+      {/* Pagination dots - tightly grouped */}
       <div className="flex justify-center items-center gap-1.5 mb-5">
         {cardContent.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
-            className="p-1"
+            type="button"
             aria-label={`Go to card ${index + 1}`}
+            className="flex items-center justify-center"
+            style={{ width: index === currentIndex ? 16 : 6, height: 20 }}
           >
             <div
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? 'w-4 bg-dusty-rose'
-                  : 'w-1.5 bg-dusty-rose/40'
-              }`}
+              className="h-1.5 rounded-full transition-all duration-300"
+              style={{
+                width: index === currentIndex ? 16 : 6,
+                backgroundColor: index === currentIndex ? '#8a5e55' : 'rgba(138, 94, 85, 0.4)'
+              }}
             />
           </button>
         ))}
       </div>
 
-      {/* Card container - minimal single card */}
-      <div className="relative" style={{ height: '260px' }}>
-        {/* Active card */}
+      {/* Card container */}
+      <div className="relative w-full max-w-sm" style={{ height: '180px' }}>
         <AnimatePresence mode="popLayout" custom={exitDirection}>
           <motion.div
             key={currentCard.id}
@@ -199,60 +200,67 @@ export function MobileSwipeableWelcomeCards({
             style={{ zIndex: 10 }}
             whileDrag={{ scale: 1.01 }}
           >
-            {/* Minimal card content */}
-            <div
-              className="h-full rounded-2xl p-6 flex flex-col justify-center items-center text-center"
-              style={{
-                background: 'rgba(255, 255, 255, 0.35)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.5)',
-              }}
-            >
+            {/* Card content - no background, text directly on image */}
+            <div className="h-full flex flex-col justify-center items-center text-center">
               <p
                 className={`font-sans leading-relaxed ${
                   currentCard.isLast
                     ? 'text-lg font-medium'
                     : 'text-sm font-light'
                 }`}
-                style={{ color: '#8a5e55' }}
+                style={{
+                  color: '#8a5e55',
+                  textShadow: '0 1px 2px rgba(255,255,255,0.5)'
+                }}
               >
                 {currentCard.text}
               </p>
 
-              {/* Swipe tutorial hint - subtle icon only */}
+              {/* Swipe hint - chevrons that animate left/right */}
               <AnimatePresence>
                 {showTutorial && !tutorialSuccess && currentIndex === 0 && (
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ delay: 0.3, duration: 0.2 }}
-                    className="mt-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: 0.5, duration: 0.3 }}
+                    className="mt-6 flex items-center gap-3"
                   >
+                    {/* Left chevron - pulses left */}
                     <motion.div
-                      className="bg-dune/8 backdrop-blur-sm rounded-full p-2"
-                      animate={{ x: [0, 6, 0, -6, 0] }}
-                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      animate={{ x: [0, -4, 0] }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
                     >
-                      <Hand className="w-3.5 h-3.5 text-dune/40 rotate-90" />
+                      <ChevronLeft className="w-4 h-4 text-[#8a5e55]/40" strokeWidth={1.5} />
+                    </motion.div>
+
+                    {/* Swipe text */}
+                    <span className="text-xs text-[#8a5e55]/50 font-light tracking-wide">
+                      swipe
+                    </span>
+
+                    {/* Right chevron - pulses right */}
+                    <motion.div
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <ChevronRight className="w-4 h-4 text-[#8a5e55]/40" strokeWidth={1.5} />
                     </motion.div>
                   </motion.div>
                 )}
                 {tutorialSuccess && currentIndex === 0 && (
                   <motion.div
-                    className="mt-4"
+                    className="mt-6"
                     initial={{ opacity: 1 }}
                     animate={{ opacity: 0 }}
-                    transition={{ duration: 0.6, delay: 0.8 }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
                   >
                     <motion.div
-                      className="bg-dune/8 backdrop-blur-sm rounded-full p-2"
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ duration: 0.3, ease: "backOut" }}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.2, ease: "backOut" }}
                     >
-                      <Check className="w-3.5 h-3.5 text-emerald-600/70" strokeWidth={3} />
+                      <Check className="w-4 h-4 text-emerald-600/60" strokeWidth={2} />
                     </motion.div>
                   </motion.div>
                 )}
