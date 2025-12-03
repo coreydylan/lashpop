@@ -137,53 +137,46 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   }, [])
 
   // GSAP ScrollTrigger for mobile arch animation
-  // The arch is positioned with top portion off-screen, leaving room for welcome content below
-  // Phase 1: Welcome content pushes up and crops the arch from the BOTTOM
-  // Phase 2: Crop stops at maximum, welcome content scrolls UNDER the cropped arch
-  // Phase 3: Team section eventually pushes the arch off screen
+  // Emily is at top: 0, covering the viewport. Welcome content is BEHIND her (z-10 under z-40).
+  // As user scrolls through welcome section, Emily gets cropped from bottom, revealing welcome behind.
+  // When welcome sticky phase ends, welcome content scrolls up and goes UNDER the remaining Emily.
+  // Team section eventually pushes Emily off screen.
   useEffect(() => {
     if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current) return
 
-    // Initialize GSAP synchronously for mobile scroll
     initGSAPSync()
 
-    // Get the scroll container and welcome section
     const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
     const welcomeSection = document.querySelector('[data-section-id="welcome"]') as HTMLElement
     if (!scrollContainer || !welcomeSection) return
 
-    // Store refs for closure
     const imageRef = mobileArchImageRef.current
 
-    // Set initial state - clip-path shows full image
-    gsap.set(imageRef, { clipPath: 'inset(0% 0 0 0)' })
+    // Start with full image visible
+    gsap.set(imageRef, { clipPath: 'inset(0 0 0% 0)' })
 
     const triggers: ScrollTrigger[] = []
 
-    // Clip from BOTTOM as the welcome section scrolls up and pushes against the arch
-    // The welcome content rises from below, "pushing" the visible portion of the arch up
-    // This crops the bottom of the arch: inset(0 0 X% 0) where X increases
+    // Crop from BOTTOM as welcome content scrolls up (after its sticky phase ends)
+    // The welcome content's top edge "pushes" against Emily, cropping her from below
+    // Timeline: starts when welcome sticky phase ends, continues as welcome scrolls up
     const clipTween = gsap.to(imageRef, {
-      clipPath: 'inset(0 0 60% 0)', // Crop 60% from the bottom, leaving Emily's face visible
+      clipPath: 'inset(0 0 65% 0)', // Crop 65% from bottom, leaving Emily's face/upper body
       ease: 'none',
       scrollTrigger: {
         trigger: welcomeSection,
         scroller: scrollContainer,
-        // Start when welcome section's bottom is at viewport bottom (welcome content starts pushing)
-        start: 'bottom bottom',
-        // End when welcome section's bottom reaches 40% from viewport top (crop stops)
-        end: 'bottom 40%',
-        scrub: 0.3, // Smooth but responsive
+        // Start when welcome section bottom reaches viewport top (sticky phase ends, content starts scrolling)
+        start: 'bottom top',
+        // End after scrolling another 60% of viewport (crop stops, welcome continues under)
+        end: '+=60%',
+        scrub: 0.3,
         invalidateOnRefresh: true,
       }
     })
     if (clipTween.scrollTrigger) triggers.push(clipTween.scrollTrigger)
 
-    // Handle resize
-    const handleResize = () => {
-      ScrollTrigger.refresh()
-    }
-
+    const handleResize = () => ScrollTrigger.refresh()
     window.addEventListener('resize', handleResize)
 
     return () => {
@@ -271,19 +264,16 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         ref={mobileContainerRef}
         className="md:hidden relative"
       >
-        {/* Emily Arch Image Container - sticky with top portion off-screen */}
-        {/* The arch sticks with ~60% above viewport, showing Emily's lower body initially */}
-        {/* Welcome content is visible below and pushes up against the arch */}
-        {/* As welcome scrolls up, the arch bottom gets cropped, welcome goes UNDER */}
+        {/* Emily Arch Image Container - sticky at viewport top */}
+        {/* Emily covers the viewport. Welcome content is BEHIND (z-10 under z-40). */}
+        {/* As Emily gets cropped from bottom, welcome content is revealed behind her. */}
+        {/* When welcome sticky ends, welcome scrolls up and goes UNDER the cropped Emily. */}
         <div
           ref={mobileArchRef}
           className="sticky w-screen z-40 flex justify-center overflow-visible"
           style={{
             background: 'transparent',
-            // Position arch with top portion off-screen
-            // Image is ~186vw tall (100vw * 1.86 aspect ratio)
-            // -110vw puts ~60% above viewport, showing ~40% (Emily's torso/lower body)
-            top: '-110vw',
+            top: '0', // Sticky at viewport top
           }}
         >
           {/* Arch image - GSAP controls clip-path for cropping effect */}
