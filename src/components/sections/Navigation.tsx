@@ -22,7 +22,7 @@ export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const { actions } = usePanelStack()
+  const { actions, state } = usePanelStack()
   const { registerLogoClick } = useDevMode()
   const pathname = usePathname()
 
@@ -61,7 +61,15 @@ export function Navigation() {
 
     if (item.action === 'open-services') {
       e.preventDefault()
-      actions.openPanel('category-picker', { entryPoint: 'page' })
+      const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
+      if (hasCategoryPicker) {
+        actions.triggerAttentionBounce()
+      } else {
+        actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
+        setTimeout(() => {
+          actions.triggerAttentionBounce()
+        }, 400)
+      }
     } else if (item.href?.startsWith('#')) {
       e.preventDefault()
       
@@ -91,9 +99,17 @@ export function Navigation() {
       const totalOffset = headerHeight + panelStackHeight
 
       smoothScrollTo(window.innerHeight - totalOffset, 1000, getScroller())
-      
-      // Open the panel
-      actions.openPanel('category-picker', { entryPoint: 'page' })
+
+      // Open chip bar in collapsed state with bounce
+      const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
+      if (hasCategoryPicker) {
+        actions.triggerAttentionBounce()
+      } else {
+        actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
+        setTimeout(() => {
+          actions.triggerAttentionBounce()
+        }, 400)
+      }
     }
   
   // Mobile header shrinks from py-6 (24px each side = 48px padding) to py-2 (8px each side = 16px padding)

@@ -75,15 +75,19 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
 
-  // Handle Book Now click - open panel or bounce if already visible
+  // Handle Book Now click - open chip bar in collapsed state with bounce
   const handleBookNowClick = useCallback((entryPoint: string) => {
     const hasCategoryPicker = panelState.panels.some(p => p.type === 'category-picker')
     if (hasCategoryPicker) {
       // Chip bar already visible - trigger attention bounce
       panelActions.triggerAttentionBounce()
     } else {
-      // Open the category picker panel
-      panelActions.openPanel('category-picker', { entryPoint })
+      // Open the category picker panel in collapsed state (chip bar)
+      panelActions.openPanel('category-picker', { entryPoint }, { autoExpand: false })
+      // Trigger bounce after the chip bar appears
+      setTimeout(() => {
+        panelActions.triggerAttentionBounce()
+      }, 400)
     }
   }, [panelState.panels, panelActions])
 

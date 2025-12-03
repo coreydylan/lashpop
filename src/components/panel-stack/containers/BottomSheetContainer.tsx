@@ -516,11 +516,11 @@ export function BottomSheetContainer() {
                 />
               </div>
 
-              {/* Panel Content - scrolls independently */}
+              {/* Panel Content - scrolls independently (pan-y for vertical, pan-x for horizontal service cards) */}
               <div
                 ref={contentRef}
                 className="flex-1 overflow-y-auto overscroll-contain"
-                style={{ touchAction: 'pan-y' }}
+                style={{ touchAction: 'pan-y pan-x' }}
               >
                 {/* Regular panels */}
                 <AnimatePresence mode="popLayout">

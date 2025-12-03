@@ -57,8 +57,12 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
         // Already visible - trigger attention bounce
         panelActions.triggerAttentionBounce()
       } else {
-        // Open in docked state so it appears as chip bar (not full screen)
+        // Open in collapsed state (chip bar) with a bounce
         panelActions.openPanel('category-picker', { entryPoint: 'welcome-card' }, { autoExpand: false })
+        // Trigger bounce after the chip bar appears
+        setTimeout(() => {
+          panelActions.triggerAttentionBounce()
+        }, 400)
       }
     }
   }, [panelActions, panelState.panels])

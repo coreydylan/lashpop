@@ -7,7 +7,7 @@ import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { useVagaroWidget } from '@/contexts/VagaroWidgetContext';
 import { getVagaroWidgetUrl } from '@/lib/vagaro-widget';
-import { CROP_CONFIG, CROP_TRANSITION_DURATION, type CropSettings } from '@/lib/vagaro-events';
+import { CROP_CONFIG, CROP_CONFIG_MOBILE, CROP_TRANSITION_DURATION, type CropSettings } from '@/lib/vagaro-events';
 import type { Panel, VagaroWidgetPanelData } from '@/types/panel-stack';
 
 // Import DevMode context - we check if it's available
@@ -19,12 +19,30 @@ interface VagaroWidgetPanelProps {
 }
 
 /**
+ * Custom hook to detect mobile viewport.
+ */
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+}
+
+/**
  * Custom hook to get crop settings with dev mode override support.
  * Directly accesses both contexts to ensure reactivity.
+ * Uses mobile-specific crop config on smaller screens.
  */
-function useCropSettingsWithDevMode(): { cropSettings: CropSettings; activeStep: string; isDevMode: boolean; debugInfo: string } {
+function useCropSettingsWithDevMode(): { cropSettings: CropSettings; activeStep: string; isDevMode: boolean; debugInfo: string; isMobile: boolean } {
   const { state: widgetState } = useVagaroWidget();
   const devModeContext = useContext(DevModeContext);
+  const isMobile = useIsMobile();
 
   // Read ALL values from context state to ensure React tracks dependencies
   const isDevMode = devModeContext?.state?.isEnabled ?? false;
@@ -39,6 +57,7 @@ function useCropSettingsWithDevMode(): { cropSettings: CropSettings; activeStep:
     isLivePreview,
     simulatedStep,
     cropOverridesKeys: Object.keys(cropOverrides),
+    isMobile,
   });
 
   // Determine which step to use for crop settings
@@ -46,23 +65,25 @@ function useCropSettingsWithDevMode(): { cropSettings: CropSettings; activeStep:
     ? simulatedStep
     : widgetState.currentStep;
 
-  // Get the base crop settings for this step
-  const baseCropSettings = CROP_CONFIG[activeStep];
+  // Get the base crop settings for this step - use mobile config on smaller screens
+  const cropConfig = isMobile ? CROP_CONFIG_MOBILE : CROP_CONFIG;
+  const baseCropSettings = cropConfig[activeStep];
 
   // Build debug info
   const overrideKeys = Object.keys(cropOverrides);
   const hasOverrideForStep = activeStep in cropOverrides;
-  const debugInfo = `ctx:${!!devModeContext} dev:${isDevMode} live:${isLivePreview} sim:${simulatedStep} step:${activeStep} overrides:[${overrideKeys.join(',')}] hasOverride:${hasOverrideForStep}`;
+  const deviceType = isMobile ? 'mobile' : 'desktop';
+  const debugInfo = `ctx:${!!devModeContext} dev:${isDevMode} live:${isLivePreview} sim:${simulatedStep} step:${activeStep} device:${deviceType} overrides:[${overrideKeys.join(',')}] hasOverride:${hasOverrideForStep}`;
 
   // If dev mode is enabled with live preview, check for overrides
   if (isDevMode && isLivePreview) {
     const override = cropOverrides[activeStep];
     if (override) {
-      return { cropSettings: override, activeStep, isDevMode, debugInfo: `${debugInfo} -> OVERRIDE` };
+      return { cropSettings: override, activeStep, isDevMode, debugInfo: `${debugInfo} -> OVERRIDE`, isMobile };
     }
   }
 
-  return { cropSettings: baseCropSettings, activeStep, isDevMode, debugInfo: `${debugInfo} -> BASE` };
+  return { cropSettings: baseCropSettings, activeStep, isDevMode, debugInfo: `${debugInfo} -> BASE`, isMobile };
 }
 
 export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
@@ -230,11 +251,10 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
         </div>
 
         {/* Full Page Width Vagaro Widget Container with cropping */}
-        <div className="relative overflow-hidden w-full min-h-[400px]">
-          {/* DEBUG: Always visible marker to verify this component is rendering */}
-          <div className="absolute top-0 left-0 z-50 bg-red-500 text-white text-xs px-2 py-1">
-            NEW LOADER v2 | ready:{String(isWidgetReady)} | show:{String(showLoading)}
-          </div>
+        <div
+          className="relative overflow-hidden w-full min-h-[400px]"
+          style={{ touchAction: 'pan-y' }}
+        >
 
           {/* Loading State - Shows LP logo animation until Vagaro widget is fully ready */}
           {showLoading && (
