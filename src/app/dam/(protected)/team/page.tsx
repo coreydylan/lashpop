@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
-import { Upload as UploadIcon, Camera, ArrowLeft, CheckCircle2, LogOut } from "lucide-react"
+import { Upload as UploadIcon, Camera, ArrowLeft, CheckCircle2, LogOut, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { PhotoCropEditor } from "./components/PhotoCropEditor"
 import { saveTeamPhotoCrops } from "@/actions/team-photos"
@@ -214,6 +214,34 @@ export default function TeamManagementPage() {
     }
   }
 
+  const handleDeletePhoto = async (photoId: string, isPrimary: boolean) => {
+    if (!selectedMember) return
+
+    if (isPrimary) {
+      alert("Cannot delete the primary photo. Set a different photo as primary first.")
+      return
+    }
+
+    const confirmed = window.confirm("Are you sure you want to delete this photo? This cannot be undone.")
+    if (!confirmed) return
+
+    try {
+      const response = await fetch(`/api/dam/team/photos/${photoId}`, {
+        method: "DELETE"
+      })
+
+      if (response.ok) {
+        void fetchMemberPhotos(selectedMember.id)
+      } else {
+        const data = await response.json()
+        alert(data.error || "Failed to delete photo")
+      }
+    } catch (error) {
+      console.error("Failed to delete photo:", error)
+      alert("Failed to delete photo. Please try again.")
+    }
+  }
+
   return (
     <div className="min-h-screen bg-cream">
       {/* Header */}
@@ -378,6 +406,16 @@ export default function TeamManagementPage() {
                         />
                       </div>
 
+                      {/* Delete button - top left */}
+                      <button
+                        onClick={() => handleDeletePhoto(photo.id, photo.isPrimary)}
+                        className="absolute top-2 left-2 w-8 h-8 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        title={photo.isPrimary ? "Cannot delete primary photo" : "Delete photo"}
+                      >
+                        <Trash2 className="w-4 h-4 text-white" />
+                      </button>
+
+                      {/* Status badges - top right */}
                       <div className="absolute top-2 right-2 flex gap-1.5">
                         {photo.isPrimary && (
                           <div className="px-2 py-1 bg-dusty-rose rounded-full">
