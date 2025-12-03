@@ -14,7 +14,7 @@ interface SubcategoryServicePanelProps {
 export function SubcategoryServicePanel({ panel }: SubcategoryServicePanelProps) {
   const { actions } = useCascadingPanels();
   const data = panel.data as SubcategoryServicePanelData;
-  const [activeTab, setActiveTab] = useState(data.subcategories[0]?.id);
+  const [activeTab, setActiveTab] = useState(data.subcategories?.[0]?.id || '');
 
   // Filter services by active subcategory
   const filteredServices = useMemo(() => {
@@ -34,8 +34,9 @@ export function SubcategoryServicePanel({ panel }: SubcategoryServicePanelProps)
       showCollapseToggle
     >
       {/* Subcategory Tabs */}
+      {data.subcategories && data.subcategories.length > 0 && (
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {data.subcategories.map(subcat => (
+        {data.subcategories?.map(subcat => (
           <button
             key={subcat.id}
             onClick={() => setActiveTab(subcat.id)}
@@ -49,6 +50,7 @@ export function SubcategoryServicePanel({ panel }: SubcategoryServicePanelProps)
           </button>
         ))}
       </div>
+      )}
 
       {/* Service Cards - Horizontal Scroll */}
       <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6">

@@ -50,7 +50,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
   const [currentView, setCurrentView] = useState<PanelView>('browse');
 
   // Browse view state
-  const [activeTab, setActiveTab] = useState(data.subcategories[0]?.id || '');
+  const [activeTab, setActiveTab] = useState(data.subcategories?.[0]?.id || '');
 
   // Service detail view state
   const [selectedService, setSelectedService] = useState<any>(null);
@@ -132,14 +132,14 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
   // Filter services by active subcategory
   const filteredServices = useMemo(() => {
-    if (!activeTab || data.subcategories.length === 0) return data.services;
+    if (!activeTab || !data.subcategories?.length) return data.services;
     return data.services.filter(service => service.subcategorySlug === activeTab);
   }, [activeTab, data.services, data.subcategories]);
 
   // Update panel summary based on current view and state
   useEffect(() => {
     if (currentView === 'browse') {
-      const activeSubcat = data.subcategories.find(s => s.id === activeTab);
+      const activeSubcat = data.subcategories?.find(s => s.id === activeTab);
       const summary = activeSubcat
         ? `${activeSubcat.name} · ${filteredServices.length} services`
         : `${data.services.length} services`;
@@ -408,10 +408,10 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               transition={{ duration: 0.2 }}
             >
               {/* Subcategory Tabs */}
-              {data.subcategories.length > 0 && (
+              {data.subcategories && data.subcategories.length > 0 && (
                 <div className="mb-4 md:mb-6 -mx-4 px-4 md:mx-0 md:px-0">
                   <div className="flex gap-2 md:gap-2.5 overflow-x-auto pb-2 scrollbar-hide">
-                    {data.subcategories.map(subcat => (
+                    {data.subcategories?.map(subcat => (
                       <button
                         key={subcat.id}
                         onClick={() => setActiveTab(subcat.id)}
