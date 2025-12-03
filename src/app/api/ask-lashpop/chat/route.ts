@@ -138,11 +138,14 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: message },
     ]
 
-    // Call OpenAI with GPT-5.1 tools API (modern agentic format)
+    // Call OpenAI with GPT-5.1 - Full agentic API compliance
+    // Docs: https://platform.openai.com/docs/models/gpt-5
     const client = getOpenAIClient()
     const completion = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-5.1',
       messages,
+
+      // GPT-5.1 Tools API (modern agentic format)
       tools: GPT_FUNCTIONS.map((f) => ({
         type: 'function' as const,
         function: {
@@ -152,9 +155,14 @@ export async function POST(request: NextRequest) {
         },
       })),
       tool_choice: 'auto',
-      parallel_tool_calls: true, // GPT-5.1 can call multiple tools in one response
-      temperature: 0.7,
-      max_tokens: 500,
+      parallel_tool_calls: true, // GPT-5.1: Execute multiple tools in single response
+
+      // GPT-5.1 specific parameters
+      max_completion_tokens: 1024, // GPT-5 uses max_completion_tokens, not max_tokens
+      // Note: reasoning_effort ('low'|'medium'|'high') available for reasoning-intensive tasks
+      // We use default for chat which auto-selects based on complexity
+
+      temperature: 0.7, // Balanced creativity for conversational responses
     })
 
     const responseMessage = completion.choices[0]?.message
