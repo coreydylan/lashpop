@@ -306,12 +306,16 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         ref={mobileContainerRef}
         className="md:hidden relative"
       >
-        {/* Emily Arch Image Container - sticky at top */}
-        {/* Image starts at 105vw width and zooms to 115vw */}
+        {/* Emily Arch Image Container - sticky after ~40% of image scrolls off */}
+        {/* Image is 105vw wide, aspect ratio ~1.86, so height is ~195vw */}
+        {/* 40% of 195vw = ~78vw, so top: -78vw lets 40% scroll off before sticking */}
         <div
           ref={mobileArchRef}
-          className="sticky top-0 w-screen z-40 flex justify-center"
-          style={{ background: 'transparent' }}
+          className="sticky w-screen z-40 flex justify-center"
+          style={{
+            background: 'transparent',
+            top: '-78vw',
+          }}
         >
           {/* Clip container - clip-path crops from bottom as letter pushes up */}
           <div
