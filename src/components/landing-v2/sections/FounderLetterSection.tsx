@@ -152,14 +152,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
     if (!scrollContainer) return
 
-    const viewportWidth = window.innerWidth
-
-    // Scale calculations - start at 105% of viewport width, end at 115%
-    const archImageWidth = 280 // Base image width in px
-    const startScale = (viewportWidth * 1.05) / archImageWidth
-    const endScale = (viewportWidth * 1.15) / archImageWidth
-
-    // The minimum visible height for the face crop banner (percentage)
+    // The minimum visible height for the face crop banner (percentage from top)
     const minVisiblePercent = 15
 
     // Store refs for closure
@@ -168,30 +161,28 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     const archContainerRef = mobileArchRef.current
     const letterRef = mobileLetterRef.current
 
-    // Set initial state - start at 105% scale, no crop
-    gsap.set(imageRef, { scale: startScale })
+    // Set initial state - no scale transform needed, width is set via CSS (105vw)
     gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
 
     const triggers: ScrollTrigger[] = []
 
-    // Phase 1: Soft zoom as arch scrolls into view (105% -> 115%)
+    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.095 = 105vw -> 115vw)
     const zoomTween = gsap.to(imageRef, {
-      scale: endScale,
+      scale: 1.095, // 115/105 = 1.095
       ease: 'none',
       scrollTrigger: {
         trigger: archContainerRef,
         scroller: scrollContainer,
         start: 'top 100%', // Start when arch enters viewport from bottom
-        end: 'top 20%', // End when arch top is near top of viewport
+        end: 'top 0%', // End when arch top reaches top of viewport
         scrub: 1.5,
         invalidateOnRefresh: true,
       }
     })
     if (zoomTween.scrollTrigger) triggers.push(zoomTween.scrollTrigger)
 
-    // Phase 2 & 3: Sticky + Roll-up crop
-    // The arch container is set to sticky via CSS, and we control the clip-path
-    // based on where the letter content is relative to the sticky arch
+    // Phase 2 & 3: Roll-up crop driven by letter position
+    // Crop from bottom as letter scrolls up and overlaps with arch
     const cropTrigger = ScrollTrigger.create({
       trigger: letterRef,
       scroller: scrollContainer,
@@ -199,31 +190,23 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       end: 'bottom top', // When letter bottom exits viewport top
       invalidateOnRefresh: true,
       onUpdate: () => {
-        // Get positions - archContainerRef is sticky so its position is fixed when stuck
-        const archRect = archContainerRef.getBoundingClientRect()
+        // Get actual bounding rects
+        const archRect = clipRef.getBoundingClientRect()
         const letterRect = letterRef.getBoundingClientRect()
 
-        // The bottom of where the arch image appears (accounting for the container)
-        const archBottom = archRect.bottom
-        // The top of the letter content
-        const letterTop = letterRect.top
+        // Calculate overlap between letter top and arch bottom
+        const overlap = archRect.bottom - letterRect.top
 
-        // Calculate overlap - how much the letter has "pushed" into the arch space
-        // When letterTop < archBottom, there's overlap
-        const overlap = archBottom - letterTop
+        if (overlap > 0 && archRect.height > 0) {
+          // Letter is overlapping - calculate crop percentage
+          const maxCrop = 100 - minVisiblePercent // 85%
+          const cropPercent = Math.min(maxCrop, (overlap / archRect.height) * 100)
 
-        if (overlap > 0) {
-          // Letter is pushing into the arch - calculate crop percentage
-          const archHeight = archRect.height
-          if (archHeight > 0) {
-            // Crop from bottom, but keep at least minVisiblePercent visible
-            const cropPercent = Math.min(100 - minVisiblePercent, (overlap / archHeight) * 100)
-            gsap.set(clipRef, {
-              clipPath: `inset(0 0 ${cropPercent}% 0)`,
-            })
-          }
+          gsap.set(clipRef, {
+            clipPath: `inset(0 0 ${cropPercent}% 0)`,
+          })
         } else {
-          // No overlap yet - show full arch
+          // No overlap yet
           gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
         }
       }
@@ -232,9 +215,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
     // Handle resize
     const handleResize = () => {
-      const newViewportWidth = window.innerWidth
-      const newStartScale = (newViewportWidth * 1.05) / archImageWidth
-      gsap.set(imageRef, { scale: newStartScale })
       gsap.set(clipRef, { clipPath: 'inset(0 0 0 0)' })
       ScrollTrigger.refresh()
     }
@@ -324,46 +304,45 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       {/* Mobile Layout - Arch with scroll-driven zoom and crop animation */}
       <div
         ref={mobileContainerRef}
-        className="md:hidden relative z-30"
+        className="md:hidden relative"
       >
-        {/* Emily Arch Image Container - FULL WIDTH to allow scale expansion */}
-        {/* sticky top-0 makes it stick when reaching top of viewport */}
-        {/* overflow-hidden clips the scaled image to viewport width */}
+        {/* Emily Arch Image Container - sticky at top */}
+        {/* Image starts at 105vw width and zooms to 115vw */}
         <div
           ref={mobileArchRef}
-          className="sticky top-0 w-screen overflow-hidden"
-          style={{
-            background: 'transparent',
-          }}
+          className="sticky top-0 w-screen z-40 flex justify-center"
+          style={{ background: 'transparent' }}
         >
-          {/* Clip container - handles the bottom crop effect via clip-path */}
+          {/* Clip container - clip-path crops from bottom as letter pushes up */}
           <div
             ref={mobileArchClipRef}
-            className="relative w-full flex justify-center will-change-transform"
+            className="relative will-change-transform"
             style={{ clipPath: 'inset(0 0 0 0)' }}
           >
-            {/* Arch image container with zoom transform - GSAP controls scale */}
-            {/* Transform origin at center-bottom so zoom expands upward and outward */}
+            {/* Arch image - width set via style, GSAP controls scale */}
             <div
               ref={mobileArchImageRef}
               className="relative will-change-transform"
-              style={{ transformOrigin: 'center bottom' }}
+              style={{
+                transformOrigin: 'center top',
+                width: '105vw',
+              }}
             >
               <Image
                 src="/lashpop-images/emily-arch.png"
                 alt="Emily in decorative arch"
                 width={280}
-                height={360}
-                style={{ width: '280px', height: 'auto' }}
-                className="relative z-10 drop-shadow-xl"
+                height={522}
+                style={{ width: '100%', height: 'auto', opacity: 1 }}
+                className="relative z-10 drop-shadow-xl !opacity-100"
                 priority
               />
             </div>
           </div>
         </div>
 
-        {/* Letter Content - this "pushes" the arch crop as it scrolls up */}
-        <div ref={mobileLetterRef} className="px-6 pb-16 bg-cream relative z-40">
+        {/* Letter Content */}
+        <div ref={mobileLetterRef} className="px-6 pb-16 bg-cream relative z-50">
           <motion.div
             className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
             initial={{ opacity: 0, y: 30 }}
