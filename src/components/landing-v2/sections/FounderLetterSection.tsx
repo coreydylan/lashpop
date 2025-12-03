@@ -137,59 +137,42 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   }, [])
 
   // GSAP ScrollTrigger for mobile arch animation
-  // Phase 1: Arch is fully visible as it scrolls into view (with soft zoom)
-  // Phase 2: Welcome letter pushes up and crops the arch from the BOTTOM
-  // Phase 3: Crop stops at maximum (~55% from bottom), content scrolls UNDER the cropped arch
-  // Phase 4: Team section eventually pushes the arch off screen
+  // The arch is positioned with top portion off-screen, leaving room for welcome content below
+  // Phase 1: Welcome content pushes up and crops the arch from the BOTTOM
+  // Phase 2: Crop stops at maximum, welcome content scrolls UNDER the cropped arch
+  // Phase 3: Team section eventually pushes the arch off screen
   useEffect(() => {
-    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileLetterRef.current) return
+    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current) return
 
     // Initialize GSAP synchronously for mobile scroll
     initGSAPSync()
 
-    // Get the scroll container (mobile uses .mobile-scroll-container)
+    // Get the scroll container and welcome section
     const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
-    if (!scrollContainer) return
+    const welcomeSection = document.querySelector('[data-section-id="welcome"]') as HTMLElement
+    if (!scrollContainer || !welcomeSection) return
 
     // Store refs for closure
     const imageRef = mobileArchImageRef.current
-    const archContainerRef = mobileArchRef.current
-    const letterRef = mobileLetterRef.current
 
     // Set initial state - clip-path shows full image
     gsap.set(imageRef, { clipPath: 'inset(0% 0 0 0)' })
 
     const triggers: ScrollTrigger[] = []
 
-    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.05)
-    const zoomTween = gsap.to(imageRef, {
-      scale: 1.05,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: archContainerRef,
-        scroller: scrollContainer,
-        start: 'top 100%', // Start when arch enters viewport from bottom
-        end: 'top 50%', // End when arch is half-way up
-        scrub: 1.5,
-        invalidateOnRefresh: true,
-      }
-    })
-    if (zoomTween.scrollTrigger) triggers.push(zoomTween.scrollTrigger)
-
-    // Phase 2: Clip from BOTTOM as the welcome letter pushes up
-    // The letter scrolls up from below, "pushing" against the arch
+    // Clip from BOTTOM as the welcome section scrolls up and pushes against the arch
+    // The welcome content rises from below, "pushing" the visible portion of the arch up
     // This crops the bottom of the arch: inset(0 0 X% 0) where X increases
-    // Result: Emily's face/upper body remains visible as lower portion gets cropped
     const clipTween = gsap.to(imageRef, {
-      clipPath: 'inset(0 0 55% 0)', // Crop 55% from the bottom, leaving Emily's face visible
+      clipPath: 'inset(0 0 60% 0)', // Crop 60% from the bottom, leaving Emily's face visible
       ease: 'none',
       scrollTrigger: {
-        trigger: letterRef,
+        trigger: welcomeSection,
         scroller: scrollContainer,
-        // Start when letter top is at bottom of viewport
-        start: 'top bottom',
-        // End when letter top reaches 35% from viewport top (crop stops here)
-        end: 'top 35%',
+        // Start when welcome section's bottom is at viewport bottom (welcome content starts pushing)
+        start: 'bottom bottom',
+        // End when welcome section's bottom reaches 40% from viewport top (crop stops)
+        end: 'bottom 40%',
         scrub: 0.3, // Smooth but responsive
         invalidateOnRefresh: true,
       }
@@ -205,7 +188,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
     return () => {
       triggers.forEach(t => t.kill())
-      zoomTween.kill()
       clipTween.kill()
       window.removeEventListener('resize', handleResize)
     }
@@ -284,31 +266,34 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
       </div>
 
-      {/* Mobile Layout - Arch with scroll-driven zoom and BOTTOM crop animation */}
+      {/* Mobile Layout - Arch with scroll-driven BOTTOM crop animation */}
       <div
         ref={mobileContainerRef}
         className="md:hidden relative"
       >
-        {/* Emily Arch Image Container - sticky at top of viewport */}
-        {/* The arch starts fully visible, then gets cropped from the BOTTOM as user scrolls */}
-        {/* The letter "pushes up" against the arch, cropping Emily's lower body first */}
-        {/* Content scrolls UNDER the cropped arch (z-index layering) */}
+        {/* Emily Arch Image Container - sticky with top portion off-screen */}
+        {/* The arch sticks with ~60% above viewport, showing Emily's lower body initially */}
+        {/* Welcome content is visible below and pushes up against the arch */}
+        {/* As welcome scrolls up, the arch bottom gets cropped, welcome goes UNDER */}
         <div
           ref={mobileArchRef}
           className="sticky w-screen z-40 flex justify-center overflow-visible"
           style={{
             background: 'transparent',
-            top: '0', // Stick at viewport top - arch is fully visible initially
+            // Position arch with top portion off-screen
+            // Image is ~186vw tall (100vw * 1.86 aspect ratio)
+            // -110vw puts ~60% above viewport, showing ~40% (Emily's torso/lower body)
+            top: '-110vw',
           }}
         >
-          {/* Arch image - width set via style, GSAP controls scale and clip-path */}
+          {/* Arch image - GSAP controls clip-path for cropping effect */}
           <div
             ref={mobileArchImageRef}
             className="relative"
             style={{
-              transformOrigin: 'center top', // Anchor to top (Emily's face) while cropping from bottom
+              transformOrigin: 'center top',
               width: '100vw',
-              willChange: 'transform, clip-path',
+              willChange: 'clip-path',
             }}
           >
             <img
