@@ -184,7 +184,7 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
   // Action Execution
   // ============================================================================
 
-  const executeAction = useCallback((action: ChatAction) => {
+  const executeAction = useCallback(async (action: ChatAction) => {
     switch (action.type) {
       case 'scroll_to_section': {
         const scrollAction = action as ScrollAction
@@ -210,10 +210,21 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
         if (panelAction.panelType === 'category-picker') {
           panelStack.actions.openPanel('category-picker', { entryPoint: 'chat' })
         } else if (panelAction.panelType === 'service-panel' && panelAction.data.categoryId) {
-          panelStack.actions.openPanel('service-panel', {
-            categoryId: panelAction.data.categoryId,
-            categoryName: panelAction.data.categoryName || panelAction.data.categoryId,
-          })
+          try {
+            // Fetch full services data before opening panel
+            const response = await fetch(`/api/ask-lashpop/services?categorySlug=${panelAction.data.categoryId}`)
+            if (response.ok) {
+              const panelData = await response.json()
+              panelStack.actions.openPanel('service-panel', panelData)
+            } else {
+              // Fallback to category picker if services fetch fails
+              console.warn('Failed to fetch services, opening category picker')
+              panelStack.actions.openPanel('category-picker', { entryPoint: 'chat' })
+            }
+          } catch (error) {
+            console.error('Error fetching services:', error)
+            panelStack.actions.openPanel('category-picker', { entryPoint: 'chat' })
+          }
         }
         if (panelAction.thenCollapse) {
           setTimeout(() => dispatch({ type: 'CLOSE' }), 300)
