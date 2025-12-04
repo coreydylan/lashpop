@@ -157,7 +157,7 @@ Include an "action" when the user wants to SEE or DO something:
 
 **scroll_to_section**: { type: "scroll_to_section", params: { section: "team|gallery|reviews|faq|find-us", button_label: "See the Team" }}
 **show_services**: { type: "show_services", params: { category: "lashes|brows|facials", button_label: "Browse Lashes" }}
-**book_service**: { type: "book_service", params: { service_slug: "classic-full-set", service_name: "Classic Full Set", button_label: "Book Now" }}
+**book_service**: { type: "book_service", params: { service_slug: "classic-full-set", vagaro_code: "6XoR0", service_name: "Classic Full Set", button_label: "Book Now" }}
 **display_team_card**: { type: "display_team_card", params: { member_name: "rachel", button_label: "Meet Rachel" }}
 **send_message_to_team**: { type: "send_message_to_team", params: { name: "...", email: "...", message: "...", inquiry_type: "general" }}
 `
@@ -176,17 +176,19 @@ export const SERVICES_CONTEXT_TEMPLATE = (services: Array<{
   categoryName: string
   durationMinutes: number
   priceStarting: number
+  vagaroServiceCode?: string
   description?: string
 }>) => `### SERVICE & PRICING DATA ###
 
-${services.map(s => `${s.name} (${s.categoryName}) - ${s.durationMinutes}min, $${(s.priceStarting / 100).toFixed(0)}+ - slug: ${s.slug}`).join('\n')}
+${services.map(s => `${s.name} (${s.categoryName}) - ${s.durationMinutes}min, $${(s.priceStarting / 100).toFixed(0)}+ | slug: "${s.slug}" | vagaro: "${s.vagaroServiceCode || ''}"`).join('\n')}
 
 **Pricing Questions**: USE THIS DATA! Quote actual prices.
 - For monthly maintenance: fills every 2-3 weeks, so monthly = fill price x 2
 - Example: "Classic fills start at $75, so about $150/month for upkeep"
 - NEVER say "I can't quote prices" - you have the data above!
 
-**Booking**: Use book_service with the slug when they want to book.
+**Booking**: Use book_service with BOTH the slug AND vagaro_code when they want to book.
+Example: { type: "book_service", params: { service_slug: "classic-full-set", vagaro_code: "6XoR0", service_name: "Classic Full Set" }}
 `
 
 export interface TeamMemberForAI {

@@ -378,13 +378,38 @@ function structuredActionToAction(
 
     case 'book_service': {
       const slug = params.service_slug as string
-      const serviceInfo = servicesMap?.get(slug)
+      const aiVagaroCode = params.vagaro_code as string | undefined
+      let serviceInfo = servicesMap?.get(slug)
+
+      // If exact match fails, try to find a partial match
+      if (!serviceInfo && servicesMap) {
+        const slugLower = slug.toLowerCase()
+        for (const [key, value] of servicesMap.entries()) {
+          if (key.toLowerCase().includes(slugLower) || slugLower.includes(key.toLowerCase())) {
+            console.log(`[book_service] Fuzzy match: "${slug}" -> "${key}"`)
+            serviceInfo = value
+            break
+          }
+        }
+      }
+
+      // Use AI-provided vagaro_code first, then fall back to servicesMap lookup
+      const vagaroCode = aiVagaroCode || serviceInfo?.vagaroServiceCode || ''
+
+      // Debug logging for service lookup
+      console.log('[book_service] Service lookup:', {
+        requestedSlug: slug,
+        aiVagaroCode: aiVagaroCode || 'NOT_PROVIDED',
+        serviceMapCode: serviceInfo?.vagaroServiceCode || 'NOT_FOUND',
+        finalCode: vagaroCode || 'NONE',
+      })
+
       return {
         type: 'load_vagaro_inline',
         service: {
           id: slug,
           name: params.service_name as string || slug,
-          vagaroServiceCode: serviceInfo?.vagaroServiceCode || '',
+          vagaroServiceCode: vagaroCode,
           priceStarting: serviceInfo?.priceStarting || 0,
           durationMinutes: serviceInfo?.durationMinutes || 60,
           categoryName: serviceInfo?.categoryName,
