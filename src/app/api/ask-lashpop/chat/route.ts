@@ -11,9 +11,12 @@ import {
   FUNCTION_CONTEXT,
   FAQ_CONTEXT_TEMPLATE,
   SERVICES_CONTEXT_TEMPLATE,
+  TEAM_CONTEXT_TEMPLATE,
+  type TeamMemberForAI,
 } from '@/lib/ask-lashpop/prompts'
+import { teamMembers } from '@/data/teamComplete'
 import { GPT_FUNCTIONS, functionCallToAction } from '@/lib/ask-lashpop/functions'
-import type { ChatAction } from '@/lib/ask-lashpop/types'
+import type { ChatAction, SmartQuickReply } from '@/lib/ask-lashpop/types'
 
 // Lazy-initialized OpenAI client (avoids build-time initialization error)
 let openai: OpenAI | null = null
@@ -120,12 +123,26 @@ export async function POST(request: NextRequest) {
     // Get context data
     const context = await getContext()
 
+    // Build team context from static data
+    const teamForAI: TeamMemberForAI[] = teamMembers.map(m => ({
+      id: m.id,
+      name: m.name,
+      role: m.role,
+      type: m.type,
+      specialties: m.specialties,
+      bio: m.bio || '',
+      quote: m.quote,
+      funFact: m.funFact,
+      businessName: m.businessName,
+    }))
+
     // Build system message with context
     const systemMessage = [
       SYSTEM_PROMPT,
       FUNCTION_CONTEXT,
       FAQ_CONTEXT_TEMPLATE(context.faqs.slice(0, 30)), // Limit FAQs to avoid token limits
       SERVICES_CONTEXT_TEMPLATE(context.services.slice(0, 40)), // Limit services
+      TEAM_CONTEXT_TEMPLATE(teamForAI),
     ].join('\n\n')
 
     // Build messages array
@@ -173,7 +190,7 @@ export async function POST(request: NextRequest) {
     // Process response
     let responseText = responseMessage.content || ''
     let actions: ChatAction[] = []
-    let quickReplies: string[] = []
+    let quickReplies: SmartQuickReply[] = []
 
     // Debug: Log what we got from OpenAI
     console.log('[ASK LASHPOP] Response from OpenAI:', {
@@ -207,8 +224,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Always generate quick replies server-side (AI's tool calls unreliable for this)
-    quickReplies = generateQuickReplies(message, responseText)
+    // Generate smart quick replies only when contextually appropriate
+    quickReplies = generateSmartQuickReplies(message, responseText, conversationHistory, actions)
 
     // CRITICAL: Ensure there's always a message (never empty bubble)
     if (!responseText || responseText.trim() === '') {
@@ -263,28 +280,143 @@ function generateFallbackMessage(actions: ChatAction[]): string {
   }
 }
 
-// Generate contextual quick replies (keep them conversational, not action-heavy)
-function generateQuickReplies(userMessage: string, response: string): string[] {
+// Smart quick reply generation - context-aware, supports actions, knows when NOT to show
+function generateSmartQuickReplies(
+  userMessage: string,
+  response: string,
+  conversationHistory: Array<{ role: string; content: string }>,
+  actions: ChatAction[]
+): SmartQuickReply[] {
   const lowerMessage = userMessage.toLowerCase()
   const lowerResponse = response.toLowerCase()
+  const fullContext = [...conversationHistory.map(m => m.content), userMessage, response].join(' ').toLowerCase()
 
-  // Based on conversation context, suggest natural follow-ups
-  if (lowerMessage.includes('lash') || lowerResponse.includes('lash')) {
-    return ['How do I prepare?', 'How often do I need fills?', 'Help me book']
+  // ============================================================================
+  // SITUATIONS WHERE WE DON'T SHOW QUICK REPLIES
+  // ============================================================================
+
+  // 1. Emotional/complaint situations - let the user express themselves freely
+  const emotionalKeywords = ['bad experience', 'upset', 'frustrated', 'disappointed', 'angry', 'complaint', 'terrible', 'horrible', 'worst', 'rude', 'unhappy', 'problem', 'issue', 'wrong']
+  if (emotionalKeywords.some(k => fullContext.includes(k))) {
+    return [] // No quick replies - let them speak freely
   }
+
+  // 2. We're in the middle of collecting info (name, email, phone, details)
+  const collectingInfo = lowerResponse.includes('what\'s your name') ||
+    lowerResponse.includes('your email') ||
+    lowerResponse.includes('your phone') ||
+    lowerResponse.includes('can you tell me') ||
+    lowerResponse.includes('what happened') ||
+    lowerResponse.includes('more about')
+  if (collectingInfo) {
+    return [] // Don't interrupt info collection with quick replies
+  }
+
+  // 3. Message just sent confirmation
+  if (lowerResponse.includes('sent!') || lowerResponse.includes('i\'ve sent') || lowerResponse.includes('passed along')) {
+    return [
+      { type: 'text', label: 'Thanks!' },
+      { type: 'text', label: 'I have another question' },
+    ]
+  }
+
+  // 4. Action-heavy response (already has buttons)
+  if (actions.length >= 2) {
+    return [] // Don't clutter with more options
+  }
+
+  // ============================================================================
+  // CONTEXTUAL QUICK REPLIES
+  // ============================================================================
+
+  // If response mentions a specific team member, offer to show their card
+  const teamMentioned = extractMentionedTeamMember(lowerResponse)
+  if (teamMentioned) {
+    return [
+      { type: 'text', label: `Tell me more about ${teamMentioned}` },
+      { type: 'text', label: 'Help me book' },
+    ]
+  }
+
+  // Discussion about services/pricing
+  if (lowerResponse.includes('$') || lowerResponse.includes('start at') || lowerResponse.includes('pricing')) {
+    return [
+      { type: 'text', label: 'Help me book' },
+      {
+        type: 'action',
+        label: '📋 Browse services',
+        action: { type: 'open_panel', panelType: 'category-picker', data: {}, label: 'Browse services' }
+      },
+    ]
+  }
+
+  // Mentioned location/address
+  if (lowerResponse.includes('coast hwy') || lowerResponse.includes('oceanside') || lowerResponse.includes('located')) {
+    return [
+      {
+        type: 'action',
+        label: '📍 Show on map',
+        action: { type: 'scroll_to_section', target: '#find-us', label: 'Show on map' }
+      },
+      { type: 'text', label: 'What are your hours?' },
+    ]
+  }
+
+  // Talking about specific lash services
+  if ((lowerMessage.includes('lash') || lowerResponse.includes('lash')) &&
+      !lowerMessage.includes('book') && !lowerResponse.includes('book')) {
+    return [
+      { type: 'text', label: 'What\'s the difference between styles?' },
+      { type: 'text', label: 'Help me book lashes' },
+    ]
+  }
+
+  // Talking about brows
   if (lowerMessage.includes('brow') || lowerResponse.includes('brow')) {
-    return ['What\'s the difference between services?', 'How long does it last?', 'Help me book']
-  }
-  if (lowerMessage.includes('book') || lowerMessage.includes('appointment')) {
-    return ['What should I expect?', 'Where are you located?', 'Browse services']
-  }
-  if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
-    return ['Browse services', 'Help me book', 'Talk to the team']
-  }
-  if (lowerMessage.includes('team') || lowerMessage.includes('message') || lowerMessage.includes('talk')) {
-    return ['I have a question', 'I need help booking', 'Something else']
+    return [
+      { type: 'text', label: 'How long does it last?' },
+      { type: 'text', label: 'Help me book' },
+    ]
   }
 
-  // Default - conversational options
-  return ['Tell me about services', 'Where are you located?', 'Talk to the team']
+  // Talking about facials/skin
+  if (lowerMessage.includes('facial') || lowerResponse.includes('facial') ||
+      lowerMessage.includes('skin') || lowerResponse.includes('hydrafacial')) {
+    return [
+      { type: 'text', label: 'What\'s included?' },
+      { type: 'text', label: 'Help me book a facial' },
+    ]
+  }
+
+  // Greeting or very first message
+  if (conversationHistory.length === 0 ||
+      lowerMessage === 'hi' || lowerMessage === 'hello' || lowerMessage === 'hey') {
+    return [
+      { type: 'text', label: 'What services do you offer?' },
+      { type: 'text', label: 'Help me book' },
+      { type: 'text', label: 'I have a question' },
+    ]
+  }
+
+  // If response asks a question, don't add quick replies
+  if (lowerResponse.endsWith('?')) {
+    return []
+  }
+
+  // Default: minimal or none - don't force quick replies
+  return []
+}
+
+// Helper: Extract mentioned team member name from response
+function extractMentionedTeamMember(text: string): string | null {
+  const teamNames = [
+    'Emily', 'Rachel', 'Ryann', 'Ashley', 'Ava', 'Savannah',
+    'Elena', 'Adrianna', 'Kelly', 'Bethany', 'Grace', 'Renee', 'Evie', 'Haley'
+  ]
+  for (const name of teamNames) {
+    if (text.toLowerCase().includes(name.toLowerCase())) {
+      return name
+    }
+  }
+  return null
 }

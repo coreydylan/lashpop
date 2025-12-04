@@ -14,6 +14,7 @@ import type {
   ScrollAction,
   OpenPanelAction,
   SubmitTeamMessageAction,
+  SmartQuickReply,
 } from '@/lib/ask-lashpop/types'
 
 // ============================================================================
@@ -42,16 +43,17 @@ function askLashpopReducer(state: AskLashpopState, action: AskLashpopAction): As
     case 'OPEN':
       // Add welcome message if no messages yet
       if (state.messages.length === 0) {
+        const welcomeQuickReplies: SmartQuickReply[] = [
+          { type: 'text', label: 'I have a question' },
+          { type: 'text', label: 'Help me book' },
+          { type: 'text', label: 'Talk to the team' },
+        ]
         const welcomeMessage: ChatMessage = {
           id: generateId(),
           role: 'assistant',
           content: "Hey! ✨ Got a question? I'll do my best to help - or if you need our team, just let me know what you'd like to tell them and I'll pass it along. What's up?",
           timestamp: Date.now(),
-          quickReplies: [
-            'I have a question',
-            'Send a message to the team',
-            'Help me book',
-          ],
+          quickReplies: welcomeQuickReplies,
         }
         return { ...state, isOpen: true, messages: [welcomeMessage] }
       }
@@ -62,16 +64,17 @@ function askLashpopReducer(state: AskLashpopState, action: AskLashpopAction): As
 
     case 'TOGGLE':
       if (!state.isOpen && state.messages.length === 0) {
+        const welcomeQuickReplies: SmartQuickReply[] = [
+          { type: 'text', label: 'I have a question' },
+          { type: 'text', label: 'Help me book' },
+          { type: 'text', label: 'Talk to the team' },
+        ]
         const welcomeMessage: ChatMessage = {
           id: generateId(),
           role: 'assistant',
           content: "Hey! ✨ Got a question? I'll do my best to help - or if you need our team, just let me know what you'd like to tell them and I'll pass it along. What's up?",
           timestamp: Date.now(),
-          quickReplies: [
-            'I have a question',
-            'Send a message to the team',
-            'Help me book',
-          ],
+          quickReplies: welcomeQuickReplies,
         }
         return { ...state, isOpen: true, messages: [welcomeMessage] }
       }
@@ -283,12 +286,16 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
           }
 
           // Add success message
+          const successReplies: SmartQuickReply[] = [
+            { type: 'text', label: 'Thanks!' },
+            { type: 'text', label: 'I have another question' },
+          ]
           const successMessage: ChatMessage = {
             id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             role: 'assistant',
             content: "Done! I've sent your message to the team. They'll get back to you within a day (usually much faster). Is there anything else I can help with?",
             timestamp: Date.now(),
-            quickReplies: ['Browse services', 'Check hours', "No, that's all!"],
+            quickReplies: successReplies,
           }
           dispatch({ type: 'ADD_MESSAGE', payload: successMessage })
         } catch (error) {
@@ -426,12 +433,16 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
       // Clear form and go back to chat with success message
       dispatch({ type: 'CLEAR_FORM' })
 
+      const formSuccessReplies: SmartQuickReply[] = [
+        { type: 'text', label: 'Thanks!' },
+        { type: 'text', label: 'I have another question' },
+      ]
       const successMessage: ChatMessage = {
         id: generateId(),
         role: 'assistant',
         content: "I've sent your message to our team. They'll get back to you within 24 hours (usually much faster!). Is there anything else I can help with?",
         timestamp: Date.now(),
-        quickReplies: ['Browse services', 'Check hours', "No, that's all!"],
+        quickReplies: formSuccessReplies,
       }
       dispatch({ type: 'ADD_MESSAGE', payload: successMessage })
     } catch (error) {
