@@ -85,10 +85,10 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
   // No need for panel summary updates since this is now a static bar
 
   const handleCategoryClick = (category: Category) => {
-    const isSelected = state.categorySelections.some(c => c.categoryId === category.id);
+    const isAlreadySelected = state.categorySelections.some(c => c.categoryId === category.id);
 
-    if (isSelected) {
-      // Deselect: close the service panel for this category
+    if (isAlreadySelected) {
+      // Already selected - just deselect it (toggle off behavior)
       actions.deselectCategory(category.id);
 
       // Find and close the service panel
@@ -99,13 +99,25 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
         actions.closePanel(servicePanel.id);
       }
     } else {
-      // Select: add category and open service panel
+      // New selection - First clear ALL other selections (Single select mode)
+      
+      // 1. Deselect all currently selected categories
+      state.categorySelections.forEach(selection => {
+        actions.deselectCategory(selection.categoryId);
+        
+        // Find and close their panels
+        const panelToClose = state.panels.find(
+          p => p.type === 'service-panel' && p.data.categoryId === selection.categoryId
+        );
+        if (panelToClose) {
+          actions.closePanel(panelToClose.id);
+        }
+      });
+
+      // 2. Select the new category
       actions.selectCategory(category.id, category.name);
 
-      // Determine if this is the first selection
-      const isFirstSelection = state.categorySelections.length === 0;
-
-      // Open service panel
+      // 3. Open service panel for the new category
       const panelId = actions.openPanel(
         'service-panel',
         {
@@ -116,22 +128,15 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
         },
         {
           parentId: panel.id,
-          autoExpand: isFirstSelection, // First selection expands, others dock
-          scrollToTop: isFirstSelection,
+          autoExpand: true, // Always expand since it's the only one
+          scrollToTop: true,
         }
       );
 
-      // Add badge to new panels after first
-      if (!isFirstSelection) {
-        actions.updatePanelData(panelId, { badge: 'new' });
-      }
-
-      // Auto-dock category picker after first selection
-      if (isFirstSelection) {
-        setTimeout(() => {
-          actions.dockPanel(panel.id);
-        }, 300);
-      }
+      // Auto-dock category picker after selection
+      setTimeout(() => {
+        actions.dockPanel(panel.id);
+      }, 300);
     }
   };
 
@@ -146,7 +151,6 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
         <div className="flex gap-2 overflow-x-auto -mx-4 px-4 scrollbar-hide">
           {categories.map((category, index) => {
             const selected = isSelected(category.id);
-            const IconComponent = getCategoryIcon(category.iconName);
 
             return (
               <motion.button
@@ -174,22 +178,8 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
                   boxShadow: selected ? `0 2px 10px ${category.colors.ring}` : 'none',
                 }}
               >
-                {/* Icon */}
-                <IconComponent className="w-3 h-3 flex-shrink-0" />
-
                 {/* Category Name */}
                 <span className="whitespace-nowrap">{category.name}</span>
-
-                {/* Check Icon (selected only) */}
-                {selected && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="flex-shrink-0"
-                  >
-                    <Check className="w-2.5 h-2.5" />
-                  </motion.span>
-                )}
               </motion.button>
             );
           })}
@@ -207,11 +197,10 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
 
       {/* Desktop: original layout with separate button */}
       <div className="hidden md:flex items-start gap-3">
-        <div className="flex-1 overflow-hidden">
-          <div className="flex gap-3 flex-wrap">
+        <div className="flex-1">
+          <div className="flex gap-3 flex-wrap p-1">
             {categories.map((category, index) => {
               const selected = isSelected(category.id);
-              const IconComponent = getCategoryIcon(category.iconName);
 
               return (
                 <motion.button
@@ -238,22 +227,8 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
                     boxShadow: selected ? `0 4px 20px ${category.colors.ring}` : 'none',
                   }}
                 >
-                  {/* Icon */}
-                  <IconComponent className="w-4 h-4 flex-shrink-0" />
-
                   {/* Category Name */}
                   <span className="text-sm whitespace-nowrap">{category.name}</span>
-
-                  {/* Check Icon (selected only) */}
-                  {selected && (
-                    <motion.span
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="flex-shrink-0"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                    </motion.span>
-                  )}
                 </motion.button>
               );
             })}
