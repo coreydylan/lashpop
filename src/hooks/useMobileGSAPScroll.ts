@@ -56,7 +56,7 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
 
     // Reviews: position so review stats and first card are clearly visible
     // Lower/negative anchorOffset = snaps further up in viewport
-    'reviews': { threshold: 0.65, anchorOffset: vh * -0.06 },
+    'reviews': { threshold: 0.65, anchorOffset: vh * -0.02 },
 
     // FAQ: disabled from global snap - uses its own IntersectionObserver entry snap
     'faq': { threshold: 0.5, anchorOffset: headerHeight, disableSnap: true },
