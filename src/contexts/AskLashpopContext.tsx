@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useReducer, useCallback, useMemo, useRef } from 'react'
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useRef, useEffect } from 'react'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { smoothScrollToElement } from '@/lib/smoothScroll'
 import type {
@@ -15,6 +15,7 @@ import type {
   OpenPanelAction,
   SubmitTeamMessageAction,
   SmartQuickReply,
+  InvokeDiscoveryAction,
 } from '@/lib/ask-lashpop/types'
 
 // ============================================================================
@@ -162,6 +163,36 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
   stateRef.current = state
 
   // ============================================================================
+  // Event Listener for cross-context communication
+  // ============================================================================
+
+  useEffect(() => {
+    const handleOpenAskLashpop = (event: CustomEvent<{ context?: string }>) => {
+      dispatch({ type: 'OPEN' })
+
+      // If context is provided, send it as an initial message after a brief delay
+      const { context } = event.detail || {}
+      if (context) {
+        // Add context as a system note that helps AI understand what the user was doing
+        setTimeout(() => {
+          const contextMessage: ChatMessage = {
+            id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            role: 'user',
+            content: context,
+            timestamp: Date.now(),
+          }
+          dispatch({ type: 'ADD_MESSAGE', payload: contextMessage })
+        }, 300)
+      }
+    }
+
+    window.addEventListener('openAskLashpop', handleOpenAskLashpop as EventListener)
+    return () => {
+      window.removeEventListener('openAskLashpop', handleOpenAskLashpop as EventListener)
+    }
+  }, [])
+
+  // ============================================================================
   // Basic Controls
   // ============================================================================
 
@@ -261,6 +292,22 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
         smoothScrollToElement('#team', 60, 800, 'top')
         // Close the chat after a brief delay
         setTimeout(() => dispatch({ type: 'CLOSE' }), 300)
+        break
+      }
+
+      case 'invoke_discovery': {
+        const discoveryAction = action as InvokeDiscoveryAction
+        // Close Ask Lashpop first
+        dispatch({ type: 'CLOSE' })
+        // Dispatch custom event to open Discover Your Look with optional context
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openDiscoverLook', {
+            detail: {
+              mode: 'inline',
+              context: discoveryAction.context,
+            }
+          }))
+        }, 200)
         break
       }
 

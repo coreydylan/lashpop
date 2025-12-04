@@ -160,6 +160,18 @@ Include an "action" when the user wants to SEE or DO something:
 **book_service**: { type: "book_service", params: { service_slug: "classic-full-set", service_name: "Classic Full Set", button_label: "Book Now" }}
 **display_team_card**: { type: "display_team_card", params: { member_name: "rachel", button_label: "Meet Rachel" }}
 **send_message_to_team**: { type: "send_message_to_team", params: { name: "...", email: "...", message: "...", inquiry_type: "general" }}
+**invoke_discovery**: { type: "invoke_discovery", params: { context: "user wants to explore lash options", button_label: "✨ Discover Your Look" }}
+
+**WHEN TO USE invoke_discovery**:
+Use this when users need personalized help finding the right service:
+- "I'm not sure which lash style to get"
+- "What would look good on me?"
+- "Help me choose between classic and volume"
+- "I want something natural but noticeable"
+- "What are my options for brows?"
+- "I'm new to lashes, where do I start?"
+
+This opens our Discover Your Look AI which specializes in personalized beauty exploration.
 `
 
 export const FAQ_CONTEXT_TEMPLATE = (faqs: Array<{ question: string; answer: string; category: string }>) => `### FAQ KNOWLEDGE ###

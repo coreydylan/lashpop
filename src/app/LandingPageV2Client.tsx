@@ -6,11 +6,13 @@ import { PanelStackProvider } from '@/contexts/PanelStackContext';
 import { VagaroWidgetProvider } from '@/contexts/VagaroWidgetContext';
 import { DevModeProvider } from '@/contexts/DevModeContext';
 import { AskLashpopProvider } from '@/contexts/AskLashpopContext';
+import { DiscoverLookProvider } from '@/contexts/DiscoverLookContext';
 import { DevModeOverlay } from '@/components/dev-mode';
 import { DrawerProvider } from '@/components/drawers/DrawerContext';
 import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
 import { AskLashpopSheet, AskLashpopPanel, AskLashpopDesktopButton } from '@/components/ask-lashpop';
+import { DiscoverLookSheet, DiscoverLookPanel } from '@/components/discover-look';
 import { Navigation } from '@/components/sections/Navigation';
 import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
@@ -284,6 +286,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
       <PanelStackProvider services={services}>
         <VagaroWidgetProvider>
         <AskLashpopProvider>
+        <DiscoverLookProvider>
         <DrawerProvider>
           <PanelManagerProvider>
             <div className={`min-h-screen relative theme-v2 ${isMobile ? '' : 'bg-cream'}`}>
@@ -428,8 +431,12 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
       <AskLashpopSheet />
       <AskLashpopPanel />
       <AskLashpopDesktopButton />
+      {/* DISCOVER YOUR LOOK AI */}
+      <DiscoverLookSheet />
+      <DiscoverLookPanel />
       {/* Dev Mode Overlay - activated by clicking logo 5 times */}
       <DevModeOverlay />
+      </DiscoverLookProvider>
       </AskLashpopProvider>
       </VagaroWidgetProvider>
       </PanelStackProvider>

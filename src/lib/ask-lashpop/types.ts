@@ -31,6 +31,7 @@ export type ChatAction =
   | SubmitTeamMessageAction
   | DisplayTeamCardAction
   | DisplayServiceCardAction
+  | InvokeDiscoveryAction
 
 // ============================================================================
 // Smart Quick Replies - Can be text OR actions
@@ -153,6 +154,13 @@ export interface DisplayServiceCardAction {
   type: 'display_service_card'
   serviceSlug: string
   serviceName: string
+  label: string
+  icon?: string
+}
+
+export interface InvokeDiscoveryAction {
+  type: 'invoke_discovery'
+  context?: string // Optional context to pass to discovery (e.g., "user interested in lashes")
   label: string
   icon?: string
 }

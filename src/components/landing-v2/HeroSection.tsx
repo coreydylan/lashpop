@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { usePanelStack } from '@/contexts/PanelStackContext'
+import { useDiscoverLook } from '@/contexts/DiscoverLookContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
 import WeatherLocationBadge from './WeatherLocationBadge'
@@ -68,6 +69,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   const heroContentRef = useRef<HTMLDivElement>(null)
 
   const { actions: panelActions, state: panelState } = usePanelStack()
+  const { open: openDiscovery } = useDiscoverLook()
   const [isMobile, setIsMobile] = useState(false)
   const [awardExpanded, setAwardExpanded] = useState(false)
   const awardBadgeRef = useRef<HTMLDivElement>(null)
@@ -306,9 +308,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 </div>
               </button>
 
-              {/* Discover Your Look - Frosted glass secondary button */}
+              {/* Discover Your Look - Frosted glass secondary button - Opens AI Discovery */}
               <button
-                onClick={() => panelActions.openPanel('discovery', {})}
+                onClick={() => openDiscovery('standalone')}
                 className="relative group w-full"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
@@ -566,7 +568,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 Book Now
               </button>
               <button
-                onClick={() => panelActions.openPanel('discovery', {})}
+                onClick={() => openDiscovery('standalone')}
                 className="btn btn-secondary"
               >
                 Discover Your Look

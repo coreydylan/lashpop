@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
                 properties: {
                   type: {
                     type: 'string',
-                    enum: ['scroll_to_section', 'show_services', 'book_service', 'send_message_to_team', 'display_team_card'],
+                    enum: ['scroll_to_section', 'show_services', 'book_service', 'send_message_to_team', 'display_team_card', 'invoke_discovery'],
                   },
                   params: {
                     type: 'object',
@@ -291,6 +291,13 @@ export async function POST(request: NextRequest) {
             type: 'action',
             label: reply.replace(/^📅\s*/, ''),
             action: { type: 'open_panel', panelType: 'category-picker', data: {}, label: reply }
+          }
+        }
+        if (reply.includes('✨') && reply.toLowerCase().includes('discover')) {
+          return {
+            type: 'action',
+            label: reply,
+            action: { type: 'invoke_discovery', label: reply, icon: 'sparkles' }
           }
         }
         // Default: text reply
@@ -435,6 +442,15 @@ function structuredActionToAction(
         memberName: member.name,
         label: params.button_label as string || `Meet ${member.name.split(' ')[0]}`,
         icon: 'user',
+      }
+    }
+
+    case 'invoke_discovery': {
+      return {
+        type: 'invoke_discovery',
+        context: params.context as string | undefined,
+        label: params.button_label as string || '✨ Discover Your Look',
+        icon: 'sparkles',
       }
     }
 
