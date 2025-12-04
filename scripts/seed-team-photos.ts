@@ -74,8 +74,8 @@ async function seedTeamMemberPhotos() {
       filePath: "/lashpop-images/team/bethany-peterson.jpeg"
     },
     "Haley Walker": {
-      fileName: "haley-walker.jpg",
-      filePath: "/lashpop-images/team/haley-walker.jpg"
+      fileName: "haley-walker.webp",
+      filePath: "/lashpop-images/team/haley-walker.webp"
     },
     "Adrianna Arnaud": {
       fileName: "adrianna-arnaud.jpg",
