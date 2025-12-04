@@ -179,35 +179,57 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               />
             </motion.div>
 
-            <motion.p
+            <motion.div
               className="text-lg md:text-xl font-sans font-light mb-6 leading-relaxed max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55' }}
             >
-              At LashPop, we&apos;re a collective of women-owned beauty businesses who believe looking amazing shouldn&apos;t require a 30-minute morning routine or a small emotional breakdown in front of the bathroom mirror. We&apos;re here to make beauty feel easy, natural, and—honestly—kind of life-changing.
-            </motion.p>
+              <span className="font-extralight opacity-80">At LashPop, we&apos;re a collective of</span>{' '}
+              <span className="font-medium" style={{ color: '#6d4a43' }}>women-owned beauty businesses</span>{' '}
+              <span className="font-extralight opacity-80">who believe looking amazing shouldn&apos;t require a 30-minute morning routine</span>{' '}
+              <span className="italic opacity-70">or a small emotional breakdown in front of the bathroom mirror.</span>
+              <span className="block text-xl md:text-2xl font-medium mt-4 tracking-wide" style={{ color: '#6d4a43' }}>
+                We&apos;re here to make beauty feel easy, natural, and—honestly—kind of life-changing.
+              </span>
+            </motion.div>
 
-            <motion.p
+            <motion.div
               className="text-base md:text-lg font-sans font-light mb-6 leading-relaxed max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              style={{ color: '#8a5e55', opacity: 0.9 }}
+              style={{ color: '#8a5e55' }}
             >
-              Everything we do is built on trust. When you walk into our studio, you&apos;re stepping into a space designed to help you breathe a little deeper and walk out feeling like the most refreshed, put-together version of yourself. No pressure. No judgment. Just great work and a team that genuinely cares about you.
-            </motion.p>
+              <span className="block text-xl md:text-2xl font-medium mb-3" style={{ color: '#6d4a43' }}>
+                Everything we do is built on trust.
+              </span>
+              <span className="font-extralight opacity-80">When you walk into our studio, you&apos;re stepping into a space designed to help you breathe a little deeper and walk out feeling like</span>{' '}
+              <span className="font-medium" style={{ color: '#6d4a43' }}>the most refreshed, put-together version of yourself.</span>
+              <span className="block mt-4 text-sm md:text-base tracking-[0.2em] uppercase font-light opacity-90">
+                No pressure · No judgment · Just great work
+              </span>
+            </motion.div>
 
-            <motion.p
+            <motion.div
               className="text-base md:text-lg font-sans font-light mb-8 leading-relaxed max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.5, ease: [0.23, 1, 0.32, 1] }}
-              style={{ color: '#8a5e55', opacity: 0.9 }}
+              style={{ color: '#8a5e55' }}
             >
-              Our artists are pros in all the good stuff: lashes, brows, permanent makeup, facials, HydraFacials, waxing, injectables, and even permanent jewelry for when you want a little sparkle that sticks around. Each service is done with the kind of precision and intention that makes your mornings smoother and your confidence louder.
-            </motion.p>
+              <span className="font-extralight opacity-80">Our artists are pros in all the good stuff:</span>
+              <span className="block my-3 text-sm tracking-[0.15em] uppercase font-light opacity-75">
+                lashes · brows · permanent makeup · facials · HydraFacials · waxing · injectables · permanent jewelry
+              </span>
+              <span>Each service is done with the kind of</span>{' '}
+              <span className="font-medium" style={{ color: '#6d4a43' }}>precision and intention</span>{' '}
+              <span>that makes your</span>
+              <span className="block text-lg md:text-xl font-medium mt-3 tracking-wide" style={{ color: '#6d4a43' }}>
+                mornings smoother &amp; confidence louder.
+              </span>
+            </motion.div>
 
             {/* Desktop only - services hint with scroll trigger for auto-loading services bar */}
             <motion.div
@@ -227,15 +249,18 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               <ScrollServicesTrigger />
             </motion.div>
 
-            <motion.p
-              className="text-lg md:text-xl font-sans font-medium mt-10 leading-relaxed max-w-3xl mx-auto"
+            <motion.div
+              className="text-center mt-10 leading-relaxed max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.7, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55' }}
             >
-              Welcome to your new favorite part of the week.
-            </motion.p>
+              <span className="block text-sm uppercase tracking-[0.3em] font-light opacity-60 mb-2">Welcome to</span>
+              <span className="block text-2xl md:text-3xl font-medium tracking-wide" style={{ color: '#6d4a43' }}>
+                your new favorite part of the week.
+              </span>
+            </motion.div>
           </motion.div>
         </div>
       </div>

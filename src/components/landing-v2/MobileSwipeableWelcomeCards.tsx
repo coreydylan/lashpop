@@ -1,31 +1,98 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
 
-// The 5 content cards with the new text
-const cardContent = [
+// Styled text components for creative typography
+const Emphasis = ({ children }: { children: ReactNode }) => (
+  <span className="font-medium" style={{ color: '#6d4a43' }}>{children}</span>
+)
+
+const Highlight = ({ children }: { children: ReactNode }) => (
+  <span className="font-semibold text-base tracking-wide" style={{ color: '#8a5e55' }}>{children}</span>
+)
+
+const Soft = ({ children }: { children: ReactNode }) => (
+  <span className="font-extralight opacity-80">{children}</span>
+)
+
+const Standout = ({ children }: { children: ReactNode }) => (
+  <span className="block text-base font-medium mt-2 tracking-wide" style={{ color: '#6d4a43' }}>{children}</span>
+)
+
+// The 5 content cards with creative typography
+const cardContent: { id: number; content: ReactNode; isLast?: boolean }[] = [
   {
     id: 1,
-    text: "At LashPop, we're a collective of women-owned beauty businesses who believe looking amazing shouldn't require a 30-minute morning routine or a small emotional breakdown in front of the bathroom mirror. We're here to make beauty feel easy, natural, and—honestly—kind of life-changing.",
+    content: (
+      <>
+        <Soft>At LashPop, we&apos;re a collective of</Soft>{' '}
+        <Emphasis>women-owned beauty businesses</Emphasis>{' '}
+        <Soft>who believe looking amazing shouldn&apos;t require a 30-minute morning routine</Soft>{' '}
+        <span className="italic opacity-70">or a small emotional breakdown in front of the bathroom mirror.</span>
+        <Standout>We&apos;re here to make beauty feel easy, natural, and—honestly—kind of life-changing.</Standout>
+      </>
+    ),
   },
   {
     id: 2,
-    text: "Everything we do is built on trust. When you walk into our studio, you're stepping into a space designed to help you breathe a little deeper and walk out feeling like the most refreshed, put-together version of yourself. No pressure. No judgment. Just great work and a team that genuinely cares about you.",
+    content: (
+      <>
+        <span className="block text-base font-medium mb-2" style={{ color: '#6d4a43' }}>
+          Everything we do is built on trust.
+        </span>
+        <Soft>When you walk into our studio, you&apos;re stepping into a space designed to help you breathe a little deeper and walk out feeling like</Soft>{' '}
+        <Emphasis>the most refreshed, put-together version of yourself.</Emphasis>
+        <span className="block mt-3 text-sm tracking-widest uppercase font-light opacity-90">
+          No pressure · No judgment · Just great work
+        </span>
+      </>
+    ),
   },
   {
     id: 3,
-    text: "Our artists are pros in all the good stuff: lashes, brows, permanent makeup, facials, HydraFacials, waxing, injectables, and even permanent jewelry for when you want a little sparkle that sticks around. Each service is done with the kind of precision and intention that makes your mornings smoother and your confidence louder.",
+    content: (
+      <>
+        <Soft>Our artists are pros in all the good stuff:</Soft>
+        <span className="block my-2 text-xs tracking-wider uppercase font-light opacity-75">
+          lashes · brows · permanent makeup · facials · waxing · injectables · permanent jewelry
+        </span>
+        <span className="text-sm">Each service is done with the kind of</span>{' '}
+        <Emphasis>precision and intention</Emphasis>{' '}
+        <span className="text-sm">that makes your</span>
+        <Standout>mornings smoother &amp; confidence louder.</Standout>
+      </>
+    ),
   },
   {
     id: 4,
-    text: "And since you're probably here to see what we offer, we made it easy—everything you need is right in the service bar above. Think of it as your personal beauty menu: quick to find, simple to navigate, and packed with options you're going to love.",
+    content: (
+      <>
+        <Soft>And since you&apos;re probably here to see what we offer,</Soft>
+        <span className="block text-base font-medium my-2" style={{ color: '#6d4a43' }}>we made it easy.</span>
+        <span className="text-sm">Everything you need is right in the</span>{' '}
+        <Highlight>service bar above</Highlight>
+        <span className="block mt-2 text-xs italic opacity-70">
+          Think of it as your personal beauty menu—quick to find, simple to navigate, packed with options you&apos;ll love.
+        </span>
+      </>
+    ),
   },
   {
     id: 5,
-    text: "Welcome to your new favorite part of the week.",
+    content: (
+      <>
+        <span className="block text-xs uppercase tracking-[0.3em] font-light opacity-60 mb-3">Welcome to</span>
+        <span className="block text-xl font-medium tracking-wide" style={{ color: '#6d4a43' }}>
+          your new favorite
+        </span>
+        <span className="block text-xl font-medium tracking-wide" style={{ color: '#6d4a43' }}>
+          part of the week.
+        </span>
+      </>
+    ),
     isLast: true,
   },
 ]
@@ -223,19 +290,15 @@ export function MobileSwipeableWelcomeCards({
           >
             {/* Card content - no background, text directly on image */}
             <div className="h-full flex flex-col justify-center items-center text-center">
-              <p
-                className={`font-sans leading-relaxed ${
-                  currentCard.isLast
-                    ? 'text-lg font-medium'
-                    : 'text-sm font-light'
-                }`}
+              <div
+                className="font-sans leading-relaxed text-sm"
                 style={{
                   color: '#8a5e55',
                   textShadow: '0 1px 2px rgba(255,255,255,0.5)'
                 }}
               >
-                {currentCard.text}
-              </p>
+                {currentCard.content}
+              </div>
 
               {/* Swipe hint - chevrons that animate left/right */}
               <AnimatePresence>
