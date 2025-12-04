@@ -12,7 +12,7 @@ export interface ChatMessage {
   content: string
   timestamp: number
   actions?: ChatAction[]
-  quickReplies?: string[]
+  quickReplies?: SmartQuickReply[]
   isLoading?: boolean
 }
 
@@ -29,6 +29,30 @@ export type ChatAction =
   | CallPhoneAction
   | OpenExternalAction
   | SubmitTeamMessageAction
+  | DisplayTeamCardAction
+  | DisplayServiceCardAction
+
+// ============================================================================
+// Smart Quick Replies - Can be text OR actions
+// ============================================================================
+
+export type SmartQuickReply =
+  | TextQuickReply
+  | ActionQuickReply
+
+export interface TextQuickReply {
+  type: 'text'
+  label: string
+  // When clicked, sends this as a user message
+}
+
+export interface ActionQuickReply {
+  type: 'action'
+  label: string
+  icon?: string
+  action: ChatAction
+  // When clicked, executes the action directly
+}
 
 export interface ScrollAction {
   type: 'scroll_to_section'
@@ -117,6 +141,22 @@ export interface SubmitTeamMessageAction {
   icon?: string
 }
 
+export interface DisplayTeamCardAction {
+  type: 'display_team_card'
+  memberId: number
+  memberName: string
+  label: string
+  icon?: string
+}
+
+export interface DisplayServiceCardAction {
+  type: 'display_service_card'
+  serviceSlug: string
+  serviceName: string
+  label: string
+  icon?: string
+}
+
 // ============================================================================
 // Chat State
 // ============================================================================
@@ -166,7 +206,7 @@ export interface ChatRequest {
 export interface ChatResponse {
   message: string
   actions?: ChatAction[]
-  quickReplies?: string[]
+  quickReplies?: SmartQuickReply[]
   conversationId: string
 }
 

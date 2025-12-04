@@ -180,6 +180,45 @@ ${services.map(s => `${s.name} (${s.categoryName}) - ${s.durationMinutes}min, $$
 **Booking**: Use book_service with the slug when they want to book.
 `
 
+export interface TeamMemberForAI {
+  id: number
+  name: string
+  role: string
+  type: 'employee' | 'independent'
+  specialties: string[]
+  bio: string
+  quote?: string
+  funFact?: string
+  businessName?: string
+}
+
+export const TEAM_CONTEXT_TEMPLATE = (teamMembers: TeamMemberForAI[]) => `### TEAM DATABASE ###
+
+You have access to display_team_card function to show rich team member cards. Use it when recommending someone or when users ask about a specific team member.
+
+**Team Members**:
+${teamMembers.map(m => `
+**${m.name}** (${m.role}) ${m.type === 'independent' ? `- ${m.businessName}` : '- LashPop Employee'}
+- Specialties: ${m.specialties.join(', ')}
+- Bio: ${m.bio}
+${m.funFact ? `- Fun Fact: ${m.funFact}` : ''}
+${m.quote ? `- Quote: "${m.quote}"` : ''}
+- To show card: display_team_card("${m.name.split(' ')[0].toLowerCase()}", "Meet ${m.name.split(' ')[0]}")
+`).join('\n')}
+
+**Team Recommendations**:
+- Volume/Mega Volume lashes → Adrianna, Ava, Bethany
+- Natural/Classic lashes → Ryann, Kelly
+- Creative/Colored lashes → Rachel
+- Sensitive eyes → Ryann (she's gentle!)
+- HydraFacials → Ashley, Savannah
+- Brows (microblading) → Renee
+- Brow + Lash combo → Evie
+- Injectables (Botox/Fillers) → Grace (she's a Nurse Injector)
+- Plasma/Anti-aging → Elena
+- Beach wave lashes → Bethany (Salty Lash)
+`
+
 // Helper function to strip HTML tags from FAQ answers
 function stripHtml(html: string): string {
   return html

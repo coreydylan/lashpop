@@ -25,6 +25,38 @@ export const SECTION_MAP: Record<string, string> = {
   home: '#hero',
 }
 
+// Team member IDs for lookup
+export const TEAM_MEMBER_MAP: Record<string, { id: number; name: string }> = {
+  'emily': { id: 1, name: 'Emily Rogers' },
+  'emily-rogers': { id: 1, name: 'Emily Rogers' },
+  'rachel': { id: 2, name: 'Rachel Edwards' },
+  'rachel-edwards': { id: 2, name: 'Rachel Edwards' },
+  'ryann': { id: 3, name: 'Ryann Alcorn' },
+  'ryann-alcorn': { id: 3, name: 'Ryann Alcorn' },
+  'ashley': { id: 4, name: 'Ashley Petersen' },
+  'ashley-petersen': { id: 4, name: 'Ashley Petersen' },
+  'ava': { id: 5, name: 'Ava Mata' },
+  'ava-mata': { id: 5, name: 'Ava Mata' },
+  'savannah': { id: 6, name: 'Savannah Scherer' },
+  'savannah-scherer': { id: 6, name: 'Savannah Scherer' },
+  'elena': { id: 7, name: 'Elena Castellanos' },
+  'elena-castellanos': { id: 7, name: 'Elena Castellanos' },
+  'adrianna': { id: 8, name: 'Adrianna Arnaud' },
+  'adrianna-arnaud': { id: 8, name: 'Adrianna Arnaud' },
+  'kelly': { id: 9, name: 'Kelly Katona' },
+  'kelly-katona': { id: 9, name: 'Kelly Katona' },
+  'bethany': { id: 10, name: 'Bethany Peterson' },
+  'bethany-peterson': { id: 10, name: 'Bethany Peterson' },
+  'grace': { id: 11, name: 'Grace Ramos' },
+  'grace-ramos': { id: 11, name: 'Grace Ramos' },
+  'renee': { id: 12, name: 'Renee Belton' },
+  'renee-belton': { id: 12, name: 'Renee Belton' },
+  'evie': { id: 13, name: 'Evie Ells' },
+  'evie-ells': { id: 13, name: 'Evie Ells' },
+  'haley': { id: 14, name: 'Haley Walker' },
+  'haley-walker': { id: 14, name: 'Haley Walker' },
+}
+
 // Contact form field templates
 export const FORM_FIELDS: Record<string, FormField[]> = {
   general: [
@@ -194,6 +226,25 @@ export const GPT_FUNCTIONS: GPTFunction[] = [
       required: ['buttons'],
     },
   },
+  {
+    name: 'display_team_card',
+    description: 'Show a rich team member card with photo, bio, specialties, and booking link. Use when discussing a specific team member or when recommending someone for a service.',
+    parameters: {
+      type: 'object',
+      properties: {
+        member_name: {
+          type: 'string',
+          enum: ['emily', 'rachel', 'ryann', 'ashley', 'ava', 'savannah', 'elena', 'adrianna', 'kelly', 'bethany', 'grace', 'renee', 'evie', 'haley'],
+          description: 'First name of the team member (lowercase)',
+        },
+        button_label: {
+          type: 'string',
+          description: 'Label for the card button (e.g., "Meet Rachel")',
+        },
+      },
+      required: ['member_name', 'button_label'],
+    },
+  },
 ]
 
 // Convert GPT function call to ChatAction
@@ -334,6 +385,19 @@ export function functionCallToAction(
             }
         }
       })
+    }
+
+    case 'display_team_card': {
+      const memberKey = (args.member_name as string).toLowerCase()
+      const member = TEAM_MEMBER_MAP[memberKey]
+      if (!member) return null
+      return {
+        type: 'display_team_card',
+        memberId: member.id,
+        memberName: member.name,
+        label: args.button_label as string,
+        icon: 'user',
+      }
     }
 
     default:

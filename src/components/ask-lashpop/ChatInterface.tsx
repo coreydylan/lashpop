@@ -8,9 +8,10 @@ import { AIMessage } from './AIMessage'
 import { UserMessage } from './UserMessage'
 import { TypingIndicator } from './TypingIndicator'
 import { QuickReplies } from './QuickReplies'
+import type { ChatAction } from '@/lib/ask-lashpop/types'
 
 export function ChatInterface() {
-  const { state, sendMessage } = useAskLashpop()
+  const { state, sendMessage, executeAction } = useAskLashpop()
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -35,9 +36,14 @@ export function ChatInterface() {
     setInputValue('')
   }
 
-  const handleQuickReply = (reply: string) => {
+  const handleTextQuickReply = (text: string) => {
     if (state.isTyping) return
-    sendMessage(reply)
+    sendMessage(text)
+  }
+
+  const handleActionQuickReply = (action: ChatAction) => {
+    if (state.isTyping) return
+    executeAction(action)
   }
 
   // Get last message for quick replies
@@ -93,7 +99,8 @@ export function ChatInterface() {
           >
             <QuickReplies
               replies={lastMessage.quickReplies!}
-              onSelect={handleQuickReply}
+              onTextSelect={handleTextQuickReply}
+              onActionSelect={handleActionQuickReply}
             />
           </motion.div>
         )}
