@@ -612,7 +612,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   </div>
                 )}
 
-                <div className="absolute inset-0 bg-gradient-to-t from-ocean-mist/20 to-transparent pointer-events-none" />
+{/* Gradient overlay removed - arch should be 100% opaque */}
 
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -658,10 +658,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   </div>
                 </motion.div>
 
-                <motion.div
-                  className="absolute inset-0 bg-cream pointer-events-none z-40"
-                  style={{ opacity: archFadeOpacity }}
-                />
+{/* Cream fade overlay removed - arch should be 100% opaque */}
               </div>
 
               <motion.div

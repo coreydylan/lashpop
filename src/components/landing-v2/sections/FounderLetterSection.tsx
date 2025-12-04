@@ -42,7 +42,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   const mobileContainerRef = useRef<HTMLDivElement>(null)
   const mobileArchRef = useRef<HTMLDivElement>(null)
   const mobileArchImageRef = useRef<HTMLDivElement>(null)
-  const mobileArchMaskRef = useRef<HTMLDivElement>(null) // Cream mask that slides up to crop
   const mobileLetterRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -138,12 +137,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   }, [])
 
   // GSAP ScrollTrigger for mobile arch animation
-  // Phase 1: Soft zoom (105% -> 115%) as arch scrolls up
-  // Phase 2: Arch sticks when top reaches viewport (via CSS sticky)
-  // Phase 3: Cream mask slides UP to cover bottom 85% of arch (GPU-accelerated translateY)
-  // Phase 4: Letter content scrolls under the cropped arch (z-index layering)
+  // Phase 1: Soft zoom as arch scrolls up
+  // Phase 2: Welcome text "pushes" the bottom of the arch up by cropping it in real-time
+  // Phase 3: Once Emily's face is cropped into a rectangle, it stays fixed and text scrolls under
   useEffect(() => {
-    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileArchMaskRef.current || !mobileLetterRef.current) return
+    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileLetterRef.current) return
 
     // Initialize GSAP synchronously for mobile scroll
     initGSAPSync()
@@ -154,49 +152,75 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
     // Store refs for closure
     const imageRef = mobileArchImageRef.current
-    const maskRef = mobileArchMaskRef.current
     const archContainerRef = mobileArchRef.current
     const letterRef = mobileLetterRef.current
-
-    // Set initial state - mask starts hidden below (translateY: 100%)
-    gsap.set(maskRef, { yPercent: 100 })
 
     const triggers: ScrollTrigger[] = []
 
     // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.095 = 105vw -> 115vw)
     const zoomTween = gsap.to(imageRef, {
-      scale: 1.095, // 115/105 = 1.095
+      scale: 1.095,
       ease: 'none',
       scrollTrigger: {
         trigger: archContainerRef,
         scroller: scrollContainer,
-        start: 'top 100%', // Start when arch enters viewport from bottom
-        end: 'top 0%', // End when arch top reaches top of viewport
+        start: 'top 100%',
+        end: 'top 0%',
         scrub: 1.5,
         invalidateOnRefresh: true,
       }
     })
     if (zoomTween.scrollTrigger) triggers.push(zoomTween.scrollTrigger)
 
-    // Phase 3: Mask slides up as letter approaches
-    // The mask covers the bottom 85% of the arch, leaving top 15% visible
-    // Timeline: mask goes from yPercent: 100 (hidden) to yPercent: 0 (covering)
-    const maskTween = gsap.to(maskRef, {
-      yPercent: 0,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: letterRef,
-        scroller: scrollContainer,
-        // Start when letter top hits bottom of viewport
-        start: 'top bottom',
-        // End when letter has scrolled up enough to fully crop the arch
-        // This creates a smooth scrub over the letter's scroll distance
-        end: 'top 15%', // Letter top reaches 15% from viewport top = full crop
-        scrub: 0.1, // Very tight scrub for responsive feel, no lag
-        invalidateOnRefresh: true,
+    // Phase 2: Real-time crop based on welcome text position
+    // The welcome text's top edge "pushes" against the arch's bottom edge
+    // Crop stops when only 15vh of the arch remains visible (Emily's face banner)
+    const cropTrigger = ScrollTrigger.create({
+      trigger: letterRef,
+      scroller: scrollContainer,
+      start: 'top bottom',
+      end: 'bottom top', // Keep active until letter scrolls past
+      scrub: true,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => {
+        const viewportHeight = window.innerHeight
+        const minVisibleHeight = viewportHeight * 0.15 // 15vh - Emily's face banner
+
+        // Get actual element positions
+        const archRect = archContainerRef.getBoundingClientRect()
+        const letterRect = letterRef.getBoundingClientRect()
+        const imageRect = imageRef.getBoundingClientRect()
+
+        const archBottom = archRect.bottom // Where arch currently ends
+        const letterTop = letterRect.top // Where welcome text starts
+        const imageHeight = imageRect.height
+
+        // If letter hasn't reached arch yet, no crop
+        if (letterTop >= archBottom) {
+          gsap.set(imageRef, { clipPath: 'inset(0 0 0% 0)' })
+          return
+        }
+
+        // Calculate how much arch extends below the welcome text
+        // This is how much we need to crop
+        const cropPixels = archBottom - letterTop
+
+        // Calculate how much of the arch is currently visible in viewport
+        const archVisibleTop = Math.max(0, archRect.top)
+        const archVisibleHeight = archBottom - archVisibleTop
+
+        // Cap the crop so at least 15vh remains visible
+        const maxCropPixels = Math.max(0, archVisibleHeight - minVisibleHeight)
+        const finalCropPixels = Math.min(cropPixels, maxCropPixels)
+
+        // Convert to percentage of image height
+        const cropPercent = Math.max(0, Math.min(100, (finalCropPixels / imageHeight) * 100))
+
+        // Apply crop from bottom
+        gsap.set(imageRef, { clipPath: `inset(0 0 ${cropPercent}% 0)` })
       }
     })
-    if (maskTween.scrollTrigger) triggers.push(maskTween.scrollTrigger)
+    triggers.push(cropTrigger)
 
     // Handle resize
     const handleResize = () => {
@@ -208,7 +232,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     return () => {
       triggers.forEach(t => t.kill())
       zoomTween.kill()
-      maskTween.kill()
       window.removeEventListener('resize', handleResize)
     }
   }, [isMobile])
@@ -317,18 +340,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               style={{
                 width: '100%',
                 height: 'auto',
-                filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
-              }}
-            />
-            {/* Cream mask - slides up from bottom to cover 85% of arch */}
-            {/* Height is 85% of image, positioned at bottom, GSAP animates yPercent */}
-            <div
-              ref={mobileArchMaskRef}
-              className="absolute bottom-0 left-0 right-0 bg-cream pointer-events-none"
-              style={{
-                height: '85%',
-                transform: 'translateY(100%)', // Initial state: hidden below
-                willChange: 'transform',
               }}
             />
           </div>
