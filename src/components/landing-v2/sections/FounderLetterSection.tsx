@@ -330,7 +330,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             {/* This div translates upward via GSAP to scroll text through the container */}
             <div ref={mobileTextContentRef} className="px-6 pt-6 pb-16 will-change-transform">
               <motion.div
-                className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
+                className="text-[#8a5e55] text-[2rem] leading-relaxed font-normal font-swanky max-w-lg mx-auto"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
@@ -359,7 +359,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                   transition={{ duration: 0.5, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
                 >
                   <p>{letterContent.signOff}</p>
-                  <p className="text-lg">{letterContent.signature}</p>
+                  <p className="text-[2.25rem]">{letterContent.signature}</p>
                 </motion.div>
               </motion.div>
             </div>
