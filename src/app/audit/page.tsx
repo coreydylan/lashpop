@@ -586,7 +586,7 @@ export default function AuditPage() {
             animate={{ opacity: 1 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl font-serif text-dune mb-4">What's Working Well</h2>
+            <h2 className="text-3xl font-serif text-dune mb-4">What&apos;s Working Well</h2>
             <p className="text-dune/70">These aspects of your landing page are already following best practices.</p>
           </motion.div>
 

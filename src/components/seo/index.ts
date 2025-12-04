@@ -1,4 +1,4 @@
-export { LocalBusinessSchema } from './LocalBusinessSchema'
-export { FAQSchema } from './FAQSchema'
-export { ReviewSchema } from './ReviewSchema'
-export { ServiceSchema } from './ServiceSchema'
+export { default as LocalBusinessSchema } from './LocalBusinessSchema'
+export { default as FAQSchema } from './FAQSchema'
+export { default as ReviewSchema } from './ReviewSchema'
+export { default as ServiceSchema } from './ServiceSchema'
