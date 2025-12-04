@@ -256,6 +256,14 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
         break
       }
 
+      case 'display_team_card': {
+        // Scroll to team section to show the team member
+        smoothScrollToElement('#team', 60, 800, 'top')
+        // Close the chat after a brief delay
+        setTimeout(() => dispatch({ type: 'CLOSE' }), 300)
+        break
+      }
+
       case 'submit_team_message': {
         const msgAction = action as SubmitTeamMessageAction
         try {
