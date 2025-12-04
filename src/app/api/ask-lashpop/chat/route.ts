@@ -155,7 +155,8 @@ export async function POST(request: NextRequest) {
       { role: 'user', content: message },
     ]
 
-    // Call OpenAI with structured output - ensures message is never empty
+    // Call OpenAI with structured output - GPT-5 compatible
+    // Docs: https://platform.openai.com/docs/models/gpt-5
     const client = getOpenAIClient()
     const completion = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-4o',
@@ -202,7 +203,13 @@ export async function POST(request: NextRequest) {
         },
       },
 
-      max_tokens: 1024,
+      // GPT-5 uses max_completion_tokens, not max_tokens
+      max_completion_tokens: 1024,
+
+      // Reasoning effort: "minimal" | "low" | "medium" | "high"
+      // Using "low" for fast conversational responses
+      reasoning_effort: 'low',
+
       temperature: 0.7,
     })
 
