@@ -6,6 +6,8 @@ import { PanelStackProvider } from '@/contexts/PanelStackContext';
 import { VagaroWidgetProvider } from '@/contexts/VagaroWidgetContext';
 import { DevModeProvider } from '@/contexts/DevModeContext';
 import { DevModeOverlay } from '@/components/dev-mode';
+import { FeedbackProvider } from '@/contexts/FeedbackContext';
+import { FeedbackLayer } from '@/components/feedback';
 import { DrawerProvider } from '@/components/drawers/DrawerContext';
 import { PanelManagerProvider } from '@/components/panels/PanelContext';
 import DrawerSystem from '@/components/drawers/DrawerSystem';
@@ -277,6 +279,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
   // });
 
   return (
+    <FeedbackProvider>
     <DevModeProvider>
     <BookingOrchestratorProvider>
       <PanelStackProvider services={services}>
@@ -423,10 +426,13 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
       </DrawerProvider>
       {/* Dev Mode Overlay - activated by clicking logo 5 times */}
       <DevModeOverlay />
+      {/* Feedback Layer - activated by ?feedback=true or typing "feedback" */}
+      <FeedbackLayer />
       </VagaroWidgetProvider>
       </PanelStackProvider>
     </BookingOrchestratorProvider>
     </DevModeProvider>
+    </FeedbackProvider>
   );
 }
 
