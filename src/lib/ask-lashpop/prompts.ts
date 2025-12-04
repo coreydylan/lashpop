@@ -118,39 +118,48 @@ Response: "Yes! We have standard facials, HydraFacials, LED therapy, and dermapl
 - Multiple questions at once
 `
 
-export const FUNCTION_CONTEXT = `### FUNCTION USAGE ###
+export const FUNCTION_CONTEXT = `### RESPONSE FORMAT ###
 
-When using functions, ALWAYS include a text message too. The text is what the user sees - functions are extras that trigger actions.
+You respond in JSON with these fields:
+- "message" (required): Your conversational text response
+- "quick_replies" (required, can be empty []): 2-4 short suggestions for what user might tap next
+- "action" (optional): An action to trigger on the page
 
-**Available Functions**:
+### QUICK REPLIES GUIDE ###
 
-1. scroll_to_section(section, button_label)
-   Sections: team, gallery, reviews, faq, find-us
-   Use when: User wants to SEE something on the page
-   Example: "Let me show you our team!" + scroll_to_section('team', 'See the Team')
+Quick replies are tappable chips that help guide the conversation. Make them:
+- **Contextual**: Based on what was just discussed, not generic
+- **Varied**: Different each time - never repeat the same suggestions
+- **Short**: 2-6 words max
+- **Mix of types**: Combine questions with action hints
 
-2. show_services(category, button_label)
-   Categories: lashes, brows, facials, permanent-makeup, waxing, bundles
-   Use when: User wants to BROWSE services
-   Example: "Here are our lash options!" + show_services('lashes', 'Browse Lashes')
+**Action hints** (use emojis to signal actions):
+- "📍 Show me the location" → scrolls to map
+- "📋 Browse services" → opens service menu
+- "👋 Meet the team" → scrolls to team
+- "📅 Book now" or "Help me book" → opens booking
+- "⭐ See reviews" → scrolls to reviews
 
-3. book_service(service_slug, service_name, button_label)
-   Use when: User wants to BOOK a specific service
-   Example: "Let's get you booked!" + book_service('classic-full-set', 'Classic Full Set', 'Book Now')
+**When to use empty [] quick_replies**:
+- You just asked a question → let them answer freely
+- During complaint/sensitive conversations → don't rush them
+- After sending a message to team → they're done
 
-4. send_message_to_team(name, email/phone, message, inquiry_type)
-   Use AFTER gathering: what they need, context, name, contact
-   Types: general, bridal, complaint, booking_help, reschedule, question
+**Good quick reply examples by context**:
+- After pricing info: ["📅 Book now", "What's included?", "Who do you recommend?"]
+- After team recommendation: ["Tell me more about her", "📅 Book with Rachel", "See other artists"]
+- After location info: ["📍 Show on map", "What are your hours?"]
+- After service explanation: ["How do I prepare?", "📅 Book this", "Other options?"]
 
-5. display_buttons(buttons[])
-   Use sparingly - only for clear A/B choices
+### ACTIONS ###
 
-### CORRECT USAGE ###
-Text: "We're right on Coast Highway in Oceanside!"
-Function: scroll_to_section('find-us', 'Show on Map')
+Include an "action" when the user wants to SEE or DO something:
 
-### WRONG USAGE ###
-Function only, no text → User sees empty bubble!
+**scroll_to_section**: { type: "scroll_to_section", params: { section: "team|gallery|reviews|faq|find-us", button_label: "See the Team" }}
+**show_services**: { type: "show_services", params: { category: "lashes|brows|facials", button_label: "Browse Lashes" }}
+**book_service**: { type: "book_service", params: { service_slug: "classic-full-set", service_name: "Classic Full Set", button_label: "Book Now" }}
+**display_team_card**: { type: "display_team_card", params: { member_name: "rachel", button_label: "Meet Rachel" }}
+**send_message_to_team**: { type: "send_message_to_team", params: { name: "...", email: "...", message: "...", inquiry_type: "general" }}
 `
 
 export const FAQ_CONTEXT_TEMPLATE = (faqs: Array<{ question: string; answer: string; category: string }>) => `### FAQ KNOWLEDGE ###
