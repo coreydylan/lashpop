@@ -69,7 +69,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'LashPop Studios - Luxury Lashes, Tailored to You',
+  title: 'LashPop Studios - Effortless Beauty for the Modern Woman',
   description: 'Experience luxury lash services in Los Angeles. From classic to mega volume, discover your perfect lash look with our expert artists.',
   keywords: 'lash extensions, eyelash extensions, volume lashes, classic lashes, mega volume, lash lift, Los Angeles, beauty studio',
   appleWebApp: {
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     title: 'LashPop Studios',
   },
   openGraph: {
-    title: 'LashPop Studios - Luxury Lashes, Tailored to You',
+    title: 'LashPop Studios - Effortless Beauty for the Modern Woman',
     description: 'Experience luxury lash services in Los Angeles. Book your appointment today.',
     images: ['/images/og-image.jpg'],
     url: 'https://lashpopstudios.com',
@@ -86,8 +86,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LashPop Studios',
-    description: 'Luxury lash services in Los Angeles',
+    title: 'LashPop Studios - Effortless Beauty for the Modern Woman',
+    description: 'Effortless beauty for the modern woman',
     images: ['/images/twitter-card.jpg'],
   },
 }
