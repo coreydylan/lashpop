@@ -323,7 +323,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           className="sticky w-[115vw] -ml-[7.5vw] z-40 flex justify-center overflow-visible"
           style={{
             background: 'transparent',
-            top: '-78vw',
+            top: '-88vw',
           }}
         >
           {/* Arch image - width set via style, GSAP controls scale */}
