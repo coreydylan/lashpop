@@ -323,6 +323,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             style={{
               top: '25vh',
               height: '75vh', // Fixed height so overflow-hidden works
+              boxShadow: '0 -8px 16px -4px rgba(245, 240, 232, 0.9)', // Soft gradient edge spreading upward
             }}
           >
             {/* Inner content area with top padding for breathing room */}
