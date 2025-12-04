@@ -167,6 +167,23 @@ export const GPT_FUNCTIONS: GPTFunction[] = [
     },
   },
   {
+    name: 'suggest_quick_replies',
+    description: 'ALWAYS call this function with every response to provide 2-3 contextual quick reply options. These help guide the conversation.',
+    parameters: {
+      type: 'object',
+      properties: {
+        replies: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Array of 2-3 short, contextual quick reply suggestions (e.g., "How do I prepare?", "What\'s the price?", "Help me book")',
+          minItems: 2,
+          maxItems: 3,
+        },
+      },
+      required: ['replies'],
+    },
+  },
+  {
     name: 'display_buttons',
     description: 'Show multiple action buttons. Use when offering several options to the user.',
     parameters: {
