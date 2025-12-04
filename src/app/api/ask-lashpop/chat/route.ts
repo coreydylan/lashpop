@@ -191,13 +191,6 @@ export async function POST(request: NextRequest) {
           const { name, arguments: argsString } = toolCall.function
           try {
             const args = JSON.parse(argsString || '{}')
-
-            // Handle suggest_quick_replies separately
-            if (name === 'suggest_quick_replies' && args.replies) {
-              quickReplies = args.replies as string[]
-              continue
-            }
-
             const action = functionCallToAction(name, args, context.servicesMap)
 
             if (action) {
@@ -214,10 +207,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate contextual quick replies as fallback if AI didn't provide them
-    if (quickReplies.length === 0) {
-      quickReplies = generateQuickReplies(message, responseText)
-    }
+    // Always generate quick replies server-side (AI's tool calls unreliable for this)
+    quickReplies = generateQuickReplies(message, responseText)
 
     // CRITICAL: Ensure there's always a message (never empty bubble)
     if (!responseText || responseText.trim() === '') {
