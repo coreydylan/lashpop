@@ -175,6 +175,15 @@ export async function POST(request: NextRequest) {
     let actions: ChatAction[] = []
     let quickReplies: string[] = []
 
+    // Debug: Log what we got from OpenAI
+    console.log('[ASK LASHPOP] Response from OpenAI:', {
+      hasContent: !!responseMessage.content,
+      contentLength: responseMessage.content?.length || 0,
+      contentPreview: responseMessage.content?.substring(0, 100),
+      toolCallsCount: responseMessage.tool_calls?.length || 0,
+      toolCallNames: responseMessage.tool_calls?.map(tc => tc.function?.name) || [],
+    })
+
     // Handle tool calls (GPT-5.1 modern format - supports parallel tool calls)
     if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
       for (const toolCall of responseMessage.tool_calls) {
@@ -210,9 +219,14 @@ export async function POST(request: NextRequest) {
       quickReplies = generateQuickReplies(message, responseText)
     }
 
-    // CRITICAL: Ensure there's always a message with actions (never empty bubble)
-    if (!responseText && actions.length > 0) {
-      responseText = generateFallbackMessage(actions)
+    // CRITICAL: Ensure there's always a message (never empty bubble)
+    if (!responseText || responseText.trim() === '') {
+      if (actions.length > 0) {
+        responseText = generateFallbackMessage(actions)
+      } else {
+        // Generic fallback when AI returns nothing useful
+        responseText = "I'm here to help! What would you like to know about LashPop? 😊"
+      }
     }
 
     // Generate conversation ID if this is a new conversation
