@@ -290,15 +290,16 @@ function generateSmartQuickReplies(
   const lowerMessage = userMessage.toLowerCase()
   const lowerResponse = response.toLowerCase()
   const fullContext = [...conversationHistory.map(m => m.content), userMessage, response].join(' ').toLowerCase()
+  const messageCount = conversationHistory.length
 
   // ============================================================================
-  // SITUATIONS WHERE WE DON'T SHOW QUICK REPLIES
+  // SITUATIONS WHERE WE DON'T SHOW QUICK REPLIES (most cases!)
   // ============================================================================
 
   // 1. Emotional/complaint situations - let the user express themselves freely
   const emotionalKeywords = ['bad experience', 'upset', 'frustrated', 'disappointed', 'angry', 'complaint', 'terrible', 'horrible', 'worst', 'rude', 'unhappy', 'problem', 'issue', 'wrong']
   if (emotionalKeywords.some(k => fullContext.includes(k))) {
-    return [] // No quick replies - let them speak freely
+    return []
   }
 
   // 2. We're in the middle of collecting info (name, email, phone, details)
@@ -307,90 +308,42 @@ function generateSmartQuickReplies(
     lowerResponse.includes('your phone') ||
     lowerResponse.includes('can you tell me') ||
     lowerResponse.includes('what happened') ||
-    lowerResponse.includes('more about')
+    lowerResponse.includes('more about') ||
+    lowerResponse.includes('what would you like')
   if (collectingInfo) {
-    return [] // Don't interrupt info collection with quick replies
+    return []
   }
 
-  // 3. Message just sent confirmation
-  if (lowerResponse.includes('sent!') || lowerResponse.includes('i\'ve sent') || lowerResponse.includes('passed along')) {
-    return [
-      { type: 'text', label: 'Thanks!' },
-      { type: 'text', label: 'I have another question' },
-    ]
+  // 3. If response asks ANY question, don't add quick replies - let user answer
+  if (lowerResponse.includes('?')) {
+    return []
   }
 
   // 4. Action-heavy response (already has buttons)
-  if (actions.length >= 2) {
-    return [] // Don't clutter with more options
+  if (actions.length >= 1) {
+    return []
+  }
+
+  // 5. After first few exchanges, stop showing quick replies most of the time
+  // Only show in specific high-value moments
+  if (messageCount > 4) {
+    // Only show after message sent confirmation
+    if (lowerResponse.includes('sent!') || lowerResponse.includes('i\'ve sent')) {
+      return [
+        { type: 'text', label: 'Thanks!' },
+        { type: 'text', label: 'I have another question' },
+      ]
+    }
+    // Otherwise, no quick replies in ongoing conversations
+    return []
   }
 
   // ============================================================================
-  // CONTEXTUAL QUICK REPLIES
+  // FIRST FEW MESSAGES ONLY - Show helpful quick replies
   // ============================================================================
 
-  // If response mentions a specific team member, offer to show their card
-  const teamMentioned = extractMentionedTeamMember(lowerResponse)
-  if (teamMentioned) {
-    return [
-      { type: 'text', label: `Tell me more about ${teamMentioned}` },
-      { type: 'text', label: 'Help me book' },
-    ]
-  }
-
-  // Discussion about services/pricing
-  if (lowerResponse.includes('$') || lowerResponse.includes('start at') || lowerResponse.includes('pricing')) {
-    return [
-      { type: 'text', label: 'Help me book' },
-      {
-        type: 'action',
-        label: '📋 Browse services',
-        action: { type: 'open_panel', panelType: 'category-picker', data: {}, label: 'Browse services' }
-      },
-    ]
-  }
-
-  // Mentioned location/address
-  if (lowerResponse.includes('coast hwy') || lowerResponse.includes('oceanside') || lowerResponse.includes('located')) {
-    return [
-      {
-        type: 'action',
-        label: '📍 Show on map',
-        action: { type: 'scroll_to_section', target: '#find-us', label: 'Show on map' }
-      },
-      { type: 'text', label: 'What are your hours?' },
-    ]
-  }
-
-  // Talking about specific lash services
-  if ((lowerMessage.includes('lash') || lowerResponse.includes('lash')) &&
-      !lowerMessage.includes('book') && !lowerResponse.includes('book')) {
-    return [
-      { type: 'text', label: 'What\'s the difference between styles?' },
-      { type: 'text', label: 'Help me book lashes' },
-    ]
-  }
-
-  // Talking about brows
-  if (lowerMessage.includes('brow') || lowerResponse.includes('brow')) {
-    return [
-      { type: 'text', label: 'How long does it last?' },
-      { type: 'text', label: 'Help me book' },
-    ]
-  }
-
-  // Talking about facials/skin
-  if (lowerMessage.includes('facial') || lowerResponse.includes('facial') ||
-      lowerMessage.includes('skin') || lowerResponse.includes('hydrafacial')) {
-    return [
-      { type: 'text', label: 'What\'s included?' },
-      { type: 'text', label: 'Help me book a facial' },
-    ]
-  }
-
-  // Greeting or very first message
-  if (conversationHistory.length === 0 ||
-      lowerMessage === 'hi' || lowerMessage === 'hello' || lowerMessage === 'hey') {
+  // Very first message (welcome response)
+  if (messageCount === 0) {
     return [
       { type: 'text', label: 'What services do you offer?' },
       { type: 'text', label: 'Help me book' },
@@ -398,12 +351,25 @@ function generateSmartQuickReplies(
     ]
   }
 
-  // If response asks a question, don't add quick replies
-  if (lowerResponse.endsWith('?')) {
-    return []
+  // After price/service info - offer booking
+  if (lowerResponse.includes('$') || lowerResponse.includes('start at')) {
+    return [
+      { type: 'text', label: 'Help me book' },
+    ]
   }
 
-  // Default: minimal or none - don't force quick replies
+  // After location info - show map action
+  if (lowerResponse.includes('coast hwy') || lowerResponse.includes('oceanside')) {
+    return [
+      {
+        type: 'action',
+        label: '📍 Show on map',
+        action: { type: 'scroll_to_section', target: '#find-us', label: 'Show on map' }
+      },
+    ]
+  }
+
+  // Default: NO quick replies - less is more
   return []
 }
 
