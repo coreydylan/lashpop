@@ -51,7 +51,11 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const { actions } = usePanelStack()
   const { registerLogoClick } = useDevMode()
-  const { toggle: toggleChat, state: chatState } = useAskLashpop()
+  const { toggle: toggleChat, state: chatState, dismissBubble, open: openChat } = useAskLashpop()
+
+  // Track if bubble is expanded (for animation)
+  const [bubbleExpanded, setBubbleExpanded] = useState(false)
+  const hasBubble = !!chatState.contextualBubble
 
   // Get current section label for display
   const currentSectionLabel = SECTIONS.find(s => s.id === currentSection)?.label || ''
@@ -134,6 +138,53 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [isMenuOpen, getScrollContainer])
+
+  // Animate bubble expansion when it appears
+  useEffect(() => {
+    if (hasBubble) {
+      // Delay the expansion slightly for a smooth animation
+      const expandTimer = setTimeout(() => setBubbleExpanded(true), 100)
+      return () => clearTimeout(expandTimer)
+    } else {
+      setBubbleExpanded(false)
+    }
+  }, [hasBubble])
+
+  // Auto-dismiss bubble after 8 seconds
+  useEffect(() => {
+    if (!hasBubble) return
+
+    const dismissTimer = setTimeout(() => {
+      setBubbleExpanded(false)
+      setTimeout(dismissBubble, 300) // Wait for collapse animation
+    }, 8000)
+
+    return () => clearTimeout(dismissTimer)
+  }, [hasBubble, dismissBubble])
+
+  // Dismiss bubble on scroll
+  useEffect(() => {
+    if (!hasBubble) return
+
+    const scrollContainer = getScrollContainer()
+    if (!scrollContainer) return
+
+    const handleScroll = () => {
+      setBubbleExpanded(false)
+      setTimeout(dismissBubble, 300)
+    }
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true, once: true })
+    return () => scrollContainer.removeEventListener('scroll', handleScroll)
+  }, [hasBubble, getScrollContainer, dismissBubble])
+
+  // Handle bubble click - open chat
+  const handleBubbleClick = useCallback(() => {
+    setBubbleExpanded(false)
+    setTimeout(() => {
+      dismissBubble()
+      openChat()
+    }, 200)
+  }, [dismissBubble, openChat])
 
   // Handle logo click - scroll to top + register for dev mode
   const handleLogoClick = useCallback(() => {
@@ -269,25 +320,64 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 />
               </button>
 
-              {/* ASK LASHPOP Button - Center */}
-              <motion.button
-                onClick={toggleChat}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`
-                  flex items-center gap-1.5 px-3 py-1.5 rounded-full
-                  transition-all duration-200
-                  ${chatState.isOpen
-                    ? 'bg-dusty-rose text-white shadow-md'
-                    : 'bg-dusty-rose/10 border border-dusty-rose/20 text-dusty-rose'
-                  }
-                `}
-              >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-semibold tracking-wider uppercase">
-                  ASK LASHPOP
-                </span>
-              </motion.button>
+              {/* ASK LASHPOP Button with Contextual Bubble - Center */}
+              <div className="relative">
+                <motion.button
+                  onClick={hasBubble ? handleBubbleClick : toggleChat}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`
+                    flex items-center gap-1.5 px-3 py-1.5 rounded-full
+                    transition-all duration-200
+                    ${chatState.isOpen
+                      ? 'bg-dusty-rose text-white shadow-md'
+                      : hasBubble
+                      ? 'bg-dusty-rose text-white shadow-md'
+                      : 'bg-dusty-rose/10 border border-dusty-rose/20 text-dusty-rose'
+                    }
+                  `}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-semibold tracking-wider uppercase">
+                    ASK LASHPOP
+                  </span>
+                </motion.button>
+
+                {/* Contextual Bubble - Expands below button */}
+                <AnimatePresence>
+                  {hasBubble && bubbleExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                      transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                      onClick={handleBubbleClick}
+                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 cursor-pointer"
+                    >
+                      <div
+                        className="px-4 py-2.5 rounded-2xl text-xs text-dune whitespace-nowrap shadow-lg"
+                        style={{
+                          background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 244, 0.98) 100%)',
+                          border: '1px solid rgba(183, 134, 134, 0.25)',
+                          boxShadow: '0 4px 20px rgba(183, 134, 134, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05)'
+                        }}
+                      >
+                        {chatState.contextualBubble?.message}
+                      </div>
+                      {/* Little tail pointing up to button */}
+                      <div
+                        className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.98)',
+                          border: '1px solid rgba(183, 134, 134, 0.25)',
+                          borderRight: 'none',
+                          borderBottom: 'none',
+                        }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Section Indicator / Menu Trigger */}
               <button

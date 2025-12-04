@@ -15,6 +15,7 @@ import type {
   OpenPanelAction,
   SubmitTeamMessageAction,
   SmartQuickReply,
+  ContextualBubble,
 } from '@/lib/ask-lashpop/types'
 
 // ============================================================================
@@ -32,6 +33,7 @@ const getInitialState = (): AskLashpopState => ({
   activeForm: null,
   formData: {},
   conversationId: null,
+  contextualBubble: null,
 })
 
 // ============================================================================
@@ -41,7 +43,7 @@ const getInitialState = (): AskLashpopState => ({
 function askLashpopReducer(state: AskLashpopState, action: AskLashpopAction): AskLashpopState {
   switch (action.type) {
     case 'OPEN':
-      // Add welcome message if no messages yet
+      // Add welcome message if no messages yet, clear contextual bubble
       if (state.messages.length === 0) {
         const welcomeQuickReplies: SmartQuickReply[] = [
           { type: 'text', label: 'I have a question' },
@@ -55,9 +57,9 @@ function askLashpopReducer(state: AskLashpopState, action: AskLashpopAction): As
           timestamp: Date.now(),
           quickReplies: welcomeQuickReplies,
         }
-        return { ...state, isOpen: true, messages: [welcomeMessage] }
+        return { ...state, isOpen: true, messages: [welcomeMessage], contextualBubble: null }
       }
-      return { ...state, isOpen: true }
+      return { ...state, isOpen: true, contextualBubble: null }
 
     case 'CLOSE':
       return { ...state, isOpen: false }
@@ -76,9 +78,10 @@ function askLashpopReducer(state: AskLashpopState, action: AskLashpopAction): As
           timestamp: Date.now(),
           quickReplies: welcomeQuickReplies,
         }
-        return { ...state, isOpen: true, messages: [welcomeMessage] }
+        return { ...state, isOpen: true, messages: [welcomeMessage], contextualBubble: null }
       }
-      return { ...state, isOpen: !state.isOpen }
+      // When opening, clear contextual bubble; when closing, leave it alone
+      return { ...state, isOpen: !state.isOpen, contextualBubble: !state.isOpen ? null : state.contextualBubble }
 
     case 'SET_VIEW':
       return { ...state, view: action.payload }
@@ -118,6 +121,12 @@ function askLashpopReducer(state: AskLashpopState, action: AskLashpopAction): As
     case 'SET_CONVERSATION_ID':
       return { ...state, conversationId: action.payload }
 
+    case 'SHOW_CONTEXTUAL_BUBBLE':
+      return { ...state, contextualBubble: action.payload }
+
+    case 'HIDE_CONTEXTUAL_BUBBLE':
+      return { ...state, contextualBubble: null }
+
     default:
       return state
   }
@@ -143,6 +152,8 @@ interface AskLashpopContextValue {
   // Form handling
   updateFormField: (field: string, value: string) => void
   submitForm: () => Promise<void>
+  // Contextual bubble
+  dismissBubble: () => void
 }
 
 const AskLashpopContext = createContext<AskLashpopContextValue | null>(null)
@@ -168,6 +179,7 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
   const open = useCallback(() => dispatch({ type: 'OPEN' }), [])
   const close = useCallback(() => dispatch({ type: 'CLOSE' }), [])
   const toggle = useCallback(() => dispatch({ type: 'TOGGLE' }), [])
+  const dismissBubble = useCallback(() => dispatch({ type: 'HIDE_CONTEXTUAL_BUBBLE' }), [])
 
   // ============================================================================
   // View Controls
@@ -201,8 +213,26 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
         }
         const target = sectionMap[scrollAction.target] || scrollAction.target
         smoothScrollToElement(target, scrollAction.offset || 60, 800, scrollAction.alignment || 'top')
+
+        // Show contextual bubble with helpful message based on section
+        const bubbleMessages: Record<string, string> = {
+          '#team': "Here's our amazing team! Tap here if you need anything else ✨",
+          '#gallery': "Check out our work! Tap here if you have questions 💕",
+          '#reviews': "See what our clients say! Tap here anytime 🌸",
+          '#faq': "Hope this helps! Tap here if you need more info 💫",
+          '#find-us': "Here's how to find us! Tap here if you need anything else 📍",
+          '#hero': "Back to the top! Tap here if you need help ✨",
+        }
+
         if (scrollAction.thenCollapse) {
-          setTimeout(() => dispatch({ type: 'CLOSE' }), 300)
+          const bubbleMessage = bubbleMessages[target] || "Tap here if you need anything else! ✨"
+          setTimeout(() => {
+            dispatch({ type: 'CLOSE' })
+            dispatch({
+              type: 'SHOW_CONTEXTUAL_BUBBLE',
+              payload: { message: bubbleMessage, section: target }
+            })
+          }, 300)
         }
         break
       }
@@ -259,8 +289,17 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
       case 'display_team_card': {
         // Scroll to team section to show the team member
         smoothScrollToElement('#team', 60, 800, 'top')
-        // Close the chat after a brief delay
-        setTimeout(() => dispatch({ type: 'CLOSE' }), 300)
+        // Close the chat and show contextual bubble after a brief delay
+        setTimeout(() => {
+          dispatch({ type: 'CLOSE' })
+          dispatch({
+            type: 'SHOW_CONTEXTUAL_BUBBLE',
+            payload: {
+              message: "Here's our team! Tap here if you need anything else ✨",
+              section: '#team'
+            }
+          })
+        }, 300)
         break
       }
 
@@ -482,8 +521,9 @@ export function AskLashpopProvider({ children }: AskLashpopProviderProps) {
       goBackToChat,
       updateFormField,
       submitForm,
+      dismissBubble,
     }),
-    [state, open, close, toggle, sendMessage, executeAction, setView, goBackToChat, updateFormField, submitForm]
+    [state, open, close, toggle, sendMessage, executeAction, setView, goBackToChat, updateFormField, submitForm, dismissBubble]
   )
 
   return <AskLashpopContext.Provider value={value}>{children}</AskLashpopContext.Provider>

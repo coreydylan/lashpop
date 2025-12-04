@@ -163,6 +163,12 @@ export interface DisplayServiceCardAction {
 
 export type ChatView = 'chat' | 'vagaro-widget' | 'contact-form'
 
+// Contextual bubble shown in header after scroll actions
+export interface ContextualBubble {
+  message: string
+  section: string // Which section was scrolled to
+}
+
 export interface AskLashpopState {
   isOpen: boolean
   view: ChatView
@@ -175,6 +181,8 @@ export interface AskLashpopState {
   formData: Record<string, string>
   // Conversation context
   conversationId: string | null
+  // Contextual bubble in header after scroll actions
+  contextualBubble: ContextualBubble | null
 }
 
 export type AskLashpopAction =
@@ -192,6 +200,8 @@ export type AskLashpopAction =
   | { type: 'CLEAR_FORM' }
   | { type: 'RESET_CONVERSATION' }
   | { type: 'SET_CONVERSATION_ID'; payload: string }
+  | { type: 'SHOW_CONTEXTUAL_BUBBLE'; payload: ContextualBubble }
+  | { type: 'HIDE_CONTEXTUAL_BUBBLE' }
 
 // ============================================================================
 // API Types
