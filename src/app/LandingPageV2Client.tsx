@@ -148,6 +148,7 @@ interface FounderLetterContent {
 
 // Hero slideshow/image config types
 import type { SlideshowPreset, SlideshowImage } from '@/types/hero-slideshow';
+import type { BusinessInfo, SocialLinks, ServiceAreas, OpeningHours } from '@/actions/site-settings';
 
 interface HeroSlideshowConfig {
   preset: SlideshowPreset | null;
@@ -173,6 +174,10 @@ interface LandingPageV2ClientProps {
   faqData?: FAQData;
   founderLetterContent?: FounderLetterContent;
   heroConfig?: HeroConfig;
+  businessInfo?: BusinessInfo;
+  socialLinks?: SocialLinks;
+  serviceAreas?: ServiceAreas;
+  openingHours?: OpeningHours;
 }
 
 // Minimal mobile styles - GSAP handles the scroll behavior
@@ -237,7 +242,7 @@ const mobileScrollStyles = `
   }
 `;
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig, businessInfo, socialLinks, serviceAreas, openingHours }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -412,7 +417,12 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                     {/* Footer */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="footer">
-                      <FooterV2 />
+                      <FooterV2
+                        businessInfo={businessInfo}
+                        socialLinks={socialLinks}
+                        serviceAreas={serviceAreas}
+                        openingHours={openingHours}
+                      />
                     </div>
                   </div>
                 </div>

@@ -5,6 +5,7 @@ import { getInstagramPosts } from "@/actions/instagram"
 import { getServiceCategories } from "@/actions/categories"
 import { getFAQsGroupedByCategory } from "@/actions/faqs"
 import { getSlideshowConfigs } from "@/actions/hero-slideshow"
+import { getBusinessInfo, getSocialLinks, getServiceAreas, getOpeningHours } from '@/actions/site-settings'
 import { LocalBusinessSchema } from '@/components/seo'
 import LandingPageV2Client from "./LandingPageV2Client"
 
@@ -12,6 +13,14 @@ import LandingPageV2Client from "./LandingPageV2Client"
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
+  // Fetch site settings from database
+  const [businessInfo, socialLinks, serviceAreas, openingHours] = await Promise.all([
+    getBusinessInfo(),
+    getSocialLinks(),
+    getServiceAreas(),
+    getOpeningHours()
+  ])
+
   // Fetch services from database
   const services = await getAllServices()
 
@@ -99,7 +108,19 @@ export default async function HomePage() {
 
   return (
     <>
-      <LocalBusinessSchema totalReviews={totalReviews} averageRating={averageRating} />
+      <LocalBusinessSchema
+        totalReviews={totalReviews}
+        averageRating={averageRating}
+        businessInfo={{
+          ...businessInfo,
+          url: 'https://lashpopstudios.com',
+          description: 'Award-winning lash extension studio in Oceanside, CA',
+          telephone: businessInfo.phone,
+        }}
+        socialLinks={socialLinks}
+        serviceAreas={serviceAreas.cities}
+        openingHours={openingHours}
+      />
       <LandingPageV2Client
         services={formattedServices}
         teamMembers={formattedTeamMembers}
@@ -109,6 +130,10 @@ export default async function HomePage() {
         serviceCategories={serviceCategories}
         faqData={faqData}
         heroConfig={heroConfig}
+        businessInfo={businessInfo}
+        socialLinks={socialLinks}
+        serviceAreas={serviceAreas}
+        openingHours={openingHours}
       />
     </>
   )

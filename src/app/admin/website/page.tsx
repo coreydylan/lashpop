@@ -2,15 +2,16 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { 
-  Image, 
-  Users, 
-  Star, 
-  Instagram, 
-  FileText, 
+import {
+  Image,
+  Users,
+  Star,
+  Instagram,
+  FileText,
   HelpCircle,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Settings
 } from 'lucide-react'
 
 const sections = [
@@ -62,12 +63,20 @@ const sections = [
     color: 'golden',
     stats: 'Database'
   },
-  { 
-    id: 'faq', 
-    label: 'FAQ Manager', 
-    icon: HelpCircle, 
+  {
+    id: 'faq',
+    label: 'FAQ Manager',
+    icon: HelpCircle,
     description: 'Manage FAQ categories, questions, and featured items',
     color: 'sage',
+    stats: 'Database'
+  },
+  {
+    id: 'settings',
+    label: 'Site Settings',
+    icon: Settings,
+    description: 'Business info, SEO, social links, and analytics configuration',
+    color: 'dune',
     stats: 'Database'
   },
 ]
@@ -78,6 +87,7 @@ const colorMap: Record<string, string> = {
   'sage': 'from-sage/20 to-sage/5 border-sage/20 hover:border-sage/40',
   'ocean-mist': 'from-ocean-mist/20 to-ocean-mist/5 border-ocean-mist/20 hover:border-ocean-mist/40',
   'terracotta': 'from-terracotta/20 to-terracotta/5 border-terracotta/20 hover:border-terracotta/40',
+  'dune': 'from-dune/20 to-dune/5 border-dune/20 hover:border-dune/40',
 }
 
 const iconColorMap: Record<string, string> = {
@@ -86,6 +96,7 @@ const iconColorMap: Record<string, string> = {
   'sage': 'text-sage',
   'ocean-mist': 'text-ocean-mist',
   'terracotta': 'text-terracotta',
+  'dune': 'text-dune',
 }
 
 export default function WebsiteAdminPage() {

@@ -5,81 +5,127 @@ import React from 'react';
 interface LocalBusinessSchemaProps {
   totalReviews?: number;
   averageRating?: number;
+  businessInfo?: {
+    name: string;
+    description?: string;
+    url: string;
+    telephone: string;
+    email: string;
+    streetAddress: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+  };
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+    yelp?: string;
+  };
+  serviceAreas?: string[];
+  openingHours?: {
+    dayOfWeek: string[];
+    opens: string;
+    closes: string;
+  };
 }
+
+// Default values for backward compatibility
+const defaultBusinessInfo = {
+  name: 'LashPop Studios',
+  description: 'Award-winning lash extension studio in Oceanside, CA',
+  url: 'https://lashpopstudios.com',
+  telephone: '+1-760-212-0448',
+  email: 'hello@lashpopstudios.com',
+  streetAddress: '429 S Coast Hwy',
+  city: 'Oceanside',
+  state: 'CA',
+  postalCode: '92054',
+  country: 'US',
+  latitude: 33.1959,
+  longitude: -117.3795,
+};
+
+const defaultSocialLinks = {
+  instagram: 'https://www.instagram.com/lashpopstudios',
+  facebook: 'https://www.facebook.com/lashpopstudios',
+};
+
+const defaultServiceAreas = [
+  'Oceanside',
+  'Carlsbad',
+  'Vista',
+  'Encinitas',
+  'San Marcos',
+  'Escondido',
+];
+
+const defaultOpeningHours = {
+  dayOfWeek: [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ],
+  opens: '08:00',
+  closes: '19:30',
+};
 
 export default function LocalBusinessSchema({
   totalReviews,
   averageRating,
+  businessInfo = defaultBusinessInfo,
+  socialLinks = defaultSocialLinks,
+  serviceAreas = defaultServiceAreas,
+  openingHours = defaultOpeningHours,
 }: LocalBusinessSchemaProps) {
+  // Build sameAs array from socialLinks
+  const sameAsArray = Object.values(socialLinks).filter(
+    (link): link is string => typeof link === 'string' && link.length > 0
+  );
+
   const schemaData = {
     '@context': 'https://schema.org',
     '@type': 'BeautySalon',
-    '@id': 'https://lashpopstudios.com/#business',
-    name: 'LashPop Studios',
-    description: 'Award-winning lash extension studio in Oceanside, CA',
-    url: 'https://lashpopstudios.com',
-    telephone: '+1-760-212-0448',
-    email: 'hello@lashpopstudios.com',
+    '@id': `${businessInfo.url}/#business`,
+    name: businessInfo.name,
+    ...(businessInfo.description && { description: businessInfo.description }),
+    url: businessInfo.url,
+    telephone: businessInfo.telephone,
+    email: businessInfo.email,
     address: {
       '@type': 'PostalAddress',
-      streetAddress: '429 S Coast Hwy',
-      addressLocality: 'Oceanside',
-      addressRegion: 'CA',
-      postalCode: '92054',
-      addressCountry: 'US',
+      streetAddress: businessInfo.streetAddress,
+      addressLocality: businessInfo.city,
+      addressRegion: businessInfo.state,
+      postalCode: businessInfo.postalCode,
+      addressCountry: businessInfo.country,
     },
     geo: {
       '@type': 'GeoCoordinates',
-      latitude: 33.1959,
-      longitude: -117.3795,
+      latitude: businessInfo.latitude,
+      longitude: businessInfo.longitude,
     },
     openingHoursSpecification: [
       {
         '@type': 'OpeningHoursSpecification',
-        dayOfWeek: [
-          'Monday',
-          'Tuesday',
-          'Wednesday',
-          'Thursday',
-          'Friday',
-          'Saturday',
-          'Sunday',
-        ],
-        opens: '08:00',
-        closes: '19:30',
+        dayOfWeek: openingHours.dayOfWeek,
+        opens: openingHours.opens,
+        closes: openingHours.closes,
       },
     ],
     priceRange: '$$',
-    areaServed: [
-      {
-        '@type': 'City',
-        name: 'Oceanside',
-      },
-      {
-        '@type': 'City',
-        name: 'Carlsbad',
-      },
-      {
-        '@type': 'City',
-        name: 'Vista',
-      },
-      {
-        '@type': 'City',
-        name: 'Encinitas',
-      },
-      {
-        '@type': 'City',
-        name: 'San Marcos',
-      },
-      {
-        '@type': 'City',
-        name: 'Escondido',
-      },
-    ],
-    sameAs: [
-      'https://www.instagram.com/lashpopstudios',
-      'https://www.facebook.com/lashpopstudios',
-    ],
+    areaServed: serviceAreas.map((city) => ({
+      '@type': 'City',
+      name: city,
+    })),
+    ...(sameAsArray.length > 0 && { sameAs: sameAsArray }),
     ...(totalReviews &&
       averageRating && {
         aggregateRating: {

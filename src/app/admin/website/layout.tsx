@@ -4,17 +4,18 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  Image, 
-  Users, 
-  Star, 
-  Instagram, 
-  FileText, 
+import {
+  Image,
+  Users,
+  Star,
+  Instagram,
+  FileText,
   HelpCircle,
   ChevronLeft,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  Settings
 } from 'lucide-react'
 
 const sections = [
@@ -25,6 +26,7 @@ const sections = [
   { id: 'instagram', label: 'Instagram', icon: Instagram, description: 'IG carousel settings' },
   { id: 'reviews', label: 'Reviews', icon: Star, description: 'Review selection & order' },
   { id: 'faq', label: 'FAQ', icon: HelpCircle, description: 'Questions & answers' },
+  { id: 'settings', label: 'Settings', icon: Settings, description: 'Site info & SEO' },
 ]
 
 export default function WebsiteAdminLayout({
