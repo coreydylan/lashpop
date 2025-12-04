@@ -59,9 +59,10 @@ export function MobileSwipeableWelcomeCards({
     return () => clearTimeout(timer)
   }, [triggerTutorial])
 
-  // Swipe threshold
-  const swipeThreshold = 80
-  const swipeVelocityThreshold = 300
+  // Swipe thresholds - lower values = more sensitive to horizontal swipes
+  const swipeThreshold = 40 // Distance in pixels (was 80)
+  const swipeVelocityThreshold = 150 // Velocity in px/s (was 300)
+  const verticalThresholdRatio = 1.5 // Allow swipe if horizontal > vertical * ratio
 
   // Handle swipe completion - infinite loop in both directions
   const handleSwipe = useCallback(
@@ -102,6 +103,16 @@ export function MobileSwipeableWelcomeCards({
   const handleDragEnd = useCallback(
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       const { offset, velocity } = info
+
+      // Check if this is primarily a horizontal gesture (not vertical scrolling)
+      const absOffsetX = Math.abs(offset.x)
+      const absOffsetY = Math.abs(offset.y)
+      const isHorizontalGesture = absOffsetX > absOffsetY * verticalThresholdRatio
+
+      // Only process horizontal swipes if it's primarily a horizontal gesture
+      if (!isHorizontalGesture) {
+        return // Let vertical scroll happen
+      }
 
       // Check if swipe meets threshold (distance or velocity)
       const swipedLeft =
@@ -157,7 +168,7 @@ export function MobileSwipeableWelcomeCards({
   const currentCard = cardContent[currentIndex]
 
   return (
-    <div ref={containerRef} className="flex flex-col items-center w-full">
+    <div ref={containerRef} className="flex flex-col items-center w-full overflow-hidden">
       {/* Pagination dots - tightly grouped */}
       <div className="flex justify-center items-center gap-1 mb-5">
         {cardContent.map((_, index) => (
@@ -180,8 +191,8 @@ export function MobileSwipeableWelcomeCards({
         ))}
       </div>
 
-      {/* Card container */}
-      <div className="relative w-full max-w-sm" style={{ height: '180px' }}>
+      {/* Card container - extended touch area with padding */}
+      <div className="relative w-full max-w-sm mx-auto" style={{ height: '180px' }}>
         <AnimatePresence mode="popLayout" custom={exitDirection}>
           <motion.div
             key={currentCard.id}
@@ -191,13 +202,23 @@ export function MobileSwipeableWelcomeCards({
             animate="center"
             exit="exit"
             drag="x"
+            dragDirectionLock
             dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.7}
+            dragElastic={0.5}
             onDragStart={handleDragStart}
             onDrag={handleDrag}
             onDragEnd={handleDragEnd}
-            className="absolute inset-0 cursor-grab active:cursor-grabbing touch-pan-y"
-            style={{ zIndex: 10 }}
+            className="absolute cursor-grab active:cursor-grabbing touch-pan-y"
+            style={{
+              zIndex: 10,
+              // Extended touch area: add padding on left/right for easier swipe initiation
+              top: 0,
+              bottom: 0,
+              left: -24,
+              right: -24,
+              paddingLeft: 24,
+              paddingRight: 24,
+            }}
             whileDrag={{ scale: 1.01 }}
           >
             {/* Card content - no background, text directly on image */}
