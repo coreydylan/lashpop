@@ -516,6 +516,17 @@ export function BottomSheetContainer() {
                 />
               </div>
 
+              {/* Services Sector Bar - sticky at top when fullScreen */}
+              {hasCategoryPicker && (
+                <div className="flex-shrink-0 border-b border-dune/10">
+                  <CollapsedChipBar
+                    onCategorySelect={handleCategorySelect}
+                    onDiscoverSelect={handleDiscoverSelect}
+                    showDragIndicator={false}
+                  />
+                </div>
+              )}
+
               {/* Panel Content - scrolls independently (pan-y for vertical, pan-x for horizontal service cards) */}
               <div
                 ref={contentRef}
