@@ -137,7 +137,7 @@ export const GPT_FUNCTIONS: GPTFunction[] = [
   },
   {
     name: 'send_message_to_team',
-    description: 'Submit a message to the LashPop team after collecting info conversationally. Only call this AFTER you have: 1) their message/question, 2) their name, 3) their email or phone.',
+    description: 'Submit a message to the LashPop team. Only call AFTER gathering: 1) what they need help with, 2) relevant context (appointment details, who they are booked with, etc), 3) their name, 4) email or phone. The message should be a helpful summary for the team.',
     parameters: {
       type: 'object',
       properties: {
@@ -155,11 +155,11 @@ export const GPT_FUNCTIONS: GPTFunction[] = [
         },
         message: {
           type: 'string',
-          description: 'The message/question to send to the team',
+          description: 'A helpful summary for the team including: what the customer needs, any relevant details (appointment time, artist name, etc), and context. Write it as a clear message the team can act on.',
         },
         inquiry_type: {
           type: 'string',
-          enum: ['general', 'bridal', 'complaint', 'booking_help'],
+          enum: ['general', 'bridal', 'complaint', 'booking_help', 'reschedule', 'question'],
           description: 'Type of inquiry',
         },
       },
