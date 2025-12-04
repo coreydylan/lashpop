@@ -162,12 +162,11 @@ export async function POST(request: NextRequest) {
       model: process.env.OPENAI_MODEL || 'gpt-4o',
       messages,
 
-      // Structured output with JSON schema
+      // Structured output with JSON schema (non-strict for flexible action params)
       response_format: {
         type: 'json_schema',
         json_schema: {
           name: 'chat_response',
-          strict: true,
           schema: {
             type: 'object',
             properties: {
@@ -189,16 +188,13 @@ export async function POST(request: NextRequest) {
                   },
                   params: {
                     type: 'object',
-                    additionalProperties: true,
+                    description: 'Action-specific parameters',
                   },
                 },
-                required: ['type', 'params'],
-                additionalProperties: false,
                 description: 'Optional action to trigger (scroll, show services, book, etc.)',
               },
             },
             required: ['message', 'quick_replies'],
-            additionalProperties: false,
           },
         },
       },
