@@ -360,7 +360,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                   {/* Cream background container for all sections after founder arch on mobile */}
                   {/* Negative margin pulls team section up into the empty space left by the 150vh wrapper */}
                   {/* z-[60] ensures team scrolls over the letter card (z-50) */}
-                  <div className={isMobile ? 'bg-cream -mt-[75vh] relative z-[60]' : ''}>
+                  <div className={isMobile ? 'bg-cream -mt-[70vh] relative z-[60]' : ''}>
                     {/* Team Section - Adjusted trigger margin for earlier loading */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="team">
                       <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
