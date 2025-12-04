@@ -157,9 +157,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
     const triggers: ScrollTrigger[] = []
 
-    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.095 = 105vw -> 115vw)
+    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.087 = 115vw -> 125vw)
     const zoomTween = gsap.to(imageRef, {
-      scale: 1.095,
+      scale: 1.087,
       ease: 'none',
       scrollTrigger: {
         trigger: archContainerRef,
@@ -184,33 +184,34 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       invalidateOnRefresh: true,
       onUpdate: (self) => {
         const viewportHeight = window.innerHeight
-        const minVisibleHeight = viewportHeight * 0.15 // 15vh - Emily's face banner
+        const minVisibleHeight = viewportHeight * 0.25 // 25vh - Emily's face banner
 
-        // Get actual element positions
-        const archRect = archContainerRef.getBoundingClientRect()
-        const letterRect = letterRef.getBoundingClientRect()
+        // Get actual element positions - use imageRect since that's what we're clipping
         const imageRect = imageRef.getBoundingClientRect()
+        const letterRect = letterRef.getBoundingClientRect()
 
-        const archBottom = archRect.bottom // Where arch currently ends
+        const imageBottom = imageRect.bottom // Where image currently ends
+        const imageTop = imageRect.top // Where image starts (likely above viewport)
         const letterTop = letterRect.top // Where welcome text starts
         const imageHeight = imageRect.height
 
-        // If letter hasn't reached arch yet, no crop
-        if (letterTop >= archBottom) {
+        // If letter hasn't reached image bottom yet, no crop
+        if (letterTop >= imageBottom) {
           gsap.set(imageRef, { clipPath: 'inset(0 0 0% 0)' })
           return
         }
 
-        // Calculate how much arch extends below the welcome text
+        // Calculate how much image extends below the welcome text
         // This is how much we need to crop
-        const cropPixels = archBottom - letterTop
+        const cropPixels = imageBottom - letterTop
 
-        // Calculate how much of the arch is currently visible in viewport
-        const archVisibleTop = Math.max(0, archRect.top)
-        const archVisibleHeight = archBottom - archVisibleTop
+        // Calculate how much of the image is currently visible in viewport
+        const imageVisibleTop = Math.max(0, imageTop)
+        const imageVisibleBottom = Math.min(viewportHeight, imageBottom)
+        const imageVisibleHeight = imageVisibleBottom - imageVisibleTop
 
         // Cap the crop so at least 15vh remains visible
-        const maxCropPixels = Math.max(0, archVisibleHeight - minVisibleHeight)
+        const maxCropPixels = Math.max(0, imageVisibleHeight - minVisibleHeight)
         const finalCropPixels = Math.min(cropPixels, maxCropPixels)
 
         // Convert to percentage of image height
@@ -319,7 +320,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         {/* 40% of 195vw = ~78vw, so top: -78vw lets 40% scroll off before sticking */}
         <div
           ref={mobileArchRef}
-          className="sticky w-screen z-40 flex justify-center overflow-hidden"
+          className="sticky w-[115vw] -ml-[7.5vw] z-40 flex justify-center overflow-visible"
           style={{
             background: 'transparent',
             top: '-78vw',
@@ -331,7 +332,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             className="relative"
             style={{
               transformOrigin: 'center top',
-              width: '105vw',
+              width: '115vw',
             }}
           >
             <img
