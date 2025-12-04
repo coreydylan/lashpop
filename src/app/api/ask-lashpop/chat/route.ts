@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
       // Using "low" for fast conversational responses
       reasoning_effort: 'low',
 
-      temperature: 0.7,
+      // Note: GPT-5 only supports temperature=1 (default), so we don't set it
     })
 
     const responseMessage = completion.choices[0]?.message
