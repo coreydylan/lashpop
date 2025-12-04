@@ -205,12 +205,22 @@ const mobileScrollStyles = `
     }
 
     /* Allow taller sections to expand naturally */
+    .mobile-section[data-section-id="founder"],
     .mobile-section[data-section-id="team"],
     .mobile-section[data-section-id="instagram"],
     .mobile-section[data-section-id="reviews"],
     .mobile-section[data-section-id="faq"],
     .mobile-section[data-section-id="map"] {
       min-height: auto;
+      padding-bottom: 0;
+    }
+
+    /* Add bottom padding to content sections */
+    .mobile-section[data-section-id="team"],
+    .mobile-section[data-section-id="instagram"],
+    .mobile-section[data-section-id="reviews"],
+    .mobile-section[data-section-id="faq"],
+    .mobile-section[data-section-id="map"] {
       padding-bottom: 60px;
     }
 
@@ -348,7 +358,9 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                   </div>
 
                   {/* Cream background container for all sections after founder arch on mobile */}
-                  <div className={isMobile ? 'bg-cream' : ''}>
+                  {/* Negative margin pulls team section up into the empty space left by the 150vh wrapper */}
+                  {/* z-[60] ensures team scrolls over the letter card (z-50) */}
+                  <div className={isMobile ? 'bg-cream -mt-[75vh] relative z-[60]' : ''}>
                     {/* Team Section - Adjusted trigger margin for earlier loading */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="team">
                       <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">

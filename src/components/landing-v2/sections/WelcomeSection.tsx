@@ -186,7 +186,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               transition={{ duration: 0.8, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55' }}
             >
-              At LashPop, we're a collective of women-owned beauty businesses who believe looking amazing shouldn't require a 30-minute morning routine or a small emotional breakdown in front of the bathroom mirror. We're here to make beauty feel easy, natural, and—honestly—kind of life-changing.
+              At LashPop, we&apos;re a collective of women-owned beauty businesses who believe looking amazing shouldn&apos;t require a 30-minute morning routine or a small emotional breakdown in front of the bathroom mirror. We&apos;re here to make beauty feel easy, natural, and—honestly—kind of life-changing.
             </motion.p>
 
             <motion.p
@@ -196,7 +196,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55', opacity: 0.9 }}
             >
-              Everything we do is built on trust. When you walk into our studio, you're stepping into a space designed to help you breathe a little deeper and walk out feeling like the most refreshed, put-together version of yourself. No pressure. No judgment. Just great work and a team that genuinely cares about you.
+              Everything we do is built on trust. When you walk into our studio, you&apos;re stepping into a space designed to help you breathe a little deeper and walk out feeling like the most refreshed, put-together version of yourself. No pressure. No judgment. Just great work and a team that genuinely cares about you.
             </motion.p>
 
             <motion.p
