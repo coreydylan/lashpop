@@ -13,6 +13,7 @@ export function InlineVagaroWidget() {
   const { state: widgetState } = useVagaroWidget()
   const containerRef = useRef<HTMLDivElement>(null)
   const scriptLoadedRef = useRef(false)
+  const isVisibleRef = useRef(false)
   const [hasError, setHasError] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
 
@@ -20,9 +21,26 @@ export function InlineVagaroWidget() {
   const isWidgetReady = widgetState.isLoaded
   const widgetScriptUrl = service ? getVagaroWidgetUrl(service.vagaroServiceCode) : ''
 
+  // Keep ref in sync with state
+  useEffect(() => {
+    isVisibleRef.current = isVisible
+  }, [isVisible])
+
+  // Debug: Log the widget URL being used
+  useEffect(() => {
+    if (service) {
+      console.log('[InlineVagaroWidget] Loading widget:', {
+        serviceName: service.name,
+        vagaroServiceCode: service.vagaroServiceCode,
+        widgetUrl: widgetScriptUrl,
+      })
+    }
+  }, [service, widgetScriptUrl])
+
   // Fade in when ready OR via fallback timeout
   useEffect(() => {
-    if (isWidgetReady) {
+    if (isWidgetReady && !isVisibleRef.current) {
+      console.log('[InlineVagaroWidget] Widget ready event received, showing widget')
       const timer = setTimeout(() => setIsVisible(true), 50)
       return () => clearTimeout(timer)
     }
@@ -34,14 +52,14 @@ export function InlineVagaroWidget() {
     if (!service) return
 
     const fallbackTimer = setTimeout(() => {
-      if (!isVisible) {
+      if (!isVisibleRef.current) {
         console.log('[InlineVagaroWidget] Fallback timeout - showing widget without WidgetLoaded event')
         setIsVisible(true)
       }
-    }, 2500) // Show after 2.5 seconds regardless
+    }, 3000) // Show after 3 seconds regardless
 
     return () => clearTimeout(fallbackTimer)
-  }, [service, isVisible])
+  }, [service]) // Only depend on service, not isVisible
 
   // Only show loading if widget not visible yet and no error
   const showLoading = !isVisible && !hasError
@@ -52,6 +70,8 @@ export function InlineVagaroWidget() {
 
     const container = containerRef.current
     scriptLoadedRef.current = true
+
+    console.log('[InlineVagaroWidget] Creating widget script element')
 
     // Create the Vagaro widget structure
     const vagaroDiv = document.createElement('div')
@@ -64,17 +84,22 @@ export function InlineVagaroWidget() {
     script.src = widgetScriptUrl
     script.async = true
 
-    script.onerror = () => {
+    script.onload = () => {
+      console.log('[InlineVagaroWidget] Script loaded successfully')
+    }
+
+    script.onerror = (e) => {
+      console.error('[InlineVagaroWidget] Script failed to load:', e)
       setHasError(true)
     }
 
     vagaroDiv.appendChild(script)
     container.appendChild(vagaroDiv)
 
-    // Timeout fallback
+    // Timeout fallback for error state
     const timeout = setTimeout(() => {
-      if (!widgetState.isLoaded) {
-        console.warn('[InlineVagaroWidget] Widget load timeout')
+      if (!widgetState.isLoaded && !isVisibleRef.current) {
+        console.warn('[InlineVagaroWidget] Widget load timeout - no WidgetLoaded event received')
       }
     }, 15000)
 
@@ -85,7 +110,7 @@ export function InlineVagaroWidget() {
       }
       scriptLoadedRef.current = false
     }
-  }, [service, widgetScriptUrl, widgetState.isLoaded])
+  }, [service, widgetScriptUrl])
 
   // Early return AFTER all hooks have been called
   if (!service) return null

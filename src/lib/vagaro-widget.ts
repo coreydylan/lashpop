@@ -19,7 +19,8 @@ const ALL_SERVICES_CODE = '6PmS0';
  * @returns The full Vagaro widget URL
  */
 export function getVagaroWidgetUrl(serviceCode: string | null | undefined): string {
-  const code = serviceCode || ALL_SERVICES_CODE;
+  // Use all-services code if serviceCode is empty, null, or undefined
+  const code = (serviceCode && serviceCode.trim()) ? serviceCode : ALL_SERVICES_CODE;
   return `https://www.vagaro.com//resources/WidgetEmbeddedLoader/${VAGARO_BUSINESS_PREFIX}${code}`;
 }
 
