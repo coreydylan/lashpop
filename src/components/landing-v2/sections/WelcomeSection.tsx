@@ -80,6 +80,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
         style={{ minHeight: '200dvh' }}
         data-section-id="welcome"
       >
+        <h2 className="sr-only">About LashPop Studios - Women-Owned Lash Studio in Oceanside</h2>
         {/* Sticky Content Container 
             - sticky top-0: Sticks to viewport top
             - h-[100dvh]: Occupies full viewport
@@ -130,6 +131,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
   // Desktop render with parallax background
   return (
     <section ref={ref} className="relative min-h-[115vh] overflow-hidden">
+      <h2 className="sr-only">About LashPop Studios - Women-Owned Lash Studio in Oceanside</h2>
       {/* Background Image - 3D Parallax on desktop */}
       <div className="absolute inset-0 z-0">
         <ParallaxImage

@@ -1,0 +1,1 @@
+export { InlineTestimonial } from './InlineTestimonial'

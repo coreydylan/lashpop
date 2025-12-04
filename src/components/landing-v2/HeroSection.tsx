@@ -213,6 +213,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   if (isMobile) {
     return (
       <section ref={containerRef} className="relative min-h-[100dvh]" style={{ background: 'transparent' }}>
+        <h1 className="sr-only">LashPop Studios - Premier Lash Extensions in Oceanside, North County San Diego</h1>
         {/*
           NOTE: The fixed background layer (arch, gradient, logo, circles) is now
           rendered by MobileHeroBackground in LandingPageV2Client.tsx.
@@ -410,6 +411,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   // ============================================
   return (
     <section ref={containerRef} className="relative h-screen flex items-end">
+      <h1 className="sr-only">LashPop Studios - Premier Lash Extensions in Oceanside, North County San Diego</h1>
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-cream via-[rgb(235,224,203)] to-[rgb(226,182,166)]" />
@@ -598,7 +600,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     <Image
                       ref={imageRef}
                       src={archImage.url}
-                      alt="LashPop Studio Interior"
+                      alt="LashPop Studios Interior - Luxury Lash Extension Studio in Oceanside, North County San Diego"
                       fill
                       className="object-cover will-change-transform"
                       priority

@@ -28,6 +28,7 @@ import {
   type TimeSlotClickedData,
   type CustomerLoginData,
 } from '@/lib/vagaro-events';
+import { trackBookingStarted, trackBookingComplete, trackEvent } from '@/lib/analytics';
 
 // ============================================================================
 // Initial State
@@ -205,6 +206,7 @@ export function VagaroWidgetProvider({ children }: VagaroWidgetProviderProps) {
       switch (event.eventName) {
         case 'WidgetLoaded':
           dispatch({ type: 'SET_LOADED', payload: true });
+          trackEvent('vagaro_widget_loaded');
           break;
 
         case 'BookNowClicked': {
@@ -215,6 +217,11 @@ export function VagaroWidgetProvider({ children }: VagaroWidgetProviderProps) {
           if (data?.customerId) {
             dispatch({ type: 'SET_CUSTOMER_ID', payload: data.customerId });
           }
+          // Track booking started with available service info
+          trackBookingStarted(
+            data?.serviceName || undefined,
+            undefined // Provider not available at BookNowClicked stage
+          );
           break;
         }
 
@@ -229,6 +236,8 @@ export function VagaroWidgetProvider({ children }: VagaroWidgetProviderProps) {
           if (data?.customerId) {
             dispatch({ type: 'SET_CUSTOMER_ID', payload: data.customerId });
           }
+          // Track time slot selection
+          trackEvent('time_slot_selected');
           break;
         }
 
@@ -241,7 +250,11 @@ export function VagaroWidgetProvider({ children }: VagaroWidgetProviderProps) {
         }
 
         case 'BookingCompleted':
-          // Booking is complete - could trigger additional actions here
+          // Booking is complete - track completion with current state data
+          trackBookingComplete(
+            state.selectedService || undefined,
+            state.selectedProvider || undefined
+          );
           break;
       }
     });

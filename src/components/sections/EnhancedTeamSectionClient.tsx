@@ -522,6 +522,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         ref={sectionRef}
         className="py-20 bg-cream overflow-x-hidden"
       >
+        <h2 className="sr-only">Meet Our Expert Lash Artists Serving North County San Diego</h2>
         {/* Mobile Grid View with Squircle Cards */}
         {isMobile ? (
           <div className="px-4">
@@ -633,7 +634,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       {/* Background Image - face-cropped */}
                       <Image
                         src={cardImage}
-                        alt={member.name}
+                        alt={`${member.name} - Lash Artist at LashPop Studios Oceanside`}
                         fill
                         className="object-cover"
                         sizes="50vw"
@@ -737,7 +738,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               {/* Image */}
                               <Image
                                 src={member.image}
-                                alt={member.name}
+                                alt={`${member.name} - Lash Artist at LashPop Studios Oceanside`}
                                 fill
                                 className="object-cover transition-transform duration-700 group-hover:scale-105"
                               />
@@ -855,7 +856,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                       >
                                         <Image
                                           src={portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image}
-                                          alt={selectedMember.name}
+                                          alt={`${selectedMember.name} - Lash Artist at LashPop Studios Oceanside`}
                                           fill
                                           className={`${
                                             portfolioImages.length > 0 && isCurrentImageHorizontal
@@ -1152,7 +1153,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           <div className="relative h-[70vh] overflow-hidden">
                             <Image
                               src={selectedMember.image}
-                              alt={selectedMember.name}
+                              alt={`${selectedMember.name} - Lash Artist at LashPop Studios Oceanside`}
                               fill
                               className="object-cover object-top"
                               priority
@@ -1318,7 +1319,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     <div className="relative h-80 rounded-t-3xl overflow-hidden">
                       <Image
                         src={selectedMember.image}
-                        alt={selectedMember.name}
+                        alt={`${selectedMember.name} - Lash Artist at LashPop Studios Oceanside`}
                         fill
                         className="object-cover"
                       />

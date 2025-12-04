@@ -159,6 +159,7 @@ export function MapSection() {
 
   return (
     <section ref={ref} className="relative h-[100dvh] md:h-auto">
+      <h2 className="sr-only">Find LashPop Studios in Oceanside, California</h2>
       {/* Map Container - Full viewport height on mobile, fixed on desktop */}
       <motion.div
         className="relative w-full h-full md:h-[600px]"

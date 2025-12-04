@@ -209,6 +209,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
     <>
       <style jsx>{scrollbarStyles}</style>
       <section ref={ref} className="relative py-20 overflow-hidden bg-cream">
+        <h2 className="sr-only">Client Reviews - Five-Star Ratings on Google, Yelp and Vagaro</h2>
         <div className="relative">
 
         {/* Review Platform Stats - Above Cards */}

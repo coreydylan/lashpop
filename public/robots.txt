@@ -1,0 +1,17 @@
+# LashPop Studios - robots.txt
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://lashpopstudios.com/sitemap.xml
+
+# Block admin and internal areas
+Disallow: /admin/
+Disallow: /dam/
+Disallow: /api/
+Disallow: /audit/
+
+# Allow important assets
+Allow: /images/
+Allow: /lashpop-images/
+Allow: /_next/static/

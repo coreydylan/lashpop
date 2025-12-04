@@ -5,6 +5,7 @@ import { getInstagramPosts } from "@/actions/instagram"
 import { getServiceCategories } from "@/actions/categories"
 import { getFAQsGroupedByCategory } from "@/actions/faqs"
 import { getSlideshowConfigs } from "@/actions/hero-slideshow"
+import { LocalBusinessSchema } from '@/components/seo'
 import LandingPageV2Client from "./LandingPageV2Client"
 
 // Ensure fresh data on each request (for admin-managed content)
@@ -78,6 +79,12 @@ export default async function HomePage() {
   // Fetch review stats from database
   const reviewStats = await getReviewStats()
 
+  // Calculate total reviews and average rating for SEO schema
+  const totalReviews = reviewStats.reduce((sum, stat) => sum + stat.reviewCount, 0)
+  const averageRating = reviewStats.length > 0
+    ? reviewStats.reduce((sum, stat) => sum + parseFloat(stat.rating) * stat.reviewCount, 0) / totalReviews
+    : 5.0
+
   // Fetch Instagram posts
   const instagramPosts = await getInstagramPosts(20)
 
@@ -90,14 +97,19 @@ export default async function HomePage() {
   // Fetch hero slideshow/image settings (includes fallback to single image)
   const heroConfig = await getSlideshowConfigs()
 
-  return <LandingPageV2Client
-    services={formattedServices}
-    teamMembers={formattedTeamMembers}
-    reviews={reviews}
-    reviewStats={reviewStats}
-    instagramPosts={instagramPosts}
-    serviceCategories={serviceCategories}
-    faqData={faqData}
-    heroConfig={heroConfig}
-  />
+  return (
+    <>
+      <LocalBusinessSchema totalReviews={totalReviews} averageRating={averageRating} />
+      <LandingPageV2Client
+        services={formattedServices}
+        teamMembers={formattedTeamMembers}
+        reviews={reviews}
+        reviewStats={reviewStats}
+        instagramPosts={instagramPosts}
+        serviceCategories={serviceCategories}
+        faqData={faqData}
+        heroConfig={heroConfig}
+      />
+    </>
+  )
 }
