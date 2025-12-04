@@ -158,9 +158,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
     const triggers: ScrollTrigger[] = []
 
-    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.087 = 115vw -> 125vw)
+    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.15 = 115vw -> ~132vw)
     const zoomTween = gsap.to(imageRef, {
-      scale: 1.087,
+      scale: 1.15,
       ease: 'none',
       scrollTrigger: {
         trigger: archContainerRef,
