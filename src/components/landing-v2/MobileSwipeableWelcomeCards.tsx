@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
 
 // Styled text components for creative typography
@@ -23,7 +23,7 @@ const Standout = ({ children }: { children: ReactNode }) => (
 )
 
 // The 5 content cards with creative typography
-const cardContent: { id: number; content: ReactNode; isLast?: boolean }[] = [
+const cardContent: { id: number; content: ReactNode; isLast?: boolean; showServiceArrow?: boolean }[] = [
   {
     id: 1,
     content: (
@@ -45,9 +45,6 @@ const cardContent: { id: number; content: ReactNode; isLast?: boolean }[] = [
         </span>
         <Soft>When you walk into our studio, you&apos;re stepping into a space designed to help you breathe a little deeper and walk out feeling like</Soft>{' '}
         <Emphasis>the most refreshed, put-together version of yourself.</Emphasis>
-        <span className="block mt-3 text-sm tracking-widest uppercase font-light opacity-90">
-          No pressure · No judgment · Just great work
-        </span>
       </>
     ),
   },
@@ -73,12 +70,13 @@ const cardContent: { id: number; content: ReactNode; isLast?: boolean }[] = [
         <Soft>And since you&apos;re probably here to see what we offer,</Soft>
         <span className="block text-base font-medium my-2" style={{ color: '#6d4a43' }}>we made it easy.</span>
         <span className="text-sm">Everything you need is right in the</span>{' '}
-        <Highlight>service bar above</Highlight>
+        <Highlight>service bar below</Highlight>
         <span className="block mt-2 text-xs italic opacity-70">
           Think of it as your personal beauty menu—quick to find, simple to navigate, packed with options you&apos;ll love.
         </span>
       </>
     ),
+    showServiceArrow: true,
   },
   {
     id: 5,
@@ -126,10 +124,10 @@ export function MobileSwipeableWelcomeCards({
     return () => clearTimeout(timer)
   }, [triggerTutorial])
 
-  // Swipe thresholds - lower values = more sensitive to horizontal swipes
-  const swipeThreshold = 40 // Distance in pixels (was 80)
-  const swipeVelocityThreshold = 150 // Velocity in px/s (was 300)
-  const verticalThresholdRatio = 1.5 // Allow swipe if horizontal > vertical * ratio
+  // Swipe thresholds - tuned for reliable horizontal swipes without accidental scrolling
+  const swipeThreshold = 30 // Distance in pixels - lower = more sensitive
+  const swipeVelocityThreshold = 100 // Velocity in px/s - lower = more sensitive
+  const verticalThresholdRatio = 0.8 // Allow swipe if horizontal > vertical * ratio (lower = more forgiving)
 
   // Handle swipe completion - infinite loop in both directions
   const handleSwipe = useCallback(
@@ -275,8 +273,9 @@ export function MobileSwipeableWelcomeCards({
             onDragStart={handleDragStart}
             onDrag={handleDrag}
             onDragEnd={handleDragEnd}
-            className="absolute cursor-grab active:cursor-grabbing touch-pan-y"
+            className="absolute cursor-grab active:cursor-grabbing"
             style={{
+              touchAction: 'pan-y pinch-zoom',
               zIndex: 10,
               // Extended touch area: add padding on left/right for easier swipe initiation
               top: 0,
@@ -299,6 +298,23 @@ export function MobileSwipeableWelcomeCards({
               >
                 {currentCard.content}
               </div>
+
+              {/* Down arrow for service bar - shows on card 4 */}
+              {currentCard.showServiceArrow && (
+                <motion.div
+                  className="mt-4 flex flex-col items-center"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.4 }}
+                >
+                  <motion.div
+                    animate={{ y: [0, 6, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ChevronDown className="w-5 h-5 text-[#8a5e55]/60" strokeWidth={1.5} />
+                  </motion.div>
+                </motion.div>
+              )}
 
               {/* Swipe hint - chevrons that animate left/right */}
               <AnimatePresence>
