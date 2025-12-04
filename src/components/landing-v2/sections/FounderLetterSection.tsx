@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { gsap, ScrollTrigger, initGSAP, initGSAPSync } from '@/lib/gsap'
@@ -38,12 +38,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   const archRef = useRef<HTMLDivElement>(null)
   const letterRef = useRef<HTMLDivElement>(null)
 
-  // Mobile scroll logic - using container ref properly
+  // Mobile scroll logic
   const mobileContainerRef = useRef<HTMLDivElement>(null)
   const mobileArchRef = useRef<HTMLDivElement>(null)
   const mobileArchImageRef = useRef<HTMLDivElement>(null)
-  const mobileLetterWrapperRef = useRef<HTMLDivElement>(null)
-  const mobileTextContentRef = useRef<HTMLDivElement>(null)
+  const mobileLetterRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
 
   // Check if mobile
@@ -53,13 +52,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  // Track scroll progress of the container (mobile)
-  const { scrollYProgress } = useScroll({
-    target: mobileContainerRef,
-    offset: ["start start", "end end"],
-    layoutEffect: false
-  } as any)
 
   // GSAP ScrollTrigger for desktop
   useEffect(() => {
@@ -139,9 +131,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
   // GSAP ScrollTrigger for mobile arch animation
   // Phase 1: Soft zoom as arch scrolls up
-  // Phase 2: Text scrolls up through the sticky container (translateY animation)
   useEffect(() => {
-    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current || !mobileLetterWrapperRef.current || !mobileTextContentRef.current) return
+    if (!isMobile || !mobileArchRef.current || !mobileArchImageRef.current) return
 
     // Initialize GSAP synchronously for mobile scroll
     initGSAPSync()
@@ -153,12 +144,10 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     // Store refs for closure
     const imageRef = mobileArchImageRef.current
     const archContainerRef = mobileArchRef.current
-    const wrapperRef = mobileLetterWrapperRef.current
-    const textRef = mobileTextContentRef.current
 
     const triggers: ScrollTrigger[] = []
 
-    // Phase 1: Soft zoom as arch scrolls into view (scale 1 -> 1.087 = 115vw -> 125vw)
+    // Soft zoom as arch scrolls into view (scale 1 -> 1.087 = 115vw -> 125vw)
     const zoomTween = gsap.to(imageRef, {
       scale: 1.087,
       ease: 'none',
@@ -173,23 +162,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     })
     if (zoomTween.scrollTrigger) triggers.push(zoomTween.scrollTrigger)
 
-    // Phase 2: Scroll the text content up through the sticky container
-    // The text translates upward as user scrolls, creating the effect of text
-    // scrolling out through the top of the container (clipped by overflow:hidden)
-    const textScrollTween = gsap.to(textRef, {
-      yPercent: -100,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: wrapperRef,
-        scroller: scrollContainer,
-        start: 'top 25%', // Start when wrapper top hits where sticky container sticks
-        end: 'bottom bottom',
-        scrub: 0.5,
-        invalidateOnRefresh: true,
-      }
-    })
-    if (textScrollTween.scrollTrigger) triggers.push(textScrollTween.scrollTrigger)
-
     // Handle resize
     const handleResize = () => {
       ScrollTrigger.refresh()
@@ -200,7 +172,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     return () => {
       triggers.forEach(t => t.kill())
       zoomTween.kill()
-      textScrollTween.kill()
       window.removeEventListener('resize', handleResize)
     }
   }, [isMobile])
@@ -247,10 +218,10 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               </div>
             </div>
 
-            {/* Arch Image - Right Side, bottom-aligned */}
+            {/* Arch Image - Right Side, bottom-aligned with slight offset to align with viewport bottom */}
             <div
               ref={archRef}
-              className="relative w-[35vw] max-w-[485px] flex-shrink-0"
+              className="relative w-[35vw] max-w-[485px] flex-shrink-0 mt-[3vh]"
             >
               {/* Decorative circle background - contained within section */}
               <div
@@ -314,56 +285,48 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           </div>
         </div>
 
-        {/* Wrapper that provides scroll height for the sticky text container */}
-        <div ref={mobileLetterWrapperRef} className="relative" style={{ minHeight: '150vh' }}>
-          {/* Text Overlay Container - sticky at ~25vh, higher z-index clips over arch */}
-          {/* overflow-hidden clips the text as it translates upward */}
-          <div
-            className="sticky z-50 bg-cream overflow-hidden"
-            style={{
-              top: '25vh',
-              height: '75vh', // Fixed height so overflow-hidden works
-              boxShadow: '0 -8px 16px -4px rgba(245, 240, 232, 0.9)', // Soft gradient edge spreading upward
-            }}
+        {/* Letter content - z-30 so it scrolls UNDER Emily's sticky arch (z-40) */}
+        {/* Natural scroll - no wrapper, no artificial height, team follows immediately */}
+        <div
+          ref={mobileLetterRef}
+          className="relative z-30 bg-cream px-6 pt-6 pb-8"
+          style={{
+            boxShadow: '0 -8px 16px -4px rgba(245, 240, 232, 0.9)',
+          }}
+        >
+          <motion.div
+            className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
           >
-            {/* Inner content area with top padding for breathing room */}
-            {/* This div translates upward via GSAP to scroll text through the container */}
-            <div ref={mobileTextContentRef} className="px-6 pt-6 pb-16 will-change-transform">
-              <motion.div
-                className="text-[#8a5e55] text-base leading-relaxed font-normal font-swanky max-w-lg mx-auto"
-                initial={{ opacity: 0, y: 30 }}
+            <p className="mb-5">{letterContent.greeting}</p>
+
+            {letterContent.paragraphs.map((paragraph, index) => (
+              <motion.p
+                key={index}
+                className={index === letterContent.paragraphs.length - 1 ? "mb-8" : "mb-5"}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 * (index + 1), ease: [0.23, 1, 0.32, 1] }}
               >
-                <p className="mb-5">{letterContent.greeting}</p>
+                {paragraph}
+              </motion.p>
+            ))}
 
-                {letterContent.paragraphs.map((paragraph, index) => (
-                  <motion.p
-                    key={index}
-                    className={index === letterContent.paragraphs.length - 1 ? "mb-8" : "mb-5"}
-                    initial={{ opacity: 0, y: 15 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.1 * (index + 1), ease: [0.23, 1, 0.32, 1] }}
-                  >
-                    {paragraph}
-                  </motion.p>
-                ))}
-
-                <motion.div
-                  className="flex flex-col gap-2"
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                >
-                  <p>{letterContent.signOff}</p>
-                  <p className="text-lg">{letterContent.signature}</p>
-                </motion.div>
-              </motion.div>
-            </div>
-          </div>
+            <motion.div
+              className="flex flex-col gap-2"
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <p>{letterContent.signOff}</p>
+              <p className="text-lg">{letterContent.signature}</p>
+            </motion.div>
+          </motion.div>
         </div>
 
         {/* Hidden accessible text for screen readers */}

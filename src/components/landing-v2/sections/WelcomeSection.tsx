@@ -7,6 +7,7 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { MobileSwipeableWelcomeCards } from '../MobileSwipeableWelcomeCards'
 import { usePanelStack } from '@/contexts/PanelStackContext'
+import { ScrollServicesTrigger } from '../ScrollServicesTrigger'
 
 // Dynamically import ParallaxImage to avoid SSR issues with Three.js
 const ParallaxImage = dynamic(() => import('@/components/three/ParallaxImage'), {
@@ -185,25 +186,35 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               transition={{ duration: 0.8, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55' }}
             >
-              We are a collective of women-owned beauty businesses who believe in low-maintenance morning routines, and the magic of a premium beauty experience.<br /><br />At LashPop Studios, we are committed to unmatched customer service, professionalism, studio atmosphere, and building trusted client relationships.
+              At LashPop, we're a collective of women-owned beauty businesses who believe looking amazing shouldn't require a 30-minute morning routine or a small emotional breakdown in front of the bathroom mirror. We're here to make beauty feel easy, natural, and—honestly—kind of life-changing.
+            </motion.p>
+
+            <motion.p
+              className="text-base md:text-lg font-sans font-light mb-6 leading-relaxed max-w-3xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              style={{ color: '#8a5e55', opacity: 0.9 }}
+            >
+              Everything we do is built on trust. When you walk into our studio, you're stepping into a space designed to help you breathe a little deeper and walk out feeling like the most refreshed, put-together version of yourself. No pressure. No judgment. Just great work and a team that genuinely cares about you.
             </motion.p>
 
             <motion.p
               className="text-base md:text-lg font-sans font-light mb-8 leading-relaxed max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              transition={{ duration: 0.8, delay: 0.5, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55', opacity: 0.9 }}
             >
-              Our team specializes in eyelash extensions, lash lifts and tints, microblading, permanent makeup, brow shaping and tinting, brow laminations, customized facials and HydraFacials, waxing, Botox, and permanent jewelry and more.
+              Our artists are pros in all the good stuff: lashes, brows, permanent makeup, facials, HydraFacials, waxing, injectables, and even permanent jewelry for when you want a little sparkle that sticks around. Each service is done with the kind of precision and intention that makes your mornings smoother and your confidence louder.
             </motion.p>
 
-            {/* Desktop only - services hint */}
+            {/* Desktop only - services hint with scroll trigger for auto-loading services bar */}
             <motion.div
               className="mt-8"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.8, delay: 0.5, ease: [0.23, 1, 0.32, 1] }}
+              transition={{ duration: 0.8, delay: 0.6, ease: [0.23, 1, 0.32, 1] }}
             >
               <p className="text-sm md:text-base uppercase tracking-widest flex items-center justify-center gap-3"
                 style={{ color: '#8a5e55' }}>
@@ -212,7 +223,19 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
                 </svg>
                 Explore our services using the menu above
               </p>
+              {/* Invisible trigger that auto-opens the services bar when scrolled into view */}
+              <ScrollServicesTrigger />
             </motion.div>
+
+            <motion.p
+              className="text-lg md:text-xl font-sans font-medium mt-10 leading-relaxed max-w-3xl mx-auto"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.8, delay: 0.7, ease: [0.23, 1, 0.32, 1] }}
+              style={{ color: '#8a5e55' }}
+            >
+              Welcome to your new favorite part of the week.
+            </motion.p>
           </motion.div>
         </div>
       </div>
