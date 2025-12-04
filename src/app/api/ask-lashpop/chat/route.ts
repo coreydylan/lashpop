@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
       contentLength: responseMessage.content?.length || 0,
       contentPreview: responseMessage.content?.substring(0, 100),
       toolCallsCount: responseMessage.tool_calls?.length || 0,
-      toolCallNames: responseMessage.tool_calls?.map(tc => tc.function?.name) || [],
+      toolCallNames: responseMessage.tool_calls?.map(tc => 'function' in tc ? tc.function?.name : 'unknown') || [],
     })
 
     // Handle tool calls (GPT-5.1 modern format - supports parallel tool calls)
