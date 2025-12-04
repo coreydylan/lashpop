@@ -105,6 +105,8 @@ export function MobileSwipeableWelcomeCards({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dragDirectionRef = useRef<'horizontal' | 'vertical' | null>(null)
+  const initialTouchRef = useRef<{ x: number; y: number } | null>(null)
 
   // Swipe tutorial with confirmation
   const {
@@ -124,10 +126,9 @@ export function MobileSwipeableWelcomeCards({
     return () => clearTimeout(timer)
   }, [triggerTutorial])
 
-  // Swipe thresholds - tuned for reliable horizontal swipes without accidental scrolling
-  const swipeThreshold = 30 // Distance in pixels - lower = more sensitive
-  const swipeVelocityThreshold = 100 // Velocity in px/s - lower = more sensitive
-  const verticalThresholdRatio = 0.8 // Allow swipe if horizontal > vertical * ratio (lower = more forgiving)
+  // Swipe thresholds
+  const swipeThreshold = 25 // Distance in pixels to trigger swipe
+  const swipeVelocityThreshold = 80 // Velocity in px/s to trigger swipe
 
   // Handle swipe completion - infinite loop in both directions
   const handleSwipe = useCallback(
@@ -151,15 +152,39 @@ export function MobileSwipeableWelcomeCards({
     []
   )
 
-  // Handle drag start - reset tutorial distance tracking
-  const handleDragStart = useCallback(() => {
-    resetSwipeDistance()
-  }, [resetSwipeDistance])
+  // Handle drag start - detect direction early and lock it
+  const handleDragStart = useCallback(
+    (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+      resetSwipeDistance()
+      dragDirectionRef.current = null
 
-  // Handle drag - track distance for tutorial
+      // Store initial touch position
+      if ('touches' in event && event.touches[0]) {
+        initialTouchRef.current = { x: event.touches[0].clientX, y: event.touches[0].clientY }
+      } else if ('clientX' in event) {
+        initialTouchRef.current = { x: event.clientX, y: event.clientY }
+      }
+    },
+    [resetSwipeDistance]
+  )
+
+  // Handle drag - determine direction early and lock
   const handleDrag = useCallback(
-    (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       checkAndComplete(Math.abs(info.delta.x))
+
+      // Early direction detection (after ~10px of movement)
+      if (!dragDirectionRef.current && (Math.abs(info.offset.x) > 10 || Math.abs(info.offset.y) > 10)) {
+        const absX = Math.abs(info.offset.x)
+        const absY = Math.abs(info.offset.y)
+
+        // If horizontal movement is greater, lock to horizontal
+        if (absX > absY) {
+          dragDirectionRef.current = 'horizontal'
+        } else {
+          dragDirectionRef.current = 'vertical'
+        }
+      }
     },
     [checkAndComplete]
   )
@@ -169,14 +194,10 @@ export function MobileSwipeableWelcomeCards({
     (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
       const { offset, velocity } = info
 
-      // Check if this is primarily a horizontal gesture (not vertical scrolling)
-      const absOffsetX = Math.abs(offset.x)
-      const absOffsetY = Math.abs(offset.y)
-      const isHorizontalGesture = absOffsetX > absOffsetY * verticalThresholdRatio
-
-      // Only process horizontal swipes if it's primarily a horizontal gesture
-      if (!isHorizontalGesture) {
-        return // Let vertical scroll happen
+      // Only process if we determined this was a horizontal gesture
+      if (dragDirectionRef.current !== 'horizontal') {
+        dragDirectionRef.current = null
+        return
       }
 
       // Check if swipe meets threshold (distance or velocity)
@@ -190,7 +211,8 @@ export function MobileSwipeableWelcomeCards({
       } else if (swipedRight) {
         handleSwipe('right')
       }
-      // If neither threshold met, framer-motion's dragElastic handles spring back
+
+      dragDirectionRef.current = null
     },
     [handleSwipe]
   )
@@ -275,7 +297,7 @@ export function MobileSwipeableWelcomeCards({
             onDragEnd={handleDragEnd}
             className="absolute cursor-grab active:cursor-grabbing"
             style={{
-              touchAction: 'pan-y pinch-zoom',
+              touchAction: 'none',
               zIndex: 10,
               // Extended touch area: add padding on left/right for easier swipe initiation
               top: 0,
