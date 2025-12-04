@@ -210,6 +210,11 @@ export async function POST(request: NextRequest) {
       quickReplies = generateQuickReplies(message, responseText)
     }
 
+    // CRITICAL: Ensure there's always a message with actions (never empty bubble)
+    if (!responseText && actions.length > 0) {
+      responseText = generateFallbackMessage(actions)
+    }
+
     // Generate conversation ID if this is a new conversation
     const conversationId = body.conversationId || `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
@@ -225,6 +230,31 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to process message' },
       { status: 500 }
     )
+  }
+}
+
+// Generate a fallback message when AI returns actions without text
+function generateFallbackMessage(actions: ChatAction[]): string {
+  const firstAction = actions[0]
+  if (!firstAction) return "Here you go!"
+
+  switch (firstAction.type) {
+    case 'scroll_to_section':
+      return "Let me show you! ✨"
+    case 'open_panel':
+      return "Here are your options!"
+    case 'load_vagaro_inline':
+      return "Let's get you booked! 💫"
+    case 'submit_team_message':
+      return "Done! I've sent your message to the team. They'll get back to you within a day!"
+    case 'show_form':
+      return "I'll help you get in touch!"
+    case 'call_phone':
+      return "Here's how to reach us!"
+    case 'open_external':
+      return "Here you go!"
+    default:
+      return "Here you go! ✨"
   }
 }
 
