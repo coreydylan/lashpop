@@ -8,6 +8,21 @@ import { useDevMode } from '@/contexts/DevModeContext'
 import { useAskLashpop } from '@/contexts/AskLashpopContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
 
+// Apple-like spring configuration for buttery smooth animations
+const APPLE_SPRING = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 30,
+  mass: 1,
+}
+
+const APPLE_SPRING_GENTLE = {
+  type: 'spring' as const,
+  stiffness: 300,
+  damping: 28,
+  mass: 0.8,
+}
+
 // Section mapping for display names and navigation
 const SECTIONS = [
   { id: 'team', label: 'TEAM', href: '#team' },
@@ -139,25 +154,25 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [isMenuOpen, getScrollContainer])
 
-  // Animate bubble expansion when it appears
+  // Animate bubble expansion when it appears (Apple-like delay)
   useEffect(() => {
     if (hasBubble) {
-      // Delay the expansion slightly for a smooth animation
-      const expandTimer = setTimeout(() => setBubbleExpanded(true), 100)
+      // Longer delay for Apple-like anticipation before reveal
+      const expandTimer = setTimeout(() => setBubbleExpanded(true), 350)
       return () => clearTimeout(expandTimer)
     } else {
       setBubbleExpanded(false)
     }
   }, [hasBubble])
 
-  // Auto-dismiss bubble after 8 seconds
+  // Auto-dismiss bubble after 10 seconds (longer for readability)
   useEffect(() => {
     if (!hasBubble) return
 
     const dismissTimer = setTimeout(() => {
       setBubbleExpanded(false)
-      setTimeout(dismissBubble, 300) // Wait for collapse animation
-    }, 8000)
+      setTimeout(dismissBubble, 400) // Wait for spring collapse animation
+    }, 10000)
 
     return () => clearTimeout(dismissTimer)
   }, [hasBubble, dismissBubble])
@@ -171,19 +186,20 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
 
     const handleScroll = () => {
       setBubbleExpanded(false)
-      setTimeout(dismissBubble, 300)
+      setTimeout(dismissBubble, 400) // Wait for spring animation
     }
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true, once: true })
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [hasBubble, getScrollContainer, dismissBubble])
 
-  // Handle bubble click - open chat
+  // Handle bubble click - open chat with smooth transition
   const handleBubbleClick = useCallback(() => {
     setBubbleExpanded(false)
+    // Wait for spring collapse before opening chat
     setTimeout(() => {
       dismissBubble()
       openChat()
-    }, 200)
+    }, 300)
   }, [dismissBubble, openChat])
 
   // Handle logo click - scroll to top + register for dev mode
@@ -326,6 +342,19 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                   onClick={hasBubble ? handleBubbleClick : toggleChat}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  animate={hasBubble ? {
+                    scale: [1, 1.03, 1],
+                    boxShadow: [
+                      '0 2px 8px rgba(183, 134, 134, 0.25)',
+                      '0 4px 16px rgba(183, 134, 134, 0.35)',
+                      '0 2px 8px rgba(183, 134, 134, 0.25)',
+                    ],
+                  } : {}}
+                  transition={hasBubble ? {
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  } : {}}
                   className={`
                     flex items-center gap-1.5 px-3 py-1.5 rounded-full
                     transition-all duration-200
@@ -343,33 +372,78 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                   </span>
                 </motion.button>
 
-                {/* Contextual Bubble - Expands below button */}
-                <AnimatePresence>
+                {/* Contextual Bubble - Apple-like morph animation */}
+                <AnimatePresence mode="wait">
                   {hasBubble && bubbleExpanded && (
                     <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.95 }}
-                      transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                      initial={{
+                        opacity: 0,
+                        scale: 0.3,
+                        scaleY: 0.5,
+                        y: -4,
+                        filter: 'blur(8px)',
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                        scaleY: 1,
+                        y: 0,
+                        filter: 'blur(0px)',
+                      }}
+                      exit={{
+                        opacity: 0,
+                        scale: 0.4,
+                        scaleY: 0.6,
+                        y: -2,
+                        filter: 'blur(4px)',
+                      }}
+                      transition={APPLE_SPRING}
                       onClick={handleBubbleClick}
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 cursor-pointer"
+                      className="absolute top-full left-1/2 mt-2 cursor-pointer"
+                      style={{
+                        transformOrigin: 'top center',
+                        x: '-50%',
+                      }}
                     >
-                      <div
-                        className="px-4 py-2.5 rounded-2xl text-xs text-dune whitespace-nowrap shadow-lg"
+                      {/* Bubble container with animated shadow */}
+                      <motion.div
+                        initial={{ boxShadow: '0 2px 8px rgba(183, 134, 134, 0.08), 0 1px 2px rgba(0, 0, 0, 0.02)' }}
+                        animate={{ boxShadow: '0 8px 32px rgba(183, 134, 134, 0.18), 0 4px 12px rgba(0, 0, 0, 0.06)' }}
+                        exit={{ boxShadow: '0 2px 8px rgba(183, 134, 134, 0.08), 0 1px 2px rgba(0, 0, 0, 0.02)' }}
+                        transition={APPLE_SPRING_GENTLE}
+                        className="px-4 py-2.5 rounded-2xl text-xs text-dune whitespace-nowrap"
                         style={{
                           background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 247, 244, 0.98) 100%)',
-                          border: '1px solid rgba(183, 134, 134, 0.25)',
-                          boxShadow: '0 4px 20px rgba(183, 134, 134, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05)'
+                          border: '1px solid rgba(183, 134, 134, 0.2)',
+                          backdropFilter: 'blur(12px)',
+                          WebkitBackdropFilter: 'blur(12px)',
                         }}
                       >
-                        {chatState.contextualBubble?.message}
-                      </div>
-                      {/* Little tail pointing up to button */}
-                      <div
+                        {/* Text content with staggered fade-in */}
+                        <motion.span
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 2 }}
+                          transition={{
+                            ...APPLE_SPRING_GENTLE,
+                            delay: 0.05, // Slight delay for staggered effect
+                          }}
+                          className="block"
+                        >
+                          {chatState.contextualBubble?.message}
+                        </motion.span>
+                      </motion.div>
+
+                      {/* Animated tail pointing up to button */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        transition={{ ...APPLE_SPRING, delay: 0.02 }}
                         className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45"
                         style={{
                           background: 'rgba(255, 255, 255, 0.98)',
-                          border: '1px solid rgba(183, 134, 134, 0.25)',
+                          border: '1px solid rgba(183, 134, 134, 0.2)',
                           borderRight: 'none',
                           borderBottom: 'none',
                         }}
