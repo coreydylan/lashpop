@@ -384,7 +384,9 @@ function structuredActionToAction(
       // If exact match fails, try to find a partial match
       if (!serviceInfo && servicesMap) {
         const slugLower = slug.toLowerCase()
-        for (const [key, value] of servicesMap.entries()) {
+        const entries = Array.from(servicesMap.entries())
+        for (let i = 0; i < entries.length; i++) {
+          const [key, value] = entries[i]
           if (key.toLowerCase().includes(slugLower) || slugLower.includes(key.toLowerCase())) {
             console.log(`[book_service] Fuzzy match: "${slug}" -> "${key}"`)
             serviceInfo = value
