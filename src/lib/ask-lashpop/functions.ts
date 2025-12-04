@@ -168,7 +168,7 @@ export const GPT_FUNCTIONS: GPTFunction[] = [
   },
   {
     name: 'suggest_quick_replies',
-    description: 'ALWAYS call this function with every response to provide 2-3 contextual quick reply options. These help guide the conversation.',
+    description: 'Call this IN ADDITION to your text response (never instead of it). Provides 2-3 contextual quick reply options. You MUST also include a text message - this function is an extra, not a replacement for text.',
     parameters: {
       type: 'object',
       properties: {
