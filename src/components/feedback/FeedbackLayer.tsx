@@ -346,6 +346,7 @@ function FeedbackInputModal({
 
 interface FeedbackPinComponentProps {
   pin: FeedbackPin;
+  scrollY: number;
   isActive: boolean;
   onClick: () => void;
   onEdit: () => void;
@@ -356,6 +357,7 @@ interface FeedbackPinComponentProps {
 
 function FeedbackPinComponent({
   pin,
+  scrollY,
   isActive,
   onClick,
   onEdit,
@@ -363,16 +365,26 @@ function FeedbackPinComponent({
   onResolve,
   isMobile,
 }: FeedbackPinComponentProps) {
+  // Calculate viewport position from document position
+  const viewportTop = pin.y - scrollY;
+
+  // Hide if pin is off-screen
+  const isVisible = viewportTop > -50 && viewportTop < window.innerHeight + 50;
+
+  if (!isVisible) return null;
+
   return (
     <motion.div
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}
+      data-feedback-pin
       style={{
-        position: 'absolute',
+        position: 'fixed',
         left: `${pin.x}%`,
-        top: pin.y,
+        top: viewportTop,
         transform: 'translate(-50%, -50%)',
+        pointerEvents: 'auto',
       }}
       className="z-[10001]"
     >
@@ -533,22 +545,21 @@ function LongPressIndicator({ position }: LongPressIndicatorProps) {
 
 export function FeedbackLayer() {
   const { state, actions } = useFeedback();
-  const layerRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const [scrollY, setScrollY] = useState(0);
+
+  // Track scroll position for pin rendering
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial value
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Get element info at position
   const getElementInfo = useCallback((x: number, y: number): { sectionId: string | null; elementInfo: string | null } => {
-    // Temporarily hide the feedback layer to get element beneath
-    if (layerRef.current) {
-      layerRef.current.style.pointerEvents = 'none';
-    }
-
     const element = document.elementFromPoint(x, y);
-
-    if (layerRef.current) {
-      layerRef.current.style.pointerEvents = '';
-    }
 
     if (!element) return { sectionId: null, elementInfo: null };
 
@@ -567,84 +578,104 @@ export function FeedbackLayer() {
     return { sectionId, elementInfo };
   }, []);
 
-  // Handle right-click on desktop
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    if (!state.isEnabled || state.isMobile || state.showTutorial) return;
+  // Document-level event listeners for right-click and touch (allows scrolling to work)
+  useEffect(() => {
+    if (!state.isEnabled || state.showTutorial) return;
 
-    e.preventDefault();
+    // Handle right-click on desktop
+    const handleContextMenu = (e: MouseEvent) => {
+      if (state.isMobile) return;
 
-    const { sectionId, elementInfo } = getElementInfo(e.clientX, e.clientY);
-    const scrollY = window.scrollY;
+      e.preventDefault();
 
-    actions.setPendingPin({
-      x: (e.clientX / window.innerWidth) * 100,
-      y: e.clientY + scrollY,
-      viewportY: e.clientY,
-      sectionId,
-      elementInfo,
-    });
-  }, [state.isEnabled, state.isMobile, state.showTutorial, actions, getElementInfo]);
+      const { sectionId, elementInfo } = getElementInfo(e.clientX, e.clientY);
 
-  // Handle touch events for mobile long-press
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!state.isEnabled || !state.isMobile || state.showTutorial) return;
-
-    const touch = e.touches[0];
-    touchStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
+      actions.setPendingPin({
+        x: (e.clientX / window.innerWidth) * 100,
+        y: e.clientY + window.scrollY,
+        viewportY: e.clientY,
+        sectionId,
+        elementInfo,
+      });
     };
 
-    actions.setPressActive(true, { x: touch.clientX, y: touch.clientY });
+    // Handle touch events for mobile long-press
+    const handleTouchStart = (e: TouchEvent) => {
+      if (!state.isMobile) return;
 
-    // Start long press timer
-    longPressTimerRef.current = setTimeout(() => {
-      if (touchStartRef.current) {
-        const { sectionId, elementInfo } = getElementInfo(
-          touchStartRef.current.x,
-          touchStartRef.current.y
-        );
-        const scrollY = window.scrollY;
+      const touch = e.touches[0];
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now(),
+      };
 
+      actions.setPressActive(true, { x: touch.clientX, y: touch.clientY });
+
+      // Start long press timer
+      longPressTimerRef.current = setTimeout(() => {
+        if (touchStartRef.current) {
+          const { sectionId, elementInfo } = getElementInfo(
+            touchStartRef.current.x,
+            touchStartRef.current.y
+          );
+
+          actions.setPressActive(false);
+          actions.setPendingPin({
+            x: (touchStartRef.current.x / window.innerWidth) * 100,
+            y: touchStartRef.current.y + window.scrollY,
+            viewportY: touchStartRef.current.y,
+            sectionId,
+            elementInfo,
+          });
+
+          // Prevent the subsequent click
+          e.preventDefault();
+        }
+      }, LONG_PRESS_DURATION);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchStartRef.current) return;
+
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - touchStartRef.current.x);
+      const dy = Math.abs(touch.clientY - touchStartRef.current.y);
+
+      // Cancel if moved too far (allows scrolling)
+      if (dx > 10 || dy > 10) {
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+        touchStartRef.current = null;
         actions.setPressActive(false);
-        actions.setPendingPin({
-          x: (touchStartRef.current.x / window.innerWidth) * 100,
-          y: touchStartRef.current.y + scrollY,
-          viewportY: touchStartRef.current.y,
-          sectionId,
-          elementInfo,
-        });
       }
-    }, LONG_PRESS_DURATION);
-  }, [state.isEnabled, state.isMobile, state.showTutorial, actions, getElementInfo]);
+    };
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!touchStartRef.current) return;
-
-    const touch = e.touches[0];
-    const dx = Math.abs(touch.clientX - touchStartRef.current.x);
-    const dy = Math.abs(touch.clientY - touchStartRef.current.y);
-
-    // Cancel if moved too far
-    if (dx > 10 || dy > 10) {
+    const handleTouchEnd = () => {
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = null;
       }
       touchStartRef.current = null;
       actions.setPressActive(false);
-    }
-  }, [actions]);
+    };
 
-  const handleTouchEnd = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    touchStartRef.current = null;
-    actions.setPressActive(false);
-  }, [actions]);
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd);
+    document.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [state.isEnabled, state.isMobile, state.showTutorial, actions, getElementInfo]);
 
   // Handle clicking a pin
   const handlePinClick = useCallback((pinId: string) => {
@@ -652,13 +683,6 @@ export function FeedbackLayer() {
       actions.editPin(''); // Deselect if clicking same pin
     } else {
       actions.editPin(pinId);
-    }
-  }, [state.activePinId, actions]);
-
-  // Close active pin when clicking elsewhere
-  const handleLayerClick = useCallback((e: React.MouseEvent) => {
-    if (state.activePinId && e.target === e.currentTarget) {
-      actions.cancelPin();
     }
   }, [state.activePinId, actions]);
 
@@ -691,6 +715,21 @@ export function FeedbackLayer() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [state.isEnabled, state.pendingPin, state.activePinId, state.showTutorial, actions]);
 
+  // Close active pin when clicking elsewhere
+  useEffect(() => {
+    if (!state.activePinId) return;
+
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Don't close if clicking on a pin or its card
+      if (target.closest('[data-feedback-pin]')) return;
+      actions.cancelPin();
+    };
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [state.activePinId, actions]);
+
   if (!state.isEnabled) {
     return null;
   }
@@ -699,37 +738,37 @@ export function FeedbackLayer() {
 
   return (
     <>
-      {/* Main overlay layer - captures interactions */}
-      <div
-        ref={layerRef}
-        className="fixed inset-0 z-[10000]"
-        style={{ cursor: state.showTutorial ? 'default' : state.isMobile ? 'default' : 'crosshair' }}
-        onContextMenu={handleContextMenu}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
-        onClick={handleLayerClick}
-      >
+      {/* Visual overlay - pointer-events: none so scrolling works */}
+      <div className="fixed inset-0 z-[10000] pointer-events-none">
         {/* Visual border to indicate feedback mode is active */}
-        <div className="absolute inset-0 pointer-events-none border-4 border-dusty-rose/30 rounded-lg m-1" />
+        <div className="absolute inset-0 border-4 border-dusty-rose/30 rounded-lg m-1" />
 
         {/* Active mode indicator */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-dusty-rose text-white rounded-full shadow-lg flex items-center gap-2 text-sm font-medium pointer-events-none"
+          className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-dusty-rose text-white rounded-full shadow-lg flex items-center gap-2 text-sm font-medium"
         >
           <MessageCircle className="w-4 h-4" />
           Feedback Mode Active
         </motion.div>
 
-        {/* Render existing pins */}
+        {/* Long press indicator */}
+        <AnimatePresence>
+          {state.isPressActive && state.pressPosition && (
+            <LongPressIndicator position={state.pressPosition} />
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Pins container - renders pins at their document positions */}
+      <div className="fixed inset-0 z-[10001] pointer-events-none overflow-visible">
         <AnimatePresence>
           {state.pins.map((pin) => (
             <FeedbackPinComponent
               key={pin.id}
               pin={pin}
+              scrollY={scrollY}
               isActive={state.activePinId === pin.id}
               onClick={() => handlePinClick(pin.id)}
               onEdit={() => {
@@ -750,13 +789,6 @@ export function FeedbackLayer() {
               isMobile={state.isMobile}
             />
           ))}
-        </AnimatePresence>
-
-        {/* Long press indicator */}
-        <AnimatePresence>
-          {state.isPressActive && state.pressPosition && (
-            <LongPressIndicator position={state.pressPosition} />
-          )}
         </AnimatePresence>
       </div>
 
