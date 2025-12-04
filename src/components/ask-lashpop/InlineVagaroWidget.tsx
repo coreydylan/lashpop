@@ -18,16 +18,33 @@ export function InlineVagaroWidget() {
 
   const service = state.inlineService
   const isWidgetReady = widgetState.isLoaded
-  const showLoading = !isWidgetReady && !hasError
   const widgetScriptUrl = service ? getVagaroWidgetUrl(service.vagaroServiceCode) : ''
 
-  // Fade in when ready
+  // Fade in when ready OR via fallback timeout
   useEffect(() => {
     if (isWidgetReady) {
       const timer = setTimeout(() => setIsVisible(true), 50)
       return () => clearTimeout(timer)
     }
   }, [isWidgetReady])
+
+  // Fallback: Show widget after timeout even if WidgetLoaded event doesn't fire
+  // This handles cases where Vagaro doesn't emit the postMessage event
+  useEffect(() => {
+    if (!service) return
+
+    const fallbackTimer = setTimeout(() => {
+      if (!isVisible) {
+        console.log('[InlineVagaroWidget] Fallback timeout - showing widget without WidgetLoaded event')
+        setIsVisible(true)
+      }
+    }, 2500) // Show after 2.5 seconds regardless
+
+    return () => clearTimeout(fallbackTimer)
+  }, [service, isVisible])
+
+  // Only show loading if widget not visible yet and no error
+  const showLoading = !isVisible && !hasError
 
   // Load Vagaro widget script
   useEffect(() => {
