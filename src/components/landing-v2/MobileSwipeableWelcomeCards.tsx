@@ -97,10 +97,12 @@ const cardContent: { id: number; content: ReactNode; isLast?: boolean; showServi
 
 interface MobileSwipeableWelcomeCardsProps {
   onCardChange?: (index: number, total: number) => void
+  showLogo?: boolean
 }
 
 export function MobileSwipeableWelcomeCards({
   onCardChange,
+  showLogo = false,
 }: MobileSwipeableWelcomeCardsProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [exitDirection, setExitDirection] = useState<'left' | 'right' | null>(null)
@@ -255,7 +257,38 @@ export function MobileSwipeableWelcomeCards({
   const currentCard = cardContent[currentIndex]
 
   return (
-    <div ref={containerRef} className="flex flex-col items-center w-full overflow-hidden">
+    <div ref={containerRef} className="flex flex-col items-center w-full overflow-hidden relative">
+      {/* LP Logo - swipeable area */}
+      {showLogo && (
+        <motion.div
+          className="relative cursor-grab active:cursor-grabbing mb-5"
+          drag="x"
+          dragDirectionLock
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={0.3}
+          onDragStart={handleDragStart}
+          onDrag={handleDrag}
+          onDragEnd={handleDragEnd}
+          style={{ touchAction: 'none' }}
+          whileDrag={{ scale: 1.02 }}
+        >
+          <div
+            className="h-20 w-48 flex-shrink-0"
+            style={{
+              maskImage: 'url(/lashpop-images/lp-logo.png)',
+              maskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
+              WebkitMaskSize: 'contain',
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              backgroundColor: '#8a5e55'
+            }}
+          />
+        </motion.div>
+      )}
+
       {/* Pagination dots - tightly grouped */}
       <div className="flex justify-center items-center gap-1 mb-5">
         {cardContent.map((_, index) => (

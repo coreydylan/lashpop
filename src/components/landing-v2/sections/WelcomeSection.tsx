@@ -103,24 +103,8 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
           
           {/* Content Container with Safe Zone */}
           <div className="relative z-10 w-full h-full flex flex-col items-center justify-center pb-[45dvh] pt-16 px-6">
-            {/* LP Logo - bigger size */}
-            <div
-              className="h-20 w-48 mb-5 flex-shrink-0"
-              style={{
-                maskImage: 'url(/lashpop-images/lp-logo.png)',
-                maskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
-                WebkitMaskSize: 'contain',
-                WebkitMaskRepeat: 'no-repeat',
-                WebkitMaskPosition: 'center',
-                backgroundColor: '#8a5e55'
-              }}
-            />
-
-            {/* Swipeable Welcome Cards */}
-            <MobileSwipeableWelcomeCards onCardChange={handleCardChange} />
+            {/* Swipeable Welcome Cards with LP Logo - logo is now part of swipe area */}
+            <MobileSwipeableWelcomeCards onCardChange={handleCardChange} showLogo />
           </div>
         </div>
       </section>
