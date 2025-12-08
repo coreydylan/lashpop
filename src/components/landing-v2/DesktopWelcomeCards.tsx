@@ -2,7 +2,33 @@
 
 import { useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
-import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ChevronUp } from 'lucide-react'
+
+// Keyboard key styled button component
+const KeyboardKey = ({
+  children,
+  onClick,
+  ariaLabel
+}: {
+  children: ReactNode
+  onClick: () => void
+  ariaLabel: string
+}) => (
+  <button
+    onClick={onClick}
+    aria-label={ariaLabel}
+    className="group flex items-center justify-center w-10 h-10 rounded-lg border-2 transition-all duration-150 hover:scale-105 active:scale-95"
+    style={{
+      borderColor: 'rgba(138, 94, 85, 0.3)',
+      backgroundColor: 'rgba(255, 255, 255, 0.4)',
+      boxShadow: '0 2px 0 rgba(138, 94, 85, 0.2), inset 0 1px 0 rgba(255,255,255,0.5)'
+    }}
+  >
+    <span className="text-[#8a5e55] group-hover:text-[#6d4a43] transition-colors">
+      {children}
+    </span>
+  </button>
+)
 
 // Styled text components for creative typography - scaled up for desktop
 const Emphasis = ({ children }: { children: ReactNode }) => (
@@ -205,17 +231,14 @@ export function DesktopWelcomeCards({ onCardChange }: DesktopWelcomeCardsProps) 
         ))}
       </div>
 
-      {/* Card container with navigation arrows */}
+      {/* Card container with keyboard navigation keys */}
       <div className="relative w-full max-w-2xl mx-auto flex items-center">
-        {/* Left arrow */}
-        <button
-          onClick={goToPrev}
-          className="absolute -left-16 p-2 rounded-full transition-all duration-200 hover:bg-[#8a5e55]/10"
-          style={{ color: '#8a5e55' }}
-          aria-label="Previous card"
-        >
-          <ChevronLeft className="w-8 h-8" strokeWidth={1.5} />
-        </button>
+        {/* Left keyboard key */}
+        <div className="absolute -left-14">
+          <KeyboardKey onClick={goToPrev} ariaLabel="Previous card (Left arrow)">
+            <ArrowLeft className="w-5 h-5" strokeWidth={2} />
+          </KeyboardKey>
+        </div>
 
         {/* Card */}
         <div className="relative w-full" style={{ height: '220px' }}>
@@ -266,21 +289,13 @@ export function DesktopWelcomeCards({ onCardChange }: DesktopWelcomeCardsProps) 
           </AnimatePresence>
         </div>
 
-        {/* Right arrow */}
-        <button
-          onClick={goToNext}
-          className="absolute -right-16 p-2 rounded-full transition-all duration-200 hover:bg-[#8a5e55]/10"
-          style={{ color: '#8a5e55' }}
-          aria-label="Next card"
-        >
-          <ChevronRight className="w-8 h-8" strokeWidth={1.5} />
-        </button>
+        {/* Right keyboard key */}
+        <div className="absolute -right-14">
+          <KeyboardKey onClick={goToNext} ariaLabel="Next card (Right arrow)">
+            <ArrowRight className="w-5 h-5" strokeWidth={2} />
+          </KeyboardKey>
+        </div>
       </div>
-
-      {/* Keyboard hint */}
-      <p className="mt-6 text-xs uppercase tracking-widest opacity-40" style={{ color: '#8a5e55' }}>
-        Use arrow keys or drag to navigate
-      </p>
     </div>
   )
 }
