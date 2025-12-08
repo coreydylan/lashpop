@@ -210,15 +210,12 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
       {/* Desktop/Tablet Layout - GSAP ScrollTrigger pinning */}
       <div ref={desktopSectionRef} className="hidden md:block relative z-20 overflow-hidden">
-        <div ref={desktopContentRef} className="h-screen flex flex-col justify-between will-change-transform pt-[calc(96px+3vh)]">
-          {/* Spacer to push content down from docked panels */}
-          <div className="flex-shrink-0" />
-          {/* Content Container - bottom-aligned with arch touching viewport bottom */}
-          <div className="container flex justify-between items-end gap-12">
-            {/* Letter Content - Left Side */}
+        <div ref={desktopContentRef} className="relative h-screen will-change-transform">
+          {/* Letter Content - Left Side, positioned in the middle-left area */}
+          <div className="container h-full flex items-end">
             <div
               ref={letterRef}
-              className="max-w-2xl z-30 pb-[16vh]"
+              className="max-w-2xl z-30 pb-[16vh] pt-[calc(96px+3vh)]"
             >
               {/* Letter Content */}
               <div className="relative w-full text-[#8a5e55] text-[clamp(0.95rem,1.4vw,1.4rem)] leading-relaxed font-normal font-swanky">
@@ -246,32 +243,30 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 <p>{letterContent.signOff} {letterContent.signature}</p>
               </div>
             </div>
+          </div>
 
-            {/* Arch Image - Right Side, translated down so bottom aligns with viewport bottom */}
+          {/* Arch Image - Absolutely positioned at bottom-right, bottom anchored to viewport */}
+          <div
+            ref={archRef}
+            className="absolute bottom-0 right-[max(2rem,calc((100vw-1280px)/2+2rem))] w-[35vw] max-w-[485px]"
+          >
+            {/* Decorative circle background - contained within section */}
             <div
-              ref={archRef}
-              className="relative w-[35vw] max-w-[485px] flex-shrink-0 translate-y-[3vh]"
-            >
-              {/* Decorative circle background - contained within section */}
-              <div
-                className="absolute inset-0 bg-gradient-to-br from-pink-100/20 to-orange-100/20 rounded-full blur-2xl pointer-events-none"
-              />
+              className="absolute inset-0 bg-gradient-to-br from-pink-100/20 to-orange-100/20 rounded-full blur-2xl pointer-events-none"
+            />
 
-              {/* Arch container with creative styling */}
-              <div className="relative">
-                {/* Static image wrapper */}
-                <div className="relative w-full h-auto">
-                    <Image
-                      src="/lashpop-images/emily-arch.png"
-                      alt="Emily in decorative arch"
-                      width={600}
-                      height={720}
-                      style={{ width: '100%', height: 'auto' }}
-                      className="relative z-10 drop-shadow-2xl"
-                    />
-                </div>
-
-                {/* Decorative elements - removed to prevent shadow artifacts */}
+            {/* Arch container with creative styling */}
+            <div className="relative">
+              {/* Static image wrapper */}
+              <div className="relative w-full h-auto">
+                  <Image
+                    src="/lashpop-images/emily-arch.png"
+                    alt="Emily in decorative arch"
+                    width={600}
+                    height={720}
+                    style={{ width: '100%', height: 'auto' }}
+                    className="relative z-10 drop-shadow-2xl"
+                  />
               </div>
             </div>
           </div>
