@@ -179,76 +179,44 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               />
             </motion.div>
 
-            <motion.div
-              className="font-sans mb-10 max-w-2xl mx-auto"
+            {/* Services list */}
+            <motion.p
+              className="text-sm tracking-[0.2em] uppercase font-light mb-12"
+              style={{ color: '#8a5e55' }}
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
             >
-              <p className="text-lg md:text-xl font-light leading-relaxed mb-4" style={{ color: '#8a5e55' }}>
-                We&apos;re a collective of women-owned beauty businesses who believe looking amazing shouldn&apos;t require a 30-minute morning routine.
-              </p>
-              <p className="text-xl md:text-2xl font-medium tracking-wide" style={{ color: '#6d4a43' }}>
-                Beauty should feel easy, natural, and kind of life-changing.
-              </p>
-            </motion.div>
+              Lashes · Brows · Permanent Makeup · Facials · Waxing · Injectables
+            </motion.p>
 
+            {/* Main statement */}
             <motion.div
-              className="font-sans mb-10 max-w-2xl mx-auto"
+              className="mb-10"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
             >
-              <p className="text-sm tracking-[0.2em] uppercase font-light mb-4" style={{ color: '#8a5e55' }}>
-                No pressure · No judgment · Just great work
+              <p className="text-xs tracking-[0.3em] uppercase font-light opacity-50 mb-3" style={{ color: '#8a5e55' }}>
+                Welcome to
               </p>
-              <p className="text-base md:text-lg font-light leading-relaxed" style={{ color: '#8a5e55' }}>
-                When you walk into our studio, you&apos;re stepping into a space designed to help you breathe a little deeper and walk out feeling like the most refreshed version of yourself.
+              <p className="text-3xl md:text-4xl font-medium tracking-wide leading-tight" style={{ color: '#6d4a43' }}>
+                Your new favorite<br />part of the week.
               </p>
             </motion.div>
 
+            {/* Services hint */}
             <motion.div
-              className="font-sans mb-8 max-w-2xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.5, ease: [0.23, 1, 0.32, 1] }}
             >
-              <p className="text-sm tracking-[0.15em] uppercase font-light mb-4 opacity-80" style={{ color: '#8a5e55' }}>
-                Lashes · Brows · Permanent Makeup · Facials · Waxing · Injectables · Permanent Jewelry
-              </p>
-              <p className="text-base md:text-lg font-light leading-relaxed" style={{ color: '#8a5e55' }}>
-                Each service is done with precision and intention—making your mornings smoother and your confidence louder.
-              </p>
-            </motion.div>
-
-            {/* Closing statement */}
-            <motion.div
-              className="font-sans mt-6 mb-8 max-w-2xl mx-auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.8, delay: 0.6, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <p className="text-xs tracking-[0.3em] uppercase font-light opacity-60 mb-2" style={{ color: '#8a5e55' }}>
-                Welcome to
-              </p>
-              <p className="text-2xl md:text-3xl font-medium tracking-wide" style={{ color: '#6d4a43' }}>
-                Your new favorite part of the week.
-              </p>
-            </motion.div>
-
-            {/* Desktop only - services hint with scroll trigger for auto-loading services bar */}
-            <motion.div
-              className="mt-4"
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.8, delay: 0.7, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <p className="text-xs uppercase tracking-[0.15em] flex items-center justify-center gap-2 opacity-70"
+              <p className="text-xs uppercase tracking-[0.15em] flex items-center justify-center gap-2 opacity-60"
                 style={{ color: '#8a5e55' }}>
                 <svg className="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                 </svg>
-                Explore services above
+                Explore services
               </p>
               {/* Invisible trigger that auto-opens the services bar when scrolled into view */}
               <ScrollServicesTrigger />
