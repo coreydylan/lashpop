@@ -247,10 +247,10 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               </div>
             </div>
 
-            {/* Arch Image - Right Side, bottom-aligned with slight offset to align with viewport bottom */}
+            {/* Arch Image - Right Side, translated down so bottom aligns with viewport bottom */}
             <div
               ref={archRef}
-              className="relative w-[35vw] max-w-[485px] flex-shrink-0 mt-[3vh]"
+              className="relative w-[35vw] max-w-[485px] flex-shrink-0 translate-y-[3vh]"
             >
               {/* Decorative circle background - contained within section */}
               <div
