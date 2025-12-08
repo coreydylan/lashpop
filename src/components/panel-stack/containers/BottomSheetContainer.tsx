@@ -377,8 +377,20 @@ export function BottomSheetContainer() {
   }, [state.categorySelections, state.panels, state.services, actions, getSubcategories]);
 
   // Handle Discover selection
+  // Closes service panel if open and loads discovery in the same surface
   const handleDiscoverSelect = useCallback(() => {
     actions.setUserInteracted();
+
+    // Clear any category selections first
+    state.categorySelections.forEach(sel => {
+      actions.deselectCategory(sel.categoryId);
+    });
+
+    // Close service panel if it exists (so discovery uses the same surface)
+    const existingServicePanel = state.panels.find(p => p.type === 'service-panel');
+    if (existingServicePanel) {
+      actions.closePanel(existingServicePanel.id);
+    }
 
     const existingDiscovery = state.panels.find(p => p.type === 'discovery');
 
@@ -391,7 +403,7 @@ export function BottomSheetContainer() {
         { autoExpand: true, scrollToTop: true }
       );
     }
-  }, [state.panels, actions]);
+  }, [state.panels, state.categorySelections, actions]);
 
   // Don't render if no panels
   if (!hasAnyPanel) {

@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { getCategoryColors } from '@/lib/category-colors';
 
@@ -130,8 +130,7 @@ export function CollapsedChipBar({
               onClick={() => onCategorySelect(category)}
               className={`
                 flex-shrink-0 px-3 py-1.5 rounded-full font-medium
-                text-[11px] flex items-center gap-1
-                transition-all duration-150
+                text-[11px] transition-all duration-150
                 ${
                   selected
                     ? 'text-white shadow-sm'
@@ -145,15 +144,6 @@ export function CollapsedChipBar({
               }}
             >
               <span className="whitespace-nowrap">{category.name}</span>
-              {selected && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="flex-shrink-0"
-                >
-                  <Check className="w-2.5 h-2.5" />
-                </motion.span>
-              )}
             </motion.button>
           );
         })}
