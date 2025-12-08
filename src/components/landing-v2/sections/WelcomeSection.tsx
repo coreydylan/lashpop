@@ -6,6 +6,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { MobileSwipeableWelcomeCards } from '../MobileSwipeableWelcomeCards'
+import { DesktopWelcomeCards } from '../DesktopWelcomeCards'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { ScrollServicesTrigger } from '../ScrollServicesTrigger'
 
@@ -149,22 +150,22 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
       {/* Content Container with Safe Zone */}
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Text Area - Takes up top portion, leaving bottom 35% as safe zone */}
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-[45vh] pt-64">
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 pb-[40vh] pt-48">
           <motion.div
             className="container max-w-5xl text-center"
             initial={{ opacity: 0, y: 40 }}
             animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
             transition={{ duration: 1, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
           >
+            {/* LP Logo with color mask */}
             <motion.div
-              className="relative mx-auto mb-8"
+              className="relative mx-auto mb-10"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={isInView ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
             >
-              {/* LP Logo with color mask */}
               <div
-                className="h-32 w-full mx-auto"
+                className="h-28 w-full mx-auto"
                 style={{
                   maskImage: 'url(/lashpop-images/lp-logo.png)',
                   maskSize: 'contain',
@@ -179,48 +180,17 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               />
             </motion.div>
 
-            {/* Services list */}
-            <motion.p
-              className="text-sm tracking-[0.2em] uppercase font-light mb-12"
-              style={{ color: '#8a5e55' }}
+            {/* Desktop Swipeable Cards */}
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
             >
-              Lashes · Brows · Permanent Makeup · Facials · Waxing · Injectables
-            </motion.p>
-
-            {/* Main statement */}
-            <motion.div
-              className="mb-10"
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <p className="text-xs tracking-[0.3em] uppercase font-light opacity-50 mb-3" style={{ color: '#8a5e55' }}>
-                Welcome to
-              </p>
-              <p className="text-3xl md:text-4xl font-medium tracking-wide leading-tight" style={{ color: '#6d4a43' }}>
-                Your new favorite<br />part of the week.
-              </p>
+              <DesktopWelcomeCards onCardChange={handleCardChange} />
             </motion.div>
 
-            {/* Services hint */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-              transition={{ duration: 0.8, delay: 0.5, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <p className="text-xs uppercase tracking-[0.15em] flex items-center justify-center gap-2 opacity-60"
-                style={{ color: '#8a5e55' }}>
-                <svg className="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                </svg>
-                Explore services
-              </p>
-              {/* Invisible trigger that auto-opens the services bar when scrolled into view */}
-              <ScrollServicesTrigger />
-            </motion.div>
+            {/* Invisible trigger that auto-opens the services bar when scrolled into view */}
+            <ScrollServicesTrigger />
           </motion.div>
         </div>
       </div>
