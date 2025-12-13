@@ -44,7 +44,7 @@ interface MobileHeaderProps {
 export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [menuPosition, setMenuPosition] = useState({ top: 56, right: 20 })
+  const [menuPosition, setMenuPosition] = useState({ top: 56, left: 0, width: 140 })
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { actions, state } = usePanelStack()
@@ -78,13 +78,17 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     return () => scrollContainer.removeEventListener('scroll', checkVisibility)
   }, [getScrollContainer])
 
-  // Update menu position when opened
+  // Update menu position when opened - center it below the menu button
   useEffect(() => {
     if (isMenuOpen && menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect()
+      const menuWidth = Math.min(rect.width, 180) // Match button width, max 180px
+      const centerX = rect.left + (rect.width / 2)
+      
       setMenuPosition({
         top: rect.bottom + 8,
-        right: window.innerWidth - rect.right
+        left: centerX - (menuWidth / 2), // Center the menu
+        width: menuWidth
       })
     }
   }, [isMenuOpen])
@@ -188,8 +192,8 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
         className="fixed z-[9999] rounded-xl overflow-hidden"
         style={{
           top: menuPosition.top,
-          right: menuPosition.right,
-          minWidth: 140,
+          left: menuPosition.left,
+          width: menuPosition.width,
           background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(250, 247, 244, 0.94) 100%)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
@@ -318,12 +322,12 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 </svg>
               </button>
 
-              {/* Book Now Button - MOVED TO RIGHT, smaller size */}
+              {/* Book Now Button - MOVED TO RIGHT, refined size */}
               <button
                 onClick={handleBookNowClick}
                 className="
-                  flex-shrink-0 h-7 px-3 rounded-full
-                  flex items-center justify-center gap-1
+                  flex-shrink-0 h-6 px-3 rounded-full
+                  flex items-center justify-center
                   bg-gradient-to-r from-dusty-rose/90 to-dusty-rose/80
                   text-white text-[10px] font-semibold tracking-wide
                   transition-all duration-200
@@ -331,10 +335,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                   shadow-sm
                 "
               >
-                <span>BOOK</span>
-                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+                <span>BOOK NOW</span>
               </button>
             </div>
           </motion.header>
