@@ -61,18 +61,15 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     return document.querySelector('.mobile-scroll-container') as HTMLElement | null
   }, [])
 
-  // Handle visibility based on scroll position relative to team section
+  // Handle visibility based on scroll position - show after scrolling past hero (roughly 100vh)
   useEffect(() => {
     const scrollContainer = getScrollContainer()
     if (!scrollContainer) return
 
     const checkVisibility = () => {
-      const teamSection = document.querySelector('[data-section-id="team"]')
-      if (!teamSection) return
-
-      const teamRect = teamSection.getBoundingClientRect()
-      // Show header when team section top reaches the top of viewport (or above)
-      setIsVisible(teamRect.top <= 60)
+      // Show header after scrolling approximately one viewport height (past hero)
+      const scrollThreshold = window.innerHeight * 0.75 // 75vh is a good threshold
+      setIsVisible(scrollContainer.scrollTop > scrollThreshold)
     }
 
     scrollContainer.addEventListener('scroll', checkVisibility, { passive: true })
