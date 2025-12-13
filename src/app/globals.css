@@ -48,7 +48,7 @@
     --safe-area-inset-left: env(safe-area-inset-left, 0px);
 
     /* Mobile Header Height - single source of truth */
-    --mobile-header-height: 44px;
+    --mobile-header-height: 56px;
   }
 
   * {

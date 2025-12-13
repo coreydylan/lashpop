@@ -145,22 +145,27 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     }
   }, [getScrollContainer, registerLogoClick])
 
+  // Handle book now button click
+  const handleBookNowClick = useCallback(() => {
+    const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
+    if (hasCategoryPicker) {
+      // Chip bar already visible - trigger attention bounce
+      actions.triggerAttentionBounce()
+    } else {
+      // Open in collapsed state (chip bar) with bounce
+      actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
+      setTimeout(() => {
+        actions.triggerAttentionBounce()
+      }, 400)
+    }
+  }, [actions, state.panels])
+
   // Handle menu item click
   const handleMenuItemClick = useCallback((item: MenuItem) => {
     setIsMenuOpen(false)
 
     if (item.action === 'open-services') {
-      const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
-      if (hasCategoryPicker) {
-        // Chip bar already visible - trigger attention bounce
-        actions.triggerAttentionBounce()
-      } else {
-        // Open in collapsed state (chip bar) with bounce
-        actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
-        setTimeout(() => {
-          actions.triggerAttentionBounce()
-        }, 400)
-      }
+      handleBookNowClick()
     } else if (item.href) {
       if (item.href === '#gallery' || item.href === '#reviews') {
         smoothScrollToElement(item.href, 60, 800, 'center')
@@ -170,7 +175,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
         smoothScrollToElement(item.href, 60, 800, 'top')
       }
     }
-  }, [actions, state.panels])
+  }, [handleBookNowClick])
 
   // Render the dropdown menu (inline, not portal - portal was breaking on mobile)
   const renderMenu = () => {
@@ -253,11 +258,11 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
               borderBottom: '1px solid rgba(161, 151, 129, 0.08)',
             }}
           >
-            <div className="px-5 flex items-center justify-between" style={{ height: 'var(--mobile-header-height)' }}>
+            <div className="px-5 flex items-center justify-between gap-3" style={{ height: 'var(--mobile-header-height)' }}>
               {/* LP Logo - subtle, balanced size */}
               <button
                 onClick={handleLogoClick}
-                className="active:opacity-60 transition-opacity"
+                className="active:opacity-60 transition-opacity flex-shrink-0"
                 aria-label="Scroll to top"
               >
                 <div
@@ -276,12 +281,31 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 />
               </button>
 
+              {/* Book Now Button - persistent CTA */}
+              <button
+                onClick={handleBookNowClick}
+                className="
+                  flex-1 max-w-[140px] h-8 rounded-full
+                  flex items-center justify-center gap-1.5
+                  bg-gradient-to-r from-dusty-rose/90 to-dusty-rose/80
+                  text-white text-[11px] font-semibold tracking-wide
+                  transition-all duration-200
+                  active:scale-95 active:from-dusty-rose active:to-dusty-rose/90
+                  shadow-sm
+                "
+              >
+                <span>BOOK NOW</span>
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+
               {/* Section Indicator / Menu Trigger */}
               <button
                 ref={menuButtonRef}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={`
-                  flex items-center gap-1.5 py-1 px-2 -mr-2 rounded-lg
+                  flex items-center gap-1.5 py-1 px-2 -mr-2 rounded-lg flex-shrink-0
                   transition-all duration-150
                   ${isMenuOpen
                     ? 'bg-dusty-rose/10'
