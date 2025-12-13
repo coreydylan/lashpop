@@ -479,6 +479,7 @@ export function BottomSheetContainer() {
               <CollapsedChipBar
                 onCategorySelect={handleCategorySelect}
                 onDiscoverSelect={handleDiscoverSelect}
+                showDragIndicator={true}
               />
             </motion.div>
           )}
@@ -515,6 +516,17 @@ export function BottomSheetContainer() {
                   transition={{ duration: 0.1 }}
                 />
               </div>
+
+              {/* Persistent Chip Bar at Top - shown when category picker exists */}
+              {hasCategoryPicker && (
+                <div className="flex-shrink-0 border-b border-dune/10">
+                  <CollapsedChipBar
+                    onCategorySelect={handleCategorySelect}
+                    onDiscoverSelect={handleDiscoverSelect}
+                    showDragIndicator={false}
+                  />
+                </div>
+              )}
 
               {/* Panel Content - scrolls independently (pan-y for vertical, pan-x for horizontal service cards) */}
               <div
