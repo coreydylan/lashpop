@@ -4,15 +4,15 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { EmblaCarouselType } from 'embla-carousel'
 
 /**
- * Hook that enables smooth horizontal carousel scrolling via mouse wheel ONLY when hovering.
+ * Hook that enables smooth horizontal carousel scrolling via horizontal scroll gestures ONLY.
  *
- * Uses the wheel-gestures library (same as embla-carousel-wheel-gestures) for smooth
- * physics-based scrolling, but only activates when hovering over the container.
+ * Uses synthetic mouse events to leverage Embla's native drag physics for smooth
+ * momentum-based scrolling when user performs horizontal scroll (trackpad left/right).
  *
- * Benefits:
- * - Proper momentum/inertia from trackpads
- * - Smooth physics simulation
- * - Vertical page scroll works normally when not hovering
+ * Behavior:
+ * - Horizontal scroll (trackpad left/right) → scrolls carousel
+ * - Vertical scroll (scroll wheel up/down) → passes through for normal page scroll
+ * - Only activates when hovering over the container
  */
 export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -38,11 +38,11 @@ export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) 
     let accumulatedX = 0
 
     const handleWheel = (e: WheelEvent) => {
-      // Only handle vertical scroll intent (convert to horizontal)
-      const isVerticalScroll = Math.abs(e.deltaY) > Math.abs(e.deltaX)
-      if (!isVerticalScroll) return
+      // Only handle horizontal scroll intent (left/right trackpad gestures)
+      const isHorizontalScroll = Math.abs(e.deltaX) > Math.abs(e.deltaY)
+      if (!isHorizontalScroll) return  // Let vertical scroll pass through
 
-      // Prevent page scroll
+      // Prevent horizontal page scroll (we'll handle it in carousel)
       e.preventDefault()
 
       if (!isGestureActive) {
@@ -62,9 +62,9 @@ export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) 
         emblaApi.containerNode().dispatchEvent(mousedown)
       }
 
-      // Accumulate horizontal movement from vertical scroll
-      // Negative because scroll down = content moves left
-      accumulatedX -= e.deltaY * 0.5
+      // Accumulate horizontal movement from horizontal scroll input
+      // Negative because deltaX positive = scroll right = content moves left
+      accumulatedX -= e.deltaX * 0.5
 
       // Dispatch mousemove
       const mousemove = new MouseEvent('mousemove', {
