@@ -242,7 +242,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
 
             {/* Right side: Book Now + Hamburger */}
             <div className="flex items-center gap-3">
-              {/* Book Now Button (outline style, smaller) */}
+              {/* Book Now Button (filled, matches desktop) */}
               <button
                 onClick={() => {
                   const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
@@ -255,7 +255,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                     }, 400)
                   }
                 }}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full border border-terracotta text-terracotta text-[10px] font-semibold tracking-wide uppercase active:bg-terracotta/10 transition-all"
+                className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-semibold tracking-wide uppercase active:bg-terracotta transition-all"
               >
                 Book
               </button>
@@ -268,20 +268,20 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                   flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center gap-1.5
                   rounded-lg transition-all duration-150
                   ${isMenuOpen
-                    ? 'bg-terracotta/10'
+                    ? 'bg-terracotta-light/10'
                     : 'active:bg-warm-sand/40'
                   }
                 `}
                 aria-label="Menu"
               >
                 <span
-                  className={`block w-5 h-0.5 bg-terracotta/80 transition-all duration-200 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-all duration-200 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-terracotta/80 transition-all duration-200 ${isMenuOpen ? 'opacity-0' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-all duration-200 ${isMenuOpen ? 'opacity-0' : ''}`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-terracotta/80 transition-all duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-all duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
                 />
               </button>
             </div>
