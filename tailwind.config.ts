@@ -10,24 +10,25 @@ const config: Config = {
     extend: {
       colors: {
         // LashPop Brand Palette (light to dark)
-        'ivory': '#faf6f2',           // Light warm cream for backgrounds
-        'cream': '#f0e0db',           // Accent background (pinkish cream)
-        'blush-light': '#f0e0db',     // Subtle highlights
-        'peach': '#eed9c8',           // Soft accents
-        'blush': '#e9d1c8',           // Light accent
-        'rose-mist': '#e2c2b6',       // Medium accent
-        'dusty-rose': '#dbb2a4',      // Primary accent
-        'terracotta-light': '#d3a392', // Warm accent
-        'terracotta': '#cc947f',      // Primary brand color
-        'rust': '#ac4d3c',            // Deep accent / CTA
-        'charcoal': '#3d3632',        // Warm dark grey for headlines
+        // These reference CSS variables in globals.css for single source of truth
+        'ivory': 'rgb(var(--ivory))',             // #faf6f2 - Main background
+        'cream': 'rgb(var(--cream))',             // #f0e0db - Accent background
+        'blush-light': 'rgb(var(--blush-light))', // #f0e0db - Subtle highlights
+        'peach': 'rgb(var(--peach))',             // #eed9c8 - Soft accents
+        'blush': 'rgb(var(--blush))',             // #e9d1c8 - Light accent
+        'rose-mist': 'rgb(var(--rose-mist))',     // #e2c2b6 - Medium accent
+        'dusty-rose': 'rgb(var(--dusty-rose))',   // #dbb2a4 - Primary accent
+        'terracotta-light': 'rgb(var(--terracotta-light))', // #d3a392 - Warm accent
+        'terracotta': 'rgb(var(--terracotta))',   // #cc947f - Primary brand color
+        'rust': 'rgb(var(--rust))',               // #ac4d3c - Deep accent / CTA
+        'charcoal': '#3d3632',                    // Warm dark grey for headlines
 
-        // Legacy colors (for compatibility)
-        'sage': 'rgb(161, 151, 129)',
-        'warm-sand': 'rgb(235, 224, 203)',
-        'golden': 'rgb(212, 175, 117)',
-        'ocean-mist': 'rgb(188, 201, 194)',
-        'dune': 'rgb(138, 124, 105)',
+        // Legacy colors (reference CSS variables)
+        'sage': 'rgb(var(--sage))',
+        'warm-sand': 'rgb(var(--warm-sand))',
+        'golden': 'rgb(var(--golden))',
+        'ocean-mist': 'rgb(var(--ocean-mist))',
+        'dune': 'rgb(var(--dune))',
 
         // Category Brand Colors
         'category-lashes': '#dbb2a4',
