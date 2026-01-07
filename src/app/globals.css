@@ -392,7 +392,7 @@ a,
   
   /* Glass Effects */
   .glass {
-    background: rgba(var(--cream), 0.8);
+    background: rgba(250, 246, 242, 0.9); /* ivory with opacity */
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
