@@ -161,7 +161,7 @@ export function Navigation() {
                     key={item.label}
                     href={item.href}
                     onClick={(e) => handleNavClick(item, e)}
-                    className="caption text-dune/70 hover:text-terracotta transition-colors duration-300 leading-none flex items-center h-8"
+                    className="caption text-terracotta-light hover:text-terracotta transition-colors duration-300 leading-none flex items-center h-8"
                   >
                     {item.label}
                   </Link>
@@ -169,14 +169,14 @@ export function Navigation() {
                   <button
                     key={item.label}
                     onClick={(e) => handleNavClick(item, e)}
-                    className="caption text-dune/70 hover:text-terracotta transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
+                    className="caption text-terracotta-light hover:text-terracotta transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
                   >
                     {item.label}
                   </button>
                 )
               ))}
-              <button 
-                className="btn btn-primary ml-4"
+              <button
+                className="btn ml-4 bg-terracotta-light hover:bg-terracotta text-cream transition-colors duration-300"
                 onClick={handleBookNow}
               >
                 Book Now
