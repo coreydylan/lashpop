@@ -12,7 +12,7 @@ const serviceCategories = [
     title: 'LASHES',
     tagline: 'Wake up ready.',
     description: 'From subtle enhancements to full-on glamour, our lash artists customize every set to complement your eye shape and lifestyle. No two sets are the same—because no two people are.',
-    icon: '/lashpop-images/services/classic-lash.png',
+    icon: '/lashpop-images/services/lashes-icon.svg',
   },
   {
     id: 'brows',
@@ -20,7 +20,7 @@ const serviceCategories = [
     title: 'BROWS',
     tagline: 'Frame your face.',
     description: 'Whether it\'s shaping, laminating, or microblading, we take time to understand your face structure and style. The result? Brows that look effortlessly you.',
-    icon: '/lashpop-images/services/brows.png',
+    icon: '/lashpop-images/services/brows-icon.svg',
   },
   {
     id: 'facials',
@@ -28,7 +28,7 @@ const serviceCategories = [
     title: 'SKINCARE',
     tagline: 'Glow from within.',
     description: 'Our estheticians don\'t just follow a script—they analyze your skin and create a treatment that addresses what it actually needs. Real results, not just relaxation.',
-    icon: '/lashpop-images/services/lash-lift.png', // TODO: Replace with facials icon
+    icon: '/lashpop-images/services/skincare-icon.svg',
   },
   {
     id: 'waxing',
@@ -36,35 +36,19 @@ const serviceCategories = [
     title: 'WAXING',
     tagline: 'Smooth confidence.',
     description: 'Quick, precise, and surprisingly comfortable. Our technique minimizes irritation and maximizes smooth—so you can get on with your day feeling fresh.',
-    icon: '/lashpop-images/services/waxing.png',
+    icon: '/lashpop-images/services/waxing-icon.svg',
   },
   {
-    id: 'specialty',
-    slug: 'specialty',
-    title: 'PERMANENT JEWELRY',
-    tagline: 'Meaningful moments.',
-    description: 'A delicate chain, welded on forever. It\'s become our favorite way to celebrate friendships, milestones, or just treating yourself to something beautiful.',
-    icon: '/lashpop-images/services/hybrid-lash.png', // TODO: Replace with jewelry icon
-  },
-  {
-    id: 'permanent-makeup',
-    slug: 'permanent-makeup',
-    title: 'PERMANENT MAKEUP',
-    tagline: 'Effortless beauty.',
-    description: 'Wake up with perfectly defined features. From brows to lips, our artists create natural-looking enhancements that simplify your routine and boost your confidence.',
-    icon: '/lashpop-images/services/volume-lash.png', // TODO: Replace with permanent makeup icon
-  },
-  {
-    id: 'injectables',
-    slug: 'specialty',
-    title: 'INJECTABLES',
-    tagline: 'Subtle refinement.',
-    description: 'Our injectors focus on enhancing what you already have. Think natural-looking results that make people wonder if you\'ve just been sleeping better.',
-    icon: '/lashpop-images/services/hybrid-lash.png', // TODO: Replace with injectables icon
+    id: 'nails',
+    slug: 'nails',
+    title: 'NAILS',
+    tagline: 'Polished perfection.',
+    description: 'From classic manicures to nail art, our technicians bring creativity and precision to every set. Leave with nails that express your unique style.',
+    icon: '/lashpop-images/services/nails-icon.svg',
   },
 ]
 
-// Service Card Component for Desktop - uses PNG icons
+// Service Card Component for Desktop
 function ServiceCard({
   category,
   onClick,
@@ -85,7 +69,6 @@ function ServiceCard({
             alt={category.title}
             fill
             className="object-contain"
-            style={{ filter: 'brightness(0) saturate(100%) invert(35%) sepia(15%) saturate(800%) hue-rotate(340deg)' }}
           />
         </div>
       </div>
@@ -117,7 +100,7 @@ function ServiceCard({
   )
 }
 
-// Mobile Swipeable Cards Component - uses PNG icons
+// Mobile Swipeable Cards Component
 function MobileSwipeableServiceCards({
   onCategoryClick,
 }: {
@@ -223,7 +206,6 @@ function MobileSwipeableServiceCards({
                 alt={currentCategory.title}
                 fill
                 className="object-contain"
-                style={{ filter: 'brightness(0) saturate(100%) invert(35%) sepia(15%) saturate(800%) hue-rotate(340deg)' }}
               />
             </div>
 
