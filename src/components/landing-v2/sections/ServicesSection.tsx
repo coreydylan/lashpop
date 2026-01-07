@@ -124,75 +124,82 @@ function MobileSwipeableServiceCards({
   onCategoryClick: (slug: string) => void
 }) {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef<number | null>(null)
   const touchStartY = useRef<number | null>(null)
-  const touchEndX = useRef<number | null>(null)
-  const touchEndY = useRef<number | null>(null)
   const isHorizontalSwipe = useRef<boolean | null>(null)
+  const currentIndexRef = useRef(currentIndex)
 
-  const swipeThreshold = 50
+  // Keep ref in sync with state for use in event handlers
+  useEffect(() => {
+    currentIndexRef.current = currentIndex
+  }, [currentIndex])
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-    touchEndX.current = null
-    touchEndY.current = null
-    isHorizontalSwipe.current = null
-  }
+  const swipeThreshold = 40
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX
-    touchEndY.current = e.touches[0].clientY
+  // Use native event listeners with passive: false to allow preventDefault
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
 
-    // Determine swipe direction on first significant movement
-    if (isHorizontalSwipe.current === null && touchStartX.current !== null && touchStartY.current !== null) {
-      const deltaX = Math.abs(touchEndX.current - touchStartX.current)
-      const deltaY = Math.abs(touchEndY.current - touchStartY.current)
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX
+      touchStartY.current = e.touches[0].clientY
+      isHorizontalSwipe.current = null
+    }
 
-      // Lock in direction after moving at least 5px
-      if (deltaX > 5 || deltaY > 5) {
-        // If horizontal movement is greater than or equal to vertical, treat as horizontal
-        isHorizontalSwipe.current = deltaX >= deltaY
+    const handleTouchMove = (e: TouchEvent) => {
+      if (touchStartX.current === null || touchStartY.current === null) return
+
+      const currentX = e.touches[0].clientX
+      const currentY = e.touches[0].clientY
+      const deltaX = Math.abs(currentX - touchStartX.current)
+      const deltaY = Math.abs(currentY - touchStartY.current)
+
+      // Determine swipe direction on first significant movement
+      if (isHorizontalSwipe.current === null && (deltaX > 8 || deltaY > 8)) {
+        // More lenient horizontal detection - 1.2x ratio instead of equal
+        isHorizontalSwipe.current = deltaX > deltaY * 0.8
+      }
+
+      // If it's a horizontal swipe, prevent vertical scroll
+      if (isHorizontalSwipe.current === true) {
+        e.preventDefault()
       }
     }
 
-    // If it's a horizontal swipe, prevent vertical scroll
-    if (isHorizontalSwipe.current === true) {
-      e.preventDefault()
-    }
-  }
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (touchStartX.current === null) return
 
-  const handleTouchEnd = () => {
-    if (touchStartX.current === null || touchEndX.current === null) return
+      const touchEndX = e.changedTouches[0].clientX
+      const diff = touchStartX.current - touchEndX
 
-    // Only process if this was determined to be a horizontal swipe
-    if (isHorizontalSwipe.current !== true) {
+      // Only process if this was determined to be a horizontal swipe
+      if (isHorizontalSwipe.current === true && Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+          // Swiped left - next card
+          setCurrentIndex((prev) => (prev + 1) % serviceCategories.length)
+        } else {
+          // Swiped right - previous card
+          setCurrentIndex((prev) => prev === 0 ? serviceCategories.length - 1 : prev - 1)
+        }
+      }
+
       touchStartX.current = null
       touchStartY.current = null
-      touchEndX.current = null
-      touchEndY.current = null
       isHorizontalSwipe.current = null
-      return
     }
 
-    const diff = touchStartX.current - touchEndX.current
+    container.addEventListener('touchstart', handleTouchStart, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
+    container.addEventListener('touchend', handleTouchEnd, { passive: true })
 
-    if (Math.abs(diff) > swipeThreshold) {
-      if (diff > 0) {
-        // Swiped left - next card
-        setCurrentIndex((prev) => (prev + 1) % serviceCategories.length)
-      } else {
-        // Swiped right - previous card
-        setCurrentIndex((prev) => prev === 0 ? serviceCategories.length - 1 : prev - 1)
-      }
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart)
+      container.removeEventListener('touchmove', handleTouchMove)
+      container.removeEventListener('touchend', handleTouchEnd)
     }
-
-    touchStartX.current = null
-    touchStartY.current = null
-    touchEndX.current = null
-    touchEndY.current = null
-    isHorizontalSwipe.current = null
-  }
+  }, [])
 
   const currentCategory = serviceCategories[currentIndex]
 
@@ -200,11 +207,9 @@ function MobileSwipeableServiceCards({
     <div className="flex flex-col items-center w-full">
       {/* Card container - more compact */}
       <div
+        ref={containerRef}
         className="relative w-full max-w-[280px] mx-auto"
         style={{ touchAction: 'pan-y pinch-zoom' }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         <div
           className="cursor-pointer"
@@ -249,28 +254,27 @@ function MobileSwipeableServiceCards({
         </div>
       </div>
 
-      {/* Clean pagination dots - constrained to card width */}
-      <div className="w-full max-w-[280px] mx-auto mt-4">
-        <div className="flex items-center justify-center gap-1.5">
-          {serviceCategories.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              type="button"
-              aria-label={`Go to ${serviceCategories[index].title}`}
-              className="p-0.5"
-            >
-              <div
-                className="rounded-full transition-all duration-300"
-                style={{
-                  width: index === currentIndex ? 14 : 5,
-                  height: 5,
-                  backgroundColor: index === currentIndex ? '#8a5e55' : 'rgba(138, 94, 85, 0.3)',
-                }}
-              />
-            </button>
-          ))}
-        </div>
+      {/* Minimal pagination dots */}
+      <div className="flex items-center justify-center gap-1 mt-3">
+        {serviceCategories.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentIndex(index)}
+            type="button"
+            aria-label={`Go to ${serviceCategories[index].title}`}
+            className="p-1"
+          >
+            <div
+              className="rounded-full transition-all duration-200"
+              style={{
+                width: 6,
+                height: 6,
+                backgroundColor: index === currentIndex ? '#8a5e55' : 'rgba(138, 94, 85, 0.2)',
+                transform: index === currentIndex ? 'scale(1)' : 'scale(0.8)',
+              }}
+            />
+          </button>
+        ))}
       </div>
     </div>
   )

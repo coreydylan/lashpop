@@ -45,24 +45,38 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
   const hasSlideshow = heroConfig?.preset && heroConfig.preset.images.length > 0
   const archImage = heroConfig?.fallbackImage || defaultFallbackImage
 
+  const archRef = useRef<HTMLDivElement>(null)
   const [isVisible, setIsVisible] = useState(true)
 
-  // Handle visibility toggle on scroll
+  // Handle scroll effects: arch zoom and visibility toggle
   useEffect(() => {
     const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
     if (!scrollContainer) return
 
     let rafId: number
+    let lastScrollTop = 0
 
     const handleScroll = () => {
       if (rafId) cancelAnimationFrame(rafId)
 
       rafId = requestAnimationFrame(() => {
         const scrollTop = scrollContainer.scrollTop
+        if (Math.abs(scrollTop - lastScrollTop) < 0.5) return
+        lastScrollTop = scrollTop
+
         const viewportHeight = window.innerHeight
 
         // Hide the fixed background after scrolling past 1.5 viewports
         setIsVisible(scrollTop < viewportHeight * 1.5)
+
+        // Zoom through arch over first 60% of viewport scroll
+        const zoomProgress = Math.min(scrollTop / (viewportHeight * 0.6), 1)
+        const scale = 1 + (zoomProgress * 0.5)
+
+        // Direct DOM manipulation for GPU-accelerated animation
+        if (archRef.current) {
+          archRef.current.style.transform = `scale3d(${scale}, ${scale}, 1)`
+        }
       })
     }
 
@@ -85,10 +99,14 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
       {/* Arch Image/Slideshow - full height container, arch is 85dvh tall aligned to bottom */}
       <div className="absolute inset-0 flex justify-center items-end overflow-hidden" style={{ zIndex: 10 }}>
         <div
-          className="relative w-[80vw] max-w-[380px] overflow-hidden"
+          ref={archRef}
+          className="relative w-[80vw] max-w-[380px] overflow-hidden will-change-transform"
           style={{
             borderRadius: 'clamp(120px, 40vw, 190px) clamp(120px, 40vw, 190px) 0 0',
             height: '85dvh',
+            transform: 'scale3d(1, 1, 1)',
+            transformOrigin: 'center bottom',
+            backfaceVisibility: 'hidden',
           }}
         >
           {hasSlideshow && heroConfig?.preset ? (

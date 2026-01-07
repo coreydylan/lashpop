@@ -224,7 +224,6 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
               : 'transparent',
             backdropFilter: isScrolled ? 'blur(16px)' : 'none',
             WebkitBackdropFilter: isScrolled ? 'blur(16px)' : 'none',
-            borderBottom: isScrolled ? '1px solid rgba(161, 151, 129, 0.08)' : 'none',
           }}
         >
           <div className="px-5 flex items-center justify-between" style={{ height: '60px' }}>
