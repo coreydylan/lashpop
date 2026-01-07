@@ -77,7 +77,7 @@ export function PanelWrapper({
       {/* ===== MOBILE HEADER (< md) ===== */}
       <div
         className={`
-          md:hidden flex items-center bg-cream/95 backdrop-blur-md transition-all
+          md:hidden flex items-center bg-ivory/95 backdrop-blur-md transition-all
           ${isDocked
             ? 'h-12 cursor-pointer active:bg-warm-sand/5'
             : 'h-14 border-b border-sage/10'
@@ -163,7 +163,7 @@ export function PanelWrapper({
       {/* ===== DESKTOP HEADER (>= md) ===== */}
       <div
         className={`
-          hidden md:flex items-center justify-between px-6 bg-cream/95 backdrop-blur-md
+          hidden md:flex items-center justify-between px-6 bg-ivory/95 backdrop-blur-md
           transition-all cursor-pointer
           ${isDocked ? 'h-12 hover:bg-warm-sand/5' : 'h-14'}
           ${isExpanded ? 'border-b border-dusty-rose/20' : ''}
@@ -294,7 +294,7 @@ export function PanelWrapper({
           >
             <div
               className={`
-                bg-cream overscroll-contain overflow-y-auto overflow-x-hidden
+                bg-ivory overscroll-contain overflow-y-auto overflow-x-hidden
                 max-h-[75vh] md:max-h-[60vh]
                 ${fullWidthContent ? '' : 'pt-4 md:px-6 md:py-6'}
               `}

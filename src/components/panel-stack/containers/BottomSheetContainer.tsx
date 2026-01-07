@@ -423,7 +423,7 @@ export function BottomSheetContainer() {
         ref={containerRef}
         data-panel-mode="bottom"
         className={`
-          fixed inset-x-0 bottom-0 z-50 bg-cream will-change-transform rounded-t-[24px]
+          fixed inset-x-0 bottom-0 z-50 bg-ivory will-change-transform rounded-t-[24px]
           ${currentSnap === 'fullScreen' ? 'shadow-2xl' : 'shadow-lg'}
         `}
         style={{ height: '100dvh' }}

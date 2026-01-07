@@ -49,7 +49,7 @@ export function TopPanelFrame({
       {/* Docked Header */}
       <div
         className={`
-          flex items-center justify-between px-4 md:px-6 bg-cream/95 backdrop-blur-md
+          flex items-center justify-between px-4 md:px-6 bg-ivory/95 backdrop-blur-md
           transition-all cursor-pointer
           ${isDocked ? 'h-8 md:h-12 hover:bg-warm-sand/5' : 'h-12 md:h-14'}
           ${isExpanded ? 'border-b border-dusty-rose/20' : ''}
@@ -136,7 +136,7 @@ export function TopPanelFrame({
           >
             <div
               className="
-                bg-cream overflow-y-auto overscroll-contain
+                bg-ivory overflow-y-auto overscroll-contain
                 max-h-[80vh] md:max-h-[60vh]
                 px-4 py-4 md:px-6 md:py-6
               "

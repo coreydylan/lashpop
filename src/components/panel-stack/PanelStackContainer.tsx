@@ -95,7 +95,7 @@ export function PanelStackContainer() {
   return (
     <motion.div
       ref={containerRef}
-      className="fixed left-0 right-0 z-30 bg-cream shadow-lg top-[80px]" // Position below header (80px height)
+      className="fixed left-0 right-0 z-30 bg-ivory shadow-lg top-[80px]" // Position below header (80px height)
       initial={{ y: -100, opacity: 0 }}
       animate={{
         y: isVisible ? 0 : -100,

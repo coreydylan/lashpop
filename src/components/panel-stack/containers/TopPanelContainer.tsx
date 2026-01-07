@@ -147,7 +147,7 @@ export function TopPanelContainer() {
     <motion.div
       ref={containerRef}
       data-panel-mode="top"
-      className="fixed left-0 right-0 z-30 bg-cream shadow-lg"
+      className="fixed left-0 right-0 z-30 bg-ivory shadow-lg"
       style={{ top: `${HEADER_HEIGHT}px` }}
       initial={{ y: -100, opacity: 0 }}
       animate={{

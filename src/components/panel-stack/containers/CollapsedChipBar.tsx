@@ -79,7 +79,7 @@ export function CollapsedChipBar({
   };
 
   return (
-    <div className="bg-cream/98 backdrop-blur-md">
+    <div className="bg-ivory/98 backdrop-blur-md">
       {/* Drag indicator - terracotta, always visible */}
       <div className="flex justify-center pt-3 pb-1">
         <motion.div

@@ -145,7 +145,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
   };
 
   return (
-    <div className="bg-cream border-b border-sage/10 px-4 py-2 md:px-6 md:py-4">
+    <div className="bg-ivory border-b border-sage/10 px-4 py-2 md:px-6 md:py-4">
       {/* Mobile: horizontal scroll with inline X */}
       <div className="md:hidden">
         <div className="flex gap-2 overflow-x-auto -mx-4 px-4 scrollbar-hide">

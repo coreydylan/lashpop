@@ -362,6 +362,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
   if (isMobile) {
     return (
       <section
+        id="services"
         className="relative w-full py-12 px-6 bg-ivory"
         data-section-id="services"
       >
@@ -400,6 +401,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
   // Desktop Layout - 3 columns
   return (
     <section
+      id="services"
       className="relative w-full py-20 px-8 bg-ivory"
       data-section-id="services"
     >

@@ -827,7 +827,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
               <div className="relative min-h-[500px] md:min-h-[600px] px-0 md:px-0">
                 {/* Loading Overlay */}
                 {!isWidgetLoaded && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream md:glass md:rounded-2xl">
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-ivory md:glass md:rounded-2xl">
                     <div className="text-center">
                       <Loader2 className="w-8 h-8 text-dusty-rose animate-spin mx-auto mb-3" />
                       <p className="text-sm text-dune/60">Loading scheduling...</p>
@@ -907,7 +907,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                   position: relative;
                   overflow: hidden;
                   width: 100% !important;
-                  background: #FAF8F5; /* cream background */
+                  background: #faf6f2; /* ivory background */
                 }
 
                 /* Force ALL Vagaro elements to be full width */
@@ -974,7 +974,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                 {/* Loading State - Shows LP logo animation until Vagaro widget is fully ready */}
                 {!vagaroState.isLoaded && !hasBookingError && (
                   <div
-                    className="absolute inset-0 flex items-center justify-center bg-cream z-20 transition-opacity duration-500"
+                    className="absolute inset-0 flex items-center justify-center bg-ivory z-20 transition-opacity duration-500"
                     style={{ opacity: vagaroState.isLoaded ? 0 : 1 }}
                   >
                     <LPLogoLoader message={"Preparing booking experience\npowered by Vagaro"} size={56} />
@@ -983,7 +983,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
                 {/* Error State */}
                 {hasBookingError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-cream z-20">
+                  <div className="absolute inset-0 flex items-center justify-center bg-ivory z-20">
                     <div className="text-center max-w-xs px-4">
                       <AlertCircle className="w-12 h-12 text-terracotta mx-auto mb-4" />
                       <h3 className="font-medium text-dune mb-2">Unable to load booking</h3>

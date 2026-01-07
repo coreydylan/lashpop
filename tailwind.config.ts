@@ -11,24 +11,25 @@ const config: Config = {
       colors: {
         // LashPop Brand Palette (light to dark)
         // These reference CSS variables in globals.css for single source of truth
-        'ivory': 'rgb(var(--ivory))',             // #faf6f2 - Main background
-        'cream': 'rgb(var(--cream))',             // #f0e0db - Accent background
-        'blush-light': 'rgb(var(--blush-light))', // #f0e0db - Subtle highlights
-        'peach': 'rgb(var(--peach))',             // #eed9c8 - Soft accents
-        'blush': 'rgb(var(--blush))',             // #e9d1c8 - Light accent
-        'rose-mist': 'rgb(var(--rose-mist))',     // #e2c2b6 - Medium accent
-        'dusty-rose': 'rgb(var(--dusty-rose))',   // #dbb2a4 - Primary accent
-        'terracotta-light': 'rgb(var(--terracotta-light))', // #d3a392 - Warm accent
-        'terracotta': 'rgb(var(--terracotta))',   // #cc947f - Primary brand color
-        'rust': 'rgb(var(--rust))',               // #ac4d3c - Deep accent / CTA
+        // Using <alpha-value> syntax to support Tailwind opacity modifiers (e.g., text-dune/50)
+        'ivory': 'rgb(var(--ivory) / <alpha-value>)',             // #faf6f2 - Main background
+        'cream': 'rgb(var(--cream) / <alpha-value>)',             // #f0e0db - Accent background
+        'blush-light': 'rgb(var(--blush-light) / <alpha-value>)', // #f0e0db - Subtle highlights
+        'peach': 'rgb(var(--peach) / <alpha-value>)',             // #eed9c8 - Soft accents
+        'blush': 'rgb(var(--blush) / <alpha-value>)',             // #e9d1c8 - Light accent
+        'rose-mist': 'rgb(var(--rose-mist) / <alpha-value>)',     // #e2c2b6 - Medium accent
+        'dusty-rose': 'rgb(var(--dusty-rose) / <alpha-value>)',   // #dbb2a4 - Primary accent
+        'terracotta-light': 'rgb(var(--terracotta-light) / <alpha-value>)', // #c46b4e - Warm accent
+        'terracotta': 'rgb(var(--terracotta) / <alpha-value>)',   // #b5563d - Primary brand color (matches logo)
+        'rust': 'rgb(var(--rust) / <alpha-value>)',               // #ac4d3c - Deep accent / CTA
         'charcoal': '#3d3632',                    // Warm dark grey for headlines
 
         // Legacy colors (reference CSS variables)
-        'sage': 'rgb(var(--sage))',
-        'warm-sand': 'rgb(var(--warm-sand))',
-        'golden': 'rgb(var(--golden))',
-        'ocean-mist': 'rgb(var(--ocean-mist))',
-        'dune': 'rgb(var(--dune))',
+        'sage': 'rgb(var(--sage) / <alpha-value>)',
+        'warm-sand': 'rgb(var(--warm-sand) / <alpha-value>)',
+        'golden': 'rgb(var(--golden) / <alpha-value>)',
+        'ocean-mist': 'rgb(var(--ocean-mist) / <alpha-value>)',
+        'dune': 'rgb(var(--dune) / <alpha-value>)',
 
         // Category Brand Colors
         'category-lashes': '#dbb2a4',

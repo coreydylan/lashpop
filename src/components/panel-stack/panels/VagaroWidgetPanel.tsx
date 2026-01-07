@@ -259,7 +259,7 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
           {/* Loading State - Shows LP logo animation until Vagaro widget is fully ready */}
           {showLoading && (
             <div
-              className="absolute inset-0 z-20 flex items-center justify-center bg-cream transition-opacity duration-500"
+              className="absolute inset-0 z-20 flex items-center justify-center bg-ivory transition-opacity duration-500"
               style={{ opacity: isVisible ? 0 : 1, pointerEvents: isVisible ? 'none' : 'auto' }}
             >
               <LPLogoLoader message={"Preparing booking experience\npowered by Vagaro"} size={56} />
@@ -268,7 +268,7 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
 
           {/* Error State */}
           {hasError && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-cream/80 min-h-[400px]">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-ivory/80 min-h-[400px]">
               <div className="text-center max-w-sm px-4">
                 <AlertCircle className="w-10 h-10 text-terracotta mx-auto mb-3" />
                 <h3 className="font-medium text-dune mb-2">Unable to load booking</h3>

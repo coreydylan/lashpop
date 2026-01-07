@@ -10,7 +10,7 @@ import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
 
 const navItems = [
-  { label: 'Services', action: 'open-services' },
+  { label: 'Services', href: '#services' },
   { label: 'Team', href: '#team' },
   { label: 'Gallery', href: '#gallery' },
   { label: 'Reviews', href: '#reviews' },
@@ -60,18 +60,7 @@ export function Navigation() {
       return
     }
 
-    if (item.action === 'open-services') {
-      e.preventDefault()
-      const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
-      if (hasCategoryPicker) {
-        actions.triggerAttentionBounce()
-      } else {
-        actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
-        setTimeout(() => {
-          actions.triggerAttentionBounce()
-        }, 400)
-      }
-    } else if (item.href?.startsWith('#')) {
+    if (item.href?.startsWith('#')) {
       e.preventDefault()
       
       if (item.href === '#gallery' || item.href === '#reviews') {

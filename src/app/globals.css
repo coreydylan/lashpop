@@ -21,23 +21,24 @@
     --font-caption: 'TikTok Sans', sans-serif;
 
     /* LashPop Brand Palette (light to dark) */
-    --ivory: 250, 246, 242;          /* #faf6f2 - Main background color */
-    --cream: 240, 224, 219;          /* #f0e0db - Background (testing blush-light) */
-    --blush-light: 240, 224, 219;    /* #f0e0db - Subtle highlights */
-    --peach: 238, 217, 200;          /* #eed9c8 - Soft accents */
-    --blush: 233, 209, 200;          /* #e9d1c8 - Light accent */
-    --rose-mist: 226, 194, 182;      /* #e2c2b6 - Medium accent */
-    --dusty-rose: 219, 178, 164;     /* #dbb2a4 - Primary accent */
-    --terracotta-light: 196, 107, 78; /* #c46b4e - Lighter terracotta */
-    --terracotta: 181, 86, 61;       /* #b5563d - Primary brand color (matches logo) */
-    --rust: 172, 77, 60;             /* #ac4d3c - Deep accent / CTA */
+    /* Using space-separated RGB values for modern CSS color syntax with alpha support */
+    --ivory: 250 246 242;          /* #faf6f2 - Main background color */
+    --cream: 240 224 219;          /* #f0e0db - Background (testing blush-light) */
+    --blush-light: 240 224 219;    /* #f0e0db - Subtle highlights */
+    --peach: 238 217 200;          /* #eed9c8 - Soft accents */
+    --blush: 233 209 200;          /* #e9d1c8 - Light accent */
+    --rose-mist: 226 194 182;      /* #e2c2b6 - Medium accent */
+    --dusty-rose: 219 178 164;     /* #dbb2a4 - Primary accent */
+    --terracotta-light: 196 107 78; /* #c46b4e - Lighter terracotta */
+    --terracotta: 181 86 61;       /* #b5563d - Primary brand color (matches logo) */
+    --rust: 172 77 60;             /* #ac4d3c - Deep accent / CTA */
 
     /* Legacy colors */
-    --sage: 161, 151, 129;
-    --warm-sand: 235, 224, 203;
-    --golden: 212, 175, 117;
-    --ocean-mist: 188, 201, 194;
-    --dune: 138, 124, 105;
+    --sage: 161 151 129;
+    --warm-sand: 235 224 203;
+    --golden: 212 175 117;
+    --ocean-mist: 188 201 194;
+    --dune: 138 124 105;
 
     /* Spacing */
     --space-xs: clamp(0.75rem, 2vw, 1rem);
@@ -119,10 +120,10 @@
   }
   
   ::selection {
-    background: rgba(var(--dusty-rose), 0.2);
+    background: rgb(var(--dusty-rose) / 0.2);
     color: rgb(var(--dune));
   }
-  
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
@@ -133,12 +134,12 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(var(--sage), 0.5);
+    background: rgb(var(--sage) / 0.5);
     border-radius: 100px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--sage), 0.7);
+    background: rgb(var(--sage) / 0.7);
   }
 }
 
@@ -393,7 +394,7 @@ a,
   
   /* Glass Effects */
   .glass {
-    background: rgba(var(--ivory), 0.9);
+    background: rgb(var(--ivory) / 0.9);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
@@ -429,12 +430,12 @@ a,
   .btn-secondary {
     background: transparent;
     color: rgb(var(--dune));
-    border: 1px solid rgba(var(--sage), 0.3);
+    border: 1px solid rgb(var(--sage) / 0.3);
   }
-  
+
   .btn-secondary:hover {
-    background: rgba(var(--sage), 0.1);
-    border-color: rgba(var(--sage), 0.5);
+    background: rgb(var(--sage) / 0.1);
+    border-color: rgb(var(--sage) / 0.5);
   }
   
   /* Utility Classes */

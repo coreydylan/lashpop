@@ -132,7 +132,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     fontWeight: 500,
                     letterSpacing: '0.03em',
                     color: '#faf6f2',
-                    backgroundColor: 'rgba(var(--terracotta), 0.85)',
+                    backgroundColor: 'rgb(var(--terracotta) / 0.85)',
                     padding: '0.1em 0.4em',
                     boxDecorationBreak: 'clone',
                   }}
@@ -345,7 +345,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     fontWeight: 500,
                     letterSpacing: '0.03em',
                     color: '#faf6f2',
-                    backgroundColor: 'rgba(var(--terracotta), 0.85)',
+                    backgroundColor: 'rgb(var(--terracotta) / 0.85)',
                     padding: '0.1em 0.4em',
                   }}
                 >
