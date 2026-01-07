@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { db } from '@/db'
+import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { homepageReviews } from '@/db/schema/website_settings'
 import { desc, gte, asc } from 'drizzle-orm'
@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
 // GET - Fetch all reviews and selected IDs
 export async function GET() {
   try {
+    const db = getDb()
     // Fetch all reviews with rating >= 3
     const allReviews = await db
       .select()
@@ -51,9 +52,10 @@ export async function GET() {
 // PUT - Update selected reviews and their order
 export async function PUT(request: NextRequest) {
   try {
+    const db = getDb()
     const body = await request.json()
     console.log('[Reviews API] PUT request body:', body)
-    
+
     const { selectedReviews } = body
 
     if (!Array.isArray(selectedReviews)) {

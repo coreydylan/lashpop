@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, compositions, layers, tracks, clips, cues, cueActions, triggers, blocks } from '@/db';
+import { getDb, compositions, layers, tracks, clips, cues, cueActions, triggers, blocks } from '@/db';
 import { eq } from 'drizzle-orm';
 
 // ============================================
@@ -10,6 +10,7 @@ import { eq } from 'drizzle-orm';
 // GET /api/scrollytelling/compositions?id=xxx - Get specific composition
 export async function GET(request: NextRequest) {
   try {
+    const db = getDb();
     const { searchParams } = new URL(request.url);
     const compositionId = searchParams.get('id');
 
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
 // POST /api/scrollytelling/compositions - Create new composition
 export async function POST(request: NextRequest) {
   try {
+    const db = getDb();
     const data = await request.json();
 
     // Create composition
@@ -92,6 +94,7 @@ export async function POST(request: NextRequest) {
 // PUT /api/scrollytelling/compositions - Update composition
 export async function PUT(request: NextRequest) {
   try {
+    const db = getDb();
     const data = await request.json();
     const { id, ...updates } = data;
 
@@ -138,6 +141,7 @@ export async function PUT(request: NextRequest) {
 // DELETE /api/scrollytelling/compositions?id=xxx - Delete composition
 export async function DELETE(request: NextRequest) {
   try {
+    const db = getDb();
     const { searchParams } = new URL(request.url);
     const compositionId = searchParams.get('id');
 
@@ -166,6 +170,7 @@ export async function DELETE(request: NextRequest) {
 // ============================================
 
 async function loadFullComposition(compositionId: string) {
+  const db = getDb();
   // Get composition
   const [composition] = await db.select()
     .from(compositions)

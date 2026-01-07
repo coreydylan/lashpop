@@ -1,6 +1,6 @@
 "use server"
 
-import { db } from "@/db"
+import { getDb } from "@/db"
 import { reviews } from "@/db/schema/reviews"
 import { reviewStats } from "@/db/schema/review_stats"
 import { homepageReviews } from "@/db/schema/website_settings"
@@ -8,6 +8,7 @@ import { desc, gte, inArray, asc } from "drizzle-orm"
 
 export async function getReviews(limit = 20) {
   try {
+    const db = getDb()
     const allReviews = await db
       .select()
       .from(reviews)
@@ -27,6 +28,7 @@ export async function getReviews(limit = 20) {
  */
 export async function getHomepageReviews(fallbackLimit = 10) {
   try {
+    const db = getDb()
     // Get selected review IDs from homepage_reviews table
     const selectedData = await db
       .select()
@@ -64,6 +66,7 @@ export async function getHomepageReviews(fallbackLimit = 10) {
 
 export async function getHighRatedReviews(limit = 10) {
   try {
+    const db = getDb()
     const topReviews = await db
       .select()
       .from(reviews)
@@ -80,6 +83,7 @@ export async function getHighRatedReviews(limit = 10) {
 
 export async function getReviewStats() {
   try {
+    const db = getDb()
     const stats = await db.select().from(reviewStats)
     return stats
   } catch (error) {

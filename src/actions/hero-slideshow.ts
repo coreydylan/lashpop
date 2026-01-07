@@ -1,6 +1,6 @@
 'use server'
 
-import { db, websiteSettings } from "@/db"
+import { getDb, websiteSettings } from "@/db"
 import { eq } from "drizzle-orm"
 import type {
   SlideshowPreset,
@@ -61,6 +61,7 @@ interface SlideshowConfig {
  */
 export async function getActiveSlideshowConfig(device: 'desktop' | 'mobile'): Promise<SlideshowConfig> {
   try {
+    const db = getDb()
     // Fetch assignments
     const [assignmentSetting] = await db
       .select()
@@ -191,6 +192,7 @@ export async function getSlideshowConfigs(): Promise<{
  */
 export async function getAllSlideshowPresets(): Promise<SlideshowPreset[]> {
   try {
+    const db = getDb()
     const [setting] = await db
       .select()
       .from(websiteSettings)

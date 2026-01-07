@@ -1,6 +1,6 @@
 'use server'
 
-import { db } from '@/db'
+import { getDb } from '@/db'
 import { faqCategories, faqItems } from '@/db/schema/faqs'
 import { eq, asc, and } from 'drizzle-orm'
 
@@ -33,6 +33,7 @@ export interface FAQWithCategory extends FAQItem {
  */
 export async function getFAQCategories(): Promise<FAQCategory[]> {
   try {
+    const db = getDb()
     const categories = await db
       .select()
       .from(faqCategories)
@@ -51,6 +52,7 @@ export async function getFAQCategories(): Promise<FAQCategory[]> {
  */
 export async function getFAQItems(): Promise<FAQItem[]> {
   try {
+    const db = getDb()
     const items = await db
       .select()
       .from(faqItems)
@@ -73,6 +75,7 @@ export async function getFAQsGroupedByCategory(): Promise<{
   featuredItems: FAQWithCategory[]
 }> {
   try {
+    const db = getDb()
     // Fetch categories
     const categories = await db
       .select()
@@ -125,6 +128,7 @@ export async function getFAQsGroupedByCategory(): Promise<{
  */
 export async function getFeaturedFAQs(): Promise<FAQWithCategory[]> {
   try {
+    const db = getDb()
     const categories = await db
       .select()
       .from(faqCategories)

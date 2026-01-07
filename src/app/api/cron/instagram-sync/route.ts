@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db, assets, tags, tagCategories, assetTags } from "@/db"
+import { getDb, assets, tags, tagCategories, assetTags } from "@/db"
 import { eq, and } from "drizzle-orm"
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 import { nanoid } from "nanoid"
@@ -42,6 +42,7 @@ async function uploadImageToS3(imageUrl: string, id: string): Promise<string | n
 }
 
 async function ensureTag(categoryName: string, tagName: string, isCollection = false) {
+  const db = getDb()
   // 1. Ensure Category - use select instead of query
   let [category] = await db
     .select()
@@ -82,6 +83,7 @@ async function ensureTag(categoryName: string, tagName: string, isCollection = f
 
 export async function POST(request: NextRequest) {
   try {
+    const db = getDb()
     // Verify cron secret
     const authHeader = request.headers.get('authorization')
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

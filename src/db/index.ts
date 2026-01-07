@@ -175,8 +175,8 @@ export async function closeDb() {
   }
 }
 
-// Export db getter as default db
-export const db = getDb()
+// NOTE: Do not export an eagerly-initialized `db` instance here.
+// Use getDb() for lazy initialization to avoid build errors when DATABASE_URL isn't set.
 
 // Re-export schema tables for convenience
 export {

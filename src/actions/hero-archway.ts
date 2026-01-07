@@ -1,6 +1,6 @@
 'use server'
 
-import { db, websiteSettings } from "@/db"
+import { getDb, websiteSettings } from "@/db"
 import { eq } from "drizzle-orm"
 
 // Types for hero archway configuration
@@ -37,6 +37,7 @@ const defaultConfig: HeroArchwayConfig = {
  */
 export async function getHeroArchwayConfig(): Promise<HeroArchwayConfig> {
   try {
+    const db = getDb()
     const [setting] = await db
       .select()
       .from(websiteSettings)

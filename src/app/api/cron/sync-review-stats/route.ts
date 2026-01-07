@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/db'
+import { getDb } from '@/db'
 import { reviewStats } from '@/db/schema/review_stats'
 
 export const runtime = 'nodejs'
@@ -157,6 +157,7 @@ async function fetchBrightDataStats(
 }
 
 async function updateStats(source: string, rating: number, reviewCount: number) {
+  const db = getDb()
   await db
     .insert(reviewStats)
     .values({

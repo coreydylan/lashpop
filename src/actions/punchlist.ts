@@ -1,6 +1,6 @@
 'use server'
 
-import { db } from '@/db'
+import { getDb } from '@/db'
 import {
   punchlistUsers,
   punchlistItems,
@@ -45,6 +45,7 @@ export interface PunchlistActivityWithUser extends PunchlistActivityEntry {
  */
 export async function getPunchlistUserByPhone(phoneNumber: string): Promise<PunchlistUser | null> {
   try {
+    const db = getDb()
     const users = await db
       .select()
       .from(punchlistUsers)
@@ -63,6 +64,7 @@ export async function getPunchlistUserByPhone(phoneNumber: string): Promise<Punc
  */
 export async function createPunchlistSession(userId: string): Promise<string | null> {
   try {
+    const db = getDb()
     const token = randomBytes(32).toString('hex')
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
 
@@ -94,6 +96,7 @@ export async function createPunchlistSession(userId: string): Promise<string | n
  */
 export async function getCurrentPunchlistUser(): Promise<PunchlistUser | null> {
   try {
+    const db = getDb()
     const cookieStore = await cookies()
     const token = cookieStore.get('punchlist_auth')?.value
 
@@ -128,6 +131,7 @@ export async function getCurrentPunchlistUser(): Promise<PunchlistUser | null> {
  */
 export async function logoutPunchlist(): Promise<void> {
   try {
+    const db = getDb()
     const cookieStore = await cookies()
     const token = cookieStore.get('punchlist_auth')?.value
 
@@ -150,6 +154,7 @@ export async function logoutPunchlist(): Promise<void> {
  */
 export async function getAllPunchlistUsers(): Promise<PunchlistUser[]> {
   try {
+    const db = getDb()
     return await db.select().from(punchlistUsers).orderBy(asc(punchlistUsers.name))
   } catch (error) {
     console.error('Error fetching punchlist users:', error)
@@ -165,6 +170,7 @@ export async function updatePunchlistUserPhone(
   phoneNumber: string
 ): Promise<boolean> {
   try {
+    const db = getDb()
     await db
       .update(punchlistUsers)
       .set({ phoneNumber, updatedAt: new Date() })
@@ -187,6 +193,7 @@ export async function getPunchlistItems(
   statusFilter?: PunchlistStatus
 ): Promise<PunchlistItemWithRelations[]> {
   try {
+    const db = getDb()
     // Get all users for mapping
     const users = await db.select().from(punchlistUsers)
     const userMap = new Map(users.map(u => [u.id, u]))
@@ -227,6 +234,7 @@ export async function getPunchlistItems(
  */
 export async function getPunchlistItem(itemId: string): Promise<PunchlistItemWithRelations | null> {
   try {
+    const db = getDb()
     const items = await db
       .select()
       .from(punchlistItems)
@@ -268,6 +276,7 @@ export async function createPunchlistItem(data: {
   assignedToId?: string
 }): Promise<PunchlistItem | null> {
   try {
+    const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
     if (!currentUser) return null
 
@@ -312,6 +321,7 @@ export async function updatePunchlistItem(
   }
 ): Promise<boolean> {
   try {
+    const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
     if (!currentUser) return false
 
@@ -338,6 +348,7 @@ export async function updatePunchlistItemStatus(
   newStatus: PunchlistStatus
 ): Promise<boolean> {
   try {
+    const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
     if (!currentUser) return false
 
@@ -395,6 +406,7 @@ export async function updatePunchlistItemStatus(
  */
 export async function deletePunchlistItem(itemId: string): Promise<boolean> {
   try {
+    const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
     if (!currentUser || currentUser.role !== 'owner') return false
 
@@ -415,6 +427,7 @@ export async function deletePunchlistItem(itemId: string): Promise<boolean> {
  */
 export async function getPunchlistComments(itemId: string): Promise<PunchlistCommentWithUser[]> {
   try {
+    const db = getDb()
     const users = await db.select().from(punchlistUsers)
     const userMap = new Map(users.map(u => [u.id, u]))
 
@@ -442,6 +455,7 @@ export async function addPunchlistComment(
   content: string
 ): Promise<PunchlistComment | null> {
   try {
+    const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
     if (!currentUser) return null
 
@@ -484,6 +498,7 @@ export async function addPunchlistComment(
  */
 export async function getPunchlistActivity(itemId: string): Promise<PunchlistActivityWithUser[]> {
   try {
+    const db = getDb()
     const users = await db.select().from(punchlistUsers)
     const userMap = new Map(users.map(u => [u.id, u]))
 
@@ -519,6 +534,7 @@ export async function getPunchlistStats(): Promise<{
   closed: number
 }> {
   try {
+    const db = getDb()
     const items = await db.select().from(punchlistItems)
 
     return {

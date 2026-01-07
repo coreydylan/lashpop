@@ -1,6 +1,6 @@
 'use server'
 
-import { db, assets, assetTags, tags, websiteSettings } from "@/db"
+import { getDb, assets, assetTags, tags, websiteSettings } from "@/db"
 import { desc, eq } from "drizzle-orm"
 
 /**
@@ -20,6 +20,7 @@ async function getInstagramSettings(): Promise<{
   }
 
   try {
+    const db = getDb()
     const [setting] = await db
       .select()
       .from(websiteSettings)
@@ -41,6 +42,7 @@ async function getInstagramSettings(): Promise<{
 
 export async function getInstagramPosts(limit?: number) {
   try {
+    const db = getDb()
     // Get settings from admin panel
     const settings = await getInstagramSettings()
     const effectiveLimit = limit ?? settings.maxPosts

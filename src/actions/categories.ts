@@ -1,10 +1,11 @@
 'use server'
 
-import { db } from "@/db"
+import { getDb } from "@/db"
 import { serviceCategories } from "@/db/schema/service_categories"
 import { eq, asc } from "drizzle-orm"
 
 export async function getServiceCategories() {
+  const db = getDb()
   const categories = await db
     .select()
     .from(serviceCategories)
