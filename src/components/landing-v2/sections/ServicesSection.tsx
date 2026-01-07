@@ -46,6 +46,22 @@ const serviceCategories = [
     description: 'From classic manicures to nail art, our technicians bring creativity and precision to every set. Leave with nails that express your unique style.',
     icon: '/lashpop-images/services/nails-icon.svg',
   },
+  {
+    id: 'specialty',
+    slug: 'specialty',
+    title: 'PERMANENT JEWELRY',
+    tagline: 'Meaningful moments.',
+    description: 'A delicate chain, welded on forever. It\'s become our favorite way to celebrate friendships, milestones, or just treating yourself to something beautiful.',
+    icon: '/lashpop-images/services/permanent-jewelry-icon.svg',
+  },
+  {
+    id: 'permanent-makeup',
+    slug: 'permanent-makeup',
+    title: 'PERMANENT MAKEUP',
+    tagline: 'Effortless beauty.',
+    description: 'Wake up with perfectly defined features. From brows to lips, our artists create natural-looking enhancements that simplify your routine and boost your confidence.',
+    icon: '/lashpop-images/services/permanent-makeup-icon.svg',
+  },
 ]
 
 // Service Card Component for Desktop
@@ -198,7 +214,7 @@ function MobileSwipeableServiceCards({
           className="cursor-pointer"
           onClick={() => onCategoryClick(currentCategory.slug)}
         >
-          <div className="flex flex-col items-center justify-center text-center px-5 py-6 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/60">
+          <div className="flex flex-col items-center justify-center text-center px-5 py-6">
             {/* Icon */}
             <div className="relative w-20 h-10 mb-4">
               <Image
@@ -346,8 +362,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
   if (isMobile) {
     return (
       <section
-        className="relative w-full py-12 px-6"
-        style={{ backgroundColor: '#faf6f2' }}
+        className="relative w-full py-12 px-6 bg-ivory"
         data-section-id="services"
       >
         {/* Section Header */}
@@ -385,8 +400,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
   // Desktop Layout - 3 columns
   return (
     <section
-      className="relative w-full py-20 px-8"
-      style={{ backgroundColor: '#faf6f2' }}
+      className="relative w-full py-20 px-8 bg-ivory"
       data-section-id="services"
     >
       <div className="max-w-5xl mx-auto">

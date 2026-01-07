@@ -1,0 +1,21 @@
+<?xml version="1.0" standalone="no"?>
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="200" height="100" viewBox="0 0 200 100"
+ preserveAspectRatio="xMidYMid meet">
+<g fill="none" stroke="#b45247" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Lips outline -->
+  <!-- Upper lip - cupid's bow -->
+  <path d="M40 50 Q60 35 100 50 Q140 35 160 50"/>
+  <!-- Lower lip -->
+  <path d="M40 50 Q60 70 100 75 Q140 70 160 50"/>
+  <!-- Upper lip detail line -->
+  <path d="M55 48 Q77 42 100 50 Q123 42 145 48"/>
+  <!-- Small cosmetic tool/needle on the side -->
+  <line x1="170" y1="25" x2="185" y2="75"/>
+  <circle cx="170" cy="25" r="4"/>
+  <!-- Small dots representing pigment -->
+  <circle cx="90" cy="55" r="1.5" fill="#b45247"/>
+  <circle cx="100" cy="58" r="1.5" fill="#b45247"/>
+  <circle cx="110" cy="55" r="1.5" fill="#b45247"/>
+</g>
+</svg>
