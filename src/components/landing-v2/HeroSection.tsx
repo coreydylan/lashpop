@@ -220,12 +220,12 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                       <span className="font-semibold text-sm text-dune">{totalReviews.toLocaleString()}</span>
                       <div className="flex items-center -space-x-0.5">
                         {[...Array(5)].map((_, i) => (
-                          <svg key={i} className="w-3.5 h-3.5 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                          <svg key={i} className="w-3.5 h-3.5 text-gold" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                           </svg>
                         ))}
                       </div>
-                      <span className="text-xs text-dune/60 font-medium">Reviews</span>
+                      <span className="text-xs text-terracotta font-medium">Reviews</span>
                     </div>
                   </div>
                 </button>
@@ -277,15 +277,15 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
       <div className="relative z-10 h-full flex items-center">
         <div className="container-wide">
           {/* Left Content - overlaid on the photo */}
-          <div className="space-y-6 max-w-xl">
+          <div className="flex flex-col max-w-xl">
             {/* Location accent with live weather */}
             <div>
-              <WeatherLocationBadge size="md" />
+              <WeatherLocationBadge size="lg" />
             </div>
 
-            {/* Reviews Chip */}
+            {/* Reviews Chip - 8px gap from weather */}
             {totalReviews > 0 && (
-              <div className="inline-block">
+              <div className="inline-block mt-2">
                 <button
                   onClick={() => {
                     const reviewsSection = document.getElementById('reviews');
@@ -316,12 +316,12 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                         </span>
                         <div className="flex items-center -space-x-0.5">
                           {[...Array(5)].map((_, i) => (
-                            <svg key={i} className="w-3.5 h-3.5 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                            <svg key={i} className="w-3.5 h-3.5 text-gold" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
                           ))}
                         </div>
-                        <span className="font-serif text-xs text-dune/70 ml-0.5">Reviews</span>
+                        <span className="font-serif text-xs text-terracotta ml-0.5">Reviews</span>
                       </div>
                     </div>
                   </div>
@@ -329,8 +329,8 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               </div>
             )}
 
-            {/* Main heading */}
-            <div className="relative -mt-2">
+            {/* Main heading - 16px gap from reviews/weather */}
+            <div className="relative mt-4">
               <h1
                 className="font-serif text-terracotta relative z-10"
                 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 400, letterSpacing: '0.05em' }}
@@ -354,12 +354,16 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-row gap-4 pt-4">
+            {/* CTA Buttons - 48px gap from heading */}
+            <div className="flex flex-row gap-4 mt-12">
               <button
                 onClick={() => {
-                  const offset = 64
-                  window.scrollTo({ top: window.innerHeight - offset, behavior: 'smooth' })
+                  const servicesSection = document.getElementById('services')
+                  if (servicesSection) {
+                    const headerHeight = 80
+                    const elementTop = servicesSection.getBoundingClientRect().top + window.pageYOffset
+                    window.scrollTo({ top: elementTop - headerHeight, behavior: 'smooth' })
+                  }
                   handleBookNowClick('hero')
                 }}
                 className="relative group"

@@ -15,7 +15,7 @@ import {
 } from '@/components/icons/DesertIcons'
 
 interface WeatherLocationBadgeProps {
-  size?: 'sm' | 'md'
+  size?: 'sm' | 'md' | 'lg'
   variant?: 'default' | 'light'
   className?: string
 }
@@ -51,9 +51,9 @@ export default function WeatherLocationBadge({ size = 'md', variant = 'default',
   const [isTapped, setIsTapped] = useState(false)
   const { weather, isLoading } = useWeather()
 
-  const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
-  const textSize = size === 'sm' ? 'text-xs' : 'caption'
-  const colorClass = variant === 'light' ? 'text-white/90' : 'text-golden'
+  const iconSize = size === 'sm' ? 'w-4 h-4' : size === 'lg' ? 'w-6 h-6' : 'w-5 h-5'
+  const textSize = size === 'sm' ? 'text-xs' : size === 'lg' ? 'text-base tracking-wider' : 'caption'
+  const colorClass = variant === 'light' ? 'text-white/90' : 'text-gold'
 
   const isActive = isHovered || isTapped
 
@@ -121,7 +121,7 @@ export default function WeatherLocationBadge({ size = 'md', variant = 'default',
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.25 }}
-              className={`${textSize} tracking-wide uppercase whitespace-nowrap`}
+              className={`${textSize} tracking-wide uppercase whitespace-nowrap font-semibold`}
             >
               Oceanside, California
             </motion.span>

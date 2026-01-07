@@ -28,6 +28,7 @@ const config: Config = {
         'sage': 'rgb(var(--sage) / <alpha-value>)',
         'warm-sand': 'rgb(var(--warm-sand) / <alpha-value>)',
         'golden': 'rgb(var(--golden) / <alpha-value>)',
+        'gold': 'rgb(var(--gold) / <alpha-value>)',           // Rich gold for stars & accents
         'ocean-mist': 'rgb(var(--ocean-mist) / <alpha-value>)',
         'dune': 'rgb(var(--dune) / <alpha-value>)',
 
