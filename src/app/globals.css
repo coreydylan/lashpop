@@ -28,8 +28,8 @@
     --blush: 233, 209, 200;          /* #e9d1c8 - Light accent */
     --rose-mist: 226, 194, 182;      /* #e2c2b6 - Medium accent */
     --dusty-rose: 219, 178, 164;     /* #dbb2a4 - Primary accent */
-    --terracotta-light: 211, 163, 146; /* #d3a392 - Warm accent */
-    --terracotta: 204, 148, 127;     /* #cc947f - Primary brand color */
+    --terracotta-light: 196, 107, 78; /* #c46b4e - Lighter terracotta */
+    --terracotta: 181, 86, 61;       /* #b5563d - Primary brand color (matches logo) */
     --rust: 172, 77, 60;             /* #ac4d3c - Deep accent / CTA */
 
     /* Legacy colors */
