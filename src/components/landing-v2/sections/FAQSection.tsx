@@ -181,7 +181,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           {filteredFAQs.map((faq) => (
             <div
               key={faq.id}
-              className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-terracotta/10"
+              className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-dusty-rose/20"
             >
               <button
                 onClick={() => toggleFAQ(faq.id)}
@@ -194,7 +194,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                       {faq.category}
                     </span>
                   )}
-                  <h3 className="font-sans text-sm md:text-base font-semibold text-dune group-hover:text-terracotta pr-6 md:pr-8">
+                  <h3 className="font-sans text-sm md:text-base font-semibold text-dune/70 group-hover:text-terracotta pr-6 md:pr-8">
                     {faq.question}
                   </h3>
                 </div>
@@ -211,7 +211,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
 
               {expandedIndex === faq.id && (
                 <div>
-                  <div className="px-4 pb-4 pt-1.5 md:px-6 md:pb-6 md:pt-2 border-t border-terracotta/10">
+                  <div className="px-4 pb-4 pt-1.5 md:px-6 md:pb-6 md:pt-2 border-t border-dusty-rose/20">
                     <div
                       className="text-sm md:text-base text-dune/80 leading-relaxed space-y-3 md:space-y-4 [&_ul]:list-disc [&_ul]:pl-4 md:[&_ul]:pl-5 [&_ul]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold"
                       dangerouslySetInnerHTML={{ __html: faq.answer }}
