@@ -113,7 +113,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             className="relative flex flex-col justify-end px-6 pb-4"
             style={{
               height: '100dvh',
-              background: 'linear-gradient(to top, #faf6f2 0%, #faf6f2 25%, rgba(250,246,242,0.8) 35%, transparent 50%)',
+              background: 'linear-gradient(to top, #faf6f2 0%, #faf6f2 12%, rgba(250,246,242,0.8) 18%, transparent 28%)',
             }}
           >
             {/* Hero text content - at bottom of viewport */}
