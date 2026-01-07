@@ -69,7 +69,7 @@ export default function Header() {
                   key={item}
                   href={`#${item.toLowerCase()}`}
                   className={`relative group transition-colors duration-300 ${
-                    isScrolled ? 'text-dune/80 hover:text-terracotta' : 'text-terracotta-light hover:text-cream'
+                    isScrolled ? 'text-dune/80 hover:text-terracotta' : 'text-terracotta hover:text-cream'
                   }`}
                   style={{
                     fontWeight: 300,
@@ -98,11 +98,11 @@ export default function Header() {
                 className={`btn transition-all duration-300 ${
                   isScrolled
                     ? 'border-terracotta text-terracotta hover:bg-terracotta hover:text-cream'
-                    : 'border-terracotta-light text-terracotta-light hover:bg-terracotta-light/10'
+                    : 'border-terracotta text-terracotta hover:bg-terracotta/10'
                 }`}
                 style={{
                   background: 'transparent',
-                  border: isScrolled ? '1px solid #cc947f' : '1px solid #d3a392',
+                  border: '1px solid rgb(var(--terracotta))',
                   backdropFilter: 'blur(10px)',
                 }}
               >
@@ -115,9 +115,9 @@ export default function Header() {
                 style={{
                   background: isScrolled
                     ? 'rgb(var(--rust))'
-                    : 'rgba(var(--cream), 0.1)',
-                  border: isScrolled ? 'none' : '1px solid rgba(var(--cream), 0.3)',
-                  color: isScrolled ? 'rgb(var(--cream))' : 'rgb(var(--cream))',
+                    : 'rgb(var(--terracotta))',
+                  border: 'none',
+                  color: 'rgb(var(--cream))',
                   backdropFilter: 'blur(10px)',
                 }}
               >
