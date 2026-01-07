@@ -1,12 +1,9 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { useInView } from 'framer-motion'
 import { useRef, useState } from 'react'
 
 export function FooterV2() {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-10%" })
   const [email, setEmail] = useState('')
   const [isSubscribed, setIsSubscribed] = useState(false)
 
@@ -23,15 +20,10 @@ export function FooterV2() {
   }
 
   return (
-    <footer ref={ref} className="bg-cream pt-20 pb-8">
+    <footer ref={ref} className="bg-ivory pt-20 pb-8">
       <div className="container">
         {/* Main Footer Content */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ duration: 0.6 }}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           {/* Brand Column */}
           <div>
             <h3 className="heading-4 text-dune mb-4">LashPop Studios</h3>
@@ -43,7 +35,7 @@ export function FooterV2() {
                 href="https://instagram.com/lashpopstudios"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-sage/10 rounded-full flex items-center justify-center hover:bg-dusty-rose hover:text-white transition-all"
+                className="w-10 h-10 bg-sage/10 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
                 aria-label="Instagram"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -54,7 +46,7 @@ export function FooterV2() {
                 href="https://facebook.com/lashpopstudios"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-sage/10 rounded-full flex items-center justify-center hover:bg-dusty-rose hover:text-white transition-all"
+                className="w-10 h-10 bg-sage/10 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
                 aria-label="Facebook"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -69,27 +61,27 @@ export function FooterV2() {
             <h4 className="caption-bold text-dune mb-4">Services</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-dusty-rose transition-colors">
+                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
                   Classic Lashes
                 </a>
               </li>
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-dusty-rose transition-colors">
+                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
                   Volume Lashes
                 </a>
               </li>
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-dusty-rose transition-colors">
+                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
                   Hybrid Lashes
                 </a>
               </li>
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-dusty-rose transition-colors">
+                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
                   Lash Lift & Tint
                 </a>
               </li>
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-dusty-rose transition-colors">
+                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
                   Brow Services
                 </a>
               </li>
@@ -105,12 +97,12 @@ export function FooterV2() {
                 Oceanside, CA 92054
               </p>
               <p className="caption text-dune/70">
-                <a href="tel:+17602120448" className="hover:text-dusty-rose transition-colors">
+                <a href="tel:+17602120448" className="hover:text-terracotta transition-colors">
                   +1 (760) 212-0448
                 </a>
               </p>
               <p className="caption text-dune/70">
-                <a href="mailto:hello@lashpopstudios.com" className="hover:text-dusty-rose transition-colors">
+                <a href="mailto:hello@lashpopstudios.com" className="hover:text-terracotta transition-colors">
                   hello@lashpopstudios.com
                 </a>
               </p>
@@ -136,7 +128,7 @@ export function FooterV2() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Your email"
-                className="w-full px-4 py-2 bg-white border border-sage/20 rounded-lg focus:outline-none focus:border-dusty-rose transition-colors"
+                className="w-full px-4 py-2 bg-white border border-sage/20 rounded-lg focus:outline-none focus:border-terracotta transition-colors"
                 required
               />
               <button
@@ -148,33 +140,28 @@ export function FooterV2() {
               </button>
             </form>
           </div>
-        </motion.div>
+        </div>
 
         {/* Bottom Bar */}
-        <motion.div
-          className="pt-8 border-t border-sage/10"
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
+        <div className="pt-8 border-t border-sage/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="caption text-dune/60">
               © 2025 LashPop Studios. All rights reserved.
             </p>
 
             <div className="flex items-center gap-6">
-              <a href="#" className="caption text-dune/60 hover:text-dusty-rose transition-colors">
+              <a href="#" className="caption text-dune/60 hover:text-terracotta transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="caption text-dune/60 hover:text-dusty-rose transition-colors">
+              <a href="#" className="caption text-dune/60 hover:text-terracotta transition-colors">
                 Terms of Service
               </a>
-              <a href="#" className="caption text-dune/60 hover:text-dusty-rose transition-colors">
+              <a href="#" className="caption text-dune/60 hover:text-terracotta transition-colors">
                 Cancellation Policy
               </a>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </footer>
   )

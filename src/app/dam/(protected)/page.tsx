@@ -2082,12 +2082,9 @@ export default function DAMPage() {
             <div className="flex items-center justify-between">
               <div className="flex-shrink-0">
                 <img
-                  src="/lashpop-images/branding/logo.png"
+                  src="/lashpop-images/branding/logo-terracotta.png"
                   alt="LashPop Studios"
                   className="h-8 lg:h-10 w-auto mb-1 lg:mb-2"
-                  style={{
-                    filter: 'brightness(0) saturate(100%) invert(72%) sepia(12%) saturate(635%) hue-rotate(316deg) brightness(95%) contrast(88%)'
-                  }}
                 />
                 <h1 className="hidden sm:block text-[10px] lg:text-xs font-semibold text-dune uppercase tracking-wider">
                   Digital Asset Management

@@ -13,7 +13,7 @@ const teamMembers = [
     name: 'Ashley Petersen',
     role: 'Master Lash Artist',
     specialties: ['Volume Extensions', 'Mega Volume'],
-    image: '/lashpop-images/team/ashley-petersen.jpg',
+    image: '/lashpop-images/team/ashley-petersen.jpeg',
     instagram: '@ashley.lashes',
     bio: 'With over 8 years of experience, Ashley specializes in creating dramatic volume sets that last.',
     certifications: ['Russian Volume Certified', 'Lash Lift Expert'],
@@ -63,7 +63,7 @@ const teamMembers = [
     name: 'Evie Ells',
     role: 'Lash Artist',
     specialties: ['Classic Application', 'Volume Sets'],
-    image: '/lashpop-images/team/evie-ells.jpg',
+    image: '/lashpop-images/team/evie-ells.jpeg',
     instagram: '@evie.lashes',
     bio: 'Evie is dedicated to creating beautiful, long-lasting lash looks for every client.',
     certifications: ['Lash Fundamentals', 'Client Care'],
@@ -76,7 +76,7 @@ export default function TeamSection() {
   const [selectedMember, setSelectedMember] = useState<typeof teamMembers[0] | null>(null);
 
   return (
-    <section ref={ref} className="py-20 lg:py-32 bg-white">
+    <section ref={ref} className="py-20 lg:py-32 bg-ivory">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Section Header */}

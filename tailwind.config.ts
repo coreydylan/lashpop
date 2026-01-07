@@ -9,28 +9,38 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary Palette
+        // LashPop Brand Palette (light to dark)
+        'ivory': '#faf6f2',           // Light warm cream for backgrounds
+        'cream': '#f0e0db',           // Accent background (pinkish cream)
+        'blush-light': '#f0e0db',     // Subtle highlights
+        'peach': '#eed9c8',           // Soft accents
+        'blush': '#e9d1c8',           // Light accent
+        'rose-mist': '#e2c2b6',       // Medium accent
+        'dusty-rose': '#dbb2a4',      // Primary accent
+        'terracotta-light': '#d3a392', // Warm accent
+        'terracotta': '#cc947f',      // Primary brand color
+        'rust': '#ac4d3c',            // Deep accent / CTA
+        'charcoal': '#3d3632',        // Warm dark grey for headlines
+
+        // Legacy colors (for compatibility)
         'sage': 'rgb(161, 151, 129)',
-        'dusty-rose': 'rgb(205, 168, 158)',
         'warm-sand': 'rgb(235, 224, 203)',
         'golden': 'rgb(212, 175, 117)',
-        'terracotta': 'rgb(189, 136, 120)',
         'ocean-mist': 'rgb(188, 201, 194)',
-        'cream': 'rgb(250, 247, 241)',
         'dune': 'rgb(138, 124, 105)',
 
         // Category Brand Colors
-        'category-lashes': 'rgb(205, 168, 158)',
-        'category-brows': 'rgb(212, 175, 117)',
-        'category-permanent-makeup': 'rgb(189, 136, 120)',
-        'category-facials': 'rgb(188, 201, 194)',
-        'category-waxing': 'rgb(161, 151, 129)',
-        'category-specialty': 'rgb(212, 175, 117)',
-        'category-bundles': 'rgb(205, 168, 158)',
+        'category-lashes': '#dbb2a4',
+        'category-brows': '#cc947f',
+        'category-permanent-makeup': '#d3a392',
+        'category-facials': '#e2c2b6',
+        'category-waxing': '#e9d1c8',
+        'category-specialty': '#cc947f',
+        'category-bundles': '#dbb2a4',
       },
       fontFamily: {
-        sans: ['Outfit', 'sans-serif'],
-        serif: ['Libre Baskerville', 'serif'],
+        sans: ['Lato', 'sans-serif'],
+        serif: ['Zilla Slab', 'serif'],
         caption: ['TikTok Sans', 'sans-serif'],
         josefin: ['var(--font-josefin)', 'serif'],
         chivo: ['var(--font-chivo)', 'sans-serif'],

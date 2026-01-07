@@ -53,7 +53,7 @@ export default function Header() {
             </motion.div>
 
             {/* Hover decoration */}
-            <div className="absolute -bottom-2 left-0 right-0 h-[1px] bg-dusty-rose scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+            <div className="absolute -bottom-2 left-0 right-0 h-[1px] bg-terracotta scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -69,7 +69,7 @@ export default function Header() {
                   key={item}
                   href={`#${item.toLowerCase()}`}
                   className={`relative group transition-colors duration-300 ${
-                    isScrolled ? 'text-dune/80 hover:text-dusty-rose' : 'text-cream/90 hover:text-cream'
+                    isScrolled ? 'text-dune/80 hover:text-terracotta' : 'text-terracotta-light hover:text-cream'
                   }`}
                   style={{
                     fontWeight: 300,
@@ -80,32 +80,51 @@ export default function Header() {
                   <span>{item}</span>
                   <span
                     className={`absolute -bottom-2 left-0 right-0 h-[1px] scale-x-0 group-hover:scale-x-100 transition-transform origin-left ${
-                      isScrolled ? 'bg-dusty-rose' : 'bg-warm-sand'
+                      isScrolled ? 'bg-terracotta' : 'bg-warm-sand'
                     }`}
                   />
                 </Link>
               ))}
             </motion.div>
 
-            <motion.button
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className={`btn ${
-                isScrolled ? 'btn-primary' : ''
-              }`}
-              style={{
-                background: isScrolled
-                  ? 'rgb(var(--dusty-rose))'
-                  : 'rgba(var(--cream), 0.1)',
-                border: isScrolled ? 'none' : '1px solid rgba(var(--cream), 0.3)',
-                color: isScrolled ? 'rgb(var(--cream))' : 'rgb(var(--cream))',
-                backdropFilter: 'blur(10px)',
-              }}
+              className="flex items-center gap-3"
             >
-              <Calendar className="w-4 h-4" />
-              Book Now
-            </motion.button>
+              <Link
+                href="#careers"
+                className={`btn transition-all duration-300 ${
+                  isScrolled
+                    ? 'border-terracotta text-terracotta hover:bg-terracotta hover:text-cream'
+                    : 'border-terracotta-light text-terracotta-light hover:bg-terracotta-light/10'
+                }`}
+                style={{
+                  background: 'transparent',
+                  border: isScrolled ? '1px solid #cc947f' : '1px solid #d3a392',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                Work with Us
+              </Link>
+              <button
+                className={`btn ${
+                  isScrolled ? 'btn-primary' : ''
+                }`}
+                style={{
+                  background: isScrolled
+                    ? 'rgb(var(--rust))'
+                    : 'rgba(var(--cream), 0.1)',
+                  border: isScrolled ? 'none' : '1px solid rgba(var(--cream), 0.3)',
+                  color: isScrolled ? 'rgb(var(--cream))' : 'rgb(var(--cream))',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <Calendar className="w-4 h-4" />
+                Book Now
+              </button>
+            </motion.div>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -160,7 +179,7 @@ export default function Header() {
                   <Link
                     key={item}
                     href={`#${item.toLowerCase()}`}
-                    className="text-dune/80 hover:text-dusty-rose transition-colors py-2"
+                    className="text-dune/80 hover:text-terracotta transition-colors py-2"
                     onClick={() => setIsMobileMenuOpen(false)}
                     style={{
                       fontWeight: 300,

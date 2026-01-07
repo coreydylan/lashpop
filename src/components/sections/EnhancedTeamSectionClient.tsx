@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check } from 'lucide-react'
+import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check, UserPlus } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
@@ -160,6 +160,24 @@ const getColumnsForWidth = (width: number): number => {
 }
 
 export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] }: EnhancedTeamSectionClientProps) {
+  // Sort team members: Emily first, then employees, then independent
+  const sortedTeamMembers = useMemo(() => {
+    return [...teamMembers].sort((a, b) => {
+      // Emily always first
+      const aIsEmily = a.name.toLowerCase().startsWith('emily')
+      const bIsEmily = b.name.toLowerCase().startsWith('emily')
+      if (aIsEmily && !bIsEmily) return -1
+      if (!aIsEmily && bIsEmily) return 1
+
+      // Employees before independent
+      if (a.type === 'employee' && b.type === 'independent') return -1
+      if (a.type === 'independent' && b.type === 'employee') return 1
+
+      // Keep original order within same group
+      return 0
+    })
+  }, [teamMembers])
+
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [selectedMemberIndex, setSelectedMemberIndex] = useState<number>(0)
   const [hoveredId, setHoveredId] = useState<number | null>(null)
@@ -261,22 +279,22 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
   // Navigation functions for swiping between team members
   const goToNextMember = () => {
-    const nextIndex = (selectedMemberIndex + 1) % teamMembers.length
+    const nextIndex = (selectedMemberIndex + 1) % sortedTeamMembers.length
     setSwipeDirection('left')
     setSelectedMemberIndex(nextIndex)
-    setSelectedMember(teamMembers[nextIndex])
+    setSelectedMember(sortedTeamMembers[nextIndex])
   }
 
   const goToPrevMember = () => {
-    const prevIndex = selectedMemberIndex === 0 ? teamMembers.length - 1 : selectedMemberIndex - 1
+    const prevIndex = selectedMemberIndex === 0 ? sortedTeamMembers.length - 1 : selectedMemberIndex - 1
     setSwipeDirection('right')
     setSelectedMemberIndex(prevIndex)
-    setSelectedMember(teamMembers[prevIndex])
+    setSelectedMember(sortedTeamMembers[prevIndex])
   }
 
   // Handle selecting a member (also tracks index)
   const handleSelectMember = (member: TeamMember) => {
-    const index = teamMembers.findIndex(m => m.id === member.id)
+    const index = sortedTeamMembers.findIndex(m => m.id === member.id)
     setSelectedMemberIndex(index >= 0 ? index : 0)
     setSelectedMember(member)
     setSwipeDirection(null)
@@ -520,8 +538,26 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     <>
       <section
         ref={sectionRef}
-        className="py-20 bg-cream overflow-x-hidden"
+        className="py-20 bg-ivory overflow-x-hidden"
       >
+        {/* Section Header */}
+        <div className="text-center mb-12 px-4">
+          <h2
+            className="text-2xl md:text-3xl font-medium tracking-wide mb-6"
+            style={{ color: '#6d4a43' }}
+          >
+            Find Your Stylist
+          </h2>
+          <div className="max-w-2xl mx-auto space-y-4">
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#8a5e55' }}>
+              LashPop Studios is home to a collective of independent beauty businesses—each offering their own services, pricing, schedules, and specialties.
+            </p>
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#8a5e55' }}>
+              Browse the profiles below to find a stylist that fits your vibe.
+            </p>
+          </div>
+        </div>
+
         {/* Mobile Grid View with Squircle Cards */}
         {isMobile ? (
           <div className="px-4">
@@ -530,7 +566,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
               {(() => {
                 // Find the first card with swipeable tags (2+ categories)
                 let firstSwipeableIndex = -1
-                return teamMembers.map((member, index) => {
+                return sortedTeamMembers.map((member, index) => {
                   // Use service categories from Vagaro, fallback to derived from specialties
                   const memberCategories = member.serviceCategories?.length
                     ? member.serviceCategories
@@ -664,11 +700,18 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </div>
                       )}
 
-                      {/* Name at Bottom */}
+                      {/* Name and Role/Business at Bottom */}
                       <div className="absolute bottom-0 left-0 right-0 p-3">
                         <h3 className="text-sm font-bold text-white drop-shadow-md">
                           {displayName}
                         </h3>
+                        <p className="text-[10px] text-white/80 drop-shadow-md mt-0.5 font-medium">
+                          {member.name.toLowerCase().startsWith('emily')
+                            ? 'LashPop Owner'
+                            : member.type === 'employee'
+                              ? 'LashPop Team Artist'
+                              : member.businessName || 'Independent Artist'}
+                        </p>
                       </div>
 
                       {/* Highlight Ring */}
@@ -693,9 +736,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
             {/* Desktop Grid View with Inline Expansion */}
             <div className="max-w-7xl mx-auto">
               {/* Render cards row by row so we can insert expansion after each row */}
-              {Array.from({ length: Math.ceil(teamMembers.length / columnsPerRow) }).map((_, rowIndex) => {
+              {Array.from({ length: Math.ceil(sortedTeamMembers.length / columnsPerRow) }).map((_, rowIndex) => {
                 const rowStart = rowIndex * columnsPerRow
-                const rowMembers = teamMembers.slice(rowStart, rowStart + columnsPerRow)
+                const rowMembers = sortedTeamMembers.slice(rowStart, rowStart + columnsPerRow)
                 const isExpansionRow = selectedRow === rowIndex && selectedMember
 
                 return (
@@ -747,9 +790,16 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                               {/* Content at Bottom */}
                               <div className="absolute inset-x-0 bottom-0 p-4">
-                                <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg mb-1.5">
+                                <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg mb-0.5">
                                   {member.name}
                                 </h3>
+                                <p className="text-xs text-white/85 drop-shadow-md mb-1.5 font-medium">
+                                  {member.name.toLowerCase().startsWith('emily')
+                                    ? 'LashPop Owner'
+                                    : member.type === 'employee'
+                                      ? 'LashPop Team Artist'
+                                      : member.businessName || 'Independent Artist'}
+                                </p>
 
                                 {memberCategories.length > 0 && (
                                   <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
@@ -1010,6 +1060,22 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
             </div>
           </div>
         )}
+
+        {/* Join The Team CTA */}
+        <div className="text-center mt-12 md:mt-16 px-4">
+          <a
+            href="mailto:careers@lashpopstudios.com?subject=Join%20The%20Team"
+            className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#6d4a43] hover:text-white hover:border-[#6d4a43]"
+            style={{
+              borderColor: '#6d4a43',
+              color: '#6d4a43',
+            }}
+          >
+            <span className="text-sm font-medium tracking-[0.1em] uppercase">
+              Join The Team
+            </span>
+          </a>
+        </div>
       </section>
 
       {/* Team Member Modal - Full Screen on Mobile (Portaled to body) */}
@@ -1108,7 +1174,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                         {/* Pagination dots */}
                         <div className="flex items-center gap-1.5">
-                          {teamMembers.map((_, idx) => (
+                          {sortedTeamMembers.map((_, idx) => (
                             <div
                               key={idx}
                               className={`w-1.5 h-1.5 rounded-full transition-all ${

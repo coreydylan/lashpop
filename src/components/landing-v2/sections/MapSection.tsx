@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
-import { useInView } from 'framer-motion'
 
 // Studio location - Oceanside, CA (you can update with exact coordinates)
 const STUDIO_LOCATION: [number, number] = [-117.3795, 33.1959]
@@ -13,10 +11,29 @@ const GOOGLE_MAPS_DIRECTIONS_URL = 'https://maps.app.goo.gl/mozm5VjGqw8qCuzL8'
 export function MapSection() {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<import('mapbox-gl').Map | null>(null)
-  const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-20%" })
+  const sectionRef = useRef<HTMLElement>(null)
+  const [isInView, setIsInView] = useState(false)
   const [mapLoaded, setMapLoaded] = useState(false)
   const mapInitializedRef = useRef(false)
+
+  // Use IntersectionObserver for lazy loading the map
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '-20%' }
+    )
+
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     // Only initialize if container exists, visible, and map not yet initialized
@@ -158,37 +175,23 @@ export function MapSection() {
   }, [isInView])
 
   return (
-    <section ref={ref} className="relative h-[100dvh] md:h-auto">
+    <section ref={sectionRef} className="relative h-[100dvh] md:h-auto">
       {/* Map Container - Full viewport height on mobile, fixed on desktop */}
-      <motion.div
-        className="relative w-full h-full md:h-[600px]"
-        initial={{ opacity: 0, y: 20 }}
-        animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-      >
+      <div className="relative w-full h-full md:h-[600px]">
         <div ref={mapContainer} className="w-full h-full" />
 
         {/* Loading state */}
         {!mapLoaded && (
           <div className="absolute inset-0 bg-warm-sand/20 flex items-center justify-center">
             <div className="text-center">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                className="w-12 h-12 mx-auto border-2 border-dusty-rose border-t-transparent rounded-full"
-              />
+              <div className="w-12 h-12 mx-auto border-2 border-dusty-rose border-t-transparent rounded-full" />
               <p className="caption text-dune/60 mt-4">Loading map...</p>
             </div>
           </div>
         )}
 
         {/* Address Card Overlay - Desktop */}
-        <motion.div
-          className="hidden md:block absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm"
-          initial={{ opacity: 0, x: -30 }}
-          animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
+        <div className="hidden md:block absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm">
           <h3 className="heading-4 text-dune mb-3">LashPop Studios</h3>
           <address className="body-text text-dune/70 not-italic mb-4">
             429 S Coast Hwy<br />
@@ -207,7 +210,7 @@ export function MapSection() {
               href={GOOGLE_MAPS_DIRECTIONS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-dusty-rose hover:text-dusty-rose/80 transition-colors"
+              className="inline-flex items-center gap-2 text-terracotta hover:text-terracotta/80 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -216,15 +219,10 @@ export function MapSection() {
               <span className="caption-bold">Get Directions</span>
             </a>
           </div>
-        </motion.div>
+        </div>
 
         {/* Address Card Overlay - Mobile, positioned at bottom of map */}
-        <motion.div
-          className="md:hidden absolute bottom-32 left-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl z-10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
+        <div className="md:hidden absolute bottom-32 left-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl z-10">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="heading-4 text-dune leading-tight">LashPop Studios</h3>
@@ -236,7 +234,7 @@ export function MapSection() {
               href={GOOGLE_MAPS_DIRECTIONS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-shrink-0 inline-flex items-center gap-1.5 text-dusty-rose hover:text-dusty-rose/80 transition-colors"
+              className="flex-shrink-0 inline-flex items-center gap-1.5 text-terracotta hover:text-terracotta/80 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -253,8 +251,8 @@ export function MapSection() {
               By Appointment Only
             </p>
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </section>
   )
 }

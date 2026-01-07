@@ -13,7 +13,7 @@ import { Navigation } from '@/components/sections/Navigation';
 import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
 import HeroSection from '@/components/landing-v2/HeroSection';
-import { WelcomeSection } from '@/components/landing-v2/sections/WelcomeSection';
+import { ServicesSection } from '@/components/landing-v2/sections/ServicesSection';
 import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
 import { InstagramCarousel } from '@/components/landing-v2/sections/InstagramCarousel';
@@ -24,9 +24,6 @@ import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { PanelStackRenderer } from '@/components/panel-stack/PanelStackRenderer';
-import { SectionTransition } from '@/components/landing-v2/transitions/SectionTransition';
-import { useMobileGSAPScroll } from '@/hooks/useMobileGSAPScroll';
-import { useMobileStackingCards } from '@/hooks/useMobileStackingCards';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -205,6 +202,7 @@ const mobileScrollStyles = `
     }
 
     /* Allow taller sections to expand naturally */
+    .mobile-section[data-section-id="services"],
     .mobile-section[data-section-id="founder"],
     .mobile-section[data-section-id="team"],
     .mobile-section[data-section-id="instagram"],
@@ -216,6 +214,7 @@ const mobileScrollStyles = `
     }
 
     /* Add bottom padding to content sections */
+    .mobile-section[data-section-id="services"],
     .mobile-section[data-section-id="team"],
     .mobile-section[data-section-id="instagram"],
     .mobile-section[data-section-id="reviews"],
@@ -253,28 +252,10 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Handle section change from GSAP scroll
+  // Handle section change for header
   const handleSectionChange = useCallback((sectionId: string) => {
     setCurrentSection(sectionId);
   }, []);
-
-  // Use GSAP-based smooth scroll with soft snapping on mobile
-  useMobileGSAPScroll({
-    enabled: isMobile,
-    sectionSelector: '.mobile-section',
-    containerSelector: '.mobile-scroll-container',
-    snapThreshold: 0.55, // Snap when within 55% of section boundary - more aggressive for magical feel
-    snapDuration: 0.35,  // Snappier animation (research suggests 200-400ms ideal)
-    onSectionChange: handleSectionChange
-  });
-
-  // Stacking Card effect DISABLED - was causing scroll stutter
-  // The arch from FounderLetterSection naturally slides over the welcome section via z-index
-  // useMobileStackingCards({
-  //   enabled: isMobile,
-  //   containerSelector: '.mobile-scroll-container',
-  //   itemSelector: '[data-effect="stack"]'
-  // });
 
   return (
     <DevModeProvider>
@@ -283,7 +264,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
         <VagaroWidgetProvider>
         <DrawerProvider>
           <PanelManagerProvider>
-            <div className={`min-h-screen relative theme-v2 ${isMobile ? '' : 'bg-cream'}`}>
+            <div className={`min-h-screen relative theme-v2 ${isMobile ? '' : 'bg-ivory'}`}>
               {/* Inject mobile scroll styles */}
               <style dangerouslySetInnerHTML={{ __html: mobileScrollStyles }} />
 
@@ -291,9 +272,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 =====================================================
                 MOBILE LAYER 0: Fixed Hero Background
                 =====================================================
-                This MUST be rendered BEFORE and OUTSIDE the scroll container.
-                It's at z-0, everything else is z-10+.
-                Contains: gradient, arch image, logo, decorative circles.
+                Renders the arch image behind the hero section.
               */}
               {isMobile && <MobileHeroBackground heroConfig={heroConfig?.mobile} />}
 
@@ -327,7 +306,6 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                   {/*
                     HERO SECTION: Transparent on mobile to show MobileHeroBackground through.
-                    On desktop, HeroSection renders its own background.
                   */}
                   <div
                     className={isMobile ? "mobile-section" : ""}
@@ -337,77 +315,50 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     <HeroSection reviewStats={reviewStats} heroConfig={heroConfig?.desktop} />
                   </div>
 
-                  {/*
-                    WELCOME SECTION: Has its own background image, works on both mobile/desktop.
-                    Uses data-effect="stack" to be pinned by useMobileStackingCards hook.
-                  */}
-                  <div className={isMobile ? "z-10" : ""} data-section-id="welcome" data-effect="stack">
-                    <WelcomeSection isMobile={isMobile} />
-                  </div>
-
-                {/* Services panel trigger removed - users open via menu/buttons */}
-
-                {/* Continuous cream background wrapper for all sections from founder onwards */}
-                {/* z-20 ensures this scrolls over the sticky WelcomeSection (z-10) on mobile */}
-                {/* negative margin pulls it UP so it overlaps the sticky Welcome Section while it's "pausing" */}
-                {/* On mobile, bg is transparent initially so arch PNG transparency shows through, then cream kicks in */}
-                <div className={`relative z-20 ${isMobile ? '-mt-[100dvh]' : 'bg-cream'}`}>
-                  {/* Founder Letter Section - handles its own cream background transition on mobile */}
+                {/* Continuous ivory background wrapper for all sections from founder onwards */}
+                <div className={`relative ${isMobile ? '' : 'bg-ivory'}`}>
+                  {/* Founder Letter Section - Emily's letter with arch, right after hero */}
                   <div className={isMobile ? "mobile-section" : ""} data-section-id="founder">
                     <FounderLetterSection content={founderLetterContent} />
                   </div>
 
-                  {/* Cream background container for all sections after founder arch on mobile */}
-                  {/* Negative margin pulls team section up into the empty space left by the 150vh wrapper */}
-                  {/* z-[60] ensures team scrolls over the letter card (z-50) */}
-                  <div className={isMobile ? 'bg-cream -mt-[55vh] relative z-[60]' : ''}>
-                    {/* Team Section - Adjusted trigger margin for earlier loading */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="team">
-                      <SectionTransition variant="slideUp" delay={0} triggerMargin="-40%">
-                        <div id="team">
-                          <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
-                        </div>
-                      </SectionTransition>
+                  {/* Background container for all sections after founder letter */}
+                  <div className={isMobile ? 'bg-ivory' : ''}>
+                    {/*
+                      SERVICES SECTION: Showcases all service categories with icons and descriptions.
+                      Desktop: Grid layout | Mobile: Swipeable cards
+                    */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="services">
+                      <ServicesSection isMobile={isMobile} />
                     </div>
 
-                    {/* Instagram Carousel */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
-                      <SectionTransition variant="scaleIn">
-                        <div id="gallery">
-                          <InstagramCarousel posts={instagramPosts} />
-                        </div>
-                      </SectionTransition>
+                    {/* Team Section */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="team" id="team">
+                      <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
                     </div>
 
                     {/* Reviews Section */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews">
-                      <SectionTransition variant="slideUp">
-                        <div id="reviews">
-                          <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
-                        </div>
-                      </SectionTransition>
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews" id="reviews">
+                      <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
+                    </div>
+
+                    {/* Instagram Carousel */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram" id="gallery">
+                      <InstagramCarousel posts={instagramPosts} />
                     </div>
 
                     {/* FAQ Section */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="faq">
-                      <SectionTransition variant="fade">
-                        <div id="faq">
-                          <FAQSection
-                            categories={faqData?.categories || []}
-                            itemsByCategory={faqData?.itemsByCategory || {}}
-                            featuredItems={faqData?.featuredItems || []}
-                          />
-                        </div>
-                      </SectionTransition>
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="faq" id="faq">
+                      <FAQSection
+                        categories={faqData?.categories || []}
+                        itemsByCategory={faqData?.itemsByCategory || {}}
+                        featuredItems={faqData?.featuredItems || []}
+                      />
                     </div>
 
                     {/* Map Section */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="map">
-                      <SectionTransition variant="scaleIn" delay={0.2}>
-                        <div id="find-us" className="pt-20">
-                          <MapSection />
-                        </div>
-                      </SectionTransition>
+                    <div className={`pt-20 ${isMobile ? "mobile-section" : ""}`} data-section-id="map" id="find-us">
+                      <MapSection />
                     </div>
 
                     {/* Footer */}

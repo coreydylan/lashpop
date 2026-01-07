@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500&family=Libre+Baskerville:ital@0;1&family=TikTok+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Hanken+Grotesk:wght@300;400;500;600;700&family=Zilla+Slab:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Outfit:wght@200;300;400;500&family=Libre+Baskerville:ital@0;1&family=TikTok+Sans:wght@400;500;600;700&display=swap');
 
 @font-face {
     font-family: 'Corey Nice';
@@ -16,19 +16,27 @@
 @layer base {
   :root {
     /* Typography */
-    --font-sans: 'Outfit', sans-serif;
-    --font-serif: 'Libre Baskerville', serif;
+    --font-sans: 'Lato', sans-serif;
+    --font-serif: 'Zilla Slab', serif;
     --font-caption: 'TikTok Sans', sans-serif;
 
-    /* Desert Ocean Palette */
-    --sage: 161, 151, 129;           /* Soft sage green */
-    --dusty-rose: 205, 168, 158;     /* Muted desert rose */
-    --warm-sand: 235, 224, 203;      /* Light sand */
-    --golden: 212, 175, 117;         /* Warm gold */
-    --terracotta: 189, 136, 120;     /* Soft terracotta */
-    --ocean-mist: 188, 201, 194;     /* Pale ocean green */
-    --cream: 250, 247, 241;          /* Off-white cream */
-    --dune: 138, 124, 105;           /* Deep sand */
+    /* LashPop Brand Palette (light to dark) */
+    --cream: 240, 224, 219;          /* #f0e0db - Background (testing blush-light) */
+    --blush-light: 240, 224, 219;    /* #f0e0db - Subtle highlights */
+    --peach: 238, 217, 200;          /* #eed9c8 - Soft accents */
+    --blush: 233, 209, 200;          /* #e9d1c8 - Light accent */
+    --rose-mist: 226, 194, 182;      /* #e2c2b6 - Medium accent */
+    --dusty-rose: 219, 178, 164;     /* #dbb2a4 - Primary accent */
+    --terracotta-light: 211, 163, 146; /* #d3a392 - Warm accent */
+    --terracotta: 204, 148, 127;     /* #cc947f - Primary brand color */
+    --rust: 172, 77, 60;             /* #ac4d3c - Deep accent / CTA */
+
+    /* Legacy colors */
+    --sage: 161, 151, 129;
+    --warm-sand: 235, 224, 203;
+    --golden: 212, 175, 117;
+    --ocean-mist: 188, 201, 194;
+    --dune: 138, 124, 105;
 
     /* Spacing */
     --space-xs: clamp(0.75rem, 2vw, 1rem);
@@ -48,7 +56,7 @@
     --safe-area-inset-left: env(safe-area-inset-left, 0px);
 
     /* Mobile Header Height - single source of truth */
-    --mobile-header-height: 44px;
+    --mobile-header-height: 52px;
   }
 
   * {
@@ -69,7 +77,7 @@
     font-family: var(--font-sans);
     font-weight: 300;
     color: rgb(var(--dune));
-    background: rgb(var(--cream));
+    background: #faf6f2; /* ivory */
     line-height: 1.6;
     min-height: 100vh;
     overflow-x: clip;
@@ -87,13 +95,13 @@
   /*
    * MOBILE HERO TRANSPARENCY
    * On mobile, we need a layered approach:
-   * - html: cream background (fallback for areas below MobileHeroBackground)
+   * - html: ivory background (fallback for areas below MobileHeroBackground)
    * - body: transparent so fixed MobileHeroBackground (z-0) shows through
    * - scroll container: transparent to see through to MobileHeroBackground
    */
   @media (max-width: 767px) {
     html {
-      background: rgb(var(--cream)) !important;
+      background: #faf6f2 !important;
     }
 
     body {
@@ -408,10 +416,10 @@ a,
   }
   
   .btn-primary {
-    background: rgb(var(--dusty-rose));
+    background: rgb(var(--rust));
     color: rgb(var(--cream));
   }
-  
+
   .btn-primary:hover {
     background: rgb(var(--terracotta));
     transform: translateY(-2px);
@@ -428,71 +436,6 @@ a,
     border-color: rgba(var(--sage), 0.5);
   }
   
-  /* Animations */
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
-  }
-  
-  @keyframes wave {
-    0%, 100% {
-      d: path("M 0 100 Q 250 50 500 100 L 500 200 L 0 200 Z");
-    }
-    50% {
-      d: path("M 0 100 Q 250 150 500 100 L 500 200 L 0 200 Z");
-    }
-  }
-
-  @keyframes slideDown {
-    from {
-      max-height: 0;
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      max-height: 2000px;
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  .animate-float {
-    animation: float 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  }
-
-  .animate-slideDown {
-    animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  .animate-shimmer {
-    animation: shimmer 2s infinite;
-  }
-
   /* Utility Classes */
   .text-sage {
     color: rgb(var(--sage));
@@ -551,79 +494,6 @@ a,
   /* Disable pointer events on images during drag */
   .dragging-selection img {
     pointer-events: none;
-  }
-
-  /* Candy cane scrolling effect for tags pending removal */
-  @keyframes candy-cane {
-    0% {
-      background-position: 0 0;
-    }
-    100% {
-      background-position: 40px 0;
-    }
-  }
-
-  .candy-cane-effect {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .candy-cane-effect::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      45deg,
-      rgba(255, 255, 255, 0.3),
-      rgba(255, 255, 255, 0.3) 10px,
-      rgba(220, 38, 38, 0.4) 10px,
-      rgba(220, 38, 38, 0.4) 20px
-    );
-    animation: candy-cane 1s linear infinite;
-    border-radius: inherit;
-    pointer-events: none;
-  }
-
-  /* Dissipation effect for removed tags */
-  @keyframes dissipate {
-    0% {
-      opacity: 1;
-      transform: scale(1) translateY(0) rotate(0deg);
-      filter: blur(0);
-    }
-    50% {
-      opacity: 0.5;
-      transform: scale(1.1) translateY(-5px) rotate(5deg);
-      filter: blur(1px);
-    }
-    100% {
-      opacity: 0;
-      transform: scale(0.8) translateY(10px) rotate(-5deg);
-      filter: blur(4px) saturate(0);
-    }
-  }
-
-  .dissipate-effect {
-    animation: dissipate 0.6s ease-out forwards;
-    pointer-events: none;
-  }
-
-  /* Appearance effect for new tags */
-  @keyframes appear {
-    0% {
-      opacity: 0;
-      transform: scale(0.5) translateY(10px);
-      filter: blur(4px);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-      filter: blur(0);
-    }
-  }
-
-  .appear-effect {
-    animation: appear 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   }
 
   /* Hide scrollbar while maintaining scroll functionality */

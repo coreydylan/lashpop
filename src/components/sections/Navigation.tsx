@@ -15,7 +15,8 @@ const navItems = [
   { label: 'Gallery', href: '#gallery' },
   { label: 'Reviews', href: '#reviews' },
   { label: 'FAQ', href: '#faq' },
-  { label: 'Find Us', href: '#find-us' }
+  { label: 'Find Us', href: '#find-us' },
+  { label: 'Work With Us', href: '#' }
 ]
 
 export function Navigation() {
@@ -142,14 +143,11 @@ export function Navigation() {
                 className="flex items-center gap-2"
               >
                 <Image
-                  src="/lashpop-images/branding/logo.png"
+                  src="/lashpop-images/branding/logo-terracotta.png"
                   alt="LashPop Studios"
                   width={120}
                   height={40}
-                  className={`w-auto brightness-0 saturate-100 transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
-                  style={{
-                    filter: 'brightness(0) saturate(100%) invert(73%) sepia(10%) saturate(633%) hue-rotate(313deg) brightness(94%) contrast(88%)'
-                  }}
+                  className={`w-auto transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
                   priority
                 />
               </motion.div>
@@ -163,7 +161,7 @@ export function Navigation() {
                     key={item.label}
                     href={item.href}
                     onClick={(e) => handleNavClick(item, e)}
-                    className="caption text-dune/70 hover:text-dusty-rose transition-colors duration-300 leading-none flex items-center h-8"
+                    className="caption text-dune/70 hover:text-terracotta transition-colors duration-300 leading-none flex items-center h-8"
                   >
                     {item.label}
                   </Link>
@@ -171,7 +169,7 @@ export function Navigation() {
                   <button
                     key={item.label}
                     onClick={(e) => handleNavClick(item, e)}
-                    className="caption text-dune/70 hover:text-dusty-rose transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
+                    className="caption text-dune/70 hover:text-terracotta transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
                   >
                     {item.label}
                   </button>

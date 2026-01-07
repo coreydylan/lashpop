@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useWeather, WeatherCondition } from '@/hooks/useWeather'
 import {
   SunIcon,
@@ -16,6 +15,7 @@ import {
 
 interface WeatherLocationBadgeProps {
   size?: 'sm' | 'md'
+  variant?: 'default' | 'light'
   className?: string
 }
 
@@ -45,13 +45,14 @@ function WeatherIcon({ condition, className }: { condition: WeatherCondition; cl
   }
 }
 
-export default function WeatherLocationBadge({ size = 'md', className = '' }: WeatherLocationBadgeProps) {
+export default function WeatherLocationBadge({ size = 'md', variant = 'default', className = '' }: WeatherLocationBadgeProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isTapped, setIsTapped] = useState(false)
   const { weather, isLoading } = useWeather()
 
   const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'
   const textSize = size === 'sm' ? 'text-xs' : 'caption'
+  const colorClass = variant === 'light' ? 'text-white/90' : 'text-golden'
 
   const isActive = isHovered || isTapped
 
@@ -60,85 +61,35 @@ export default function WeatherLocationBadge({ size = 'md', className = '' }: We
   }
 
   return (
-    <motion.div
-      className={`inline-flex items-center gap-2 text-golden cursor-default select-none -m-3 p-3 ${className}`}
+    <div
+      className={`inline-flex items-center gap-2 ${colorClass} cursor-default select-none -m-3 p-3 ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onTap={handleTap}
-      initial={false}
+      onClick={handleTap}
     >
-      {/* Icon container with animation */}
+      {/* Icon container */}
       <div className="relative">
-        <AnimatePresence mode="wait">
-          {!isActive || isLoading ? (
-            // Default sun icon with subtle pulse animation on hover
-            <motion.div
-              key="sun"
-              initial={{ opacity: 0, scale: 0.8, rotate: -30 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                rotate: 0,
-              }}
-              exit={{ opacity: 0, scale: 0.8, rotate: 30 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="relative"
-            >
-              <motion.div
-                animate={isActive && !isLoading ? {
-                  rotate: [0, 15, -15, 0],
-                  scale: [1, 1.1, 1],
-                } : {}}
-                transition={{ duration: 0.4, ease: 'easeInOut' }}
-              >
-                <SunIcon className={iconSize} />
-              </motion.div>
-            </motion.div>
-          ) : (
-            // Weather icon with entrance animation
-            <motion.div
-              key="weather"
-              initial={{ opacity: 0, scale: 0.5, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.5, y: 10 }}
-              transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
-            >
-              <WeatherIcon condition={weather?.condition || 'clear'} className={iconSize} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {!isActive || isLoading ? (
+          <SunIcon className={iconSize} />
+        ) : (
+          <WeatherIcon condition={weather?.condition || 'clear'} className={iconSize} />
+        )}
       </div>
 
-      {/* Text container with smooth width animation */}
+      {/* Text container */}
       <div className="relative overflow-hidden">
-        <AnimatePresence mode="wait">
-          {!isActive || isLoading ? (
-            <motion.span
-              key="location"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.25 }}
-              className={`${textSize} tracking-wide uppercase whitespace-nowrap`}
-            >
-              Oceanside, California
-            </motion.span>
-          ) : weather ? (
-            <motion.span
-              key="weather-info"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.25, delay: 0.1 }}
-              className={`${textSize} tracking-wide uppercase whitespace-nowrap flex items-center gap-1.5`}
-            >
-              <span>{weather.temperature}°F</span>
-              <span className="opacity-50">•</span>
-              <span>{weather.description}</span>
-            </motion.span>
-          ) : null}
-        </AnimatePresence>
+        {!isActive || isLoading ? (
+          <span className={`${textSize} tracking-wide uppercase whitespace-nowrap`}>
+            Oceanside, California
+          </span>
+        ) : weather ? (
+          <span className={`${textSize} tracking-wide uppercase whitespace-nowrap flex items-center gap-1.5`}>
+            <span>{weather.temperature}°F</span>
+            <span className="opacity-50">•</span>
+            <span>{weather.description}</span>
+          </span>
+        ) : null}
       </div>
-    </motion.div>
+    </div>
   )
 }

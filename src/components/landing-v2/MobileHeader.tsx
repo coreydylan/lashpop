@@ -1,16 +1,16 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
 
 // Section mapping for display names and navigation
 const SECTIONS = [
+  { id: 'services', label: 'SERVICES', href: '#services' },
   { id: 'team', label: 'TEAM', href: '#team' },
-  { id: 'instagram', label: 'GALLERY', href: '#gallery' },
   { id: 'reviews', label: 'REVIEWS', href: '#reviews' },
+  { id: 'instagram', label: 'GALLERY', href: '#gallery' },
   { id: 'faq', label: 'FAQ', href: '#faq' },
   { id: 'map', label: 'FIND US', href: '#find-us' },
   { id: 'footer', label: 'FIND US', href: '#find-us' }, // Footer shows same as map
@@ -20,17 +20,16 @@ const SECTIONS = [
 interface MenuItem {
   id: string
   label: string
-  href?: string
-  action?: string
+  href: string
 }
 
-// Menu items (includes Services which opens bottom sheet)
+// Menu items - ordered to match page flow
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'services', label: 'SERVICES', action: 'open-services' },
+  { id: 'services', label: 'SERVICES', href: '#services' },
   { id: 'team', label: 'TEAM', href: '#team' },
+  { id: 'reviews', label: 'REVIEWS', href: '#reviews' },
   { id: 'instagram', label: 'GALLERY', href: '#gallery' },
   { id: 'faq', label: 'FAQ', href: '#faq' },
-  { id: 'reviews', label: 'REVIEWS', href: '#reviews' },
   { id: 'map', label: 'FIND US', href: '#find-us' },
 ]
 
@@ -42,9 +41,10 @@ interface MobileHeaderProps {
 }
 
 export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
+  const [isScrolled, setIsScrolled] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [menuPosition, setMenuPosition] = useState({ top: 56, right: 20 })
+  const [menuPosition, setMenuPosition] = useState({ top: 56, left: 0 })
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { actions, state } = usePanelStack()
@@ -61,33 +61,30 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     return document.querySelector('.mobile-scroll-container') as HTMLElement | null
   }, [])
 
-  // Handle visibility based on scroll position relative to team section
+  // Track scroll position for transparent/frosted glass transition
   useEffect(() => {
     const scrollContainer = getScrollContainer()
     if (!scrollContainer) return
 
-    const checkVisibility = () => {
-      const teamSection = document.querySelector('[data-section-id="team"]')
-      if (!teamSection) return
-
-      const teamRect = teamSection.getBoundingClientRect()
-      // Show header when team section top reaches the top of viewport (or above)
-      setIsVisible(teamRect.top <= 60)
+    const handleScroll = () => {
+      setIsScrolled(scrollContainer.scrollTop > 20)
     }
 
-    scrollContainer.addEventListener('scroll', checkVisibility, { passive: true })
-    checkVisibility()
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Check initial state
 
-    return () => scrollContainer.removeEventListener('scroll', checkVisibility)
+    return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [getScrollContainer])
 
-  // Update menu position when opened
+  // Update menu position when opened - center under button
   useEffect(() => {
     if (isMenuOpen && menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect()
+      const menuWidth = 140 // minWidth of menu
+      const buttonCenter = rect.left + rect.width / 2
       setMenuPosition({
         top: rect.bottom + 8,
-        right: window.innerWidth - rect.right
+        left: buttonCenter - menuWidth / 2
       })
     }
   }, [isMenuOpen])
@@ -149,46 +146,30 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const handleMenuItemClick = useCallback((item: MenuItem) => {
     setIsMenuOpen(false)
 
-    if (item.action === 'open-services') {
-      const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
-      if (hasCategoryPicker) {
-        // Chip bar already visible - trigger attention bounce
-        actions.triggerAttentionBounce()
-      } else {
-        // Open in collapsed state (chip bar) with bounce
-        actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
-        setTimeout(() => {
-          actions.triggerAttentionBounce()
-        }, 400)
-      }
-    } else if (item.href) {
-      if (item.href === '#gallery' || item.href === '#reviews') {
-        smoothScrollToElement(item.href, 60, 800, 'center')
-      } else if (item.href === '#faq') {
-        smoothScrollToElement(item.href, 140, 800, 'top')
-      } else {
-        smoothScrollToElement(item.href, 60, 800, 'top')
-      }
+    if (item.href === '#gallery' || item.href === '#reviews') {
+      smoothScrollToElement(item.href, 60, 800, 'center')
+    } else if (item.href === '#faq') {
+      smoothScrollToElement(item.href, 140, 800, 'top')
+    } else if (item.href === '#services') {
+      smoothScrollToElement(item.href, 0, 800, 'top')
+    } else {
+      smoothScrollToElement(item.href, 60, 800, 'top')
     }
-  }, [actions, state.panels])
+  }, [])
 
   // Render the dropdown menu (inline, not portal - portal was breaking on mobile)
   const renderMenu = () => {
     if (!isMenuOpen) return null
 
     return (
-      <motion.div
+      <div
         ref={menuRef}
-        initial={{ opacity: 0, scale: 0.96, y: -4 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: -4 }}
-        transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
         className="fixed z-[9999] rounded-xl overflow-hidden"
         style={{
           top: menuPosition.top,
-          right: menuPosition.right,
+          left: menuPosition.left,
           minWidth: 140,
-          background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(250, 247, 244, 0.94) 100%)',
+          background: 'rgba(250, 246, 242, 0.96)',
           backdropFilter: 'blur(24px)',
           WebkitBackdropFilter: 'blur(24px)',
           border: '1px solid rgba(161, 151, 129, 0.12)',
@@ -196,134 +177,121 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
         }}
       >
         <div className="py-1.5">
-          {MENU_ITEMS.map((item, index) => {
+          {MENU_ITEMS.map((item) => {
             const isActive = item.id === currentSection ||
               (item.id === 'map' && currentSection === 'footer')
 
             return (
-              <motion.button
+              <button
                 key={item.id}
-                initial={{ opacity: 0, x: 4 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.025, duration: 0.15 }}
                 onClick={() => handleMenuItemClick(item)}
                 className={`
                   w-full flex items-center justify-between gap-3 px-4 py-2.5
                   text-left transition-colors duration-150
                   ${isActive
-                    ? 'bg-dusty-rose/8'
+                    ? 'bg-terracotta/8'
                     : 'active:bg-warm-sand/50'
                   }
                 `}
               >
                 <span className={`
                   text-[11px] font-medium tracking-wide
-                  ${isActive ? 'text-dusty-rose' : 'text-dune/70'}
+                  ${isActive ? 'text-terracotta' : 'text-terracotta/70'}
                 `}>
                   {item.label}
                 </span>
                 {isActive && (
-                  <div className="w-1 h-1 rounded-full bg-dusty-rose/60" />
+                  <div className="w-1 h-1 rounded-full bg-terracotta/60" />
                 )}
-              </motion.button>
+              </button>
             )
           })}
         </div>
-      </motion.div>
+      </div>
     )
   }
 
   return (
     <>
-      {/* Mini Header - LP logo + Section indicator (only shows from team section) */}
-      <AnimatePresence mode="wait">
-        {isVisible && (
-          <motion.header
-            key="mini-header"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-            className="fixed top-0 left-0 right-0 z-50 md:hidden"
-            style={{
-              paddingTop: 'env(safe-area-inset-top, 0px)',
-              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 247, 244, 0.92) 100%)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              borderBottom: '1px solid rgba(161, 151, 129, 0.08)',
-            }}
-          >
-            <div className="px-5 flex items-center justify-between" style={{ height: 'var(--mobile-header-height)' }}>
-              {/* LP Logo - subtle, balanced size */}
+      {/* Mini Header - transparent at top, frosted glass on scroll */}
+      {isVisible && (
+        <header
+          className="fixed top-0 left-0 right-0 z-50 md:hidden transition-all duration-300"
+          style={{
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            background: isScrolled
+              ? 'rgba(250, 246, 242, 0.95)'
+              : 'transparent',
+            backdropFilter: isScrolled ? 'blur(16px)' : 'none',
+            WebkitBackdropFilter: isScrolled ? 'blur(16px)' : 'none',
+            borderBottom: isScrolled ? '1px solid rgba(161, 151, 129, 0.08)' : 'none',
+          }}
+        >
+          <div className="px-5 flex items-center justify-between" style={{ height: '60px' }}>
+            {/* LashPop Logo - Left */}
+            <button
+              onClick={handleLogoClick}
+              className="active:opacity-60 transition-opacity flex-shrink-0"
+              aria-label="Scroll to top"
+            >
+              <img
+                src="/lashpop-images/branding/logo-terracotta.png"
+                alt="LashPop Studios"
+                className="h-6 w-auto"
+              />
+            </button>
+
+            {/* Right side: Book Now + Hamburger */}
+            <div className="flex items-center gap-3">
+              {/* Book Now Button (outline style, smaller) */}
               <button
-                onClick={handleLogoClick}
-                className="active:opacity-60 transition-opacity"
-                aria-label="Scroll to top"
+                onClick={() => {
+                  const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
+                  if (hasCategoryPicker) {
+                    actions.triggerAttentionBounce()
+                  } else {
+                    actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
+                    setTimeout(() => {
+                      actions.triggerAttentionBounce()
+                    }, 400)
+                  }
+                }}
+                className="flex-shrink-0 px-3 py-1.5 rounded-full border border-terracotta text-terracotta text-[10px] font-semibold tracking-wide uppercase active:bg-terracotta/10 transition-all"
               >
-                <div
-                  className="h-4 w-8"
-                  style={{
-                    maskImage: 'url(/lashpop-images/lp-logo.png)',
-                    maskSize: 'contain',
-                    maskRepeat: 'no-repeat',
-                    maskPosition: 'left center',
-                    WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
-                    WebkitMaskSize: 'contain',
-                    WebkitMaskRepeat: 'no-repeat',
-                    WebkitMaskPosition: 'left center',
-                    backgroundColor: 'rgba(138, 94, 85, 0.7)'
-                  }}
-                />
+                Book
               </button>
 
-              {/* Section Indicator / Menu Trigger */}
+              {/* Hamburger Menu */}
               <button
                 ref={menuButtonRef}
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={`
-                  flex items-center gap-1.5 py-1 px-2 -mr-2 rounded-lg
-                  transition-all duration-150
+                  flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center gap-1.5
+                  rounded-lg transition-all duration-150
                   ${isMenuOpen
-                    ? 'bg-dusty-rose/10'
+                    ? 'bg-terracotta/10'
                     : 'active:bg-warm-sand/40'
                   }
                 `}
+                aria-label="Menu"
               >
-                {/* Section label with scroll animation */}
-                <div className="h-4 overflow-hidden relative">
-                  <AnimatePresence mode="popLayout" initial={false}>
-                    <motion.span
-                      key={shouldShowHeader && currentSectionLabel ? currentSectionLabel : 'Menu'}
-                      initial={{ y: 12, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -12, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                      className="block text-[10px] font-semibold tracking-widest text-dune/50 uppercase leading-4"
-                    >
-                      {shouldShowHeader && currentSectionLabel ? currentSectionLabel : 'Menu'}
-                    </motion.span>
-                  </AnimatePresence>
-                </div>
-                {/* Subtle chevron indicator */}
-                <svg
-                  className={`w-3 h-3 text-dune/40 transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : ''}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <span
+                  className={`block w-5 h-0.5 bg-terracotta/80 transition-all duration-200 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}
+                />
+                <span
+                  className={`block w-5 h-0.5 bg-terracotta/80 transition-all duration-200 ${isMenuOpen ? 'opacity-0' : ''}`}
+                />
+                <span
+                  className={`block w-5 h-0.5 bg-terracotta/80 transition-all duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
+                />
               </button>
             </div>
-          </motion.header>
-        )}
-      </AnimatePresence>
+          </div>
+        </header>
+      )}
 
       {/* Dropdown Menu */}
-      <AnimatePresence>
-        {renderMenu()}
-      </AnimatePresence>
+      {renderMenu()}
     </>
   )
 }

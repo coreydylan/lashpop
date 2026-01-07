@@ -80,10 +80,10 @@ export function CollapsedChipBar({
 
   return (
     <div className="bg-cream/98 backdrop-blur-md">
-      {/* Drag indicator - dusty rose, always visible */}
+      {/* Drag indicator - terracotta, always visible */}
       <div className="flex justify-center pt-3 pb-1">
         <motion.div
-          className="w-10 h-1 bg-dusty-rose/50 rounded-full"
+          className="w-10 h-1 bg-terracotta/50 rounded-full"
           initial={{ opacity: 0, scaleX: 0.5 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ delay: 0.1, duration: 0.2 }}

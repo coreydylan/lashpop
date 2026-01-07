@@ -25,7 +25,7 @@ export const teamMembers = [
     id: 3,
     name: 'Ashley Chen',
     role: 'Lash Artist & Brow Specialist',
-    image: '/lashpop-images/team/ashley-petersen.jpg',
+    image: '/lashpop-images/team/ashley-petersen.jpeg',
     specialties: ['Classic Extensions', 'Brow Lamination', 'Lash Lifts'],
     bio: 'Ashley brings a minimalist aesthetic to lash artistry. Her classic sets are known for their perfect symmetry and natural flow. She\'s also our resident brow architect.',
     quote: 'Simplicity is the ultimate sophistication in lash design.',

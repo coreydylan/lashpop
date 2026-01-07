@@ -2,12 +2,9 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
-import { motion, useInView, AnimatePresence } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
-import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
-import { Hand, Check } from 'lucide-react'
 
 // Stub data using gallery images for now
 const galleryImages = [
@@ -39,7 +36,6 @@ interface InstagramCarouselProps {
 
 export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   const ref = useRef(null)
-  const isInView = useInView(ref, { once: true, margin: "-20%" })
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -50,18 +46,6 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  // Swipe tutorial for mobile
-  const {
-    showTutorial,
-    tutorialSuccess,
-    triggerTutorial,
-    checkAndComplete,
-    resetSwipeDistance
-  } = useSwipeTutorial({
-    storageKey: 'gallery-swipe-tutorial',
-    completionThreshold: 80
-  })
 
   // Initialize Embla with AutoScroll (wheel gestures handled by useCarouselWheelScroll)
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -76,7 +60,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
     [
       AutoScroll({
         playOnInit: true,
-        speed: 1.5, // Increased back to 1.5 as requested
+        speed: 1.5,
         stopOnInteraction: false,
         stopOnMouseEnter: true,
         rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement
@@ -87,65 +71,9 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   // Hover-based wheel scroll - only captures wheel events when hovering
   const { wheelContainerRef } = useCarouselWheelScroll(emblaApi)
 
-  // Handle trackpad/mouse wheel scrolling and add initial nudge
-  useEffect(() => {
-    if (!emblaApi) return
-
-    let isUserInteracting = false
-
-    // Track pointer interactions for swipe tutorial
-    const onPointerDown = () => {
-      isUserInteracting = true
-      resetSwipeDistance()
-    }
-    const onPointerUp = () => {
-      isUserInteracting = false
-    }
-    const onScroll = () => {
-      // Only count user-initiated scrolls, not auto-scroll
-      if (isMobile && showTutorial && isUserInteracting) {
-        checkAndComplete(15)
-      }
-    }
-
-    emblaApi.on('pointerDown', onPointerDown)
-    emblaApi.on('pointerUp', onPointerUp)
-    emblaApi.on('scroll', onScroll)
-
-    // Add subtle nudge animation when carousel comes into view on mobile
-    if (isInView && isMobile) {
-      // Trigger swipe tutorial
-      triggerTutorial()
-
-      // Pause the auto-scroll briefly
-      const autoScrollPlugin = emblaApi.plugins().autoScroll
-      if (autoScrollPlugin) {
-        autoScrollPlugin.stop()
-
-        // Do a subtle nudge animation
-        setTimeout(() => {
-          emblaApi.scrollTo(1, false)
-          setTimeout(() => {
-            emblaApi.scrollTo(0, true)
-            // Resume auto-scroll after nudge
-            setTimeout(() => {
-              autoScrollPlugin.play()
-            }, 500)
-          }, 400)
-        }, 600)
-      }
-    }
-
-    return () => {
-      emblaApi.off('pointerDown', onPointerDown)
-      emblaApi.off('pointerUp', onPointerUp)
-      emblaApi.off('scroll', onScroll)
-    }
-  }, [emblaApi, isInView, isMobile, triggerTutorial, resetSwipeDistance, checkAndComplete, showTutorial])
-
   // Use provided posts or fallback to gallery images
   // We duplicate them once to ensure smooth looping even on wide screens
-  const rawItems = posts.length > 0 
+  const rawItems = posts.length > 0
     ? posts.map(p => ({ mediaUrl: p.mediaUrl, permalink: p.permalink }))
     : galleryImages.map(url => ({ mediaUrl: url, permalink: null }))
 
@@ -154,24 +82,14 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
 
   return (
     <>
-      <section ref={ref} className="relative py-20 overflow-hidden bg-cream">
-        {/* Follow Button Header - Styled like review stats */}
-        <motion.div
-          className="mb-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ duration: 0.6 }}
-        >
+      <section ref={ref} className="relative py-20 overflow-hidden bg-ivory">
+        {/* Follow Button Header */}
+        <div className="mb-12">
           <div className="flex justify-center px-4">
-            <motion.a
+            <a
               href="https://instagram.com/lashpopstudios"
               target="_blank"
               rel="noopener noreferrer"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.98 }}
             >
               {/* Frosted Glass Badge with Emboss/Deboss Effect */}
               <div className="relative group">
@@ -201,17 +119,14 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                   </div>
                 </div>
               </div>
-            </motion.a>
+            </a>
           </div>
-        </motion.div>
+        </div>
 
         {/* Carousel Container */}
-        <motion.div
+        <div
           ref={wheelContainerRef}
           className="relative w-full"
-          initial={{ opacity: 0, x: 100 }}
-          animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 100 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
         >
           {/* Embla Viewport */}
           <div className="overflow-hidden" ref={emblaRef}>
@@ -238,14 +153,10 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                       className="object-cover"
                       draggable={false} // Prevent default image drag ghost
                     />
-                    
+
                     {/* Overlay on hover */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center pointer-events-none">
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        whileHover={{ opacity: 1, scale: 1 }}
-                        className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg"
-                      >
+                      <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         {item.permalink ? (
                           <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -256,7 +167,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
                         )}
-                      </motion.div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -267,60 +178,17 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
           {/* Gradient edges for seamless look */}
           <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
           <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
-
-          {/* Mobile Swipe Tutorial Hint - subtle icon */}
-          <AnimatePresence>
-            {isMobile && showTutorial && !tutorialSuccess && (
-              <motion.div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <motion.div
-                  className="bg-black/40 backdrop-blur-sm rounded-full p-2"
-                  animate={{ x: [0, 6, 0, -6, 0] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <Hand className="w-4 h-4 text-white/70 rotate-90" />
-                </motion.div>
-              </motion.div>
-            )}
-            {isMobile && tutorialSuccess && (
-              <motion.div
-                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
-                initial={{ opacity: 1 }}
-                animate={{ opacity: 0 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
-              >
-                <motion.div
-                  className="bg-black/40 backdrop-blur-sm rounded-full p-2"
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ duration: 0.3, ease: "backOut" }}
-                >
-                  <Check className="w-4 h-4 text-emerald-400" strokeWidth={3} />
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+        </div>
       </section>
 
       {/* Modal for enlarged image view */}
       {selectedImage && (
-        <motion.div
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
           onClick={() => setSelectedImage(null)}
         >
-          <motion.div
+          <div
             className="relative max-w-4xl max-h-[90vh] m-4"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative w-full h-full min-h-[50vh] min-w-[50vw]">
@@ -340,8 +208,8 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
     </>
   )

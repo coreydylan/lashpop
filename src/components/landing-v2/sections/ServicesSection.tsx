@@ -1,0 +1,460 @@
+'use client'
+
+import { useState, useEffect, useCallback, useRef } from 'react'
+import Image from 'next/image'
+import { usePanelStack } from '@/contexts/PanelStackContext'
+
+// Service category data - focused on "how" (what makes them special) vs "what"
+const serviceCategories = [
+  {
+    id: 'lashes',
+    slug: 'lashes',
+    title: 'LASHES',
+    tagline: 'Wake up ready.',
+    description: 'From subtle enhancements to full-on glamour, our lash artists customize every set to complement your eye shape and lifestyle. No two sets are the same—because no two people are.',
+    icon: '/lashpop-images/services/classic-lash.png',
+  },
+  {
+    id: 'brows',
+    slug: 'brows',
+    title: 'BROWS',
+    tagline: 'Frame your face.',
+    description: 'Whether it\'s shaping, laminating, or microblading, we take time to understand your face structure and style. The result? Brows that look effortlessly you.',
+    icon: '/lashpop-images/services/brows.png',
+  },
+  {
+    id: 'facials',
+    slug: 'facials',
+    title: 'SKINCARE',
+    tagline: 'Glow from within.',
+    description: 'Our estheticians don\'t just follow a script—they analyze your skin and create a treatment that addresses what it actually needs. Real results, not just relaxation.',
+    icon: '/lashpop-images/services/lash-lift.png', // TODO: Replace with facials icon
+  },
+  {
+    id: 'waxing',
+    slug: 'waxing',
+    title: 'WAXING',
+    tagline: 'Smooth confidence.',
+    description: 'Quick, precise, and surprisingly comfortable. Our technique minimizes irritation and maximizes smooth—so you can get on with your day feeling fresh.',
+    icon: '/lashpop-images/services/waxing.png',
+  },
+  {
+    id: 'specialty',
+    slug: 'specialty',
+    title: 'PERMANENT JEWELRY',
+    tagline: 'Meaningful moments.',
+    description: 'A delicate chain, welded on forever. It\'s become our favorite way to celebrate friendships, milestones, or just treating yourself to something beautiful.',
+    icon: '/lashpop-images/services/hybrid-lash.png', // TODO: Replace with jewelry icon
+  },
+  {
+    id: 'permanent-makeup',
+    slug: 'permanent-makeup',
+    title: 'PERMANENT MAKEUP',
+    tagline: 'Effortless beauty.',
+    description: 'Wake up with perfectly defined features. From brows to lips, our artists create natural-looking enhancements that simplify your routine and boost your confidence.',
+    icon: '/lashpop-images/services/volume-lash.png', // TODO: Replace with permanent makeup icon
+  },
+  {
+    id: 'injectables',
+    slug: 'specialty',
+    title: 'INJECTABLES',
+    tagline: 'Subtle refinement.',
+    description: 'Our injectors focus on enhancing what you already have. Think natural-looking results that make people wonder if you\'ve just been sleeping better.',
+    icon: '/lashpop-images/services/hybrid-lash.png', // TODO: Replace with injectables icon
+  },
+]
+
+// Service Card Component for Desktop - uses PNG icons
+function ServiceCard({
+  category,
+  onClick,
+}: {
+  category: typeof serviceCategories[0]
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group text-center p-6 rounded-2xl transition-all duration-300 hover:bg-white/30"
+    >
+      {/* Icon */}
+      <div className="flex justify-center mb-4">
+        <div className="relative w-24 h-12">
+          <Image
+            src={category.icon}
+            alt={category.title}
+            fill
+            className="object-contain"
+            style={{ filter: 'brightness(0) saturate(100%) invert(35%) sepia(15%) saturate(800%) hue-rotate(340deg)' }}
+          />
+        </div>
+      </div>
+
+      {/* Title */}
+      <h3
+        className="text-sm font-medium tracking-[0.15em] mb-3"
+        style={{ color: '#6d4a43' }}
+      >
+        {category.title}
+      </h3>
+
+      {/* Tagline */}
+      <p
+        className="text-base italic mb-3"
+        style={{ color: '#8a5e55' }}
+      >
+        {category.tagline}
+      </p>
+
+      {/* Description */}
+      <p
+        className="text-sm leading-relaxed"
+        style={{ color: '#8a5e55' }}
+      >
+        {category.description}
+      </p>
+    </button>
+  )
+}
+
+// Mobile Swipeable Cards Component - uses PNG icons
+function MobileSwipeableServiceCards({
+  onCategoryClick,
+}: {
+  onCategoryClick: (slug: string) => void
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
+  const touchEndX = useRef<number | null>(null)
+  const touchEndY = useRef<number | null>(null)
+  const isHorizontalSwipe = useRef<boolean | null>(null)
+
+  const swipeThreshold = 50
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+    touchEndX.current = null
+    touchEndY.current = null
+    isHorizontalSwipe.current = null
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX
+    touchEndY.current = e.touches[0].clientY
+
+    // Determine swipe direction on first significant movement
+    if (isHorizontalSwipe.current === null && touchStartX.current !== null && touchStartY.current !== null) {
+      const deltaX = Math.abs(touchEndX.current - touchStartX.current)
+      const deltaY = Math.abs(touchEndY.current - touchStartY.current)
+
+      // Lock in direction after moving at least 5px
+      if (deltaX > 5 || deltaY > 5) {
+        // If horizontal movement is greater than or equal to vertical, treat as horizontal
+        isHorizontalSwipe.current = deltaX >= deltaY
+      }
+    }
+
+    // If it's a horizontal swipe, prevent vertical scroll
+    if (isHorizontalSwipe.current === true) {
+      e.preventDefault()
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return
+
+    // Only process if this was determined to be a horizontal swipe
+    if (isHorizontalSwipe.current !== true) {
+      touchStartX.current = null
+      touchStartY.current = null
+      touchEndX.current = null
+      touchEndY.current = null
+      isHorizontalSwipe.current = null
+      return
+    }
+
+    const diff = touchStartX.current - touchEndX.current
+
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        // Swiped left - next card
+        setCurrentIndex((prev) => (prev + 1) % serviceCategories.length)
+      } else {
+        // Swiped right - previous card
+        setCurrentIndex((prev) => prev === 0 ? serviceCategories.length - 1 : prev - 1)
+      }
+    }
+
+    touchStartX.current = null
+    touchStartY.current = null
+    touchEndX.current = null
+    touchEndY.current = null
+    isHorizontalSwipe.current = null
+  }
+
+  const currentCategory = serviceCategories[currentIndex]
+
+  return (
+    <div className="flex flex-col items-center w-full">
+      {/* Card container - more compact */}
+      <div
+        className="relative w-full max-w-[280px] mx-auto"
+        style={{ touchAction: 'pan-y pinch-zoom' }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div
+          className="cursor-pointer"
+          onClick={() => onCategoryClick(currentCategory.slug)}
+        >
+          <div className="flex flex-col items-center justify-center text-center px-5 py-6 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/60">
+            {/* Icon */}
+            <div className="relative w-20 h-10 mb-4">
+              <Image
+                src={currentCategory.icon}
+                alt={currentCategory.title}
+                fill
+                className="object-contain"
+                style={{ filter: 'brightness(0) saturate(100%) invert(35%) sepia(15%) saturate(800%) hue-rotate(340deg)' }}
+              />
+            </div>
+
+            {/* Title */}
+            <h3
+              className="text-xs font-medium tracking-[0.15em] mb-2"
+              style={{ color: '#6d4a43' }}
+            >
+              {currentCategory.title}
+            </h3>
+
+            {/* Tagline */}
+            <p
+              className="text-sm italic mb-3"
+              style={{ color: '#8a5e55' }}
+            >
+              {currentCategory.tagline}
+            </p>
+
+            {/* Description */}
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: '#8a5e55' }}
+            >
+              {currentCategory.description}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Clean pagination dots - constrained to card width */}
+      <div className="w-full max-w-[280px] mx-auto mt-4">
+        <div className="flex items-center justify-center gap-1.5">
+          {serviceCategories.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              type="button"
+              aria-label={`Go to ${serviceCategories[index].title}`}
+              className="p-0.5"
+            >
+              <div
+                className="rounded-full transition-all duration-300"
+                style={{
+                  width: index === currentIndex ? 14 : 5,
+                  height: 5,
+                  backgroundColor: index === currentIndex ? '#8a5e55' : 'rgba(138, 94, 85, 0.3)',
+                }}
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface ServicesSectionProps {
+  isMobile?: boolean
+}
+
+export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps) {
+  const [stateIsMobile, setIsMobile] = useState(false)
+  const { state: panelState, actions: panelActions } = usePanelStack()
+
+  const isMobile = propIsMobile ?? stateIsMobile
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Handle category click - open services panel directly for that category
+  const handleCategoryClick = useCallback((categorySlug: string) => {
+    // Find category info
+    const category = serviceCategories.find(c => c.slug === categorySlug)
+    if (!category) return
+
+    // Get services for this category from state
+    const categoryServices = panelState.services.filter(
+      s => s.categorySlug === categorySlug
+    )
+
+    // Build subcategories from services
+    const subcategoryMap = new Map<string, { id: string; name: string; slug: string }>()
+    categoryServices.forEach(service => {
+      if (service.subcategorySlug && service.subcategoryName) {
+        if (!subcategoryMap.has(service.subcategorySlug)) {
+          subcategoryMap.set(service.subcategorySlug, {
+            id: service.subcategorySlug,
+            name: service.subcategoryName,
+            slug: service.subcategorySlug,
+          })
+        }
+      }
+    })
+    const subcategories = Array.from(subcategoryMap.values())
+
+    // First, open the category picker (creates level 1 panel)
+    const categoryPickerPanelId = panelActions.openPanel('category-picker', {
+      entryPoint: 'services-section',
+    })
+
+    // Select the category
+    panelActions.selectCategory(categorySlug, category.title)
+
+    // Then open the service panel directly (creates level 2 panel showing services)
+    panelActions.openPanel(
+      'service-panel',
+      {
+        categoryId: categorySlug,
+        categoryName: category.title,
+        subcategories,
+        services: categoryServices,
+      },
+      {
+        parentId: categoryPickerPanelId,
+        autoExpand: true,
+        scrollToTop: false,
+      }
+    )
+
+    // Auto-dock category picker after selection
+    setTimeout(() => {
+      panelActions.dockPanel(categoryPickerPanelId)
+    }, 300)
+  }, [panelState.services, panelActions])
+
+  // Handle Book Now button click
+  const handleBookNowClick = useCallback(() => {
+    panelActions.openPanel('category-picker', {
+      entryPoint: 'services-section-button',
+    })
+  }, [panelActions])
+
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <section
+        className="relative w-full py-12 px-6"
+        style={{ backgroundColor: '#faf6f2' }}
+        data-section-id="services"
+      >
+        {/* Section Header */}
+        <div className="text-center mb-6">
+          <h2
+            className="text-xl font-medium tracking-wide"
+            style={{ color: '#6d4a43' }}
+          >
+            Our Services
+          </h2>
+        </div>
+
+        {/* Swipeable Cards */}
+        <MobileSwipeableServiceCards onCategoryClick={handleCategoryClick} />
+
+        {/* Book Now Button - Below services */}
+        <div className="text-center mt-8">
+          <button
+            onClick={handleBookNowClick}
+            className="px-6 py-2.5 rounded-full border transition-all duration-300 active:scale-[0.98]"
+            style={{
+              borderColor: 'rgba(109, 74, 67, 0.4)',
+              color: '#6d4a43',
+            }}
+          >
+            <span className="text-xs font-medium tracking-[0.1em] uppercase">
+              Book an Appointment
+            </span>
+          </button>
+        </div>
+      </section>
+    )
+  }
+
+  // Desktop Layout - 3 columns
+  return (
+    <section
+      className="relative w-full py-20 px-8"
+      style={{ backgroundColor: '#faf6f2' }}
+      data-section-id="services"
+    >
+      <div className="max-w-5xl mx-auto">
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <h2
+            className="text-3xl font-medium tracking-wide"
+            style={{ color: '#6d4a43' }}
+          >
+            Our Services
+          </h2>
+        </div>
+
+        {/* Services Grid - 4 on top, 3 on bottom */}
+        <div className="space-y-8">
+          {/* Top row - 4 items */}
+          <div className="grid grid-cols-4 gap-6">
+            {serviceCategories.slice(0, 4).map((category) => (
+              <ServiceCard
+                key={category.id}
+                category={category}
+                onClick={() => handleCategoryClick(category.slug)}
+              />
+            ))}
+          </div>
+          {/* Bottom row - 3 items centered */}
+          <div className="flex justify-center gap-6">
+            {serviceCategories.slice(4).map((category) => (
+              <div key={category.id} className="w-1/4">
+                <ServiceCard
+                  category={category}
+                  onClick={() => handleCategoryClick(category.slug)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Book Now Button - Below services */}
+        <div className="text-center mt-14">
+          <button
+            onClick={handleBookNowClick}
+            className="px-10 py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#6d4a43] hover:text-white"
+            style={{
+              borderColor: '#6d4a43',
+              color: '#6d4a43',
+            }}
+          >
+            <span className="text-sm font-medium tracking-[0.15em] uppercase">
+              Book an Appointment
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}

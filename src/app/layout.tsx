@@ -63,7 +63,7 @@ export const viewport: Viewport = {
   userScalable: false,
   viewportFit: 'cover', // iOS safe area support
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FAF7F1' }, // cream color
+    { media: '(prefers-color-scheme: light)', color: '#faf6f2' }, // ivory color
     { media: '(prefers-color-scheme: dark)', color: '#1C1917' }, // stone-900
   ],
 }
@@ -99,7 +99,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${josefin.variable} ${chivo.variable} ${andika.variable} ${leagueScript.variable} ${swanky.variable} ${licorice.variable}`}>
-      <body className={`${inter.className} antialiased bg-stone-50 text-gray-800`}>
+      <body className={`${inter.className} antialiased bg-ivory text-gray-800`}>
         <AuthProvider>
           <UserKnowledgeProvider>
             {children}

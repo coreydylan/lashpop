@@ -1,11 +1,9 @@
 'use client'
 
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { usePanelStack } from '@/contexts/PanelStackContext'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
-import { gsap, ScrollTrigger, initGSAP } from '@/lib/gsap'
 import WeatherLocationBadge from './WeatherLocationBadge'
 import { HeroArchSlideshow } from './slideshow'
 import type { SlideshowPreset } from '@/types/hero-slideshow'
@@ -55,107 +53,42 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   const imageRef = useRef<HTMLImageElement>(null)
   const imageContainerRef = useRef<HTMLDivElement>(null)
 
-  const { scrollY } = useScroll({ layoutEffect: false } as any)
-
-  // ALL useTransform hooks must be called unconditionally at top level
-  const y = useTransform(scrollY, [0, 500], [0, 150])
-  const opacity = useTransform(scrollY, [0, 300], [1, 0])
-  const yCircle2 = useTransform(scrollY, [0, 500], [0, -100])
-  const yCircle3 = useTransform(scrollY, [0, 500], [0, -60])
-  const archFadeOpacity = useTransform(scrollY, [100, 600], [0, 1])
-
   // Mobile - no longer need internal scroll state
   const heroContentRef = useRef<HTMLDivElement>(null)
 
   const { actions: panelActions, state: panelState } = usePanelStack()
   const [isMobile, setIsMobile] = useState(false)
-  const [awardExpanded, setAwardExpanded] = useState(false)
-  const awardBadgeRef = useRef<HTMLDivElement>(null)
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
 
-  // Handle Book Now click - open chip bar in collapsed state with bounce
-  const handleBookNowClick = useCallback((entryPoint: string) => {
+  // Handle Book Now click - on mobile open full sheet, on desktop open chip bar
+  const handleBookNowClick = useCallback((entryPoint: string, forceExpand?: boolean) => {
     const hasCategoryPicker = panelState.panels.some(p => p.type === 'category-picker')
+    const shouldExpand = forceExpand ?? isMobile
+
     if (hasCategoryPicker) {
-      // Chip bar already visible - trigger attention bounce
-      panelActions.triggerAttentionBounce()
-    } else {
-      // Open the category picker panel in collapsed state (chip bar)
-      panelActions.openPanel('category-picker', { entryPoint }, { autoExpand: false })
-      // Trigger bounce after the chip bar appears
-      setTimeout(() => {
-        panelActions.triggerAttentionBounce()
-      }, 400)
-    }
-  }, [panelState.panels, panelActions])
-
-  // GSAP Animation for Background Pan (Desktop only)
-  useEffect(() => {
-    // Only require imageContainerRef for pinning - imageRef is optional (only used in single image mode)
-    if (!imageContainerRef.current) return
-
-    let mm: gsap.MatchMedia | null = null
-
-    // Initialize GSAP deferred, then set up animations
-    initGSAP().then(() => {
-      mm = gsap.matchMedia()
-
-      mm.add("(min-width: 768px)", () => {
-        const image = imageRef.current
-        const container = imageContainerRef.current
-
-        if (!container) return
-
-        // Pin the arch container so it stays at the bottom of the viewport while fading out
-        ScrollTrigger.create({
-          trigger: container,
-          start: "bottom bottom",
-          end: "+=500",
-          pin: true,
-          pinSpacing: false,
-          anticipatePin: 1,
-        })
-
-        // Only apply image animations if we have a single image (not slideshow)
-        if (image) {
-          // Initial pan animation on load
-          gsap.fromTo(image,
-            {
-              scale: 1.4,
-              xPercent: 0,
-            },
-            {
-              scale: 1.2,
-              xPercent: 20,
-              duration: 4,
-              ease: "power2.out"
-            }
-          )
-
-          // Scroll-triggered pan animation (parallax)
-          const tl = gsap.timeline({
-            scrollTrigger: {
-              trigger: container,
-              start: "top center",
-              end: "bottom top",
-              scrub: 1,
-            }
-          })
-
-          tl.to(image, {
-            xPercent: 25,
-            ease: "none"
-          }, 0)
+      if (shouldExpand) {
+        // Expand the existing panel
+        const categoryPanel = panelState.panels.find(p => p.type === 'category-picker')
+        if (categoryPanel) {
+          panelActions.expandPanel(categoryPanel.id)
         }
-      })
-    })
-
-    return () => {
-      if (mm) mm.revert()
+      } else {
+        // Chip bar already visible - trigger attention bounce
+        panelActions.triggerAttentionBounce()
+      }
+    } else {
+      // Open the category picker panel
+      panelActions.openPanel('category-picker', { entryPoint }, { autoExpand: shouldExpand })
+      if (!shouldExpand) {
+        // Trigger bounce after the chip bar appears (desktop only)
+        setTimeout(() => {
+          panelActions.triggerAttentionBounce()
+        }, 400)
+      }
     }
-  }, [])
+  }, [panelState.panels, panelActions, isMobile])
 
   // Check if mobile
   useEffect(() => {
@@ -167,97 +100,39 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Handle award badge expansion - dispatch event and scroll to show full badge
-  useEffect(() => {
-    if (!isMobile) return
-
-    // Dispatch event so scroll system knows about the state change
-    window.dispatchEvent(new CustomEvent('hero-award-toggle', {
-      detail: { expanded: awardExpanded }
-    }))
-
-    // If expanded and we have a ref, scroll to ensure badge is visible
-    if (awardExpanded && awardBadgeRef.current) {
-      // Small delay to let the animation start
-      setTimeout(() => {
-        const container = document.querySelector('.mobile-scroll-container')
-        if (!container || !awardBadgeRef.current) return
-
-        const badgeRect = awardBadgeRef.current.getBoundingClientRect()
-        const containerRect = container.getBoundingClientRect()
-        const viewportHeight = window.innerHeight
-
-        // Check if badge bottom is below viewport (with some padding)
-        const padding = 40
-        if (badgeRect.bottom > viewportHeight - padding) {
-          // Calculate how much to scroll to show the full badge
-          const scrollAmount = badgeRect.bottom - viewportHeight + padding + 60 // extra for expanded content
-          const currentScroll = container.scrollTop
-
-          // Smooth scroll to show the badge
-          container.scrollTo({
-            top: currentScroll + scrollAmount,
-            behavior: 'smooth'
-          })
-        }
-      }, 50)
-    }
-  }, [awardExpanded, isMobile])
-
-  // No more custom scroll handling needed - page scrolls naturally
-  // Mobile background (arch, gradient, logo) is now handled by MobileHeroBackground component
-
   // ============================================
   // MOBILE LAYOUT - Content only (background handled by MobileHeroBackground)
   // ============================================
   if (isMobile) {
     return (
       <section ref={containerRef} className="relative min-h-[100dvh]" style={{ background: 'transparent' }}>
-        {/*
-          NOTE: The fixed background layer (arch, gradient, logo, circles) is now
-          rendered by MobileHeroBackground in LandingPageV2Client.tsx.
-          This section ONLY contains the scrollable content.
-          The transparent background allows MobileHeroBackground to show through.
-        */}
-
-        {/* ===== PAGE FLOW CONTENT - scrolls with page over the arch ===== */}
+        {/* Background shows through from MobileHeroBackground */}
         <div className="relative">
-          {/* ABOVE THE FOLD - exactly 100dvh, gradient covers bottom ~35% with readable text area */}
-          {/* Uses flex to push content to bottom, Oceanside anchored at very bottom */}
+          {/* ABOVE THE FOLD - exactly 100dvh, gradient fades to ivory at bottom */}
           <div
-            className="relative flex flex-col justify-end px-6"
+            className="relative flex flex-col justify-end px-6 pb-4"
             style={{
               height: '100dvh',
-              background: 'linear-gradient(to top, rgb(235, 224, 203) 0%, rgba(235, 224, 203, 0.98) 8%, rgba(235, 224, 203, 0.92) 15%, rgba(235, 224, 203, 0.75) 25%, rgba(235, 224, 203, 0.4) 32%, transparent 40%)',
+              background: 'linear-gradient(to top, #faf6f2 0%, #faf6f2 25%, rgba(250,246,242,0.8) 35%, transparent 50%)',
             }}
           >
-            {/* Hero text content - near bottom of viewport with breathing room */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-              className="text-center pb-8"
-            >
+            {/* Hero text content - at bottom of viewport */}
+            <div className="text-center">
               <h1
-                className="font-licorice text-dune leading-none"
-                style={{ fontSize: '2.5rem' }}
-              >
-                naturally effortless
-              </h1>
-              <div
-                className="font-serif text-dune -mt-1"
+                className="font-serif text-terracotta"
                 style={{ fontSize: '2rem', fontWeight: 400, letterSpacing: '0.05em' }}
               >
                 lashes + beauty
-              </div>
+              </h1>
               <div className="-mt-0.5">
                 <span
-                  className="font-serif text-dusty-rose"
+                  className="font-serif"
                   style={{
                     fontSize: '1.1rem',
                     fontWeight: 500,
                     letterSpacing: '0.03em',
-                    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+                    color: '#f0e0db',
+                    backgroundColor: 'rgba(196, 123, 95, 0.75)',
                     padding: '0.1em 0.4em',
                     boxDecorationBreak: 'clone',
                   }}
@@ -270,7 +145,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               <div className="flex items-center justify-center pt-3">
                 <WeatherLocationBadge size="sm" />
               </div>
-            </motion.div>
+            </div>
           </div>
 
           {/* BELOW THE FOLD - gradient from cream to pink to match next section */}
@@ -285,37 +160,43 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             ref={heroContentRef}
             className="relative px-6 py-6"
             style={{
-              background: 'linear-gradient(to bottom, rgb(235, 224, 203) 0%, rgb(235, 224, 203) 60%, rgb(226, 182, 166) 100%)',
+              background: '#faf6f2',
             }}
           >
             {/* Buttons and chips - immediately below the fold */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-              className="mx-auto flex w-full max-w-[300px] flex-col gap-3"
-            >
-              {/* Book Now - Primary frosted glass button with dusty rose fill */}
+            <div className="mx-auto flex w-full max-w-[300px] flex-col gap-3">
+              {/* Book Now - Terracotta frosted glass button */}
               <button
                 onClick={() => handleBookNowClick('hero-mobile')}
                 className="relative group w-full"
               >
-                <div className="absolute inset-0 rounded-full bg-dusty-rose/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
-                <div className="relative py-3.5 px-6 rounded-full bg-dusty-rose/90 backdrop-blur-md border border-dusty-rose/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all">
+                <div className="absolute inset-0 rounded-full bg-terracotta/30 blur-md opacity-50" />
+                <div className="relative py-3.5 px-6 rounded-full bg-terracotta/90 backdrop-blur-md border border-terracotta/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
                   <span className="font-medium text-base text-white">Book Now</span>
                 </div>
               </button>
 
-              {/* Discover Your Look - Frosted glass secondary button */}
+              {/* Find Your Look - Frosted glass secondary button */}
               <button
                 onClick={() => panelActions.openPanel('discovery', {})}
                 className="relative group w-full"
               >
-                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
-                <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all group-hover:bg-white/60">
-                  <span className="font-medium text-base text-dune">Discover Your Look</span>
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
+                <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
+                  <span className="font-medium text-base text-dune">Find Your Look</span>
                 </div>
               </button>
+
+              {/* Work With Us - Frosted glass secondary button */}
+              <a
+                href="#"
+                className="relative group w-full block"
+              >
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
+                <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] text-center">
+                  <span className="font-medium text-base text-dune">Work With Us</span>
+                </div>
+              </a>
 
               {/* Reviews chip - Frosted glass style matching other chips */}
               {totalReviews > 0 && (
@@ -328,10 +209,10 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   }}
                   className="relative group w-full"
                 >
-                  <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
-                  <div className="relative py-3 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all group-hover:bg-white/60">
+                  <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
+                  <div className="relative py-3 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
                     <div className="flex items-center justify-center gap-2.5">
-                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10 text-dusty-rose">
+                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10 text-terracotta">
                         <GoogleLogoCompact monochrome />
                         <YelpLogoCompact monochrome />
                         <VagaroLogoCompact monochrome />
@@ -350,55 +231,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 </button>
               )}
 
-              {/* Award badge - Frosted glass chip with expandable Reader logo */}
-              <div ref={awardBadgeRef} className="relative w-full flex flex-col items-center">
-                <button
-                  onClick={() => setAwardExpanded(!awardExpanded)}
-                  className="relative group w-full"
-                >
-                  <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
-                  <div className="relative py-2.5 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] transition-all group-hover:bg-white/60">
-                    <div className="flex flex-col items-center justify-center gap-0.5">
-                      <span className="text-sm font-medium text-dusty-rose">Voted Best Lash Studio</span>
-                      <span className="text-xs font-medium text-dune/70">San Diego Reader</span>
-                    </div>
-                  </div>
-                </button>
-
-                {/* Expandable Reader logo */}
-                <AnimatePresence>
-                  {awardExpanded && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                      animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
-                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <motion.a
-                        href="https://2024.northcountybestof.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0.8 }}
-                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                        className="block w-[60%] mx-auto"
-                        style={{ maxWidth: '180px' }}
-                      >
-                        <Image
-                          src="/lashpop-images/reader-best-of-2024.webp"
-                          alt="North County Reader Best of 2024"
-                          width={183}
-                          height={205}
-                          className="w-full h-auto"
-                        />
-                      </motion.a>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -406,69 +239,53 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   }
 
   // ============================================
-  // DESKTOP LAYOUT - Original side-by-side
+  // DESKTOP LAYOUT - Full viewport photo with overlaid content
   // ============================================
   return (
-    <section ref={containerRef} className="relative h-screen flex items-end">
-      {/* Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-cream via-[rgb(235,224,203)] to-[rgb(226,182,166)]" />
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-sage/5" />
+    <section ref={containerRef} className="relative h-screen w-screen overflow-hidden">
+      {/* Full viewport background image */}
+      <div
+        ref={imageContainerRef}
+        className="absolute inset-0 w-full h-full"
+        style={{ zIndex: 1 }}
+      >
+        {hasSlideshow && heroConfig?.preset ? (
+          /* Slideshow Mode */
+          <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
+        ) : (
+          /* Single Image Mode - full bleed */
+          <div className="absolute inset-0 overflow-hidden">
+            <Image
+              ref={imageRef}
+              src={archImage.url}
+              alt="LashPop Studio Interior"
+              fill
+              className="object-cover"
+              priority
+              quality={90}
+              sizes="100vw"
+              style={{
+                objectPosition: `${archImage.position.x}% ${archImage.position.y}%`
+              }}
+            />
+          </div>
+        )}
 
-        {/* Floating circles with parallax */}
-        <motion.div
-          style={{ y }}
-          className="absolute top-10 right-10 w-48 h-48"
-        >
-          <CircleDecoration className="text-dusty-rose" />
-        </motion.div>
-
-        <motion.div
-          style={{ y: yCircle2 }}
-          className="absolute bottom-40 left-10 w-36 h-36"
-        >
-          <CircleDecoration className="text-sage" />
-        </motion.div>
-
-        <motion.div
-          style={{ y: yCircle3 }}
-          className="absolute bottom-32 right-20 w-24 h-24 opacity-50"
-        >
-          <CircleDecoration className="text-golden" />
-        </motion.div>
       </div>
 
-      {/* Main Content */}
-      <motion.div
-        style={{ opacity }}
-        className="relative z-10 container-wide"
-      >
-        {/* Gap scales down on smaller screens: 48px at 1400px+, tighter below */}
-        <div className="grid lg:grid-cols-2 gap-4 md:gap-6 lg:gap-8 xl:gap-10 2xl:gap-12 items-end h-full pb-0">
-          {/* Left Content */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-6 mb-[28vh]"
-          >
-            {/* Location accent with live weather on hover */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-            >
+      {/* Overlaid Content */}
+      <div className="relative z-10 h-full flex items-center">
+        <div className="container-wide">
+          {/* Left Content - overlaid on the photo */}
+          <div className="space-y-6 max-w-xl">
+            {/* Location accent with live weather */}
+            <div>
               <WeatherLocationBadge size="md" />
-            </motion.div>
+            </div>
 
             {/* Reviews Chip */}
             {totalReviews > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.8 }}
-                className="inline-block"
-              >
+              <div className="inline-block">
                 <button
                   onClick={() => {
                     const reviewsSection = document.getElementById('reviews');
@@ -485,10 +302,10 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   }}
                   className="relative group cursor-pointer text-left"
                 >
-                  <div className="absolute inset-0 rounded-full bg-golden/10 blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
-                  <div className="relative px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-sm border border-white/50 shadow-sm transition-all duration-300 group-hover:bg-white/60 group-hover:scale-105">
+                  <div className="absolute inset-0 rounded-full bg-cream/30 blur-lg opacity-30" />
+                  <div className="relative px-3 py-1.5 rounded-full bg-white/60 backdrop-blur-sm border border-white/80 shadow-sm">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 pr-2 border-r border-dusty-rose/30 text-dusty-rose">
+                      <div className="flex items-center gap-1.5 pr-2 border-r border-terracotta/30 text-terracotta">
                         <GoogleLogoCompact monochrome />
                         <YelpLogoCompact monochrome />
                         <VagaroLogoCompact monochrome />
@@ -504,172 +321,68 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                             </svg>
                           ))}
                         </div>
-                        <span className="font-serif text-xs text-dune ml-0.5">Reviews</span>
+                        <span className="font-serif text-xs text-dune/70 ml-0.5">Reviews</span>
                       </div>
                     </div>
                   </div>
                 </button>
-              </motion.div>
+              </div>
             )}
 
             {/* Main heading */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="relative -mt-2"
-            >
+            <div className="relative -mt-2">
               <h1
-                className="font-licorice text-dune leading-none"
-                style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)' }}
-              >
-                naturally effortless
-              </h1>
-              <div
-                className="font-serif text-dune -mt-2 relative z-10"
-                style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 400, letterSpacing: '0.05em' }}
+                className="font-serif text-terracotta relative z-10"
+                style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 400, letterSpacing: '0.05em' }}
               >
                 lashes + beauty
-              </div>
+              </h1>
               <div className="-mt-1">
                 <span
-                  className="font-serif text-dusty-rose"
+                  className="font-serif"
                   style={{
-                    fontSize: 'clamp(1rem, 2.5vw, 1.75rem)',
+                    fontSize: 'clamp(1.1rem, 2.5vw, 2rem)',
                     fontWeight: 500,
                     letterSpacing: '0.03em',
-                    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+                    color: '#f0e0db',
+                    backgroundColor: 'rgba(196, 123, 95, 0.75)',
                     padding: '0.1em 0.4em',
-                    boxDecorationBreak: 'clone',
                   }}
                 >
                   for the modern woman
                 </span>
               </div>
-            </motion.div>
+            </div>
 
             {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.8 }}
-              className="flex flex-row gap-4 pt-4"
-            >
+            <div className="flex flex-row gap-4 pt-4">
               <button
                 onClick={() => {
                   const offset = 64
                   window.scrollTo({ top: window.innerHeight - offset, behavior: 'smooth' })
                   handleBookNowClick('hero')
                 }}
-                className="btn btn-primary"
+                className="relative group"
               >
-                Book Now
+                <div className="absolute inset-0 rounded-full bg-terracotta/30 blur-md opacity-50" />
+                <div className="relative px-8 py-3.5 rounded-full bg-terracotta/90 backdrop-blur-md border border-terracotta/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-terracotta transition-all">
+                  <span className="font-medium text-white">Book Now</span>
+                </div>
               </button>
               <button
                 onClick={() => panelActions.openPanel('discovery', {})}
-                className="btn btn-secondary"
+                className="relative group"
               >
-                Discover Your Look
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
+                <div className="relative px-8 py-3.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-white/60 transition-all">
+                  <span className="font-medium text-dune">Find Your Look</span>
+                </div>
               </button>
-            </motion.div>
-          </motion.div>
-
-          {/* Right Content - Arch Image or Slideshow */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="relative h-full flex items-end pl-4 lg:pl-6 xl:pl-8"
-          >
-            <div className="relative w-full h-full flex items-end">
-              <div
-                ref={imageContainerRef}
-                className="relative w-full max-w-[500px] h-[90vh] rounded-[200px_200px_0_0] overflow-hidden"
-                style={{ transformOrigin: 'bottom center', zIndex: 20 }}
-              >
-                {hasSlideshow && heroConfig?.preset ? (
-                  /* Slideshow Mode - render the carousel */
-                  <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
-                ) : (
-                  /* Single Image Mode - original behavior */
-                  /* Use absolute positioning to ensure full coverage at all screen widths */
-                  /* GSAP handles the transform animations (scale, xPercent) - don't set inline transforms */
-                  <div className="absolute inset-0 overflow-hidden">
-                    <Image
-                      ref={imageRef}
-                      src={archImage.url}
-                      alt="LashPop Studio Interior"
-                      fill
-                      className="object-cover will-change-transform"
-                      priority
-                      quality={85}
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      style={{
-                        transformOrigin: "center center",
-                        objectPosition: `${archImage.position.x}% ${archImage.position.y}%`
-                      }}
-                    />
-                  </div>
-                )}
-
-{/* Gradient overlay removed - arch should be 100% opaque */}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1, duration: 0.8 }}
-                  className="absolute bottom-8 left-8 right-8 z-30"
-                >
-                  <div
-                    className="glass rounded-2xl p-6 cursor-pointer group transition-all duration-300 hover:bg-white/50"
-                    onMouseEnter={() => setAwardExpanded(true)}
-                    onMouseLeave={() => setAwardExpanded(false)}
-                    onClick={() => setAwardExpanded(!awardExpanded)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <p className="text-dusty-rose font-medium mb-1">Voted Best Lash Studio</p>
-                        <p className="text-sm text-dune/70">San Diego Reader</p>
-                      </div>
-                      <AnimatePresence>
-                        {awardExpanded && (
-                          <motion.a
-                            href="https://2024.northcountybestof.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            initial={{ opacity: 0, scale: 0.8, width: 0 }}
-                            animate={{ opacity: 1, scale: 1, width: 80 }}
-                            exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex-shrink-0 overflow-hidden"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Image
-                              src="/lashpop-images/reader-best-of-2024.webp"
-                              alt="North County Reader Best of 2024"
-                              width={80}
-                              height={89}
-                              className="w-full h-auto"
-                            />
-                          </motion.a>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </motion.div>
-
-{/* Cream fade overlay removed - arch should be 100% opaque */}
-              </div>
-
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-warm-sand/50 blur-2xl z-10"
-              />
             </div>
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+      </div>
+
     </section>
   )
 }

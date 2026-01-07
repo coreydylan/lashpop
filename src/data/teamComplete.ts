@@ -15,6 +15,7 @@ export interface TeamMember {
   favoriteServices?: string[]
   funFact?: string
   gallery?: string[]
+  hidden?: boolean
 }
 
 export const teamMembers: TeamMember[] = [
@@ -74,7 +75,7 @@ export const teamMembers: TeamMember[] = [
     name: 'Ashley Petersen',
     role: 'HydraFacial Specialist & Lash Artist',
     businessName: 'Integrated Body and Beauty',
-    image: '/lashpop-images/team/ashley-petersen.jpg',
+    image: '/lashpop-images/team/ashley-petersen.jpeg',
     phone: '760-822-0255',
     specialties: ['HydraFacials', 'Lash Extensions', 'Skin Care', 'Wellness'],
     bio: 'Ashley combines beauty and wellness through her integrated approach. Specializing in HydraFacials and lash artistry, she helps clients achieve radiant skin and stunning lashes.',
@@ -91,7 +92,7 @@ export const teamMembers: TeamMember[] = [
     name: 'Ava Mata',
     role: 'Lash Artist',
     businessName: 'Looks and Lashes',
-    image: '/lashpop-images/team/ava-mata.jpg',
+    image: '/lashpop-images/team/ava-mata.jpeg',
     phone: '714-336-4908',
     specialties: ['Volume Extensions', 'Classic Lashes', 'Lash Styling'],
     bio: 'Ava\'s expertise in both classic and volume techniques allows her to create customized looks that perfectly complement each client\'s unique features and lifestyle.',
@@ -142,7 +143,7 @@ export const teamMembers: TeamMember[] = [
     name: 'Adrianna Arnaud',
     role: 'Lash Artist',
     businessName: 'Lashed by Adrianna',
-    image: '/lashpop-images/team/adrianna-arnaud.jpg',
+    image: '/lashpop-images/team/adrianna-arnaud.jpeg',
     phone: '760-964-7235',
     specialties: ['Volume Extensions', 'Mega Volume', 'Wispy Lashes'],
     bio: 'Adrianna is known for her stunning volume sets and ability to create wispy, textured looks. Her attention to detail ensures every lash is perfectly placed.',
@@ -227,7 +228,7 @@ export const teamMembers: TeamMember[] = [
     name: 'Evie Ells',
     role: 'Lash Artist & Brow Specialist',
     businessName: 'Evie Ells Aesthetics',
-    image: '/lashpop-images/team/evie-ells.jpg',
+    image: '/lashpop-images/team/evie-ells.jpeg',
     phone: '949-866-2206',
     specialties: ['Lash Extensions', 'Brow Services', 'Combination Treatments'],
     bio: 'Evie offers the perfect combination of lash and brow services, ensuring your eye area looks cohesive and beautiful. Her balanced approach creates harmony in facial features.',
