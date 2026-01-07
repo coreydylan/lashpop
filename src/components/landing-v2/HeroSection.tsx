@@ -364,8 +364,8 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 }}
                 className="relative group"
               >
-                <div className="absolute inset-0 rounded-full bg-terracotta/30 blur-md opacity-50" />
-                <div className="relative px-8 py-3.5 rounded-full bg-terracotta/90 backdrop-blur-md border border-terracotta/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-terracotta transition-all">
+                <div className="absolute inset-0 rounded-full bg-terracotta-light/30 blur-md opacity-50" />
+                <div className="relative px-8 py-3.5 rounded-full bg-terracotta-light backdrop-blur-md border border-terracotta-light/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-terracotta transition-all">
                   <span className="font-medium text-white">Book Now</span>
                 </div>
               </button>
