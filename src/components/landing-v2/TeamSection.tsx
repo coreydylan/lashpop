@@ -131,8 +131,8 @@ export default function TeamSection() {
 
                   {/* Content */}
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
-                    <p className="text-[#C4A484] font-medium mb-3">{member.role}</p>
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
+                    <p className="text-sm sm:text-base text-[#C4A484] font-medium mb-3">{member.role}</p>
                     <div className="flex flex-wrap gap-2">
                       {member.specialties.map((specialty) => (
                         <span
@@ -149,16 +149,22 @@ export default function TeamSection() {
             ))}
           </div>
 
-          {/* View All Button */}
+          {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.8 }}
-            className="text-center mt-12"
+            className="text-center mt-12 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <button className="px-8 py-3 border-2 border-[#C4A484] text-[#C4A484] rounded-lg font-semibold hover:bg-[#C4A484] hover:text-white transition-all">
               View All Team Members
             </button>
+            <a
+              href="mailto:careers@lashpopstudios.com?subject=Join%20The%20Team"
+              className="px-8 py-3 bg-[#C4A484] text-white rounded-lg font-semibold hover:bg-[#D4A574] transition-all"
+            >
+              Join the Team
+            </a>
           </motion.div>
         </div>
       </div>

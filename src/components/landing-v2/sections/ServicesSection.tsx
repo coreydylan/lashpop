@@ -47,8 +47,8 @@ const serviceCategories = [
     icon: '/lashpop-images/services/nails-icon.svg',
   },
   {
-    id: 'specialty',
-    slug: 'specialty',
+    id: 'permanent-jewelry',
+    slug: 'permanent-jewelry',
     title: 'PERMANENT JEWELRY',
     tagline: 'Meaningful moments.',
     description: 'A delicate chain, welded on forever. It\'s become our favorite way to celebrate friendships, milestones, or just treating yourself to something beautiful.',

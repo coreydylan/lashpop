@@ -189,7 +189,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
 
               {/* Work With Us - Frosted glass secondary button */}
               <a
-                href="#"
+                href="mailto:careers@lashpopstudios.com?subject=Join%20The%20Team"
                 className="relative group w-full block"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
@@ -360,9 +360,11 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 onClick={() => {
                   const servicesSection = document.getElementById('services')
                   if (servicesSection) {
+                    // Scroll past the "Our Services" title directly to the cards
                     const headerHeight = 80
+                    const titleOffset = 120 // Extra offset to skip past the section title
                     const elementTop = servicesSection.getBoundingClientRect().top + window.pageYOffset
-                    window.scrollTo({ top: elementTop - headerHeight, behavior: 'smooth' })
+                    window.scrollTo({ top: elementTop - headerHeight + titleOffset, behavior: 'smooth' })
                   }
                   handleBookNowClick('hero')
                 }}

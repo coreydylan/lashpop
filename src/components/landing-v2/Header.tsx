@@ -94,16 +94,17 @@ export default function Header() {
               className="flex items-center gap-3"
             >
               <Link
-                href="#careers"
+                href="mailto:careers@lashpopstudios.com?subject=Join%20The%20Team"
                 className={`btn transition-all duration-300 ${
                   isScrolled
                     ? 'border-terracotta text-terracotta hover:bg-terracotta hover:text-cream'
-                    : 'border-terracotta text-terracotta hover:bg-terracotta/10'
+                    : 'border-cream/80 text-cream hover:bg-cream/10'
                 }`}
                 style={{
                   background: 'transparent',
-                  border: '1px solid rgb(var(--terracotta))',
+                  border: isScrolled ? '2px solid rgb(var(--terracotta))' : '2px solid rgba(250, 246, 242, 0.8)',
                   backdropFilter: 'blur(10px)',
+                  fontWeight: 500,
                 }}
               >
                 Work with Us
