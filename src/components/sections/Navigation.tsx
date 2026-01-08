@@ -16,7 +16,6 @@ const navItems = [
   { label: 'Reviews', href: '#reviews' },
   { label: 'FAQ', href: '#faq' },
   { label: 'Find Us', href: '#find-us' },
-  { label: 'Work With Us', href: '#' }
 ]
 
 export function Navigation() {
@@ -164,8 +163,15 @@ export function Navigation() {
                   </button>
                 )
               ))}
+              <a
+                href="mailto:careers@lashpopstudios.com?subject=Join%20The%20Team"
+                className="btn ml-4 border-2 border-terracotta-light text-terracotta-light hover:bg-terracotta-light hover:text-cream transition-colors duration-300"
+                style={{ background: 'transparent' }}
+              >
+                Work With Us
+              </a>
               <button
-                className="btn ml-4 bg-terracotta-light hover:bg-terracotta text-cream transition-colors duration-300"
+                className="btn bg-terracotta-light hover:bg-terracotta text-cream transition-colors duration-300"
                 onClick={handleBookNow}
               >
                 Book Now
