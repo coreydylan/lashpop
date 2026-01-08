@@ -95,29 +95,26 @@ export default function Header() {
             >
               <Link
                 href="mailto:careers@lashpopstudios.com?subject=Join%20The%20Team"
-                className={`btn transition-all duration-300 ${
+                className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium transition-all duration-300 ${
                   isScrolled
-                    ? 'border-terracotta text-terracotta hover:bg-terracotta hover:text-cream'
-                    : 'border-cream/80 text-cream hover:bg-cream/10'
+                    ? 'text-terracotta hover:bg-terracotta hover:text-cream'
+                    : 'text-cream hover:bg-cream/20'
                 }`}
                 style={{
                   background: 'transparent',
-                  border: isScrolled ? '2px solid rgb(var(--terracotta))' : '2px solid rgba(250, 246, 242, 0.8)',
+                  border: isScrolled ? '2px solid rgb(var(--terracotta))' : '2px solid rgba(250, 246, 242, 0.9)',
                   backdropFilter: 'blur(10px)',
-                  fontWeight: 500,
                 }}
               >
                 Work with Us
               </Link>
               <button
-                className={`btn ${
-                  isScrolled ? 'btn-primary' : ''
-                }`}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-medium transition-all duration-300"
                 style={{
                   background: isScrolled
                     ? 'rgb(var(--rust))'
                     : 'rgb(var(--terracotta))',
-                  border: 'none',
+                  border: '2px solid transparent',
                   color: 'rgb(var(--cream))',
                   backdropFilter: 'blur(10px)',
                 }}
