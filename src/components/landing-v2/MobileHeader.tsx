@@ -31,6 +31,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'instagram', label: 'GALLERY', href: '#gallery' },
   { id: 'faq', label: 'FAQ', href: '#faq' },
   { id: 'map', label: 'FIND US', href: '#find-us' },
+  { id: 'work-with-us', label: 'WORK WITH US', href: '/work-with-us' },
 ]
 
 // Sections that should show the header (team and below)
@@ -145,6 +146,12 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   // Handle menu item click
   const handleMenuItemClick = useCallback((item: MenuItem) => {
     setIsMenuOpen(false)
+
+    // Handle page links (non-hash links)
+    if (!item.href.startsWith('#')) {
+      window.location.href = item.href
+      return
+    }
 
     if (item.href === '#gallery' || item.href === '#reviews') {
       smoothScrollToElement(item.href, 60, 800, 'center')
