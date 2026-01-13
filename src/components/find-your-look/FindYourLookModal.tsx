@@ -3,152 +3,168 @@
 import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft, X, ArrowRight } from 'lucide-react';
 
-// Hand-picked images from DAM for Step 2 (Aesthetic - full face/beauty shots)
-const AESTHETIC_IMAGES = {
-  natural: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913826908-6hzrr-Facetune_11-11-2025-17-14-06.jpeg',
-  'clean-girl': 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913825367-ukjfzn-Facetune_11-11-2025-17-14-59.jpeg',
-  textured: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913823492-qo5v6m-Facetune_11-11-2025-17-15-29.jpeg',
-  dramatic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913818972-vqyxvb-Facetune_20-09-2025-16-55-05.jpeg',
+// Placeholder images - these should be updated with actual DAM images
+// Q3 Images (4 lash style photos)
+const Q3_IMAGES = {
+  lashLift: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913826908-6hzrr-Facetune_11-11-2025-17-14-06.jpeg',
+  classic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913825367-ukjfzn-Facetune_11-11-2025-17-14-59.jpeg',
+  hybridWet: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913823492-qo5v6m-Facetune_11-11-2025-17-15-29.jpeg',
+  volume: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913818972-vqyxvb-Facetune_20-09-2025-16-55-05.jpeg',
 } as const;
 
-// Hand-picked images from DAM for Step 3 (Style - lash close-ups)
-const STYLE_IMAGES = {
-  'soft-natural': 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913814498-011mtb-IMG_1268.JPG',
-  'glossy-defined': 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913812439-dvx0zn-IMG_1266.JPG',
-  'fuller-textured': 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913809619-nc5gi-IMG_1253.JPG',
-  'bold-volume': 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913806903-vraq1-IMG_1246.JPG',
+// Q4 Follow-up images (2 options each for B, C, D paths)
+const Q4_IMAGES = {
+  // For Classic path (B) - choose between Classic or Hybrid
+  classicOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913814498-011mtb-IMG_1268.JPG',
+  classicOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913812439-dvx0zn-IMG_1266.JPG',
+  // For Hybrid/Wet path (C) - choose between Hybrid or Volume
+  hybridOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913809619-nc5gi-IMG_1253.JPG',
+  hybridOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913806903-vraq1-IMG_1246.JPG',
+  // For Volume path (D) - choose between Hybrid or Volume
+  volumeOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913801621-qruz2e-IMG_1243.JPG',
+  volumeOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913799255-mxoa8-IMG_1236.JPG',
 } as const;
 
-// Hand-picked images from DAM for Step 4 (Results)
+// Result page images
 const RESULT_IMAGES = {
-  classic: {
-    before: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913804878-pkvu55-IMG_1245.JPG',
-    after: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913803318-jp9r6-IMG_1244.JPG',
-  },
-  hybrid: {
-    before: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913801621-qruz2e-IMG_1243.JPG',
-    after: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913799255-mxoa8-IMG_1236.JPG',
-  },
-  'wet-angel': {
-    before: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913797443-7iq5ps-IMG_1234.JPG',
-    after: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913794167-0rr1xe-IMG_1090.JPG',
-  },
-  volume: {
-    before: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913790698-tr0m4-IMG_1231.JPG',
-    after: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913788611-9tldje-IMG_1230.JPG',
-  },
+  lashLift: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913826908-6hzrr-Facetune_11-11-2025-17-14-06.jpeg',
+  classic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913804878-pkvu55-IMG_1245.JPG',
+  wetAngel: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913797443-7iq5ps-IMG_1234.JPG',
+  hybrid: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913801621-qruz2e-IMG_1243.JPG',
+  volume: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1762913790698-tr0m4-IMG_1231.JPG',
 } as const;
 
-// Quiz step type
-type QuizStep = 1 | 2 | 3 | 4;
+// Quiz step type - 0 = intro, 1-4 = questions, 5 = results
+type QuizStep = 0 | 1 | 2 | 3 | 4 | 5;
 
-// Answer types
-type LifestyleAnswer = 'low-maintenance' | 'polished' | 'glam';
-type AestheticAnswer = 'natural' | 'clean-girl' | 'textured' | 'dramatic';
-type StyleAnswer = 'soft-natural' | 'glossy-defined' | 'fuller-textured' | 'bold-volume';
+// Q1 Answer: Beauty routine
+type Q1Answer = 'A' | 'B' | 'C' | 'D';
+
+// Q2 Answer: Lash look feel
+type Q2Answer = 'A' | 'B' | 'C' | 'D';
+
+// Q3 Answer: Photo selection
+type Q3Answer = 'A' | 'B' | 'C' | 'D';
+
+// Q4 Answer: Follow-up photo selection (only for B, C, D paths)
+type Q4Answer = '1' | '2';
 
 // Lash style result
-type LashStyleResult = 'classic' | 'hybrid' | 'wet-angel' | 'volume';
+type LashStyleResult = 'lashLift' | 'classic' | 'wetAngel' | 'hybrid' | 'volume';
 
 interface QuizAnswers {
-  lifestyle?: LifestyleAnswer;
-  aesthetic?: AestheticAnswer;
-  style?: StyleAnswer;
+  q1?: Q1Answer;
+  q2?: Q2Answer;
+  q3?: Q3Answer;
+  q4?: Q4Answer;
 }
 
 // Lash style details for results
 const lashStyleDetails: Record<LashStyleResult, {
   name: string;
   displayName: string;
-  tagline: string;
+  recommendedService: string;
   description: string;
+  bestFor: string[];
+  duration?: string;
+  bookingLabel: string;
 }> = {
-  'classic': {
+  lashLift: {
+    name: 'Lash Lift',
+    displayName: 'Lash Lift + Tint',
+    recommendedService: 'Lash Lift + Tint',
+    description: 'You love a natural, low-maintenance look that still makes your eyes pop, and a lash lift is perfect for that. A lash lift gently curls and lifts your own natural lashes from the base, making them look longer, darker, and more defined without adding extensions. Easier mornings with minimal maintenance. Pair it with a tint and you\'ll look like you\'re wearing mascara.',
+    bestFor: [
+      'You want the lowest maintenance option',
+      'You want very natural results',
+      'You want a fresh makeup-free look',
+    ],
+    duration: 'Results last about 6–8 weeks',
+    bookingLabel: 'Book Lash Lift + Tint',
+  },
+  classic: {
     name: 'Classic',
     displayName: 'Classic Lashes',
-    tagline: 'Effortlessly Natural',
-    description: 'You love a subtle, refined look that enhances your natural beauty without looking "done." Classic lashes give you that perfect mascara-free, wake-up-ready elegance that\'s perfect for everyday life.',
+    recommendedService: 'Classic Lashes',
+    description: 'You love a natural, polished look that still makes your eyes stand out. Classic lashes add length and definition by placing one extension on each natural lash, while keeping things soft and effortless. That "better than mascara" but without the mascara look.',
+    bestFor: [
+      'First-time extension clients',
+      'Natural makeup lovers',
+      'Everyday wear',
+    ],
+    bookingLabel: 'Book Classic Full Set',
   },
-  'hybrid': {
-    name: 'Hybrid',
-    displayName: 'Hybrid Lashes',
-    tagline: 'The Perfect Balance',
-    description: 'You want the best of both worlds - natural definition with a hint of drama. Hybrid lashes blend classic and volume techniques for a textured, dimensional look that\'s both sophisticated and eye-catching.',
-  },
-  'wet-angel': {
+  wetAngel: {
     name: 'Wet / Angel',
     displayName: 'Wet / Angel Lashes',
-    tagline: 'Modern & Glossy',
-    description: 'You love a clean, effortless, "model off duty" look. Wet / Angel gives you glossy, defined lashes that feel modern, chic, and natural but elevated.',
+    recommendedService: 'Wet / Angel Set',
+    description: 'You love a modern, clean, model-off-duty look. Wet and Angel sets give you glossy, defined lashes that feel natural but elevated. Wet / angel lashes create soft, wispy spikes that give your eyes a bright, fresh look. Perfect if you want definition and texture while still keeping things light and airy.',
+    bestFor: [
+      'You like a soft but noticeable lash look',
+      'You love a fresh, dewy, "model off duty" vibe',
+      'You love a minimal makeup routine',
+    ],
+    bookingLabel: 'Book Wet / Angel Set',
   },
-  'volume': {
+  hybrid: {
+    name: 'Hybrid',
+    displayName: 'Hybrid Lashes',
+    recommendedService: 'Hybrid Lashes',
+    description: 'You like your lashes a little fuller and more textured but still a soft and everyday look. Hybrid lashes blend classic and volume techniques for the perfect balance of texture and fullness.',
+    bestFor: [
+      'You want more fullness than classic, but not too dramatic',
+      'You love a fluffy, textured finish',
+      'You want a look that transitions easily from day to night',
+    ],
+    bookingLabel: 'Book Hybrid Full Set',
+  },
+  volume: {
     name: 'Volume',
     displayName: 'Volume Lashes',
-    tagline: 'Bold & Beautiful',
-    description: 'You\'re not afraid to make a statement. Volume lashes deliver dramatic fullness and dimension that command attention - perfect for those who love to glam up.',
+    recommendedService: 'Volume Lashes',
+    description: 'You love bold, fluffy lashes that make a statement. Volume sets give you maximum fullness and drama for a high-impact look.',
+    bestFor: [
+      'Full glam fans',
+      'Sparse natural lashes',
+      'You love a dark and full lash line',
+    ],
+    bookingLabel: 'Book Volume Full Set',
   },
 };
 
-// Quiz logic - determine result based on answers
+// Determine result based on Q3 and Q4 answers
 function calculateResult(answers: QuizAnswers): LashStyleResult {
-  const { lifestyle, aesthetic, style } = answers;
+  const { q3, q4 } = answers;
 
-  // Scoring system
-  let scores: Record<LashStyleResult, number> = {
-    'classic': 0,
-    'hybrid': 0,
-    'wet-angel': 0,
-    'volume': 0,
-  };
-
-  // Lifestyle scoring
-  if (lifestyle === 'low-maintenance') {
-    scores['classic'] += 2;
-    scores['wet-angel'] += 1;
-  } else if (lifestyle === 'polished') {
-    scores['hybrid'] += 2;
-    scores['wet-angel'] += 2;
-  } else if (lifestyle === 'glam') {
-    scores['volume'] += 2;
-    scores['hybrid'] += 1;
+  // If Q3 = A (Lash Lift), go directly to Lash Lift result
+  if (q3 === 'A') {
+    return 'lashLift';
   }
 
-  // Aesthetic scoring
-  if (aesthetic === 'natural') {
-    scores['classic'] += 2;
-  } else if (aesthetic === 'clean-girl') {
-    scores['wet-angel'] += 3;
-  } else if (aesthetic === 'textured') {
-    scores['hybrid'] += 2;
-    scores['volume'] += 1;
-  } else if (aesthetic === 'dramatic') {
-    scores['volume'] += 3;
+  // If Q3 = B (Classic path)
+  if (q3 === 'B') {
+    if (q4 === '1') return 'classic';
+    if (q4 === '2') return 'hybrid';
+    return 'classic'; // fallback
   }
 
-  // Style scoring
-  if (style === 'soft-natural') {
-    scores['classic'] += 2;
-  } else if (style === 'glossy-defined') {
-    scores['wet-angel'] += 3;
-  } else if (style === 'fuller-textured') {
-    scores['hybrid'] += 2;
-  } else if (style === 'bold-volume') {
-    scores['volume'] += 3;
+  // If Q3 = C (Hybrid/Wet path)
+  if (q3 === 'C') {
+    if (q4 === '1') return 'hybrid';
+    if (q4 === '2') return 'volume';
+    return 'hybrid'; // fallback
   }
 
-  // Find highest score
-  let result: LashStyleResult = 'classic';
-  let maxScore = 0;
-  for (const [style, score] of Object.entries(scores)) {
-    if (score > maxScore) {
-      maxScore = score;
-      result = style as LashStyleResult;
-    }
+  // If Q3 = D (Volume path)
+  if (q3 === 'D') {
+    if (q4 === '1') return 'hybrid';
+    if (q4 === '2') return 'volume';
+    return 'volume'; // fallback
   }
 
-  return result;
+  return 'classic'; // fallback
 }
 
 interface FindYourLookModalProps {
@@ -158,42 +174,67 @@ interface FindYourLookModalProps {
 }
 
 export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModalProps) {
-  const [step, setStep] = useState<QuizStep>(1);
+  const [step, setStep] = useState<QuizStep>(0);
   const [answers, setAnswers] = useState<QuizAnswers>({});
   const [result, setResult] = useState<LashStyleResult | null>(null);
 
-  const totalSteps = 4;
-
   const handleBack = useCallback(() => {
-    if (step > 1) {
-      setStep((s) => (s - 1) as QuizStep);
+    if (step > 0) {
+      // If on results, go back to Q4 or Q3 depending on path
+      if (step === 5) {
+        if (answers.q3 === 'A') {
+          setStep(3); // Go back to Q3 for lash lift path
+        } else {
+          setStep(4); // Go back to Q4 for other paths
+        }
+        setResult(null);
+      } else {
+        setStep((s) => (s - 1) as QuizStep);
+      }
     }
-  }, [step]);
+  }, [step, answers.q3]);
 
   const handleClose = useCallback(() => {
-    // Reset state on close
-    setStep(1);
+    setStep(0);
     setAnswers({});
     setResult(null);
     onClose();
   }, [onClose]);
 
-  const handleLifestyleAnswer = (answer: LifestyleAnswer) => {
-    setAnswers((prev) => ({ ...prev, lifestyle: answer }));
+  const handleStartQuiz = () => {
+    setStep(1);
+  };
+
+  const handleQ1Answer = (answer: Q1Answer) => {
+    setAnswers((prev) => ({ ...prev, q1: answer }));
     setStep(2);
   };
 
-  const handleAestheticAnswer = (answer: AestheticAnswer) => {
-    setAnswers((prev) => ({ ...prev, aesthetic: answer }));
+  const handleQ2Answer = (answer: Q2Answer) => {
+    setAnswers((prev) => ({ ...prev, q2: answer }));
     setStep(3);
   };
 
-  const handleStyleAnswer = (answer: StyleAnswer) => {
-    const newAnswers = { ...answers, style: answer };
+  const handleQ3Answer = (answer: Q3Answer) => {
+    const newAnswers = { ...answers, q3: answer };
+    setAnswers(newAnswers);
+
+    // If Lash Lift (A), go directly to results
+    if (answer === 'A') {
+      setResult('lashLift');
+      setStep(5);
+    } else {
+      // Otherwise, go to Q4 for follow-up
+      setStep(4);
+    }
+  };
+
+  const handleQ4Answer = (answer: Q4Answer) => {
+    const newAnswers = { ...answers, q4: answer };
     setAnswers(newAnswers);
     const calculatedResult = calculateResult(newAnswers);
     setResult(calculatedResult);
-    setStep(4);
+    setStep(5);
   };
 
   const handleBookNow = () => {
@@ -201,6 +242,20 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
       onBook(result);
     }
     handleClose();
+  };
+
+  // Calculate total steps based on path (4 for lash lift, 5 for others)
+  const getTotalSteps = () => {
+    if (step === 0) return 4; // Before starting
+    if (answers.q3 === 'A') return 4; // Lash lift path: intro, Q1, Q2, Q3, result
+    return 5; // Other paths: intro, Q1, Q2, Q3, Q4, result
+  };
+
+  // Get current step number for display (excluding intro)
+  const getCurrentStepNumber = () => {
+    if (step === 0) return 0;
+    if (step === 5) return getTotalSteps();
+    return step;
   };
 
   return (
@@ -226,8 +281,8 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
             className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 pointer-events-none"
           >
             <div
-              className="relative w-full max-w-[460px] bg-ivory rounded-3xl shadow-2xl overflow-hidden pointer-events-auto
-                         h-full md:h-auto"
+              className="relative w-full max-w-[480px] bg-ivory rounded-3xl shadow-2xl overflow-hidden pointer-events-auto
+                         h-full md:h-auto max-h-[90vh] md:max-h-[680px]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close button */}
@@ -239,8 +294,8 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 <X className="w-4 h-4" />
               </button>
 
-              {/* Back button (steps 2, 3, and 4) */}
-              {step > 1 && (
+              {/* Back button (all steps except intro) */}
+              {step > 0 && (
                 <button
                   onClick={handleBack}
                   className="absolute top-4 left-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
@@ -250,55 +305,59 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 </button>
               )}
 
-              {/* Content - fixed height container */}
-              <div className="p-6 md:h-[580px] h-full flex flex-col">
-                {/* Step indicator dots */}
-                <div className="flex justify-center gap-2.5 mb-5 shrink-0">
-                  {[1, 2, 3, 4].map((s) => (
-                    <div
-                      key={s}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        s === step
-                          ? 'bg-terracotta w-6'
-                          : s < step
-                          ? 'bg-terracotta/40 w-2'
-                          : 'bg-cream w-2'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                {/* Step content - fixed height */}
-                <div className="h-[510px] overflow-hidden">
-                  <AnimatePresence mode="wait">
-                    {step === 1 && (
-                      <Step1Lifestyle
-                        key="step1"
-                        onAnswer={handleLifestyleAnswer}
+              {/* Content */}
+              <div className="p-6 md:p-8 h-full md:h-[640px] flex flex-col overflow-y-auto">
+                {/* Step indicator dots (hidden on intro) */}
+                {step > 0 && (
+                  <div className="flex justify-center gap-2.5 mb-5 shrink-0">
+                    {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((s) => (
+                      <div
+                        key={s}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          s === getCurrentStepNumber()
+                            ? 'bg-terracotta w-6'
+                            : s < getCurrentStepNumber()
+                            ? 'bg-terracotta/40 w-2'
+                            : 'bg-cream w-2'
+                        }`}
                       />
+                    ))}
+                  </div>
+                )}
+
+                {/* Step content */}
+                <div className="flex-1 overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    {step === 0 && (
+                      <IntroScreen key="intro" onStart={handleStartQuiz} />
+                    )}
+
+                    {step === 1 && (
+                      <Q1BeautyRoutine key="q1" onAnswer={handleQ1Answer} />
                     )}
 
                     {step === 2 && (
-                      <Step2Aesthetic
-                        key="step2"
-                        onAnswer={handleAestheticAnswer}
-                        images={AESTHETIC_IMAGES}
-                      />
+                      <Q2LashLookFeel key="q2" onAnswer={handleQ2Answer} />
                     )}
 
                     {step === 3 && (
-                      <Step3Style
-                        key="step3"
-                        onAnswer={handleStyleAnswer}
-                        images={STYLE_IMAGES}
+                      <Q3PhotoSelection key="q3" onAnswer={handleQ3Answer} images={Q3_IMAGES} />
+                    )}
+
+                    {step === 4 && (
+                      <Q4FollowUp
+                        key="q4"
+                        q3Answer={answers.q3!}
+                        onAnswer={handleQ4Answer}
+                        images={Q4_IMAGES}
                       />
                     )}
 
-                    {step === 4 && result && (
-                      <Step4Results
-                        key="step4"
+                    {step === 5 && result && (
+                      <ResultScreen
+                        key="result"
                         result={lashStyleDetails[result]}
-                        resultImages={RESULT_IMAGES[result]}
+                        resultImage={RESULT_IMAGES[result]}
                         onBook={handleBookNow}
                       />
                     )}
@@ -313,12 +372,43 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
   );
 }
 
-// Step 1: Lifestyle Question
-function Step1Lifestyle({ onAnswer }: { onAnswer: (answer: LifestyleAnswer) => void }) {
-  const options: { value: LifestyleAnswer; label: string }[] = [
-    { value: 'low-maintenance', label: 'Super low-maintenance—gym, errands, busy days' },
-    { value: 'polished', label: 'Polished but not overdone' },
-    { value: 'glam', label: 'Events, nights out, I love glam' },
+// Intro Screen
+function IntroScreen({ onStart }: { onStart: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="h-full flex flex-col items-center justify-center text-center px-4"
+    >
+      <h1 className="text-3xl md:text-4xl font-display font-medium text-charcoal mb-4">
+        Find Your Perfect Lash Look
+      </h1>
+      <p className="text-sage text-base md:text-lg leading-relaxed mb-8 max-w-sm">
+        Answer a few quick questions and we&apos;ll match you with the lash style that fits your vibe, lifestyle, and natural lashes.
+      </p>
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={onStart}
+        className="flex items-center gap-2 px-8 py-4 rounded-full bg-terracotta hover:bg-rust text-white font-medium
+                   shadow-lg shadow-terracotta/30 transition-all duration-200"
+      >
+        Start Quiz
+        <ArrowRight className="w-4 h-4" />
+      </motion.button>
+    </motion.div>
+  );
+}
+
+// Q1: Beauty Routine
+function Q1BeautyRoutine({ onAnswer }: { onAnswer: (answer: Q1Answer) => void }) {
+  const options: { value: Q1Answer; label: string }[] = [
+    { value: 'A', label: 'Sunscreen, lip balm, and I\'m out the door' },
+    { value: 'B', label: 'Light makeup, soft and natural' },
+    { value: 'C', label: 'Full makeup and all the glam' },
+    { value: 'D', label: 'It depends — sometimes simple, sometimes glam' },
   ];
 
   return (
@@ -327,25 +417,25 @@ function Step1Lifestyle({ onAnswer }: { onAnswer: (answer: LifestyleAnswer) => v
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="h-[510px] flex flex-col justify-center"
+      className="h-full flex flex-col justify-center"
     >
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-display font-medium text-charcoal">
-          Which best describes your everyday routine?
+        <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
+          How would you describe your everyday beauty routine?
         </h2>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {options.map((option) => (
           <motion.button
             key={option.value}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
             onClick={() => onAnswer(option.value)}
-            className="w-full p-5 rounded-xl bg-cream/50 hover:bg-cream border border-blush/30
+            className="w-full p-4 md:p-5 rounded-xl bg-cream/50 hover:bg-cream border border-blush/30
                        text-left transition-all duration-200 group"
           >
-            <span className="text-charcoal group-hover:text-terracotta transition-colors">
+            <span className="text-charcoal group-hover:text-terracotta transition-colors text-sm md:text-base">
               {option.label}
             </span>
           </motion.button>
@@ -355,18 +445,13 @@ function Step1Lifestyle({ onAnswer }: { onAnswer: (answer: LifestyleAnswer) => v
   );
 }
 
-// Step 2: Aesthetic Photo Grid
-interface Step2Props {
-  onAnswer: (answer: AestheticAnswer) => void;
-  images: typeof AESTHETIC_IMAGES;
-}
-
-function Step2Aesthetic({ onAnswer, images }: Step2Props) {
-  const options: { value: AestheticAnswer; label: string }[] = [
-    { value: 'natural', label: 'My natural lashes...just darker' },
-    { value: 'clean-girl', label: 'Glossy, defined, clean-girl lashes' },
-    { value: 'textured', label: 'Natural but fuller & textured' },
-    { value: 'dramatic', label: 'Bold, dramatic, full glam' },
+// Q2: Lash Look Feel
+function Q2LashLookFeel({ onAnswer }: { onAnswer: (answer: Q2Answer) => void }) {
+  const options: { value: Q2Answer; label: string }[] = [
+    { value: 'A', label: 'Barely there, just a subtle boost' },
+    { value: 'B', label: 'Soft and natural, perfect for everyday' },
+    { value: 'C', label: 'Fuller with a little texture' },
+    { value: 'D', label: 'Bold and dramatic' },
   ];
 
   return (
@@ -375,11 +460,59 @@ function Step2Aesthetic({ onAnswer, images }: Step2Props) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="h-[510px] flex flex-col"
+      className="h-full flex flex-col justify-center"
+    >
+      <div className="text-center mb-8">
+        <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
+          When it comes to your lashes, you love a look that feels…
+        </h2>
+      </div>
+
+      <div className="space-y-3">
+        {options.map((option) => (
+          <motion.button
+            key={option.value}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            onClick={() => onAnswer(option.value)}
+            className="w-full p-4 md:p-5 rounded-xl bg-cream/50 hover:bg-cream border border-blush/30
+                       text-left transition-all duration-200 group"
+          >
+            <span className="text-charcoal group-hover:text-terracotta transition-colors text-sm md:text-base">
+              {option.label}
+            </span>
+          </motion.button>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+// Q3: Photo Selection (4 images)
+interface Q3Props {
+  onAnswer: (answer: Q3Answer) => void;
+  images: typeof Q3_IMAGES;
+}
+
+function Q3PhotoSelection({ onAnswer, images }: Q3Props) {
+  const options: { value: Q3Answer; image: string }[] = [
+    { value: 'A', image: images.lashLift },
+    { value: 'B', image: images.classic },
+    { value: 'C', image: images.hybridWet },
+    { value: 'D', image: images.volume },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.3 }}
+      className="h-full flex flex-col"
     >
       <div className="text-center mb-4 shrink-0">
-        <h2 className="text-xl font-display font-medium text-charcoal">
-          What kind of lash look are you most drawn to?
+        <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
+          Which lash look are you most drawn to?
         </h2>
       </div>
 
@@ -390,20 +523,15 @@ function Step2Aesthetic({ onAnswer, images }: Step2Props) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onAnswer(option.value)}
-            className="relative h-[215px] rounded-xl overflow-hidden group"
+            className="relative aspect-[3/4] rounded-xl overflow-hidden group"
           >
             <Image
-              src={images[option.value]}
-              alt={option.label}
+              src={option.image}
+              alt={`Lash style option ${option.value}`}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-3">
-              <span className="text-white text-xs font-medium leading-tight block">
-                {option.label}
-              </span>
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </motion.button>
         ))}
       </div>
@@ -411,19 +539,38 @@ function Step2Aesthetic({ onAnswer, images }: Step2Props) {
   );
 }
 
-// Step 3: Lash Style Close-ups
-interface Step3Props {
-  onAnswer: (answer: StyleAnswer) => void;
-  images: typeof STYLE_IMAGES;
+// Q4: Follow-up Photo Selection (2 images based on Q3)
+interface Q4Props {
+  q3Answer: Q3Answer;
+  onAnswer: (answer: Q4Answer) => void;
+  images: typeof Q4_IMAGES;
 }
 
-function Step3Style({ onAnswer, images }: Step3Props) {
-  const options: { value: StyleAnswer; label: string }[] = [
-    { value: 'soft-natural', label: 'Sexy, soft and natural' },
-    { value: 'glossy-defined', label: 'Glossy defined clean girl lashes' },
-    { value: 'fuller-textured', label: 'Natural but fuller & textured' },
-    { value: 'bold-volume', label: 'Bold and full volume' },
-  ];
+function Q4FollowUp({ q3Answer, onAnswer, images }: Q4Props) {
+  // Get the two image options based on Q3 answer
+  const getOptions = (): { value: Q4Answer; image: string; label: string }[] => {
+    switch (q3Answer) {
+      case 'B': // Classic path - Classic or Hybrid
+        return [
+          { value: '1', image: images.classicOption1, label: 'Classic' },
+          { value: '2', image: images.classicOption2, label: 'Hybrid' },
+        ];
+      case 'C': // Hybrid/Wet path - Hybrid or Volume
+        return [
+          { value: '1', image: images.hybridOption1, label: 'Hybrid' },
+          { value: '2', image: images.hybridOption2, label: 'Volume' },
+        ];
+      case 'D': // Volume path - Hybrid or Volume
+        return [
+          { value: '1', image: images.volumeOption1, label: 'Hybrid' },
+          { value: '2', image: images.volumeOption2, label: 'Volume' },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const options = getOptions();
 
   return (
     <motion.div
@@ -431,32 +578,32 @@ function Step3Style({ onAnswer, images }: Step3Props) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="h-[510px] flex flex-col"
+      className="h-full flex flex-col"
     >
-      <div className="text-center mb-4 shrink-0">
-        <h2 className="text-xl font-display font-medium text-charcoal">
+      <div className="text-center mb-6 shrink-0">
+        <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
           Which style feels most like you?
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 flex-1">
+      <div className="grid grid-cols-2 gap-4 flex-1">
         {options.map((option) => (
           <motion.button
             key={option.value}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => onAnswer(option.value)}
-            className="relative h-[215px] rounded-xl overflow-hidden group"
+            className="relative aspect-[3/4] rounded-xl overflow-hidden group"
           >
             <Image
-              src={images[option.value]}
+              src={option.image}
               alt={option.label}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-3">
-              <span className="text-white text-xs font-medium leading-tight block">
+              <span className="text-white text-sm font-medium">
                 {option.label}
               </span>
             </div>
@@ -467,58 +614,63 @@ function Step3Style({ onAnswer, images }: Step3Props) {
   );
 }
 
-// Step 4: Results
-interface Step4Props {
+// Result Screen
+interface ResultScreenProps {
   result: typeof lashStyleDetails[LashStyleResult];
-  resultImages: { before: string; after: string };
+  resultImage: string;
   onBook: () => void;
 }
 
-function Step4Results({ result, resultImages, onBook }: Step4Props) {
+function ResultScreen({ result, resultImage, onBook }: ResultScreenProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="h-[510px] flex flex-col"
+      className="h-full flex flex-col"
     >
-      <div className="text-center mb-2 shrink-0">
-        <p className="text-sm text-terracotta font-medium mb-1">{result.tagline}</p>
-        <h2 className="text-xl font-display font-medium text-charcoal">
-          Your Match: {result.displayName}
+      {/* Header */}
+      <div className="text-center mb-4 shrink-0">
+        <p className="text-sm text-terracotta font-medium mb-1">Your Perfect Match</p>
+        <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
+          {result.displayName}
         </h2>
+        <p className="text-xs text-sage mt-1">Recommended Service: {result.recommendedService}</p>
       </div>
 
-      <p className="text-sage text-center text-xs leading-relaxed mb-3 shrink-0">
+      {/* Result Image */}
+      <div className="relative w-full h-40 md:h-48 rounded-xl overflow-hidden mb-4 shrink-0">
+        <Image
+          src={resultImage}
+          alt={result.displayName}
+          fill
+          className="object-cover"
+        />
+      </div>
+
+      {/* Description */}
+      <p className="text-sage text-sm leading-relaxed mb-4 shrink-0">
         {result.description}
       </p>
 
-      {/* Before/After Images */}
-      <div className="flex gap-3 mb-3 h-[240px] shrink-0">
-        <div className="flex-1 relative h-full rounded-xl overflow-hidden">
-          <Image
-            src={resultImages.before}
-            alt="Before"
-            fill
-            className="object-cover"
-          />
-          <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-            Example
-          </div>
-        </div>
-        <div className="flex-1 relative h-full rounded-xl overflow-hidden">
-          <Image
-            src={resultImages.after}
-            alt={result.name}
-            fill
-            className="object-cover"
-          />
-          <div className="absolute bottom-2 left-2 bg-terracotta text-white text-xs px-2 py-1 rounded">
-            {result.name}
-          </div>
-        </div>
+      {/* Best For */}
+      <div className="mb-4 shrink-0">
+        <p className="text-charcoal font-medium text-sm mb-2">Best for you if:</p>
+        <ul className="space-y-1.5">
+          {result.bestFor.map((item, index) => (
+            <li key={index} className="flex items-start gap-2 text-sage text-sm">
+              <span className="text-terracotta mt-0.5">•</span>
+              {item}
+            </li>
+          ))}
+        </ul>
       </div>
+
+      {/* Duration (for Lash Lift only) */}
+      {result.duration && (
+        <p className="text-sage text-sm italic mb-4 shrink-0">{result.duration}</p>
+      )}
 
       {/* Book CTA */}
       <motion.button
@@ -526,14 +678,14 @@ function Step4Results({ result, resultImages, onBook }: Step4Props) {
         whileTap={{ scale: 0.98 }}
         onClick={onBook}
         className="w-full py-4 rounded-full bg-terracotta hover:bg-rust text-white font-medium
-                   shadow-lg shadow-terracotta/30 transition-all duration-200 mb-2 shrink-0"
+                   shadow-lg shadow-terracotta/30 transition-all duration-200 mb-3 shrink-0"
       >
-        Book {result.displayName} Now
+        {result.bookingLabel} →
       </motion.button>
 
-      {/* Fine print */}
+      {/* Universal Note */}
       <p className="text-xs text-sage/70 text-center leading-relaxed shrink-0">
-        Every set is customized to your eye shape and natural lashes. Your artist will fine tune during your consultation.
+        Every set is customized to your eye shape and natural lashes. Your artist will fine-tune your look during your appointment so you leave loving your lashes.
       </p>
     </motion.div>
   );
