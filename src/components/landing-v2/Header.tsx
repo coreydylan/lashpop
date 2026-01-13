@@ -1,12 +1,24 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Calendar } from 'lucide-react'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [hasAnimated, setHasAnimated] = useState(true) // Start true to prevent flash
+
+  useEffect(() => {
+    // Check if header has already animated this session
+    const alreadyAnimated = sessionStorage.getItem('headerAnimated')
+    if (alreadyAnimated) {
+      setHasAnimated(true)
+    } else {
+      setHasAnimated(false)
+      sessionStorage.setItem('headerAnimated', 'true')
+    }
+  }, [])
 
   return (
     <header
@@ -18,7 +30,7 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="relative group">
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={hasAnimated ? false : { opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col"
@@ -38,9 +50,9 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-10">
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={hasAnimated ? false : { opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.8, delay: hasAnimated ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
               className="flex items-center gap-8"
             >
               {['About', 'Services', 'Team', 'Contact'].map((item, index) => (
@@ -56,9 +68,9 @@ export default function Header() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={hasAnimated ? false : { opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.8, delay: hasAnimated ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="flex items-center gap-3"
             >
               <Link
