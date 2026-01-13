@@ -137,8 +137,8 @@ export function MapSection() {
             new mapboxgl.default.Popup({ offset: 25 })
               .setHTML(`
                 <div style="text-align: center; padding: 10px;">
-                  <h3 style="margin: 0 0 5px; color: #4a4a4a;">LashPop Studios</h3>
-                  <p style="margin: 0 0 10px; color: #666; font-size: 14px;">Oceanside, CA</p>
+                  <h3 style="margin: 0 0 5px; color: #3d3632;">LashPop Studios</h3>
+                  <p style="margin: 0 0 10px; color: #3d3632; font-size: 14px;">Oceanside, CA</p>
                   <a
                     href="${GOOGLE_MAPS_DIRECTIONS_URL}"
                     target="_blank"
@@ -196,23 +196,23 @@ export function MapSection() {
           <div className="absolute inset-0 bg-warm-sand/20 flex items-center justify-center">
             <div className="text-center">
               <div className="w-12 h-12 mx-auto border-2 border-dusty-rose border-t-transparent rounded-full" />
-              <p className="caption text-dune/60 mt-4">Loading map...</p>
+              <p className="caption text-charcoal mt-4">Loading map...</p>
             </div>
           </div>
         )}
 
         {/* Address Card Overlay - Desktop */}
         <div className="hidden md:block absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm">
-          <h3 className="heading-4 text-dune mb-3">LashPop Studios</h3>
-          <address className="body-text text-dune/70 not-italic mb-4">
+          <h3 className="heading-4 text-charcoal mb-3">LashPop Studios</h3>
+          <address className="body-text text-charcoal not-italic mb-4">
             429 S Coast Hwy<br />
             Oceanside, CA 92054
           </address>
           <div className="space-y-1">
-            <p className="caption text-dune/70">
+            <p className="caption text-charcoal">
               <span className="caption-bold">Open Daily:</span> 8:00 AM – 7:30 PM
             </p>
-            <p className="caption text-dune/50 text-sm">
+            <p className="caption text-charcoal text-sm">
               By Appointment Only
             </p>
           </div>
@@ -236,8 +236,8 @@ export function MapSection() {
         <div className="md:hidden absolute bottom-32 left-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl z-10">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="heading-4 text-dune leading-tight">LashPop Studios</h3>
-              <address className="caption text-dune/70 not-italic mt-1">
+              <h3 className="heading-4 text-charcoal leading-tight">LashPop Studios</h3>
+              <address className="caption text-charcoal not-italic mt-1">
                 429 S Coast Hwy, Oceanside, CA 92054
               </address>
             </div>
@@ -255,10 +255,10 @@ export function MapSection() {
             </a>
           </div>
           <div className="mt-2">
-            <p className="caption text-dune/70">
+            <p className="caption text-charcoal">
               <span className="caption-bold">Open Daily</span> 8A–7:30P
             </p>
-            <p className="caption text-dune/50 text-xs mt-0.5">
+            <p className="caption text-charcoal text-xs mt-0.5">
               By Appointment Only
             </p>
           </div>

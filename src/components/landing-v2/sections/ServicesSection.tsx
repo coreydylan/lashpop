@@ -100,7 +100,7 @@ function ServiceCard({
       {/* Tagline */}
       <p
         className="text-base font-sans font-normal italic mb-3"
-        style={{ color: '#ac4d3c' }}
+        style={{ color: '#cc947f' }}
       >
         {category.tagline}
       </p>
@@ -236,7 +236,7 @@ function MobileSwipeableServiceCards({
             {/* Tagline */}
             <p
               className="text-sm font-sans font-normal italic mb-3"
-              style={{ color: '#ac4d3c' }}
+              style={{ color: '#cc947f' }}
             >
               {currentCategory.tagline}
             </p>

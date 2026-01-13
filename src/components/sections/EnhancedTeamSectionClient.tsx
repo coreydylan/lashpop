@@ -678,7 +678,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               {memberCategories.slice(0, 4).map((category) => (
                                 <span
                                   key={category}
-                                  className="px-2 py-0.5 text-xs font-serif font-normal bg-cream text-charcoal rounded-full whitespace-nowrap"
+                                  className="px-2 py-0.5 text-xs font-sans font-normal bg-cream text-charcoal rounded-full whitespace-nowrap"
                                 >
                                   {category}
                                 </span>
@@ -786,11 +786,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             >
                               {/* Service Tags - Positioned outside arch overflow, overlapping the arch */}
                               {memberCategories.length > 0 && (
-                                <div className="absolute top-3 left-4 z-20 flex flex-wrap gap-1.5">
+                                <div className="absolute top-3 left-4 z-20 flex flex-nowrap gap-1.5">
                                   {memberCategories.slice(0, 3).map((category, idx) => (
                                     <span
                                       key={idx}
-                                      className="text-xs font-serif font-light px-3 py-1 bg-cream text-dune rounded-full"
+                                      className="text-xs font-sans font-light px-3 py-1 bg-cream text-dune rounded-full whitespace-nowrap"
                                     >
                                       {category}
                                     </span>
@@ -1089,6 +1089,15 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
               Join The Team
             </span>
           </a>
+        </div>
+
+        {/* Team Group Photo - Full Width */}
+        <div className="mt-12 md:mt-16 -mx-4 md:-mx-8 lg:-mx-12">
+          <img
+            src="/lashpop-images/team/team-group-photo.jpg"
+            alt="The LashPop Studios team"
+            className="w-full h-auto"
+          />
         </div>
       </section>
 

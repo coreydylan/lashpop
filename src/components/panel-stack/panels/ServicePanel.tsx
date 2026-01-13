@@ -399,7 +399,7 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleContinueToBook}
-                  className="w-full px-4 py-3 md:px-6 md:py-4 rounded-full font-medium transition-all text-sm md:text-base bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                  className="w-full px-4 py-3 md:px-6 md:py-4 rounded-full font-medium transition-all text-sm md:text-base bg-gradient-to-r from-terracotta to-terracotta-light text-white shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
                   Continue to Book
                   <ExternalLink className="w-4 h-4" />

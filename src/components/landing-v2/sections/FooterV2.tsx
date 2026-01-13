@@ -26,9 +26,9 @@ export function FooterV2() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
           {/* Brand Column */}
           <div>
-            <h3 className="heading-4 text-dune mb-4">LashPop Studios</h3>
-            <p className="body-text text-dune/70 mb-6">
-              Where artistry meets precision in every lash application.
+            <h3 className="heading-4 mb-4" style={{ color: '#ac4d3c' }}>LashPop Studios</h3>
+            <p className="body-text text-charcoal mb-6">
+              Effortless beauty for the modern woman.
             </p>
             <div className="flex gap-4">
               <a
@@ -58,31 +58,41 @@ export function FooterV2() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="caption-bold text-dune mb-4">Services</h4>
+            <h4 className="caption-bold text-charcoal mb-4">Services</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
-                  Classic Lashes
+                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
+                  Lashes
                 </a>
               </li>
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
-                  Volume Lashes
+                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
+                  Brows
                 </a>
               </li>
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
-                  Hybrid Lashes
+                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
+                  Skincare
                 </a>
               </li>
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
-                  Lash Lift & Tint
+                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
+                  Waxing
                 </a>
               </li>
               <li>
-                <a href="#" className="caption text-dune/70 hover:text-terracotta transition-colors">
-                  Brow Services
+                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
+                  Permanent Makeup
+                </a>
+              </li>
+              <li>
+                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
+                  Permanent Jewelry
+                </a>
+              </li>
+              <li>
+                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
+                  Botox
                 </a>
               </li>
             </ul>
@@ -90,26 +100,26 @@ export function FooterV2() {
 
           {/* Contact Info */}
           <div>
-            <h4 className="caption-bold text-dune mb-4">Visit Us</h4>
+            <h4 className="caption-bold text-charcoal mb-4">Visit Us</h4>
             <address className="not-italic space-y-3">
-              <p className="caption text-dune/70">
+              <p className="caption text-charcoal">
                 429 S Coast Hwy<br />
                 Oceanside, CA 92054
               </p>
-              <p className="caption text-dune/70">
+              <p className="caption text-charcoal">
                 <a href="tel:+17602120448" className="hover:text-terracotta transition-colors">
                   +1 (760) 212-0448
                 </a>
               </p>
-              <p className="caption text-dune/70">
-                <a href="mailto:hello@lashpopstudios.com" className="hover:text-terracotta transition-colors">
-                  hello@lashpopstudios.com
+              <p className="caption text-charcoal">
+                <a href="mailto:lashpopstudios@gmail.com" className="hover:text-terracotta transition-colors">
+                  lashpopstudios@gmail.com
                 </a>
               </p>
             </address>
             <div className="mt-4">
-              <p className="caption-bold text-dune mb-2">Hours</p>
-              <p className="caption text-dune/70">
+              <p className="caption-bold text-charcoal mb-2">Hours</p>
+              <p className="caption text-charcoal">
                 8a-7:30p every day<br />
                 by appointment only
               </p>
@@ -118,8 +128,8 @@ export function FooterV2() {
 
           {/* Newsletter */}
           <div>
-            <h4 className="caption-bold text-dune mb-4">Stay Connected</h4>
-            <p className="caption text-dune/70 mb-4">
+            <h4 className="caption-bold text-charcoal mb-4">Stay Connected</h4>
+            <p className="caption text-charcoal mb-4">
               Subscribe for exclusive offers and beauty tips
             </p>
             <form onSubmit={handleSubscribe} className="space-y-3">
@@ -145,18 +155,18 @@ export function FooterV2() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-sage/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="caption text-dune/60">
+            <p className="caption text-charcoal">
               © 2025 LashPop Studios. All rights reserved.
             </p>
 
             <div className="flex items-center gap-6">
-              <a href="#" className="caption text-dune/60 hover:text-terracotta transition-colors">
+              <a href="#" className="caption text-charcoal hover:text-terracotta transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="caption text-dune/60 hover:text-terracotta transition-colors">
+              <a href="#" className="caption text-charcoal hover:text-terracotta transition-colors">
                 Terms of Service
               </a>
-              <a href="#" className="caption text-dune/60 hover:text-terracotta transition-colors">
+              <a href="#" className="caption text-charcoal hover:text-terracotta transition-colors">
                 Cancellation Policy
               </a>
             </div>

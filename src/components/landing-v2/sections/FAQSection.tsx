@@ -173,7 +173,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                   <div className={`relative px-3 py-1.5 md:px-4 md:py-2 rounded-full border ${
                     activeCategory === category.id
                       ? 'border-transparent text-white'
-                      : 'border-white/60 text-dune hover:border-terracotta/30'
+                      : 'border-white/60 text-charcoal hover:border-terracotta/30'
                   }`}>
                     <span className="text-xs md:text-sm font-sans font-medium whitespace-nowrap">
                       {category.label}
