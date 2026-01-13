@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -342,12 +342,49 @@ export default function WorkWithUsPage() {
   const [activeSection, setActiveSection] = useState<CareerPath | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState<CareerPath | null>(null)
+  const [menuPosition, setMenuPosition] = useState({ top: 68, left: 0 })
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Update menu position when opened
+  useEffect(() => {
+    if (isMobileMenuOpen && menuButtonRef.current) {
+      const menuWidth = 140
+      const rightPadding = 20
+      setMenuPosition({
+        top: 68,
+        left: window.innerWidth - menuWidth - rightPadding
+      })
+    }
+  }, [isMobileMenuOpen])
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!isMobileMenuOpen) return
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(event.target as Node) &&
+        menuButtonRef.current && !menuButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+    const timeout = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside as any)
+    }, 10)
+    return () => {
+      clearTimeout(timeout)
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside as any)
+    }
+  }, [isMobileMenuOpen])
 
   const handleFormSubmit = async (data: PathFormData, path: CareerPath) => {
     setIsSubmitting(true)
@@ -458,44 +495,61 @@ export default function WorkWithUsPage() {
               Book
             </Link>
             <button
+              ref={menuButtonRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-lg"
+              className={`flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-lg transition-all duration-150 ${
+                isMobileMenuOpen ? 'bg-terracotta-light/10' : 'active:bg-warm-sand/40'
+              }`}
               aria-label="Menu"
             >
-              <motion.span animate={{ rotate: isMobileMenuOpen ? 45 : 0, y: isMobileMenuOpen ? 6 : 0 }} className="block w-5 h-0.5" style={{ backgroundColor: '#b14e33' }} />
-              <motion.span animate={{ opacity: isMobileMenuOpen ? 0 : 1 }} className="block w-5 h-0.5" style={{ backgroundColor: '#b14e33' }} />
-              <motion.span animate={{ rotate: isMobileMenuOpen ? -45 : 0, y: isMobileMenuOpen ? -6 : 0 }} className="block w-5 h-0.5" style={{ backgroundColor: '#b14e33' }} />
+              <span className={`block w-5 h-0.5 transition-all duration-200 ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} style={{ backgroundColor: '#b14e33' }} />
+              <span className={`block w-5 h-0.5 transition-all duration-200 ${isMobileMenuOpen ? 'opacity-0' : ''}`} style={{ backgroundColor: '#b14e33' }} />
+              <span className={`block w-5 h-0.5 transition-all duration-200 ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} style={{ backgroundColor: '#b14e33' }} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 bg-cream z-30 md:hidden"
-          >
-            <div className="flex flex-col justify-center items-center h-full space-y-8">
-              {navItems.map((item, index) => (
-                <motion.div key={item.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`text-2xl font-light ${(item as { active?: boolean }).active ? 'text-terracotta' : 'text-dune'}`}
-                  >
-                    {item.label}
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mobile Dropdown Menu */}
+      {isMobileMenuOpen && (
+        <div
+          ref={menuRef}
+          className="fixed z-[9999] rounded-xl overflow-hidden md:hidden"
+          style={{
+            top: menuPosition.top,
+            left: menuPosition.left,
+            minWidth: 140,
+            background: 'rgba(250, 246, 242, 0.96)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
+            border: '1px solid rgba(161, 151, 129, 0.12)',
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)'
+          }}
+        >
+          <div className="py-1.5">
+            {navItems.map((item) => {
+              const isActive = (item as { active?: boolean }).active
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`
+                    w-full flex items-center justify-between gap-3 px-4 py-2.5
+                    text-left transition-colors duration-150
+                    ${isActive ? 'bg-terracotta/8' : 'active:bg-warm-sand/50'}
+                  `}
+                >
+                  <span className={`text-[11px] font-sans font-medium tracking-wide ${isActive ? 'text-terracotta' : 'text-terracotta/70'}`}>
+                    {item.label.toUpperCase()}
+                  </span>
+                  {isActive && <div className="w-1 h-1 rounded-full bg-terracotta/60" />}
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Spacer */}
       <div className="h-16 md:h-20" />
@@ -560,14 +614,15 @@ export default function WorkWithUsPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: smoothEase, delay: 0.1 + index * 0.1 }}
+                className="flex flex-col"
               >
                 <button
                   onClick={() => setActiveSection(activeSection === card.id ? null : card.id)}
                   className={`w-full text-left group relative overflow-hidden rounded-2xl transition-all duration-300 ${
                     activeSection === card.id
-                      ? 'ring-2 ring-rust shadow-xl'
+                      ? 'ring-2 ring-rust shadow-xl md:ring-2'
                       : 'hover:shadow-lg'
-                  }`}
+                  } ${activeSection === card.id ? 'md:rounded-2xl rounded-t-2xl rounded-b-none' : 'rounded-2xl'}`}
                 >
                   {/* Card Image */}
                   <div className="relative h-32 md:h-40 overflow-hidden">
@@ -612,13 +667,35 @@ export default function WorkWithUsPage() {
                     </span>
                   </div>
                 </button>
+
+                {/* Mobile Inline Form - shows within card on mobile only */}
+                <AnimatePresence>
+                  {activeSection === card.id && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: smoothEase }}
+                      className="md:hidden overflow-hidden bg-white border-2 border-t-0 border-rust rounded-b-2xl"
+                    >
+                      <div className="p-4">
+                        <PathForm
+                          path={card.id}
+                          onSubmit={handleFormSubmit}
+                          isSubmitting={isSubmitting}
+                          isSubmitted={isSubmitted}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* EXPANDABLE SECTIONS WITH INLINE FORMS */}
+      {/* EXPANDABLE SECTIONS WITH INLINE FORMS - Desktop only */}
 
       {/* Employee Section */}
       <AnimatePresence>
@@ -628,7 +705,7 @@ export default function WorkWithUsPage() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.4, ease: smoothEase }}
-            className="overflow-hidden bg-white border-t border-sage/10"
+            className="hidden md:block overflow-hidden bg-white border-t border-sage/10"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
@@ -713,7 +790,7 @@ export default function WorkWithUsPage() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.4, ease: smoothEase }}
-            className="overflow-hidden bg-white border-t border-sage/10"
+            className="hidden md:block overflow-hidden bg-white border-t border-sage/10"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
@@ -796,9 +873,10 @@ export default function WorkWithUsPage() {
         )}
       </AnimatePresence>
 
-      {/* Training Section */}
+      {/* Training Section - Desktop only, mobile shows inline in card */}
       <AnimatePresence>
         {activeSection === 'training' && (
+          <div className="hidden md:block">
           <motion.section
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -874,6 +952,7 @@ export default function WorkWithUsPage() {
               </div>
             </div>
           </motion.section>
+          </div>
         )}
       </AnimatePresence>
 
