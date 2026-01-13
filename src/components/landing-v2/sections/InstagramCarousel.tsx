@@ -176,7 +176,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                     <div className="h-5 w-px bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
 
                     {/* Text */}
-                    <span className="font-sans text-sm font-medium text-dune/80 tracking-tight">
+                    <span className="font-sans text-sm font-medium text-charcoal tracking-tight">
                       Follow @lashpopstudios
                     </span>
 

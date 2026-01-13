@@ -284,7 +284,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                         {/* Header: Name */}
                         <div className="flex items-start gap-4 mb-4 shrink-0 pr-24">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-display font-semibold text-dune text-base mb-1 truncate">
+                            <h3 className="font-display font-semibold text-charcoal text-base mb-1 truncate">
                               {review.reviewerName}
                             </h3>
                             {review.reviewDate && (
@@ -307,7 +307,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                             }
                           }}
                         >
-                          <p className="font-sans font-light text-dune/85 leading-relaxed text-[15px]">
+                          <p className="font-sans font-light text-charcoal leading-relaxed text-[15px]">
                             &quot;{review.reviewText}&quot;
                           </p>
                         </div>

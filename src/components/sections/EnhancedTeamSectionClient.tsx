@@ -550,10 +550,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </h2>
           <div className="w-16 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#ac4d3c' }}>
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#3d3632' }}>
               LashPop Studios is home to a collective of independent beauty businesses—each offering their own services, pricing, schedules, and specialties.
             </p>
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#ac4d3c' }}>
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#3d3632' }}>
               Browse the profiles below to find a stylist that fits your vibe.
             </p>
           </div>
@@ -678,7 +678,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               {memberCategories.slice(0, 4).map((category) => (
                                 <span
                                   key={category}
-                                  className="px-2 py-0.5 text-xs font-serif font-light bg-cream text-dune rounded-full whitespace-nowrap"
+                                  className="px-2 py-0.5 text-xs font-serif font-normal bg-cream text-charcoal rounded-full whitespace-nowrap"
                                 >
                                   {category}
                                 </span>
@@ -1432,7 +1432,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             ).map((category, idx) => (
                               <span
                                 key={idx}
-                                className="px-3 py-1.5 text-xs font-medium bg-dusty-rose/10 text-dune/80 rounded-full whitespace-nowrap"
+                                className="px-3 py-1.5 text-xs font-semibold bg-dusty-rose/10 text-charcoal rounded-full whitespace-nowrap"
                               >
                                 {category}
                               </span>

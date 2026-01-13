@@ -206,7 +206,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                       {faq.category}
                     </span>
                   )}
-                  <h3 className="font-sans text-sm md:text-base font-semibold text-dune/70 group-hover:text-terracotta pr-6 md:pr-8">
+                  <h3 className="font-sans text-sm md:text-base font-semibold text-charcoal group-hover:text-terracotta pr-6 md:pr-8">
                     {faq.question}
                   </h3>
                 </div>
@@ -225,7 +225,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                 <div>
                   <div className="px-4 pb-4 pt-1.5 md:px-6 md:pb-6 md:pt-2 border-t border-dusty-rose/20">
                     <div
-                      className="text-sm md:text-base font-sans font-light text-dune/80 leading-relaxed space-y-3 md:space-y-4 [&_ul]:list-disc [&_ul]:pl-4 md:[&_ul]:pl-5 [&_ul]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold"
+                      className="text-sm md:text-base font-sans font-light text-charcoal leading-relaxed space-y-3 md:space-y-4 [&_ul]:list-disc [&_ul]:pl-4 md:[&_ul]:pl-5 [&_ul]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold"
                       dangerouslySetInnerHTML={{ __html: faq.answer }}
                     />
                   </div>
@@ -237,7 +237,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <p className="font-sans font-light text-dune/70 mb-4">
+          <p className="font-sans font-light text-charcoal mb-4">
             Still have questions?
           </p>
           <a

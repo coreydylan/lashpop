@@ -108,7 +108,7 @@ function ServiceCard({
       {/* Description */}
       <p
         className="text-sm font-sans font-light leading-relaxed"
-        style={{ color: '#ac4d3c' }}
+        style={{ color: '#3d3632' }}
       >
         {category.description}
       </p>
@@ -244,7 +244,7 @@ function MobileSwipeableServiceCards({
             {/* Description */}
             <p
               className="text-xs font-sans font-light leading-relaxed"
-              style={{ color: '#ac4d3c' }}
+              style={{ color: '#3d3632' }}
             >
               {currentCategory.description}
             </p>
