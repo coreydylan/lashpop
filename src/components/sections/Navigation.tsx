@@ -16,7 +16,7 @@ const navItems = [
   { label: 'Gallery', href: '#gallery' },
   { label: 'FAQ', href: '#faq' },
   { label: 'Find Us', href: '#find-us' },
-  { label: 'Work With Us', href: '#' }
+  { label: 'Work With Us', href: '/work-with-us' }
 ]
 
 export function Navigation() {

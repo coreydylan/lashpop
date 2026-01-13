@@ -95,6 +95,11 @@ export function FooterV2() {
                   Botox
                 </a>
               </li>
+              <li className="pt-2 border-t border-sage/10">
+                <a href="/work-with-us" className="caption text-terracotta hover:text-rust transition-colors font-medium">
+                  Work With Us
+                </a>
+              </li>
             </ul>
           </div>
 
