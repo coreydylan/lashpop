@@ -153,7 +153,18 @@ export default function Header() {
                     {item}
                   </Link>
                 ))}
-                <button className="btn btn-primary w-full mt-4">
+                <Link
+                  href="/work-with-us"
+                  className="btn w-full mt-4 transition-all duration-300 border-terracotta text-terracotta hover:bg-terracotta hover:text-cream"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgb(var(--terracotta))',
+                  }}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Work with Us
+                </Link>
+                <button className="btn btn-primary w-full">
                   <Calendar className="w-4 h-4" />
                   Book Now
                 </button>
