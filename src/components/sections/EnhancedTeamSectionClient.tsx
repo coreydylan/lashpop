@@ -602,9 +602,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       }}
                       className="cursor-pointer"
                     >
-                      {/* Taller Card Container - 3:4 aspect like desktop */}
+                      {/* Arch Card Container */}
                       <div
-                        className="relative aspect-[3/4] overflow-hidden shadow-md active:scale-[0.98] transition-transform duration-150 rounded-[24px]"
+                        className="bg-white rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 active:scale-[0.98] border border-terracotta/10"
                         onTouchStart={(e) => {
                         const touch = e.touches[0]
                         const card = e.currentTarget
@@ -666,46 +666,50 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         }
                       }}
                     >
-                      {/* Background Image - face-cropped */}
-                      <Image
-                        src={cardImage}
-                        alt={member.name}
-                        fill
-                        className="object-cover"
-                        sizes="50vw"
-                      />
-
-                      {/* Gradient overlays for text readability */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent" />
-
-                      {/* Tags at Top */}
-                      {memberCategories.length > 0 && (
-                        <div className="absolute top-0 left-0 right-0 p-3">
-                          <div
-                            data-tags-scroll
-                            className="overflow-x-auto scrollbar-hide -mx-1 px-1"
-                          >
-                            <div className="flex gap-1 min-w-max">
-                              {memberCategories.slice(0, 4).map((category) => (
-                                <span
-                                  key={category}
-                                  className="px-2 py-0.5 text-[9px] font-medium bg-white/20 backdrop-blur-sm text-white rounded-full whitespace-nowrap"
-                                >
-                                  {category}
-                                </span>
-                              ))}
+                      {/* Arch Image Container */}
+                      <div className="relative px-3 pt-3">
+                        <div className="relative h-48 overflow-hidden rounded-t-[60px] rounded-b-lg bg-stone-100">
+                          {/* Service Tags */}
+                          {memberCategories.length > 0 && (
+                            <div className="absolute top-3 left-3 z-20">
+                              <div
+                                data-tags-scroll
+                                className="flex flex-wrap gap-1"
+                              >
+                                {memberCategories.slice(0, 2).map((category) => (
+                                  <span
+                                    key={category}
+                                    className="text-[9px] font-serif font-light px-2 py-0.5 bg-terracotta-light/90 text-white rounded-full whitespace-nowrap"
+                                  >
+                                    {category}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      )}
+                          )}
 
-                      {/* Name and Role/Business at Bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3">
-                        <h3 className="text-sm font-bold text-white drop-shadow-md">
+                          <Image
+                            src={cardImage}
+                            alt={member.name}
+                            fill
+                            className="object-cover"
+                            sizes="50vw"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Content Below Image */}
+                      <div className="px-4 py-4 text-center">
+                        {/* Name */}
+                        <h3 className="text-lg font-serif font-light text-gray-900 mb-1">
                           {displayName}
                         </h3>
-                        <p className="text-[10px] text-white/80 drop-shadow-md mt-0.5 font-medium">
+
+                        {/* Separator Line */}
+                        <div className="w-12 h-px bg-terracotta/30 mx-auto mb-1" />
+
+                        {/* Title/Role */}
+                        <p className="text-xs font-serif font-light text-gray-500">
                           {member.name.toLowerCase().startsWith('emily')
                             ? 'LashPop Owner'
                             : member.type === 'employee'
@@ -716,7 +720,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                       {/* Highlight Ring */}
                       {isHighlighted(member.id) && (
-                        <div className="absolute inset-0 pointer-events-none rounded-[24px] ring-[3px] ring-inset ring-dusty-rose" />
+                        <div className="absolute inset-0 pointer-events-none rounded-[20px] ring-[3px] ring-inset ring-dusty-rose" />
                       )}
 
                       {/* Swipe Tutorial Hint */}
@@ -768,53 +772,60 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             onMouseEnter={() => setHoveredId(member.id)}
                             onMouseLeave={() => setHoveredId(null)}
                           >
-                            {/* Card Design */}
+                            {/* Arch Card Design */}
                             <motion.div
-                              className={`relative aspect-[3/4] overflow-hidden rounded-3xl shadow-lg transition-all duration-300 ${
+                              className={`bg-white rounded-[20px] overflow-hidden shadow-md transition-all duration-300 border border-terracotta/10 ${
                                 isSelected ? 'ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream' : ''
                               }`}
                               whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
                               animate={{ scale: isSelected ? 1.02 : 1 }}
                               transition={{ duration: 0.3 }}
                             >
-                              {/* Image */}
-                              <Image
-                                src={member.image}
-                                alt={member.name}
-                                fill
-                                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                              />
+                              {/* Arch Image Container */}
+                              <div className="relative px-4 pt-4">
+                                <div className="relative h-72 overflow-hidden rounded-t-[80px] rounded-b-lg bg-stone-100">
+                                  {/* Service Tags */}
+                                  {memberCategories.length > 0 && (
+                                    <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-1.5">
+                                      {memberCategories.slice(0, 3).map((category, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="text-xs font-serif font-light px-3 py-1 bg-terracotta-light/90 text-white rounded-full"
+                                        >
+                                          {category}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
 
-                              {/* Gradient Overlay */}
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                                  {/* Image */}
+                                  <Image
+                                    src={member.image}
+                                    alt={member.name}
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                  />
+                                </div>
+                              </div>
 
-                              {/* Content at Bottom */}
-                              <div className="absolute inset-x-0 bottom-0 p-4">
-                                <h3 className="font-sans font-bold text-white text-lg drop-shadow-lg mb-0.5">
+                              {/* Content Below Image */}
+                              <div className="px-6 py-5 text-center">
+                                {/* Name */}
+                                <h3 className="text-2xl font-serif font-light text-gray-900 mb-2">
                                   {member.name}
                                 </h3>
-                                <p className="text-xs text-white/85 drop-shadow-md mb-1.5 font-medium">
+
+                                {/* Separator Line */}
+                                <div className="w-16 h-px bg-terracotta/30 mx-auto mb-2" />
+
+                                {/* Title/Role */}
+                                <p className="font-serif font-light text-gray-500">
                                   {member.name.toLowerCase().startsWith('emily')
                                     ? 'LashPop Owner'
                                     : member.type === 'employee'
                                       ? 'LashPop Team Artist'
                                       : member.businessName || 'Independent Artist'}
                                 </p>
-
-                                {memberCategories.length > 0 && (
-                                  <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
-                                    <div className="flex gap-1 min-w-max">
-                                      {memberCategories.slice(0, 4).map((category, idx) => (
-                                        <span
-                                          key={idx}
-                                          className="px-2 py-0.5 text-[9px] font-medium bg-white/15 backdrop-blur-sm text-white/90 rounded-full whitespace-nowrap"
-                                        >
-                                          {category}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
                               </div>
 
                               {/* Hover Glow Effect */}
@@ -832,7 +843,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                               {/* Highlight Ring (from orchestrator) */}
                               {isHighlighted(member.id) && !isSelected && (
-                                <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-3xl pointer-events-none" />
+                                <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-[20px] pointer-events-none" />
                               )}
                             </motion.div>
 

@@ -42,8 +42,9 @@ const config: Config = {
         'category-bundles': '#dbb2a4',
       },
       fontFamily: {
-        sans: ['Lato', 'sans-serif'],
+        sans: ['Zilla Slab', 'serif'],
         serif: ['Zilla Slab', 'serif'],
+        lato: ['Lato', 'sans-serif'],
         caption: ['TikTok Sans', 'sans-serif'],
         josefin: ['var(--font-josefin)', 'serif'],
         chivo: ['var(--font-chivo)', 'sans-serif'],

@@ -16,8 +16,9 @@
 @layer base {
   :root {
     /* Typography */
-    --font-sans: 'Lato', sans-serif;
+    --font-sans: 'Zilla Slab', serif;
     --font-serif: 'Zilla Slab', serif;
+    --font-lato: 'Lato', sans-serif;
     --font-caption: 'TikTok Sans', sans-serif;
 
     /* LashPop Brand Palette (light to dark) */
