@@ -77,15 +77,15 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [getScrollContainer])
 
-  // Update menu position when opened - center under button
+  // Update menu position when opened - align to right with padding
   useEffect(() => {
     if (isMenuOpen && menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect()
       const menuWidth = 140 // minWidth of menu
-      const buttonCenter = rect.left + rect.width / 2
+      const rightPadding = 20 // padding from right edge of screen
       setMenuPosition({
         top: rect.bottom + 8,
-        left: buttonCenter - menuWidth / 2
+        left: window.innerWidth - menuWidth - rightPadding
       })
     }
   }, [isMenuOpen])
