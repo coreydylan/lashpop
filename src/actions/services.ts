@@ -34,6 +34,39 @@ export async function getServices() {
   return allServices
 }
 
+export async function getServiceBySlug(slug: string) {
+  const db = getDb()
+
+  const result = await db
+    .select({
+      id: services.id,
+      name: services.name,
+      slug: services.slug,
+      subtitle: services.subtitle,
+      description: services.description,
+      durationMinutes: services.durationMinutes,
+      priceStarting: services.priceStarting,
+      imageUrl: services.imageUrl,
+      color: services.color,
+      categoryId: services.categoryId,
+      categoryName: serviceCategories.name,
+      categorySlug: serviceCategories.slug,
+      subcategoryId: services.subcategoryId,
+      subcategoryName: serviceSubcategories.name,
+      subcategorySlug: serviceSubcategories.slug,
+      vagaroWidgetUrl: services.vagaroWidgetUrl,
+      vagaroServiceCode: services.vagaroServiceCode,
+      vagaroServiceId: services.vagaroServiceId,
+    })
+    .from(services)
+    .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))
+    .leftJoin(serviceSubcategories, eq(services.subcategoryId, serviceSubcategories.id))
+    .where(and(eq(services.slug, slug), eq(services.isActive, true)))
+    .limit(1)
+
+  return result[0] || null
+}
+
 export async function getServicesByCategory(categorySlug: string) {
   const db = getDb()
 

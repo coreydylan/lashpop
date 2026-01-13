@@ -15,11 +15,12 @@
 
 @layer base {
   :root {
-    /* Typography */
-    --font-sans: 'Zilla Slab', serif;
-    --font-serif: 'Zilla Slab', serif;
-    --font-lato: 'Lato', sans-serif;
-    --font-caption: 'TikTok Sans', sans-serif;
+    /* Typography - Two-font system
+       Uses Next.js font variables (--font-zilla-slab, --font-inter) with CSS fallbacks */
+    --font-display: var(--font-zilla-slab, 'Zilla Slab'), serif;      /* Headlines, titles, names, hero text */
+    --font-body: var(--font-inter, 'Inter'), system-ui, sans-serif;  /* Paragraphs, buttons, nav, forms */
+    --font-sans: var(--font-inter, 'Inter'), system-ui, sans-serif;
+    --font-serif: var(--font-zilla-slab, 'Zilla Slab'), serif;
 
     /* LashPop Brand Palette (light to dark) */
     /* Using space-separated RGB values for modern CSS color syntax with alpha support */
@@ -37,8 +38,8 @@
     /* Legacy colors */
     --sage: 161 151 129;
     --warm-sand: 235 224 203;
-    --golden: 212 175 117;
-    --gold: 201 164 70;              /* #C9A446 - Rich gold for stars & accents */
+    --golden: 177 78 51;            /* #b14e33 - Dark terracotta */
+    --gold: 177 78 51;               /* #b14e33 - Dark terracotta for stars & accents */
     --ocean-mist: 188 201 194;
     --dune: 138 124 105;
 
@@ -78,8 +79,8 @@
   }
 
   body {
-    font-family: var(--font-sans);
-    font-weight: 300;
+    font-family: var(--font-body);
+    font-weight: 400;
     color: rgb(var(--dune));
     background: rgb(var(--ivory));
     line-height: 1.6;
@@ -313,50 +314,120 @@ a,
 }
 
 @layer components {
-  /* Typography */
+  /* ===========================================
+     TYPOGRAPHY SYSTEM
+     -------------------------------------------
+     Zilla Slab (--font-display): Headlines, titles, names, hero text
+     Inter (--font-body): Paragraphs, descriptions, buttons, forms, nav
+     =========================================== */
+
+  /* DISPLAY TEXT - Zilla Slab */
   .h1 {
-    font-family: var(--font-serif);
+    font-family: var(--font-display);
     font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 400;
+    font-weight: 500;
     line-height: 1.2;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
-  
+
   .h2 {
-    font-family: var(--font-serif);
+    font-family: var(--font-display);
     font-size: clamp(1.5rem, 4vw, 2.5rem);
-    font-weight: 400;
+    font-weight: 500;
     line-height: 1.3;
     letter-spacing: -0.01em;
   }
-  
+
   .h3 {
-    font-family: var(--font-sans);
+    font-family: var(--font-display);
     font-size: clamp(1.25rem, 3vw, 1.75rem);
-    font-weight: 300;
+    font-weight: 500;
     line-height: 1.4;
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
   }
-  
+
+  .heading-4 {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
+
+  /* Stylist/Person names - Zilla Slab */
+  .text-name {
+    font-family: var(--font-display);
+    font-weight: 500;
+  }
+
+  /* BODY TEXT - Inter */
   .body-lg {
+    font-family: var(--font-body);
     font-size: clamp(1.1rem, 2vw, 1.25rem);
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.7;
-    letter-spacing: 0.01em;
+    letter-spacing: 0;
   }
-  
+
   .body {
+    font-family: var(--font-body);
     font-size: 1rem;
-    font-weight: 300;
+    font-weight: 400;
     line-height: 1.7;
   }
-  
+
+  .body-text {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.7;
+  }
+
+  /* UI TEXT - Inter (captions, labels, buttons) */
   .caption {
-    font-family: var(--font-caption);
+    font-family: var(--font-body);
     font-size: 0.875rem;
     font-weight: 500;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
+  }
+
+  .caption-bold {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .button-primary {
+    font-family: var(--font-body);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    background: rgb(var(--rust));
+    color: rgb(var(--cream));
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .button-primary:hover {
+    background: rgb(var(--terracotta));
+    transform: translateY(-2px);
+  }
+
+  .button-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
   }
 
   /* Layout */
@@ -561,31 +632,39 @@ a,
     }
   }
 
-  /* V2 Theme Overrides */
+  /* V2 Theme Overrides - Two-font system
+     Zilla Slab: Headlines, titles, names, hero text
+     Inter: Paragraphs, descriptions, buttons, forms, nav */
   .theme-v2 {
-    --font-serif: var(--font-josefin);
-    --font-sans: var(--font-chivo);
-    font-family: var(--font-andika);
+    --font-display: var(--font-zilla-slab, 'Zilla Slab'), serif;
+    --font-body: var(--font-inter, 'Inter'), system-ui, sans-serif;
+    --font-serif: var(--font-zilla-slab, 'Zilla Slab'), serif;
+    --font-sans: var(--font-inter, 'Inter'), system-ui, sans-serif;
+    font-family: var(--font-body);
   }
 
-  .theme-v2 .h1, 
-  .theme-v2 .h2 {
-    font-family: var(--font-serif);
-  }
-
+  /* Display text - Zilla Slab */
+  .theme-v2 .h1,
+  .theme-v2 .h2,
   .theme-v2 .h3,
-  .theme-v2 .btn {
-    font-family: var(--font-sans);
+  .theme-v2 .heading-4,
+  .theme-v2 .text-name {
+    font-family: var(--font-display);
   }
-  
-  .theme-v2 .caption {
-    font-family: var(--font-caption);
+
+  /* Body/UI text - Inter */
+  .theme-v2 p,
+  .theme-v2 .body,
+  .theme-v2 .body-lg,
+  .theme-v2 .body-text {
+    font-family: var(--font-body);
   }
-  
-  .theme-v2 p, 
-  .theme-v2 .body, 
-  .theme-v2 .body-lg {
-    font-family: var(--font-andika);
+
+  .theme-v2 .caption,
+  .theme-v2 .caption-bold,
+  .theme-v2 .btn,
+  .theme-v2 button {
+    font-family: var(--font-body);
   }
 
   /* Allow overrides inside theme v2 sections */

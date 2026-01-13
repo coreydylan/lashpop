@@ -195,7 +195,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 `}
               >
                 <span className={`
-                  text-[11px] font-medium tracking-wide
+                  text-[11px] font-sans font-medium tracking-wide
                   ${isActive ? 'text-terracotta' : 'text-terracotta/70'}
                 `}>
                   {item.label}
@@ -255,7 +255,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                     }, 400)
                   }
                 }}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-semibold tracking-wide uppercase active:bg-terracotta transition-all"
+                className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-all"
               >
                 Book
               </button>

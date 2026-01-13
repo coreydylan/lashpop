@@ -35,12 +35,39 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
   const { state, actions } = usePanelStack();
   const data = panel.data as CategoryPickerPanelData;
 
+  // Define the specific order for chips (matching service cards order)
+  const CATEGORY_ORDER = [
+    'lashes',
+    'brows',
+    'facials',
+    'waxing',
+    'permanent-makeup',
+    'specialty',
+    'injectables',
+  ];
+
+  // Display names for chips (matching service card labels)
+  const CHIP_DISPLAY_NAMES: Record<string, string> = {
+    'lashes': 'Lashes',
+    'brows': 'Brows',
+    'facials': 'Skincare',
+    'waxing': 'Waxing',
+    'specialty': 'Jewelry',
+    'permanent-makeup': 'Makeup',
+    'injectables': 'Botox',
+  };
+
+  const EXCLUDED_CATEGORIES = ['bundles', 'specials', 'nails'];
+
   // Build category hierarchy from services
   const categories = useMemo(() => {
     const categoryMap = new Map<string, Category>();
 
     state.services.forEach(service => {
       if (!service.categorySlug || !service.categoryName) return;
+
+      // Skip excluded categories
+      if (EXCLUDED_CATEGORIES.includes(service.categorySlug)) return;
 
       if (!categoryMap.has(service.categorySlug)) {
         const colors = getCategoryColors(service.categorySlug);
@@ -79,7 +106,15 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
       }
     });
 
-    return Array.from(categoryMap.values());
+    // Sort categories by the defined order
+    return Array.from(categoryMap.values()).sort((a, b) => {
+      const indexA = CATEGORY_ORDER.indexOf(a.slug);
+      const indexB = CATEGORY_ORDER.indexOf(b.slug);
+      // If not in order array, put at the end
+      const orderA = indexA === -1 ? 999 : indexA;
+      const orderB = indexB === -1 ? 999 : indexB;
+      return orderA - orderB;
+    });
   }, [state.services]);
 
   // No need for panel summary updates since this is now a static bar
@@ -129,7 +164,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
         {
           parentId: panel.id,
           autoExpand: true, // Always expand since it's the only one
-          scrollToTop: true,
+          scrollToTop: false,
         }
       );
 
@@ -179,7 +214,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
                 }}
               >
                 {/* Category Name */}
-                <span className="whitespace-nowrap">{category.name}</span>
+                <span className="whitespace-nowrap">{CHIP_DISPLAY_NAMES[category.slug] || category.name}</span>
               </motion.button>
             );
           })}
@@ -228,7 +263,7 @@ export function CategoryPickerPanel({ panel }: CategoryPickerPanelProps) {
                   }}
                 >
                   {/* Category Name */}
-                  <span className="text-sm whitespace-nowrap">{category.name}</span>
+                  <span className="text-sm whitespace-nowrap">{CHIP_DISPLAY_NAMES[category.slug] || category.name}</span>
                 </motion.button>
               );
             })}

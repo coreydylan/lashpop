@@ -92,10 +92,10 @@ export default function TeamSection() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-serif font-light text-gray-900 mb-6">
+            <h2 className="text-4xl md:text-5xl font-display font-semibold tracking-wide uppercase text-gray-900 mb-6">
               Meet Your Artists
             </h2>
-            <p className="text-lg md:text-xl font-serif font-light text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl font-sans font-light text-gray-600 max-w-3xl mx-auto">
               Our talented team of lash artists brings years of experience and passion
               to create your perfect look.
             </p>
@@ -114,21 +114,21 @@ export default function TeamSection() {
               >
                 {/* Arch Card */}
                 <div className="bg-white rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-terracotta/10">
-                  {/* Arch Image Container */}
-                  <div className="relative px-4 pt-4">
-                    <div className="relative h-72 overflow-hidden rounded-t-[80px] rounded-b-lg bg-stone-100">
-                      {/* Service Tags */}
-                      <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-1.5">
-                        {member.services.map((service) => (
-                          <span
-                            key={service}
-                            className="text-xs font-serif font-light px-3 py-1 bg-terracotta-light/90 text-white rounded-full"
-                          >
-                            {service}
-                          </span>
-                        ))}
-                      </div>
+                  {/* Service Tags - Outside arch, inside card */}
+                  <div className="px-4 pt-4 pb-2 flex flex-wrap gap-1.5">
+                    {member.services.map((service) => (
+                      <span
+                        key={service}
+                        className="text-sm md:text-xs font-sans font-medium uppercase tracking-wider px-3 py-1 bg-terracotta-light/90 text-white rounded-full"
+                      >
+                        {service}
+                      </span>
+                    ))}
+                  </div>
 
+                  {/* Arch Image Container */}
+                  <div className="relative px-4">
+                    <div className="relative h-72 overflow-hidden rounded-t-[80px] rounded-b-lg bg-stone-100">
                       <Image
                         src={member.image}
                         alt={member.name}
@@ -142,7 +142,7 @@ export default function TeamSection() {
                   {/* Content */}
                   <div className="px-6 py-5 text-center">
                     {/* Name */}
-                    <h3 className="text-2xl font-serif font-light text-gray-900 mb-2">
+                    <h3 className="text-2xl font-display font-medium text-gray-900 mb-2">
                       {member.name}
                     </h3>
 
@@ -150,7 +150,7 @@ export default function TeamSection() {
                     <div className="w-16 h-px bg-terracotta/30 mx-auto mb-2" />
 
                     {/* Title/Role */}
-                    <p className="font-serif font-light text-gray-500 mb-4">
+                    <p className="font-sans font-normal text-gray-500 mb-4">
                       {member.role}
                     </p>
 
@@ -159,7 +159,7 @@ export default function TeamSection() {
                       {member.specialties.map((specialty) => (
                         <span
                           key={specialty}
-                          className="text-xs font-serif font-light px-3 py-1.5 bg-ivory border border-terracotta/20 text-gray-600 rounded-full"
+                          className="text-sm md:text-xs font-sans font-light px-3 py-1.5 bg-ivory border border-terracotta/20 text-gray-600 rounded-full"
                         >
                           {specialty}
                         </span>
@@ -178,7 +178,7 @@ export default function TeamSection() {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="text-center mt-12"
           >
-            <button className="px-8 py-3 border-2 border-terracotta text-terracotta rounded-lg font-serif font-light hover:bg-terracotta hover:text-white transition-all">
+            <button className="px-8 py-3 border-2 border-terracotta text-terracotta rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-terracotta hover:text-white transition-all">
               View All Team Members
             </button>
           </motion.div>
@@ -221,21 +221,21 @@ export default function TeamSection() {
               {/* Modal Content */}
               <div className="p-8">
                 <div className="mb-6">
-                  <h3 className="text-3xl font-serif font-light text-gray-900 mb-2">
+                  <h3 className="text-3xl font-display font-semibold text-gray-900 mb-2">
                     {selectedMember.name}
                   </h3>
                   <div className="w-16 h-px bg-terracotta/30 mb-3" />
-                  <p className="text-xl font-serif font-light text-terracotta mb-4">
+                  <p className="text-xl font-sans font-normal text-terracotta mb-4">
                     {selectedMember.role}
                   </p>
-                  <p className="font-serif font-light text-gray-600 leading-relaxed mb-4">
+                  <p className="font-sans font-light text-gray-600 leading-relaxed mb-4">
                     {selectedMember.bio}
                   </p>
                 </div>
 
                 {/* Certifications */}
                 <div className="mb-6">
-                  <h4 className="text-lg font-serif font-light text-gray-900 mb-3 flex items-center gap-2">
+                  <h4 className="text-lg font-display font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <Award className="w-5 h-5 text-terracotta" />
                     Certifications
                   </h4>
@@ -243,7 +243,7 @@ export default function TeamSection() {
                     {selectedMember.certifications.map((cert) => (
                       <span
                         key={cert}
-                        className="px-3 py-1 bg-terracotta/10 text-terracotta font-serif font-light rounded-full text-sm"
+                        className="px-3 py-1 bg-terracotta/10 text-terracotta font-sans font-light rounded-full text-sm"
                       >
                         {cert}
                       </span>
@@ -253,7 +253,7 @@ export default function TeamSection() {
 
                 {/* Specialties */}
                 <div className="mb-6">
-                  <h4 className="text-lg font-serif font-light text-gray-900 mb-3 flex items-center gap-2">
+                  <h4 className="text-lg font-display font-medium text-gray-900 mb-3 flex items-center gap-2">
                     <Star className="w-5 h-5 text-terracotta" />
                     Specialties
                   </h4>
@@ -261,7 +261,7 @@ export default function TeamSection() {
                     {selectedMember.specialties.map((specialty) => (
                       <span
                         key={specialty}
-                        className="px-3 py-1 bg-ivory border border-terracotta/20 text-gray-700 font-serif font-light rounded-full text-sm"
+                        className="px-3 py-1 bg-ivory border border-terracotta/20 text-gray-700 font-sans font-light rounded-full text-sm"
                       >
                         {specialty}
                       </span>
@@ -271,11 +271,11 @@ export default function TeamSection() {
 
                 {/* Instagram */}
                 <div className="flex items-center gap-4">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-serif font-light rounded-lg hover:shadow-lg transition-all">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-sans font-normal rounded-lg hover:shadow-lg transition-all">
                     <Instagram className="w-5 h-5" />
                     {selectedMember.instagram}
                   </button>
-                  <button className="px-4 py-2 bg-terracotta text-white font-serif font-light rounded-lg hover:bg-terracotta-light transition-colors">
+                  <button className="px-4 py-2 bg-terracotta text-white font-sans font-medium rounded-lg hover:bg-terracotta-light transition-colors">
                     Book with {selectedMember.name.split(' ')[0]}
                   </button>
                 </div>

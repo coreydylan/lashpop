@@ -16,7 +16,7 @@ interface FounderLetterSectionProps {
 
 // Default content fallback
 const defaultContent: FounderLetterContent = {
-  greeting: 'Welcome to LashPop Studios — I\'m so glad you\'re here. 🤎',
+  greeting: 'I\'m so glad you\'re here. 🤎',
   paragraphs: [
     'When I launched LashPop back in 2016, I wanted something simple: a place where women could feel genuinely cared for and walk out looking refreshed without the long routine. That idea grew into the beauty collective we have today—artists who specialize in lashes, brows, skincare, injectables, waxing, permanent jewelry, and more, all with one goal in mind.',
     'We\'re united by the same mission: helping you feel effortlessly beautiful and confident, with a few less things to stress about during your busy week. If we can give you that "just woke up from eight blissful hours" look with almost no effort—even if you\'re running on five—we\'ll call that a win.',
@@ -51,6 +51,16 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           <div className="container flex justify-between items-end gap-12">
             {/* Letter Content - Left Side */}
             <div className="max-w-2xl z-30 pb-[16vh]">
+              {/* Section Header */}
+              <div className="mb-8">
+                <h2
+                  className="text-3xl font-display font-medium tracking-wide mb-6"
+                  style={{ color: '#6d4a43' }}
+                >
+                  Welcome to Lashpop Studios
+                </h2>
+                <div className="w-16 h-px bg-terracotta/30" />
+              </div>
               {/* Letter Content */}
               <div className="relative w-full text-[#8a5e55] text-[clamp(0.95rem,1.4vw,1.4rem)] leading-relaxed font-normal font-sans">
                 <p className="mb-[1.5vh]">{letterContent.greeting}</p>
@@ -117,6 +127,16 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
         {/* Text Container - static, normal scroll */}
         <div className="bg-ivory px-6 pt-6 pb-16">
+          {/* Section Header */}
+          <div className="text-center mb-6 max-w-lg mx-auto">
+            <h2
+              className="text-xl font-display font-medium tracking-wide mb-4"
+              style={{ color: '#6d4a43' }}
+            >
+              Welcome to Lashpop Studios
+            </h2>
+            <div className="w-16 h-px bg-terracotta/30 mx-auto" />
+          </div>
           <div className="text-[#8a5e55] text-base leading-relaxed font-normal font-sans max-w-lg mx-auto">
             <p className="mb-4">{letterContent.greeting}</p>
 

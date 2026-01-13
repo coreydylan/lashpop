@@ -543,11 +543,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         {/* Section Header */}
         <div className="text-center mb-12 px-4">
           <h2
-            className="text-2xl md:text-3xl font-medium tracking-wide mb-6"
+            className="text-2xl md:text-3xl font-display font-medium tracking-wide mb-6"
             style={{ color: '#6d4a43' }}
           >
             Find Your Stylist
           </h2>
+          <div className="w-16 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
             <p className="text-base md:text-lg leading-relaxed" style={{ color: '#8a5e55' }}>
               LashPop Studios is home to a collective of independent beauty businesses—each offering their own services, pricing, schedules, and specialties.
@@ -604,7 +605,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     >
                       {/* Arch Card Container */}
                       <div
-                        className="bg-white rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 active:scale-[0.98] border border-terracotta/10"
+                        className="relative bg-ivory rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 active:scale-[0.98] border border-terracotta/10"
                         onTouchStart={(e) => {
                         const touch = e.touches[0]
                         const card = e.currentTarget
@@ -666,28 +667,30 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         }
                       }}
                     >
+                      {/* Service Tags - Horizontally scrollable row */}
+                      {memberCategories.length > 0 && (
+                        <div className="absolute top-2 left-0 right-0 px-3 z-20">
+                          <div
+                            data-tags-scroll
+                            className="overflow-x-auto scrollbar-hide"
+                          >
+                            <div className="flex gap-1 min-w-max">
+                              {memberCategories.slice(0, 4).map((category) => (
+                                <span
+                                  key={category}
+                                  className="px-2 py-0.5 text-xs font-serif font-light bg-cream text-dune rounded-full whitespace-nowrap"
+                                >
+                                  {category}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Arch Image Container */}
                       <div className="relative px-3 pt-3">
-                        <div className="relative h-48 overflow-hidden rounded-t-[60px] rounded-b-lg bg-stone-100">
-                          {/* Service Tags */}
-                          {memberCategories.length > 0 && (
-                            <div className="absolute top-3 left-3 z-20">
-                              <div
-                                data-tags-scroll
-                                className="flex flex-wrap gap-1"
-                              >
-                                {memberCategories.slice(0, 2).map((category) => (
-                                  <span
-                                    key={category}
-                                    className="text-[9px] font-serif font-light px-2 py-0.5 bg-terracotta-light/90 text-white rounded-full whitespace-nowrap"
-                                  >
-                                    {category}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
+                        <div className="relative h-48 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
                           <Image
                             src={cardImage}
                             alt={member.name}
@@ -774,30 +777,30 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           >
                             {/* Arch Card Design */}
                             <motion.div
-                              className={`bg-white rounded-[20px] overflow-hidden shadow-md transition-all duration-300 border border-terracotta/10 ${
+                              className={`relative bg-ivory rounded-[20px] overflow-hidden shadow-md transition-all duration-300 border border-terracotta/10 ${
                                 isSelected ? 'ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream' : ''
                               }`}
                               whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
                               animate={{ scale: isSelected ? 1.02 : 1 }}
                               transition={{ duration: 0.3 }}
                             >
+                              {/* Service Tags - Positioned outside arch overflow, overlapping the arch */}
+                              {memberCategories.length > 0 && (
+                                <div className="absolute top-3 left-4 z-20 flex flex-wrap gap-1.5">
+                                  {memberCategories.slice(0, 3).map((category, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-xs font-serif font-light px-3 py-1 bg-cream text-dune rounded-full"
+                                    >
+                                      {category}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+
                               {/* Arch Image Container */}
                               <div className="relative px-4 pt-4">
-                                <div className="relative h-72 overflow-hidden rounded-t-[80px] rounded-b-lg bg-stone-100">
-                                  {/* Service Tags */}
-                                  {memberCategories.length > 0 && (
-                                    <div className="absolute top-4 left-4 z-20 flex flex-wrap gap-1.5">
-                                      {memberCategories.slice(0, 3).map((category, idx) => (
-                                        <span
-                                          key={idx}
-                                          className="text-xs font-serif font-light px-3 py-1 bg-terracotta-light/90 text-white rounded-full"
-                                        >
-                                          {category}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-
+                                <div className="relative h-72 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
                                   {/* Image */}
                                   <Image
                                     src={member.image}

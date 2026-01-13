@@ -125,9 +125,21 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
   return (
     <section
       ref={sectionRef}
+      id="faq"
       className="pt-8 pb-20 bg-ivory"
     >
       <div className="container max-w-4xl">
+        {/* Section Header */}
+        <div className="text-center mb-8 md:mb-12">
+          <h2
+            className="text-xl md:text-3xl font-display font-medium tracking-wide mb-4 md:mb-6"
+            style={{ color: '#6d4a43' }}
+          >
+            FAQ
+          </h2>
+          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
+        </div>
+
         {/* Category Sorter - Compact Frosted Glass Chips */}
         <div
           ref={stickyHeaderRef}
@@ -163,7 +175,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                       ? 'border-transparent text-white'
                       : 'border-white/60 text-dune hover:border-terracotta/30'
                   }`}>
-                    <span className="text-xs md:text-sm font-medium whitespace-nowrap">
+                    <span className="text-xs md:text-sm font-sans font-medium whitespace-nowrap">
                       {category.label}
                     </span>
                   </div>
@@ -190,7 +202,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                 <div className="flex flex-col items-start gap-0.5 md:gap-1">
                   {/* Show category label if in All or Top FAQs view */}
                   {(activeCategory === 'all' || activeCategory === 'top-faqs') && (
-                    <span className="text-[10px] md:text-xs font-medium text-terracotta uppercase tracking-wider">
+                    <span className="text-[10px] md:text-xs font-sans font-medium text-terracotta uppercase tracking-wider">
                       {faq.category}
                     </span>
                   )}
@@ -213,7 +225,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                 <div>
                   <div className="px-4 pb-4 pt-1.5 md:px-6 md:pb-6 md:pt-2 border-t border-dusty-rose/20">
                     <div
-                      className="text-sm md:text-base text-dune/80 leading-relaxed space-y-3 md:space-y-4 [&_ul]:list-disc [&_ul]:pl-4 md:[&_ul]:pl-5 [&_ul]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold"
+                      className="text-sm md:text-base font-sans font-light text-dune/80 leading-relaxed space-y-3 md:space-y-4 [&_ul]:list-disc [&_ul]:pl-4 md:[&_ul]:pl-5 [&_ul]:space-y-1 [&_p]:mb-2 [&_strong]:font-semibold"
                       dangerouslySetInnerHTML={{ __html: faq.answer }}
                     />
                   </div>
@@ -225,7 +237,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <p className="body text-dune/70 mb-4">
+          <p className="font-sans font-light text-dune/70 mb-4">
             Still have questions?
           </p>
           <a

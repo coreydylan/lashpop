@@ -1,28 +1,16 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Calendar } from 'lucide-react'
 
 export default function Header() {
-  const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled ? 'glass shadow-lg' : 'bg-transparent'
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 glass shadow-lg"
       style={{ height: '80px' }}
     >
       <div className="container-wide h-full">
@@ -35,19 +23,10 @@ export default function Header() {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col"
             >
-              <span
-                className={`text-2xl transition-colors duration-500 ${
-                  isScrolled ? 'text-dune' : 'text-cream'
-                }`}
-                style={{ fontFamily: 'var(--font-serif)', fontWeight: 400 }}
-              >
+              <span className="text-2xl font-display font-semibold tracking-wide text-dune">
                 LashPop
               </span>
-              <span
-                className={`caption transition-colors duration-500 ${
-                  isScrolled ? 'text-sage' : 'text-warm-sand'
-                }`}
-              >
+              <span className="text-xs font-sans font-medium uppercase tracking-widest text-sage">
                 Studios
               </span>
             </motion.div>
@@ -68,21 +47,10 @@ export default function Header() {
                 <Link
                   key={item}
                   href={`#${item.toLowerCase()}`}
-                  className={`relative group transition-colors duration-300 ${
-                    isScrolled ? 'text-dune/80 hover:text-terracotta' : 'text-terracotta hover:text-cream'
-                  }`}
-                  style={{
-                    fontWeight: 300,
-                    letterSpacing: '0.05em',
-                    fontSize: '0.95rem',
-                  }}
+                  className="relative group font-sans font-light tracking-wide text-[0.95rem] transition-colors duration-300 text-dune/80 hover:text-terracotta"
                 >
                   <span>{item}</span>
-                  <span
-                    className={`absolute -bottom-2 left-0 right-0 h-[1px] scale-x-0 group-hover:scale-x-100 transition-transform origin-left ${
-                      isScrolled ? 'bg-terracotta' : 'bg-warm-sand'
-                    }`}
-                  />
+                  <span className="absolute -bottom-2 left-0 right-0 h-[1px] scale-x-0 group-hover:scale-x-100 transition-transform origin-left bg-terracotta" />
                 </Link>
               ))}
             </motion.div>
@@ -95,11 +63,7 @@ export default function Header() {
             >
               <Link
                 href="#careers"
-                className={`btn transition-all duration-300 ${
-                  isScrolled
-                    ? 'border-terracotta text-terracotta hover:bg-terracotta hover:text-cream'
-                    : 'border-terracotta text-terracotta hover:bg-terracotta/10'
-                }`}
+                className="btn transition-all duration-300 border-terracotta text-terracotta hover:bg-terracotta hover:text-cream"
                 style={{
                   background: 'transparent',
                   border: '1px solid rgb(var(--terracotta))',
@@ -109,13 +73,9 @@ export default function Header() {
                 Work with Us
               </Link>
               <button
-                className={`btn ${
-                  isScrolled ? 'btn-primary' : ''
-                }`}
+                className="btn btn-primary"
                 style={{
-                  background: isScrolled
-                    ? 'rgb(var(--rust))'
-                    : 'rgb(var(--terracotta))',
+                  background: 'rgb(var(--rust))',
                   border: 'none',
                   color: 'rgb(var(--cream))',
                   backdropFilter: 'blur(10px)',
@@ -130,11 +90,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className={`md:hidden p-3 rounded-full transition-all ${
-              isScrolled
-                ? 'text-dune hover:bg-sage/10'
-                : 'text-cream hover:bg-cream/10'
-            }`}
+            className="md:hidden p-3 rounded-full transition-all text-dune hover:bg-sage/10"
           >
             <AnimatePresence mode="wait">
               {isMobileMenuOpen ? (
@@ -179,12 +135,8 @@ export default function Header() {
                   <Link
                     key={item}
                     href={`#${item.toLowerCase()}`}
-                    className="text-dune/80 hover:text-terracotta transition-colors py-2"
+                    className="text-dune/80 hover:text-terracotta transition-colors py-2 font-sans font-light tracking-wide"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    style={{
-                      fontWeight: 300,
-                      letterSpacing: '0.05em',
-                    }}
                   >
                     {item}
                   </Link>

@@ -38,13 +38,10 @@ export default function AboutSection() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2
-              className="text-4xl md:text-5xl font-bold text-gray-900 mb-6"
-              style={{ fontFamily: 'Playfair Display, serif' }}
-            >
+            <h2 className="text-4xl md:text-5xl font-display font-semibold tracking-wide uppercase text-gray-900 mb-6">
               Elevate Your Beauty
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl font-sans font-light text-gray-600 max-w-3xl mx-auto">
               At LashPop Studios, we believe in enhancing your natural beauty with precision,
               artistry, and uncompromising quality. Every visit is a luxurious experience
               tailored just for you.
@@ -68,10 +65,10 @@ export default function AboutSection() {
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  <h3 className="text-2xl font-display font-medium text-gray-900 mb-3">
                     {value.title}
                   </h3>
-                  <p className="text-gray-600 leading-relaxed">
+                  <p className="font-sans font-light text-gray-600 leading-relaxed">
                     {value.description}
                   </p>
 
@@ -96,10 +93,10 @@ export default function AboutSection() {
               { number: "7", label: "Years Experience" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-[#C4A484] mb-2">
+                <div className="text-3xl md:text-4xl font-display font-semibold text-[#C4A484] mb-2">
                   {stat.number}
                 </div>
-                <div className="text-gray-600">{stat.label}</div>
+                <div className="font-sans font-light text-gray-600">{stat.label}</div>
               </div>
             ))}
           </motion.div>

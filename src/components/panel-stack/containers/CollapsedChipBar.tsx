@@ -42,12 +42,39 @@ export function CollapsedChipBar({
 }: CollapsedChipBarProps) {
   const { state } = usePanelStack();
 
-  // Build category list from services
+  // Define the specific order for chips (matching service cards order)
+  const CATEGORY_ORDER = [
+    'lashes',
+    'brows',
+    'facials',
+    'waxing',
+    'permanent-makeup',
+    'specialty',
+    'injectables',
+  ];
+
+  // Display names for chips (matching service card labels)
+  const CHIP_DISPLAY_NAMES: Record<string, string> = {
+    'lashes': 'Lashes',
+    'brows': 'Brows',
+    'facials': 'Skincare',
+    'waxing': 'Waxing',
+    'specialty': 'Jewelry',
+    'permanent-makeup': 'Makeup',
+    'injectables': 'Botox',
+  };
+
+  const EXCLUDED_CATEGORIES = ['bundles', 'specials', 'nails'];
+
+  // Build category list from services with specific order
   const categories = useMemo(() => {
     const categoryMap = new Map<string, Category>();
 
     state.services.forEach(service => {
       if (!service.categorySlug || !service.categoryName) return;
+
+      // Skip excluded categories
+      if (EXCLUDED_CATEGORIES.includes(service.categorySlug)) return;
 
       if (!categoryMap.has(service.categorySlug)) {
         const colors = getCategoryColors(service.categorySlug);
@@ -71,7 +98,15 @@ export function CollapsedChipBar({
       category.serviceCount++;
     });
 
-    return Array.from(categoryMap.values());
+    // Sort categories by the defined order
+    return Array.from(categoryMap.values()).sort((a, b) => {
+      const indexA = CATEGORY_ORDER.indexOf(a.slug);
+      const indexB = CATEGORY_ORDER.indexOf(b.slug);
+      // If not in order array, put at the end
+      const orderA = indexA === -1 ? 999 : indexA;
+      const orderB = indexB === -1 ? 999 : indexB;
+      return orderA - orderB;
+    });
   }, [state.services]);
 
   const isSelected = (categoryId: string) => {
@@ -142,7 +177,7 @@ export function CollapsedChipBar({
                 color: selected ? 'white' : category.colors.primary,
               }}
             >
-              <span className="whitespace-nowrap">{category.name}</span>
+              <span className="whitespace-nowrap">{CHIP_DISPLAY_NAMES[category.slug] || category.name}</span>
               {selected && (
                 <motion.span
                   initial={{ scale: 0 }}

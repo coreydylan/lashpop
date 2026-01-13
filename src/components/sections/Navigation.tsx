@@ -12,8 +12,8 @@ import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smooth
 const navItems = [
   { label: 'Services', href: '#services' },
   { label: 'Team', href: '#team' },
-  { label: 'Gallery', href: '#gallery' },
   { label: 'Reviews', href: '#reviews' },
+  { label: 'Gallery', href: '#gallery' },
   { label: 'FAQ', href: '#faq' },
   { label: 'Find Us', href: '#find-us' },
   { label: 'Work With Us', href: '#' }
@@ -76,19 +76,8 @@ export function Navigation() {
   }
 
     const handleBookNow = () => {
-      // Scroll to the content section (past hero)
-      // We want the top of the Welcome section to align with the bottom of the services panel stack
-      // Header Height: 80px
-      // Panel Stack Bar Height: ~64px
-      // Total Offset: ~144px
-      // So we want the Welcome section top to be at 144px from the top of the viewport.
-      // ScrollTop = WelcomeTop - 144px
-      // Since WelcomeTop is window.innerHeight (after Hero), we scroll to window.innerHeight - 144.
-      const headerHeight = 80
-      const panelStackHeight = 64
-      const totalOffset = headerHeight + panelStackHeight
-
-      smoothScrollTo(window.innerHeight - totalOffset, 1000, getScroller())
+      // Scroll to the services section
+      smoothScrollToElement('#services', 80, 1000, 'top')
 
       // Open chip bar in collapsed state with bounce
       const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
@@ -113,10 +102,8 @@ export function Navigation() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 hidden md:block ${
-          isScrolled
-            ? `glass backdrop-blur-md ${mobileScrolled ? 'py-2' : 'py-4'}`
-            : 'py-6 md:bg-transparent glass md:glass-none backdrop-blur-md md:backdrop-blur-none'
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 hidden md:block glass backdrop-blur-md shadow-lg ${
+          isScrolled ? 'py-4' : 'py-6'
         }`}
       >
         <div className="w-full px-6 md:px-12">
@@ -150,7 +137,8 @@ export function Navigation() {
                     key={item.label}
                     href={item.href}
                     onClick={(e) => handleNavClick(item, e)}
-                    className="caption text-terracotta-light hover:text-terracotta transition-colors duration-300 leading-none flex items-center h-8"
+                    className="caption hover:opacity-80 transition-colors duration-300 leading-none flex items-center h-8"
+                    style={{ color: '#b14e33' }}
                   >
                     {item.label}
                   </Link>
@@ -158,14 +146,16 @@ export function Navigation() {
                   <button
                     key={item.label}
                     onClick={(e) => handleNavClick(item, e)}
-                    className="caption text-terracotta-light hover:text-terracotta transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
+                    className="caption hover:opacity-80 transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
+                    style={{ color: '#b14e33' }}
                   >
                     {item.label}
                   </button>
                 )
               ))}
               <button
-                className="btn ml-4 bg-terracotta-light hover:bg-terracotta text-cream transition-colors duration-300"
+                className="btn ml-4 text-cream transition-colors duration-300 hover:opacity-90"
+                style={{ backgroundColor: '#b14e33' }}
                 onClick={handleBookNow}
               >
                 Book Now

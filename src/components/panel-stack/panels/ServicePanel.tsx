@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Clock, DollarSign, User, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
@@ -41,6 +42,7 @@ const SERVICE_WIDGET_SCRIPTS: Record<string, string> = {
 // ];
 
 export function ServicePanel({ panel }: ServicePanelProps) {
+  const router = useRouter();
   const { state, actions } = usePanelStack();
   const { trackServiceView, trackServiceSelection, trackProviderSelection, shouldShowSaveNudge } = useUserKnowledge();
   const { state: vagaroState, reset: resetVagaroState } = useVagaroWidget();
@@ -210,26 +212,8 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     // Track service view
     trackServiceView(service.id, service.name, data.categoryId);
 
-    // Check if service should use Vagaro widget (has DB code/URL or is in hardcoded demo list)
-    const shouldUseVagaroWidget = service.vagaroServiceCode || service.vagaroWidgetUrl || SERVICES_WITH_VAGARO_WIDGET.includes(service.slug);
-
-    setSelectedService(service);
-    setSelectedProviders(new Set()); // Reset provider selection
-
-    // Reset widget state for new service
-    scriptLoadedRef.current = false;
-    loadedServiceIdRef.current = null;
-    setIsBookingLoading(true);
-    setHasBookingError(false);
-    resetVagaroState(); // Reset widget loaded state for fresh loading animation
-
-    if (shouldUseVagaroWidget) {
-      // Go directly to booking view for services with Vagaro widget
-      setCurrentView('booking');
-    } else {
-      // Go to service detail for services without widget (legacy flow)
-      setCurrentView('service-detail');
-    }
+    // Navigate to the service detail page
+    router.push(`/services/${service.slug}`);
   };
 
   const handleBackToBrowse = () => {

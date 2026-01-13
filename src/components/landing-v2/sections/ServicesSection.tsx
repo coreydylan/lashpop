@@ -39,12 +39,12 @@ const serviceCategories = [
     icon: '/lashpop-images/services/waxing-icon.svg',
   },
   {
-    id: 'nails',
-    slug: 'nails',
-    title: 'NAILS',
-    tagline: 'Polished perfection.',
-    description: 'From classic manicures to nail art, our technicians bring creativity and precision to every set. Leave with nails that express your unique style.',
-    icon: '/lashpop-images/services/nails-icon.svg',
+    id: 'permanent-makeup',
+    slug: 'permanent-makeup',
+    title: 'PERMANENT MAKEUP',
+    tagline: 'Effortless beauty.',
+    description: 'Wake up with perfectly defined features. From brows to lips, our artists create natural-looking enhancements that simplify your routine and boost your confidence.',
+    icon: '/lashpop-images/services/permanent-makeup-icon.svg',
   },
   {
     id: 'specialty',
@@ -55,12 +55,12 @@ const serviceCategories = [
     icon: '/lashpop-images/services/permanent-jewelry-icon.svg',
   },
   {
-    id: 'permanent-makeup',
-    slug: 'permanent-makeup',
-    title: 'PERMANENT MAKEUP',
-    tagline: 'Effortless beauty.',
-    description: 'Wake up with perfectly defined features. From brows to lips, our artists create natural-looking enhancements that simplify your routine and boost your confidence.',
-    icon: '/lashpop-images/services/permanent-makeup-icon.svg',
+    id: 'injectables',
+    slug: 'injectables',
+    title: 'BOTOX',
+    tagline: 'Subtle refinement.',
+    description: 'Expert-administered Botox, fillers, and aesthetic injectables. Our licensed professionals deliver natural results that enhance your features while maintaining your unique look.',
+    icon: '/lashpop-images/services/injectables-icon.svg',
   },
 ]
 
@@ -91,7 +91,7 @@ function ServiceCard({
 
       {/* Title */}
       <h3
-        className="text-sm font-medium tracking-[0.15em] mb-3"
+        className="text-sm font-display font-medium tracking-[0.15em] mb-3"
         style={{ color: '#6d4a43' }}
       >
         {category.title}
@@ -99,7 +99,7 @@ function ServiceCard({
 
       {/* Tagline */}
       <p
-        className="text-base italic mb-3"
+        className="text-base font-sans font-normal italic mb-3"
         style={{ color: '#8a5e55' }}
       >
         {category.tagline}
@@ -107,7 +107,7 @@ function ServiceCard({
 
       {/* Description */}
       <p
-        className="text-sm leading-relaxed"
+        className="text-sm font-sans font-light leading-relaxed"
         style={{ color: '#8a5e55' }}
       >
         {category.description}
@@ -227,7 +227,7 @@ function MobileSwipeableServiceCards({
 
             {/* Title */}
             <h3
-              className="text-xs font-medium tracking-[0.15em] mb-2"
+              className="text-xs font-display font-medium tracking-[0.15em] mb-2"
               style={{ color: '#6d4a43' }}
             >
               {currentCategory.title}
@@ -235,7 +235,7 @@ function MobileSwipeableServiceCards({
 
             {/* Tagline */}
             <p
-              className="text-sm italic mb-3"
+              className="text-sm font-sans font-normal italic mb-3"
               style={{ color: '#8a5e55' }}
             >
               {currentCategory.tagline}
@@ -243,7 +243,7 @@ function MobileSwipeableServiceCards({
 
             {/* Description */}
             <p
-              className="text-xs leading-relaxed"
+              className="text-xs font-sans font-light leading-relaxed"
               style={{ color: '#8a5e55' }}
             >
               {currentCategory.description}
@@ -369,11 +369,12 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
         {/* Section Header */}
         <div className="text-center mb-6">
           <h2
-            className="text-xl font-medium tracking-wide"
+            className="text-xl font-display font-medium tracking-wide mb-4"
             style={{ color: '#6d4a43' }}
           >
-            Our Services
+            Choose a Service
           </h2>
+          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
         </div>
 
         {/* Swipeable Cards */}
@@ -389,7 +390,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
               color: '#6d4a43',
             }}
           >
-            <span className="text-xs font-medium tracking-[0.1em] uppercase">
+            <span className="text-xs font-sans font-medium tracking-[0.1em] uppercase">
               Book an Appointment
             </span>
           </button>
@@ -409,14 +410,15 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
         {/* Section Header */}
         <div className="text-center mb-12">
           <h2
-            className="text-3xl font-medium tracking-wide"
+            className="text-3xl font-display font-medium tracking-wide mb-6"
             style={{ color: '#6d4a43' }}
           >
-            Our Services
+            Choose a Service
           </h2>
+          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
         </div>
 
-        {/* Services Grid - 4 on top, 3 on bottom */}
+        {/* Services Grid - 4 on top, 3 centered on bottom */}
         <div className="space-y-8">
           {/* Top row - 4 items */}
           <div className="grid grid-cols-4 gap-6">
@@ -431,7 +433,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
           {/* Bottom row - 3 items centered */}
           <div className="flex justify-center gap-6">
             {serviceCategories.slice(4).map((category) => (
-              <div key={category.id} className="w-1/4">
+              <div key={category.id} className="w-[calc(25%-1.125rem)]">
                 <ServiceCard
                   category={category}
                   onClick={() => handleCategoryClick(category.slug)}
@@ -451,7 +453,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
               color: '#6d4a43',
             }}
           >
-            <span className="text-sm font-medium tracking-[0.15em] uppercase">
+            <span className="text-sm font-sans font-medium tracking-[0.15em] uppercase">
               Book an Appointment
             </span>
           </button>

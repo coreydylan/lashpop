@@ -42,13 +42,14 @@ const config: Config = {
         'category-bundles': '#dbb2a4',
       },
       fontFamily: {
-        sans: ['Zilla Slab', 'serif'],
-        serif: ['Zilla Slab', 'serif'],
-        lato: ['Lato', 'sans-serif'],
-        caption: ['TikTok Sans', 'sans-serif'],
-        josefin: ['var(--font-josefin)', 'serif'],
-        chivo: ['var(--font-chivo)', 'sans-serif'],
-        andika: ['var(--font-andika)', 'sans-serif'],
+        // Primary fonts - Two-font system
+        sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],           // Body text, buttons, nav, forms
+        display: ['var(--font-zilla-slab)', 'Zilla Slab', 'serif'],                 // Headlines, titles, names, hero text
+        // Aliases for clarity
+        body: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+        heading: ['var(--font-zilla-slab)', 'Zilla Slab', 'serif'],
+        // Legacy/decorative fonts
+        serif: ['var(--font-zilla-slab)', 'Zilla Slab', 'serif'],
         'league-script': ['var(--font-league-script)', 'cursive'],
         swanky: ['var(--font-swanky)', 'cursive'],
         licorice: ['var(--font-licorice)', 'cursive'],

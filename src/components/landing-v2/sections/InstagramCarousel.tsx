@@ -82,45 +82,16 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
 
   return (
     <>
-      <section ref={ref} className="relative py-20 overflow-hidden bg-ivory">
-        {/* Follow Button Header */}
-        <div className="mb-12">
-          <div className="flex justify-center px-4">
-            <a
-              href="https://instagram.com/lashpopstudios"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {/* Frosted Glass Badge with Emboss/Deboss Effect */}
-              <div className="relative group">
-                {/* Subtle outer glow/shadow */}
-                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
-
-                {/* Main badge */}
-                <div className="relative px-5 py-3 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-300 group-hover:bg-white/60 group-hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_6px_rgba(0,0,0,0.12)]">
-                  <div className="flex items-center gap-3">
-                    {/* Instagram Icon */}
-                    <svg className="w-5 h-5 text-dune" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
-                    </svg>
-
-                    {/* Vertical Divider */}
-                    <div className="h-5 w-px bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
-
-                    {/* Text */}
-                    <span className="font-sans text-sm font-medium text-dune/80 tracking-tight">
-                      Follow @lashpopstudios
-                    </span>
-
-                    {/* Arrow Icon */}
-                    <svg className="w-4 h-4 text-dune/60 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
+      <section ref={ref} id="gallery" className="relative py-20 overflow-hidden bg-ivory">
+        {/* Section Header */}
+        <div className="text-center mb-8 md:mb-12">
+          <h2
+            className="text-xl md:text-3xl font-display font-medium tracking-wide mb-4 md:mb-6"
+            style={{ color: '#6d4a43' }}
+          >
+            Gallery
+          </h2>
+          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
         </div>
 
         {/* Carousel Container */}
@@ -178,6 +149,46 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
           {/* Gradient edges for seamless look */}
           <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-cream to-transparent pointer-events-none z-10" />
           <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-cream to-transparent pointer-events-none z-10" />
+        </div>
+
+        {/* Follow Button - Below Carousel */}
+        <div className="mt-10 md:mt-12">
+          <div className="flex justify-center px-4">
+            <a
+              href="https://instagram.com/lashpopstudios"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {/* Frosted Glass Badge with Emboss/Deboss Effect */}
+              <div className="relative group">
+                {/* Subtle outer glow/shadow */}
+                <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
+
+                {/* Main badge */}
+                <div className="relative px-5 py-3 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-300 group-hover:bg-white/60 group-hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_6px_rgba(0,0,0,0.12)]">
+                  <div className="flex items-center gap-3">
+                    {/* Instagram Icon */}
+                    <svg className="w-5 h-5 text-dune" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
+                    </svg>
+
+                    {/* Vertical Divider */}
+                    <div className="h-5 w-px bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
+
+                    {/* Text */}
+                    <span className="font-sans text-sm font-medium text-dune/80 tracking-tight">
+                      Follow @lashpopstudios
+                    </span>
+
+                    {/* Arrow Icon */}
+                    <svg className="w-4 h-4 text-dune/60 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
         </div>
       </section>
 

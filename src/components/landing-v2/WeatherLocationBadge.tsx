@@ -121,7 +121,7 @@ export default function WeatherLocationBadge({ size = 'md', variant = 'default',
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.25 }}
-              className={`${textSize} tracking-wide uppercase whitespace-nowrap font-semibold`}
+              className={`${textSize} font-sans tracking-wide uppercase whitespace-nowrap font-semibold`}
             >
               Oceanside, California
             </motion.span>
@@ -132,7 +132,7 @@ export default function WeatherLocationBadge({ size = 'md', variant = 'default',
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.25, delay: 0.1 }}
-              className={`${textSize} tracking-wide uppercase whitespace-nowrap flex items-center gap-1.5`}
+              className={`${textSize} font-sans tracking-wide uppercase whitespace-nowrap flex items-center gap-1.5`}
             >
               <span>{weather.temperature}°F</span>
               <span className="opacity-50">•</span>

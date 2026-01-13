@@ -180,157 +180,62 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   return (
     <>
       <style jsx>{scrollbarStyles}</style>
-      <section ref={ref} className="relative py-20 overflow-hidden bg-ivory">
+      <section ref={ref} id="reviews" className="relative py-20 overflow-hidden bg-ivory">
         <div className="relative">
 
-        {/* Review Platform Stats - Above Cards */}
-        {reviewStats && reviewStats.length > 0 && (
-          <div className="mb-6 md:mb-8">
+        {/* Section Header */}
+        <div className="text-center mb-8 md:mb-12">
+          <h2
+            className="text-xl md:text-3xl font-display font-medium tracking-wide mb-4 md:mb-6"
+            style={{ color: '#6d4a43' }}
+          >
+            Reviews
+          </h2>
+          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
+        </div>
+
+        {/* Review Stats Chips - Between Header and Carousel */}
+        {reviewStats.length > 0 && (
+          <>
             {/* Desktop View */}
-            <div className="hidden md:flex justify-center gap-2.5 flex-wrap px-4">
+            <div className="hidden md:flex justify-center gap-6 mb-8">
               {reviewStats.map((stat) => (
-                <div key={stat.id}>
-                  {/* Frosted Glass Badge with Emboss/Deboss Effect */}
-                  <div className="relative group cursor-default">
-                    {/* Subtle outer glow/shadow */}
-                    <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
-
-                    {/* Main badge */}
-                    <div className="relative px-4 py-2.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-300 group-hover:bg-white/60 group-hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_6px_rgba(0,0,0,0.12)]">
-                      <div className="flex items-center gap-2.5">
-                        {/* Platform Logo - Compact */}
-                        <div className="shrink-0 flex items-center pr-2.5">
-                          {getSourceLogoCompact(stat.source)}
-                        </div>
-
-                        {/* Count */}
-                        <span className="font-sans text-sm font-semibold text-dune tracking-tight">
-                          {stat.reviewCount.toLocaleString()}
-                        </span>
-
-                        {/* Stars */}
-                        <div className="flex gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <svg
-                                key={i}
-                                className={`w-3.5 h-3.5 ${i < parseFloat(stat.rating) ? 'text-golden' : 'text-sage/30'}`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
-                        </div>
-
-                        {/* "Reviews" text */}
-                        <span className="font-sans text-xs text-dune/60 font-medium">Reviews</span>
-                      </div>
-                    </div>
+                <div
+                  key={stat.id}
+                  className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-full px-5 py-2.5 shadow-sm border border-white/40"
+                >
+                  <div className="scale-75">
+                    {getSourceLogoCompact(stat.source)}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-sans font-semibold text-dune text-sm">{stat.rating}</span>
+                    <svg className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    <span className="text-dune/60 text-xs">({stat.reviewCount})</span>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Mobile View - Interactive Chip */}
-            <div className="flex md:hidden justify-center px-4 overflow-hidden relative min-h-[50px]">
-              {!isMobileExpanded ? (
+            {/* Mobile View */}
+            <div className="md:hidden flex justify-center gap-3 mb-6 px-4">
+              {reviewStats.map((stat) => (
                 <div
-                  onClick={() => setIsMobileExpanded(true)}
-                  className="cursor-pointer"
+                  key={stat.id}
+                  className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm border border-white/40"
                 >
-                  <div className="relative group">
-                    {/* Subtle outer glow/shadow */}
-                    <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
-
-                    {/* Main badge */}
-                  <div className="relative px-4 py-2.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)]">
-                    <div className="flex items-center gap-3">
-                      {/* Platform Logos - Side by side */}
-                      <div className="flex items-center gap-2">
-                         <div className="w-5 h-5 flex items-center justify-center">
-                           <GoogleLogoCompact />
-                         </div>
-                         <div className="w-5 h-5 flex items-center justify-center">
-                           <YelpLogoCompact />
-                         </div>
-                         <div className="w-5 h-5 flex items-center justify-center">
-                           <VagaroLogoCompact />
-                         </div>
-                      </div>
-
-                      <div className="h-4 w-[1px] bg-dune/10" />
-
-                      {/* Total Count and Stars */}
-                        <div className="flex items-center gap-2">
-                          <span className="font-sans text-sm font-semibold text-dune tracking-tight">
-                            {reviewStats.reduce((sum, stat) => sum + stat.reviewCount, 0).toLocaleString()}
-                          </span>
-
-                          <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => (
-                              <svg
-                                  key={i}
-                                  className="w-3.5 h-3.5 text-golden"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="scale-[0.6]">
+                    {getSourceLogoCompact(stat.source)}
                   </div>
+                  <span className="font-sans font-semibold text-dune text-xs">{stat.rating}</span>
+                  <svg className="w-3 h-3 text-golden" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
                 </div>
-              ) : (
-                <div className="w-full overflow-x-auto no-scrollbar touch-pan-x px-4">
-                  <div className="flex gap-3 min-w-max pb-2 mx-auto justify-center">
-                    {reviewStats.map((stat) => (
-                      <div key={stat.id} className="relative group shrink-0">
-                        {/* Main badge */}
-                        <div
-                          className="relative px-3 py-2 rounded-full bg-white/60 backdrop-blur-md border border-white/60 shadow-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            {/* Platform Logo */}
-                            <div className="shrink-0 flex items-center">
-                              {getSourceLogoCompact(stat.source)}
-                            </div>
-                            {/* Count */}
-                            <span className="font-sans text-sm font-semibold text-dune">
-                              {stat.reviewCount}
-                            </span>
-                            {/* Stars */}
-                            <div className="flex gap-0.5">
-                              <svg className="w-3 h-3 text-golden" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    {/* Close button for expanded view */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsMobileExpanded(false);
-                      }}
-                      className="w-8 h-8 rounded-full bg-white/40 backdrop-blur-md border border-white/50 flex items-center justify-center text-dune/60"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              )}
+              ))}
             </div>
-          </div>
+          </>
         )}
 
         {/* Full-width Reviews Container with Beautiful Frosted Glass */}
@@ -379,7 +284,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                         {/* Header: Name */}
                         <div className="flex items-start gap-4 mb-4 shrink-0 pr-24">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-sans font-semibold text-dune text-base mb-1 truncate">
+                            <h3 className="font-display font-semibold text-dune text-base mb-1 truncate">
                               {review.reviewerName}
                             </h3>
                             {review.reviewDate && (
@@ -402,7 +307,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                             }
                           }}
                         >
-                          <p className="text-dune/85 leading-relaxed text-[15px]">
+                          <p className="font-sans font-light text-dune/85 leading-relaxed text-[15px]">
                             &quot;{review.reviewText}&quot;
                           </p>
                         </div>

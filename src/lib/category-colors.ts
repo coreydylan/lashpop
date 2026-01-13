@@ -72,6 +72,24 @@ export const CATEGORY_COLORS = {
     iconName: 'bundles',
     name: 'Bundles',
   },
+  nails: {
+    primary: 'rgb(199, 167, 186)',
+    light: 'rgba(199, 167, 186, 0.15)',
+    medium: 'rgba(199, 167, 186, 0.3)',
+    ring: 'rgba(199, 167, 186, 0.3)',
+    tailwind: 'category-nails',
+    iconName: 'nails',
+    name: 'Nails',
+  },
+  injectables: {
+    primary: 'rgb(176, 166, 189)',
+    light: 'rgba(176, 166, 189, 0.15)',
+    medium: 'rgba(176, 166, 189, 0.3)',
+    ring: 'rgba(176, 166, 189, 0.3)',
+    tailwind: 'category-injectables',
+    iconName: 'injectables',
+    name: 'Injectables',
+  },
 } as const;
 
 export type CategorySlug = keyof typeof CATEGORY_COLORS;

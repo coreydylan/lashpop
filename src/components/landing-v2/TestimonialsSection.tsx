@@ -50,13 +50,10 @@ export default function TestimonialsSection() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2
-              className="text-4xl md:text-5xl font-bold text-gray-900 mb-6"
-              style={{ fontFamily: 'Playfair Display, serif' }}
-            >
+            <h2 className="text-4xl md:text-5xl font-sans font-semibold tracking-wide uppercase text-gray-900 mb-6">
               What Our Clients Say
             </h2>
-            <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-lg md:text-xl font-sans font-light text-gray-600 max-w-3xl mx-auto">
               Don&apos;t just take our word for it – hear from our amazing clients
               about their LashPop experience.
             </p>
@@ -89,16 +86,16 @@ export default function TestimonialsSection() {
                   </div>
 
                   {/* Review */}
-                  <p className="text-gray-700 leading-relaxed mb-6 italic">
+                  <p className="font-sans font-light text-gray-700 leading-relaxed mb-6 italic">
                     &ldquo;{testimonial.review}&rdquo;
                   </p>
 
                   {/* Service Info */}
                   <div className="mb-4">
-                    <span className="text-sm px-3 py-1 bg-[#C4A484]/10 text-[#C4A484] rounded-full">
+                    <span className="font-sans font-light text-sm px-3 py-1 bg-[#C4A484]/10 text-[#C4A484] rounded-full">
                       {testimonial.service}
                     </span>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="font-sans font-light text-sm text-gray-500 mt-2">
                       Artist: {testimonial.artist}
                     </p>
                   </div>
@@ -106,10 +103,10 @@ export default function TestimonialsSection() {
                   {/* Customer Info */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                     <div>
-                      <p className="font-semibold text-gray-900">{testimonial.name}</p>
-                      <p className="text-sm text-gray-500">{testimonial.date}</p>
+                      <p className="font-sans font-medium text-gray-900">{testimonial.name}</p>
+                      <p className="font-sans font-light text-sm text-gray-500">{testimonial.date}</p>
                     </div>
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#C4A484] to-[#D4A574] rounded-full flex items-center justify-center text-white font-bold">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#C4A484] to-[#D4A574] rounded-full flex items-center justify-center text-white font-sans font-semibold">
                       {testimonial.name.charAt(0)}
                     </div>
                   </div>
@@ -127,16 +124,16 @@ export default function TestimonialsSection() {
           >
             <div className="grid md:grid-cols-3 gap-8 text-center">
               <div>
-                <div className="text-3xl font-bold mb-2">500+</div>
-                <div className="text-white/90">Five-Star Reviews</div>
+                <div className="text-3xl font-sans font-semibold mb-2">500+</div>
+                <div className="font-sans font-light text-white/90">Five-Star Reviews</div>
               </div>
               <div>
-                <div className="text-3xl font-bold mb-2">98%</div>
-                <div className="text-white/90">Client Satisfaction</div>
+                <div className="text-3xl font-sans font-semibold mb-2">98%</div>
+                <div className="font-sans font-light text-white/90">Client Satisfaction</div>
               </div>
               <div>
-                <div className="text-3xl font-bold mb-2">85%</div>
-                <div className="text-white/90">Return Clients</div>
+                <div className="text-3xl font-sans font-semibold mb-2">85%</div>
+                <div className="font-sans font-light text-white/90">Return Clients</div>
               </div>
             </div>
           </motion.div>
@@ -148,7 +145,7 @@ export default function TestimonialsSection() {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="text-center mt-12"
           >
-            <button className="px-8 py-3 bg-[#C4A484] text-white rounded-lg font-semibold hover:bg-[#D4A574] transition-all hover:scale-105 hover:shadow-xl">
+            <button className="px-8 py-3 bg-[#C4A484] text-white rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-[#D4A574] transition-all hover:scale-105 hover:shadow-xl">
               Read More Reviews
             </button>
           </motion.div>

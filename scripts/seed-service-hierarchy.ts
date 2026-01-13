@@ -15,11 +15,13 @@ config({ path: '.env.local' })
 const CATEGORIES = [
   { name: 'Lashes', slug: 'lashes', description: 'Eyelash extensions, lifts, and enhancements', icon: '👁️', displayOrder: 1 },
   { name: 'Brows', slug: 'brows', description: 'Eyebrow shaping, lamination, and permanent makeup', icon: '✨', displayOrder: 2 },
-  { name: 'Permanent Makeup', slug: 'permanent-makeup', description: 'Long-lasting cosmetic tattooing', icon: '💄', displayOrder: 3 },
-  { name: 'Facials', slug: 'facials', description: 'Professional facial treatments and skin care', icon: '🌸', displayOrder: 4 },
-  { name: 'Waxing', slug: 'waxing', description: 'Hair removal services', icon: '🪒', displayOrder: 5 },
-  { name: 'Specialty', slug: 'specialty', description: 'Unique and specialty services', icon: '💎', displayOrder: 6 },
-  { name: 'Bundles', slug: 'bundles', description: 'Service packages and combos', icon: '🎁', displayOrder: 7 },
+  { name: 'Facials', slug: 'facials', description: 'Professional facial treatments and skin care', icon: '🌸', displayOrder: 3 },
+  { name: 'Waxing', slug: 'waxing', description: 'Hair removal services', icon: '🪒', displayOrder: 4 },
+  { name: 'Nails', slug: 'nails', description: 'Manicures, pedicures, and nail art', icon: '💅', displayOrder: 5 },
+  { name: 'Specialty', slug: 'specialty', description: 'Permanent jewelry and unique services', icon: '💎', displayOrder: 6 },
+  { name: 'Permanent Makeup', slug: 'permanent-makeup', description: 'Long-lasting cosmetic tattooing', icon: '💄', displayOrder: 7 },
+  { name: 'Injectables', slug: 'injectables', description: 'Botox, fillers, and aesthetic injectables', icon: '💉', displayOrder: 8 },
+  { name: 'Bundles', slug: 'bundles', description: 'Service packages and combos', icon: '🎁', displayOrder: 9 },
 ]
 
 // Subcategory definitions with their parent category
@@ -59,6 +61,16 @@ const SUBCATEGORIES = [
   // Specialty
   { categorySlug: 'specialty', name: 'Permanent Jewelry', slug: 'permanent-jewelry', displayOrder: 1 },
   { categorySlug: 'specialty', name: 'Other Services', slug: 'other-specialty-services', displayOrder: 2 },
+
+  // Nails
+  { categorySlug: 'nails', name: 'Manicures', slug: 'manicures', displayOrder: 1 },
+  { categorySlug: 'nails', name: 'Pedicures', slug: 'pedicures', displayOrder: 2 },
+  { categorySlug: 'nails', name: 'Nail Art', slug: 'nail-art', displayOrder: 3 },
+
+  // Injectables
+  { categorySlug: 'injectables', name: 'Botox', slug: 'botox', displayOrder: 1 },
+  { categorySlug: 'injectables', name: 'Fillers', slug: 'fillers', displayOrder: 2 },
+  { categorySlug: 'injectables', name: 'Other Injectables', slug: 'other-injectables', displayOrder: 3 },
 
   // Bundles
   { categorySlug: 'bundles', name: 'Service Packages', slug: 'service-packages', displayOrder: 1 },
@@ -203,8 +215,8 @@ const SERVICE_MAPPING: Record<string, { categorySlug: string; subcategorySlug: s
   'brazilian-underarms-wax': { categorySlug: 'bundles', subcategorySlug: 'service-packages' },
   'brazilian-brow-wax': { categorySlug: 'bundles', subcategorySlug: 'service-packages' },
 
-  // Others - assign to appropriate categories
-  'botox-treatment': { categorySlug: 'specialty', subcategorySlug: 'other-specialty-services' },
+  // Injectables
+  'botox-treatment': { categorySlug: 'injectables', subcategorySlug: 'botox' },
 }
 
 async function seedServiceHierarchy() {

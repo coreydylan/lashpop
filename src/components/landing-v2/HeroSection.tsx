@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { usePanelStack } from '@/contexts/PanelStackContext'
+import { useFindYourLook } from '@/components/find-your-look'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import WeatherLocationBadge from './WeatherLocationBadge'
 import { HeroArchSlideshow } from './slideshow'
@@ -57,6 +58,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   const heroContentRef = useRef<HTMLDivElement>(null)
 
   const { actions: panelActions, state: panelState } = usePanelStack()
+  const { openQuiz } = useFindYourLook()
   const [isMobile, setIsMobile] = useState(false)
 
   // Calculate total reviews
@@ -119,22 +121,22 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             {/* Hero text content - at bottom of viewport */}
             <div className="text-center">
               <h1
-                className="font-serif text-terracotta"
-                style={{ fontSize: '2rem', fontWeight: 400, letterSpacing: '0.05em' }}
+                className="font-serif"
+                style={{ fontSize: '2rem', fontWeight: 400, letterSpacing: '0.05em', color: '#cc947f' }}
               >
                 lashes + beauty
               </h1>
-              <div className="-mt-0.5">
+              <div className="mt-1">
                 <span
-                  className="font-serif"
+                  className="font-serif font-medium inline-block px-4 py-1 rounded-full"
                   style={{
-                    fontSize: '1.1rem',
-                    fontWeight: 500,
+                    fontSize: '0.9rem',
                     letterSpacing: '0.03em',
-                    color: '#faf6f2',
-                    backgroundColor: 'rgb(var(--terracotta) / 0.85)',
-                    padding: '0.1em 0.4em',
-                    boxDecorationBreak: 'clone',
+                    fontFamily: 'var(--font-zilla-slab), "Zilla Slab", serif',
+                    color: '#cc947f',
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    borderColor: 'rgba(204, 148, 127, 0.8)',
                   }}
                 >
                   for the modern woman
@@ -170,20 +172,20 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 onClick={() => handleBookNowClick('hero-mobile')}
                 className="relative group w-full"
               >
-                <div className="absolute inset-0 rounded-full bg-terracotta/30 blur-md opacity-50" />
-                <div className="relative py-3.5 px-6 rounded-full bg-terracotta/90 backdrop-blur-md border border-terracotta/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
-                  <span className="font-medium text-base text-white">Book Now</span>
+                <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
+                <div className="relative py-3.5 px-6 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]" style={{ backgroundColor: 'rgba(204, 148, 127, 0.9)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
+                  <span className="font-sans font-medium text-base text-white">Book Now</span>
                 </div>
               </button>
 
               {/* Find Your Look - Frosted glass secondary button */}
               <button
-                onClick={() => panelActions.openPanel('discovery', {})}
+                onClick={openQuiz}
                 className="relative group w-full"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
-                  <span className="font-medium text-base text-dune">Find Your Look</span>
+                  <span className="font-sans font-medium text-base text-dune">Find Your Look</span>
                 </div>
               </button>
 
@@ -194,7 +196,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] text-center">
-                  <span className="font-medium text-base text-dune">Work With Us</span>
+                  <span className="font-sans font-medium text-base text-dune">Work With Us</span>
                 </div>
               </a>
 
@@ -212,12 +214,12 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                   <div className="relative py-3 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
                     <div className="flex items-center justify-center gap-2.5">
-                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10 text-terracotta">
+                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10" style={{ color: '#cc947f' }}>
                         <GoogleLogoCompact monochrome />
                         <YelpLogoCompact monochrome />
                         <VagaroLogoCompact monochrome />
                       </div>
-                      <span className="font-semibold text-sm text-dune">{totalReviews.toLocaleString()}</span>
+                      <span className="font-sans font-semibold text-sm text-dune">{totalReviews.toLocaleString()}</span>
                       <div className="flex items-center -space-x-0.5">
                         {[...Array(5)].map((_, i) => (
                           <svg key={i} className="w-3.5 h-3.5 text-gold" fill="currentColor" viewBox="0 0 20 20">
@@ -225,7 +227,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                           </svg>
                         ))}
                       </div>
-                      <span className="text-xs text-terracotta font-medium">Reviews</span>
+                      <span className="text-xs font-sans font-medium" style={{ color: '#cc947f' }}>Reviews</span>
                     </div>
                   </div>
                 </button>
@@ -305,13 +307,13 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   <div className="absolute inset-0 rounded-full bg-cream/30 blur-lg opacity-30" />
                   <div className="relative px-3 py-1.5 rounded-full bg-white/60 backdrop-blur-sm border border-white/80 shadow-sm">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 pr-2 border-r border-terracotta/30 text-terracotta">
+                      <div className="flex items-center gap-1.5 pr-2 border-r" style={{ borderColor: 'rgba(204, 148, 127, 0.3)', color: '#cc947f' }}>
                         <GoogleLogoCompact monochrome />
                         <YelpLogoCompact monochrome />
                         <VagaroLogoCompact monochrome />
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="font-serif text-sm font-semibold text-dune">
+                        <span className="font-sans text-sm font-semibold text-dune">
                           {totalReviews.toLocaleString()}
                         </span>
                         <div className="flex items-center -space-x-0.5">
@@ -321,7 +323,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                             </svg>
                           ))}
                         </div>
-                        <span className="font-serif text-xs text-terracotta ml-0.5">Reviews</span>
+                        <span className="font-sans text-xs font-medium ml-0.5" style={{ color: '#cc947f' }}>Reviews</span>
                       </div>
                     </div>
                   </div>
@@ -332,21 +334,22 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             {/* Main heading - 16px gap from reviews/weather */}
             <div className="relative mt-4">
               <h1
-                className="font-serif text-terracotta relative z-10"
-                style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 400, letterSpacing: '0.05em' }}
+                className="font-serif relative z-10"
+                style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 400, letterSpacing: '0.05em', color: '#cc947f' }}
               >
                 lashes + beauty
               </h1>
-              <div className="-mt-1">
+              <div className="mt-2">
                 <span
-                  className="font-serif"
+                  className="font-serif font-medium inline-block px-5 py-1.5 rounded-full"
                   style={{
-                    fontSize: 'clamp(1.1rem, 2.5vw, 2rem)',
-                    fontWeight: 500,
+                    fontSize: 'clamp(1rem, 2vw, 1.5rem)',
                     letterSpacing: '0.03em',
-                    color: '#faf6f2',
-                    backgroundColor: 'rgb(var(--terracotta) / 0.85)',
-                    padding: '0.1em 0.4em',
+                    fontFamily: 'var(--font-zilla-slab), "Zilla Slab", serif',
+                    color: '#cc947f',
+                    borderWidth: '2px',
+                    borderStyle: 'solid',
+                    borderColor: 'rgba(204, 148, 127, 0.8)',
                   }}
                 >
                   for the modern woman
@@ -368,18 +371,18 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 }}
                 className="relative group"
               >
-                <div className="absolute inset-0 rounded-full bg-terracotta-light/30 blur-md opacity-50" />
-                <div className="relative px-8 py-3.5 rounded-full bg-terracotta-light backdrop-blur-md border border-terracotta-light/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-terracotta transition-all">
-                  <span className="font-medium text-white">Book Now</span>
+                <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
+                <div className="relative px-8 py-3.5 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] transition-all" style={{ backgroundColor: '#cc947f', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
+                  <span className="font-sans font-medium text-white">Book Now</span>
                 </div>
               </button>
               <button
-                onClick={() => panelActions.openPanel('discovery', {})}
+                onClick={openQuiz}
                 className="relative group"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative px-8 py-3.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-white/60 transition-all">
-                  <span className="font-medium text-dune">Find Your Look</span>
+                  <span className="font-sans font-medium text-dune">Find Your Look</span>
                 </div>
               </button>
             </div>

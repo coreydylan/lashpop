@@ -14,10 +14,10 @@ export default function Footer() {
         <div className="py-12 grid md:grid-cols-4 gap-8">
           {/* Brand Column */}
           <div className="md:col-span-1">
-            <h3 className="text-2xl font-bold text-white mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>
+            <h3 className="text-2xl font-display font-semibold text-white mb-4">
               LashPop Studios
             </h3>
-            <p className="text-gray-400 mb-4">
+            <p className="text-gray-400 mb-4 font-sans font-light">
               Where artistry meets precision to create your signature lash look.
             </p>
             {/* Social Links */}
@@ -59,7 +59,7 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Quick Links</h4>
+            <h4 className="text-white font-display font-medium mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
                 <Link href="/about" className="hover:text-[#C4A484] transition-colors">
@@ -91,7 +91,7 @@ export default function Footer() {
 
           {/* Services */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Popular Services</h4>
+            <h4 className="text-white font-display font-medium mb-4">Popular Services</h4>
             <ul className="space-y-2">
               <li>
                 <Link href="/services/classic" className="hover:text-[#C4A484] transition-colors">
@@ -123,7 +123,7 @@ export default function Footer() {
 
           {/* Contact Info */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Contact</h4>
+            <h4 className="text-white font-display font-medium mb-4">Contact</h4>
             <ul className="space-y-2">
               <li>429 S Coast Hwy</li>
               <li>Oceanside, CA 92054</li>
@@ -144,19 +144,19 @@ export default function Footer() {
         {/* Newsletter Section */}
         <div className="py-8 border-t border-gray-800">
           <div className="max-w-2xl mx-auto text-center">
-            <h3 className="text-xl font-semibold text-white mb-2">Stay Updated</h3>
-            <p className="text-gray-400 mb-4">
+            <h3 className="text-xl font-display font-medium text-white mb-2">Stay Updated</h3>
+            <p className="text-gray-400 mb-4 font-sans font-light">
               Get exclusive offers and lash care tips delivered to your inbox.
             </p>
             <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4A484] text-white placeholder-gray-500"
+                className="flex-1 px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4A484] text-white placeholder-gray-500 font-sans font-light"
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-[#C4A484] text-white rounded-lg font-semibold hover:bg-[#D4A574] transition-colors"
+                className="px-6 py-3 bg-[#C4A484] text-white rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-[#D4A574] transition-colors"
               >
                 Subscribe
               </button>

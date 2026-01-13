@@ -174,7 +174,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               <span className="font-medium" style={{ color: '#6d4a43' }}>women-owned beauty businesses</span>{' '}
               <span className="font-extralight opacity-80">who believe looking amazing shouldn&apos;t require a 30-minute morning routine</span>{' '}
               <span className="italic opacity-70">or a small emotional breakdown in front of the bathroom mirror.</span>
-              <span className="block text-xl md:text-2xl font-medium mt-4 tracking-wide" style={{ color: '#6d4a43' }}>
+              <span className="block text-xl md:text-2xl font-display font-medium mt-4 tracking-wide" style={{ color: '#6d4a43' }}>
                 We&apos;re here to make beauty feel easy, natural, and—honestly—kind of life-changing.
               </span>
             </motion.div>
@@ -186,7 +186,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               transition={{ duration: 0.8, delay: 0.4, ease: [0.23, 1, 0.32, 1] }}
               style={{ color: '#8a5e55' }}
             >
-              <span className="block text-xl md:text-2xl font-medium mb-3" style={{ color: '#6d4a43' }}>
+              <span className="block text-xl md:text-2xl font-display font-medium mb-3" style={{ color: '#6d4a43' }}>
                 Everything we do is built on trust.
               </span>
               <span className="font-extralight opacity-80">When you walk into our studio, you&apos;re stepping into a space designed to help you breathe a little deeper and walk out feeling like</span>{' '}
@@ -210,7 +210,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               <span>Each service is done with the kind of</span>{' '}
               <span className="font-medium" style={{ color: '#6d4a43' }}>precision and intention</span>{' '}
               <span>that makes your</span>
-              <span className="block text-lg md:text-xl font-medium mt-3 tracking-wide" style={{ color: '#6d4a43' }}>
+              <span className="block text-lg md:text-xl font-display font-medium mt-3 tracking-wide" style={{ color: '#6d4a43' }}>
                 mornings smoother &amp; confidence louder.
               </span>
             </motion.div>
@@ -241,7 +241,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               style={{ color: '#8a5e55' }}
             >
               <span className="block text-sm uppercase tracking-[0.3em] font-light opacity-60 mb-2">Welcome to</span>
-              <span className="block text-2xl md:text-3xl font-medium tracking-wide" style={{ color: '#6d4a43' }}>
+              <span className="block text-xl md:text-3xl font-display font-medium tracking-wide" style={{ color: '#6d4a43' }}>
                 your new favorite part of the week.
               </span>
             </motion.div>

@@ -1,13 +1,22 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display, Josefin_Slab, Chivo, Andika, League_Script, Swanky_and_Moo_Moo, Licorice } from 'next/font/google'
+import { Inter, Zilla_Slab, Playfair_Display, Josefin_Slab, Chivo, Andika, League_Script, Swanky_and_Moo_Moo, Licorice } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { UserKnowledgeProvider } from '@/contexts/UserKnowledgeContext'
+import { FindYourLookProvider } from '@/components/find-your-look'
 
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
+})
+
+const zillaSlab = Zilla_Slab({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-zilla-slab',
 })
 
 const playfair = Playfair_Display({
@@ -98,11 +107,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} ${josefin.variable} ${chivo.variable} ${andika.variable} ${leagueScript.variable} ${swanky.variable} ${licorice.variable}`}>
+    <html lang="en" className={`${inter.variable} ${zillaSlab.variable} ${playfair.variable} ${josefin.variable} ${chivo.variable} ${andika.variable} ${leagueScript.variable} ${swanky.variable} ${licorice.variable}`}>
       <body className={`${inter.className} antialiased bg-ivory text-gray-800`}>
         <AuthProvider>
           <UserKnowledgeProvider>
-            {children}
+            <FindYourLookProvider>
+              {children}
+            </FindYourLookProvider>
           </UserKnowledgeProvider>
         </AuthProvider>
       </body>
