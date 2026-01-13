@@ -55,14 +55,14 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               <div className="mb-8">
                 <h2
                   className="text-3xl font-display font-medium tracking-wide mb-6"
-                  style={{ color: '#6d4a43' }}
+                  style={{ color: '#ac4d3c' }}
                 >
                   Welcome to Lashpop Studios
                 </h2>
                 <div className="w-16 h-px bg-terracotta/30" />
               </div>
               {/* Letter Content */}
-              <div className="relative w-full text-[#8a5e55] text-[clamp(0.95rem,1.4vw,1.4rem)] leading-relaxed font-normal font-sans">
+              <div className="relative w-full text-[#ac4d3c] text-[clamp(0.95rem,1.4vw,1.4rem)] leading-relaxed font-normal font-sans">
                 <p className="mb-[1.5vh]">{letterContent.greeting}</p>
 
                 {letterContent.paragraphs.map((paragraph, index) => (
@@ -131,13 +131,13 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           <div className="text-center mb-6 max-w-lg mx-auto">
             <h2
               className="text-xl font-display font-medium tracking-wide mb-4"
-              style={{ color: '#6d4a43' }}
+              style={{ color: '#ac4d3c' }}
             >
               Welcome to Lashpop Studios
             </h2>
             <div className="w-16 h-px bg-terracotta/30 mx-auto" />
           </div>
-          <div className="text-[#8a5e55] text-base leading-relaxed font-normal font-sans max-w-lg mx-auto">
+          <div className="text-[#ac4d3c] text-base leading-relaxed font-normal font-sans max-w-lg mx-auto">
             <p className="mb-4">{letterContent.greeting}</p>
 
             {letterContent.paragraphs.map((paragraph, index) => (

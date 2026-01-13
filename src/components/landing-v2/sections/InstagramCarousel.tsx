@@ -87,7 +87,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-xl md:text-3xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: '#6d4a43' }}
+            style={{ color: '#ac4d3c' }}
           >
             Gallery
           </h2>

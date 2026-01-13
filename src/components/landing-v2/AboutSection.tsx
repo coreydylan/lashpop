@@ -60,7 +60,7 @@ export default function AboutSection() {
               >
                 <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2">
                   {/* Icon */}
-                  <div className="w-14 h-14 bg-gradient-to-br from-[#C4A484] to-[#D4A574] rounded-xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 bg-gradient-to-br from-[#cc947f] to-[#d3a392] rounded-xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform">
                     {value.icon}
                   </div>
 
@@ -73,7 +73,7 @@ export default function AboutSection() {
                   </p>
 
                   {/* Decorative element */}
-                  <div className="mt-6 h-1 w-12 bg-gradient-to-r from-[#C4A484] to-[#D4A574] rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="mt-6 h-1 w-12 bg-gradient-to-r from-[#cc947f] to-[#d3a392] rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </motion.div>
             ))}
@@ -93,7 +93,7 @@ export default function AboutSection() {
               { number: "7", label: "Years Experience" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-3xl md:text-4xl font-display font-semibold text-[#C4A484] mb-2">
+                <div className="text-3xl md:text-4xl font-display font-semibold text-[#cc947f] mb-2">
                   {stat.number}
                 </div>
                 <div className="font-sans font-light text-gray-600">{stat.label}</div>

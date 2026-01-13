@@ -7,11 +7,11 @@ import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
 
 // Styled text components for creative typography
 const Emphasis = ({ children }: { children: ReactNode }) => (
-  <span className="font-medium" style={{ color: '#6d4a43' }}>{children}</span>
+  <span className="font-medium" style={{ color: '#ac4d3c' }}>{children}</span>
 )
 
 const Highlight = ({ children }: { children: ReactNode }) => (
-  <span className="font-semibold text-base tracking-wide" style={{ color: '#8a5e55' }}>{children}</span>
+  <span className="font-semibold text-base tracking-wide" style={{ color: '#ac4d3c' }}>{children}</span>
 )
 
 const Soft = ({ children }: { children: ReactNode }) => (
@@ -19,7 +19,7 @@ const Soft = ({ children }: { children: ReactNode }) => (
 )
 
 const Standout = ({ children }: { children: ReactNode }) => (
-  <span className="block text-base font-medium mt-2 tracking-wide" style={{ color: '#6d4a43' }}>{children}</span>
+  <span className="block text-base font-medium mt-2 tracking-wide" style={{ color: '#ac4d3c' }}>{children}</span>
 )
 
 // The 5 content cards with creative typography
@@ -40,7 +40,7 @@ const cardContent: { id: number; content: ReactNode; isLast?: boolean; showServi
     id: 2,
     content: (
       <>
-        <span className="block text-base font-medium mb-2" style={{ color: '#6d4a43' }}>
+        <span className="block text-base font-medium mb-2" style={{ color: '#ac4d3c' }}>
           Everything we do is built on trust.
         </span>
         <Soft>When you walk into our studio, you&apos;re stepping into a space designed to help you breathe a little deeper and walk out feeling like</Soft>{' '}
@@ -68,7 +68,7 @@ const cardContent: { id: number; content: ReactNode; isLast?: boolean; showServi
     content: (
       <>
         <Soft>And since you&apos;re probably here to see what we offer,</Soft>
-        <span className="block text-base font-medium my-2" style={{ color: '#6d4a43' }}>we made it easy.</span>
+        <span className="block text-base font-medium my-2" style={{ color: '#ac4d3c' }}>we made it easy.</span>
         <span className="text-sm">Everything you need is right in the</span>{' '}
         <Highlight>service bar below</Highlight>
         <span className="block mt-2 text-xs italic opacity-70">
@@ -83,10 +83,10 @@ const cardContent: { id: number; content: ReactNode; isLast?: boolean; showServi
     content: (
       <>
         <span className="block text-xs uppercase tracking-[0.3em] font-light opacity-60 mb-3">Welcome to</span>
-        <span className="block text-xl font-medium tracking-wide" style={{ color: '#6d4a43' }}>
+        <span className="block text-xl font-medium tracking-wide" style={{ color: '#ac4d3c' }}>
           your new favorite
         </span>
-        <span className="block text-xl font-medium tracking-wide" style={{ color: '#6d4a43' }}>
+        <span className="block text-xl font-medium tracking-wide" style={{ color: '#ac4d3c' }}>
           part of the week.
         </span>
       </>
@@ -283,7 +283,7 @@ export function MobileSwipeableWelcomeCards({
               WebkitMaskSize: 'contain',
               WebkitMaskRepeat: 'no-repeat',
               WebkitMaskPosition: 'center',
-              backgroundColor: '#8a5e55'
+              backgroundColor: '#ac4d3c'
             }}
           />
         </motion.div>
@@ -304,7 +304,7 @@ export function MobileSwipeableWelcomeCards({
               className="h-1.5 rounded-full transition-all duration-300"
               style={{
                 width: index === currentIndex ? 16 : 6,
-                backgroundColor: index === currentIndex ? '#8a5e55' : 'rgba(138, 94, 85, 0.4)'
+                backgroundColor: index === currentIndex ? '#ac4d3c' : 'rgba(138, 94, 85, 0.4)'
               }}
             />
           </button>
@@ -347,7 +347,7 @@ export function MobileSwipeableWelcomeCards({
               <div
                 className="font-sans leading-relaxed text-sm"
                 style={{
-                  color: '#8a5e55',
+                  color: '#ac4d3c',
                   textShadow: '0 1px 2px rgba(255,255,255,0.5)'
                 }}
               >
@@ -366,7 +366,7 @@ export function MobileSwipeableWelcomeCards({
                     animate={{ y: [0, 6, 0] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <ChevronDown className="w-5 h-5 text-[#8a5e55]/60" strokeWidth={1.5} />
+                    <ChevronDown className="w-5 h-5 text-[#ac4d3c]/60" strokeWidth={1.5} />
                   </motion.div>
                 </motion.div>
               )}
@@ -386,11 +386,11 @@ export function MobileSwipeableWelcomeCards({
                       animate={{ x: [0, -3, 0] }}
                       transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                     >
-                      <ChevronLeft className="w-3.5 h-3.5 text-[#8a5e55]/40" strokeWidth={1.5} />
+                      <ChevronLeft className="w-3.5 h-3.5 text-[#ac4d3c]/40" strokeWidth={1.5} />
                     </motion.div>
 
                     {/* Swipe text */}
-                    <span className="text-[10px] text-[#8a5e55]/45 font-light tracking-wider uppercase">
+                    <span className="text-[10px] text-[#ac4d3c]/45 font-light tracking-wider uppercase">
                       swipe
                     </span>
 
@@ -399,7 +399,7 @@ export function MobileSwipeableWelcomeCards({
                       animate={{ x: [0, 3, 0] }}
                       transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
                     >
-                      <ChevronRight className="w-3.5 h-3.5 text-[#8a5e55]/40" strokeWidth={1.5} />
+                      <ChevronRight className="w-3.5 h-3.5 text-[#ac4d3c]/40" strokeWidth={1.5} />
                     </motion.div>
                   </motion.div>
                 )}

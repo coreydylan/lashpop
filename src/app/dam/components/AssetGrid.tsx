@@ -1258,7 +1258,7 @@ function AssetCard({
                       isAppearing ? 'appear-effect' : ''
                     }`}
                     style={{
-                      background: `linear-gradient(135deg, ${tag.category.color || "#8A7C69"} 0%, ${tag.category.color || "#8A7C69"}CC 100%)`
+                      background: `linear-gradient(135deg, ${tag.category.color || "#ac4d3c"} 0%, ${tag.category.color || "#ac4d3c"}CC 100%)`
                     }}
                   >
                     {tag.displayName}

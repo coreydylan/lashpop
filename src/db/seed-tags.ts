@@ -57,7 +57,7 @@ const TAG_SEED_DATA = [
       name: "color",
       displayName: "Color",
       description: "The color of the lash extensions",
-      color: "#8A7C69", // dune
+      color: "#ac4d3c", // terracotta
       sortOrder: 4
     },
     tags: [

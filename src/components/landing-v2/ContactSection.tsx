@@ -40,8 +40,8 @@ export default function ContactSection() {
               <div className="space-y-6">
                 {/* Address */}
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-[#C4A484]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-[#C4A484]" />
+                  <div className="w-12 h-12 bg-[#cc947f]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-6 h-6 text-[#cc947f]" />
                   </div>
                   <div>
                     <h3 className="font-sans font-medium text-gray-900 mb-1">Location</h3>
@@ -49,7 +49,7 @@ export default function ContactSection() {
                       429 S Coast Hwy<br />
                       Oceanside, CA 92054
                     </p>
-                    <button className="font-sans font-normal text-[#C4A484] hover:text-[#D4A574] text-sm mt-2 flex items-center gap-1">
+                    <button className="font-sans font-normal text-[#cc947f] hover:text-[#d3a392] text-sm mt-2 flex items-center gap-1">
                       Get Directions
                       <ArrowRight className="w-4 h-4" />
                     </button>
@@ -58,8 +58,8 @@ export default function ContactSection() {
 
                 {/* Phone */}
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-[#C4A484]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-6 h-6 text-[#C4A484]" />
+                  <div className="w-12 h-12 bg-[#cc947f]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-6 h-6 text-[#cc947f]" />
                   </div>
                   <div>
                     <h3 className="font-sans font-medium text-gray-900 mb-1">Phone</h3>
@@ -70,8 +70,8 @@ export default function ContactSection() {
 
                 {/* Email */}
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-[#C4A484]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-6 h-6 text-[#C4A484]" />
+                  <div className="w-12 h-12 bg-[#cc947f]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-6 h-6 text-[#cc947f]" />
                   </div>
                   <div>
                     <h3 className="font-sans font-medium text-gray-900 mb-1">Email</h3>
@@ -82,8 +82,8 @@ export default function ContactSection() {
 
                 {/* Hours */}
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-[#C4A484]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-6 h-6 text-[#C4A484]" />
+                  <div className="w-12 h-12 bg-[#cc947f]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-6 h-6 text-[#cc947f]" />
                   </div>
                   <div>
                     <h3 className="font-sans font-medium text-gray-900 mb-2">Hours</h3>
@@ -107,7 +107,7 @@ export default function ContactSection() {
               animate={isInView ? { opacity: 1, x: 0 } : {}}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              <div className="bg-gradient-to-br from-[#C4A484] to-[#D4A574] rounded-2xl p-8 text-white">
+              <div className="bg-gradient-to-br from-[#cc947f] to-[#d3a392] rounded-2xl p-8 text-white">
                 <h3 className="text-2xl font-sans font-semibold mb-4">Ready to Book?</h3>
                 <p className="font-sans font-light text-white/90 mb-6">
                   Join hundreds of satisfied clients who trust us with their lash care.
@@ -115,7 +115,7 @@ export default function ContactSection() {
                 </p>
 
                 <div className="space-y-4">
-                  <button className="w-full py-4 bg-white text-[#C4A484] rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                  <button className="w-full py-4 bg-white text-[#cc947f] rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
                     <Calendar className="w-5 h-5" />
                     Book Online Now
                   </button>
@@ -160,8 +160,8 @@ export default function ContactSection() {
               { label: 'Premium Products', value: '✓' },
             ].map((badge) => (
               <div key={badge.label} className="group">
-                <div className="w-16 h-16 bg-[#C4A484]/10 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#C4A484]/20 transition-colors">
-                  <span className="text-2xl text-[#C4A484]">{badge.value}</span>
+                <div className="w-16 h-16 bg-[#cc947f]/10 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-[#cc947f]/20 transition-colors">
+                  <span className="text-2xl text-[#cc947f]">{badge.value}</span>
                 </div>
                 <p className="font-sans font-light text-sm text-gray-600">{badge.label}</p>
               </div>

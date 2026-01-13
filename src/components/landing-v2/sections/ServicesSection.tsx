@@ -92,7 +92,7 @@ function ServiceCard({
       {/* Title */}
       <h3
         className="text-sm font-display font-medium tracking-[0.15em] mb-3"
-        style={{ color: '#6d4a43' }}
+        style={{ color: '#ac4d3c' }}
       >
         {category.title}
       </h3>
@@ -100,7 +100,7 @@ function ServiceCard({
       {/* Tagline */}
       <p
         className="text-base font-sans font-normal italic mb-3"
-        style={{ color: '#8a5e55' }}
+        style={{ color: '#ac4d3c' }}
       >
         {category.tagline}
       </p>
@@ -108,7 +108,7 @@ function ServiceCard({
       {/* Description */}
       <p
         className="text-sm font-sans font-light leading-relaxed"
-        style={{ color: '#8a5e55' }}
+        style={{ color: '#ac4d3c' }}
       >
         {category.description}
       </p>
@@ -228,7 +228,7 @@ function MobileSwipeableServiceCards({
             {/* Title */}
             <h3
               className="text-xs font-display font-medium tracking-[0.15em] mb-2"
-              style={{ color: '#6d4a43' }}
+              style={{ color: '#ac4d3c' }}
             >
               {currentCategory.title}
             </h3>
@@ -236,7 +236,7 @@ function MobileSwipeableServiceCards({
             {/* Tagline */}
             <p
               className="text-sm font-sans font-normal italic mb-3"
-              style={{ color: '#8a5e55' }}
+              style={{ color: '#ac4d3c' }}
             >
               {currentCategory.tagline}
             </p>
@@ -244,7 +244,7 @@ function MobileSwipeableServiceCards({
             {/* Description */}
             <p
               className="text-xs font-sans font-light leading-relaxed"
-              style={{ color: '#8a5e55' }}
+              style={{ color: '#ac4d3c' }}
             >
               {currentCategory.description}
             </p>
@@ -267,7 +267,7 @@ function MobileSwipeableServiceCards({
               style={{
                 width: 6,
                 height: 6,
-                backgroundColor: index === currentIndex ? '#8a5e55' : 'rgba(138, 94, 85, 0.2)',
+                backgroundColor: index === currentIndex ? '#ac4d3c' : 'rgba(138, 94, 85, 0.2)',
                 transform: index === currentIndex ? 'scale(1)' : 'scale(0.8)',
               }}
             />
@@ -370,7 +370,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
         <div className="text-center mb-6">
           <h2
             className="text-xl font-display font-medium tracking-wide mb-4"
-            style={{ color: '#6d4a43' }}
+            style={{ color: '#ac4d3c' }}
           >
             Choose a Service
           </h2>
@@ -387,7 +387,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
             className="px-6 py-2.5 rounded-full border transition-all duration-300 active:scale-[0.98]"
             style={{
               borderColor: 'rgba(109, 74, 67, 0.4)',
-              color: '#6d4a43',
+              color: '#ac4d3c',
             }}
           >
             <span className="text-xs font-sans font-medium tracking-[0.1em] uppercase">
@@ -411,7 +411,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
         <div className="text-center mb-12">
           <h2
             className="text-3xl font-display font-medium tracking-wide mb-6"
-            style={{ color: '#6d4a43' }}
+            style={{ color: '#ac4d3c' }}
           >
             Choose a Service
           </h2>
@@ -447,10 +447,10 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
         <div className="text-center mt-14">
           <button
             onClick={handleBookNowClick}
-            className="px-10 py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#6d4a43] hover:text-white"
+            className="px-10 py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#ac4d3c] hover:text-white"
             style={{
-              borderColor: '#6d4a43',
-              color: '#6d4a43',
+              borderColor: '#ac4d3c',
+              color: '#ac4d3c',
             }}
           >
             <span className="text-sm font-sans font-medium tracking-[0.15em] uppercase">

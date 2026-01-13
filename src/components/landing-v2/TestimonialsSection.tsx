@@ -71,7 +71,7 @@ export default function TestimonialsSection() {
               >
                 <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 relative">
                   {/* Quote Icon */}
-                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-[#C4A484] to-[#D4A574] rounded-full flex items-center justify-center text-white opacity-20 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-[#cc947f] to-[#d3a392] rounded-full flex items-center justify-center text-white opacity-20 group-hover:opacity-100 transition-opacity">
                     <Quote className="w-6 h-6" />
                   </div>
 
@@ -92,7 +92,7 @@ export default function TestimonialsSection() {
 
                   {/* Service Info */}
                   <div className="mb-4">
-                    <span className="font-sans font-light text-sm px-3 py-1 bg-[#C4A484]/10 text-[#C4A484] rounded-full">
+                    <span className="font-sans font-light text-sm px-3 py-1 bg-[#cc947f]/10 text-[#cc947f] rounded-full">
                       {testimonial.service}
                     </span>
                     <p className="font-sans font-light text-sm text-gray-500 mt-2">
@@ -106,7 +106,7 @@ export default function TestimonialsSection() {
                       <p className="font-sans font-medium text-gray-900">{testimonial.name}</p>
                       <p className="font-sans font-light text-sm text-gray-500">{testimonial.date}</p>
                     </div>
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#C4A484] to-[#D4A574] rounded-full flex items-center justify-center text-white font-sans font-semibold">
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#cc947f] to-[#d3a392] rounded-full flex items-center justify-center text-white font-sans font-semibold">
                       {testimonial.name.charAt(0)}
                     </div>
                   </div>
@@ -120,7 +120,7 @@ export default function TestimonialsSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-16 bg-gradient-to-r from-[#C4A484] to-[#D4A574] rounded-2xl p-8 text-white"
+            className="mt-16 bg-gradient-to-r from-[#cc947f] to-[#d3a392] rounded-2xl p-8 text-white"
           >
             <div className="grid md:grid-cols-3 gap-8 text-center">
               <div>
@@ -145,7 +145,7 @@ export default function TestimonialsSection() {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="text-center mt-12"
           >
-            <button className="px-8 py-3 bg-[#C4A484] text-white rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-[#D4A574] transition-all hover:scale-105 hover:shadow-xl">
+            <button className="px-8 py-3 bg-[#cc947f] text-white rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-[#d3a392] transition-all hover:scale-105 hover:shadow-xl">
               Read More Reviews
             </button>
           </motion.div>

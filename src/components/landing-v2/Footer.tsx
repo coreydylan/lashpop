@@ -26,7 +26,7 @@ export default function Footer() {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-[#C4A484] transition-colors"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-[#cc947f] transition-colors"
               >
                 <Instagram className="w-5 h-5" />
               </a>
@@ -34,7 +34,7 @@ export default function Footer() {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-[#C4A484] transition-colors"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-[#cc947f] transition-colors"
               >
                 <Facebook className="w-5 h-5" />
               </a>
@@ -42,7 +42,7 @@ export default function Footer() {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-[#C4A484] transition-colors"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-[#cc947f] transition-colors"
               >
                 <Twitter className="w-5 h-5" />
               </a>
@@ -50,7 +50,7 @@ export default function Footer() {
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-[#C4A484] transition-colors"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-[#cc947f] transition-colors"
               >
                 <Youtube className="w-5 h-5" />
               </a>
@@ -62,27 +62,27 @@ export default function Footer() {
             <h4 className="text-white font-display font-medium mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/about" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/about" className="hover:text-[#cc947f] transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/services" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/services" className="hover:text-[#cc947f] transition-colors">
                   Our Services
                 </Link>
               </li>
               <li>
-                <Link href="/team" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/team" className="hover:text-[#cc947f] transition-colors">
                   Meet the Team
                 </Link>
               </li>
               <li>
-                <Link href="/gallery" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/gallery" className="hover:text-[#cc947f] transition-colors">
                   Gallery
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/blog" className="hover:text-[#cc947f] transition-colors">
                   Blog
                 </Link>
               </li>
@@ -94,27 +94,27 @@ export default function Footer() {
             <h4 className="text-white font-display font-medium mb-4">Popular Services</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/services/classic" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/services/classic" className="hover:text-[#cc947f] transition-colors">
                   Classic Lashes
                 </Link>
               </li>
               <li>
-                <Link href="/services/volume" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/services/volume" className="hover:text-[#cc947f] transition-colors">
                   Volume Lashes
                 </Link>
               </li>
               <li>
-                <Link href="/services/mega" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/services/mega" className="hover:text-[#cc947f] transition-colors">
                   Mega Volume
                 </Link>
               </li>
               <li>
-                <Link href="/services/lift" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/services/lift" className="hover:text-[#cc947f] transition-colors">
                   Lash Lift & Tint
                 </Link>
               </li>
               <li>
-                <Link href="/services/removal" className="hover:text-[#C4A484] transition-colors">
+                <Link href="/services/removal" className="hover:text-[#cc947f] transition-colors">
                   Lash Removal
                 </Link>
               </li>
@@ -128,12 +128,12 @@ export default function Footer() {
               <li>429 S Coast Hwy</li>
               <li>Oceanside, CA 92054</li>
               <li className="pt-2">
-                <a href="tel:7602120448" className="hover:text-[#C4A484] transition-colors">
+                <a href="tel:7602120448" className="hover:text-[#cc947f] transition-colors">
                   +1 (760) 212-0448
                 </a>
               </li>
               <li>
-                <a href="mailto:hello@lashpopstudios.com" className="hover:text-[#C4A484] transition-colors">
+                <a href="mailto:hello@lashpopstudios.com" className="hover:text-[#cc947f] transition-colors">
                   hello@lashpopstudios.com
                 </a>
               </li>
@@ -152,11 +152,11 @@ export default function Footer() {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="flex-1 px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C4A484] text-white placeholder-gray-500 font-sans font-light"
+                className="flex-1 px-4 py-3 bg-gray-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#cc947f] text-white placeholder-gray-500 font-sans font-light"
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-[#C4A484] text-white rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-[#D4A574] transition-colors"
+                className="px-6 py-3 bg-[#cc947f] text-white rounded-lg font-sans font-medium uppercase tracking-wide hover:bg-[#d3a392] transition-colors"
               >
                 Subscribe
               </button>
@@ -171,13 +171,13 @@ export default function Footer() {
               © {currentYear} LashPop Studios. All rights reserved.
             </p>
             <div className="flex gap-6 text-sm">
-              <Link href="/privacy" className="hover:text-[#C4A484] transition-colors">
+              <Link href="/privacy" className="hover:text-[#cc947f] transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="hover:text-[#C4A484] transition-colors">
+              <Link href="/terms" className="hover:text-[#cc947f] transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/cancellation" className="hover:text-[#C4A484] transition-colors">
+              <Link href="/cancellation" className="hover:text-[#cc947f] transition-colors">
                 Cancellation Policy
               </Link>
             </div>

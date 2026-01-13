@@ -103,7 +103,7 @@ export function MapSection() {
           const labelLayers = ['poi-label', 'road-label', 'waterway-label']
           labelLayers.forEach(layer => {
             if (newMap.getLayer(layer)) {
-              newMap.setPaintProperty(layer, 'text-color', '#8a7c69') // dune color
+              newMap.setPaintProperty(layer, 'text-color', '#ac4d3c') // terracotta color
             }
           })
         })
@@ -180,7 +180,7 @@ export function MapSection() {
       <div className="text-center py-8 md:py-12">
         <h2
           className="text-xl md:text-3xl font-display font-medium tracking-wide mb-4 md:mb-6"
-          style={{ color: '#6d4a43' }}
+          style={{ color: '#ac4d3c' }}
         >
           Find Us
         </h2>

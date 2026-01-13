@@ -1,23 +1,15 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Clock, DollarSign, User, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { ChevronRight, Clock, DollarSign } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { useUserKnowledge } from '@/contexts/UserKnowledgeContext';
-import { useVagaroWidget } from '@/contexts/VagaroWidgetContext';
-import { PhoneSaveNudge } from '@/components/auth/PhoneSaveNudge';
-import { LPLogoLoader } from '@/components/ui/LPLogoLoader';
 import { getAssetsByServiceSlug, type AssetWithTags } from '@/actions/dam';
-import { getTeamMembersByServiceId } from '@/actions/team';
-import { VagaroBookingWidget } from '@/components/VagaroBookingWidget';
-import { getVagaroWidgetUrl } from '@/lib/vagaro-widget';
 import type { Panel, ServicePanelData, BreadcrumbStep } from '@/types/panel-stack';
-import type { SelectTeamMember } from '@/db/schema/team_members';
 
 interface ServicePanelProps {
   panel: Panel;
@@ -212,8 +204,11 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     // Track service view
     trackServiceView(service.id, service.name, data.categoryId);
 
-    // Navigate to the service detail page
-    router.push(`/services/${service.slug}`);
+    setSelectedService(service);
+    setSelectedProviders(new Set()); // Reset provider selection
+
+    // Go to service detail view within the panel
+    setCurrentView('service-detail');
   };
 
   const handleBackToBrowse = () => {
@@ -609,153 +604,26 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                 </div>
               )}
 
-              {/* Provider Selection */}
-              <div className="px-4 md:px-0">
-                <div className="flex items-center justify-between mb-3 md:mb-4">
-                  <h4 className="font-medium text-dune text-sm md:text-base">
-                    Choose Your Artist
-                    {isLoadingProviders && (
-                      <span className="ml-2 text-xs text-sage/60">Loading...</span>
-                    )}
-                  </h4>
-                  {providers.length > 0 && (
-                    <button
-                      onClick={handleSelectAllProviders}
-                      className="text-xs md:text-sm text-dusty-rose font-medium hover:text-terracotta transition-colors"
-                    >
-                      {selectedProviders.size === providers.length ? 'Clear' : 'Any Artist'}
-                    </button>
-                  )}
-                </div>
-
-                {/* Loading State */}
-                {isLoadingProviders && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                    {[1, 2, 3, 4].map(i => (
-                      <div
-                        key={i}
-                        className="p-2 md:p-3 rounded-xl md:rounded-xl bg-sage/5 animate-pulse"
-                      >
-                        <div className="aspect-square bg-warm-sand/20 rounded-lg mb-1 md:mb-2" />
-                        <div className="h-3 bg-sage/10 rounded mb-1" />
-                        <div className="h-2 bg-sage/10 rounded w-2/3" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Providers - 2-column grid on mobile, 4-column on desktop */}
-                {!isLoadingProviders && providers.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-                    {providers.map(provider => {
-                      const isSelected = selectedProviders.has(provider.id);
-
-                      return (
-                        <motion.button
-                          key={provider.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.97 }}
-                          onClick={() => handleProviderToggle(provider.id)}
-                          className={`
-                            relative p-3 rounded-2xl md:rounded-xl transition-all text-left
-                            ${
-                              isSelected
-                                ? 'bg-gradient-to-br from-dusty-rose/20 to-warm-sand/20 ring-2 ring-dusty-rose shadow-md'
-                                : 'bg-sage/5 hover:bg-sage/10 active:bg-sage/10'
-                            }
-                          `}
-                        >
-                          {isSelected && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              className="absolute top-2 right-2 w-5 h-5 md:w-5 md:h-5 rounded-full bg-dusty-rose flex items-center justify-center"
-                            >
-                              <Check className="w-3 h-3 text-white" />
-                            </motion.div>
-                          )}
-
-                          {provider.imageUrl ? (
-                            <div className="aspect-square rounded-xl md:rounded-lg mb-2 overflow-hidden">
-                              <Image
-                                src={provider.imageUrl}
-                                alt={provider.name}
-                                width={120}
-                                height={120}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ) : (
-                            <div className="aspect-square bg-warm-sand/20 rounded-xl md:rounded-lg mb-2 flex items-center justify-center">
-                              <User className="w-6 h-6 md:w-6 md:h-6 text-sage/30" />
-                            </div>
-                          )}
-                          <p className="text-sm font-medium text-dune text-center truncate">{provider.name}</p>
-                          <p className="text-xs text-sage text-center mt-0.5 truncate">{provider.role}</p>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* No Providers State */}
-                {!isLoadingProviders && providers.length === 0 && (
-                  <div className="glass rounded-xl p-6 text-center">
-                    <User className="w-10 h-10 text-sage/30 mx-auto mb-2" />
-                    <p className="text-sm text-dune/60">No artists available for this service</p>
-                  </div>
-                )}
-
-                {/* Selection summary */}
-                {selectedProviders.size > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-3 md:mt-4 p-2 md:p-3 rounded-xl bg-dusty-rose/10 border border-dusty-rose/20"
-                  >
-                    <p className="text-xs md:text-sm text-dusty-rose">
-                      <strong>{selectedProviders.size}</strong> {selectedProviders.size === 1 ? 'artist' : 'artists'} selected
-                    </p>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Phone Save Nudge - appears contextually */}
-              <AnimatePresence>
-                {shouldShowSaveNudge() && selectedProviders.size > 0 && !showSaveNudge && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    onAnimationComplete={() => setShowSaveNudge(true)}
-                    className="px-4 md:px-0"
-                  >
-                    <PhoneSaveNudge onClose={() => setShowSaveNudge(false)} context="service-selection" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Continue Button */}
+              {/* Continue to Book Button */}
               <div className="pt-3 md:pt-4 border-t border-sage/10 px-4 md:px-0 pb-4 md:pb-0">
                 <motion.button
-                  whileHover={{ scale: selectedProviders.size > 0 ? 1.02 : 1 }}
-                  whileTap={{ scale: selectedProviders.size > 0 ? 0.98 : 1 }}
-                  onClick={handleContinueToTimeSelection}
-                  disabled={selectedProviders.size === 0}
-                  className={`
-                    w-full px-4 py-3 md:px-6 md:py-4 rounded-full font-medium transition-all text-sm md:text-base
-                    ${
-                      selectedProviders.size > 0
-                        ? 'bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white shadow-lg hover:shadow-xl'
-                        : 'bg-sage/20 text-sage/50 cursor-not-allowed'
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    // Track service selection
+                    if (selectedService) {
+                      trackServiceSelection(selectedService.id, selectedService.name, data.categoryId);
                     }
-                  `}
+                    // Open Vagaro booking in new tab
+                    const bookingUrl = selectedService?.vagaroServiceId
+                      ? `https://www.vagaro.com/lashpop32?sId=${selectedService.vagaroServiceId}`
+                      : 'https://www.vagaro.com/lashpop32';
+                    window.open(bookingUrl, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="w-full px-4 py-3 md:px-6 md:py-4 rounded-full font-medium transition-all text-sm md:text-base bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
-                  {selectedProviders.size === 0
-                    ? 'Select an artist to continue'
-                    : selectedProviders.size === 1
-                    ? 'Continue to Time Selection'
-                    : `Continue with ${selectedProviders.size} Artists`}
+                  Continue to Book
+                  <ChevronRight className="w-4 h-4" />
                 </motion.button>
               </div>
             </motion.div>

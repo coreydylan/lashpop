@@ -544,16 +544,16 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         <div className="text-center mb-12 px-4">
           <h2
             className="text-2xl md:text-3xl font-display font-medium tracking-wide mb-6"
-            style={{ color: '#6d4a43' }}
+            style={{ color: '#ac4d3c' }}
           >
             Find Your Stylist
           </h2>
           <div className="w-16 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#8a5e55' }}>
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#ac4d3c' }}>
               LashPop Studios is home to a collective of independent beauty businesses—each offering their own services, pricing, schedules, and specialties.
             </p>
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#8a5e55' }}>
+            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#ac4d3c' }}>
               Browse the profiles below to find a stylist that fits your vibe.
             </p>
           </div>
@@ -1079,10 +1079,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         <div className="text-center mt-12 md:mt-16 px-4">
           <a
             href="mailto:careers@lashpopstudios.com?subject=Join%20The%20Team"
-            className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#6d4a43] hover:text-white hover:border-[#6d4a43]"
+            className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#ac4d3c] hover:text-white hover:border-[#ac4d3c]"
             style={{
-              borderColor: '#6d4a43',
-              color: '#6d4a43',
+              borderColor: '#ac4d3c',
+              color: '#ac4d3c',
             }}
           >
             <span className="text-sm font-medium tracking-[0.1em] uppercase">
