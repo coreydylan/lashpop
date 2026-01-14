@@ -49,11 +49,11 @@ export function BrowseView() {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2 }}
-      className="p-4 md:p-6"
+      className="relative"
     >
-      {/* Subcategory Tabs */}
+      {/* Subcategory Tabs - Sticky on mobile */}
       {subcategories.length > 1 && (
-        <div className="mb-4">
+        <div className="sticky top-0 z-10 bg-ivory/95 backdrop-blur-sm px-4 pt-4 pb-3 md:relative md:bg-transparent md:backdrop-blur-none md:px-6 md:pt-6 md:pb-0 md:mb-4">
           <SubcategoryTabs
             subcategories={subcategories}
             activeSubcategory={activeSubcategory}
@@ -63,23 +63,25 @@ export function BrowseView() {
       )}
 
       {/* Services Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-        {filteredServices.map((service, index) => (
-          <ServiceCard
-            key={service.id || `service-${index}`}
-            service={service}
-            index={index}
-            onClick={() => actions.selectService(service)}
-          />
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {filteredServices.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-sage font-sans">No services found in this category.</p>
+      <div className={`px-4 pb-4 md:px-6 md:pb-6 ${subcategories.length > 1 ? 'pt-2 md:pt-0' : 'pt-4 md:pt-6'}`}>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          {filteredServices.map((service, index) => (
+            <ServiceCard
+              key={service.id || `service-${index}`}
+              service={service}
+              index={index}
+              onClick={() => actions.selectService(service)}
+            />
+          ))}
         </div>
-      )}
+
+        {/* Empty State */}
+        {filteredServices.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-sage font-sans">No services found in this category.</p>
+          </div>
+        )}
+      </div>
     </motion.div>
   )
 }
