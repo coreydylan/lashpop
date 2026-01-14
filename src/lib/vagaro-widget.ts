@@ -10,17 +10,21 @@
 // This is constant for all services in the LashPop account
 const VAGARO_BUSINESS_PREFIX = 'OZqsEJatCoPqFJ1y6BuSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfoR';
 
+// Version parameter required by Vagaro's widget loader
+// Without this, the script loads but doesn't initialize the iframe
+const VAGARO_VERSION_PARAM = '?v=hiLxqW4Klh4bZZdrYo8KnJ4QSz12Y9nutihT1iqCSyC#';
+
 // Fallback code for "all services" widget
 const ALL_SERVICES_CODE = '6PmS0';
 
 /**
  * Constructs a Vagaro widget URL from a service code
  * @param serviceCode - The 5-character service-specific code (e.g., "6XoR0")
- * @returns The full Vagaro widget URL
+ * @returns The full Vagaro widget URL with version parameter
  */
 export function getVagaroWidgetUrl(serviceCode: string | null | undefined): string {
   const code = serviceCode || ALL_SERVICES_CODE;
-  return `https://www.vagaro.com//resources/WidgetEmbeddedLoader/${VAGARO_BUSINESS_PREFIX}${code}`;
+  return `https://www.vagaro.com//resources/WidgetEmbeddedLoader/${VAGARO_BUSINESS_PREFIX}${code}${VAGARO_VERSION_PARAM}`;
 }
 
 /**
