@@ -169,7 +169,7 @@ export default function ServiceDetailPanel({ service, onClose }: ServiceDetailPa
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {gallery.map((asset, i) => (
                 <motion.div
-                  key={asset.id}
+                  key={asset.id || `gallery-asset-${i}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
@@ -239,12 +239,12 @@ export default function ServiceDetailPanel({ service, onClose }: ServiceDetailPa
           {/* Providers Grid */}
           {!isLoadingProviders && providers.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {providers.map((provider) => {
+              {providers.map((provider, idx) => {
               const isSelected = selectedProviders.includes(provider.id);
 
                 return (
                   <motion.button
-                    key={provider.id}
+                    key={provider.id || `provider-${idx}`}
                     onClick={() => handleProviderSelect(provider.id)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}

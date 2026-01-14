@@ -67,7 +67,7 @@ export function BrowseView() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           {filteredServices.map((service, index) => (
             <ServiceCard
-              key={service.id || `service-${index}`}
+              key={service.id || service.slug || `service-${index}`}
               service={service}
               index={index}
               onClick={() => actions.selectService(service)}

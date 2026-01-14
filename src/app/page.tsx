@@ -16,7 +16,7 @@ export default async function HomePage() {
 
   // Format services for the drawer (keep hierarchy structure)
   const formattedServices = services.map(service => ({
-    id: service.slug,
+    id: service.id || service.slug || `service-${service.name}`,
     name: service.name,
     slug: service.slug,
     subtitle: service.subtitle,
@@ -58,8 +58,8 @@ export default async function HomePage() {
     favoriteServices: member.favoriteServices as string[] | undefined,
     funFact: member.funFact || undefined,
     // Quick facts from database
-    quickFacts: member.quickFacts?.map(fact => ({
-      id: fact.id,
+    quickFacts: member.quickFacts?.map((fact, index) => ({
+      id: fact.id || `fact-${index}`,
       factType: fact.factType,
       customLabel: fact.customLabel,
       value: fact.value,

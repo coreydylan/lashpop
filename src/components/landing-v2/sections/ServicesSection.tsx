@@ -401,9 +401,9 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
         <div className="space-y-8">
           {/* Top row - 4 items */}
           <div className="grid grid-cols-4 gap-6">
-            {serviceCategories.slice(0, 4).map((category) => (
+            {serviceCategories.slice(0, 4).map((category, index) => (
               <ServiceCard
-                key={category.id}
+                key={category.id || `cat-${index}`}
                 category={category}
                 onClick={() => handleCategoryClick(category.slug)}
               />
@@ -411,8 +411,8 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
           </div>
           {/* Bottom row - 3 items centered */}
           <div className="flex justify-center gap-6">
-            {serviceCategories.slice(4).map((category) => (
-              <div key={category.id} className="w-[calc(25%-1.125rem)]">
+            {serviceCategories.slice(4).map((category, index) => (
+              <div key={category.id || `cat-bottom-${index}`} className="w-[calc(25%-1.125rem)]">
                 <ServiceCard
                   category={category}
                   onClick={() => handleCategoryClick(category.slug)}

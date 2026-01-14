@@ -156,9 +156,9 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           {/* Scrollable container for mobile */}
           <div className="overflow-x-auto py-2 -my-2 -mx-4 px-4 md:mx-0 md:px-0 md:py-0 md:my-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
             <div className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-2 md:gap-3 min-w-max md:min-w-0">
-              {categoryOptions.map((category) => (
+              {categoryOptions.map((category, index) => (
                 <button
-                  key={category.id}
+                  key={category.id || `cat-${index}`}
                   onClick={() => handleCategoryChange(category.id)}
                   className="relative group shrink-0 focus:outline-none focus-visible:outline-none"
                 >
@@ -190,9 +190,9 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           ref={faqListRef}
           className="space-y-3 md:space-y-4"
         >
-          {filteredFAQs.map((faq) => (
+          {filteredFAQs.map((faq, index) => (
             <div
-              key={faq.id}
+              key={faq.id || `faq-${index}`}
               className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-dusty-rose/20"
             >
               <button

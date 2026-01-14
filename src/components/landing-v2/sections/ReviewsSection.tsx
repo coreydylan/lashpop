@@ -199,9 +199,9 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
           <>
             {/* Desktop View */}
             <div className="hidden md:flex justify-center gap-6 mb-8">
-              {reviewStats.map((stat) => (
+              {reviewStats.map((stat, index) => (
                 <div
-                  key={stat.id}
+                  key={stat.id || `stat-${index}`}
                   className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-full px-5 py-2.5 shadow-sm border border-white/40"
                 >
                   <div className="scale-75">
@@ -220,9 +220,9 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
 
             {/* Mobile View */}
             <div className="md:hidden flex justify-center gap-3 mb-6 px-4">
-              {reviewStats.map((stat) => (
+              {reviewStats.map((stat, index) => (
                 <div
-                  key={stat.id}
+                  key={stat.id || `stat-${index}`}
                   className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm border border-white/40"
                 >
                   <div className="scale-[0.6]">
@@ -251,7 +251,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
             <div className="flex touch-pan-x pt-4 pb-16 md:py-10 px-4">
               {reviews.map((review, index) => (
                 <div
-                  key={review.id}
+                  key={review.id || `review-${index}`}
                   className="flex-[0_0_auto] mr-5 pl-4 first:pl-0"
                 >
                 <div

@@ -76,11 +76,11 @@ export function SubcategoryTabs({ subcategories, activeSubcategory, onSelect }: 
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {allTabs.map((tab) => {
+        {allTabs.map((tab, index) => {
           const isActive = activeSubcategory === tab.slug
           return (
             <motion.button
-              key={tab.id}
+              key={tab.id || `tab-${index}`}
               onClick={() => onSelect(tab.slug)}
               className={`
                 relative px-4 py-2 rounded-full text-sm font-sans font-medium whitespace-nowrap shrink-0

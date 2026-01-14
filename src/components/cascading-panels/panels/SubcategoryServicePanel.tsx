@@ -35,9 +35,9 @@ export function SubcategoryServicePanel({ panel }: SubcategoryServicePanelProps)
     >
       {/* Subcategory Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {data.subcategories.map(subcat => (
+        {data.subcategories.map((subcat, index) => (
           <button
-            key={subcat.id}
+            key={subcat.id || `subcat-${index}`}
             onClick={() => setActiveTab(subcat.id)}
             className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${
               activeTab === subcat.id
@@ -54,7 +54,7 @@ export function SubcategoryServicePanel({ panel }: SubcategoryServicePanelProps)
       <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6">
         {filteredServices.map((service, index) => (
           <motion.button
-            key={service.id}
+            key={service.id || `service-${index}`}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}

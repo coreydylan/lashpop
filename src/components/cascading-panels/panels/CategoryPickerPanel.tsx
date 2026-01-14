@@ -125,7 +125,7 @@ export function CategoryPickerPanel({ panel }: BookNowPanelProps) {
 
           return (
             <motion.button
-              key={category.id}
+              key={category.id || `category-${index}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}

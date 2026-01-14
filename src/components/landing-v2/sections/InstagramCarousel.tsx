@@ -105,7 +105,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
             <div className="flex touch-pan-y gap-4 px-4">
               {displayItems.map((item, index) => (
                 <div
-                  key={index}
+                  key={`${index}-${item.mediaUrl}`}
                   className="flex-[0_0_auto] w-80 h-80 min-w-0 cursor-grab active:cursor-grabbing group relative"
                   onClick={() => {
                     if (item.permalink) {

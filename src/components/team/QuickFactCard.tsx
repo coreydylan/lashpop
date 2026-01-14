@@ -153,7 +153,7 @@ export function QuickFactsGrid({ facts, compact = false, className = '' }: Quick
     return (
       <div className={`flex flex-wrap gap-2 ${className}`}>
         {sortedFacts.map((fact, index) => (
-          <QuickFactCard key={fact.id} fact={fact} index={index} compact />
+          <QuickFactCard key={fact.id || `quickfact-compact-${index}`} fact={fact} index={index} compact />
         ))}
       </div>
     )
@@ -162,7 +162,7 @@ export function QuickFactsGrid({ facts, compact = false, className = '' }: Quick
   return (
     <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${className}`}>
       {sortedFacts.map((fact, index) => (
-        <QuickFactCard key={fact.id} fact={fact} index={index} />
+        <QuickFactCard key={fact.id || `quickfact-${index}`} fact={fact} index={index} />
       ))}
     </div>
   )

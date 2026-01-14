@@ -64,8 +64,8 @@ export function CascadingPanelContainer() {
                 {state.panels
                   .filter(panel => panel.level === level)
                   .sort((a, b) => a.position - b.position)
-                  .map(panel => (
-                    <div key={panel.id}>
+                  .map((panel, idx) => (
+                    <div key={panel.id || `panel-${idx}`}>
                       {panel.type === 'book-now' && <BookNowPanel panel={panel} />}
                       {panel.type === 'category-picker' && <CategoryPickerPanel panel={panel} />}
                       {panel.type === 'subcategory-services' && <SubcategoryServicePanel panel={panel} />}

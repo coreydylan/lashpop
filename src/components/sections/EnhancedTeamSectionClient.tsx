@@ -390,8 +390,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         .then(res => res.json())
         .then(data => {
           if (data.photos && data.photos.length > 0) {
-            const images: PortfolioImage[] = data.photos.map((photo: any) => ({
-              id: photo.id,
+            const images: PortfolioImage[] = data.photos.map((photo: any, index: number) => ({
+              id: photo.id || `photo-${index}`,
               url: photo.filePath,
               width: photo.width,
               height: photo.height,
@@ -675,9 +675,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             className="overflow-x-auto scrollbar-hide"
                           >
                             <div className="flex gap-1 min-w-max">
-                              {memberCategories.slice(0, 4).map((category) => (
+                              {memberCategories.slice(0, 4).map((category, idx) => (
                                 <span
-                                  key={category}
+                                  key={`${member.id}-cat-${idx}`}
                                   className="px-2 py-0.5 text-xs font-sans font-normal bg-cream text-charcoal rounded-full whitespace-nowrap"
                                 >
                                   {category}
@@ -910,7 +910,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   ) : (
                                     <AnimatePresence mode="wait">
                                       <motion.div
-                                        key={portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.id : 'headshot'}
+                                        key={portfolioImages.length > 0 && portfolioImages[currentImageIndex]?.id ? portfolioImages[currentImageIndex].id : 'headshot'}
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
@@ -958,7 +958,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                     <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                                       {portfolioImages.map((img, idx) => (
                                         <button
-                                          key={img.id}
+                                          key={img.id || `portfolio-${idx}`}
                                           onClick={() => handleImageSelect(idx)}
                                           className={`relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all ${
                                             idx === currentImageIndex
@@ -1362,7 +1362,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                       .sort((a, b) => a.displayOrder - b.displayOrder)
                                       .map((fact, index) => (
                                         <div
-                                          key={fact.id}
+                                          key={fact.id || `quickfact-${index}`}
                                           className="w-[75vw] max-w-[300px] flex-shrink-0"
                                         >
                                           <QuickFactCard fact={fact} index={index} />

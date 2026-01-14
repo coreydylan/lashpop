@@ -433,7 +433,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                   <div className="grid grid-cols-3 gap-2">
                     {photos.map((photo, idx) => (
                       <motion.button
-                        key={photo.id}
+                        key={photo.id || `mobile-photo-${idx}`}
                         onClick={() => setCurrentPhotoIndex(idx)}
                         className={`relative aspect-square rounded-xl overflow-hidden ${
                           idx === currentPhotoIndex
@@ -680,7 +680,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
                   {photos.map((photo, idx) => (
                     <motion.button
-                      key={photo.id}
+                      key={photo.id || `desktop-photo-${idx}`}
                       onClick={() => setCurrentPhotoIndex(idx)}
                       className={`relative aspect-square w-full rounded-xl overflow-hidden ${
                         idx === currentPhotoIndex

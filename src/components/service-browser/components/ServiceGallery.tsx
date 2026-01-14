@@ -58,7 +58,7 @@ export function ServiceGallery({ images, isLoading }: ServiceGalleryProps) {
       <div className="flex gap-2 overflow-x-auto scrollbar-hide md:grid md:grid-cols-4 md:gap-3 -mx-4 px-4 md:mx-0 md:px-0">
         {images.map((image, index) => (
           <motion.button
-            key={image.id}
+            key={image.id || `img-${index}`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.03 }}
