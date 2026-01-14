@@ -2,17 +2,15 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, Clock, DollarSign, ExternalLink } from 'lucide-react';
+import { ChevronRight, Clock, DollarSign } from 'lucide-react';
 import { useSwipeable } from 'react-swipeable';
 import Image from 'next/image';
 import { PanelWrapper } from '../PanelWrapper';
 import { usePanelStack } from '@/contexts/PanelStackContext';
 import { useUserKnowledge } from '@/contexts/UserKnowledgeContext';
 import { getAssetsByServiceSlug, type AssetWithTags } from '@/actions/dam';
+import { BookingModal } from '@/components/booking';
 import type { Panel, ServicePanelData, BreadcrumbStep } from '@/types/panel-stack';
-
-// Base Vagaro booking URL for Lash Pop
-const VAGARO_BASE_BOOKING_URL = 'https://www.vagaro.com/lashpop32';
 
 interface ServicePanelProps {
   panel: Panel;
@@ -36,6 +34,9 @@ export function ServicePanel({ panel }: ServicePanelProps) {
   const [gallery, setGallery] = useState<AssetWithTags[]>([]);
   const [isLoadingGallery, setIsLoadingGallery] = useState(false);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+
+  // Booking modal state
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   // Build breadcrumbs based on current view
   const buildBreadcrumbs = useCallback((): BreadcrumbStep[] => {
@@ -127,19 +128,15 @@ export function ServicePanel({ panel }: ServicePanelProps) {
     setGallery([]);
   };
 
-  // Open Vagaro booking in a new tab
+  // Open booking modal
   const handleContinueToBook = () => {
     // Track service selection
     if (selectedService) {
       trackServiceSelection(selectedService.id, selectedService.name, data.categoryId);
     }
 
-    // Generate Vagaro booking URL with service filter if available
-    const bookingUrl = selectedService?.vagaroServiceId
-      ? `${VAGARO_BASE_BOOKING_URL}?sId=${selectedService.vagaroServiceId}`
-      : VAGARO_BASE_BOOKING_URL;
-
-    window.open(bookingUrl, '_blank', 'noopener,noreferrer');
+    // Open the booking modal
+    setIsBookingModalOpen(true);
   };
 
   // Swipe handlers for switching between service panels (mobile)
@@ -402,7 +399,6 @@ export function ServicePanel({ panel }: ServicePanelProps) {
                   className="w-full px-4 py-3 md:px-6 md:py-4 rounded-full font-medium transition-all text-sm md:text-base bg-gradient-to-r from-terracotta to-terracotta-light text-white shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
                   Continue to Book
-                  <ExternalLink className="w-4 h-4" />
                 </motion.button>
               </div>
             </motion.div>
@@ -410,6 +406,16 @@ export function ServicePanel({ panel }: ServicePanelProps) {
 
         </AnimatePresence>
       </PanelWrapper>
+
+      {/* Booking Modal - conditionally mounted so it gets fresh state like VagaroWidgetPanel */}
+      {isBookingModalOpen && (
+        <BookingModal
+          isOpen={true}
+          onClose={() => setIsBookingModalOpen(false)}
+          vagaroServiceCode={selectedService?.vagaroServiceCode}
+          serviceName={selectedService?.name}
+        />
+      )}
     </div>
   );
 }
