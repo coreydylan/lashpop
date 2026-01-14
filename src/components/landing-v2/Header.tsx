@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Calendar } from 'lucide-react'
+import { smoothScrollToElement } from '@/lib/smoothScroll'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -92,12 +93,7 @@ export default function Header() {
                   color: 'rgb(var(--cream))',
                   backdropFilter: 'blur(10px)',
                 }}
-                onClick={() => {
-                  const servicesSection = document.getElementById('services')
-                  if (servicesSection) {
-                    servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                  }
-                }}
+                onClick={() => smoothScrollToElement('#services', 80, 800, 'top')}
               >
                 <Calendar className="w-4 h-4" />
                 Book Now
@@ -174,10 +170,7 @@ export default function Header() {
                   className="btn btn-primary w-full"
                   onClick={() => {
                     setIsMobileMenuOpen(false)
-                    const servicesSection = document.getElementById('services')
-                    if (servicesSection) {
-                      servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-                    }
+                    smoothScrollToElement('#services', 60, 800, 'top')
                   }}
                 >
                   <Calendar className="w-4 h-4" />

@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { useFindYourLook } from '@/components/find-your-look'
+import { smoothScrollToElement } from '@/lib/smoothScroll'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import WeatherLocationBadge from './WeatherLocationBadge'
 import { HeroArchSlideshow } from './slideshow'
@@ -64,12 +65,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
 
   // Handle Book Now click - scroll to services section
   const scrollToServices = useCallback(() => {
-    const servicesSection = document.getElementById('services')
-    if (servicesSection) {
-      const headerHeight = 80
-      const elementTop = servicesSection.getBoundingClientRect().top + window.pageYOffset
-      window.scrollTo({ top: elementTop - headerHeight, behavior: 'smooth' })
-    }
+    smoothScrollToElement('#services', 60, 800, 'top')
   }, [])
 
   // Check if mobile
