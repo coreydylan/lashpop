@@ -206,38 +206,15 @@ function MobileSwipeableServiceCards({
 
   return (
     <div className="flex flex-col items-center w-full">
-      {/* Progress indicator - matching FindYourLook quiz style */}
-      <div className="flex justify-center items-center gap-2 mb-4">
-        {serviceCategories.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            type="button"
-            aria-label={`Go to ${serviceCategories[index].title}`}
-            className="flex items-center justify-center h-5"
-          >
-            <div
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? 'w-5 bg-terracotta'
-                  : index < currentIndex
-                  ? 'w-1.5 bg-terracotta/40'
-                  : 'w-1.5 bg-cream'
-              }`}
-            />
-          </button>
-        ))}
-      </div>
-
       {/* Card container with side arrows */}
       <div
         ref={containerRef}
-        className="relative w-full max-w-[280px] mx-auto"
+        className="relative w-full max-w-[300px] mx-auto"
         style={{ touchAction: 'pan-y pinch-zoom' }}
       >
         {/* Subtle side arrows indicating swipe */}
         <motion.div
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 z-0 pointer-events-none"
+          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 z-0 pointer-events-none"
           animate={{
             opacity: [0.15, 0.35, 0.15],
             x: [0, -3, 0]
@@ -251,7 +228,7 @@ function MobileSwipeableServiceCards({
           <ChevronLeft className="w-5 h-5 text-[#ac4d3c]" strokeWidth={1.5} />
         </motion.div>
         <motion.div
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 z-0 pointer-events-none"
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 z-0 pointer-events-none"
           animate={{
             opacity: [0.15, 0.35, 0.15],
             x: [0, 3, 0]
@@ -265,11 +242,12 @@ function MobileSwipeableServiceCards({
           <ChevronRight className="w-5 h-5 text-[#ac4d3c]" strokeWidth={1.5} />
         </motion.div>
 
+        {/* Subtle card container */}
         <div
-          className="cursor-pointer"
+          className="cursor-pointer rounded-2xl bg-white/40 border border-warm-sand/30 shadow-sm"
           onClick={() => onCategoryClick(currentCategory.slug)}
         >
-          <div className="flex flex-col items-center justify-center text-center px-5 py-6">
+          <div className="flex flex-col items-center justify-center text-center px-6 py-6">
             {/* Icon */}
             <div className="relative w-20 h-10 mb-4">
               <Image
@@ -305,6 +283,29 @@ function MobileSwipeableServiceCards({
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Progress indicator below cards - condensed left to right */}
+      <div className="flex justify-center items-center gap-1.5 mt-4">
+        {serviceCategories.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentIndex(index)}
+            type="button"
+            aria-label={`Go to ${serviceCategories[index].title}`}
+            className="flex items-center justify-center h-5"
+          >
+            <div
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                index === currentIndex
+                  ? 'w-5 bg-terracotta'
+                  : index < currentIndex
+                  ? 'w-1.5 bg-terracotta/40'
+                  : 'w-1.5 bg-cream'
+              }`}
+            />
+          </button>
+        ))}
       </div>
     </div>
   )
