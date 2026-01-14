@@ -124,12 +124,12 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// PATCH - Update a single team member's details (manual categories, bio, funFact)
+// PATCH - Update a single team member's details (manual categories, bio, funFact, credentials)
 export async function PATCH(request: NextRequest) {
   try {
     const db = getDb()
     const body = await request.json()
-    const { memberId, manualServiceCategories, bio, funFact } = body
+    const { memberId, manualServiceCategories, bio, funFact, credentials } = body
 
     if (!memberId) {
       return NextResponse.json(
@@ -159,6 +159,17 @@ export async function PATCH(request: NextRequest) {
 
     if (funFact !== undefined) {
       updateData.funFact = funFact
+    }
+
+    // Handle credentials (for SEO structured data)
+    if (credentials !== undefined) {
+      if (!Array.isArray(credentials)) {
+        return NextResponse.json(
+          { error: 'credentials must be an array' },
+          { status: 400 }
+        )
+      }
+      updateData.credentials = credentials
     }
 
     await db

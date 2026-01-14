@@ -2,15 +2,16 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { 
-  Image, 
-  Users, 
-  Star, 
-  Instagram, 
-  FileText, 
+import {
+  Image,
+  Users,
+  Star,
+  Instagram,
+  FileText,
   HelpCircle,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Search
 } from 'lucide-react'
 
 const sections = [
@@ -62,13 +63,21 @@ const sections = [
     color: 'golden',
     stats: 'Database'
   },
-  { 
-    id: 'faq', 
-    label: 'FAQ Manager', 
-    icon: HelpCircle, 
+  {
+    id: 'faq',
+    label: 'FAQ Manager',
+    icon: HelpCircle,
     description: 'Manage FAQ categories, questions, and featured items',
     color: 'sage',
     stats: 'Database'
+  },
+  {
+    id: 'seo',
+    label: 'SEO & Metadata',
+    icon: Search,
+    description: 'Configure meta tags, social images, and structured data settings',
+    color: 'ocean-mist',
+    stats: 'Database + DAM'
   },
 ]
 

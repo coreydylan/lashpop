@@ -27,6 +27,8 @@ import {
   Sparkles
 } from 'lucide-react'
 import { QuickFactsEditor } from '@/components/team/QuickFactsEditor'
+import { CredentialsEditor } from '@/components/team/CredentialsEditor'
+import type { TeamMemberCredential } from '@/db/schema/team_members'
 
 interface QuickFact {
   id: string
@@ -58,6 +60,7 @@ interface TeamMember {
   vagaroServiceCategories: string[]
   manualServiceCategories: string[]
   quickFacts?: QuickFact[]
+  credentials?: TeamMemberCredential[]
 }
 
 // Common service category options for manual tags
@@ -598,6 +601,20 @@ export default function TeamManagerPage() {
                             onFactsChange={(facts) => {
                               setTeamMembers(prev => prev.map(m =>
                                 m.id === member.id ? { ...m, quickFacts: facts } : m
+                              ))
+                            }}
+                          />
+                        </div>
+
+                        {/* Credentials Editor - For SEO/Schema.org */}
+                        <div className="sm:col-span-2 p-4 bg-ocean-mist/5 rounded-2xl border border-ocean-mist/10">
+                          <CredentialsEditor
+                            memberId={member.id}
+                            memberName={member.name}
+                            initialCredentials={member.credentials || []}
+                            onCredentialsChange={(credentials) => {
+                              setTeamMembers(prev => prev.map(m =>
+                                m.id === member.id ? { ...m, credentials: credentials } : m
                               ))
                             }}
                           />

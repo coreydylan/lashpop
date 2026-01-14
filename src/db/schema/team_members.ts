@@ -1,5 +1,19 @@
 import { pgEnum, pgTable, text, timestamp, uuid, jsonb, boolean } from "drizzle-orm/pg-core"
 
+/**
+ * Credential/Certification for structured data (Schema.org)
+ * These appear in JSON-LD for search engines to demonstrate expertise (E-E-A-T)
+ */
+export interface TeamMemberCredential {
+  type: 'certification' | 'license' | 'training' | 'award' | 'education'
+  name: string                    // e.g., "Licensed Esthetician", "Certified Lash Artist"
+  issuer?: string                 // e.g., "California Board of Barbering and Cosmetology"
+  dateIssued?: string            // ISO date string
+  expirationDate?: string        // ISO date string (for licenses)
+  licenseNumber?: string         // For verifiable licenses
+  url?: string                   // Link to verification or credential info
+}
+
 export const teamMemberType = pgEnum("team_member_type", ["employee", "independent"])
 
 export const teamMembers = pgTable("team_members", {
@@ -32,6 +46,10 @@ export const teamMembers = pgTable("team_members", {
   displayOrder: text("display_order").default("0"),
   isActive: boolean("is_active").default(true).notNull(),
   showOnWebsite: boolean("show_on_website").default(true), // Legacy column - preserved for data
+
+  // SEO/Schema.org structured data fields
+  // Credentials appear in JSON-LD for search engines but not necessarily displayed publicly
+  credentials: jsonb("credentials").$type<TeamMemberCredential[]>().default([]),
 
   // Metadata
   createdAt: timestamp("created_at").defaultNow().notNull(),
