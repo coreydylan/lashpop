@@ -114,39 +114,24 @@ export function BookingModal({
     }
   }, [isOpen, resetWidgetState]);
 
-  // Check if we're on localhost (Vagaro widget doesn't work on localhost)
-  const isLocalhost = typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-  // Load Vagaro widget script
+  // Load Vagaro widget script - EXACTLY matching VagaroWidgetPanel
   useEffect(() => {
     if (!isOpen || !widgetContainerRef.current || scriptLoadedRef.current) return;
-
-    // On localhost, skip script loading and show fallback immediately
-    if (isLocalhost) {
-      console.log('[BookingModal] Localhost detected - Vagaro widget requires deployed environment');
-      scriptLoadedRef.current = true;
-      setScriptLoaded(true);
-      // Don't set error, but don't set ready either - will show localhost message
-      return;
-    }
 
     const container = widgetContainerRef.current;
 
     console.log('[BookingModal] Loading Vagaro widget:', widgetScriptUrl);
 
-    // Create the Vagaro widget structure
+    // Create the Vagaro widget structure (exactly like VagaroWidgetPanel)
     const vagaroDiv = document.createElement('div');
     vagaroDiv.className = 'vagaro';
     vagaroDiv.style.cssText = 'width:100%; padding:0; border:0; margin:0; text-align:left;';
 
-    container.appendChild(vagaroDiv);
-
-    // Create and append the script
+    // Add the script (exactly like VagaroWidgetPanel)
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = widgetScriptUrl;
-    script.async = false;
+    script.async = true;  // VagaroWidgetPanel uses async = true
 
     script.onload = () => {
       console.log('[BookingModal] Vagaro widget script loaded');
@@ -159,7 +144,11 @@ export function BookingModal({
       setHasError(true);
     };
 
+    // IMPORTANT: Same order as VagaroWidgetPanel
+    // 1. Append script to vagaroDiv
+    // 2. Then append vagaroDiv to container
     vagaroDiv.appendChild(script);
+    container.appendChild(vagaroDiv);
 
     // Timeout for error state
     const timeout = setTimeout(() => {
@@ -175,7 +164,7 @@ export function BookingModal({
       }
       scriptLoadedRef.current = false;
     };
-  }, [isOpen, widgetScriptUrl, isLocalhost]);
+  }, [isOpen, widgetScriptUrl]);
 
   const handleOpenExternal = () => {
     // Open the Vagaro booking page in a new window
@@ -264,30 +253,8 @@ export function BookingModal({
                   }
                 `}</style>
 
-                {/* Localhost development message */}
-                {isLocalhost && (
-                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-ivory">
-                    <div className="text-center max-w-sm px-4">
-                      <div className="w-12 h-12 rounded-full bg-sage/10 flex items-center justify-center mx-auto mb-4">
-                        <span className="text-2xl">🔧</span>
-                      </div>
-                      <h3 className="font-medium text-dune mb-2">Development Mode</h3>
-                      <p className="text-sm text-dune/60 mb-4">
-                        Vagaro booking widget requires a deployed environment.
-                        Deploy to Vercel to test the embedded widget.
-                      </p>
-                      <button
-                        onClick={handleOpenExternal}
-                        className="px-6 py-3 bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white rounded-full font-medium hover:shadow-lg transition-shadow"
-                      >
-                        Open Vagaro Booking
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 {/* Loading State - Shows LP logo animation until Vagaro widget is fully ready */}
-                {!isLocalhost && showLoading && (
+                {showLoading && (
                   <div
                     className="absolute inset-0 z-20 flex items-center justify-center bg-ivory transition-opacity duration-500"
                     style={{ opacity: isVisible ? 0 : 1, pointerEvents: isVisible ? 'none' : 'auto' }}
@@ -297,7 +264,7 @@ export function BookingModal({
                 )}
 
                 {/* Error state */}
-                {!isLocalhost && hasError && (
+                {hasError && (
                   <div className="absolute inset-0 z-20 flex items-center justify-center bg-ivory">
                     <div className="text-center max-w-sm px-4">
                       <AlertCircle className="w-10 h-10 text-terracotta mx-auto mb-3" />
