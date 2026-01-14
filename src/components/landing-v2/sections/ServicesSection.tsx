@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { usePanelStack } from '@/contexts/PanelStackContext'
+import { useServiceBrowser } from '@/components/service-browser'
 
 // Service category data - focused on "how" (what makes them special) vs "what"
 const serviceCategories = [
@@ -284,7 +284,7 @@ interface ServicesSectionProps {
 
 export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps) {
   const [stateIsMobile, setIsMobile] = useState(false)
-  const { state: panelState, actions: panelActions } = usePanelStack()
+  const { actions: browserActions } = useServiceBrowser()
 
   const isMobile = propIsMobile ?? stateIsMobile
 
@@ -295,68 +295,18 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Handle category click - open services panel directly for that category
+  // Handle category click - open the service browser modal for that category
   const handleCategoryClick = useCallback((categorySlug: string) => {
-    // Find category info
     const category = serviceCategories.find(c => c.slug === categorySlug)
-    if (!category) return
+    if (category) {
+      browserActions.openModal(categorySlug, category.title)
+    }
+  }, [browserActions])
 
-    // Get services for this category from state
-    const categoryServices = panelState.services.filter(
-      s => s.categorySlug === categorySlug
-    )
-
-    // Build subcategories from services
-    const subcategoryMap = new Map<string, { id: string; name: string; slug: string }>()
-    categoryServices.forEach(service => {
-      if (service.subcategorySlug && service.subcategoryName) {
-        if (!subcategoryMap.has(service.subcategorySlug)) {
-          subcategoryMap.set(service.subcategorySlug, {
-            id: service.subcategorySlug,
-            name: service.subcategoryName,
-            slug: service.subcategorySlug,
-          })
-        }
-      }
-    })
-    const subcategories = Array.from(subcategoryMap.values())
-
-    // First, open the category picker (creates level 1 panel)
-    const categoryPickerPanelId = panelActions.openPanel('category-picker', {
-      entryPoint: 'services-section',
-    })
-
-    // Select the category
-    panelActions.selectCategory(categorySlug, category.title)
-
-    // Then open the service panel directly (creates level 2 panel showing services)
-    panelActions.openPanel(
-      'service-panel',
-      {
-        categoryId: categorySlug,
-        categoryName: category.title,
-        subcategories,
-        services: categoryServices,
-      },
-      {
-        parentId: categoryPickerPanelId,
-        autoExpand: true,
-        scrollToTop: false,
-      }
-    )
-
-    // Auto-dock category picker after selection
-    setTimeout(() => {
-      panelActions.dockPanel(categoryPickerPanelId)
-    }, 300)
-  }, [panelState.services, panelActions])
-
-  // Handle Book Now button click
+  // Handle Book Now button click - open with first category
   const handleBookNowClick = useCallback(() => {
-    panelActions.openPanel('category-picker', {
-      entryPoint: 'services-section-button',
-    })
-  }, [panelActions])
+    browserActions.openModal('lashes', 'Lashes')
+  }, [browserActions])
 
   // Mobile Layout
   if (isMobile) {

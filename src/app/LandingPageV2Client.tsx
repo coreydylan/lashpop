@@ -24,6 +24,7 @@ import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { PanelStackRenderer } from '@/components/panel-stack/PanelStackRenderer';
+import { ServiceBrowserProvider, ServiceBrowserModal } from '@/components/service-browser';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -261,6 +262,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     <DevModeProvider>
     <BookingOrchestratorProvider>
       <PanelStackProvider services={services}>
+        <ServiceBrowserProvider services={services}>
         <VagaroWidgetProvider>
         <DrawerProvider>
           <PanelManagerProvider>
@@ -291,6 +293,9 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                 {/* Panel Stack System - Responsive: top panels on desktop, bottom sheet on mobile */}
                 <PanelStackRenderer />
+
+                {/* Service Browser Modal - New simplified service exploration */}
+                <ServiceBrowserModal />
 
                 {/* Z-2: Drawer System Layer */}
                 <DrawerSystem services={services} />
@@ -375,6 +380,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
       {/* Dev Mode Overlay - activated by clicking logo 5 times */}
       <DevModeOverlay />
       </VagaroWidgetProvider>
+      </ServiceBrowserProvider>
       </PanelStackProvider>
     </BookingOrchestratorProvider>
     </DevModeProvider>
