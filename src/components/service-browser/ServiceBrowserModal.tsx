@@ -99,6 +99,7 @@ export function ServiceBrowserModal() {
         <>
           {/* Backdrop - hidden on mobile for fullscreen feel */}
           <motion.div
+            key="service-browser-backdrop"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -110,6 +111,7 @@ export function ServiceBrowserModal() {
 
           {/* Modal */}
           <motion.div
+            key="service-browser-modal"
             variants={isMobile ? modalVariantsMobile : modalVariantsDesktop}
             initial="hidden"
             animate="visible"

@@ -330,6 +330,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
         <>
           {/* Backdrop - hidden on mobile for fullscreen feel */}
           <motion.div
+            key="find-your-look-backdrop"
             variants={backdropVariants}
             initial="hidden"
             animate="visible"
@@ -341,6 +342,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
 
           {/* Modal */}
           <motion.div
+            key="find-your-look-modal"
             variants={isMobile ? modalVariantsMobile : modalVariantsDesktop}
             initial="hidden"
             animate="visible"
