@@ -618,11 +618,11 @@ export default function WorkWithUsPage() {
               >
                 <button
                   onClick={() => setActiveSection(activeSection === card.id ? null : card.id)}
-                  className={`w-full text-left group relative overflow-hidden rounded-2xl transition-all duration-300 ${
+                  className={`w-full text-left group relative overflow-hidden transition-all duration-300 ${
                     activeSection === card.id
-                      ? 'ring-2 ring-rust shadow-xl md:ring-2'
-                      : 'hover:shadow-lg'
-                  } ${activeSection === card.id ? 'md:rounded-2xl rounded-t-2xl rounded-b-none' : 'rounded-2xl'}`}
+                      ? 'shadow-xl md:ring-2 md:ring-rust/50 rounded-t-2xl rounded-b-none md:rounded-2xl'
+                      : 'hover:shadow-lg rounded-2xl'
+                  }`}
                 >
                   {/* Card Image */}
                   <div className="relative h-32 md:h-40 overflow-hidden">
@@ -668,7 +668,7 @@ export default function WorkWithUsPage() {
                   </div>
                 </button>
 
-                {/* Mobile Inline Form - shows within card on mobile only */}
+                {/* Mobile Inline Content + Form - shows within card on mobile only */}
                 <AnimatePresence>
                   {activeSection === card.id && (
                     <motion.div
@@ -676,9 +676,135 @@ export default function WorkWithUsPage() {
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3, ease: smoothEase }}
-                      className="md:hidden overflow-hidden bg-white border-2 border-t-0 border-rust rounded-b-2xl"
+                      className="md:hidden overflow-hidden bg-white rounded-b-2xl shadow-lg"
                     >
-                      <div className="p-4">
+                      <div className="p-4 space-y-5">
+                        {/* Employee Mobile Content */}
+                        {card.id === 'employee' && (
+                          <>
+                            <div>
+                              <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#ac4d3c' }}>
+                                Employee Benefits
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {employeeBenefits.map((benefit) => (
+                                  <div key={benefit.title} className="flex gap-2 p-2.5 rounded-xl bg-ivory/50">
+                                    <benefit.icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#ac4d3c' }} />
+                                    <div>
+                                      <h4 className="font-medium text-xs text-charcoal">{benefit.title}</h4>
+                                      <p className="text-[10px] text-charcoal/60 leading-tight">{benefit.description}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="bg-gradient-to-br from-cream/50 to-peach/20 rounded-xl p-4">
+                              <h4 className="font-display font-medium text-sm mb-3 text-charcoal">How to Join</h4>
+                              <div className="flex flex-col gap-2">
+                                {['Apply below', 'Meet the team', 'Skills check', 'Welcome!'].map((step, i) => (
+                                  <div key={step} className="flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-full bg-rust/10 flex items-center justify-center text-[10px] font-medium" style={{ color: '#ac4d3c' }}>
+                                      {i + 1}
+                                    </span>
+                                    <span className="text-xs text-charcoal/80">{step}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Booth Mobile Content */}
+                        {card.id === 'booth' && (
+                          <>
+                            <div>
+                              <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#ac4d3c' }}>
+                                Booth Rental
+                              </p>
+                              <div className="space-y-3">
+                                <div className="p-3 rounded-xl bg-ivory/50 border border-sage/10">
+                                  <div className="flex justify-between items-start mb-1">
+                                    <h4 className="font-display font-medium text-sm text-charcoal">Station Rental</h4>
+                                    <span className="text-xs font-medium" style={{ color: '#ac4d3c' }}>From $600/mo</span>
+                                  </div>
+                                  <p className="text-[10px] text-charcoal/60 mb-2">Semi-private workspace in our shared studio.</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {['Dedicated space', 'Shared amenities', 'Flexible hours'].map(item => (
+                                      <span key={item} className="inline-flex items-center gap-1 text-[10px] text-charcoal/70">
+                                        <CheckCircle2 className="w-2.5 h-2.5 text-green-600" />
+                                        {item}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="p-3 rounded-xl bg-ivory/50 border border-sage/10">
+                                  <div className="flex justify-between items-start mb-1">
+                                    <h4 className="font-display font-medium text-sm text-charcoal">Private Room</h4>
+                                    <span className="text-xs font-medium" style={{ color: '#ac4d3c' }}>From $1,200/mo</span>
+                                  </div>
+                                  <p className="text-[10px] text-charcoal/60 mb-2">Your own private space within LashPop.</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {['Private room', 'Personal setup', 'Premium amenities'].map(item => (
+                                      <span key={item} className="inline-flex items-center gap-1 text-[10px] text-charcoal/70">
+                                        <CheckCircle2 className="w-2.5 h-2.5 text-green-600" />
+                                        {item}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {boothAmenities.map((amenity) => (
+                                <div key={amenity.text} className="flex flex-col items-center gap-1 p-2 rounded-lg bg-ivory/30 text-center">
+                                  <amenity.icon className="w-4 h-4" style={{ color: '#ac4d3c' }} />
+                                  <span className="text-[9px] text-charcoal/70 leading-tight">{amenity.text}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {/* Training Mobile Content */}
+                        {card.id === 'training' && (
+                          <>
+                            <div>
+                              <p className="text-base italic mb-3" style={{ color: '#cc947f' }}>
+                                Master the award-winning LashPop way
+                              </p>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-xl bg-ivory/50">
+                                  <h4 className="font-medium text-xs text-charcoal mb-2">What You&apos;ll Learn</h4>
+                                  <ul className="space-y-1">
+                                    {['Signature lash techniques', 'Client consultation', 'Business fundamentals', 'Building clientele'].map(item => (
+                                      <li key={item} className="flex items-start gap-1.5 text-[10px] text-charcoal/70">
+                                        <CheckCircle2 className="w-3 h-3 text-green-600 flex-shrink-0 mt-0.5" />
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div className="p-3 rounded-xl bg-ivory/50">
+                                  <h4 className="font-medium text-xs text-charcoal mb-2">What&apos;s Included</h4>
+                                  <ul className="space-y-1">
+                                    {['Hands-on training', 'Professional starter kit', 'Certification', 'Ongoing mentorship'].map(item => (
+                                      <li key={item} className="flex items-start gap-1.5 text-[10px] text-charcoal/70">
+                                        <CheckCircle2 className="w-3 h-3 text-green-600 flex-shrink-0 mt-0.5" />
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="bg-gradient-to-br from-cream/50 to-peach/20 rounded-xl p-3 text-center">
+                              <p className="text-sm font-display text-charcoal">Be first in line</p>
+                              <p className="text-[10px] text-charcoal/60">Limited spots for inaugural cohort</p>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Form */}
                         <PathForm
                           path={card.id}
                           onSubmit={handleFormSubmit}
