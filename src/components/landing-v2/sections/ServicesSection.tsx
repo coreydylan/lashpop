@@ -280,11 +280,24 @@ function MobileSwipeableServiceCards({
 
               {/* Description */}
               <p
-                className="text-xs font-sans font-light leading-relaxed"
+                className="text-xs font-sans font-light leading-relaxed mb-4"
                 style={{ color: '#3d3632' }}
               >
                 {currentCategory.description}
               </p>
+
+              {/* Explore button */}
+              <button
+                className="px-5 py-2 rounded-full border transition-all duration-300 active:scale-[0.98]"
+                style={{
+                  borderColor: 'rgba(172, 77, 60, 0.4)',
+                  color: '#ac4d3c',
+                }}
+              >
+                <span className="text-[10px] font-sans font-medium tracking-[0.1em] uppercase">
+                  Explore {currentCategory.title.toLowerCase() === 'skincare' ? 'Skincare' : currentCategory.title.charAt(0) + currentCategory.title.slice(1).toLowerCase()} Services
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -361,22 +374,6 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
 
         {/* Swipeable Cards */}
         <MobileSwipeableServiceCards onCategoryClick={handleCategoryClick} />
-
-        {/* Book Now Button - Below services */}
-        <div className="text-center mt-8">
-          <button
-            onClick={handleBookNowClick}
-            className="px-6 py-2.5 rounded-full border transition-all duration-300 active:scale-[0.98]"
-            style={{
-              borderColor: 'rgba(109, 74, 67, 0.4)',
-              color: '#ac4d3c',
-            }}
-          >
-            <span className="text-xs font-sans font-medium tracking-[0.1em] uppercase">
-              Book an Appointment
-            </span>
-          </button>
-        </div>
       </section>
     )
   }
