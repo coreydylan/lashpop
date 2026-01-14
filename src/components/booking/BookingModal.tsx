@@ -243,13 +243,14 @@ export function BookingModal({
                     display: none !important;
                   }
 
-                  /* Style the iframe */
+                  /* Style the iframe - fixed height, scrollable within modal */
                   .booking-modal-widget iframe {
                     width: 100% !important;
                     max-width: none !important;
                     border: none !important;
                     display: block;
-                    min-height: 650px;
+                    height: 100% !important;
+                    min-height: 0 !important;
                   }
                 `}</style>
 
@@ -282,10 +283,10 @@ export function BookingModal({
                   </div>
                 )}
 
-                {/* Vagaro widget container - starts visible (Vagaro may check visibility to initialize) */}
+                {/* Vagaro widget container - fixed height to stay within modal bounds */}
                 <div
                   ref={widgetContainerRef}
-                  className="booking-modal-widget relative w-full min-h-[650px] transition-opacity duration-500"
+                  className="booking-modal-widget relative w-full h-full transition-opacity duration-500"
                   style={{ opacity: 1 }}
                 />
               </div>
