@@ -171,10 +171,23 @@ export function startVagaroEventListener(): void {
     return;
   }
 
-  // Add a catch-all debug listener that logs EVERYTHING
+  // Add a catch-all debug listener that logs EVERYTHING from Vagaro
   window.addEventListener('message', (event) => {
-    if (event.origin === 'https://www.vagaro.com') {
+    // Log ALL messages that might be from Vagaro (broader check)
+    if (event.origin.includes('vagaro')) {
       console.log('%c[VAGARO postMessage]', 'background: green; color: white; font-size: 14px; padding: 4px;', event.data);
+    }
+    // Also log any non-internal messages for debugging (filter out webpack/react noise)
+    else if (
+      event.data &&
+      typeof event.data !== 'string' ||
+      (typeof event.data === 'string' && !event.data.includes('webpack') && !event.data.includes('react'))
+    ) {
+      // Only log if it looks interesting (has eventName or object property like Vagaro messages)
+      const dataStr = typeof event.data === 'string' ? event.data : JSON.stringify(event.data);
+      if (dataStr.includes('eventName') || dataStr.includes('"object"') || dataStr.includes('setHeight')) {
+        console.log('%c[PostMessage Debug]', 'background: orange; color: black;', 'origin:', event.origin, 'data:', event.data);
+      }
     }
   }, false);
 

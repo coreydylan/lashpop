@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertCircle, ExternalLink } from 'lucide-react';
 import { LPLogoLoader } from '@/components/ui/LPLogoLoader';
+import { useVagaroWidget } from '@/contexts/VagaroWidgetContext';
 import { subscribeToVagaroEvent } from '@/lib/vagaro-events';
 import { getVagaroWidgetUrl } from '@/lib/vagaro-widget';
 
@@ -29,30 +30,49 @@ export function BookingModal({
   const widgetContainerRef = useRef<HTMLDivElement>(null);
   const scriptLoadedRef = useRef(false);
 
+  // Use VagaroWidgetContext for state - matches VagaroWidgetPanel approach
+  const { state: widgetState, reset: resetWidgetState } = useVagaroWidget();
+
   const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [isWidgetReady, setIsWidgetReady] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // Widget is truly ready when Vagaro sends WidgetLoaded event (via context)
+  const isWidgetReady = widgetState.isLoaded;
 
   // Get widget script URL from service code
   const widgetScriptUrl = getVagaroWidgetUrl(vagaroServiceCode);
 
-  console.log('[BookingModal] Render state:', {
-    isOpen,
-    vagaroServiceCode,
-    widgetScriptUrl,
-    scriptLoaded,
-    isWidgetReady,
-    hasError
-  });
+  // Detailed logging like working version
+  console.log('[BookingModal] getWidgetScriptUrl - vagaroServiceCode:', vagaroServiceCode);
+  console.log('[BookingModal] getWidgetScriptUrl - using URL:', widgetScriptUrl);
 
-  // Subscribe to WidgetLoaded to know when ready
+  // Debug: Log loading state changes
+  useEffect(() => {
+    console.log('[BookingModal] Loading state:', {
+      isOpen,
+      isWidgetReady,
+      isVisible,
+      hasError,
+      scriptLoaded,
+      widgetStateIsLoaded: widgetState.isLoaded,
+      currentStep: widgetState.currentStep,
+    });
+  }, [isOpen, isWidgetReady, isVisible, hasError, scriptLoaded, widgetState.isLoaded, widgetState.currentStep]);
+
+  // Trigger fade-in animation when widget becomes ready
+  useEffect(() => {
+    if (isWidgetReady) {
+      console.log('[BookingModal] Widget ready! Triggering fade-in...');
+      // Small delay to ensure smooth transition
+      const timer = setTimeout(() => setIsVisible(true), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isWidgetReady]);
+
+  // Subscribe to BookingCompleted for callback
   useEffect(() => {
     if (!isOpen) return;
-
-    const unsubscribeLoaded = subscribeToVagaroEvent('WidgetLoaded', () => {
-      console.log('[BookingModal] WidgetLoaded event received');
-      setIsWidgetReady(true);
-    });
 
     const unsubscribeCompleted = subscribeToVagaroEvent('BookingCompleted', () => {
       console.log('[BookingModal] BookingCompleted event received');
@@ -61,7 +81,6 @@ export function BookingModal({
     });
 
     return () => {
-      unsubscribeLoaded();
       unsubscribeCompleted();
     };
   }, [isOpen, onClose, onBookingCompleted]);
@@ -87,20 +106,32 @@ export function BookingModal({
   useEffect(() => {
     if (isOpen) {
       setScriptLoaded(false);
-      setIsWidgetReady(false);
       setHasError(false);
+      setIsVisible(false);
       scriptLoadedRef.current = false;
+      // Reset widget context state for fresh start
+      resetWidgetState();
     }
-  }, [isOpen]);
+  }, [isOpen, resetWidgetState]);
 
-  // Load Vagaro widget script - same approach as VagaroWidgetPanel
+  // Check if we're on localhost (Vagaro widget doesn't work on localhost)
+  const isLocalhost = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  // Load Vagaro widget script
   useEffect(() => {
     if (!isOpen || !widgetContainerRef.current || scriptLoadedRef.current) return;
 
-    const container = widgetContainerRef.current;
+    // On localhost, skip script loading and show fallback immediately
+    if (isLocalhost) {
+      console.log('[BookingModal] Localhost detected - Vagaro widget requires deployed environment');
+      scriptLoadedRef.current = true;
+      setScriptLoaded(true);
+      // Don't set error, but don't set ready either - will show localhost message
+      return;
+    }
 
-    // Clear any existing content
-    container.innerHTML = '';
+    const container = widgetContainerRef.current;
 
     console.log('[BookingModal] Loading Vagaro widget:', widgetScriptUrl);
 
@@ -109,11 +140,13 @@ export function BookingModal({
     vagaroDiv.className = 'vagaro';
     vagaroDiv.style.cssText = 'width:100%; padding:0; border:0; margin:0; text-align:left;';
 
-    // Add the script
+    container.appendChild(vagaroDiv);
+
+    // Create and append the script
     const script = document.createElement('script');
     script.type = 'text/javascript';
     script.src = widgetScriptUrl;
-    script.async = true;
+    script.async = false;
 
     script.onload = () => {
       console.log('[BookingModal] Vagaro widget script loaded');
@@ -127,23 +160,22 @@ export function BookingModal({
     };
 
     vagaroDiv.appendChild(script);
-    container.appendChild(vagaroDiv);
 
     // Timeout for error state
     const timeout = setTimeout(() => {
-      if (!isWidgetReady && scriptLoadedRef.current) {
+      if (!widgetState.isLoaded) {
         console.warn('[BookingModal] Widget load timeout');
-        // Don't show error - Vagaro may still work, just without the event
       }
     }, 15000);
 
     return () => {
       clearTimeout(timeout);
-      // Clean up on unmount
-      container.innerHTML = '';
+      if (container.contains(vagaroDiv)) {
+        container.removeChild(vagaroDiv);
+      }
       scriptLoadedRef.current = false;
     };
-  }, [isOpen, widgetScriptUrl, isWidgetReady]);
+  }, [isOpen, widgetScriptUrl, isLocalhost]);
 
   const handleOpenExternal = () => {
     // Open the Vagaro booking page in a new window
@@ -232,18 +264,40 @@ export function BookingModal({
                   }
                 `}</style>
 
-                {/* Loading state */}
-                {showLoading && (
+                {/* Localhost development message */}
+                {isLocalhost && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-ivory">
+                    <div className="text-center max-w-sm px-4">
+                      <div className="w-12 h-12 rounded-full bg-sage/10 flex items-center justify-center mx-auto mb-4">
+                        <span className="text-2xl">🔧</span>
+                      </div>
+                      <h3 className="font-medium text-dune mb-2">Development Mode</h3>
+                      <p className="text-sm text-dune/60 mb-4">
+                        Vagaro booking widget requires a deployed environment.
+                        Deploy to Vercel to test the embedded widget.
+                      </p>
+                      <button
+                        onClick={handleOpenExternal}
+                        className="px-6 py-3 bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white rounded-full font-medium hover:shadow-lg transition-shadow"
+                      >
+                        Open Vagaro Booking
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading State - Shows LP logo animation until Vagaro widget is fully ready */}
+                {!isLocalhost && showLoading && (
                   <div
-                    className="absolute inset-0 flex items-center justify-center bg-ivory z-20 transition-opacity duration-500"
-                    style={{ opacity: isWidgetReady ? 0 : 1, pointerEvents: isWidgetReady ? 'none' : 'auto' }}
+                    className="absolute inset-0 z-20 flex items-center justify-center bg-ivory transition-opacity duration-500"
+                    style={{ opacity: isVisible ? 0 : 1, pointerEvents: isVisible ? 'none' : 'auto' }}
                   >
                     <LPLogoLoader message={'Preparing booking experience\npowered by Vagaro'} size={56} />
                   </div>
                 )}
 
                 {/* Error state */}
-                {hasError && (
+                {!isLocalhost && hasError && (
                   <div className="absolute inset-0 z-20 flex items-center justify-center bg-ivory">
                     <div className="text-center max-w-sm px-4">
                       <AlertCircle className="w-10 h-10 text-terracotta mx-auto mb-3" />
@@ -261,11 +315,11 @@ export function BookingModal({
                   </div>
                 )}
 
-                {/* Vagaro widget container - script loads here */}
+                {/* Vagaro widget container - starts visible (Vagaro may check visibility to initialize) */}
                 <div
                   ref={widgetContainerRef}
                   className="booking-modal-widget relative w-full min-h-[650px] transition-opacity duration-500"
-                  style={{ opacity: isWidgetReady ? 1 : 0 }}
+                  style={{ opacity: 1 }}
                 />
               </div>
             </div>
