@@ -5,7 +5,7 @@ import { services } from "@/db/schema/services"
 import { serviceCategories } from "@/db/schema/service_categories"
 import { serviceSubcategories } from "@/db/schema/service_subcategories"
 import { assetServices } from "@/db/schema/asset_services"
-import { and, eq, asc } from "drizzle-orm"
+import { and, eq, asc, inArray } from "drizzle-orm"
 
 export async function getServices() {
   const db = getDb()
@@ -115,6 +115,7 @@ export async function getAllServices() {
       subcategoryId: services.subcategoryId,
       subcategoryName: serviceSubcategories.name,
       subcategorySlug: serviceSubcategories.slug,
+      subcategoryDisplayOrder: serviceSubcategories.displayOrder,
       vagaroWidgetUrl: services.vagaroWidgetUrl,
       vagaroServiceCode: services.vagaroServiceCode,
       keyImageAssetId: services.keyImageAssetId,
@@ -320,4 +321,71 @@ export async function untagAssetFromService(
     )
 
   return { success: true }
+}
+
+// Update subcategory display order
+export async function updateSubcategoryDisplayOrder(
+  subcategoryId: string,
+  displayOrder: number
+) {
+  const db = getDb()
+
+  await db
+    .update(serviceSubcategories)
+    .set({
+      displayOrder,
+      updatedAt: new Date()
+    })
+    .where(eq(serviceSubcategories.id, subcategoryId))
+
+  return { success: true }
+}
+
+// Bulk update subcategory display orders
+export async function updateSubcategoryDisplayOrders(
+  updates: Array<{ subcategoryId: string; displayOrder: number }>
+) {
+  const db = getDb()
+
+  // Update each subcategory's display order
+  for (const update of updates) {
+    await db
+      .update(serviceSubcategories)
+      .set({
+        displayOrder: update.displayOrder,
+        updatedAt: new Date()
+      })
+      .where(eq(serviceSubcategories.id, update.subcategoryId))
+  }
+
+  return { success: true }
+}
+
+// Get all subcategories for a category (for admin ordering)
+export async function getSubcategoriesByCategory(categorySlug: string) {
+  const db = getDb()
+
+  const category = await db
+    .select()
+    .from(serviceCategories)
+    .where(eq(serviceCategories.slug, categorySlug))
+    .limit(1)
+
+  if (category.length === 0) {
+    return []
+  }
+
+  const subcategories = await db
+    .select({
+      id: serviceSubcategories.id,
+      name: serviceSubcategories.name,
+      slug: serviceSubcategories.slug,
+      displayOrder: serviceSubcategories.displayOrder,
+      isActive: serviceSubcategories.isActive,
+    })
+    .from(serviceSubcategories)
+    .where(eq(serviceSubcategories.categoryId, category[0].id))
+    .orderBy(asc(serviceSubcategories.displayOrder))
+
+  return subcategories
 }
