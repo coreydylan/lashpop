@@ -1,9 +1,29 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, X, ArrowRight } from 'lucide-react';
+
+// Animation variants
+const backdropVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+};
+
+// Desktop modal with scale animation
+const modalVariantsDesktop = {
+  hidden: { opacity: 0, scale: 0.95, y: 20 },
+  visible: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.95, y: 20 },
+};
+
+// Mobile modal slides up from bottom
+const modalVariantsMobile = {
+  hidden: { opacity: 0, y: '100%' },
+  visible: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: '100%' },
+};
 
 // Placeholder images - these should be updated with actual DAM images
 // Q3 Images (4 lash style photos)
@@ -177,6 +197,25 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
   const [step, setStep] = useState<QuizStep>(0);
   const [answers, setAnswers] = useState<QuizAnswers>({});
   const [result, setResult] = useState<LashStyleResult | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Lock body scroll when open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const handleBack = useCallback(() => {
     if (step > 0) {
@@ -258,67 +297,126 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
     return step;
   };
 
+  // Get title for mobile header
+  const getMobileTitle = () => {
+    if (step === 0) return 'Find Your Look';
+    if (step === 5) return 'Your Result';
+    return `Question ${step} of ${getTotalSteps()}`;
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - hidden on mobile for fullscreen feel */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            variants={backdropVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 z-50"
+            className="fixed inset-0 bg-black/50 z-50 hidden md:block"
             onClick={handleClose}
           />
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 pointer-events-none"
+            variants={isMobile ? modalVariantsMobile : modalVariantsDesktop}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            transition={{
+              duration: isMobile ? 0.35 : 0.3,
+              ease: isMobile ? [0.32, 0.72, 0, 1] : [0.4, 0, 0.2, 1]
+            }}
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-6 pointer-events-none"
           >
             <div
-              className="relative w-full max-w-[480px] bg-ivory rounded-3xl shadow-2xl overflow-hidden pointer-events-auto
-                         h-full md:h-auto max-h-[90vh] md:max-h-[680px]"
+              className="relative w-full h-full md:w-full md:max-w-[480px] md:h-auto md:max-h-[90vh] bg-ivory md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
               onClick={(e) => e.stopPropagation()}
+              style={isMobile ? {
+                paddingTop: 'env(safe-area-inset-top)',
+                paddingBottom: 'env(safe-area-inset-bottom)'
+              } : undefined}
             >
-              {/* Close button */}
-              <button
-                onClick={handleClose}
-                className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
-                           text-sage hover:text-charcoal transition-all shadow-sm"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {/* Mobile Header - Full-width with safe area support */}
+              {isMobile ? (
+                <div className="flex items-center justify-between px-4 py-3 border-b border-sage/10 shrink-0 bg-ivory/95 backdrop-blur-sm">
+                  {/* Left side - Back button or spacer */}
+                  <div className="w-10 flex justify-start">
+                    {step > 0 && (
+                      <motion.button
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.15 }}
+                        onClick={handleBack}
+                        className="p-2 -ml-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
+                        aria-label="Go back"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-dune" />
+                      </motion.button>
+                    )}
+                  </div>
 
-              {/* Back button (all steps except intro) */}
-              {step > 0 && (
-                <button
-                  onClick={handleBack}
-                  className="absolute top-4 left-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
-                             text-sage hover:text-charcoal transition-all shadow-sm"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
+                  {/* Center - Title */}
+                  <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
+                    {getMobileTitle()}
+                  </h2>
+
+                  {/* Right side - Close button */}
+                  <div className="w-10 flex justify-end">
+                    <button
+                      onClick={handleClose}
+                      className="p-2 -mr-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
+                      aria-label="Close"
+                    >
+                      <X className="w-5 h-5 text-dune" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Desktop floating buttons */
+                <>
+                  <button
+                    onClick={handleClose}
+                    className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
+                               text-sage hover:text-charcoal transition-all shadow-sm"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+
+                  {step > 0 && (
+                    <button
+                      onClick={handleBack}
+                      className="absolute top-4 left-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
+                                 text-sage hover:text-charcoal transition-all shadow-sm"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                </>
               )}
 
               {/* Content */}
-              <div className="p-6 md:p-8 h-full md:h-[640px] flex flex-col overflow-y-auto">
+              <div
+                className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-y-auto"
+                style={isMobile ? {
+                  WebkitOverflowScrolling: 'touch',
+                  overscrollBehavior: 'contain'
+                } : undefined}
+              >
                 {/* Step indicator dots (hidden on intro) */}
                 {step > 0 && (
-                  <div className="flex justify-center gap-2.5 mb-5 shrink-0">
+                  <div className="flex justify-center gap-2 md:gap-2.5 mb-4 md:mb-5 shrink-0">
                     {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((s) => (
                       <div
                         key={s}
-                        className={`h-2 rounded-full transition-all duration-300 ${
+                        className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
                           s === getCurrentStepNumber()
-                            ? 'bg-terracotta w-6'
+                            ? 'bg-terracotta w-5 md:w-6'
                             : s < getCurrentStepNumber()
-                            ? 'bg-terracotta/40 w-2'
-                            : 'bg-cream w-2'
+                            ? 'bg-terracotta/40 w-1.5 md:w-2'
+                            : 'bg-cream w-1.5 md:w-2'
                         }`}
                       />
                     ))}
@@ -326,7 +424,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 )}
 
                 {/* Step content */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-hidden">
                   <AnimatePresence mode="wait">
                     {step === 0 && (
                       <IntroScreen key="intro" onStart={handleStartQuiz} />
@@ -359,6 +457,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                         result={lashStyleDetails[result]}
                         resultImage={RESULT_IMAGES[result]}
                         onBook={handleBookNow}
+                        isMobile={isMobile}
                       />
                     )}
                   </AnimatePresence>
@@ -619,9 +718,10 @@ interface ResultScreenProps {
   result: typeof lashStyleDetails[LashStyleResult];
   resultImage: string;
   onBook: () => void;
+  isMobile?: boolean;
 }
 
-function ResultScreen({ result, resultImage, onBook }: ResultScreenProps) {
+function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -630,63 +730,87 @@ function ResultScreen({ result, resultImage, onBook }: ResultScreenProps) {
       transition={{ duration: 0.3 }}
       className="h-full flex flex-col"
     >
-      {/* Header */}
-      <div className="text-center mb-4 shrink-0">
-        <p className="text-sm text-terracotta font-medium mb-1">Your Perfect Match</p>
-        <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
-          {result.displayName}
-        </h2>
-        <p className="text-xs text-sage mt-1">Recommended Service: {result.recommendedService}</p>
+      {/* Scrollable content area */}
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'pb-20' : ''}`}>
+        {/* Header */}
+        <div className="text-center mb-3 md:mb-4 shrink-0">
+          <p className="text-xs md:text-sm text-terracotta font-medium mb-1">Your Perfect Match</p>
+          <h2 className="text-lg md:text-2xl font-display font-medium text-charcoal">
+            {result.displayName}
+          </h2>
+          <p className="text-[11px] md:text-xs text-sage mt-1">Recommended Service: {result.recommendedService}</p>
+        </div>
+
+        {/* Result Image */}
+        <div className="relative w-full h-36 md:h-48 rounded-xl overflow-hidden mb-3 md:mb-4 shrink-0">
+          <Image
+            src={resultImage}
+            alt={result.displayName}
+            fill
+            className="object-cover"
+          />
+        </div>
+
+        {/* Description */}
+        <p className="text-sage text-sm leading-relaxed mb-3 md:mb-4 shrink-0">
+          {result.description}
+        </p>
+
+        {/* Best For */}
+        <div className="mb-3 md:mb-4 shrink-0">
+          <p className="text-charcoal font-medium text-sm mb-2">Best for you if:</p>
+          <ul className="space-y-1 md:space-y-1.5">
+            {result.bestFor.map((item, index) => (
+              <li key={index} className="flex items-start gap-2 text-sage text-sm">
+                <span className="text-terracotta mt-0.5">•</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Duration (for Lash Lift only) */}
+        {result.duration && (
+          <p className="text-sage text-sm italic mb-3 md:mb-4 shrink-0">{result.duration}</p>
+        )}
+
+        {/* Desktop Book CTA */}
+        {!isMobile && (
+          <>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onBook}
+              className="w-full py-4 rounded-full bg-terracotta hover:bg-rust text-white font-medium
+                         shadow-lg shadow-terracotta/30 transition-all duration-200 mb-3 shrink-0"
+            >
+              {result.bookingLabel} →
+            </motion.button>
+
+            {/* Universal Note */}
+            <p className="text-xs text-sage/70 text-center leading-relaxed shrink-0">
+              Every set is customized to your eye shape and natural lashes. Your artist will fine-tune your look during your appointment so you leave loving your lashes.
+            </p>
+          </>
+        )}
       </div>
 
-      {/* Result Image */}
-      <div className="relative w-full h-40 md:h-48 rounded-xl overflow-hidden mb-4 shrink-0">
-        <Image
-          src={resultImage}
-          alt={result.displayName}
-          fill
-          className="object-cover"
-        />
-      </div>
-
-      {/* Description */}
-      <p className="text-sage text-sm leading-relaxed mb-4 shrink-0">
-        {result.description}
-      </p>
-
-      {/* Best For */}
-      <div className="mb-4 shrink-0">
-        <p className="text-charcoal font-medium text-sm mb-2">Best for you if:</p>
-        <ul className="space-y-1.5">
-          {result.bestFor.map((item, index) => (
-            <li key={index} className="flex items-start gap-2 text-sage text-sm">
-              <span className="text-terracotta mt-0.5">•</span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Duration (for Lash Lift only) */}
-      {result.duration && (
-        <p className="text-sage text-sm italic mb-4 shrink-0">{result.duration}</p>
+      {/* Mobile Sticky Book CTA */}
+      {isMobile && (
+        <div
+          className="absolute bottom-0 left-0 right-0 p-4 bg-ivory/95 backdrop-blur-sm border-t border-sage/10"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        >
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={onBook}
+            className="w-full py-3.5 rounded-full bg-terracotta text-white font-medium
+                       shadow-lg shadow-terracotta/30 active:shadow-md transition-shadow"
+          >
+            {result.bookingLabel} →
+          </motion.button>
+        </div>
       )}
-
-      {/* Book CTA */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onBook}
-        className="w-full py-4 rounded-full bg-terracotta hover:bg-rust text-white font-medium
-                   shadow-lg shadow-terracotta/30 transition-all duration-200 mb-3 shrink-0"
-      >
-        {result.bookingLabel} →
-      </motion.button>
-
-      {/* Universal Note */}
-      <p className="text-xs text-sage/70 text-center leading-relaxed shrink-0">
-        Every set is customized to your eye shape and natural lashes. Your artist will fine-tune your look during your appointment so you leave loving your lashes.
-      </p>
     </motion.div>
   );
 }
