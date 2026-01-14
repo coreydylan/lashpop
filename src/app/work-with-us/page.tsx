@@ -489,7 +489,7 @@ export default function WorkWithUsPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/#services"
-              className="flex-shrink-0 px-3 py-1.5 rounded-full text-white text-[10px] font-sans font-semibold tracking-wide uppercase"
+              className="flex-shrink-0 flex items-center justify-center px-3 py-1.5 rounded-full text-white text-[10px] font-sans font-semibold tracking-wide uppercase leading-none"
               style={{ backgroundColor: '#b14e33' }}
             >
               Book
