@@ -96,14 +96,10 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
       {/* Background - solid ivory */}
       <div className="absolute inset-0 bg-ivory z-0" />
 
-      {/* Arch Image/Slideshow - positioned above the bottom ivory strip */}
+      {/* Arch Image/Slideshow - full height container, arch is 85dvh tall aligned to bottom */}
       <div
         className="absolute inset-0 flex justify-center items-end overflow-hidden"
-        style={{
-          zIndex: 10,
-          /* Keep arch above the ivory strip that covers iOS viewport gaps */
-          bottom: '12dvh',
-        }}
+        style={{ zIndex: 10 }}
       >
         <div
           ref={archRef}

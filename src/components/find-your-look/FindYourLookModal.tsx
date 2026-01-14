@@ -199,6 +199,15 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
   const [result, setResult] = useState<LashStyleResult | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Reset quiz state when modal opens (ensures fresh start each time)
+  useEffect(() => {
+    if (isOpen) {
+      setStep(0);
+      setAnswers({});
+      setResult(null);
+    }
+  }, [isOpen]);
+
   // Detect mobile viewport
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -275,6 +284,17 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
     setResult(calculatedResult);
     setStep(5);
   };
+
+  // Auto-open services modal when quiz completes with results
+  useEffect(() => {
+    if (step === 5 && result && onBook) {
+      // Small delay to let the results page render briefly before transitioning
+      const timer = setTimeout(() => {
+        onBook(result);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [step, result, onBook]);
 
   const handleBookNow = () => {
     if (result && onBook) {
