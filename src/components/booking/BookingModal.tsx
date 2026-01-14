@@ -17,7 +17,7 @@ export interface BookingModalProps {
   onBookingCompleted?: () => void;
 }
 
-const modalContainerClass = 'relative w-full max-w-3xl bg-ivory rounded-3xl shadow-2xl overflow-hidden pointer-events-auto h-full md:h-auto max-h-[90vh]';
+const modalContainerClass = 'relative w-full max-w-3xl bg-ivory rounded-3xl shadow-2xl overflow-hidden pointer-events-auto h-[85vh] md:h-[80vh] max-h-[800px]';
 const closeButtonClass = 'absolute top-4 right-4 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white text-sage hover:text-charcoal transition-all shadow-sm';
 
 export function BookingModal({
@@ -243,14 +243,13 @@ export function BookingModal({
                     display: none !important;
                   }
 
-                  /* Style the iframe - fixed height, scrollable within modal */
+                  /* Style the iframe - fill container height */
                   .booking-modal-widget iframe {
                     width: 100% !important;
                     max-width: none !important;
                     border: none !important;
                     display: block;
                     height: 100% !important;
-                    min-height: 0 !important;
                   }
                 `}</style>
 
