@@ -87,10 +87,12 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
         {/* Background shows through from MobileHeroBackground */}
         <div className="relative">
           {/* ABOVE THE FOLD - exactly 100dvh, gradient fades to ivory at bottom */}
+          {/* Extra height via padding-bottom covers iOS Safari safe area/address bar gaps */}
           <div
             className="relative flex flex-col justify-end px-6 pb-4"
             style={{
-              height: '100dvh',
+              minHeight: '100dvh',
+              paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
               background: 'linear-gradient(to top, #faf6f2 0%, #faf6f2 12%, rgba(250,246,242,0.8) 18%, transparent 28%)',
             }}
           >

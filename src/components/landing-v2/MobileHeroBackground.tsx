@@ -96,8 +96,15 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
       {/* Background - solid ivory */}
       <div className="absolute inset-0 bg-ivory z-0" />
 
-      {/* Arch Image/Slideshow - full height container, arch is 85dvh tall aligned to bottom */}
-      <div className="absolute inset-0 flex justify-center items-end overflow-hidden" style={{ zIndex: 10 }}>
+      {/* Arch Image/Slideshow - positioned above the bottom safe area strip */}
+      <div
+        className="absolute inset-0 flex justify-center items-end overflow-hidden"
+        style={{
+          zIndex: 10,
+          /* Leave room at bottom for ivory strip to cover iOS safe area gap */
+          bottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
+      >
         <div
           ref={archRef}
           className="relative w-[80vw] max-w-[380px] overflow-hidden will-change-transform"
@@ -126,6 +133,15 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
           )}
         </div>
       </div>
+
+      {/* Bottom ivory strip - covers any gap between content and screen edge on iOS Safari */}
+      <div
+        className="absolute left-0 right-0 bottom-0 bg-ivory"
+        style={{
+          height: 'calc(env(safe-area-inset-bottom, 0px) + 20px)',
+          zIndex: 20,
+        }}
+      />
     </div>
   )
 }
