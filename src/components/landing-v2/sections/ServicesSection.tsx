@@ -206,18 +206,14 @@ function MobileSwipeableServiceCards({
 
   return (
     <div className="flex flex-col items-center w-full">
-      {/* Card container with side arrows */}
-      <div
-        ref={containerRef}
-        className="relative w-full max-w-[300px] mx-auto"
-        style={{ touchAction: 'pan-y pinch-zoom' }}
-      >
-        {/* Subtle side arrows indicating swipe */}
+      {/* Card with arrows on outside */}
+      <div className="relative w-full flex items-center justify-center">
+        {/* Left arrow - outside card */}
         <motion.div
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 z-0 pointer-events-none"
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
           animate={{
-            opacity: [0.15, 0.35, 0.15],
-            x: [0, -3, 0]
+            opacity: [0.2, 0.45, 0.2],
+            x: [0, -2, 0]
           }}
           transition={{
             duration: 2,
@@ -225,86 +221,89 @@ function MobileSwipeableServiceCards({
             ease: "easeInOut"
           }}
         >
-          <ChevronLeft className="w-5 h-5 text-[#ac4d3c]" strokeWidth={1.5} />
-        </motion.div>
-        <motion.div
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-5 z-0 pointer-events-none"
-          animate={{
-            opacity: [0.15, 0.35, 0.15],
-            x: [0, 3, 0]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          <ChevronRight className="w-5 h-5 text-[#ac4d3c]" strokeWidth={1.5} />
+          <ChevronLeft className="w-5 h-5 text-terracotta" strokeWidth={1.5} />
         </motion.div>
 
-        {/* Subtle card container */}
+        {/* Right arrow - outside card */}
+        <motion.div
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
+          animate={{
+            opacity: [0.2, 0.45, 0.2],
+            x: [0, 2, 0]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <ChevronRight className="w-5 h-5 text-terracotta" strokeWidth={1.5} />
+        </motion.div>
+
+        {/* Card container */}
         <div
-          className="cursor-pointer rounded-2xl bg-white/40 border border-warm-sand/30 shadow-sm"
-          onClick={() => onCategoryClick(currentCategory.slug)}
+          ref={containerRef}
+          className="w-full max-w-[280px]"
+          style={{ touchAction: 'pan-y pinch-zoom' }}
         >
-          <div className="flex flex-col items-center justify-center text-center px-6 py-6">
-            {/* Icon */}
-            <div className="relative w-20 h-10 mb-4">
-              <Image
-                src={currentCategory.icon}
-                alt={currentCategory.title}
-                fill
-                className="object-contain"
-              />
+          {/* Subtle card container */}
+          <div
+            className="cursor-pointer rounded-2xl bg-white/40 border border-warm-sand/30 shadow-sm"
+            onClick={() => onCategoryClick(currentCategory.slug)}
+          >
+            <div className="flex flex-col items-center justify-center text-center px-6 py-6">
+              {/* Icon */}
+              <div className="relative w-20 h-10 mb-4">
+                <Image
+                  src={currentCategory.icon}
+                  alt={currentCategory.title}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+
+              {/* Title */}
+              <h3
+                className="text-xs font-display font-medium tracking-[0.15em] mb-2"
+                style={{ color: '#ac4d3c' }}
+              >
+                {currentCategory.title}
+              </h3>
+
+              {/* Tagline */}
+              <p
+                className="text-sm font-sans font-normal italic mb-3"
+                style={{ color: '#cc947f' }}
+              >
+                {currentCategory.tagline}
+              </p>
+
+              {/* Description */}
+              <p
+                className="text-xs font-sans font-light leading-relaxed"
+                style={{ color: '#3d3632' }}
+              >
+                {currentCategory.description}
+              </p>
             </div>
-
-            {/* Title */}
-            <h3
-              className="text-xs font-display font-medium tracking-[0.15em] mb-2"
-              style={{ color: '#ac4d3c' }}
-            >
-              {currentCategory.title}
-            </h3>
-
-            {/* Tagline */}
-            <p
-              className="text-sm font-sans font-normal italic mb-3"
-              style={{ color: '#cc947f' }}
-            >
-              {currentCategory.tagline}
-            </p>
-
-            {/* Description */}
-            <p
-              className="text-xs font-sans font-light leading-relaxed"
-              style={{ color: '#3d3632' }}
-            >
-              {currentCategory.description}
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Progress indicator below cards - condensed left to right */}
-      <div className="flex justify-center items-center gap-1.5 mt-4">
+      {/* Progress indicator - exact match to FindYourLook quiz */}
+      <div className="flex justify-center gap-2 mt-5">
         {serviceCategories.map((_, index) => (
-          <button
+          <div
             key={index}
             onClick={() => setCurrentIndex(index)}
-            type="button"
-            aria-label={`Go to ${serviceCategories[index].title}`}
-            className="flex items-center justify-center h-5"
-          >
-            <div
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? 'w-5 bg-terracotta'
-                  : index < currentIndex
-                  ? 'w-1.5 bg-terracotta/40'
-                  : 'w-1.5 bg-cream'
-              }`}
-            />
-          </button>
+            className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+              index === currentIndex
+                ? 'bg-terracotta w-5'
+                : index < currentIndex
+                ? 'bg-terracotta/40 w-1.5'
+                : 'bg-cream w-1.5'
+            }`}
+          />
         ))}
       </div>
     </div>
