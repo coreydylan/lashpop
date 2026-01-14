@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertCircle, ExternalLink } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { LPLogoLoader } from '@/components/ui/LPLogoLoader';
 import { useVagaroWidget } from '@/contexts/VagaroWidgetContext';
 import { subscribeToVagaroEvent } from '@/lib/vagaro-events';
@@ -125,7 +125,7 @@ export function BookingModal({
     // Create the Vagaro widget structure (exactly like VagaroWidgetPanel)
     const vagaroDiv = document.createElement('div');
     vagaroDiv.className = 'vagaro';
-    vagaroDiv.style.cssText = 'width:100%; padding:0; border:0; margin:0; text-align:left;';
+    vagaroDiv.style.cssText = 'width:100%; height:100%; padding:0; border:0; margin:0; text-align:left;';
 
     // Add the script (exactly like VagaroWidgetPanel)
     const script = document.createElement('script');
@@ -212,26 +212,20 @@ export function BookingModal({
               </button>
 
               {/* Header */}
-              <div className="px-6 pt-6 pb-4 border-b border-sage/10 flex items-center justify-between">
+              <div className="px-6 pt-6 pb-4 border-b border-sage/10">
                 <h2 className="text-lg md:text-xl font-display font-medium text-charcoal pr-8">
                   {serviceName ? `Book ${serviceName}` : 'Book Your Appointment'}
                 </h2>
-                <button
-                  onClick={handleOpenExternal}
-                  className="flex items-center gap-1.5 text-sm text-sage hover:text-dusty-rose transition-colors mr-10"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  <span className="hidden md:inline">New window</span>
-                </button>
               </div>
 
-              {/* Widget container */}
-              <div className="h-[calc(100%-80px)] overflow-y-auto relative">
+              {/* Widget container - no overflow-y-auto so iframe can fill height */}
+              <div className="h-[calc(100%-80px)] overflow-hidden relative">
                 {/* Global styles for Vagaro widget */}
                 <style jsx global>{`
-                  /* Force Vagaro container to be full width */
+                  /* Force Vagaro container to fill available space */
                   .booking-modal-widget .vagaro {
                     width: 100% !important;
+                    height: 100% !important;
                     max-width: none !important;
                     margin: 0 !important;
                     padding: 0 !important;
@@ -243,13 +237,17 @@ export function BookingModal({
                     display: none !important;
                   }
 
-                  /* Style the iframe - fill container height */
-                  .booking-modal-widget iframe {
+                  /* Style the iframe - override Vagaro's dynamic height with fixed height */
+                  .booking-modal-widget iframe,
+                  .booking-modal-widget .vagaro iframe,
+                  .booking-modal-widget iframe[style] {
                     width: 100% !important;
+                    height: calc(80vh - 100px) !important;
+                    min-height: 500px !important;
+                    max-height: 700px !important;
                     max-width: none !important;
                     border: none !important;
-                    display: block;
-                    height: 100% !important;
+                    display: block !important;
                   }
                 `}</style>
 
