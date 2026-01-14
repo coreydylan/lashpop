@@ -171,7 +171,7 @@ export function ServiceBrowserProvider({ children, services }: ServiceBrowserPro
   const handleQuizResult = useCallback((lashStyle: string) => {
     // Map quiz result to subcategory slug
     const styleToSubcategory: Record<string, string> = {
-      'lashLift': 'enhancements', // Lash lift is in enhancements
+      'lashLift': 'lash-enhancements', // Lash lift is in enhancements
       'classic': 'classic-extensions',
       'wetAngel': 'wet-angel-extensions',
       'hybrid': 'hybrid-extensions',

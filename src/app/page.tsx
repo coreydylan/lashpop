@@ -30,6 +30,7 @@ export default async function HomePage() {
     categorySlug: service.categorySlug,
     subcategoryName: service.subcategoryName,
     subcategorySlug: service.subcategorySlug,
+    subcategoryDisplayOrder: service.subcategoryDisplayOrder,
     vagaroWidgetUrl: service.vagaroWidgetUrl ?? undefined,
     vagaroServiceCode: service.vagaroServiceCode ?? undefined,
   }))
