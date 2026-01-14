@@ -92,6 +92,12 @@ export default function Header() {
                   color: 'rgb(var(--cream))',
                   backdropFilter: 'blur(10px)',
                 }}
+                onClick={() => {
+                  const servicesSection = document.getElementById('services')
+                  if (servicesSection) {
+                    servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
+                }}
               >
                 <Calendar className="w-4 h-4" />
                 Book Now
@@ -164,7 +170,16 @@ export default function Header() {
                 >
                   Work with Us
                 </Link>
-                <button className="btn btn-primary w-full">
+                <button
+                  className="btn btn-primary w-full"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false)
+                    const servicesSection = document.getElementById('services')
+                    if (servicesSection) {
+                      servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }
+                  }}
+                >
                   <Calendar className="w-4 h-4" />
                   Book Now
                 </button>

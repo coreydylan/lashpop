@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { usePanelStack } from '@/contexts/PanelStackContext'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
 
@@ -48,7 +47,6 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const [menuPosition, setMenuPosition] = useState({ top: 56, left: 0 })
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const { actions, state } = usePanelStack()
   const { registerLogoClick } = useDevMode()
 
   // Get current section label for display
@@ -251,17 +249,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
             <div className="flex items-center gap-3">
               {/* Book Now Button (filled, matches desktop) */}
               <button
-                onClick={() => {
-                  const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
-                  if (hasCategoryPicker) {
-                    actions.triggerAttentionBounce()
-                  } else {
-                    actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
-                    setTimeout(() => {
-                      actions.triggerAttentionBounce()
-                    }, 400)
-                  }
-                }}
+                onClick={() => smoothScrollToElement('#services', 0, 800, 'top')}
                 className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-all"
               >
                 Book

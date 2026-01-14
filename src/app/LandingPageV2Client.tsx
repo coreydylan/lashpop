@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorContext';
-import { PanelStackProvider } from '@/contexts/PanelStackContext';
 import { VagaroWidgetProvider } from '@/contexts/VagaroWidgetContext';
 import { DevModeProvider } from '@/contexts/DevModeContext';
 import { DevModeOverlay } from '@/components/dev-mode';
@@ -23,7 +22,6 @@ import { MapSection } from '@/components/landing-v2/sections/MapSection';
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
-import { PanelStackRenderer } from '@/components/panel-stack/PanelStackRenderer';
 import { ServiceBrowserProvider, ServiceBrowserModal } from '@/components/service-browser';
 
 // Import global styles to ensure all the beautiful v1 styles are available
@@ -261,7 +259,6 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
   return (
     <DevModeProvider>
     <BookingOrchestratorProvider>
-      <PanelStackProvider services={services}>
         <ServiceBrowserProvider services={services}>
         <VagaroWidgetProvider>
         <DrawerProvider>
@@ -290,9 +287,6 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 {/* Desktop: Full Navigation | Mobile: MobileHeader with dock behavior */}
                 <Navigation />
                 {isMobile && <MobileHeader currentSection={currentSection} />}
-
-                {/* Panel Stack System - Responsive: top panels on desktop, bottom sheet on mobile */}
-                <PanelStackRenderer />
 
                 {/* Service Browser Modal - New simplified service exploration */}
                 <ServiceBrowserModal />
@@ -381,7 +375,6 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
       <DevModeOverlay />
       </VagaroWidgetProvider>
       </ServiceBrowserProvider>
-      </PanelStackProvider>
     </BookingOrchestratorProvider>
     </DevModeProvider>
   );

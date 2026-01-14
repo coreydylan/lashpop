@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { usePanelStack } from '@/contexts/PanelStackContext'
 import { useFindYourLook } from '@/components/find-your-look'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import WeatherLocationBadge from './WeatherLocationBadge'
@@ -57,40 +56,21 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   // Mobile - no longer need internal scroll state
   const heroContentRef = useRef<HTMLDivElement>(null)
 
-  const { actions: panelActions, state: panelState } = usePanelStack()
   const { openQuiz } = useFindYourLook()
   const [isMobile, setIsMobile] = useState(false)
 
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
 
-  // Handle Book Now click - on mobile open full sheet, on desktop open chip bar
-  const handleBookNowClick = useCallback((entryPoint: string, forceExpand?: boolean) => {
-    const hasCategoryPicker = panelState.panels.some(p => p.type === 'category-picker')
-    const shouldExpand = forceExpand ?? isMobile
-
-    if (hasCategoryPicker) {
-      if (shouldExpand) {
-        // Expand the existing panel
-        const categoryPanel = panelState.panels.find(p => p.type === 'category-picker')
-        if (categoryPanel) {
-          panelActions.expandPanel(categoryPanel.id)
-        }
-      } else {
-        // Chip bar already visible - trigger attention bounce
-        panelActions.triggerAttentionBounce()
-      }
-    } else {
-      // Open the category picker panel
-      panelActions.openPanel('category-picker', { entryPoint }, { autoExpand: shouldExpand })
-      if (!shouldExpand) {
-        // Trigger bounce after the chip bar appears (desktop only)
-        setTimeout(() => {
-          panelActions.triggerAttentionBounce()
-        }, 400)
-      }
+  // Handle Book Now click - scroll to services section
+  const scrollToServices = useCallback(() => {
+    const servicesSection = document.getElementById('services')
+    if (servicesSection) {
+      const headerHeight = 80
+      const elementTop = servicesSection.getBoundingClientRect().top + window.pageYOffset
+      window.scrollTo({ top: elementTop - headerHeight, behavior: 'smooth' })
     }
-  }, [panelState.panels, panelActions, isMobile])
+  }, [])
 
   // Check if mobile
   useEffect(() => {
@@ -169,7 +149,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             <div className="mx-auto flex w-full max-w-[300px] flex-col gap-3">
               {/* Book Now - Terracotta frosted glass button */}
               <button
-                onClick={() => handleBookNowClick('hero-mobile')}
+                onClick={scrollToServices}
                 className="relative group w-full"
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
@@ -360,15 +340,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             {/* CTA Buttons - 48px gap from heading */}
             <div className="flex flex-row gap-4 mt-12">
               <button
-                onClick={() => {
-                  const servicesSection = document.getElementById('services')
-                  if (servicesSection) {
-                    const headerHeight = 80
-                    const elementTop = servicesSection.getBoundingClientRect().top + window.pageYOffset
-                    window.scrollTo({ top: elementTop - headerHeight, behavior: 'smooth' })
-                  }
-                  handleBookNowClick('hero')
-                }}
+                onClick={scrollToServices}
                 className="relative group"
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />

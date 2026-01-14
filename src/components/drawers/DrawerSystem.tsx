@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DiscoverDrawer from './DiscoverDrawer';
 import { useDrawer } from './DrawerContext';
 
 interface Service {
@@ -62,7 +61,7 @@ export default function DrawerSystem({ services }: DrawerSystemProps) {
       )}
 
       {/* Drawer Components */}
-      <DiscoverDrawer />
+      {/* DiscoverDrawer removed - using FindYourLook modal instead */}
     </>
   );
 }

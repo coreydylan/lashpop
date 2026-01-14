@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { usePanelStack } from '@/contexts/PanelStackContext'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
 
@@ -23,7 +22,6 @@ export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const { actions, state } = usePanelStack()
   const { registerLogoClick } = useDevMode()
   const pathname = usePathname()
 
@@ -78,17 +76,6 @@ export function Navigation() {
     const handleBookNow = () => {
       // Scroll to the services section
       smoothScrollToElement('#services', 80, 1000, 'top')
-
-      // Open chip bar in collapsed state with bounce
-      const hasCategoryPicker = state.panels.some(p => p.type === 'category-picker')
-      if (hasCategoryPicker) {
-        actions.triggerAttentionBounce()
-      } else {
-        actions.openPanel('category-picker', { entryPoint: 'page' }, { autoExpand: false })
-        setTimeout(() => {
-          actions.triggerAttentionBounce()
-        }, 400)
-      }
     }
   
   // Mobile header shrinks from py-6 (24px each side = 48px padding) to py-2 (8px each side = 16px padding)

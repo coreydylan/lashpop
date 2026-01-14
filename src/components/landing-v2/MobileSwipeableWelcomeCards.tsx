@@ -289,23 +289,24 @@ export function MobileSwipeableWelcomeCards({
         </motion.div>
       )}
 
-      {/* Pagination dots - tightly grouped */}
-      <div className="flex justify-center items-center gap-1 mb-5">
+      {/* Progress indicator - matching FindYourLook quiz style */}
+      <div className="flex justify-center items-center gap-2 mb-5">
         {cardContent.map((_, index) => (
           <button
             key={index}
             onClick={() => setCurrentIndex(index)}
             type="button"
             aria-label={`Go to card ${index + 1}`}
-            className="flex items-center justify-center"
-            style={{ width: index === currentIndex ? 16 : 6, height: 20 }}
+            className="flex items-center justify-center h-5"
           >
             <div
-              className="h-1.5 rounded-full transition-all duration-300"
-              style={{
-                width: index === currentIndex ? 16 : 6,
-                backgroundColor: index === currentIndex ? '#ac4d3c' : 'rgba(138, 94, 85, 0.4)'
-              }}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                index === currentIndex
+                  ? 'w-5 bg-terracotta'
+                  : index < currentIndex
+                  ? 'w-1.5 bg-terracotta/40'
+                  : 'w-1.5 bg-cream'
+              }`}
             />
           </button>
         ))}
@@ -313,6 +314,36 @@ export function MobileSwipeableWelcomeCards({
 
       {/* Card container - extended touch area with padding */}
       <div className="relative w-full max-w-sm mx-auto" style={{ height: '180px' }}>
+        {/* Subtle side arrows indicating swipe */}
+        <motion.div
+          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 z-0 pointer-events-none"
+          animate={{
+            opacity: [0.15, 0.35, 0.15],
+            x: [0, -3, 0]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <ChevronLeft className="w-5 h-5 text-[#ac4d3c]" strokeWidth={1.5} />
+        </motion.div>
+        <motion.div
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 z-0 pointer-events-none"
+          animate={{
+            opacity: [0.15, 0.35, 0.15],
+            x: [0, 3, 0]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <ChevronRight className="w-5 h-5 text-[#ac4d3c]" strokeWidth={1.5} />
+        </motion.div>
+
         <AnimatePresence mode="popLayout" custom={exitDirection}>
           <motion.div
             key={currentCard.id}
