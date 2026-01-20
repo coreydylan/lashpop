@@ -42,6 +42,15 @@ export function ServiceBrowserModal() {
   // Track if we're in the morphing animation phase
   const isMorphing = isMorphingQuiz && morphTargetSubcategory !== null
 
+  // Track if layout animation has settled (to prevent scrollbar flash)
+  const [layoutSettled, setLayoutSettled] = useState(true)
+
+  // Reset layout settled when morphing starts
+  useEffect(() => {
+    if (isMorphing) {
+      setLayoutSettled(false)
+    }
+  }, [isMorphing])
 
   // Reset quiz state when modal closes or leaves morphing mode
   useEffect(() => {
@@ -196,6 +205,7 @@ export function ServiceBrowserModal() {
                     damping: 35,
                   }
                 }}
+                onLayoutAnimationComplete={() => setLayoutSettled(true)}
               >
                 {/* Mobile Header - Full-width with safe area support */}
                 {isMobile ? (
@@ -295,7 +305,7 @@ export function ServiceBrowserModal() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.15 }}
-                      className="flex-1 min-h-0 flex items-center justify-center"
+                      className="flex-1 min-h-0 flex items-center justify-center overflow-hidden"
                       layout="position"
                     >
                       <div className="text-center">
@@ -313,8 +323,12 @@ export function ServiceBrowserModal() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.25, delay: 0.1 }}
-                      className={`flex-1 min-h-0 relative ${view === 'booking' ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}
-                      style={isMobile ? {
+                      className={`flex-1 min-h-0 relative ${
+                        !layoutSettled || view === 'booking'
+                          ? 'overflow-hidden'
+                          : 'overflow-y-auto overflow-x-hidden'
+                      }`}
+                      style={isMobile && layoutSettled ? {
                         WebkitOverflowScrolling: 'touch',
                         overscrollBehavior: 'contain'
                       } : undefined}
