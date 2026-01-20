@@ -164,12 +164,31 @@ export function BookingView({ service }: BookingViewProps) {
             min-height: 100% !important;
             /* Ensure it accounts for mobile viewport height */
             height: 100% !important;
+            /* Allow touch scrolling within the iframe */
+            touch-action: pan-x pan-y !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+
+          /* Ensure the widget container captures touch events */
+          .booking-view-widget {
+            touch-action: pan-x pan-y !important;
+            overscroll-behavior: contain !important;
+            -webkit-overflow-scrolling: touch !important;
           }
         }
       `}</style>
 
-      {/* Widget Container */}
-      <div className="relative flex-1 min-h-0">
+      {/* Widget Container - full height with proper touch handling */}
+      <div
+        className="relative flex-1 min-h-0"
+        style={{
+          // Ensure this container fills the space and handles overflow
+          overflow: 'hidden',
+          // Allow touch scrolling within (iframe will handle actual scrolling)
+          touchAction: 'pan-x pan-y',
+          overscrollBehavior: 'contain'
+        }}
+      >
         {/* Loading State */}
         {showLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-ivory z-10">

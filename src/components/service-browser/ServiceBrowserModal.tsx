@@ -33,6 +33,7 @@ export function ServiceBrowserModal() {
   const { state, actions } = useServiceBrowser()
   const { isOpen, view, categoryName, selectedService, showLashQuizPrompt, showFindYourLookQuiz, isMorphingQuiz, morphTargetSubcategory } = state
   const [isMobile, setIsMobile] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
   const quizContentRef = useRef<FindYourLookContentRef>(null)
 
   // Track quiz step for header updates (since refs don't trigger re-renders)
@@ -67,6 +68,31 @@ export function ServiceBrowserModal() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // Prevent scroll passthrough on mobile when in booking view
+  // The iframe handles its own scrolling, so we block touch events on the container
+  useEffect(() => {
+    if (!isMobile || view !== 'booking' || !isOpen) return
+
+    const container = contentRef.current
+    if (!container) return
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Only prevent default if the touch is not on the iframe
+      // This prevents the background from scrolling while allowing iframe scroll
+      const target = e.target as HTMLElement
+      if (target.tagName !== 'IFRAME') {
+        e.preventDefault()
+      }
+    }
+
+    // Use passive: false to allow preventDefault
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
+
+    return () => {
+      container.removeEventListener('touchmove', handleTouchMove)
+    }
+  }, [isMobile, view, isOpen])
 
   // When morphing starts, wait for animation then complete
   useEffect(() => {
@@ -327,6 +353,7 @@ export function ServiceBrowserModal() {
                   {/* Services content (normal view) */}
                   {!isMorphingQuiz && (
                     <motion.div
+                      ref={contentRef}
                       key="services-content"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
