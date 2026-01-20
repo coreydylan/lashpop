@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { useFindYourLook } from '@/components/find-your-look'
+import { useServiceBrowser } from '@/components/service-browser'
 import { smoothScrollToElement } from '@/lib/smoothScroll'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import WeatherLocationBadge from './WeatherLocationBadge'
@@ -57,7 +57,11 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   // Mobile - no longer need internal scroll state
   const heroContentRef = useRef<HTMLDivElement>(null)
 
-  const { openQuiz } = useFindYourLook()
+  const { actions } = useServiceBrowser()
+
+  const handleFindYourLook = () => {
+    actions.openFindYourLookQuiz();
+  }
   const [isMobile, setIsMobile] = useState(false)
 
   // Calculate total reviews
@@ -158,7 +162,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
 
               {/* Find Your Look - Frosted glass secondary button */}
               <button
-                onClick={openQuiz}
+                onClick={handleFindYourLook}
                 className="relative group w-full"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
@@ -347,7 +351,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 </div>
               </button>
               <button
-                onClick={openQuiz}
+                onClick={handleFindYourLook}
                 className="relative group"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />

@@ -33,6 +33,9 @@ interface ServiceBrowserState {
   pendingLashOpen: boolean
   // Find Your Look quiz
   showFindYourLookQuiz: boolean
+  // Morphing animation state - when true, quiz is embedded in services modal and will morph
+  isMorphingQuiz: boolean
+  morphTargetSubcategory: string | null
 }
 
 interface ServiceBrowserActions {
@@ -50,6 +53,8 @@ interface ServiceBrowserActions {
   openFindYourLookQuiz: () => void
   closeFindYourLookQuiz: () => void
   handleQuizResult: (lashStyle: string) => void
+  // Morphing animation actions
+  completeMorph: () => void
 }
 
 interface ServiceBrowserContextValue {
@@ -76,6 +81,8 @@ const initialState: ServiceBrowserState = {
   showLashQuizPrompt: false,
   pendingLashOpen: false,
   showFindYourLookQuiz: false,
+  isMorphingQuiz: false,
+  morphTargetSubcategory: null,
 }
 
 export function ServiceBrowserProvider({ children, services }: ServiceBrowserProviderProps) {
@@ -153,12 +160,16 @@ export function ServiceBrowserProvider({ children, services }: ServiceBrowserPro
     }))
   }, [])
 
-  // Open the Find Your Look quiz
+  // Open the Find Your Look quiz - now opens as embedded morphing modal
   const openFindYourLookQuiz = useCallback(() => {
     setState(prev => ({
       ...prev,
       showLashQuizPrompt: false,
-      showFindYourLookQuiz: true,
+      showFindYourLookQuiz: false,
+      isOpen: true,
+      categorySlug: 'lashes',
+      categoryName: 'Lashes',
+      isMorphingQuiz: true,
     }))
   }, [])
 
@@ -167,7 +178,7 @@ export function ServiceBrowserProvider({ children, services }: ServiceBrowserPro
     setState(initialState)
   }, [])
 
-  // Handle quiz result - open lashes modal filtered to the recommended style
+  // Handle quiz result - trigger morph animation to services modal
   const handleQuizResult = useCallback((lashStyle: string) => {
     // Map quiz result to subcategory slug
     const styleToSubcategory: Record<string, string> = {
@@ -180,13 +191,21 @@ export function ServiceBrowserProvider({ children, services }: ServiceBrowserPro
 
     const subcategorySlug = styleToSubcategory[lashStyle] || null
 
-    setState({
-      ...initialState,
-      isOpen: true,
-      categorySlug: 'lashes',
-      categoryName: 'Lashes',
-      activeSubcategory: subcategorySlug,
-    })
+    // Set the morph target - animation will expand the modal
+    setState(prev => ({
+      ...prev,
+      morphTargetSubcategory: subcategorySlug,
+    }))
+  }, [])
+
+  // Complete the morph animation - switch from quiz view to services view
+  const completeMorph = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      isMorphingQuiz: false,
+      activeSubcategory: prev.morphTargetSubcategory,
+      morphTargetSubcategory: null,
+    }))
   }, [])
 
   const actions = useMemo<ServiceBrowserActions>(() => ({
@@ -202,7 +221,8 @@ export function ServiceBrowserProvider({ children, services }: ServiceBrowserPro
     openFindYourLookQuiz,
     closeFindYourLookQuiz,
     handleQuizResult,
-  }), [openModal, closeModal, selectService, goBack, setActiveSubcategory, openBooking, closeBooking, closeLashQuizPrompt, confirmLashQuizSkip, openFindYourLookQuiz, closeFindYourLookQuiz, handleQuizResult])
+    completeMorph,
+  }), [openModal, closeModal, selectService, goBack, setActiveSubcategory, openBooking, closeBooking, closeLashQuizPrompt, confirmLashQuizSkip, openFindYourLookQuiz, closeFindYourLookQuiz, handleQuizResult, completeMorph])
 
   const value = useMemo<ServiceBrowserContextValue>(() => ({
     state,

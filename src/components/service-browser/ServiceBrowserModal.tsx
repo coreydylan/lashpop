@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft } from 'lucide-react'
 import { useServiceBrowser } from './ServiceBrowserContext'
@@ -8,7 +8,7 @@ import { BrowseView } from './views/BrowseView'
 import { DetailView } from './views/DetailView'
 import { BookingView } from './views/BookingView'
 import { LashQuizPrompt } from './LashQuizPrompt'
-import { FindYourLookModal } from '@/components/find-your-look/FindYourLookModal'
+import { FindYourLookModal, FindYourLookContent, type FindYourLookContentRef } from '@/components/find-your-look/FindYourLookModal'
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -31,8 +31,25 @@ const modalVariantsMobile = {
 
 export function ServiceBrowserModal() {
   const { state, actions } = useServiceBrowser()
-  const { isOpen, view, categoryName, selectedService, showLashQuizPrompt, showFindYourLookQuiz } = state
+  const { isOpen, view, categoryName, selectedService, showLashQuizPrompt, showFindYourLookQuiz, isMorphingQuiz, morphTargetSubcategory } = state
   const [isMobile, setIsMobile] = useState(false)
+  const quizContentRef = useRef<FindYourLookContentRef>(null)
+
+  // Track quiz step for header updates (since refs don't trigger re-renders)
+  const [quizStep, setQuizStep] = useState(0)
+  const [quizHeaderTitle, setQuizHeaderTitle] = useState('Find Your Look')
+
+  // Track if we're in the morphing animation phase
+  const isMorphing = isMorphingQuiz && morphTargetSubcategory !== null
+
+
+  // Reset quiz state when modal closes or leaves morphing mode
+  useEffect(() => {
+    if (!isOpen || !isMorphingQuiz) {
+      setQuizStep(0)
+      setQuizHeaderTitle('Find Your Look')
+    }
+  }, [isOpen, isMorphingQuiz])
 
   // Detect mobile viewport
   useEffect(() => {
@@ -42,18 +59,39 @@ export function ServiceBrowserModal() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // When morphing starts, wait for animation then complete
+  useEffect(() => {
+    if (isMorphing) {
+      // Wait for the expand animation to complete, then switch content
+      const timer = setTimeout(() => {
+        actions.completeMorph()
+      }, 500) // Match the animation duration
+      return () => clearTimeout(timer)
+    }
+  }, [isMorphing, actions])
+
   // Handle the lash quiz prompt "Take Quiz" action - opens the Find Your Look quiz
   const handleTakeQuiz = () => {
     actions.openFindYourLookQuiz()
   }
 
-  // Handle quiz result
+  // Handle quiz result - triggers morph animation
   const handleQuizBook = (lashStyle: string) => {
     actions.handleQuizResult(lashStyle)
   }
 
+  // Handle quiz step changes
+  const handleQuizStepChange = useCallback((step: number, headerTitle: string) => {
+    setQuizStep(step)
+    setQuizHeaderTitle(headerTitle)
+  }, [])
+
   // Get header title based on current view
   const getHeaderTitle = () => {
+    // When showing quiz content
+    if (isMorphingQuiz && !isMorphing) {
+      return quizHeaderTitle
+    }
     if (view === 'booking') return `Book ${selectedService?.name || ''}`
     if (view === 'detail') return selectedService?.name || ''
     return categoryName || ''
@@ -61,11 +99,24 @@ export function ServiceBrowserModal() {
 
   // Handle back navigation based on current view
   const handleBack = () => {
+    // If in quiz mode, delegate to quiz
+    if (isMorphingQuiz && !isMorphing && quizStep > 0) {
+      quizContentRef.current?.handleBack()
+      return
+    }
     if (view === 'booking') {
       actions.closeBooking()
     } else {
       actions.goBack()
     }
+  }
+
+  // Check if back button should be shown
+  const showBackButton = () => {
+    if (isMorphingQuiz && !isMorphing) {
+      return quizStep > 0
+    }
+    return view === 'detail' || view === 'booking'
   }
 
   // Handle escape key and body scroll lock
@@ -94,53 +145,65 @@ export function ServiceBrowserModal() {
   }, [isOpen, view, actions])
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop - hidden on mobile for fullscreen feel */}
-          <motion.div
-            key="service-browser-backdrop"
-            variants={backdropVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/50 z-50 hidden md:block"
-            onClick={actions.closeModal}
-          />
+    <>
+      {/* Service Browser Modal */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop - hidden on mobile for fullscreen feel */}
+            <motion.div
+              key="service-browser-backdrop"
+              variants={backdropVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/50 z-50 hidden md:block"
+              onClick={actions.closeModal}
+            />
 
-          {/* Modal */}
-          <motion.div
-            key="service-browser-modal"
-            variants={isMobile ? modalVariantsMobile : modalVariantsDesktop}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={{
-              duration: isMobile ? 0.35 : 0.3,
-              ease: isMobile ? [0.32, 0.72, 0, 1] : [0.4, 0, 0.2, 1]
-            }}
-            className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-6 pointer-events-none"
-          >
-            <div
-              className="relative w-full h-full md:w-[900px] md:h-[80vh] md:max-w-[90vw] bg-ivory md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-              style={isMobile ? {
-                paddingTop: 'env(safe-area-inset-top)',
-                paddingBottom: 'env(safe-area-inset-bottom)'
-              } : undefined}
+            {/* Modal */}
+            <motion.div
+              key="service-browser-modal"
+              variants={isMobile ? modalVariantsMobile : modalVariantsDesktop}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              transition={{
+                duration: isMobile ? 0.35 : 0.3,
+                ease: isMobile ? [0.32, 0.72, 0, 1] : [0.4, 0, 0.2, 1]
+              }}
+              className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-6 pointer-events-none"
             >
-              {/* Mobile Header - Full-width with safe area support */}
-              {isMobile ? (
-                <div className="flex items-center justify-between px-4 py-3 border-b border-sage/10 shrink-0 bg-ivory/95 backdrop-blur-sm sticky top-0 z-10">
-                  {/* Left side - Back button or spacer */}
-                  <div className="w-10 flex justify-start">
-                    <AnimatePresence mode="wait">
-                      {(view === 'detail' || view === 'booking') && (
+              <motion.div
+                layout
+                className={`relative w-full bg-ivory md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col ${
+                  isMobile ? 'h-full' : (isMorphingQuiz && !isMorphing ? 'h-auto max-h-[90vh]' : 'h-[80vh]')
+                }`}
+                onClick={(e) => e.stopPropagation()}
+                style={isMobile ? {
+                  paddingTop: 'env(safe-area-inset-top)',
+                  paddingBottom: 'env(safe-area-inset-bottom)'
+                } : undefined}
+                animate={{
+                  width: isMobile ? '100%' : (isMorphingQuiz && !isMorphing ? '480px' : '900px'),
+                  maxWidth: isMobile ? '100%' : '90vw',
+                }}
+                transition={{
+                  duration: 0.45,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
+              >
+                {/* Mobile Header - Full-width with safe area support */}
+                {isMobile ? (
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-sage/10 shrink-0 bg-ivory/95 backdrop-blur-sm sticky top-0 z-10">
+                    {/* Left side - Back button or spacer */}
+                    <div className="w-10 flex justify-start">
+                      {showBackButton() && (
                         <motion.button
+                          key="mobile-back-btn"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -10 }}
                           transition={{ duration: 0.15 }}
                           onClick={handleBack}
                           className="p-2 -ml-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
@@ -149,35 +212,33 @@ export function ServiceBrowserModal() {
                           <ChevronLeft className="w-5 h-5 text-dune" />
                         </motion.button>
                       )}
-                    </AnimatePresence>
-                  </div>
+                    </div>
 
-                  {/* Center - Title */}
-                  <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
-                    {getHeaderTitle()}
-                  </h2>
+                    {/* Center - Title */}
+                    <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
+                      {getHeaderTitle()}
+                    </h2>
 
-                  {/* Right side - Close button */}
-                  <div className="w-10 flex justify-end">
-                    <button
-                      onClick={actions.closeModal}
-                      className="p-2 -mr-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
-                      aria-label="Close"
-                    >
-                      <X className="w-5 h-5 text-dune" />
-                    </button>
+                    {/* Right side - Close button */}
+                    <div className="w-10 flex justify-end">
+                      <button
+                        onClick={actions.closeModal}
+                        className="p-2 -mr-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
+                        aria-label="Close"
+                      >
+                        <X className="w-5 h-5 text-dune" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                /* Desktop Header */
-                <div className="flex items-center justify-between px-6 py-4 border-b border-sage/10 shrink-0 bg-ivory">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AnimatePresence mode="wait">
-                      {(view === 'detail' || view === 'booking') && (
+                ) : (
+                  /* Desktop Header */
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-sage/10 shrink-0 bg-ivory">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {showBackButton() && (
                         <motion.button
+                          key="desktop-back-btn"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -10 }}
                           transition={{ duration: 0.15 }}
                           onClick={handleBack}
                           className="p-2 -ml-2 rounded-full hover:bg-sage/10 transition-colors shrink-0"
@@ -186,44 +247,90 @@ export function ServiceBrowserModal() {
                           <ChevronLeft className="w-5 h-5 text-dune" />
                         </motion.button>
                       )}
-                    </AnimatePresence>
-                    <h2 className="text-xl font-display font-medium text-charcoal truncate">
-                      {getHeaderTitle()}
-                    </h2>
+                      <h2 className="text-xl font-display font-medium text-charcoal truncate">
+                        {getHeaderTitle()}
+                      </h2>
+                    </div>
+                    <button
+                      onClick={actions.closeModal}
+                      className="p-2 rounded-full hover:bg-sage/10 transition-colors shrink-0"
+                      aria-label="Close modal"
+                    >
+                      <X className="w-5 h-5 text-dune" />
+                    </button>
                   </div>
-                  <button
-                    onClick={actions.closeModal}
-                    className="p-2 rounded-full hover:bg-sage/10 transition-colors shrink-0"
-                    aria-label="Close modal"
-                  >
-                    <X className="w-5 h-5 text-dune" />
-                  </button>
-                </div>
-              )}
+                )}
 
-              {/* Content with View Transitions */}
-              <div
-                className={`flex-1 min-h-0 relative ${view === 'booking' ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}
-                style={isMobile ? {
-                  WebkitOverflowScrolling: 'touch',
-                  overscrollBehavior: 'contain'
-                } : undefined}
-              >
+                {/* Content with View Transitions */}
                 <AnimatePresence mode="wait">
-                  {view === 'browse' && <BrowseView key="browse" />}
-                  {view === 'detail' && <DetailView key="detail" />}
-                  {view === 'booking' && selectedService && (
-                    <BookingView key="booking" service={selectedService} />
+                  {/* Quiz content (during morphing phase) */}
+                  {isMorphingQuiz && !isMorphing && (
+                    <motion.div
+                      key="quiz-content"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex-1 min-h-0 flex flex-col overflow-hidden"
+                    >
+                      <FindYourLookContent
+                        ref={quizContentRef}
+                        onBook={handleQuizBook}
+                        onClose={actions.closeModal}
+                        isMobile={isMobile}
+                        onStepChange={handleQuizStepChange}
+                      />
+                    </motion.div>
+                  )}
+
+                  {/* Morphing transition - show a brief loading state */}
+                  {isMorphing && (
+                    <motion.div
+                      key="morphing"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="flex-1 min-h-0 flex items-center justify-center"
+                    >
+                      <div className="text-center">
+                        <div className="w-8 h-8 border-2 border-terracotta/30 border-t-terracotta rounded-full animate-spin mx-auto mb-3" />
+                        <p className="text-sage text-sm">Loading your services...</p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Services content (normal view) */}
+                  {!isMorphingQuiz && (
+                    <motion.div
+                      key="services-content"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25, delay: 0.1 }}
+                      className={`flex-1 min-h-0 relative ${view === 'booking' ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}
+                      style={isMobile ? {
+                        WebkitOverflowScrolling: 'touch',
+                        overscrollBehavior: 'contain'
+                      } : undefined}
+                    >
+                      <AnimatePresence mode="wait">
+                        {view === 'browse' && <BrowseView key="browse" />}
+                        {view === 'detail' && <DetailView key="detail" />}
+                        {view === 'booking' && selectedService && (
+                          <BookingView key="booking" service={selectedService} />
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
-            </div>
-          </motion.div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
-        </>
-      )}
-
-      {/* Lash Quiz Prompt */}
+      {/* Lash Quiz Prompt - has its own AnimatePresence */}
       <LashQuizPrompt
         isOpen={showLashQuizPrompt}
         onTakeQuiz={handleTakeQuiz}
@@ -231,12 +338,12 @@ export function ServiceBrowserModal() {
         onClose={actions.closeLashQuizPrompt}
       />
 
-      {/* Find Your Look Quiz */}
+      {/* Find Your Look Quiz - has its own AnimatePresence */}
       <FindYourLookModal
         isOpen={showFindYourLookQuiz}
         onClose={actions.closeFindYourLookQuiz}
         onBook={handleQuizBook}
       />
-    </AnimatePresence>
+    </>
   )
 }
