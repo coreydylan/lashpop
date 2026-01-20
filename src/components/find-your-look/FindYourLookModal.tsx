@@ -330,7 +330,18 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
       )}
 
       {/* Step content */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <motion.div
+        className="flex-1 min-h-0 overflow-hidden"
+        layout
+        transition={{
+          layout: {
+            type: 'spring',
+            stiffness: 180,
+            damping: 28,
+            mass: 1,
+          }
+        }}
+      >
         <AnimatePresence mode="wait">
           {step === 0 && (
             <IntroScreen key="intro" onStart={handleStartQuiz} />
@@ -367,7 +378,7 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
             />
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </div>
   );
 });

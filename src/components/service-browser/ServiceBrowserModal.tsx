@@ -74,7 +74,7 @@ export function ServiceBrowserModal() {
       // Wait for the expand animation to complete, then switch content
       const timer = setTimeout(() => {
         actions.completeMorph()
-      }, 500) // Match the animation duration
+      }, 650) // Match the smoother spring animation duration
       return () => clearTimeout(timer)
     }
   }, [isMorphing, actions])
@@ -201,8 +201,9 @@ export function ServiceBrowserModal() {
                 transition={{
                   layout: {
                     type: 'spring',
-                    stiffness: 400,
-                    damping: 35,
+                    stiffness: 180,
+                    damping: 28,
+                    mass: 1,
                   }
                 }}
                 onLayoutAnimationComplete={() => setLayoutSettled(true)}
@@ -283,9 +284,17 @@ export function ServiceBrowserModal() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{
+                        opacity: { duration: 0.25, ease: 'easeOut' },
+                        layout: {
+                          type: 'spring',
+                          stiffness: 180,
+                          damping: 28,
+                          mass: 1,
+                        }
+                      }}
                       className="flex-1 min-h-0 flex flex-col overflow-hidden md:max-h-[calc(90vh-60px)]"
-                      layout="position"
+                      layout
                     >
                       <FindYourLookContent
                         ref={quizContentRef}
@@ -304,7 +313,7 @@ export function ServiceBrowserModal() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
                       className="flex-1 min-h-0 flex items-center justify-center overflow-hidden"
                       layout="position"
                     >
@@ -322,7 +331,7 @@ export function ServiceBrowserModal() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.25, delay: 0.1 }}
+                      transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
                       className={`flex-1 min-h-0 relative ${
                         !layoutSettled || view === 'booking'
                           ? 'overflow-hidden'
