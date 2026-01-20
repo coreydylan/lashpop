@@ -176,22 +176,25 @@ export function ServiceBrowserModal() {
               className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-6 pointer-events-none"
             >
               <motion.div
-                layout
-                className={`relative w-full bg-ivory md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col ${
-                  isMobile ? 'h-full' : (isMorphingQuiz && !isMorphing ? 'h-auto max-h-[90vh]' : 'h-[80vh]')
+                className={`relative bg-ivory md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col ${
+                  isMobile
+                    ? 'w-full h-full'
+                    : isMorphingQuiz && !isMorphing
+                      ? 'w-[480px] max-w-[90vw]'
+                      : 'w-[900px] max-w-[90vw] h-[80vh] max-h-[90vh]'
                 }`}
                 onClick={(e) => e.stopPropagation()}
                 style={isMobile ? {
                   paddingTop: 'env(safe-area-inset-top)',
                   paddingBottom: 'env(safe-area-inset-bottom)'
                 } : undefined}
-                animate={{
-                  width: isMobile ? '100%' : (isMorphingQuiz && !isMorphing ? '480px' : '900px'),
-                  maxWidth: isMobile ? '100%' : '90vw',
-                }}
+                layout
                 transition={{
-                  duration: 0.45,
-                  ease: [0.4, 0, 0.2, 1],
+                  layout: {
+                    type: 'spring',
+                    stiffness: 400,
+                    damping: 35,
+                  }
                 }}
               >
                 {/* Mobile Header - Full-width with safe area support */}
@@ -271,7 +274,8 @@ export function ServiceBrowserModal() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="flex-1 min-h-0 flex flex-col overflow-hidden"
+                      className="flex-1 min-h-0 flex flex-col overflow-hidden md:max-h-[calc(90vh-60px)]"
+                      layout="position"
                     >
                       <FindYourLookContent
                         ref={quizContentRef}
@@ -292,6 +296,7 @@ export function ServiceBrowserModal() {
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.15 }}
                       className="flex-1 min-h-0 flex items-center justify-center"
+                      layout="position"
                     >
                       <div className="text-center">
                         <div className="w-8 h-8 border-2 border-terracotta/30 border-t-terracotta rounded-full animate-spin mx-auto mb-3" />
@@ -313,6 +318,7 @@ export function ServiceBrowserModal() {
                         WebkitOverflowScrolling: 'touch',
                         overscrollBehavior: 'contain'
                       } : undefined}
+                      layout="position"
                     >
                       <AnimatePresence mode="wait">
                         {view === 'browse' && <BrowseView key="browse" />}

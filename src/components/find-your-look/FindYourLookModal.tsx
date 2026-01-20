@@ -304,7 +304,13 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
   };
 
   return (
-    <div className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-y-auto">
+    <div
+      className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-y-auto"
+      style={isMobile ? {
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehavior: 'contain'
+      } : undefined}
+    >
       {/* Step indicator dots (hidden on intro) */}
       {step > 0 && (
         <div className="flex justify-center gap-2 md:gap-2.5 mb-4 md:mb-5 shrink-0">
