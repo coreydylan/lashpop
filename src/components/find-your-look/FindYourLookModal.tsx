@@ -56,6 +56,30 @@ const RESULT_IMAGES = {
   volume: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945198617-7qha6t-IMG_9329.png',
 } as const;
 
+// Collect all quiz images for preloading
+const ALL_QUIZ_IMAGES = [
+  ...Object.values(Q3_IMAGES),
+  ...Object.values(Q4_IMAGES),
+  ...Object.values(RESULT_IMAGES),
+];
+
+// Preload quiz images using native browser preloading
+function preloadQuizImages() {
+  ALL_QUIZ_IMAGES.forEach((src) => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = src;
+    // Check if already preloaded to avoid duplicates
+    if (!document.querySelector(`link[href="${src}"]`)) {
+      document.head.appendChild(link);
+    }
+  });
+}
+
+// Blur placeholder for smooth image loading - neutral warm tone matching brand
+const BLUR_DATA_URL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAcI/8QAIhAAAQMEAgIDAAAAAAAAAAAAAQIDBAUGEQASIQcxQVFh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAaEQACAwEBAAAAAAAAAAAAAAABAgADESEE/9oADAMBAAIRAxEAPwC08j0+mVqm0eo02owZkCpR0TYr8d5LjT7TgCkLQoHCkqBBBHBBHJJFj8fUiDT+P7cZp0GOxAbpkJLLLLSUNttBhGkJSAAlKR4AAAHjnOc0xWzGvBFy6mf/2Q==';
+
 // Quiz step type - 0 = intro, 1-4 = questions, 5 = results
 type QuizStep = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -396,11 +420,14 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
   const [isMobile, setIsMobile] = useState(false);
 
   // Reset quiz state when modal opens (ensures fresh start each time)
+  // Also preload all quiz images for instant loading
   useEffect(() => {
     if (isOpen) {
       setStep(0);
       setAnswers({});
       setResult(null);
+      // Preload all quiz images when modal opens
+      preloadQuizImages();
     }
   }, [isOpen]);
 
@@ -852,7 +879,10 @@ function Q3PhotoSelection({ onAnswer, images }: Q3Props) {
               src={option.image}
               alt={option.label}
               fill
+              priority
               sizes="(max-width: 768px) 45vw, 200px"
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -931,6 +961,9 @@ function Q4FollowUp({ q3Answer, onAnswer, images }: Q4Props) {
               src={option.image}
               alt={option.label}
               fill
+              sizes="(max-width: 768px) 45vw, 200px"
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
@@ -980,6 +1013,9 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
             src={resultImage}
             alt={result.displayName}
             fill
+            sizes="(max-width: 768px) 100vw, 400px"
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
             className="object-cover"
           />
         </div>
