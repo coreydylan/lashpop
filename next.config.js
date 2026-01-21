@@ -10,7 +10,7 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'lashpop-dam-assets.s3.us-west-2.amazonaws.com',
-        pathname: '/uploads/**',
+        pathname: '/**',
       },
     ],
   },
