@@ -36,14 +36,14 @@ export const CATEGORY_COLORS = {
     iconName: 'permanent-makeup',
     name: 'Permanent Makeup',
   },
-  facials: {
+  skincare: {
     primary: 'rgb(188, 201, 194)',
     light: 'rgba(188, 201, 194, 0.15)',
     medium: 'rgba(188, 201, 194, 0.3)',
     ring: 'rgba(188, 201, 194, 0.3)',
     tailwind: 'category-facials',
     iconName: 'facials',
-    name: 'Facials',
+    name: 'Skincare',
   },
   waxing: {
     primary: 'rgb(161, 151, 129)',

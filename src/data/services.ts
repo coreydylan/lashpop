@@ -71,7 +71,7 @@ export const services = [
     id: 'brows',
     title: 'Brow Artistry',
     subtitle: 'Frame your story',
-    description: 'Because your brows are the architecture of your face. Whether it\'s lamination for that perfectly brushed look, tinting for definition, or shaping for structure—we create frames worthy of your masterpiece.',
+    description: 'Because your brows are the architecture of your face. Whether it\'s lamination for that perfectly brushed look, tinting for definition, or shaping for structure, we create frames worthy of your masterpiece.',
     features: [
       'Lamination, tinting, or shaping',
       'Customized to your features',

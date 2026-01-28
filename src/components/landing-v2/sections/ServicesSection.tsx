@@ -6,14 +6,25 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useServiceBrowser } from '@/components/service-browser'
 
-// Service category data - focused on "how" (what makes them special) vs "what"
-const serviceCategories = [
+// Service category type for data from database
+export interface ServiceCategory {
+  id: string
+  slug: string
+  title: string
+  tagline: string
+  description: string
+  icon: string
+}
+
+// Default service category data - used as fallback if database fetch fails
+// These are updated to match the latest content requirements
+export const defaultServiceCategories: ServiceCategory[] = [
   {
     id: 'lashes',
     slug: 'lashes',
     title: 'LASHES',
     tagline: 'Wake up ready.',
-    description: 'From subtle enhancements to full-on glamour, our lash artists customize every set to complement your eye shape and lifestyle. No two sets are the same—because no two people are.',
+    description: 'From soft and natural to full and fluffy, every lash look is personalized to your eye shape, natural lashes and your preferences, so getting ready feels like a breeze (and way more fun). Choose from any style of lash extensions or a lash lift + tint.',
     icon: '/lashpop-images/services/lashes-icon.svg',
   },
   {
@@ -21,47 +32,47 @@ const serviceCategories = [
     slug: 'brows',
     title: 'BROWS',
     tagline: 'Frame your face.',
-    description: 'Whether it\'s shaping, laminating, or microblading, we take time to understand your face structure and style. The result? Brows that look effortlessly you.',
+    description: 'Customized brow services that shape, define and enhance what you already have. Each service tailored so you leave looking refreshed and effortlessly put together. Choose from brow laminations, waxing, tinting, micro blading and nano-brows.',
     icon: '/lashpop-images/services/brows-icon.svg',
   },
   {
     id: 'facials',
     slug: 'facials',
     title: 'SKINCARE',
-    tagline: 'Glow from within.',
-    description: 'Our estheticians don\'t just follow a script—they analyze your skin and create a treatment that addresses what it actually needs. Real results, not just relaxation.',
+    tagline: 'Glow-y and fresh.',
+    description: 'Personalized skincare treatments designed to support your skin, restore your glow, and leave you feeling refreshed and radiant. Choose from basic facials, hydra facials, derma planing, fibroblast, jet plasma and more.',
     icon: '/lashpop-images/services/skincare-icon.svg',
   },
   {
     id: 'waxing',
     slug: 'waxing',
     title: 'WAXING',
-    tagline: 'Smooth confidence.',
-    description: 'Quick, precise, and surprisingly comfortable. Our technique minimizes irritation and maximizes smooth—so you can get on with your day feeling fresh.',
+    tagline: 'Smooth + effortless.',
+    description: 'Low maintenance waxing services that keep your skin smooth and your routine effortless.',
     icon: '/lashpop-images/services/waxing-icon.svg',
   },
   {
     id: 'permanent-makeup',
     slug: 'permanent-makeup',
     title: 'PERMANENT MAKEUP',
-    tagline: 'Effortless beauty.',
-    description: 'Wake up with perfectly defined features. From brows to lips, our artists create natural-looking enhancements that simplify your routine and boost your confidence.',
+    tagline: 'High impact, low maintenance.',
+    description: 'Natural looking results that streamline your routine and elevate your look without feeling overdone. Choose from micro blading and nano-brow services, lip blushing, and faux freckles/beauty marks.',
     icon: '/lashpop-images/services/permanent-makeup-icon.svg',
   },
   {
     id: 'specialty',
     slug: 'specialty',
     title: 'PERMANENT JEWELRY',
-    tagline: 'Meaningful moments.',
-    description: 'A delicate chain, welded on forever. It\'s become our favorite way to celebrate friendships, milestones, or just treating yourself to something beautiful.',
+    tagline: 'No clasps. No fuss.',
+    description: 'Custom, minimal chains welded in place so that you never have to think about it. A personal keepsake you\'ll wear every day, whether you\'re diving into the ocean, traveling, or simply going about your life.',
     icon: '/lashpop-images/services/permanent-jewelry-icon.svg',
   },
   {
     id: 'injectables',
     slug: 'injectables',
     title: 'BOTOX',
-    tagline: 'Subtle refinement.',
-    description: 'Expert-administered Botox, fillers, and aesthetic injectables. Our licensed professionals deliver natural results that enhance your features while maintaining your unique look.',
+    tagline: 'The subtle glow up.',
+    description: 'Natural looking results that keep your face looking smooth, relaxed, effortlessly refreshed + still you.',
     icon: '/lashpop-images/services/injectables-icon.svg',
   },
 ]
@@ -71,13 +82,13 @@ function ServiceCard({
   category,
   onClick,
 }: {
-  category: typeof serviceCategories[0]
+  category: ServiceCategory
   onClick: () => void
 }) {
   return (
     <button
       onClick={onClick}
-      className="group text-center p-6 rounded-2xl transition-all duration-300 hover:bg-white/30"
+      className="group text-center p-6 rounded-2xl transition-all duration-300 hover:bg-white/40 hover:shadow-md hover:scale-[1.02] hover:-translate-y-1"
     >
       {/* Icon */}
       <div className="flex justify-center mb-4">
@@ -120,8 +131,10 @@ function ServiceCard({
 
 // Mobile Swipeable Cards Component
 function MobileSwipeableServiceCards({
+  categories,
   onCategoryClick,
 }: {
+  categories: ServiceCategory[]
   onCategoryClick: (slug: string) => void
 }) {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -179,10 +192,10 @@ function MobileSwipeableServiceCards({
       if (isHorizontalSwipe.current === true && Math.abs(diff) > swipeThreshold) {
         if (diff > 0) {
           // Swiped left - next card
-          setCurrentIndex((prev) => (prev + 1) % serviceCategories.length)
+          setCurrentIndex((prev) => (prev + 1) % categories.length)
         } else {
           // Swiped right - previous card
-          setCurrentIndex((prev) => prev === 0 ? serviceCategories.length - 1 : prev - 1)
+          setCurrentIndex((prev) => prev === 0 ? categories.length - 1 : prev - 1)
         }
       }
 
@@ -200,9 +213,9 @@ function MobileSwipeableServiceCards({
       container.removeEventListener('touchmove', handleTouchMove)
       container.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [])
+  }, [categories.length])
 
-  const currentCategory = serviceCategories[currentIndex]
+  const currentCategory = categories[currentIndex]
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -305,7 +318,7 @@ function MobileSwipeableServiceCards({
 
       {/* Progress indicator - exact match to FindYourLook quiz */}
       <div className="flex justify-center gap-2 mt-5">
-        {serviceCategories.map((_, index) => (
+        {categories.map((_, index) => (
           <div
             key={index}
             onClick={() => setCurrentIndex(index)}
@@ -325,13 +338,17 @@ function MobileSwipeableServiceCards({
 
 interface ServicesSectionProps {
   isMobile?: boolean
+  categories?: ServiceCategory[]
 }
 
-export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps) {
+export function ServicesSection({ isMobile: propIsMobile, categories: propCategories }: ServicesSectionProps) {
   const [stateIsMobile, setIsMobile] = useState(false)
   const { actions: browserActions } = useServiceBrowser()
 
   const isMobile = propIsMobile ?? stateIsMobile
+
+  // Use prop categories if provided, otherwise use defaults
+  const serviceCategories = propCategories || defaultServiceCategories
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -346,7 +363,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
     if (category) {
       browserActions.openModal(categorySlug, category.title)
     }
-  }, [browserActions])
+  }, [browserActions, serviceCategories])
 
   // Handle Book Now button click - open with first category
   const handleBookNowClick = useCallback(() => {
@@ -358,7 +375,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
     return (
       <section
         id="services"
-        className="relative w-full py-12 px-6 bg-ivory"
+        className="relative w-full py-12 px-6 bg-cream"
         data-section-id="services"
       >
         {/* Section Header */}
@@ -373,7 +390,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
         </div>
 
         {/* Swipeable Cards */}
-        <MobileSwipeableServiceCards onCategoryClick={handleCategoryClick} />
+        <MobileSwipeableServiceCards categories={serviceCategories} onCategoryClick={handleCategoryClick} />
       </section>
     )
   }
@@ -382,7 +399,7 @@ export function ServicesSection({ isMobile: propIsMobile }: ServicesSectionProps
   return (
     <section
       id="services"
-      className="relative w-full py-20 px-8 bg-ivory"
+      className="relative w-full py-20 px-8 bg-cream"
       data-section-id="services"
     >
       <div className="max-w-5xl mx-auto">

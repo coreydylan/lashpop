@@ -5,6 +5,7 @@ export const serviceCategories = pgTable("service_categories", {
   name: text("name").notNull().unique(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
+  tagline: text("tagline"), // Short tagline displayed on landing page service cards (e.g., "Wake up ready.")
   icon: text("icon"),
   displayOrder: integer("display_order").default(0).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
