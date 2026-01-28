@@ -214,11 +214,11 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-full px-5 py-2.5 shadow-sm border border-white/40 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:bg-white/80"
                 >
-                  <div className="scale-75">
+                  <div className="scale-100">
                     {getSourceLogoCompact(stat.source)}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-sans font-semibold text-dune text-sm">{stat.rating}</span>
+                    <span className="font-sans font-semibold text-dune text-base">{stat.rating}</span>
                     <svg className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
@@ -238,10 +238,10 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm border border-white/40 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:bg-white/80"
                 >
-                  <div className="scale-[0.6]">
+                  <div className="scale-90">
                     {getSourceLogoCompact(stat.source)}
                   </div>
-                  <span className="font-sans font-semibold text-dune text-xs">{stat.rating}</span>
+                  <span className="font-sans font-semibold text-dune text-sm">{stat.rating}</span>
                   <svg className="w-3 h-3 text-golden" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
@@ -331,8 +331,8 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                             className="absolute bottom-0 left-0 right-0 pointer-events-none"
                             style={{ bottom: 0 }}
                           >
-                            {/* Fade gradient */}
-                            <div className="h-16 bg-gradient-to-t from-white/80 via-white/40 to-transparent rounded-b-2xl" />
+                            {/* Fade gradient - reduced height to avoid blocking scroll */}
+                            <div className="h-8 bg-gradient-to-t from-white/70 to-transparent rounded-b-2xl pointer-events-none" />
                             {/* Scroll up hint */}
                             <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
                               <div className="bg-dune/10 backdrop-blur-sm rounded-full p-1.5">
