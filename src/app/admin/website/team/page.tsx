@@ -66,7 +66,7 @@ interface TeamMember {
 // Common service category options for manual tags
 const CATEGORY_OPTIONS = [
   'Lashes',
-  'Brow',
+  'Brows',
   'Waxing',
   'Facials',
   'Skin Care',

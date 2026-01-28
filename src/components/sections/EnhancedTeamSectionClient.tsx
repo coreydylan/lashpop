@@ -160,23 +160,9 @@ const getColumnsForWidth = (width: number): number => {
 }
 
 export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] }: EnhancedTeamSectionClientProps) {
-  // Sort team members: Emily first, then employees, then independent
-  const sortedTeamMembers = useMemo(() => {
-    return [...teamMembers].sort((a, b) => {
-      // Emily always first
-      const aIsEmily = a.name.toLowerCase().startsWith('emily')
-      const bIsEmily = b.name.toLowerCase().startsWith('emily')
-      if (aIsEmily && !bIsEmily) return -1
-      if (!aIsEmily && bIsEmily) return 1
-
-      // Employees before independent
-      if (a.type === 'employee' && b.type === 'independent') return -1
-      if (a.type === 'independent' && b.type === 'employee') return 1
-
-      // Keep original order within same group
-      return 0
-    })
-  }, [teamMembers])
+  // Team members are already sorted by displayOrder from the database
+  // Order can be managed via admin panel at /admin/website/team
+  const sortedTeamMembers = teamMembers
 
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [selectedMemberIndex, setSelectedMemberIndex] = useState<number>(0)
@@ -494,7 +480,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       'mega': 'Lashes',
       'wispy': 'Lashes',
       'wet': 'Lashes',
-      'brow': 'Brow',
+      'brow': 'Brows',
       'lamination': 'Brow',
       'microblading': 'Brow',
       'threading': 'Brow',
@@ -538,12 +524,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     <>
       <section
         ref={sectionRef}
-        className="py-20 bg-ivory overflow-x-hidden"
+        className="py-12 bg-ivory overflow-x-hidden"
       >
         {/* Section Header */}
         <div className="text-center mb-12 px-4">
           <h2
-            className="text-2xl md:text-3xl font-display font-medium tracking-wide mb-6"
+            className="text-xl md:text-3xl font-display font-medium tracking-wide mb-6"
             style={{ color: '#ac4d3c' }}
           >
             Find Your Stylist
@@ -551,7 +537,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           <div className="w-16 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
             <p className="text-base md:text-lg leading-relaxed" style={{ color: '#3d3632' }}>
-              LashPop Studios is home to a collective of independent beauty businesses—each offering their own services, pricing, schedules, and specialties.
+              LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules, and specialties.
             </p>
             <p className="text-base md:text-lg leading-relaxed" style={{ color: '#3d3632' }}>
               Browse the profiles below to find a stylist that fits your vibe.
@@ -689,7 +675,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       )}
 
                       {/* Arch Image Container */}
-                      <div className="relative px-3 pt-3">
+                      <div className="relative px-3 pt-6">
                         <div className="relative h-48 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
                           <Image
                             src={cardImage}
@@ -799,7 +785,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               )}
 
                               {/* Arch Image Container */}
-                              <div className="relative px-4 pt-4">
+                              <div className="relative px-4 pt-8">
                                 <div className="relative h-72 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
                                   {/* Image */}
                                   <Image
@@ -1078,7 +1064,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         {/* Join The Team CTA */}
         <div className="text-center mt-12 md:mt-16 px-4">
           <a
-            href="mailto:careers@lashpopstudios.com?subject=Join%20The%20Team"
+            href="/work-with-us"
             className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#ac4d3c] hover:text-white hover:border-[#ac4d3c]"
             style={{
               borderColor: '#ac4d3c',
