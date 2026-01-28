@@ -28,17 +28,17 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
       isFeatured: true
     },
     {
-      question: "Independent stylists vs. employees — what's the difference?",
+      question: "Independent stylists vs. employees - what's the difference?",
       answer: `<p class="mb-2">We're a hybrid salon, meaning we have both LashPop employees and independent beauty businesses renting space under our roof. Each independent service provider sets their own pricing/ policies and handles their own bookings and client relationships.</p><p class="mb-2">Each team member has been carefully hand selected to be under the LashPop brand, so either way, you'll be in great hands whether you book with an employee or independent artist.</p><p>When you book with a specific stylist, your deposit, rescheduling, and cancellation policies follow their terms, though we aim for consistency in standards across all stylists.</p>`
     },
     {
       question: "How to Prepare for Your Appointment",
-      answer: `<ul class="list-disc pl-5 space-y-1"><li>Use the restroom before your appointment.</li><li>Bring headphones or your own playlist if you want to zone out and relax.</li><li>Bring a sweater or light blanket — we keep our studio at 70–72°F for certain products.</li><li>Plan to lay fairly still throughout the service.</li><li>Try to minimize talking during lash services to avoid fluttering eyes or movement that can affect application.</li></ul>`,
+      answer: `<ul class="list-disc pl-5 space-y-1"><li>Use the restroom before your appointment.</li><li>Bring headphones or your own playlist if you want to zone out and relax.</li><li>Bring a sweater or light blanket - we keep our studio at 70-72F for certain products.</li><li>Plan to lay fairly still throughout the service.</li><li>Try to minimize talking during lash services to avoid fluttering eyes or movement that can affect application.</li></ul>`,
       isFeatured: true
     },
     {
       question: "Parking & Studio Entry / Door Code",
-      answer: `<p class="mb-2"><strong>Parking:</strong> Free street parking is available all around near the studio. There is also a shared parking lot on the north end of our building</p><p class="mb-2"><strong>Why we use a door code:</strong> This helps us create a peaceful, uninterrupted environment for your service and ensures that only scheduled clients and team members have access to the studio. It's simply an extra layer of comfort and safety for both our guests and our team — while keeping out unexpected solicitors or walk-ins. :)</p><p class="mb-2">Please arrive a few minutes early so you can enter smoothly — if the door is locked, call/text the studio number and your stylist will let you in.</p><p>Once you arrive, you can make yourself at home in our waiting area. Please have a seat, grab a tea or coffee, and wait for your stylist to come out and get you.</p>`
+      answer: `<p class="mb-2"><strong>Parking:</strong> Free street parking is available all around near the studio. There is also a shared parking lot on the north end of our building</p><p class="mb-2"><strong>Why we use a door code:</strong> This helps us create a peaceful, uninterrupted environment for your service and ensures that only scheduled clients and team members have access to the studio. It's simply an extra layer of comfort and safety for both our guests and our team, while keeping out unexpected solicitors or walk-ins. :)</p><p class="mb-2">Please arrive a few minutes early so you can enter smoothly. If the door is locked, call/text the studio number and your stylist will let you in.</p><p>Once you arrive, you can make yourself at home in our waiting area. Please have a seat, grab a tea or coffee, and wait for your stylist to come out and get you.</p>`
     }
   ],
   'Policies': [
@@ -64,12 +64,12 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
   'Lash Extensions': [
     {
       question: "Appointment Lengths",
-      answer: `<ul class="list-disc pl-5 space-y-1"><li>Classic Full Set: 1.5-2 hours</li><li>Classic Fill: 60-75 mins</li><li>Mini Fill: 30 min</li><li>Hybrid Full Set: 1.5-2 hours</li><li>Hybrid Fill: 60-75 mins</li><li>Mini Fill: 30-45 min</li><li>Volume Full Set: 2 hrs</li><li>Volume Fill: 1 hr 30 min</li><li>Mini Fill: 30-45 min</li><li>Removal: 30–45 min</li></ul>`,
+      answer: `<ul class="list-disc pl-5 space-y-1"><li>Classic Full Set: 1.5-2 hours</li><li>Classic Fill: 60-75 mins</li><li>Mini Fill: 30 min</li><li>Hybrid Full Set: 1.5-2 hours</li><li>Hybrid Fill: 60-75 mins</li><li>Mini Fill: 30-45 min</li><li>Volume Full Set: 2 hrs</li><li>Volume Fill: 1 hr 30 min</li><li>Mini Fill: 30-45 min</li><li>Removal: 30-45 min</li></ul>`,
       isFeatured: true
     },
     {
       question: "How to Prepare",
-      answer: `<ul class="list-disc pl-5 space-y-1"><li>Arrive with clean, makeup-free lashes.</li><li>Silence your phone.</li><li>Keep talking to a minimum to avoid eye movement during application.</li><li>Use the restroom before your appointment if needed.</li><li>Bring headphones and your phone if you'd like to listen to your own music or podcasts.</li><li>Bring a blanket or sweater — we keep our studio at 70-72 degrees for certain products.</li></ul>`
+      answer: `<ul class="list-disc pl-5 space-y-1"><li>Arrive with clean, makeup-free lashes.</li><li>Silence your phone.</li><li>Keep talking to a minimum to avoid eye movement during application.</li><li>Use the restroom before your appointment if needed.</li><li>Bring headphones and your phone if you'd like to listen to your own music or podcasts.</li><li>Bring a blanket or sweater - we keep our studio at 70-72 degrees for certain products.</li></ul>`
     },
     {
       question: "Aftercare & Maintenance",
@@ -171,7 +171,7 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "How to Prepare",
-      answer: `<ul class="list-disc pl-5 space-y-1"><li>Arrive with clean skin.</li><li>Avoid exfoliating products (including shaving and waxing), Retin-A, Tretinoin, and Benzoyl Peroxide for at least five days prior.</li><li>Avoid tanning or sunburn for at least 48 hours before.</li><li>Shave the day before (if needed) — not the same day.</li><li>Stay hydrated!</li></ul>`
+      answer: `<ul class="list-disc pl-5 space-y-1"><li>Arrive with clean skin.</li><li>Avoid exfoliating products (including shaving and waxing), Retin-A, Tretinoin, and Benzoyl Peroxide for at least five days prior.</li><li>Avoid tanning or sunburn for at least 48 hours before.</li><li>Shave the day before (if needed), not the same day.</li><li>Stay hydrated!</li></ul>`
     },
     {
       question: "Aftercare",
