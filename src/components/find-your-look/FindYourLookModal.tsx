@@ -753,7 +753,7 @@ function Q1BeautyRoutine({ onAnswer }: { onAnswer: (answer: Q1Answer) => void })
     { value: 'A', label: 'Sunscreen, lip balm, and I\'m out the door' },
     { value: 'B', label: 'Light makeup, soft and natural' },
     { value: 'C', label: 'Full makeup and all the glam' },
-    { value: 'D', label: 'It depends — sometimes simple, sometimes glam' },
+    { value: 'D', label: 'It depends - sometimes simple, sometimes glam' },
   ];
 
   return (

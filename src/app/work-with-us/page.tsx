@@ -78,7 +78,7 @@ const boothAmenities = [
 // Specialties for form
 const specialties = [
   'Lash Extensions', 'Lash Lifts', 'Brow Lamination', 'Microblading',
-  'Permanent Makeup', 'Facials/Skincare', 'Waxing', 'Nails', 'Injectables', 'Other'
+  'Permanent Makeup', 'Skincare', 'Waxing', 'Nails', 'Injectables', 'Other'
 ]
 
 // Inline Form Component
@@ -1131,7 +1131,7 @@ export default function WorkWithUsPage() {
           {/* Benefits Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[
-              { icon: Users, title: 'Real Community', desc: 'Not just coworkers—a family that celebrates wins together.' },
+              { icon: Users, title: 'Real Community', desc: 'Not just coworkers, but a family that celebrates wins together.' },
               { icon: Sparkles, title: 'Cross-Promotion', desc: 'When one wins, we all win. Active client referrals.' },
               { icon: Heart, title: 'Fun Environment', desc: 'Good music, great energy, a space you want to be in.' },
               { icon: Star, title: 'Brand Power', desc: 'Benefit from established reputation and marketing.' },

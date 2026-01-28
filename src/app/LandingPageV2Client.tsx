@@ -323,12 +323,30 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                   {/* Background container for all sections after founder letter */}
                   <div className={isMobile ? 'bg-ivory' : ''}>
+                    {/* Page break between Welcome Letter and Services */}
+                    <div className="py-8 flex items-center justify-center">
+                      <div className="flex items-center gap-4 max-w-xs w-full">
+                        <div className="flex-1 h-px bg-terracotta/20" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+                        <div className="flex-1 h-px bg-terracotta/20" />
+                      </div>
+                    </div>
+
                     {/*
                       SERVICES SECTION: Showcases all service categories with icons and descriptions.
                       Desktop: Grid layout | Mobile: Swipeable cards
                     */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="services">
                       <ServicesSection isMobile={isMobile} />
+                    </div>
+
+                    {/* Page break between Services and Team */}
+                    <div className="py-8 flex items-center justify-center bg-ivory">
+                      <div className="flex items-center gap-4 max-w-xs w-full">
+                        <div className="flex-1 h-px bg-terracotta/20" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+                        <div className="flex-1 h-px bg-terracotta/20" />
+                      </div>
                     </div>
 
                     {/* Team Section */}
