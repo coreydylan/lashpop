@@ -173,7 +173,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
 
               {/* Work With Us - Frosted glass secondary button */}
               <a
-                href="#"
+                href="/work-with-us"
                 className="relative group w-full block"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
@@ -185,12 +185,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               {/* Reviews chip - Frosted glass style matching other chips */}
               {totalReviews > 0 && (
                 <button
-                  onClick={() => {
-                    const reviewsSection = document.getElementById('reviews');
-                    if (reviewsSection) {
-                      reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                  }}
+                  onClick={() => smoothScrollToElement('#reviews', 60, 800, 'center')}
                   className="relative group w-full"
                 >
                   <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />

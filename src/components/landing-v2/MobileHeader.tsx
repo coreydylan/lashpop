@@ -142,6 +142,8 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   }, [getScrollContainer, registerLogoClick])
 
   // Handle menu item click
+  // Header height is 60px - use consistent offsets based on this
+  const HEADER_HEIGHT = 60
   const handleMenuItemClick = useCallback((item: MenuItem) => {
     setIsMenuOpen(false)
 
@@ -151,14 +153,15 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       return
     }
 
-    if (item.href === '#gallery' || item.href === '#reviews') {
-      smoothScrollToElement(item.href, 60, 800, 'center')
-    } else if (item.href === '#faq') {
-      smoothScrollToElement(item.href, 140, 800, 'top')
-    } else if (item.href === '#services') {
-      smoothScrollToElement(item.href, 0, 800, 'top')
+    // Services section needs header offset to show "Choose a Service" heading
+    if (item.href === '#services') {
+      smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
+    } else if (item.href === '#gallery' || item.href === '#reviews') {
+      // Gallery and reviews use center alignment with header offset
+      smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'center')
     } else {
-      smoothScrollToElement(item.href, 60, 800, 'top')
+      // All other sections: offset by header height
+      smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
     }
   }, [])
 
@@ -249,7 +252,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
             <div className="flex items-center gap-3">
               {/* Book Now Button (filled, matches desktop) */}
               <button
-                onClick={() => smoothScrollToElement('#services', 0, 800, 'top')}
+                onClick={() => smoothScrollToElement('#services', 60, 800, 'top')}
                 className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-all"
               >
                 Book
