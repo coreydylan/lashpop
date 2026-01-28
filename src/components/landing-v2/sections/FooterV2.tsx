@@ -35,7 +35,7 @@ export function FooterV2() {
                 href="https://instagram.com/lashpopstudios"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-sage/10 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
                 aria-label="Instagram"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -46,11 +46,58 @@ export function FooterV2() {
                 href="https://facebook.com/lashpopstudios"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-sage/10 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
                 aria-label="Facebook"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+              </a>
+              <a
+                href="https://tiktok.com/@lashpopstudios_"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                aria-label="TikTok"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                </svg>
+              </a>
+              <a
+                href="https://www.yelp.com/biz/lashpop-studios-oceanside"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                aria-label="Yelp"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.16 12.594l-4.995 1.433c-.96.276-1.74-.8-1.176-1.63l2.905-4.308a1.072 1.072 0 011.596-.206 9.194 9.194 0 011.676 3.218c.235.818-.428 1.334-1.006 1.493zm-7.166 5.1l-.485 5.05c-.04.478-.464.856-.95.856h-.104a9.196 9.196 0 01-3.496-1.199c-.756-.45-.65-1.36-.206-1.778l3.467-3.25c.697-.654 1.83-.013 1.774.92v-.599zm-1.278-6.074L6.53 8.39c-.73-.463-.593-1.49.207-1.934a9.2 9.2 0 013.38-1.18c.792-.108 1.326.544 1.326 1.164l.174 4.876c.03.87-1.14 1.298-1.762.654l.159-.35zm-1.02 2.38l-5.05.18c-.492.018-.918-.33-.984-.815a9.186 9.186 0 01.5-3.606c.278-.788 1.168-.94 1.63-.55l3.592 3.04c.738.625.297 1.76-.688 1.75zm3.14-11.478c.055-.513.475-.907.991-.907h.104a9.196 9.196 0 013.22 1.022c.773.422.72 1.29.31 1.74l-3.252 3.57c-.652.717-1.82.155-1.82-.876l.447-4.55z"/>
+                </svg>
+              </a>
+              <a
+                href="https://maps.app.goo.gl/mozm5VjGqw8qCuzL8"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                aria-label="Google"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+              </a>
+              <a
+                href="https://www.vagaro.com/lashpop32"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                aria-label="Vagaro"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 15.06L7.7 8.94h2.27l1.95 5.47 1.96-5.47h2.27l-2.89 8.12h-2.67z"/>
                 </svg>
               </a>
             </div>
@@ -95,8 +142,8 @@ export function FooterV2() {
                   Botox
                 </a>
               </li>
-              <li className="pt-2 border-t border-sage/10">
-                <a href="/work-with-us" className="caption text-terracotta hover:text-rust transition-colors font-medium">
+              <li>
+                <a href="/work-with-us" className="inline-flex items-center justify-center px-5 py-2 bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white rounded-full text-sm font-medium hover:shadow-lg transition-all">
                   Work With Us
                 </a>
               </li>
@@ -107,10 +154,15 @@ export function FooterV2() {
           <div>
             <h4 className="caption-bold text-charcoal mb-4">Visit Us</h4>
             <address className="not-italic space-y-3">
-              <p className="caption text-charcoal">
+              <a
+                href="https://maps.app.goo.gl/mozm5VjGqw8qCuzL8"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="caption text-charcoal hover:text-terracotta transition-colors"
+              >
                 429 S Coast Hwy<br />
                 Oceanside, CA 92054
-              </p>
+              </a>
               <p className="caption text-charcoal">
                 <a href="tel:+17602120448" className="hover:text-terracotta transition-colors">
                   +1 (760) 212-0448
@@ -148,7 +200,7 @@ export function FooterV2() {
               />
               <button
                 type="submit"
-                className="w-full button-primary"
+                className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white rounded-full font-medium hover:shadow-lg transition-all"
                 disabled={isSubscribed}
               >
                 {isSubscribed ? 'Subscribed!' : 'Subscribe'}

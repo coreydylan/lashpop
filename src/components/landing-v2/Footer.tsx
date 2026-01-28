@@ -125,8 +125,17 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-display font-medium mb-4">Contact</h4>
             <ul className="space-y-2">
-              <li>429 S Coast Hwy</li>
-              <li>Oceanside, CA 92054</li>
+              <li>
+                <a
+                  href="https://maps.app.goo.gl/mozm5VjGqw8qCuzL8"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#cc947f] transition-colors"
+                >
+                  429 S Coast Hwy<br />
+                  Oceanside, CA 92054
+                </a>
+              </li>
               <li className="pt-2">
                 <a href="tel:7602120448" className="hover:text-[#cc947f] transition-colors">
                   +1 (760) 212-0448
