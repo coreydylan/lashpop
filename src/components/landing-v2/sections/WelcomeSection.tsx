@@ -150,7 +150,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               <span className="font-extralight opacity-80">who believe looking amazing shouldn&apos;t require a 30-minute morning routine</span>{' '}
               <span className="italic opacity-70">or a small emotional breakdown in front of the bathroom mirror.</span>
               <span className="block text-xl md:text-2xl font-display font-medium mt-4 tracking-wide" style={{ color: '#ac4d3c' }}>
-                We&apos;re here to make beauty feel easy, natural, and—honestly—kind of life-changing.
+                We&apos;re here to make beauty feel easy, natural, and honestly kind of life-changing.
               </span>
             </motion.div>
 

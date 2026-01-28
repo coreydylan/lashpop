@@ -16,13 +16,13 @@ interface FounderLetterSectionProps {
 
 // Default content fallback
 const defaultContent: FounderLetterContent = {
-  greeting: 'I\'m so glad you\'re here. 🤎',
+  greeting: 'I\'m so glad you\'re here.',
   paragraphs: [
-    'When I launched LashPop back in 2016, I wanted something simple: a place where women could feel genuinely cared for and walk out looking refreshed without the long routine. That idea grew into the beauty collective we have today—artists who specialize in lashes, brows, skincare, injectables, waxing, permanent jewelry, and more, all with one goal in mind.',
-    'We\'re united by the same mission: helping you feel effortlessly beautiful and confident, with a few less things to stress about during your busy week. If we can give you that "just woke up from eight blissful hours" look with almost no effort—even if you\'re running on five—we\'ll call that a win.',
+    'When I launched LashPop back in 2016, I wanted something simple: a place where women could feel genuinely cared for and walk out looking refreshed without the long routine. That idea grew into the beauty collective we have today: artists who specialize in lashes, brows, skincare, injectables, waxing, permanent jewelry, and more, all with one goal in mind.',
+    'We\'re united by the same mission: helping you feel effortlessly beautiful and confident, with a few less things to stress about during your busy week. If we can give you that "just woke up from eight blissful hours" look with almost no effort (even if you\'re running on five), we\'ll call that a win.',
     'We can\'t wait to see you soon!'
   ],
-  signOff: 'Xo',
+  signOff: 'Xo,',
   signature: 'Emily'
 }
 
@@ -50,19 +50,19 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           {/* Content Container - bottom-aligned with arch touching viewport bottom */}
           <div className="container flex justify-between items-end gap-12">
             {/* Letter Content - Left Side */}
-            <div className="max-w-2xl z-30 pb-[16vh]">
+            <div className="max-w-2xl z-30 pb-[6vh]">
               {/* Section Header */}
               <div className="mb-8">
                 <h2
                   className="text-3xl font-display font-medium tracking-wide mb-6"
                   style={{ color: '#ac4d3c' }}
                 >
-                  Welcome to Lashpop Studios
+                  Welcome to LashPop Studios
                 </h2>
                 <div className="w-16 h-px bg-terracotta/30" />
               </div>
               {/* Letter Content */}
-              <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.4vw,1.4rem)] leading-relaxed font-normal font-sans">
+              <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.4vw,1.4rem)] leading-relaxed font-normal font-sans italic">
                 <p className="mb-[1.5vh]">{letterContent.greeting}</p>
 
                 {letterContent.paragraphs.map((paragraph, index) => (
@@ -73,7 +73,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
                 <div className="flex flex-col gap-[0.5vh]">
                   <p>{letterContent.signOff}</p>
-                  <p className="text-[clamp(1.2rem,1.8vw,1.7rem)]">{letterContent.signature}</p>
+                  <p>{letterContent.signature}</p>
                 </div>
               </div>
 
@@ -137,7 +137,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             </h2>
             <div className="w-16 h-px bg-terracotta/30 mx-auto" />
           </div>
-          <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans max-w-lg mx-auto">
+          <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic max-w-lg mx-auto">
             <p className="mb-4">{letterContent.greeting}</p>
 
             {letterContent.paragraphs.map((paragraph, index) => (
@@ -151,7 +151,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
             <div className="flex flex-col gap-1">
               <p>{letterContent.signOff}</p>
-              <p className="text-[1.2rem]">{letterContent.signature}</p>
+              <p>{letterContent.signature}</p>
             </div>
           </div>
         </div>
