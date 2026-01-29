@@ -23,7 +23,7 @@ export function FooterV2() {
     <footer ref={ref} className="bg-ivory pt-20 pb-8">
       <div className="container">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 lg:gap-20 mb-16">
           {/* Brand Column */}
           <div>
             <h3 className="heading-4 mb-4" style={{ color: '#ac4d3c' }}>LashPop Studios</h3>
@@ -153,26 +153,52 @@ export function FooterV2() {
           {/* Contact Info */}
           <div>
             <h4 className="caption-bold text-charcoal mb-4">Visit Us</h4>
-            <address className="not-italic space-y-3">
+            <address className="not-italic space-y-4">
               <a
                 href="https://maps.app.goo.gl/mozm5VjGqw8qCuzL8"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="caption text-charcoal hover:text-terracotta transition-colors"
+                className="flex items-start gap-3 caption text-charcoal hover:text-terracotta transition-colors"
               >
-                429 S Coast Hwy<br />
-                Oceanside, CA 92054
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>429 S Coast Hwy<br />Oceanside, CA 92054</span>
               </a>
-              <p className="caption text-charcoal">
-                <a href="tel:+17602120448" className="hover:text-terracotta transition-colors">
-                  +1 (760) 212-0448
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 flex-shrink-0 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                <span className="caption text-charcoal">+1 (760) 212-0448</span>
+                <a
+                  href="tel:+17602120448"
+                  className="w-8 h-8 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                  aria-label="Call"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
                 </a>
-              </p>
-              <p className="caption text-charcoal">
-                <a href="mailto:lashpopstudios@gmail.com" className="hover:text-terracotta transition-colors">
-                  lashpopstudios@gmail.com
+                <a
+                  href="sms:+17602120448"
+                  className="w-8 h-8 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                  aria-label="Text"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
                 </a>
-              </p>
+              </div>
+              <a
+                href="mailto:lashpopstudios@gmail.com"
+                className="flex items-center gap-3 caption text-charcoal hover:text-terracotta transition-colors"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span>lashpopstudios@gmail.com</span>
+              </a>
             </address>
             <div className="mt-4">
               <p className="caption-bold text-charcoal mb-2">Hours</p>
