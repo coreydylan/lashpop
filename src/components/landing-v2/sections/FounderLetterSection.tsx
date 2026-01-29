@@ -1,6 +1,5 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 
 interface FounderLetterContent {
@@ -29,84 +28,61 @@ const defaultContent: FounderLetterContent = {
 export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   // Use provided content or fallback to defaults
   const letterContent = content || defaultContent
-  const [isMobile, setIsMobile] = useState(false)
-
-  // Check if mobile
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
 
   return (
-    <section className="relative w-full md:bg-ivory">
+    <section className="relative w-full">
 
       {/* Desktop/Tablet Layout */}
       <div className="hidden md:block relative z-20 overflow-hidden">
-        <div className="h-screen flex flex-col justify-between pt-[calc(96px+3vh)]">
-          {/* Spacer to push content down from docked panels */}
-          <div className="flex-shrink-0" />
-          {/* Content Container - bottom-aligned with arch touching viewport bottom */}
-          <div className="container flex justify-between items-end gap-12">
-            {/* Letter Content - Left Side */}
-            <div className="max-w-2xl z-30 pb-[6vh]">
-              {/* Section Header */}
-              <div className="mb-8">
-                <h2
-                  className="text-3xl font-display font-medium tracking-wide mb-6"
-                  style={{ color: '#ac4d3c' }}
-                >
-                  Welcome to LashPop Studios
-                </h2>
-                <div className="w-16 h-px bg-terracotta/30" />
-              </div>
-              {/* Letter Content */}
-              <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.4vw,1.4rem)] leading-relaxed font-normal font-sans italic">
-                <p className="mb-[1.5vh]">{letterContent.greeting}</p>
+        {/* Full-width background image */}
+        <div className="relative h-screen w-full">
+          <Image
+            src="/lashpop-images/founder-letter-bg.jpg"
+            alt="Emily in studio archway"
+            fill
+            className="object-cover object-right"
+            priority
+          />
 
-                {letterContent.paragraphs.map((paragraph, index) => (
-                  <p key={index} className={index === letterContent.paragraphs.length - 1 ? "mb-[2vh]" : "mb-[1.5vh]"}>
-                    {paragraph}
-                  </p>
-                ))}
-
-                <div className="flex flex-col gap-[0.5vh]">
-                  <p>{letterContent.signOff}</p>
-                  <p>{letterContent.signature}</p>
+          {/* Content overlay */}
+          <div className="absolute inset-0 flex items-center">
+            <div className="container">
+              {/* Letter Content - Left Side */}
+              <div className="max-w-xl z-30 pl-4 lg:pl-8">
+                {/* Section Header */}
+                <div className="mb-8">
+                  <h2
+                    className="text-3xl font-display font-medium tracking-wide mb-6"
+                    style={{ color: '#ac4d3c' }}
+                  >
+                    Welcome to LashPop Studios
+                  </h2>
+                  <div className="w-16 h-px bg-terracotta/30" />
                 </div>
-              </div>
+                {/* Letter Content */}
+                <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic">
+                  <p className="mb-[1.5vh]">{letterContent.greeting}</p>
 
-              {/* Hidden accessible text for screen readers and SEO */}
-              <div id="founder-letter-text" className="sr-only">
-                <h2>A Letter from Our Founder</h2>
-                <p>{letterContent.greeting}</p>
-                {letterContent.paragraphs.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
-                <p>{letterContent.signOff} {letterContent.signature}</p>
-              </div>
-            </div>
+                  {letterContent.paragraphs.map((paragraph, index) => (
+                    <p key={index} className={index === letterContent.paragraphs.length - 1 ? "mb-[2vh]" : "mb-[1.5vh]"}>
+                      {paragraph}
+                    </p>
+                  ))}
 
-            {/* Arch Image - Right Side, bottom-aligned */}
-            <div className="relative w-[35vw] max-w-[485px] flex-shrink-0">
-              {/* Decorative circle background - contained within section */}
-              <div
-                className="absolute inset-0 bg-gradient-to-br from-pink-100/20 to-orange-100/20 rounded-full blur-2xl pointer-events-none"
-              />
+                  <div className="flex flex-col gap-[0.5vh]">
+                    <p>{letterContent.signOff}</p>
+                    <p>{letterContent.signature}</p>
+                  </div>
+                </div>
 
-              {/* Arch container with creative styling */}
-              <div className="relative">
-                {/* Static image wrapper */}
-                <div className="relative w-full h-auto">
-                    <Image
-                      src="/lashpop-images/emily-arch.png"
-                      alt="Emily in decorative arch"
-                      width={600}
-                      height={720}
-                      style={{ width: '100%', height: 'auto' }}
-                      className="relative z-10 drop-shadow-2xl"
-                    />
+                {/* Hidden accessible text for screen readers and SEO */}
+                <div id="founder-letter-text" className="sr-only">
+                  <h2>A Letter from Our Founder</h2>
+                  <p>{letterContent.greeting}</p>
+                  {letterContent.paragraphs.map((paragraph, index) => (
+                    <p key={index}>{paragraph}</p>
+                  ))}
+                  <p>{letterContent.signOff} {letterContent.signature}</p>
                 </div>
               </div>
             </div>
@@ -117,10 +93,10 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       {/* Mobile Layout - Simple static scroll */}
       <div className="md:hidden relative bg-ivory">
         {/* Emily Arch Image - static, full width */}
-        <div className="w-[115vw] -ml-[7.5vw] flex justify-center bg-ivory">
+        <div className="w-full flex justify-center bg-ivory">
           <img
-            src="https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1767752866801-a2aa5-emilyarchstaticmobile1.jpg"
-            alt="Emily in decorative arch"
+            src="/lashpop-images/founder-letter-bg-mobile.jpg"
+            alt="Emily in studio archway"
             className="w-full h-auto"
           />
         </div>

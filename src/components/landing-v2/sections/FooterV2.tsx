@@ -71,8 +71,8 @@ export function FooterV2() {
                 className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
                 aria-label="Yelp"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20.16 12.594l-4.995 1.433c-.96.276-1.74-.8-1.176-1.63l2.905-4.308a1.072 1.072 0 011.596-.206 9.194 9.194 0 011.676 3.218c.235.818-.428 1.334-1.006 1.493zm-7.166 5.1l-.485 5.05c-.04.478-.464.856-.95.856h-.104a9.196 9.196 0 01-3.496-1.199c-.756-.45-.65-1.36-.206-1.778l3.467-3.25c.697-.654 1.83-.013 1.774.92v-.599zm-1.278-6.074L6.53 8.39c-.73-.463-.593-1.49.207-1.934a9.2 9.2 0 013.38-1.18c.792-.108 1.326.544 1.326 1.164l.174 4.876c.03.87-1.14 1.298-1.762.654l.159-.35zm-1.02 2.38l-5.05.18c-.492.018-.918-.33-.984-.815a9.186 9.186 0 01.5-3.606c.278-.788 1.168-.94 1.63-.55l3.592 3.04c.738.625.297 1.76-.688 1.75zm3.14-11.478c.055-.513.475-.907.991-.907h.104a9.196 9.196 0 013.22 1.022c.773.422.72 1.29.31 1.74l-3.252 3.57c-.652.717-1.82.155-1.82-.876l.447-4.55z"/>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 384 512">
+                  <path d="M42.9 240.32l99.62 48.61c19.2 9.4 16.2 37.51-4.5 42.71L30.5 358.45a22.79 22.79 0 0 1-28.21-19.6 197.16 197.16 0 0 1 9-85.32 22.8 22.8 0 0 1 31.61-13.21zm44 239.25a199.45 199.45 0 0 0 79.42 32.11A22.78 22.78 0 0 0 192.94 490l3.9-110.82c.7-21.3-25.5-31.91-39.81-16.1l-74.21 82.4a22.82 22.82 0 0 0 4.09 34.09zm145.34-109.92l58.81 94a22.93 22.93 0 0 0 34 5.5 198.36 198.36 0 0 0 52.71-67.61A23 23 0 0 0 364.17 370l-105.42-34.26c-20.31-6.5-37.81 15.8-26.51 33.91zm148.33-132.23a197.44 197.44 0 0 0-50.41-69.31 22.85 22.85 0 0 0-34 4.4l-62 91.92c-11.9 17.7 4.7 40.61 25.2 34.71L366 268.63a22.9 22.9 0 0 0 14.61-31.21zM62.11 30.18a22.86 22.86 0 0 0-9.9 32l104.12 180.44c11.7 20.2 42.61 11.9 42.61-11.4V22.88a22.67 22.67 0 0 0-24.5-22.8 320.37 320.37 0 0 0-112.33 30.1z"/>
                 </svg>
               </a>
               <a
@@ -93,12 +93,14 @@ export function FooterV2() {
                 href="https://www.vagaro.com/lashpop32"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all overflow-hidden group"
                 aria-label="Vagaro"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.41 15.06L7.7 8.94h2.27l1.95 5.47 1.96-5.47h2.27l-2.89 8.12h-2.67z"/>
-                </svg>
+                <img
+                  src="/lashpop-images/Vagaro_Logo.png"
+                  alt="Vagaro"
+                  className="w-6 h-6 object-contain brightness-0 group-hover:brightness-0 group-hover:invert"
+                />
               </a>
             </div>
           </div>
@@ -166,30 +168,24 @@ export function FooterV2() {
                 </svg>
                 <span>429 S Coast Hwy<br />Oceanside, CA 92054</span>
               </a>
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 flex-shrink-0 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <a
+                href="tel:+17602120448"
+                className="flex items-center gap-3 caption text-charcoal hover:text-terracotta transition-colors"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
-                <span className="caption text-charcoal">+1 (760) 212-0448</span>
-                <a
-                  href="tel:+17602120448"
-                  className="w-8 h-8 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
-                  aria-label="Call"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                </a>
-                <a
-                  href="sms:+17602120448"
-                  className="w-8 h-8 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
-                  aria-label="Text"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </a>
-              </div>
+                <span>(760) 212-0448</span>
+              </a>
+              <a
+                href="sms:+17602120448"
+                className="flex items-center gap-3 caption text-charcoal hover:text-terracotta transition-colors"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span>Text us</span>
+              </a>
               <a
                 href="mailto:lashpopstudios@gmail.com"
                 className="flex items-center gap-3 caption text-charcoal hover:text-terracotta transition-colors"
