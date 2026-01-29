@@ -30,7 +30,7 @@ export function FooterV2() {
             <p className="body-text text-charcoal mb-6">
               Effortless beauty for the modern woman.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-3">
               <a
                 href="https://instagram.com/lashpopstudios"
                 target="_blank"
