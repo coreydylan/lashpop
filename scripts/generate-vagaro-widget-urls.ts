@@ -136,7 +136,7 @@ const VAGARO_SERVICES = [
   { id: 'pSmmLj0mQQBiE8JpZKDwYw==', name: 'Brazilian & Brow Wax', category: 'Bundles' },
 
   // Training
-  { id: 'ZEVKKbeQlBFTlXa6gzy9HA==', name: 'Lashpop Pro Training', category: 'Training' },
+  { id: 'ZEVKKbeQlBFTlXa6gzy9HA==', name: 'LashPop Pro Training', category: 'Training' },
 ]
 
 // Name normalization for matching

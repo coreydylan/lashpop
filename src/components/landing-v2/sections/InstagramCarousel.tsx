@@ -82,7 +82,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
 
   return (
     <>
-      <section ref={ref} id="gallery" className="relative py-20 overflow-hidden bg-ivory">
+      <section ref={ref} id="gallery" className="relative py-12 overflow-hidden bg-ivory">
         {/* Section Header */}
         <div className="text-center mb-8 md:mb-12">
           <h2
@@ -91,7 +91,11 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
           >
             Gallery
           </h2>
-          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
+          <div className="flex items-center justify-center gap-3 mx-auto">
+            <div className="w-8 h-px bg-terracotta/30" />
+            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+            <div className="w-8 h-px bg-terracotta/30" />
+          </div>
         </div>
 
         {/* Carousel Container */}

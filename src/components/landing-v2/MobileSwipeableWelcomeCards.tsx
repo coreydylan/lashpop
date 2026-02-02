@@ -32,7 +32,7 @@ const cardContent: { id: number; content: ReactNode; isLast?: boolean; showServi
         <Emphasis>women-owned beauty businesses</Emphasis>{' '}
         <Soft>who believe looking amazing shouldn&apos;t require a 30-minute morning routine</Soft>{' '}
         <span className="italic opacity-70">or a small emotional breakdown in front of the bathroom mirror.</span>
-        <Standout>We&apos;re here to make beauty feel easy, natural, and—honestly—kind of life-changing.</Standout>
+        <Standout>We&apos;re here to make beauty feel easy, natural, and honestly kind of life-changing.</Standout>
       </>
     ),
   },
@@ -72,7 +72,7 @@ const cardContent: { id: number; content: ReactNode; isLast?: boolean; showServi
         <span className="text-sm">Everything you need is right in the</span>{' '}
         <Highlight>service bar below</Highlight>
         <span className="block mt-2 text-xs italic opacity-70">
-          Think of it as your personal beauty menu—quick to find, simple to navigate, packed with options you&apos;ll love.
+          Think of it as your personal beauty menu: quick to find, simple to navigate, packed with options you&apos;ll love.
         </span>
       </>
     ),

@@ -108,7 +108,7 @@ export default function WebsiteAdminLayout({
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-72 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-cream/80 backdrop-blur-xl border-r border-sage/10 px-6 py-8">
           {/* Logo */}
           <Link href="/admin/website" className="flex items-center gap-3 mb-4">

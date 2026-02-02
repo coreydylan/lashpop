@@ -26,34 +26,37 @@ const modalVariantsMobile = {
 };
 
 // Quiz Question Images (Q3) - Photos from Emily for the Find Your Look quiz
+// Optimized versions (resized to 800px, converted to JPEG) for fast loading
 const Q3_IMAGES = {
-  lashLift: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945182293-ydc3xa-IMG_3301.png',
-  classic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945184945-vmeg4k-IMG_7768.png',
-  hybrid: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945187288-ev1ez-IMG_8622.png',
+  lashLift: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/lash-lift-q3.jpg',
+  classic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/classic-q3.jpg',
+  hybrid: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/hybrid-q3.jpg',
   wet: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945191194-ahfs4b-IMG_3859.jpeg',
   volume: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945191750-burzjk-FullSizeRender_VSCO.jpeg',
 } as const;
 
 // Q4 Follow-up images (2 options each for paths that need refinement)
+// Optimized versions for fast loading
 const Q4_IMAGES = {
   // For Classic path (B) - choose between Classic or Hybrid
-  classicOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945186253-845sj-IMG_0070.png',
-  classicOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945188685-cksu6v-IMG_3997.png',
+  classicOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/q4-classic1.jpg',
+  classicOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/q4-classic2.jpg',
   // For Hybrid/Wet path (C) - choose between Hybrid or Wet/Angel
-  hybridOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945189994-5bdlfa-IMG_0975.png',
+  hybridOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/q4-hybrid1.jpg',
   hybridOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945191512-d4g84r-IMG_5272_VSCO.jpeg',
   // For Volume path (D) - choose between Volume or Hybrid
   volumeOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945192028-4c4kyh-IMG_3927.jpeg',
-  volumeOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945188685-cksu6v-IMG_3997.png',
+  volumeOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/q4-classic2.jpg',
 } as const;
 
 // Quiz Result Images - Photos from Emily for results pages
+// Optimized versions for fast loading
 const RESULT_IMAGES = {
-  lashLift: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945192496-6oxub-IMG_2241.png',
-  classic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945194159-ku60w5-IMG_4302.png',
-  hybrid: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945195614-f60pk8-IMG_0258.png',
-  wetAngel: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945196786-ojjdf-IMG_0622.png',
-  volume: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945198617-7qha6t-IMG_9329.png',
+  lashLift: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-lashlift.jpg',
+  classic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-classic.jpg',
+  hybrid: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-hybrid.jpg',
+  wetAngel: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-wetangel.jpg',
+  volume: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-volume.jpg',
 } as const;
 
 // Collect all quiz images for preloading
@@ -753,7 +756,7 @@ function Q1BeautyRoutine({ onAnswer }: { onAnswer: (answer: Q1Answer) => void })
     { value: 'A', label: 'Sunscreen, lip balm, and I\'m out the door' },
     { value: 'B', label: 'Light makeup, soft and natural' },
     { value: 'C', label: 'Full makeup and all the glam' },
-    { value: 'D', label: 'It depends — sometimes simple, sometimes glam' },
+    { value: 'D', label: 'It depends - sometimes simple, sometimes glam' },
   ];
 
   return (

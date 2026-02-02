@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
+import { DevModeProvider } from '@/contexts/DevModeContext'
+import { Navigation } from '@/components/sections/Navigation'
+import { MobileHeader } from '@/components/landing-v2/MobileHeader'
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2'
 import {
   CheckCircle2,
@@ -44,17 +47,6 @@ interface PathFormData {
 // Custom easing curve
 const smoothEase = [0.23, 1, 0.32, 1] as const
 
-// Navigation items
-const navItems = [
-  { label: 'Services', href: '/#services' },
-  { label: 'Team', href: '/#team' },
-  { label: 'Reviews', href: '/#reviews' },
-  { label: 'Gallery', href: '/#gallery' },
-  { label: 'FAQ', href: '/#faq' },
-  { label: 'Find Us', href: '/#find-us' },
-  { label: 'Work With Us', href: '/work-with-us', active: true }
-]
-
 // Employee Benefits Data
 const employeeBenefits = [
   { icon: Calendar, title: 'Flexible Scheduling', description: 'Build your own schedule around your life.' },
@@ -78,7 +70,7 @@ const boothAmenities = [
 // Specialties for form
 const specialties = [
   'Lash Extensions', 'Lash Lifts', 'Brow Lamination', 'Microblading',
-  'Permanent Makeup', 'Facials/Skincare', 'Waxing', 'Nails', 'Injectables', 'Other'
+  'Permanent Makeup', 'Skincare', 'Waxing', 'Nails', 'Injectables', 'Other'
 ]
 
 // Inline Form Component
@@ -337,54 +329,9 @@ function PathForm({
 }
 
 export default function WorkWithUsPage() {
-  const [isScrolled, setIsScrolled] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [activeSection, setActiveSection] = useState<CareerPath | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState<CareerPath | null>(null)
-  const [menuPosition, setMenuPosition] = useState({ top: 68, left: 0 })
-  const menuButtonRef = useRef<HTMLButtonElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // Update menu position when opened
-  useEffect(() => {
-    if (isMobileMenuOpen && menuButtonRef.current) {
-      const menuWidth = 140
-      const rightPadding = 20
-      setMenuPosition({
-        top: 68,
-        left: window.innerWidth - menuWidth - rightPadding
-      })
-    }
-  }, [isMobileMenuOpen])
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    if (!isMobileMenuOpen) return
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        menuRef.current && !menuRef.current.contains(event.target as Node) &&
-        menuButtonRef.current && !menuButtonRef.current.contains(event.target as Node)
-      ) {
-        setIsMobileMenuOpen(false)
-      }
-    }
-    const timeout = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('touchstart', handleClickOutside as any)
-    }, 10)
-    return () => {
-      clearTimeout(timeout)
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('touchstart', handleClickOutside as any)
-    }
-  }, [isMobileMenuOpen])
 
   const handleFormSubmit = async (data: PathFormData, path: CareerPath) => {
     setIsSubmitting(true)
@@ -419,137 +366,11 @@ export default function WorkWithUsPage() {
   ]
 
   return (
+    <DevModeProvider>
     <div className="min-h-screen bg-ivory">
-      {/* Desktop Navigation */}
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 hidden md:block glass backdrop-blur-md shadow-lg ${
-          isScrolled ? 'py-4' : 'py-6'
-        }`}
-      >
-        <div className="w-full px-6 md:px-12">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="relative flex items-center transition-all duration-300 h-8">
-              <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2">
-                <Image
-                  src="/lashpop-images/branding/logo-terracotta.png"
-                  alt="LashPop Studios"
-                  width={120}
-                  height={40}
-                  className="w-auto h-8 transition-all duration-300"
-                  priority
-                />
-              </motion.div>
-            </Link>
-            <div className="hidden md:flex items-center gap-8">
-              {navItems.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className={`caption hover:opacity-80 transition-colors duration-300 leading-none flex items-center h-8 ${
-                    (item as { active?: boolean }).active ? 'font-medium' : ''
-                  }`}
-                  style={{ color: '#b14e33' }}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <Link
-                href="/#services"
-                className="btn ml-4 text-cream transition-colors duration-300 hover:opacity-90"
-                style={{ backgroundColor: '#b14e33' }}
-              >
-                Book Now
-              </Link>
-            </div>
-          </div>
-        </div>
-      </motion.nav>
-
-      {/* Mobile Header */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-40 md:hidden transition-all duration-300 ${
-          isScrolled || isMobileMenuOpen ? 'bg-ivory/95 backdrop-blur-md shadow-sm' : 'bg-transparent'
-        }`}
-        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-      >
-        <div className="px-5 flex items-center justify-between" style={{ height: '60px' }}>
-          <Link href="/" className="flex-shrink-0">
-            <Image
-              src="/lashpop-images/branding/logo-terracotta.png"
-              alt="LashPop Studios"
-              width={96}
-              height={32}
-              className="h-6 w-auto"
-              priority
-            />
-          </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/#services"
-              className="flex-shrink-0 flex items-center justify-center px-3 py-1.5 rounded-full text-white text-[10px] font-sans font-semibold tracking-wide uppercase leading-none"
-              style={{ backgroundColor: '#b14e33' }}
-            >
-              Book
-            </Link>
-            <button
-              ref={menuButtonRef}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center gap-1.5 rounded-lg transition-all duration-150 ${
-                isMobileMenuOpen ? 'bg-terracotta-light/10' : 'active:bg-warm-sand/40'
-              }`}
-              aria-label="Menu"
-            >
-              <span className={`block w-5 h-0.5 transition-all duration-200 ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`} style={{ backgroundColor: '#b14e33' }} />
-              <span className={`block w-5 h-0.5 transition-all duration-200 ${isMobileMenuOpen ? 'opacity-0' : ''}`} style={{ backgroundColor: '#b14e33' }} />
-              <span className={`block w-5 h-0.5 transition-all duration-200 ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`} style={{ backgroundColor: '#b14e33' }} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile Dropdown Menu */}
-      {isMobileMenuOpen && (
-        <div
-          ref={menuRef}
-          className="fixed z-[9999] rounded-xl overflow-hidden md:hidden"
-          style={{
-            top: menuPosition.top,
-            left: menuPosition.left,
-            minWidth: 140,
-            background: 'rgba(250, 246, 242, 0.96)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid rgba(161, 151, 129, 0.12)',
-            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)'
-          }}
-        >
-          <div className="py-1.5">
-            {navItems.map((item) => {
-              const isActive = (item as { active?: boolean }).active
-              return (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`
-                    w-full flex items-center justify-between gap-3 px-4 py-2.5
-                    text-left transition-colors duration-150
-                    ${isActive ? 'bg-terracotta/8' : 'active:bg-warm-sand/50'}
-                  `}
-                >
-                  <span className={`text-[11px] font-sans font-medium tracking-wide ${isActive ? 'text-terracotta' : 'text-terracotta/70'}`}>
-                    {item.label.toUpperCase()}
-                  </span>
-                  {isActive && <div className="w-1 h-1 rounded-full bg-terracotta/60" />}
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
+      {/* Shared Navigation Components */}
+      <Navigation />
+      <MobileHeader />
 
       {/* Spacer */}
       <div className="h-16 md:h-20" />
@@ -1131,7 +952,7 @@ export default function WorkWithUsPage() {
           {/* Benefits Grid */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {[
-              { icon: Users, title: 'Real Community', desc: 'Not just coworkers—a family that celebrates wins together.' },
+              { icon: Users, title: 'Real Community', desc: 'Not just coworkers, but a family that celebrates wins together.' },
               { icon: Sparkles, title: 'Cross-Promotion', desc: 'When one wins, we all win. Active client referrals.' },
               { icon: Heart, title: 'Fun Environment', desc: 'Good music, great energy, a space you want to be in.' },
               { icon: Star, title: 'Brand Power', desc: 'Benefit from established reputation and marketing.' },
@@ -1162,5 +983,6 @@ export default function WorkWithUsPage() {
       {/* Footer */}
       <FooterV2 />
     </div>
+    </DevModeProvider>
   )
 }

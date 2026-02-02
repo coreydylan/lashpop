@@ -5,7 +5,9 @@ import { services } from "@/db/schema/services"
 import { serviceCategories } from "@/db/schema/service_categories"
 import { serviceSubcategories } from "@/db/schema/service_subcategories"
 import { assetServices } from "@/db/schema/asset_services"
-import { and, eq, asc, inArray } from "drizzle-orm"
+import { assets } from "@/db/schema/assets"
+import { and, eq, asc, inArray, sql } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 
 export async function getServices() {
   const db = getDb()
@@ -97,6 +99,10 @@ export async function getServicesByCategory(categorySlug: string) {
 export async function getAllServices() {
   const db = getDb()
 
+  // Create aliases for assets table to join twice
+  const serviceKeyImage = alias(assets, "service_key_image")
+  const subcategoryKeyImage = alias(assets, "subcategory_key_image")
+
   const allServices = await db
     .select({
       id: services.id,
@@ -106,7 +112,12 @@ export async function getAllServices() {
       description: services.description,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
-      imageUrl: services.imageUrl,
+      // Resolve image URL with fallback: service.imageUrl -> serviceKeyImage -> subcategoryKeyImage
+      imageUrl: sql<string | null>`COALESCE(
+        ${services.imageUrl},
+        ${serviceKeyImage.filePath},
+        ${subcategoryKeyImage.filePath}
+      )`,
       color: services.color,
       displayOrder: services.displayOrder,
       categoryId: services.categoryId,
@@ -127,6 +138,8 @@ export async function getAllServices() {
     .from(services)
     .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))
     .leftJoin(serviceSubcategories, eq(services.subcategoryId, serviceSubcategories.id))
+    .leftJoin(serviceKeyImage, eq(services.keyImageAssetId, serviceKeyImage.id))
+    .leftJoin(subcategoryKeyImage, eq(serviceSubcategories.keyImageAssetId, subcategoryKeyImage.id))
     .where(eq(services.isActive, true))
     .orderBy(asc(services.displayOrder))
 
@@ -203,6 +216,7 @@ export async function getServiceCategoriesWithSubcategories() {
       name: serviceCategories.name,
       slug: serviceCategories.slug,
       description: serviceCategories.description,
+      tagline: serviceCategories.tagline,
       icon: serviceCategories.icon,
       displayOrder: serviceCategories.displayOrder,
       isActive: serviceCategories.isActive,
@@ -388,4 +402,69 @@ export async function getSubcategoriesByCategory(categorySlug: string) {
     .orderBy(asc(serviceSubcategories.displayOrder))
 
   return subcategories
+}
+
+// Update service category description and tagline
+export async function updateServiceCategoryContent(
+  categoryId: string,
+  data: {
+    description?: string | null
+    tagline?: string | null
+    icon?: string | null
+  }
+) {
+  const db = getDb()
+
+  await db
+    .update(serviceCategories)
+    .set({
+      ...data,
+      updatedAt: new Date()
+    })
+    .where(eq(serviceCategories.id, categoryId))
+
+  return { success: true }
+}
+
+// Get all service categories for admin (including inactive)
+export async function getAllServiceCategoriesAdmin() {
+  const db = getDb()
+
+  const categories = await db
+    .select({
+      id: serviceCategories.id,
+      name: serviceCategories.name,
+      slug: serviceCategories.slug,
+      description: serviceCategories.description,
+      tagline: serviceCategories.tagline,
+      icon: serviceCategories.icon,
+      displayOrder: serviceCategories.displayOrder,
+      isActive: serviceCategories.isActive,
+      keyImageAssetId: serviceCategories.keyImageAssetId,
+    })
+    .from(serviceCategories)
+    .orderBy(asc(serviceCategories.displayOrder))
+
+  return categories
+}
+
+// Get service categories for the landing page (public, with taglines and descriptions)
+export async function getServiceCategoriesForLanding() {
+  const db = getDb()
+
+  const categories = await db
+    .select({
+      id: serviceCategories.id,
+      name: serviceCategories.name,
+      slug: serviceCategories.slug,
+      description: serviceCategories.description,
+      tagline: serviceCategories.tagline,
+      icon: serviceCategories.icon,
+      displayOrder: serviceCategories.displayOrder,
+    })
+    .from(serviceCategories)
+    .where(eq(serviceCategories.isActive, true))
+    .orderBy(asc(serviceCategories.displayOrder))
+
+  return categories
 }

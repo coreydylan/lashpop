@@ -24,7 +24,10 @@ import {
   ToggleRight,
   X,
   Save,
-  ExternalLink
+  ExternalLink,
+  Edit3,
+  FileText,
+  Type
 } from 'lucide-react'
 import clsx from 'clsx'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
@@ -35,7 +38,8 @@ import {
   updateServiceImage,
   updateServiceCategoryImage,
   updateServiceSubcategoryImage,
-  tagAssetWithService
+  tagAssetWithService,
+  updateServiceCategoryContent
 } from '@/actions/services'
 
 // Types
@@ -81,6 +85,7 @@ interface Category {
   name: string
   slug: string
   description: string | null
+  tagline: string | null
   icon: string | null
   displayOrder: number
   isActive: boolean
@@ -125,6 +130,16 @@ export default function ServicesAdminPage() {
   // Asset lookup for displaying images
   const [assetLookup, setAssetLookup] = useState<Map<string, { filePath: string; fileName: string }>>(new Map())
   const [assetsFetched, setAssetsFetched] = useState(false)
+
+  // Category content editor state
+  const [categoryContentEditor, setCategoryContentEditor] = useState<{
+    isOpen: boolean
+    categoryId: string
+    categoryName: string
+    description: string
+    tagline: string
+    icon: string
+  } | null>(null)
 
   // Fetch data
   const fetchData = useCallback(async () => {
@@ -785,6 +800,24 @@ export default function ServicesAdminPage() {
                   </button>
 
                   <div className="flex items-center gap-3">
+                    {/* Edit Content Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setCategoryContentEditor({
+                          isOpen: true,
+                          categoryId: category.id,
+                          categoryName: category.name,
+                          description: category.description || '',
+                          tagline: category.tagline || '',
+                          icon: category.icon || ''
+                        })
+                      }}
+                      className="p-2 rounded-lg hover:bg-dusty-rose/10 text-dusty-rose/60 hover:text-dusty-rose transition-colors"
+                      title="Edit category content"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
                     <span className={clsx(
                       "px-2 py-1 rounded-full text-[10px] font-medium",
                       category.isActive
@@ -1073,6 +1106,185 @@ export default function ServicesAdminPage() {
         serviceId={serviceImagePicker?.serviceId ?? ''}
         serviceName={serviceImagePicker?.serviceName ?? ''}
       />
+
+      {/* Category Content Editor Modal */}
+      <AnimatePresence>
+        {categoryContentEditor?.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-dune/40 backdrop-blur-sm"
+              onClick={() => setCategoryContentEditor(null)}
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-sage/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-dusty-rose/10 flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-dusty-rose" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-xl text-dune">Edit Category Content</h2>
+                    <p className="text-sm text-dune/60">{categoryContentEditor.categoryName}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCategoryContentEditor(null)}
+                  className="p-2 rounded-lg hover:bg-sage/10 transition-colors"
+                >
+                  <X className="w-5 h-5 text-dune/60" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                {/* Tagline */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-dune mb-2">
+                    <Type className="w-4 h-4 text-dusty-rose" />
+                    Tagline
+                  </label>
+                  <input
+                    type="text"
+                    value={categoryContentEditor.tagline}
+                    onChange={(e) => setCategoryContentEditor({
+                      ...categoryContentEditor,
+                      tagline: e.target.value
+                    })}
+                    placeholder="e.g., Wake up ready."
+                    className="w-full px-4 py-3 rounded-xl bg-cream/50 border border-sage/20 text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
+                  />
+                  <p className="mt-1 text-xs text-dune/50">Short, catchy phrase shown on the landing page (e.g., &quot;Wake up ready.&quot;)</p>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-dune mb-2">
+                    <FileText className="w-4 h-4 text-dusty-rose" />
+                    Description
+                  </label>
+                  <textarea
+                    value={categoryContentEditor.description}
+                    onChange={(e) => setCategoryContentEditor({
+                      ...categoryContentEditor,
+                      description: e.target.value
+                    })}
+                    placeholder="Describe what makes this category special..."
+                    rows={4}
+                    className="w-full px-4 py-3 rounded-xl bg-cream/50 border border-sage/20 text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30 resize-none"
+                  />
+                  <p className="mt-1 text-xs text-dune/50">Longer description shown on the landing page service cards</p>
+                </div>
+
+                {/* Icon URL */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-dune mb-2">
+                    <ImageIcon className="w-4 h-4 text-dusty-rose" />
+                    Icon Path
+                  </label>
+                  <input
+                    type="text"
+                    value={categoryContentEditor.icon}
+                    onChange={(e) => setCategoryContentEditor({
+                      ...categoryContentEditor,
+                      icon: e.target.value
+                    })}
+                    placeholder="/lashpop-images/services/lashes-icon.svg"
+                    className="w-full px-4 py-3 rounded-xl bg-cream/50 border border-sage/20 text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
+                  />
+                  <p className="mt-1 text-xs text-dune/50">Path to the SVG icon used on the landing page (e.g., /lashpop-images/services/lashes-icon.svg)</p>
+                </div>
+
+                {/* Preview */}
+                {categoryContentEditor.icon && (
+                  <div className="p-4 rounded-xl bg-cream/50 border border-sage/10">
+                    <p className="text-xs text-dune/50 uppercase tracking-wider mb-3">Icon Preview</p>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-8 relative">
+                        <Image
+                          src={categoryContentEditor.icon}
+                          alt="Icon preview"
+                          fill
+                          className="object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none'
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm text-dune/60">{categoryContentEditor.icon}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-sage/10 bg-cream/30">
+                <button
+                  onClick={() => setCategoryContentEditor(null)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-dune/60 hover:text-dune hover:bg-sage/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!categoryContentEditor) return
+                    setSaving(categoryContentEditor.categoryId)
+                    try {
+                      await updateServiceCategoryContent(categoryContentEditor.categoryId, {
+                        description: categoryContentEditor.description || null,
+                        tagline: categoryContentEditor.tagline || null,
+                        icon: categoryContentEditor.icon || null
+                      })
+                      // Update local state
+                      setCategories(prev => prev.map(c =>
+                        c.id === categoryContentEditor.categoryId
+                          ? {
+                              ...c,
+                              description: categoryContentEditor.description || null,
+                              tagline: categoryContentEditor.tagline || null,
+                              icon: categoryContentEditor.icon || null
+                            }
+                          : c
+                      ))
+                      setCategoryContentEditor(null)
+                    } catch (error) {
+                      console.error('Error saving category content:', error)
+                    } finally {
+                      setSaving(null)
+                    }
+                  }}
+                  disabled={saving === categoryContentEditor.categoryId}
+                  className="btn btn-primary"
+                >
+                  {saving === categoryContentEditor.categoryId ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

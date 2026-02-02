@@ -28,7 +28,7 @@ async function seed(dbUrl: string) {
       VALUES
         ('Lashes', 'lashes', 'Eyelash extensions and treatments', 'sparkles', 1, true),
         ('Brows', 'brows', 'Brow shaping, tinting, and lamination', 'star', 2, true),
-        ('Skincare', 'skincare', 'Facials and skincare treatments', 'heart', 3, true),
+        ('Skincare', 'skincare', 'Skincare treatments', 'heart', 3, true),
         ('Waxing', 'waxing', 'Professional waxing services', 'sun', 4, true),
         ('Permanent Makeup', 'permanent-makeup', 'Microblading and permanent cosmetics', 'moon', 5, true),
         ('Permanent Jewelry', 'permanent-jewelry', 'Welded jewelry services', 'circle', 6, true),
@@ -106,7 +106,7 @@ async function seed(dbUrl: string) {
           'Brow Artistry',
           'brows',
           'Frame your story',
-          'Because your brows are the architecture of your face. Whether it is lamination for that perfectly brushed look, tinting for definition, or shaping for structure—we create frames worthy of your masterpiece.',
+          'Because your brows are the architecture of your face. Whether it is lamination for that perfectly brushed look, tinting for definition, or shaping for structure, we create frames worthy of your masterpiece.',
           45,
           4500,
           '/lashpop-images/services/brow-photo.png',

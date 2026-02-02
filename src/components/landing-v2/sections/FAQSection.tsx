@@ -126,7 +126,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     <section
       ref={sectionRef}
       id="faq"
-      className="pt-8 pb-20 bg-ivory"
+      className="pt-8 pb-20 bg-cream"
     >
       <div className="container max-w-4xl">
         {/* Section Header */}
@@ -137,7 +137,11 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           >
             FAQ
           </h2>
-          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
+          <div className="flex items-center justify-center gap-3 mx-auto">
+            <div className="w-8 h-px bg-terracotta/30" />
+            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+            <div className="w-8 h-px bg-terracotta/30" />
+          </div>
         </div>
 
         {/* Category Sorter - Compact Frosted Glass Chips */}
