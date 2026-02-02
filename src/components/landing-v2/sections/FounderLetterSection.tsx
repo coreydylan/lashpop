@@ -55,7 +55,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 {/* Card wrapper */}
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 lg:p-10 shadow-sm">
                   {/* Section Header */}
-                  <div className="mb-6">
+                  <div className="mb-6 text-center">
                     <h2
                       className="text-3xl font-display font-medium tracking-wide"
                       style={{ color: '#ac4d3c' }}
@@ -109,7 +109,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         {/* Text Container - static, normal scroll */}
         <div className="px-6 pt-6 pb-16 bg-cream">
           {/* Section Header - outside card */}
-          <div className="mb-4 max-w-lg mx-auto">
+          <div className="mb-4 max-w-lg mx-auto text-center">
             <h2
               className="text-3xl font-display font-bold tracking-wide leading-tight"
               style={{ color: '#d3a392' }}
