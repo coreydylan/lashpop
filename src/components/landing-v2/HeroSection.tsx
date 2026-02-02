@@ -166,7 +166,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 className="relative group w-full"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
-                <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
+                <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]" style={{ borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.35)' }}>
                   <span className="font-sans font-medium text-base text-dune">Take Our Lash Quiz</span>
                 </div>
               </button>
@@ -177,7 +177,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 className="relative group w-full block"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
-                <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] text-center">
+                <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] text-center" style={{ borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.35)' }}>
                   <span className="font-sans font-medium text-base text-dune">Work With Us</span>
                 </div>
               </a>
