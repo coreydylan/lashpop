@@ -37,6 +37,12 @@ export interface UploadParams {
   contentType: string
 }
 
+export interface UploadBufferParams {
+  buffer: Buffer
+  key: string
+  contentType: string
+}
+
 export async function uploadToS3(params: UploadParams) {
   const { file, key, contentType } = params
 
@@ -44,6 +50,27 @@ export async function uploadToS3(params: UploadParams) {
     Bucket: BUCKET_NAME,
     Key: key,
     Body: Buffer.from(await file.arrayBuffer()),
+    ContentType: contentType
+  })
+
+  await s3Client.send(command)
+
+  return {
+    url: `${BUCKET_URL}/${key}`,
+    key
+  }
+}
+
+/**
+ * Upload a buffer directly to S3 (used for optimized images)
+ */
+export async function uploadBufferToS3(params: UploadBufferParams) {
+  const { buffer, key, contentType } = params
+
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+    Body: buffer,
     ContentType: contentType
   })
 

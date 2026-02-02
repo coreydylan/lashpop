@@ -167,7 +167,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
-                  <span className="font-sans font-medium text-base text-dune">Find Your Look</span>
+                  <span className="font-sans font-medium text-base text-dune">Take Our Lash Quiz</span>
                 </div>
               </button>
 
@@ -351,7 +351,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative px-8 py-3.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-white/60 transition-all">
-                  <span className="font-sans font-medium text-dune">Find Your Look</span>
+                  <span className="font-sans font-medium text-dune">Take Our Lash Quiz</span>
                 </div>
               </button>
             </div>

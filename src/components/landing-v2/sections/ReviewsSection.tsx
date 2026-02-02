@@ -187,7 +187,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   return (
     <>
       <style jsx>{scrollbarStyles}</style>
-      <section ref={ref} id="reviews" className="relative py-12 overflow-hidden bg-cream">
+      <section ref={ref} id="reviews" className="relative pt-8 pb-12 overflow-hidden bg-cream">
         <div className="relative">
 
         {/* Section Header */}
@@ -196,9 +196,13 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
             className="text-xl md:text-3xl font-display font-medium tracking-wide mb-4 md:mb-6"
             style={{ color: '#ac4d3c' }}
           >
-            Reviews
+            What People Are Saying
           </h2>
-          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
+          <div className="flex items-center justify-center gap-3 mx-auto">
+            <div className="w-8 h-px bg-terracotta/30" />
+            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+            <div className="w-8 h-px bg-terracotta/30" />
+          </div>
         </div>
 
         {/* Review Stats Chips - Between Header and Carousel */}

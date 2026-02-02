@@ -145,7 +145,14 @@ export function FooterV2() {
                 </a>
               </li>
               <li>
-                <a href="/work-with-us" className="inline-flex items-center justify-center px-5 py-2 bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white rounded-full text-sm font-medium hover:shadow-lg transition-all">
+                <a
+                  href="/work-with-us"
+                  className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 text-terracotta hover:bg-terracotta hover:text-cream"
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgb(var(--terracotta))',
+                  }}
+                >
                   Work With Us
                 </a>
               </li>
@@ -222,7 +229,11 @@ export function FooterV2() {
               />
               <button
                 type="submit"
-                className="w-full inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-dusty-rose to-[rgb(255,192,203)] text-white rounded-full font-medium hover:shadow-lg transition-all"
+                className="w-full inline-flex items-center justify-center px-6 py-3 rounded-full font-medium transition-all duration-300 text-terracotta hover:bg-terracotta hover:text-cream disabled:opacity-50"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgb(var(--terracotta))',
+                }}
                 disabled={isSubscribed}
               >
                 {isSubscribed ? 'Subscribed!' : 'Subscribe'}

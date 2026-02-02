@@ -147,7 +147,11 @@ export default function TeamSection() {
                     </h3>
 
                     {/* Separator Line */}
-                    <div className="w-16 h-px bg-terracotta/30 mx-auto mb-2" />
+                    <div className="flex items-center justify-center gap-3 mx-auto mb-2">
+                      <div className="w-8 h-px bg-terracotta/30" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+                      <div className="w-8 h-px bg-terracotta/30" />
+                    </div>
 
                     {/* Title/Role */}
                     <p className="font-sans font-normal text-gray-500 mb-4">
@@ -224,7 +228,11 @@ export default function TeamSection() {
                   <h3 className="text-3xl font-display font-semibold text-gray-900 mb-2">
                     {selectedMember.name}
                   </h3>
-                  <div className="w-16 h-px bg-terracotta/30 mb-3" />
+                  <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-px bg-terracotta/30" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+                      <div className="w-8 h-px bg-terracotta/30" />
+                    </div>
                   <p className="text-xl font-sans font-normal text-terracotta mb-4">
                     {selectedMember.role}
                   </p>

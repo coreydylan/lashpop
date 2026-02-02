@@ -181,6 +181,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const firstCardRef = useRef<HTMLDivElement>(null)
   const hasSnappedOnEntryRef = useRef(false)
 
+  // Cache for preloaded portfolio photos (keyed by member UUID)
+  const preloadedPhotosCache = useRef<Map<string, PortfolioImage[]>>(new Map())
+
   // Entry snap for mobile - snap when entering section, but allow free scroll within
   useEffect(() => {
     // Check mobile directly instead of relying on state
@@ -368,8 +371,17 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   // Fetch portfolio images when a member is selected (desktop only)
   useEffect(() => {
     if (selectedMember?.uuid && !isMobile) {
-      setIsLoadingPortfolio(true)
       setCurrentImageIndex(0)
+
+      // Check if we already have cached photos from preloading
+      const cachedPhotos = preloadedPhotosCache.current.get(selectedMember.uuid)
+      if (cachedPhotos) {
+        setPortfolioImages(cachedPhotos)
+        setIsLoadingPortfolio(false)
+        return
+      }
+
+      setIsLoadingPortfolio(true)
 
       // Fetch DAM assets tagged to this team member
       fetch(`/api/dam/team/${selectedMember.uuid}/photos`)
@@ -384,6 +396,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
               caption: photo.caption
             }))
             setPortfolioImages(images)
+            // Cache for future use
+            preloadedPhotosCache.current.set(selectedMember.uuid, images)
           } else {
             setPortfolioImages([])
           }
@@ -466,6 +480,37 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     setSelectedMember(null)
   }
 
+  // Preload portfolio photos on hover (desktop only)
+  const preloadPhotosForMember = useCallback((memberUuid: string | undefined) => {
+    if (!memberUuid || isMobile || preloadedPhotosCache.current.has(memberUuid)) return
+
+    // Fetch photos in the background
+    fetch(`/api/dam/team/${memberUuid}/photos`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.photos && data.photos.length > 0) {
+          const images: PortfolioImage[] = data.photos.map((photo: any, index: number) => ({
+            id: photo.id || `photo-${index}`,
+            url: photo.filePath,
+            width: photo.width,
+            height: photo.height,
+            caption: photo.caption
+          }))
+          preloadedPhotosCache.current.set(memberUuid, images)
+
+          // Also preload the actual image files
+          images.forEach(img => {
+            const link = document.createElement('link')
+            link.rel = 'preload'
+            link.as = 'image'
+            link.href = img.url
+            document.head.appendChild(link)
+          })
+        }
+      })
+      .catch(() => {})
+  }, [isMobile])
+
   const isHighlighted = (memberId: number) => highlights.includes(memberId.toString())
 
   // Map specialties to service categories (fallback when no Vagaro data)
@@ -524,7 +569,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     <>
       <section
         ref={sectionRef}
-        className="py-12 bg-ivory overflow-x-hidden"
+        className="pt-12 pb-0 bg-ivory overflow-x-hidden"
       >
         {/* Section Header */}
         <div className="text-center mb-12 px-4">
@@ -534,7 +579,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           >
             Find Your Stylist
           </h2>
-          <div className="w-16 h-px bg-terracotta/30 mx-auto mb-6" />
+          <div className="flex items-center justify-center gap-3 mx-auto mb-6">
+            <div className="w-8 h-px bg-terracotta/30" />
+            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+            <div className="w-8 h-px bg-terracotta/30" />
+          </div>
           <div className="max-w-2xl mx-auto space-y-4">
             <p className="text-base md:text-lg leading-relaxed" style={{ color: '#3d3632' }}>
               LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules, and specialties.
@@ -695,7 +744,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </h3>
 
                         {/* Separator Line */}
-                        <div className="w-12 h-px bg-terracotta/30 mx-auto mb-1" />
+                        <div className="flex items-center justify-center gap-2 mx-auto mb-1">
+                          <div className="w-6 h-px bg-terracotta/30" />
+                          <div className="w-1 h-1 rounded-full bg-terracotta/40" />
+                          <div className="w-6 h-px bg-terracotta/30" />
+                        </div>
 
                         {/* Title/Role */}
                         <p className="text-xs font-serif font-light text-gray-500">
@@ -758,7 +811,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             }}
                             className="relative group cursor-pointer"
                             onClick={() => handleMemberClick(member, absoluteIndex)}
-                            onMouseEnter={() => setHoveredId(member.id)}
+                            onMouseEnter={() => {
+                              setHoveredId(member.id)
+                              preloadPhotosForMember(member.uuid)
+                            }}
                             onMouseLeave={() => setHoveredId(null)}
                           >
                             {/* Arch Card Design */}
@@ -805,7 +861,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 </h3>
 
                                 {/* Separator Line */}
-                                <div className="w-16 h-px bg-terracotta/30 mx-auto mb-2" />
+                                <div className="flex items-center justify-center gap-3 mx-auto mb-2">
+                                  <div className="w-8 h-px bg-terracotta/30" />
+                                  <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+                                  <div className="w-8 h-px bg-terracotta/30" />
+                                </div>
 
                                 {/* Title/Role */}
                                 <p className="font-serif font-light text-gray-500">
@@ -860,7 +920,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       {isExpansionRow && selectedMember && (
                         <motion.div
                           ref={expandedRowRef}
-                          className="mb-6 overflow-hidden"
+                          className="mb-6 rounded-3xl shadow-xl overflow-hidden"
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
@@ -869,7 +929,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             opacity: { duration: 0.2 }
                           }}
                         >
-                          <div className="bg-white rounded-3xl shadow-xl border border-sage/10 overflow-hidden">
+                          <div className="bg-white border border-sage/10 overflow-hidden">
                             <div className="flex flex-col lg:flex-row">
                               {/* Left: Portfolio Image Carousel */}
                               <div className="lg:w-2/5 relative flex flex-col">
@@ -940,8 +1000,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                                 {/* Thumbnail strip */}
                                 {portfolioImages.length > 1 && (
-                                  <div className="bg-dune/5 p-3">
-                                    <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                                  <div className="bg-dune/5 p-3 lg:rounded-bl-3xl">
+                                    <div className="flex gap-2 overflow-x-auto scrollbar-hide p-1 -m-1">
                                       {portfolioImages.map((img, idx) => (
                                         <button
                                           key={img.id || `portfolio-${idx}`}

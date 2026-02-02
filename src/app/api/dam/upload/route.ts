@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
-import { uploadToS3, generateAssetKey } from "@/lib/dam/s3-client"
+import { uploadToS3, uploadBufferToS3, generateAssetKey } from "@/lib/dam/s3-client"
+import { optimizeImage, isOptimizableImage, getOptimizedFilename } from "@/lib/dam/image-optimizer"
 
 const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024 // 200MB
 const ALLOWED_MIME_PREFIXES = ["image/", "video/"]
+
+// Images larger than this will be optimized
+const OPTIMIZATION_THRESHOLD_BYTES = 500 * 1024 // 500KB
 
 type UploadSuccess = {
   fileName: string
   status: "success"
   asset: typeof assets.$inferSelect
+  optimized?: boolean
 }
 
 type UploadFailure = {
   fileName: string
   status: "error"
-  errorCode: "NO_FILE" | "UNSUPPORTED_TYPE" | "FILE_TOO_LARGE" | "UPLOAD_FAILED" | "DB_ERROR"
+  errorCode: "NO_FILE" | "UNSUPPORTED_TYPE" | "FILE_TOO_LARGE" | "UPLOAD_FAILED" | "DB_ERROR" | "OPTIMIZATION_FAILED"
   message: string
 }
 
@@ -26,6 +31,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const files = formData.getAll("files") as File[]
     const teamMemberId = formData.get("teamMemberId") as string | null
+    const skipOptimization = formData.get("skipOptimization") === "true"
 
     if (!files || files.length === 0) {
       const result: UploadFailure = {
@@ -66,20 +72,65 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        const key = generateAssetKey(file.name, teamMemberId || undefined)
+        const isImage = file.type.startsWith("image/")
+        const shouldOptimize = !skipOptimization &&
+          isImage &&
+          isOptimizableImage(file.type) &&
+          file.size > OPTIMIZATION_THRESHOLD_BYTES
 
-        const { url } = await uploadToS3({
-          file,
-          key,
-          contentType: file.type
-        })
-
+        let uploadUrl: string
+        let uploadKey: string
         let width: number | undefined
         let height: number | undefined
+        let finalMimeType = file.type
+        let finalFileSize = file.size
+        let wasOptimized = false
 
-        if (file.type.startsWith("image/")) {
-          // Note: In production, you'd want to use sharp or similar to get actual dimensions
-          // For now, we'll leave it undefined and can update later
+        if (shouldOptimize) {
+          try {
+            // Optimize the image
+            const fileBuffer = Buffer.from(await file.arrayBuffer())
+            const optimized = await optimizeImage(fileBuffer, {
+              maxWidth: 1600,
+              maxHeight: 1600,
+              quality: 85,
+              format: 'webp'
+            })
+
+            // Generate key with optimized filename
+            const optimizedFilename = getOptimizedFilename(file.name, optimized.format)
+            uploadKey = generateAssetKey(optimizedFilename, teamMemberId || undefined)
+
+            // Upload optimized version
+            const result = await uploadBufferToS3({
+              buffer: optimized.buffer,
+              key: uploadKey,
+              contentType: optimized.mimeType
+            })
+
+            uploadUrl = result.url
+            width = optimized.width
+            height = optimized.height
+            finalMimeType = optimized.mimeType
+            finalFileSize = optimized.buffer.length
+            wasOptimized = true
+
+            console.log(`Optimized ${file.name}: ${file.size} -> ${finalFileSize} bytes (${Math.round((1 - finalFileSize/file.size) * 100)}% reduction)`)
+          } catch (optimizationError) {
+            console.error("Image optimization failed, uploading original:", optimizationError)
+            // Fall through to upload original
+          }
+        }
+
+        // If not optimized (either by choice or failure), upload original
+        if (!wasOptimized) {
+          uploadKey = generateAssetKey(file.name, teamMemberId || undefined)
+          const result = await uploadToS3({
+            file,
+            key: uploadKey,
+            contentType: file.type
+          })
+          uploadUrl = result.url
         }
 
         try {
@@ -87,10 +138,10 @@ export async function POST(request: NextRequest) {
             .insert(assets)
             .values({
               fileName: file.name,
-              filePath: url,
+              filePath: uploadUrl,
               fileType: file.type.startsWith("video/") ? "video" : "image",
-              mimeType: file.type,
-              fileSize: file.size,
+              mimeType: finalMimeType,
+              fileSize: finalFileSize,
               width,
               height,
               teamMemberId: teamMemberId || undefined
@@ -100,7 +151,8 @@ export async function POST(request: NextRequest) {
           results.push({
             fileName: file.name,
             status: "success",
-            asset
+            asset,
+            optimized: wasOptimized
           })
         } catch (dbError) {
           console.error("Database insert error:", dbError)
@@ -125,6 +177,7 @@ export async function POST(request: NextRequest) {
     const successful = results.filter(
       (result): result is UploadSuccess => result.status === "success"
     )
+    const optimizedCount = successful.filter(r => r.optimized).length
     const status =
       successful.length === 0
         ? 400
@@ -136,7 +189,8 @@ export async function POST(request: NextRequest) {
       {
         success: successful.length === results.length,
         assets: successful.map((result) => result.asset),
-        results
+        results,
+        optimizedCount
       },
       { status }
     )

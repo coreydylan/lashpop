@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
 
@@ -15,15 +15,30 @@ const navItems = [
   { label: 'Gallery', href: '#gallery' },
   { label: 'FAQ', href: '#faq' },
   { label: 'Find Us', href: '#find-us' },
-  { label: 'Work With Us', href: '/work-with-us' }
 ]
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [hasAnimated, setHasAnimated] = useState(true) // Start true to prevent flash
   const { registerLogoClick } = useDevMode()
   const pathname = usePathname()
+  const router = useRouter()
+
+  // Check if we're on the home/landing page
+  const isHomePage = pathname === '/' || pathname === '/landing-v2'
+
+  // Check if nav has already animated this session
+  useEffect(() => {
+    const alreadyAnimated = sessionStorage.getItem('navAnimated')
+    if (alreadyAnimated) {
+      setHasAnimated(true)
+    } else {
+      setHasAnimated(false)
+      sessionStorage.setItem('navAnimated', 'true')
+    }
+  }, [])
 
   // Check if mobile
   useEffect(() => {
@@ -49,7 +64,7 @@ export function Navigation() {
       registerLogoClick()
 
       // If we're on the landing page (v2) or home page, scroll to top
-      if (pathname === '/landing-v2' || pathname === '/') {
+      if (isHomePage) {
         e.preventDefault()
         smoothScrollTo(0, 1000, getScroller())
         setIsMobileMenuOpen(false)
@@ -60,7 +75,15 @@ export function Navigation() {
 
     if (item.href?.startsWith('#')) {
       e.preventDefault()
-      
+
+      // If not on home page, navigate there with the anchor
+      if (!isHomePage) {
+        router.push('/' + item.href)
+        setIsMobileMenuOpen(false)
+        return
+      }
+
+      // On home page, smooth scroll to the section
       if (item.href === '#gallery' || item.href === '#reviews') {
         smoothScrollToElement(item.href, 80, 1000, 'center')
       } else if (item.href === '#faq') {
@@ -74,6 +97,11 @@ export function Navigation() {
   }
 
     const handleBookNow = () => {
+      // If not on home page, navigate there with the anchor
+      if (!isHomePage) {
+        router.push('/#services')
+        return
+      }
       // Scroll to the services section
       smoothScrollToElement('#services', 80, 1000, 'top')
     }
@@ -86,9 +114,9 @@ export function Navigation() {
     <>
       {/* Desktop Navigation - hidden on mobile where MobileHeader takes over */}
       <motion.nav
-        initial={{ y: -100 }}
+        initial={hasAnimated ? false : { y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: hasAnimated ? 0 : 0.6, ease: [0.22, 1, 0.36, 1] }}
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 hidden md:block glass backdrop-blur-md shadow-lg ${
           isScrolled ? 'py-4' : 'py-6'
         }`}
@@ -140,8 +168,19 @@ export function Navigation() {
                   </button>
                 )
               ))}
+              <Link
+                href="/work-with-us"
+                className="btn ml-4 transition-colors duration-300 hover:opacity-90"
+                style={{
+                  backgroundColor: 'transparent',
+                  border: '1.5px solid #b14e33',
+                  color: '#b14e33'
+                }}
+              >
+                Work With Us
+              </Link>
               <button
-                className="btn ml-4 text-cream transition-colors duration-300 hover:opacity-90"
+                className="btn text-cream transition-colors duration-300 hover:opacity-90"
                 style={{ backgroundColor: '#b14e33' }}
                 onClick={handleBookNow}
               >
@@ -215,11 +254,29 @@ export function Navigation() {
                   )}
                 </motion.div>
               ))}
-              <motion.button
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="btn btn-primary mt-8"
+              >
+                <Link
+                  href="/work-with-us"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="btn mt-8"
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: '1.5px solid #b14e33',
+                    color: '#b14e33'
+                  }}
+                >
+                  Work With Us
+                </Link>
+              </motion.div>
+              <motion.button
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+                className="btn btn-primary"
                 onClick={() => {
                   handleBookNow();
                   setIsMobileMenuOpen(false);

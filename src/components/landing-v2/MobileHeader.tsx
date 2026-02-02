@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
 
@@ -48,6 +49,11 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { registerLogoClick } = useDevMode()
+  const pathname = usePathname()
+  const router = useRouter()
+
+  // Check if we're on the home/landing page
+  const isHomePage = pathname === '/' || pathname === '/landing-v2'
 
   // Get current section label for display
   const currentSectionLabel = SECTIONS.find(s => s.id === currentSection)?.label || ''
@@ -133,13 +139,19 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     // Register click for dev mode activation (5 clicks = activate)
     registerLogoClick()
 
+    // If not on home page, navigate there
+    if (!isHomePage) {
+      router.push('/')
+      return
+    }
+
     const scrollContainer = getScrollContainer()
     if (scrollContainer) {
       scrollContainer.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
       smoothScrollTo(0, 1000, getScroller())
     }
-  }, [getScrollContainer, registerLogoClick])
+  }, [getScrollContainer, registerLogoClick, isHomePage, router])
 
   // Handle menu item click
   // Header height is 60px - use consistent offsets based on this
@@ -149,10 +161,17 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
 
     // Handle page links (non-hash links)
     if (!item.href.startsWith('#')) {
-      window.location.href = item.href
+      router.push(item.href)
       return
     }
 
+    // If not on home page, navigate there with the anchor
+    if (!isHomePage) {
+      router.push('/' + item.href)
+      return
+    }
+
+    // On home page, smooth scroll to the section
     // Services section needs header offset to show "Choose a Service" heading
     if (item.href === '#services') {
       smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
@@ -163,7 +182,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       // All other sections: offset by header height
       smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
     }
-  }, [])
+  }, [isHomePage, router])
 
   // Render the dropdown menu (inline, not portal - portal was breaking on mobile)
   const renderMenu = () => {
@@ -252,7 +271,13 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
             <div className="flex items-center gap-3">
               {/* Book Now Button (filled, matches desktop) */}
               <button
-                onClick={() => smoothScrollToElement('#services', 60, 800, 'top')}
+                onClick={() => {
+                  if (!isHomePage) {
+                    router.push('/#services')
+                  } else {
+                    smoothScrollToElement('#services', 60, 800, 'top')
+                  }
+                }}
                 className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-all"
               >
                 Book

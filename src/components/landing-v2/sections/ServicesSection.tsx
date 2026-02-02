@@ -386,7 +386,11 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
           >
             Choose a Service
           </h2>
-          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
+          <div className="flex items-center justify-center gap-3 mx-auto">
+            <div className="w-8 h-px bg-terracotta/30" />
+            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+            <div className="w-8 h-px bg-terracotta/30" />
+          </div>
         </div>
 
         {/* Swipeable Cards */}
@@ -411,7 +415,11 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
           >
             Choose a Service
           </h2>
-          <div className="w-16 h-px bg-terracotta/30 mx-auto" />
+          <div className="flex items-center justify-center gap-3 mx-auto">
+            <div className="w-8 h-px bg-terracotta/30" />
+            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
+            <div className="w-8 h-px bg-terracotta/30" />
+          </div>
         </div>
 
         {/* Services Grid - 4 on top, 3 centered on bottom */}

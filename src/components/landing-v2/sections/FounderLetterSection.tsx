@@ -57,7 +57,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                   >
                     Welcome to LashPop Studios
                   </h2>
-                  <div className="w-16 h-px bg-terracotta/30" />
                 </div>
                 {/* Letter Content */}
                 <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic">
@@ -111,7 +110,6 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             >
               Welcome to Lashpop Studios
             </h2>
-            <div className="w-16 h-px bg-terracotta/30 mx-auto" />
           </div>
           <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic max-w-lg mx-auto">
             <p className="mb-4">{letterContent.greeting}</p>
