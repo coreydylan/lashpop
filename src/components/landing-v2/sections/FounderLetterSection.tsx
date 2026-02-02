@@ -107,7 +107,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
 
         {/* Text Container - static, normal scroll */}
-        <div className="px-6 pt-6 pb-16 bg-cream">
+        <div className="px-6 pt-6 pb-16" style={{ backgroundColor: '#ffede2' }}>
           {/* Section Header - outside card */}
           <div className="mb-4 max-w-lg mx-auto text-center">
             <h2
@@ -118,8 +118,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             </h2>
           </div>
           {/* Card wrapper */}
-          <div className="bg-ivory rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
-            <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic">
+          <div className="rounded-2xl p-6 shadow-sm max-w-lg mx-auto" style={{ backgroundColor: '#d5a58f' }}>
+            <div className="text-cream text-base leading-relaxed font-normal font-sans italic">
               <p className="mb-4">{letterContent.greeting}</p>
 
               {letterContent.paragraphs.map((paragraph, index) => (
