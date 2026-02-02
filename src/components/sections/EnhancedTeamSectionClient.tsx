@@ -528,18 +528,18 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       'wispy': 'Lashes',
       'wet': 'Lashes',
       'brow': 'Brows',
-      'lamination': 'Brow',
-      'microblading': 'Brow',
-      'threading': 'Brow',
+      'lamination': 'Brows',
+      'microblading': 'Brows',
+      'threading': 'Brows',
       'lift': 'Lash Lifts',
       'perm': 'Lash Lifts',
       'tint': 'Tinting',
       'dye': 'Tinting',
       'wax': 'Waxing',
-      'facial': 'Facials',
-      'hydrafacial': 'Facials',
-      'dermaplaning': 'Facials',
-      'skin': 'Skin Care',
+      'facial': 'Skincare',
+      'hydrafacial': 'Skincare',
+      'dermaplaning': 'Skincare',
+      'skin': 'Skincare',
       'plasma': 'Plasma',
       'fibroblast': 'Plasma',
       'jet plasma': 'Plasma',
@@ -584,11 +584,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </h2>
           <div className="w-24 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#3d3632' }}>
-              LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules, and specialties.
+            <p className="text-base md:text-lg leading-relaxed text-pretty" style={{ color: '#3d3632' }}>
+              LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules,&nbsp;and&nbsp;policies.
             </p>
-            <p className="text-base md:text-lg leading-relaxed" style={{ color: '#3d3632' }}>
-              Browse the profiles below to find a stylist that fits your vibe.
+            <p className="text-xs md:text-sm leading-relaxed uppercase tracking-wider font-medium mt-10" style={{ color: '#3d3632' }}>
+              <span className="font-semibold block md:inline">Click the profiles</span>
+              <span className="block md:inline"> below to find a stylist that fits your vibe.</span>
             </p>
           </div>
         </div>
@@ -800,13 +801,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         return (
                           <motion.div
                             key={member.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, margin: "-50px" }}
+                            initial={{ opacity: 0, y: 60, scale: 0.95 }}
+                            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                            viewport={{ once: true, margin: "-100px" }}
                             transition={{
-                              duration: 0.5,
-                              delay: indexInRow * 0.05,
-                              ease: [0.23, 1, 0.32, 1]
+                              duration: 0.7,
+                              delay: indexInRow * 0.12,
+                              ease: [0.22, 1, 0.36, 1]
                             }}
                             className="relative group cursor-pointer"
                             onClick={() => handleMemberClick(member, absoluteIndex)}
