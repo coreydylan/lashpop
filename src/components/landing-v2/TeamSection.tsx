@@ -147,11 +147,7 @@ export default function TeamSection() {
                     </h3>
 
                     {/* Separator Line */}
-                    <div className="flex items-center justify-center gap-3 mx-auto mb-2">
-                      <div className="w-8 h-px bg-terracotta/30" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
-                      <div className="w-8 h-px bg-terracotta/30" />
-                    </div>
+                    <div className="w-24 h-px bg-terracotta/30 mx-auto mb-2" />
 
                     {/* Title/Role */}
                     <p className="font-sans font-normal text-gray-500 mb-4">

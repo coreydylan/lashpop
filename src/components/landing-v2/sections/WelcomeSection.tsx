@@ -214,7 +214,7 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               style={{ color: '#ac4d3c' }}
             >
               <span className="block text-sm uppercase tracking-[0.3em] font-light opacity-60 mb-2">Welcome to</span>
-              <span className="block text-xl md:text-3xl font-display font-medium tracking-wide" style={{ color: '#ac4d3c' }}>
+              <span className="block text-2xl md:text-5xl font-display font-medium tracking-wide" style={{ color: '#ac4d3c' }}>
                 your new favorite part of the week.
               </span>
             </motion.div>

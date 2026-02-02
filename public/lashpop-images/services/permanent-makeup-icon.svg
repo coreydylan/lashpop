@@ -2,7 +2,7 @@
 <svg version="1.0" xmlns="http://www.w3.org/2000/svg"
  width="200" height="100" viewBox="0 0 200 100"
  preserveAspectRatio="xMidYMid meet">
-<g fill="none" stroke="#b45247" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+<g fill="none" stroke="#cc947f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
   <!-- Lips outline -->
   <!-- Upper lip - cupid's bow -->
   <path d="M30 50 Q55 30 100 50 Q145 30 170 50"/>
@@ -14,8 +14,8 @@
   <line x1="175" y1="20" x2="188" y2="70"/>
   <circle cx="175" cy="20" r="5"/>
   <!-- Small dots representing pigment -->
-  <circle cx="85" cy="58" r="2" fill="#b45247"/>
-  <circle cx="100" cy="62" r="2" fill="#b45247"/>
-  <circle cx="115" cy="58" r="2" fill="#b45247"/>
+  <circle cx="85" cy="58" r="2" fill="#cc947f"/>
+  <circle cx="100" cy="62" r="2" fill="#cc947f"/>
+  <circle cx="115" cy="58" r="2" fill="#cc947f"/>
 </g>
 </svg>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50" width="200" height="100">
-  <g fill="none" stroke="#b45247" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <g fill="none" stroke="#cc947f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <!-- Syringe body outline -->
     <rect x="25" y="18" width="50" height="14" rx="3"/>
     <!-- Plunger -->
@@ -19,5 +19,5 @@
     <line x1="35" y1="16" x2="35" y2="34"/>
   </g>
   <!-- Droplet at tip - this one stays filled -->
-  <ellipse cx="97" cy="28" rx="2" ry="2.5" fill="#b45247"/>
+  <ellipse cx="97" cy="28" rx="2" ry="2.5" fill="#cc947f"/>
 </svg>

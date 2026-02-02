@@ -86,16 +86,12 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
         {/* Section Header */}
         <div className="text-center mb-8 md:mb-12">
           <h2
-            className="text-xl md:text-3xl font-display font-medium tracking-wide mb-4 md:mb-6"
+            className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
             style={{ color: '#ac4d3c' }}
           >
             Gallery
           </h2>
-          <div className="flex items-center justify-center gap-3 mx-auto">
-            <div className="w-8 h-px bg-terracotta/30" />
-            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
-            <div className="w-8 h-px bg-terracotta/30" />
-          </div>
+          <div className="w-24 h-px bg-terracotta/30 mx-auto" />
         </div>
 
         {/* Carousel Container */}

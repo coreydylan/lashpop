@@ -576,16 +576,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         {/* Section Header */}
         <div className="text-center mb-12 px-4">
           <h2
-            className="text-xl md:text-3xl font-display font-medium tracking-wide mb-6"
+            className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-6"
             style={{ color: '#ac4d3c' }}
           >
             Find Your Stylist
           </h2>
-          <div className="flex items-center justify-center gap-3 mx-auto mb-6">
-            <div className="w-8 h-px bg-terracotta/30" />
-            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
-            <div className="w-8 h-px bg-terracotta/30" />
-          </div>
+          <div className="w-24 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
             <p className="text-base md:text-lg leading-relaxed" style={{ color: '#3d3632' }}>
               LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules, and specialties.
@@ -863,11 +859,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 </h3>
 
                                 {/* Separator Line */}
-                                <div className="flex items-center justify-center gap-3 mx-auto mb-2">
-                                  <div className="w-8 h-px bg-terracotta/30" />
-                                  <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
-                                  <div className="w-8 h-px bg-terracotta/30" />
-                                </div>
+                                <div className="w-24 h-px bg-terracotta/30 mx-auto mb-2" />
 
                                 {/* Title/Role */}
                                 <p className="font-serif font-light text-gray-500">

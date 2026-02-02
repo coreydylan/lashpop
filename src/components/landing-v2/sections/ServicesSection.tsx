@@ -25,7 +25,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'LASHES',
     tagline: 'Wake up ready.',
     description: 'From soft and natural to full and fluffy, every lash look is personalized to your eye shape, natural lashes and your preferences, so getting ready feels like a breeze (and way more fun). Choose from any style of lash extensions or a lash lift + tint.',
-    icon: '/lashpop-images/services/lashes-icon.svg',
+    icon: '/lashpop-images/services/thin/lashes-icon.svg',
   },
   {
     id: 'brows',
@@ -33,7 +33,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'BROWS',
     tagline: 'Frame your face.',
     description: 'Customized brow services that shape, define and enhance what you already have. Each service tailored so you leave looking refreshed and effortlessly put together. Choose from brow laminations, waxing, tinting, micro blading and nano-brows.',
-    icon: '/lashpop-images/services/brows-icon.svg',
+    icon: '/lashpop-images/services/thin/brows-icon.svg',
   },
   {
     id: 'facials',
@@ -41,7 +41,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'SKINCARE',
     tagline: 'Glow-y and fresh.',
     description: 'Personalized skincare treatments designed to support your skin, restore your glow, and leave you feeling refreshed and radiant. Choose from basic facials, hydra facials, derma planing, fibroblast, jet plasma and more.',
-    icon: '/lashpop-images/services/skincare-icon.svg',
+    icon: '/lashpop-images/services/thin/skincare-icon.svg',
   },
   {
     id: 'waxing',
@@ -49,7 +49,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'WAXING',
     tagline: 'Smooth + effortless.',
     description: 'Low maintenance waxing services that keep your skin smooth and your routine effortless.',
-    icon: '/lashpop-images/services/waxing-icon.svg',
+    icon: '/lashpop-images/services/thin/waxing-icon.svg',
   },
   {
     id: 'permanent-makeup',
@@ -57,7 +57,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'PERMANENT MAKEUP',
     tagline: 'High impact, low maintenance.',
     description: 'Natural looking results that streamline your routine and elevate your look without feeling overdone. Choose from micro blading and nano-brow services, lip blushing, and faux freckles/beauty marks.',
-    icon: '/lashpop-images/services/permanent-makeup-icon.svg',
+    icon: '/lashpop-images/services/thin/permanent-makeup-icon.svg',
   },
   {
     id: 'specialty',
@@ -65,7 +65,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'PERMANENT JEWELRY',
     tagline: 'No clasps. No fuss.',
     description: 'Custom, minimal chains welded in place so that you never have to think about it. A personal keepsake you\'ll wear every day, whether you\'re diving into the ocean, traveling, or simply going about your life.',
-    icon: '/lashpop-images/services/permanent-jewelry-icon.svg',
+    icon: '/lashpop-images/services/thin/permanent-jewelry-icon.svg',
   },
   {
     id: 'injectables',
@@ -73,7 +73,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'BOTOX',
     tagline: 'The subtle glow up.',
     description: 'Natural looking results that keep your face looking smooth, relaxed, effortlessly refreshed + still you.',
-    icon: '/lashpop-images/services/injectables-icon.svg',
+    icon: '/lashpop-images/services/thin/injectables-icon.svg',
   },
 ]
 
@@ -104,15 +104,15 @@ function ServiceCard({
 
       {/* Title */}
       <h3
-        className="text-sm font-display font-medium tracking-[0.15em] mb-3"
-        style={{ color: '#ac4d3c' }}
+        className="text-lg font-display font-semibold tracking-[0.15em] mb-3"
+        style={{ color: 'rgb(204, 148, 127)' }}
       >
         {category.title}
       </h3>
 
       {/* Tagline */}
       <p
-        className="text-base font-sans font-normal italic mb-3"
+        className="text-sm font-sans font-semibold uppercase tracking-wide mb-3"
         style={{ color: '#cc947f' }}
       >
         {category.tagline}
@@ -120,7 +120,7 @@ function ServiceCard({
 
       {/* Description */}
       <p
-        className="text-sm font-sans font-light leading-relaxed"
+        className="text-sm font-sans font-light leading-relaxed italic"
         style={{ color: '#3d3632' }}
       >
         {category.description}
@@ -218,106 +218,70 @@ function MobileSwipeableServiceCards({
   const currentCategory = categories[currentIndex]
 
   return (
-    <div className="flex flex-col items-center w-full">
-      {/* Card with arrows on outside */}
-      <div className="relative w-full flex items-center justify-center">
-        {/* Left arrow - outside card */}
-        <motion.div
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
-          animate={{
-            opacity: [0.2, 0.45, 0.2],
-            x: [0, -2, 0]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          <ChevronLeft className="w-5 h-5 text-terracotta" strokeWidth={1.5} />
-        </motion.div>
-
-        {/* Right arrow - outside card */}
-        <motion.div
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none"
-          animate={{
-            opacity: [0.2, 0.45, 0.2],
-            x: [0, 2, 0]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        >
-          <ChevronRight className="w-5 h-5 text-terracotta" strokeWidth={1.5} />
-        </motion.div>
-
-        {/* Card container */}
+    <div
+      ref={containerRef}
+      className="flex flex-col items-center w-full"
+      style={{ touchAction: 'pan-y pinch-zoom' }}
+    >
+      {/* Card container - wider */}
+      <div className="w-full">
         <div
-          ref={containerRef}
-          className="w-full max-w-[280px]"
-          style={{ touchAction: 'pan-y pinch-zoom' }}
+          className="rounded-2xl bg-white/40 border border-warm-sand/30 shadow-sm overflow-hidden h-[340px] flex flex-col"
         >
-          {/* Subtle card container */}
-          <div
-            className="cursor-pointer rounded-2xl bg-white/40 border border-warm-sand/30 shadow-sm"
-            onClick={() => onCategoryClick(currentCategory.slug)}
-          >
-            <div className="flex flex-col items-center justify-center text-center px-6 py-6">
-              {/* Icon */}
-              <div className="relative w-20 h-10 mb-4">
-                <Image
-                  src={currentCategory.icon}
-                  alt={currentCategory.title}
-                  fill
-                  className="object-contain"
-                />
-              </div>
-
-              {/* Title */}
-              <h3
-                className="text-xs font-display font-medium tracking-[0.15em] mb-2"
-                style={{ color: '#ac4d3c' }}
-              >
-                {currentCategory.title}
-              </h3>
-
-              {/* Tagline */}
-              <p
-                className="text-sm font-sans font-normal italic mb-3"
-                style={{ color: '#cc947f' }}
-              >
-                {currentCategory.tagline}
-              </p>
-
-              {/* Description */}
-              <p
-                className="text-xs font-sans font-light leading-relaxed mb-4"
-                style={{ color: '#3d3632' }}
-              >
-                {currentCategory.description}
-              </p>
-
-              {/* Explore button */}
-              <button
-                className="px-5 py-2 rounded-full border transition-all duration-300 active:scale-[0.98]"
-                style={{
-                  borderColor: 'rgba(172, 77, 60, 0.4)',
-                  color: '#ac4d3c',
-                }}
-              >
-                <span className="text-[10px] font-sans font-medium tracking-[0.1em] uppercase">
-                  Explore {currentCategory.title.toLowerCase() === 'skincare' ? 'Skincare' : currentCategory.title.charAt(0) + currentCategory.title.slice(1).toLowerCase()} Services
-                </span>
-              </button>
+          {/* Top content */}
+          <div className="flex flex-col items-center text-center px-6 py-6 flex-1">
+            {/* Icon */}
+            <div className="relative w-20 h-10 mb-4">
+              <Image
+                src={currentCategory.icon}
+                alt={currentCategory.title}
+                fill
+                className="object-contain"
+              />
             </div>
+
+            {/* Title */}
+            <h3
+              className="text-base font-display font-semibold tracking-[0.15em] mb-2"
+              style={{ color: 'rgb(204, 148, 127)' }}
+            >
+              {currentCategory.title}
+            </h3>
+
+            {/* Tagline */}
+            <p
+              className="text-xs font-sans font-semibold uppercase tracking-wide mb-3"
+              style={{ color: '#cc947f' }}
+            >
+              {currentCategory.tagline}
+            </p>
+
+            {/* Description */}
+            <p
+              className="text-sm font-sans font-light leading-relaxed italic"
+              style={{ color: '#3d3632' }}
+            >
+              {currentCategory.description}
+            </p>
           </div>
+
+          {/* Bottom button area - full width, pinned to bottom */}
+          <button
+            onClick={() => onCategoryClick(currentCategory.slug)}
+            className="w-full py-3 border-t border-warm-sand/40 bg-white/30 transition-all duration-300 active:bg-white/50 mt-auto flex items-center justify-center"
+          >
+            <span
+              className="text-[10px] font-sans font-medium tracking-[0.1em] uppercase"
+              style={{ color: '#ac4d3c' }}
+            >
+              Explore {currentCategory.title.toLowerCase() === 'skincare' ? 'Skincare' : currentCategory.title.charAt(0) + currentCategory.title.slice(1).toLowerCase()} Services
+            </span>
+          </button>
         </div>
       </div>
 
-      {/* Progress indicator - exact match to FindYourLook quiz */}
-      <div className="flex justify-center gap-2 mt-5">
+      {/* Progress indicator - all dots visible */}
+      <div className="flex justify-center gap-2 mt-8">
         {categories.map((_, index) => (
           <div
             key={index}
@@ -325,12 +289,52 @@ function MobileSwipeableServiceCards({
             className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
               index === currentIndex
                 ? 'bg-terracotta w-5'
-                : index < currentIndex
-                ? 'bg-terracotta/40 w-1.5'
-                : 'bg-cream w-1.5'
+                : 'bg-terracotta/40 w-1.5'
             }`}
           />
         ))}
+      </div>
+
+      {/* Swipe to explore with arrows on sides */}
+      <div className="flex items-center justify-center gap-4 mt-4">
+        {/* Left arrow */}
+        <motion.button
+          onClick={() => setCurrentIndex((prev) => prev === 0 ? categories.length - 1 : prev - 1)}
+          className="w-8 h-8 rounded-full border border-terracotta/30 bg-white/60 flex items-center justify-center"
+          animate={{
+            opacity: [0.6, 1, 0.6],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <ChevronLeft className="w-4 h-4 text-terracotta" strokeWidth={1.5} />
+        </motion.button>
+
+        <p
+          className="text-[10px] font-sans font-light tracking-[0.1em] uppercase"
+          style={{ color: '#cc947f' }}
+        >
+          swipe to explore
+        </p>
+
+        {/* Right arrow */}
+        <motion.button
+          onClick={() => setCurrentIndex((prev) => (prev + 1) % categories.length)}
+          className="w-8 h-8 rounded-full border border-terracotta/30 bg-white/60 flex items-center justify-center"
+          animate={{
+            opacity: [0.6, 1, 0.6],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        >
+          <ChevronRight className="w-4 h-4 text-terracotta" strokeWidth={1.5} />
+        </motion.button>
       </div>
     </div>
   )
@@ -375,22 +379,18 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
     return (
       <section
         id="services"
-        className="relative w-full py-12 px-6 bg-cream"
+        className="relative w-full py-12 px-6 bg-ivory"
         data-section-id="services"
       >
         {/* Section Header */}
         <div className="text-center mb-6">
           <h2
-            className="text-xl font-display font-medium tracking-wide mb-4"
-            style={{ color: '#ac4d3c' }}
+            className="text-2xl font-display font-medium tracking-wide mb-4"
+            style={{ color: 'rgb(204, 148, 127)' }}
           >
             Choose a Service
           </h2>
-          <div className="flex items-center justify-center gap-3 mx-auto">
-            <div className="w-8 h-px bg-terracotta/30" />
-            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
-            <div className="w-8 h-px bg-terracotta/30" />
-          </div>
+          <div className="w-24 h-px bg-terracotta/30 mx-auto" />
         </div>
 
         {/* Swipeable Cards */}
@@ -403,23 +403,19 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
   return (
     <section
       id="services"
-      className="relative w-full py-20 px-8 bg-cream"
+      className="relative w-full py-20 px-8 bg-ivory"
       data-section-id="services"
     >
       <div className="max-w-5xl mx-auto">
         {/* Section Header */}
         <div className="text-center mb-12">
           <h2
-            className="text-3xl font-display font-medium tracking-wide mb-6"
-            style={{ color: '#ac4d3c' }}
+            className="text-5xl font-display font-medium tracking-wide mb-6"
+            style={{ color: 'rgb(204, 148, 127)' }}
           >
             Choose a Service
           </h2>
-          <div className="flex items-center justify-center gap-3 mx-auto">
-            <div className="w-8 h-px bg-terracotta/30" />
-            <div className="w-1.5 h-1.5 rounded-full bg-terracotta/40" />
-            <div className="w-8 h-px bg-terracotta/30" />
-          </div>
+          <div className="w-24 h-px bg-terracotta/30 mx-auto" />
         </div>
 
         {/* Services Grid - 4 on top, 3 centered on bottom */}
