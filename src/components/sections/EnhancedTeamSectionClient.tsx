@@ -571,13 +571,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     <>
       <section
         ref={sectionRef}
-        className="pt-12 pb-0 bg-ivory overflow-x-hidden"
+        className="relative pt-0 pb-0 overflow-x-hidden"
+        style={{ backgroundColor: 'rgb(238, 217, 200)' }}
       >
         {/* Section Header */}
-        <div className="text-center mb-12 px-4">
+        <div className="text-center mb-12 px-4 pt-12 md:pt-16">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-6"
-            style={{ color: '#ac4d3c' }}
+            style={{ color: 'rgb(211, 163, 146)' }}
           >
             Find Your Stylist
           </h2>
