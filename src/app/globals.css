@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Hanken+Grotesk:wght@300;400;500;600;700&family=Zilla+Slab:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Outfit:wght@200;300;400;500&family=Libre+Baskerville:ital@0;1&family=TikTok+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Hanken+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Outfit:wght@200;300;400;500&family=Libre+Baskerville:ital@0;1&family=TikTok+Sans:wght@400;500;600;700&display=swap');
 
 @font-face {
     font-family: 'Corey Nice';
@@ -16,11 +16,11 @@
 @layer base {
   :root {
     /* Typography - Two-font system
-       Uses Next.js font variables (--font-zilla-slab, --font-inter) with CSS fallbacks */
-    --font-display: var(--font-zilla-slab, 'Zilla Slab'), serif;      /* Headlines, titles, names, hero text */
+       Uses Next.js font variables (--font-playfair, --font-inter) with CSS fallbacks */
+    --font-display: var(--font-playfair, 'Playfair Display'), serif;      /* Headlines, titles, names, hero text */
     --font-body: var(--font-inter, 'Inter'), system-ui, sans-serif;  /* Paragraphs, buttons, nav, forms */
     --font-sans: var(--font-inter, 'Inter'), system-ui, sans-serif;
-    --font-serif: var(--font-zilla-slab, 'Zilla Slab'), serif;
+    --font-serif: var(--font-playfair, 'Playfair Display'), serif;
 
     /* LashPop Brand Palette (light to dark) */
     /* Using space-separated RGB values for modern CSS color syntax with alpha support */
@@ -317,11 +317,11 @@ a,
   /* ===========================================
      TYPOGRAPHY SYSTEM
      -------------------------------------------
-     Zilla Slab (--font-display): Headlines, titles, names, hero text
+     Playfair Display (--font-display): Headlines, titles, names, hero text
      Inter (--font-body): Paragraphs, descriptions, buttons, forms, nav
      =========================================== */
 
-  /* DISPLAY TEXT - Zilla Slab */
+  /* DISPLAY TEXT - Playfair Display */
   .h1 {
     font-family: var(--font-display);
     font-size: clamp(2rem, 5vw, 3.5rem);
@@ -354,7 +354,7 @@ a,
     letter-spacing: 0;
   }
 
-  /* Stylist/Person names - Zilla Slab */
+  /* Stylist/Person names - Playfair Display */
   .text-name {
     font-family: var(--font-display);
     font-weight: 500;
@@ -633,17 +633,17 @@ a,
   }
 
   /* V2 Theme Overrides - Two-font system
-     Zilla Slab: Headlines, titles, names, hero text
+     Playfair Display: Headlines, titles, names, hero text
      Inter: Paragraphs, descriptions, buttons, forms, nav */
   .theme-v2 {
-    --font-display: var(--font-zilla-slab, 'Zilla Slab'), serif;
+    --font-display: var(--font-playfair, 'Playfair Display'), serif;
     --font-body: var(--font-inter, 'Inter'), system-ui, sans-serif;
-    --font-serif: var(--font-zilla-slab, 'Zilla Slab'), serif;
+    --font-serif: var(--font-playfair, 'Playfair Display'), serif;
     --font-sans: var(--font-inter, 'Inter'), system-ui, sans-serif;
     font-family: var(--font-body);
   }
 
-  /* Display text - Zilla Slab */
+  /* Display text - Playfair Display */
   .theme-v2 .h1,
   .theme-v2 .h2,
   .theme-v2 .h3,

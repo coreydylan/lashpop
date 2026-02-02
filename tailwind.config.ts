@@ -44,12 +44,12 @@ const config: Config = {
       fontFamily: {
         // Primary fonts - Two-font system
         sans: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],           // Body text, buttons, nav, forms
-        display: ['var(--font-zilla-slab)', 'Zilla Slab', 'serif'],                 // Headlines, titles, names, hero text
+        display: ['var(--font-playfair)', 'Playfair Display', 'serif'],             // Headlines, titles, names, hero text
         // Aliases for clarity
         body: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
-        heading: ['var(--font-zilla-slab)', 'Zilla Slab', 'serif'],
+        heading: ['var(--font-playfair)', 'Playfair Display', 'serif'],
         // Legacy/decorative fonts
-        serif: ['var(--font-zilla-slab)', 'Zilla Slab', 'serif'],
+        serif: ['var(--font-playfair)', 'Playfair Display', 'serif'],
         'league-script': ['var(--font-league-script)', 'cursive'],
         swanky: ['var(--font-swanky)', 'cursive'],
         licorice: ['var(--font-licorice)', 'cursive'],

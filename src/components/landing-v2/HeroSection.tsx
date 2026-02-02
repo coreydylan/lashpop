@@ -63,7 +63,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
     actions.openFindYourLookQuiz();
   }
   const [isMobile, setIsMobile] = useState(false)
-
+  
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
 
@@ -104,7 +104,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             <div className="text-center">
               <h1
                 className="font-serif"
-                style={{ fontSize: '2rem', fontWeight: 400, letterSpacing: '0.05em', color: '#cc947f' }}
+                style={{ fontSize: '2.25rem', fontWeight: 500, letterSpacing: '0.05em', color: '#cc947f' }}
               >
                 lashes + beauty
               </h1>
@@ -114,7 +114,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   style={{
                     fontSize: '0.9rem',
                     letterSpacing: '0.03em',
-                    fontFamily: 'var(--font-zilla-slab), "Zilla Slab", serif',
+                    fontFamily: 'var(--font-playfair), "Playfair Display", serif',
                     color: '#cc947f',
                     borderWidth: '1px',
                     borderStyle: 'solid',
@@ -317,7 +317,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
             <div className="relative mt-4">
               <h1
                 className="font-serif relative z-10"
-                style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 400, letterSpacing: '0.05em', color: '#cc947f' }}
+                style={{ fontSize: 'clamp(2.15rem, 5.2vw, 3.9rem)', fontWeight: 500, letterSpacing: '0.05em', color: '#cc947f' }}
               >
                 lashes + beauty
               </h1>
@@ -327,7 +327,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                   style={{
                     fontSize: 'clamp(1rem, 2vw, 1.5rem)',
                     letterSpacing: '0.03em',
-                    fontFamily: 'var(--font-zilla-slab), "Zilla Slab", serif',
+                    fontFamily: 'var(--font-playfair), "Playfair Display", serif',
                     color: '#cc947f',
                     borderWidth: '2px',
                     borderStyle: 'solid',
