@@ -96,9 +96,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       </div>
 
       {/* Mobile Layout - Simple static scroll */}
-      <div className="md:hidden relative bg-cream pt-12">
+      <div className="md:hidden relative bg-cream">
         {/* Emily Arch Image - static, full width */}
-        <div className="w-full flex justify-center bg-cream">
+        <div className="w-full">
           <img
             src="/lashpop-images/founder-letter-bg-mobile.jpg"
             alt="Emily in studio archway"
@@ -106,20 +106,20 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           />
         </div>
 
-        {/* Text Container - pulls up to overlap with arch image */}
-        <div className="px-6 pb-16 bg-cream -mt-16 relative z-10">
-          {/* Section Header - outside card */}
-          <div className="mb-4 max-w-lg mx-auto">
+        {/* Text Container */}
+        <div className="px-6 pt-6 pb-16 bg-cream">
+          {/* Section Header */}
+          <div className="mb-6 max-w-lg mx-auto">
             <h2
               className="text-3xl font-display font-bold tracking-wide leading-tight"
-              style={{ color: '#d3a392' }}
+              style={{ color: '#1a1a1a' }}
             >
               Welcome to<br />LashPop Studios
             </h2>
           </div>
-          {/* Card wrapper */}
-          <div className="bg-ivory rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
-            <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic">
+          {/* Letter content */}
+          <div className="max-w-lg mx-auto border-l-2 border-[#ac4d3c] pl-4">
+            <div className="text-[#1a1a1a] text-base leading-relaxed font-normal font-sans italic">
               <p className="mb-4">{letterContent.greeting}</p>
 
               {letterContent.paragraphs.map((paragraph, index) => (
