@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { useRef } from 'react'
 
 
 interface FounderLetterContent {
@@ -30,7 +31,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   // Use provided content or fallback to defaults
   const letterContent = content || defaultContent
 
-
+  const parallaxRef = useRef<HTMLDivElement>(null)
 
   return (
     <section className="relative w-full">
@@ -71,10 +72,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                     </p>
                   ))}
 
-                  <div className="flex flex-col gap-[0.5vh]">
-                    <p>{letterContent.signOff}</p>
-                    <p>{letterContent.signature}</p>
-                  </div>
+                  <img
+                    src="/lashpop-images/emily-signature.webp"
+                    alt="Xo, Emily"
+                    className="h-16 w-auto"
+                  />
                 </div>
 
                 {/* Hidden accessible text for screen readers and SEO */}
@@ -94,14 +96,16 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
       {/* Mobile Layout - Simple static scroll */}
       <div className="md:hidden relative" style={{ backgroundColor: '#d8c9c0' }}>
-        {/* Emily Arch Image - static, full width */}
-        <div className="w-full overflow-hidden">
-          <img
-            src="/lashpop-images/founder-letter-bg-mobile.jpg"
-            alt="Emily in studio archway"
-            className="w-full h-auto scale-110 translate-y-[10%]"
-          />
-        </div>
+        {/* Emily Arch Image - parallax */}
+        <div
+          ref={parallaxRef}
+          className="w-full h-[60vh] bg-cover bg-top"
+          style={{
+            backgroundImage: 'url(/lashpop-images/emily-parallax.webp)',
+            backgroundAttachment: 'fixed',
+            backgroundPosition: 'top center'
+          }}
+        />
 
         {/* Text Container */}
         <div className="px-6 pt-6 pb-16" style={{ backgroundColor: '#d8c9c0' }}>
@@ -128,10 +132,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 </p>
               ))}
 
-              <div className="flex flex-col gap-1">
-                <p>{letterContent.signOff}</p>
-                <p>{letterContent.signature}</p>
-              </div>
+              <img
+                src="/lashpop-images/emily-signature.webp"
+                alt="Xo, Emily"
+                className="h-14 w-auto"
+              />
             </div>
           </div>
         </div>
