@@ -397,7 +397,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
             }))
             setPortfolioImages(images)
             // Cache for future use
-            preloadedPhotosCache.current.set(selectedMember.uuid, images)
+            if (selectedMember.uuid) {
+              preloadedPhotosCache.current.set(selectedMember.uuid, images)
+            }
           } else {
             setPortfolioImages([])
           }
