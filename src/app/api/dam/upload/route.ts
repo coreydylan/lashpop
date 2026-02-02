@@ -78,8 +78,8 @@ export async function POST(request: NextRequest) {
           isOptimizableImage(file.type) &&
           file.size > OPTIMIZATION_THRESHOLD_BYTES
 
-        let uploadUrl: string
-        let uploadKey: string
+        let uploadUrl = ''
+        let uploadKey = ''
         let width: number | undefined
         let height: number | undefined
         let finalMimeType = file.type
