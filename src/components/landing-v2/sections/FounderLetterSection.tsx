@@ -52,31 +52,28 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             <div className="container">
               {/* Letter Content - Left Side */}
               <div className="max-w-xl z-30 pl-4 lg:pl-8 mt-12">
-                {/* Card wrapper */}
-                <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 lg:p-10 shadow-sm">
-                  {/* Section Header */}
-                  <div className="mb-6">
-                    <h2
-                      className="text-3xl font-display font-medium tracking-wide"
-                      style={{ color: '#ac4d3c' }}
-                    >
-                      Welcome to LashPop Studios
-                    </h2>
-                  </div>
-                  {/* Letter Content */}
-                  <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic">
-                    <p className="mb-[1.5vh]">{letterContent.greeting}</p>
+                {/* Section Header */}
+                <div className="mb-6">
+                  <h2
+                    className="text-4xl font-display font-semibold tracking-wide"
+                    style={{ color: '#1a1a1a' }}
+                  >
+                    Welcome to LashPop Studios
+                  </h2>
+                </div>
+                {/* Letter Content */}
+                <div className="relative w-full border-l-2 pl-4 text-[#1a1a1a] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic" style={{ borderColor: '#b09080' }}>
+                  <p className="mb-[1.5vh]">{letterContent.greeting}</p>
 
-                    {letterContent.paragraphs.map((paragraph, index) => (
-                      <p key={index} className={index === letterContent.paragraphs.length - 1 ? "mb-[2vh]" : "mb-[1.5vh]"}>
-                        {paragraph}
-                      </p>
-                    ))}
+                  {letterContent.paragraphs.map((paragraph, index) => (
+                    <p key={index} className={index === letterContent.paragraphs.length - 1 ? "mb-[2vh]" : "mb-[1.5vh]"}>
+                      {paragraph}
+                    </p>
+                  ))}
 
-                    <div className="flex flex-col gap-[0.5vh]">
-                      <p>{letterContent.signOff}</p>
-                      <p>{letterContent.signature}</p>
-                    </div>
+                  <div className="flex flex-col gap-[0.5vh]">
+                    <p>{letterContent.signOff}</p>
+                    <p>{letterContent.signature}</p>
                   </div>
                 </div>
 
@@ -96,18 +93,18 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       </div>
 
       {/* Mobile Layout - Simple static scroll */}
-      <div className="md:hidden relative bg-cream">
+      <div className="md:hidden relative" style={{ backgroundColor: '#d8c9c0' }}>
         {/* Emily Arch Image - static, full width */}
-        <div className="w-full">
+        <div className="w-full overflow-hidden">
           <img
             src="/lashpop-images/founder-letter-bg-mobile.jpg"
             alt="Emily in studio archway"
-            className="w-full h-auto"
+            className="w-full h-auto scale-110 translate-y-[10%]"
           />
         </div>
 
         {/* Text Container */}
-        <div className="px-6 pt-6 pb-16 bg-cream">
+        <div className="px-6 pt-6 pb-16" style={{ backgroundColor: '#d8c9c0' }}>
           {/* Section Header */}
           <div className="mb-6 max-w-lg mx-auto">
             <h2
@@ -118,7 +115,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             </h2>
           </div>
           {/* Letter content */}
-          <div className="max-w-lg mx-auto border-l-2 border-[#ac4d3c] pl-4">
+          <div className="max-w-lg mx-auto border-l-2 pl-4" style={{ borderColor: '#b09080' }}>
             <div className="text-[#1a1a1a] text-base leading-relaxed font-normal font-sans italic">
               <p className="mb-4">{letterContent.greeting}</p>
 
