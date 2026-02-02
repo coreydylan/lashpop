@@ -51,11 +51,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           <div className="absolute inset-0 flex items-center">
             <div className="container">
               {/* Letter Content - Left Side */}
-              <div className="max-w-xl z-30 pl-4 lg:pl-8">
+              <div className="max-w-xl z-30 pl-4 lg:pl-8 mt-12">
                 {/* Card wrapper */}
                 <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 lg:p-10 shadow-sm">
                   {/* Section Header */}
-                  <div className="mb-6 text-center">
+                  <div className="mb-6">
                     <h2
                       className="text-3xl font-display font-medium tracking-wide"
                       style={{ color: '#ac4d3c' }}
@@ -96,7 +96,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       </div>
 
       {/* Mobile Layout - Simple static scroll */}
-      <div className="md:hidden relative bg-cream">
+      <div className="md:hidden relative bg-cream pt-12">
         {/* Emily Arch Image - static, full width */}
         <div className="w-full flex justify-center bg-cream">
           <img
@@ -106,10 +106,10 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
           />
         </div>
 
-        {/* Text Container - static, normal scroll */}
-        <div className="px-6 pt-6 pb-16" style={{ backgroundColor: '#ffede2' }}>
+        {/* Text Container - pulls up to overlap with arch image */}
+        <div className="px-6 pb-16 bg-cream -mt-16 relative z-10">
           {/* Section Header - outside card */}
-          <div className="mb-4 max-w-lg mx-auto text-center">
+          <div className="mb-4 max-w-lg mx-auto">
             <h2
               className="text-3xl font-display font-bold tracking-wide leading-tight"
               style={{ color: '#d3a392' }}
@@ -118,8 +118,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             </h2>
           </div>
           {/* Card wrapper */}
-          <div className="rounded-2xl p-6 shadow-sm max-w-lg mx-auto" style={{ backgroundColor: '#d5a58f' }}>
-            <div className="text-cream text-base leading-relaxed font-normal font-sans italic">
+          <div className="bg-ivory rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
+            <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic">
               <p className="mb-4">{letterContent.greeting}</p>
 
               {letterContent.paragraphs.map((paragraph, index) => (
