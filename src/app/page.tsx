@@ -11,8 +11,26 @@ import LandingPageV2Client from "./LandingPageV2Client"
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  // Fetch services from database
-  const services = await getAllServices()
+  // Fetch all data in parallel for faster loads
+  const [
+    services,
+    teamMembers,
+    reviews,
+    reviewStats,
+    instagramPosts,
+    serviceCategories,
+    faqData,
+    heroConfig,
+  ] = await Promise.all([
+    getAllServices(),
+    getTeamMembersWithServices(),
+    getHomepageReviews(15),
+    getReviewStats(),
+    getInstagramPosts(20),
+    getServiceCategories(),
+    getFAQsGroupedByCategory(),
+    getSlideshowConfigs(),
+  ])
 
   // Format services for the drawer (keep hierarchy structure)
   const formattedServices = services.map(service => ({
@@ -34,9 +52,6 @@ export default async function HomePage() {
     vagaroWidgetUrl: service.vagaroWidgetUrl ?? undefined,
     vagaroServiceCode: service.vagaroServiceCode ?? undefined,
   }))
-
-  // Fetch team members from database with their service categories
-  const teamMembers = await getTeamMembersWithServices()
 
   // Transform database format to component format
   const formattedTeamMembers = teamMembers.map((member, index) => ({
@@ -72,24 +87,6 @@ export default async function HomePage() {
     cropMediumCircleUrl: member.cropMediumCircleUrl || undefined,
     cropFullVerticalUrl: member.cropFullVerticalUrl || undefined,
   }))
-
-  // Fetch reviews from database (uses admin-selected reviews if available)
-  const reviews = await getHomepageReviews(15)
-
-  // Fetch review stats from database
-  const reviewStats = await getReviewStats()
-
-  // Fetch Instagram posts
-  const instagramPosts = await getInstagramPosts(20)
-
-  // Fetch service categories
-  const serviceCategories = await getServiceCategories()
-
-  // Fetch FAQs
-  const faqData = await getFAQsGroupedByCategory()
-
-  // Fetch hero slideshow/image settings (includes fallback to single image)
-  const heroConfig = await getSlideshowConfigs()
 
   return <LandingPageV2Client
     services={formattedServices}

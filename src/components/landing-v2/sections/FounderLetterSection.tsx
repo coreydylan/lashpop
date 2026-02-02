@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 
+
 interface FounderLetterContent {
   greeting: string
   paragraphs: string[]
@@ -29,6 +30,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   // Use provided content or fallback to defaults
   const letterContent = content || defaultContent
 
+
+
   return (
     <section className="relative w-full">
 
@@ -49,28 +52,31 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             <div className="container">
               {/* Letter Content - Left Side */}
               <div className="max-w-xl z-30 pl-4 lg:pl-8">
-                {/* Section Header */}
-                <div className="mb-8">
-                  <h2
-                    className="text-3xl font-display font-medium tracking-wide mb-6"
-                    style={{ color: '#ac4d3c' }}
-                  >
-                    Welcome to LashPop Studios
-                  </h2>
-                </div>
-                {/* Letter Content */}
-                <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic">
-                  <p className="mb-[1.5vh]">{letterContent.greeting}</p>
+                {/* Card wrapper */}
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 lg:p-10 shadow-sm">
+                  {/* Section Header */}
+                  <div className="mb-6">
+                    <h2
+                      className="text-3xl font-display font-medium tracking-wide"
+                      style={{ color: '#ac4d3c' }}
+                    >
+                      Welcome to LashPop Studios
+                    </h2>
+                  </div>
+                  {/* Letter Content */}
+                  <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic">
+                    <p className="mb-[1.5vh]">{letterContent.greeting}</p>
 
-                  {letterContent.paragraphs.map((paragraph, index) => (
-                    <p key={index} className={index === letterContent.paragraphs.length - 1 ? "mb-[2vh]" : "mb-[1.5vh]"}>
-                      {paragraph}
-                    </p>
-                  ))}
+                    {letterContent.paragraphs.map((paragraph, index) => (
+                      <p key={index} className={index === letterContent.paragraphs.length - 1 ? "mb-[2vh]" : "mb-[1.5vh]"}>
+                        {paragraph}
+                      </p>
+                    ))}
 
-                  <div className="flex flex-col gap-[0.5vh]">
-                    <p>{letterContent.signOff}</p>
-                    <p>{letterContent.signature}</p>
+                    <div className="flex flex-col gap-[0.5vh]">
+                      <p>{letterContent.signOff}</p>
+                      <p>{letterContent.signature}</p>
+                    </div>
                   </div>
                 </div>
 
@@ -90,9 +96,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       </div>
 
       {/* Mobile Layout - Simple static scroll */}
-      <div className="md:hidden relative bg-ivory">
+      <div className="md:hidden relative bg-cream">
         {/* Emily Arch Image - static, full width */}
-        <div className="w-full flex justify-center bg-ivory">
+        <div className="w-full flex justify-center bg-cream">
           <img
             src="/lashpop-images/founder-letter-bg-mobile.jpg"
             alt="Emily in studio archway"
@@ -101,31 +107,34 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
 
         {/* Text Container - static, normal scroll */}
-        <div className="bg-ivory px-6 pt-6 pb-16">
-          {/* Section Header */}
-          <div className="text-center mb-6 max-w-lg mx-auto">
+        <div className="px-6 pt-6 pb-16 bg-cream">
+          {/* Section Header - outside card */}
+          <div className="mb-4 max-w-lg mx-auto">
             <h2
-              className="text-xl font-display font-medium tracking-wide mb-4"
-              style={{ color: '#ac4d3c' }}
+              className="text-3xl font-display font-bold tracking-wide leading-tight"
+              style={{ color: '#d3a392' }}
             >
-              Welcome to Lashpop Studios
+              Welcome to<br />LashPop Studios
             </h2>
           </div>
-          <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic max-w-lg mx-auto">
-            <p className="mb-4">{letterContent.greeting}</p>
+          {/* Card wrapper */}
+          <div className="bg-ivory rounded-2xl p-6 shadow-sm max-w-lg mx-auto">
+            <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic">
+              <p className="mb-4">{letterContent.greeting}</p>
 
-            {letterContent.paragraphs.map((paragraph, index) => (
-              <p
-                key={index}
-                className={index === letterContent.paragraphs.length - 1 ? "mb-6" : "mb-4"}
-              >
-                {paragraph}
-              </p>
-            ))}
+              {letterContent.paragraphs.map((paragraph, index) => (
+                <p
+                  key={index}
+                  className={index === letterContent.paragraphs.length - 1 ? "mb-6" : "mb-4"}
+                >
+                  {paragraph}
+                </p>
+              ))}
 
-            <div className="flex flex-col gap-1">
-              <p>{letterContent.signOff}</p>
-              <p>{letterContent.signature}</p>
+              <div className="flex flex-col gap-1">
+                <p>{letterContent.signOff}</p>
+                <p>{letterContent.signature}</p>
+              </div>
             </div>
           </div>
         </div>

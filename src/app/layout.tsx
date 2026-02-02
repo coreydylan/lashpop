@@ -6,6 +6,7 @@ import { UserKnowledgeProvider } from '@/contexts/UserKnowledgeContext'
 import { FindYourLookProvider } from '@/components/find-your-look'
 import { getSEOSettings } from '@/actions/seo'
 import { LocalBusinessSchema, WebSiteSchema, FAQSchema, ServicesSchema, ReviewSchema } from '@/components/seo'
+import { DesignMode } from '@/components/dev/DesignMode'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -162,6 +163,7 @@ export default async function RootLayout({
           <UserKnowledgeProvider>
             <FindYourLookProvider>
               {children}
+              {process.env.NODE_ENV === 'development' && <DesignMode />}
             </FindYourLookProvider>
           </UserKnowledgeProvider>
         </AuthProvider>
