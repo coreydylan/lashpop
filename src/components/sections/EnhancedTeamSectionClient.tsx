@@ -743,11 +743,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           {displayName}
                         </h3>
 
-                        {/* Separator Line */}
-                        <div className="w-12 h-px bg-terracotta/30 mx-auto mb-0.5" />
-
                         {/* Title/Role */}
-                        <p className="text-xs font-serif font-light text-gray-500">
+                        <p className="text-xs font-sans font-light text-gray-500">
                           {member.name.toLowerCase().startsWith('emily')
                             ? 'LashPop Owner'
                             : member.type === 'employee'
@@ -755,6 +752,26 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               : member.businessName || 'Independent Artist'}
                         </p>
                       </div>
+
+                      {/* Bottom IG section - like service cards */}
+                      {member.instagram && member.instagram.trim() && (
+                        <a
+                          href={`https://instagram.com/${member.instagram.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          onTouchEnd={(e) => {
+                            e.stopPropagation()
+                            window.open(`https://instagram.com/${member.instagram!.replace('@', '')}`, '_blank')
+                          }}
+                          className="w-full py-2 border-t border-warm-sand/40 bg-white/30 flex items-center justify-center gap-1.5 active:bg-white/50 transition-colors"
+                        >
+                          <Instagram className="w-3 h-3 text-dusty-rose" />
+                          <span className="text-[10px] font-sans font-medium tracking-wide text-dusty-rose">
+                            {member.instagram.replace('@', '')}
+                          </span>
+                        </a>
+                      )}
 
                       {/* Highlight Ring */}
                       {isHighlighted(member.id) && (
@@ -852,41 +869,35 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               {/* Content Below Image */}
                               <div className="px-6 py-5 text-center">
                                 {/* Name */}
-                                <h3 className="text-2xl font-serif font-light text-gray-900 mb-2">
+                                <h3 className="text-2xl font-serif font-light text-gray-900 mb-1">
                                   {member.name}
                                 </h3>
 
-                                {/* Separator Line */}
-                                <div className="w-24 h-px bg-terracotta/30 mx-auto mb-2" />
-
-                                {/* Title/Role - clickable to IG if they have one */}
-                                {member.instagram && member.instagram.trim() ? (
-                                  <a
-                                    href={`https://instagram.com/${member.instagram.replace('@', '')}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center justify-center gap-1.5 font-sans font-light text-gray-500 hover:text-dusty-rose transition-colors"
-                                  >
-                                    <Instagram className="w-3.5 h-3.5" />
-                                    <span>
-                                      {member.name.toLowerCase().startsWith('emily')
-                                        ? 'LashPop Owner'
-                                        : member.type === 'employee'
-                                          ? 'LashPop Team Artist'
-                                          : member.businessName || 'Independent Artist'}
-                                    </span>
-                                  </a>
-                                ) : (
-                                  <p className="font-sans font-light text-gray-500">
-                                    {member.name.toLowerCase().startsWith('emily')
-                                      ? 'LashPop Owner'
-                                      : member.type === 'employee'
-                                        ? 'LashPop Team Artist'
-                                        : member.businessName || 'Independent Artist'}
-                                  </p>
-                                )}
+                                {/* Title/Role */}
+                                <p className="font-sans font-light text-gray-500">
+                                  {member.name.toLowerCase().startsWith('emily')
+                                    ? 'LashPop Owner'
+                                    : member.type === 'employee'
+                                      ? 'LashPop Team Artist'
+                                      : member.businessName || 'Independent Artist'}
+                                </p>
                               </div>
+
+                              {/* Bottom IG section - like service cards */}
+                              {member.instagram && member.instagram.trim() && (
+                                <a
+                                  href={`https://instagram.com/${member.instagram.replace('@', '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="w-full py-2.5 border-t border-warm-sand/40 bg-white/30 flex items-center justify-center gap-1.5 hover:bg-white/50 transition-colors"
+                                >
+                                  <Instagram className="w-3.5 h-3.5 text-dusty-rose" />
+                                  <span className="text-xs font-sans font-medium tracking-wide text-dusty-rose">
+                                    {member.instagram.replace('@', '')}
+                                  </span>
+                                </a>
+                              )}
 
                               {/* Hover Glow Effect */}
                               <AnimatePresence>
