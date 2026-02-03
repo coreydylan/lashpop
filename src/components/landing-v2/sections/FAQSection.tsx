@@ -133,7 +133,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: '#ac4d3c' }}
+            style={{ color: '#cc947f' }}
           >
             FAQ
           </h2>
@@ -163,18 +163,23 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                   className="relative group shrink-0 focus:outline-none focus-visible:outline-none"
                 >
                   {/* Active/Hover State Background */}
-                  <div className={`absolute inset-0 rounded-full ${
-                    activeCategory === category.id
-                      ? 'bg-terracotta shadow-md'
-                      : 'bg-white/50 hover:bg-white/80'
-                  }`} />
+                  <div
+                    className={`absolute inset-0 rounded-full ${
+                      activeCategory === category.id
+                        ? 'shadow-md'
+                        : 'bg-white/50 hover:bg-white/80'
+                    }`}
+                    style={activeCategory === category.id ? { backgroundColor: '#d3a392' } : undefined}
+                  />
 
                   {/* Content - Compact sizing for mobile */}
                   <div className={`relative px-3 py-1.5 md:px-4 md:py-2 rounded-full border ${
                     activeCategory === category.id
                       ? 'border-transparent text-white'
-                      : 'border-white/60 text-charcoal hover:border-terracotta/30'
-                  }`}>
+                      : 'border-white/60 text-charcoal'
+                  }`}
+                  style={activeCategory !== category.id ? { ['--tw-border-opacity' as string]: 0.3 } : undefined}
+                  >
                     <span className="text-xs md:text-sm font-sans font-medium whitespace-nowrap">
                       {category.label}
                     </span>
@@ -202,18 +207,21 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                 <div className="flex flex-col items-start gap-0.5 md:gap-1">
                   {/* Show category label if in All or Top FAQs view */}
                   {(activeCategory === 'all' || activeCategory === 'top-faqs') && (
-                    <span className="text-[10px] md:text-xs font-sans font-medium text-terracotta uppercase tracking-wider">
+                    <span
+                      className="text-[10px] md:text-xs font-sans font-medium uppercase tracking-wider"
+                      style={{ color: '#d3a392' }}
+                    >
                       {faq.category}
                     </span>
                   )}
-                  <h3 className="font-sans text-sm md:text-base font-semibold text-charcoal group-hover:text-terracotta pr-6 md:pr-8">
+                  <h3 className="font-sans text-sm md:text-base font-semibold text-charcoal pr-6 md:pr-8 group-hover:[color:#d3a392]">
                     {faq.question}
                   </h3>
                 </div>
                 <div
-                  className={`shrink-0 ml-3 md:ml-4 text-terracotta bg-terracotta/10 rounded-full p-1 md:p-1.5 group-hover:bg-terracotta group-hover:text-white ${
+                  className={`shrink-0 ml-3 md:ml-4 rounded-full p-1 md:p-1.5 transition-colors ${
                     expandedIndex === faq.id ? 'rotate-180' : ''
-                  }`}
+                  } [color:#d3a392] [background-color:rgba(211,163,146,0.1)] group-hover:[background-color:#d3a392] group-hover:text-white`}
                 >
                   <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
