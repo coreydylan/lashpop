@@ -310,7 +310,7 @@ function PathForm({
         type="submit"
         disabled={isSubmitting}
         className="w-full py-3 rounded-full font-medium text-sm uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 hover:shadow-lg"
-        style={{ backgroundColor: '#ac4d3c', color: 'rgb(240, 224, 219)' }}
+        style={{ backgroundColor: '#cc947f', color: 'rgb(240, 224, 219)' }}
       >
         {isSubmitting ? (
           <>
@@ -377,18 +377,6 @@ export default function WorkWithUsPage() {
 
       {/* HERO + PATH CARDS - ONE COHESIVE SECTION */}
       <section className="relative min-h-[calc(100vh-5rem)] md:min-h-0 bg-gradient-to-b from-cream/50 via-ivory to-ivory">
-        {/* Background Image - Desktop */}
-        <div className="hidden md:block absolute top-0 right-0 w-1/3 h-full overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-ivory/80 to-ivory z-10" />
-          <Image
-            src="/lashpop-images/culture/team-hallway.jpeg"
-            alt=""
-            fill
-            className="object-cover object-center opacity-40"
-            priority
-          />
-        </div>
-
         <div className="relative z-10 container max-w-6xl px-5 md:px-8 py-10 md:py-16">
           {/* Hero Content */}
           <motion.div
@@ -397,7 +385,7 @@ export default function WorkWithUsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: smoothEase }}
           >
-            <p className="text-xs md:text-sm font-medium tracking-[0.2em] uppercase mb-3" style={{ color: '#ac4d3c' }}>
+            <p className="text-xs md:text-sm font-medium tracking-[0.2em] uppercase mb-3" style={{ color: '#cc947f' }}>
               Join Our Team
             </p>
             <h1 className="font-display text-3xl md:text-5xl font-medium mb-4 md:mb-6" style={{ color: '#3d3632' }}>
@@ -457,7 +445,7 @@ export default function WorkWithUsPage() {
 
                     {/* Badge */}
                     {card.badge && (
-                      <span className="absolute top-3 right-3 px-2 py-1 rounded-full bg-rust/90 text-cream text-[10px] font-medium flex items-center gap-1">
+                      <span className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-medium flex items-center gap-1" style={{ backgroundColor: '#dbb2a4', color: '#ac4d3c' }}>
                         <Sparkles className="w-3 h-3" />
                         {card.badge}
                       </span>
@@ -466,7 +454,7 @@ export default function WorkWithUsPage() {
                     {/* Icon */}
                     <div className="absolute bottom-3 left-3">
                       <div className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center">
-                        <card.icon className="w-5 h-5" style={{ color: '#ac4d3c' }} />
+                        <card.icon className="w-5 h-5" style={{ color: '#cc947f' }} />
                       </div>
                     </div>
                   </div>
@@ -481,7 +469,7 @@ export default function WorkWithUsPage() {
                     </p>
                     <span
                       className="text-xs font-medium flex items-center gap-1 transition-colors"
-                      style={{ color: '#ac4d3c' }}
+                      style={{ color: '#cc947f' }}
                     >
                       {activeSection === card.id ? 'Close' : 'Learn more'}
                       <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${activeSection === card.id ? 'rotate-180' : ''}`} />
@@ -504,13 +492,13 @@ export default function WorkWithUsPage() {
                         {card.id === 'employee' && (
                           <>
                             <div>
-                              <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#ac4d3c' }}>
+                              <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#cc947f' }}>
                                 Employee Benefits
                               </p>
                               <div className="grid grid-cols-2 gap-2">
                                 {employeeBenefits.map((benefit) => (
                                   <div key={benefit.title} className="flex gap-2 p-2.5 rounded-xl bg-ivory/50">
-                                    <benefit.icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#ac4d3c' }} />
+                                    <benefit.icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#cc947f' }} />
                                     <div>
                                       <h4 className="font-medium text-xs text-charcoal">{benefit.title}</h4>
                                       <p className="text-[10px] text-charcoal/60 leading-tight">{benefit.description}</p>
@@ -524,7 +512,7 @@ export default function WorkWithUsPage() {
                               <div className="flex flex-col gap-2">
                                 {['Apply below', 'Meet the team', 'Skills check', 'Welcome!'].map((step, i) => (
                                   <div key={step} className="flex items-center gap-2">
-                                    <span className="w-5 h-5 rounded-full bg-rust/10 flex items-center justify-center text-[10px] font-medium" style={{ color: '#ac4d3c' }}>
+                                    <span className="w-5 h-5 rounded-full bg-rust/10 flex items-center justify-center text-[10px] font-medium" style={{ color: '#cc947f' }}>
                                       {i + 1}
                                     </span>
                                     <span className="text-xs text-charcoal/80">{step}</span>
@@ -539,14 +527,14 @@ export default function WorkWithUsPage() {
                         {card.id === 'booth' && (
                           <>
                             <div>
-                              <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#ac4d3c' }}>
+                              <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#cc947f' }}>
                                 Booth Rental
                               </p>
                               <div className="space-y-3">
                                 <div className="p-3 rounded-xl bg-ivory/50 border border-sage/10">
                                   <div className="flex justify-between items-start mb-1">
                                     <h4 className="font-display font-medium text-sm text-charcoal">Station Rental</h4>
-                                    <span className="text-xs font-medium" style={{ color: '#ac4d3c' }}>From $600/mo</span>
+                                    <span className="text-xs font-medium" style={{ color: '#cc947f' }}>From $600/mo</span>
                                   </div>
                                   <p className="text-[10px] text-charcoal/60 mb-2">Semi-private workspace in our shared studio.</p>
                                   <div className="flex flex-wrap gap-1.5">
@@ -561,7 +549,7 @@ export default function WorkWithUsPage() {
                                 <div className="p-3 rounded-xl bg-ivory/50 border border-sage/10">
                                   <div className="flex justify-between items-start mb-1">
                                     <h4 className="font-display font-medium text-sm text-charcoal">Private Room</h4>
-                                    <span className="text-xs font-medium" style={{ color: '#ac4d3c' }}>From $1,200/mo</span>
+                                    <span className="text-xs font-medium" style={{ color: '#cc947f' }}>From $1,200/mo</span>
                                   </div>
                                   <p className="text-[10px] text-charcoal/60 mb-2">Your own private space within LashPop.</p>
                                   <div className="flex flex-wrap gap-1.5">
@@ -578,7 +566,7 @@ export default function WorkWithUsPage() {
                             <div className="grid grid-cols-3 gap-1.5">
                               {boothAmenities.map((amenity) => (
                                 <div key={amenity.text} className="flex flex-col items-center gap-1 p-2 rounded-lg bg-ivory/30 text-center">
-                                  <amenity.icon className="w-4 h-4" style={{ color: '#ac4d3c' }} />
+                                  <amenity.icon className="w-4 h-4" style={{ color: '#cc947f' }} />
                                   <span className="text-[9px] text-charcoal/70 leading-tight">{amenity.text}</span>
                                 </div>
                               ))}
@@ -658,7 +646,7 @@ export default function WorkWithUsPage() {
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
                 {/* Left: Benefits */}
                 <div>
-                  <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#ac4d3c' }}>
+                  <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#cc947f' }}>
                     Employee Benefits
                   </p>
                   <h2 className="font-display text-2xl md:text-3xl font-medium mb-6" style={{ color: '#3d3632' }}>
@@ -668,7 +656,7 @@ export default function WorkWithUsPage() {
                   <div className="grid sm:grid-cols-2 gap-4 mb-8">
                     {employeeBenefits.map((benefit) => (
                       <div key={benefit.title} className="flex gap-3 p-3 rounded-xl bg-ivory/50">
-                        <benefit.icon className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#ac4d3c' }} />
+                        <benefit.icon className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#cc947f' }} />
                         <div>
                           <h4 className="font-medium text-sm text-charcoal">{benefit.title}</h4>
                           <p className="text-xs text-charcoal/60">{benefit.description}</p>
@@ -683,7 +671,7 @@ export default function WorkWithUsPage() {
                     <div className="flex flex-col gap-3">
                       {['Apply below', 'Meet the team', 'Skills check', 'Welcome!'].map((step, i) => (
                         <div key={step} className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded-full bg-rust/10 flex items-center justify-center text-xs font-medium" style={{ color: '#ac4d3c' }}>
+                          <span className="w-6 h-6 rounded-full bg-rust/10 flex items-center justify-center text-xs font-medium" style={{ color: '#cc947f' }}>
                             {i + 1}
                           </span>
                           <span className="text-sm text-charcoal/80">{step}</span>
@@ -743,7 +731,7 @@ export default function WorkWithUsPage() {
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
                 {/* Left: Info */}
                 <div>
-                  <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#ac4d3c' }}>
+                  <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#cc947f' }}>
                     Booth Rental
                   </p>
                   <h2 className="font-display text-2xl md:text-3xl font-medium mb-6" style={{ color: '#3d3632' }}>
@@ -755,7 +743,7 @@ export default function WorkWithUsPage() {
                     <div className="p-4 rounded-xl bg-ivory/50 border border-sage/10">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-display font-medium text-charcoal">Station Rental</h4>
-                        <span className="text-sm font-medium" style={{ color: '#ac4d3c' }}>From $600/mo</span>
+                        <span className="text-sm font-medium" style={{ color: '#cc947f' }}>From $600/mo</span>
                       </div>
                       <p className="text-xs text-charcoal/60 mb-2">Semi-private workspace in our shared studio.</p>
                       <div className="flex flex-wrap gap-2">
@@ -771,7 +759,7 @@ export default function WorkWithUsPage() {
                     <div className="p-4 rounded-xl bg-ivory/50 border border-sage/10">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-display font-medium text-charcoal">Private Room</h4>
-                        <span className="text-sm font-medium" style={{ color: '#ac4d3c' }}>From $1,200/mo</span>
+                        <span className="text-sm font-medium" style={{ color: '#cc947f' }}>From $1,200/mo</span>
                       </div>
                       <p className="text-xs text-charcoal/60 mb-2">Your own private space within LashPop.</p>
                       <div className="flex flex-wrap gap-2">
@@ -789,7 +777,7 @@ export default function WorkWithUsPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
                     {boothAmenities.map((amenity) => (
                       <div key={amenity.text} className="flex items-center gap-2 p-2 rounded-lg bg-ivory/30">
-                        <amenity.icon className="w-4 h-4 flex-shrink-0" style={{ color: '#ac4d3c' }} />
+                        <amenity.icon className="w-4 h-4 flex-shrink-0" style={{ color: '#cc947f' }} />
                         <span className="text-[10px] text-charcoal/70">{amenity.text}</span>
                       </div>
                     ))}
@@ -835,7 +823,7 @@ export default function WorkWithUsPage() {
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
                 {/* Left: Info */}
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rust/10 text-xs font-medium mb-4" style={{ color: '#ac4d3c' }}>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-4" style={{ backgroundColor: 'rgba(219, 178, 164, 0.15)', color: '#ac4d3c' }}>
                     <Sparkles className="w-3.5 h-3.5" />
                     Coming Soon
                   </div>
@@ -912,7 +900,7 @@ export default function WorkWithUsPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="font-display text-2xl md:text-3xl font-medium mb-3" style={{ color: '#ac4d3c' }}>
+            <h2 className="font-display text-2xl md:text-3xl font-medium mb-3" style={{ color: '#cc947f' }}>
               Why LashPop?
             </h2>
             <p className="text-charcoal/70 max-w-xl mx-auto text-sm md:text-base">
@@ -968,7 +956,7 @@ export default function WorkWithUsPage() {
                 transition={{ delay: i * 0.05 }}
               >
                 <div className="w-10 h-10 rounded-full bg-dusty-rose/20 flex items-center justify-center flex-shrink-0">
-                  <item.icon className="w-5 h-5" style={{ color: '#ac4d3c' }} />
+                  <item.icon className="w-5 h-5" style={{ color: '#cc947f' }} />
                 </div>
                 <div>
                   <h3 className="font-medium text-sm text-charcoal mb-0.5">{item.title}</h3>
