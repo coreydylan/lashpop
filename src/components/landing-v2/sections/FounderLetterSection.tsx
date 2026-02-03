@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { useRef } from 'react'
 
 
 interface FounderLetterContent {
@@ -30,8 +29,6 @@ const defaultContent: FounderLetterContent = {
 export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   // Use provided content or fallback to defaults
   const letterContent = content || defaultContent
-
-  const parallaxRef = useRef<HTMLDivElement>(null)
 
   return (
     <section className="relative w-full">
@@ -96,23 +93,21 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
       {/* Mobile Layout - Simple static scroll */}
       <div className="md:hidden relative" style={{ backgroundColor: '#d8c9c0' }}>
-        {/* Emily Arch Image - parallax */}
-        <div
-          ref={parallaxRef}
-          className="w-full h-[60vh] bg-cover bg-top"
-          style={{
-            backgroundImage: 'url(/lashpop-images/emily-parallax.webp)',
-            backgroundAttachment: 'fixed',
-            backgroundPosition: 'top center'
-          }}
-        />
+        {/* Emily Arch Image - static, full width */}
+        <div className="w-full overflow-hidden">
+          <img
+            src="/lashpop-images/founder-letter-bg-mobile.jpg"
+            alt="Emily in studio archway"
+            className="w-full h-auto scale-110 translate-y-[10%]"
+          />
+        </div>
 
         {/* Text Container */}
         <div className="px-6 pt-6 pb-16" style={{ backgroundColor: '#d8c9c0' }}>
           {/* Section Header */}
           <div className="mb-6 max-w-lg mx-auto">
             <h2
-              className="text-3xl font-display font-bold tracking-wide leading-tight"
+              className="text-2xl font-display font-medium tracking-wide leading-tight"
               style={{ color: '#1a1a1a' }}
             >
               Welcome to<br />LashPop Studios
