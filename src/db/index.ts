@@ -63,10 +63,9 @@ import { businessLocations } from "./schema/business_locations"
 import { formResponses } from "./schema/form_responses"
 import { transactions } from "./schema/transactions"
 
-// Environment setup
+// Environment setup - match whh-portal pattern exactly
 const nodeEnv = process.env.NODE_ENV ?? "development"
 const isProduction = nodeEnv === "production"
-const isServerless = !!(process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge')
 
 if (!isProduction) {
   config({ path: ".env.local" })
@@ -81,12 +80,10 @@ const dbSchema = {
   user,
   session,
   verification,
-
   // Profile tables
   profiles,
   vagaroSyncMappings,
   friendBookingRequests,
-
   // Local tables
   customers,
   teamMembers,
@@ -116,7 +113,6 @@ const dbSchema = {
   quizLashStyle,
   quizResultSettings,
   workWithUsCarouselPhotos,
-
   // Scrollytelling CMS tables
   compositions,
   layers,
@@ -132,7 +128,6 @@ const dbSchema = {
   drawerStates,
   collisionRules,
   playbackEvents,
-
   // Vagaro mirror tables
   appointments,
   vagaroCustomers,
@@ -156,8 +151,24 @@ declare global {
   var __lashpopDatabaseHandles__: DatabaseHandles | undefined
 }
 
+// Get database URL
+const databaseUrl = process.env.DATABASE_URL
+
+// Detect pooled connection
+const isPooledConnection = databaseUrl?.includes("pooler") ?? false
+
+// Pool size configuration - match whh-portal pattern
+function defaultPoolSize(): number {
+  if (isPooledConnection) {
+    return isProduction ? 10 : 5
+  }
+  return isProduction ? 5 : 3
+}
+
+const connectionPoolSize = defaultPoolSize()
+
 // Retry configuration
-const RETRYABLE_ERROR_CODES = new Set([
+const retryableErrorCodes = new Set([
   "53300", // too_many_connections
   "57P03", // cannot_connect_now
   "08006", // connection_failure
@@ -166,42 +177,50 @@ const RETRYABLE_ERROR_CODES = new Set([
   "08003"  // connection_does_not_exist
 ])
 
-const MAX_RETRY_ATTEMPTS = 3
-const BASE_RETRY_DELAY_MS = 200
-const MAX_RETRY_DELAY_MS = 2000
+const maxRetryAttempts = 3
+const baseRetryDelayMs = 200
+const maxRetryDelayMs = 2000
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-function isRetryableError(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false
+function isRetryableError(error: unknown): error is { code?: string; errno?: string } {
+  if (typeof error !== "object" || error === null) {
+    return false
+  }
 
-  const err = error as { code?: string; errno?: string }
+  const code = (error as { code?: string }).code
+  const errno = (error as { errno?: string }).errno
 
-  // Handle CONNECT_TIMEOUT from postgres.js
-  if (err.errno === "CONNECT_TIMEOUT" || err.code === "CONNECT_TIMEOUT") {
+  // Handle CONNECT_TIMEOUT from postgres.js client
+  if (errno === "CONNECT_TIMEOUT" || code === "CONNECT_TIMEOUT") {
     return true
   }
 
-  return typeof err.code === "string" && RETRYABLE_ERROR_CODES.has(err.code)
+  if (code === "53300") {
+    return true
+  }
+
+  return typeof code === "string" && retryableErrorCodes.has(code)
 }
 
 async function executeWithRetry<T>(operation: () => Promise<T> | T, attempt = 1): Promise<T> {
   try {
     return await operation()
   } catch (error) {
-    const shouldRetry = attempt < MAX_RETRY_ATTEMPTS && isRetryableError(error)
+    const isRetryable = isRetryableError(error)
+    const shouldRetry = attempt < maxRetryAttempts && isRetryable
 
     if (!shouldRetry) {
-      if (isRetryableError(error)) {
+      if (isRetryable) {
         console.error(`[DB] Retryable error failed after ${attempt} attempts:`, error)
       }
       throw error
     }
 
-    const backoff = Math.min(BASE_RETRY_DELAY_MS * 2 ** (attempt - 1), MAX_RETRY_DELAY_MS)
-    console.warn(`[DB] Retrying operation (attempt ${attempt + 1}/${MAX_RETRY_ATTEMPTS}) after ${backoff}ms:`,
+    const backoff = Math.min(baseRetryDelayMs * 2 ** (attempt - 1), maxRetryDelayMs)
+    console.warn(`[DB] Retrying operation (attempt ${attempt + 1}/${maxRetryAttempts}) after ${backoff}ms:`,
       error instanceof Error ? error.message : error)
     await delay(backoff)
     return executeWithRetry(operation, attempt + 1)
@@ -209,39 +228,26 @@ async function executeWithRetry<T>(operation: () => Promise<T> | T, attempt = 1)
 }
 
 function createSqlClient(url: string): SqlClient {
-  // Add pgbouncer parameter for Supabase pooler if not present
-  let connectionUrl = url
-  if (url.includes('pooler.supabase.com') && !url.includes('pgbouncer=true')) {
-    connectionUrl = url + (url.includes('?') ? '&' : '?') + 'pgbouncer=true'
-  }
-
-  // Connection settings based on environment
-  const connectTimeout = isServerless ? 30 : 10
-  const idleTimeout = isServerless ? 10 : 20
-  const maxConnections = isServerless ? 1 : 5
+  // Connection settings - match whh-portal exactly
+  const connectTimeout = isProduction ? 30 : 10
+  const idleTimeout = isProduction ? 60 : 20
+  const maxLifetime = 60 * 30 // 30 minutes
   const statementTimeout = 30000 // 30 seconds
 
-  const client = postgres(connectionUrl, {
-    // Required for Supabase Transaction Pooler (pgbouncer)
+  const client = postgres(url, {
     prepare: false,
-    // Connection pool settings
-    max: maxConnections,
     connect_timeout: connectTimeout,
     idle_timeout: idleTimeout,
-    max_lifetime: 60 * 30, // 30 minutes
-    // SSL required for Supabase
+    max_lifetime: maxLifetime,
+    max: connectionPoolSize,
     ssl: "require",
-    // Skip fetching custom types - faster startup
-    fetch_types: false,
-    // Suppress notice messages
-    onnotice: () => {},
-    // Connection metadata
     connection: {
       application_name: APPLICATION_NAME,
       statement_timeout: statementTimeout
     },
-    // Debug in development
-    debug: !isProduction && !isServerless
+    fetch_types: false,
+    onnotice: () => {},
+    debug: !isProduction
   })
 
   return client
@@ -277,53 +283,55 @@ function wrapSqlClientWithRetry(rawClient: SqlClient): SqlClient {
 }
 
 function createHandles(): DatabaseHandles {
-  const databaseUrl = process.env.DATABASE_URL
-
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is not set")
   }
 
-  const rawSqlClient = createSqlClient(databaseUrl)
-  const sql = wrapSqlClientWithRetry(rawSqlClient)
+  const sqlClient = createSqlClient(databaseUrl)
+  const sql = wrapSqlClientWithRetry(sqlClient)
   const db = drizzlePostgres(sql, { schema: dbSchema })
 
-  const isPooledConnection = databaseUrl.includes("pooler")
   const connectionMode = isPooledConnection ? "Pooler" : "Direct"
-  const maxConnections = isServerless ? 1 : 5
-
   console.log(
     "[DB] Connection initialized:",
     connectionMode,
     `env=${nodeEnv}`,
-    `serverless=${isServerless}`,
-    `pool_max=${maxConnections}`,
-    `connect_timeout=${isServerless ? 30 : 10}s`
+    `pool_max=${connectionPoolSize}`,
+    `connect_timeout=${isProduction ? 30 : 10}s`,
+    `statement_timeout=30s`
   )
 
   return { sql, db }
 }
 
-// Global singleton initialization
+// Eager initialization at module load - match whh-portal pattern
 const globalScope = globalThis as typeof globalThis & { __lashpopDatabaseHandles__?: DatabaseHandles }
 
+// Only initialize if DATABASE_URL is available (skip during build)
+if (databaseUrl) {
+  globalScope.__lashpopDatabaseHandles__ ??= createHandles()
+}
+
+// Get handles (creates if needed)
 function getHandles(): DatabaseHandles {
   if (!globalScope.__lashpopDatabaseHandles__) {
+    if (!databaseUrl) {
+      throw new Error("DATABASE_URL is not set")
+    }
     globalScope.__lashpopDatabaseHandles__ = createHandles()
   }
   return globalScope.__lashpopDatabaseHandles__
 }
 
-// Main export - lazy initialization
+// Main exports - match whh-portal pattern
 export function getDb(): DrizzleDatabase {
   return getHandles().db
 }
 
-// SQL client export for raw queries
 export function getSql(): SqlClient {
   return getHandles().sql
 }
 
-// Run operation with retry logic
 export async function runWithDbRetry<T>(operation: (database: DrizzleDatabase) => Promise<T> | T): Promise<T> {
   return executeWithRetry(() => operation(getHandles().db))
 }
