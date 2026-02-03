@@ -92,7 +92,11 @@ function ServiceCard({
     >
       {/* Icon */}
       <div className="flex justify-center mb-4">
-        <div className="relative w-24 h-12">
+        <div className={`relative ${
+          category.slug === 'lashes' || category.slug === 'brows'
+            ? 'w-20 h-10'
+            : 'w-24 h-12'
+        }`}>
           <Image
             src={category.icon}
             alt={category.title}
@@ -231,7 +235,11 @@ function MobileSwipeableServiceCards({
           {/* Top content */}
           <div className="flex flex-col items-center text-center px-6 py-6 flex-1">
             {/* Icon */}
-            <div className="relative w-20 h-10 mb-4">
+            <div className={`relative mb-4 ${
+              currentCategory.slug === 'lashes' || currentCategory.slug === 'brows'
+                ? 'w-16 h-8'
+                : 'w-20 h-10'
+            }`}>
               <Image
                 src={currentCategory.icon}
                 alt={currentCategory.title}
