@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DevModeProvider } from '@/contexts/DevModeContext'
 import { Navigation } from '@/components/sections/Navigation'
 import { MobileHeader } from '@/components/landing-v2/MobileHeader'
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2'
+import { submitWorkWithUsForm, type CareerPath } from '@/actions/work-with-us'
+import { TeamCarousel } from '@/components/work-with-us/TeamCarousel'
 import {
   CheckCircle2,
   Sparkles,
@@ -19,19 +20,53 @@ import {
   Star,
   Building2,
   Clock,
-  Wifi,
   Coffee,
   Camera,
   Send,
   Loader2,
   ChevronDown,
-  ArrowRight,
-  X
+  Share2,
+  MapPin,
+  Percent,
+  Megaphone
 } from 'lucide-react'
 
-// Types
-type CareerPath = 'employee' | 'booth' | 'training'
+// Slot Machine Price Component
+function SlotMachinePrice({ value, className }: { value: number; className?: string }) {
+  const digits = value.toString().split('')
 
+  return (
+    <span className={`inline-flex items-baseline ${className || ''}`} style={{ color: '#cc947f' }}>
+      <span className="mr-0.5">$</span>
+      <span className="inline-flex overflow-hidden">
+        {digits.map((digit, index) => (
+          <span key={index} className="relative inline-block" style={{ width: '0.6em' }}>
+            <AnimatePresence mode="popLayout">
+              <motion.span
+                key={`${index}-${digit}`}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 20, opacity: 0 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 300,
+                  damping: 25,
+                  delay: index * 0.03
+                }}
+                className="inline-block"
+              >
+                {digit}
+              </motion.span>
+            </AnimatePresence>
+          </span>
+        ))}
+      </span>
+      <span className="text-[0.6em] ml-0.5 opacity-70">/day</span>
+    </span>
+  )
+}
+
+// Types
 interface PathFormData {
   name: string
   email: string
@@ -52,25 +87,47 @@ const employeeBenefits = [
   { icon: Calendar, title: 'Flexible Scheduling', description: 'Build your own schedule around your life.' },
   { icon: DollarSign, title: 'Competitive Pay', description: 'Commission-based with guaranteed minimums.' },
   { icon: GraduationCap, title: 'Ongoing Training', description: 'Continuous education at no cost to you.' },
-  { icon: Heart, title: 'Health & Wellness', description: 'Wellness programs and work-life balance.' },
   { icon: Users, title: 'Team Community', description: 'A supportive team that lifts each other up.' },
-  { icon: Star, title: 'Career Growth', description: 'Clear pathways to advance your career.' }
+  { icon: Star, title: 'Career Growth', description: 'Clear pathways to advance your career.' },
+  { icon: Share2, title: 'Client Referrals', description: 'Cross-promotion and referrals within the team.' },
+  { icon: Megaphone, title: 'Marketing Support', description: 'Social media and marketing assistance provided.' },
+  { icon: Camera, title: 'Team Photoshoots', description: 'Professional photography sessions included.' },
+  { icon: Sparkles, title: 'Complimentary Lashes', description: 'One free lash service per month.' },
+  { icon: MapPin, title: 'Coastal Location', description: 'Walkable to beach, coffee shops & restaurants.' },
+  { icon: Coffee, title: 'Break Room Perks', description: 'Coffee and tea bar available.' },
+  { icon: Percent, title: 'Employee Discount', description: '30% off all retail products.' }
 ]
 
-// Booth Rental Amenities
-const boothAmenities = [
-  { icon: Building2, text: 'Private or semi-private stations' },
-  { icon: Wifi, text: 'High-speed WiFi included' },
-  { icon: Coffee, text: 'Complimentary beverages' },
-  { icon: Camera, text: 'Ring light & photo area' },
-  { icon: Clock, text: '24/7 studio access' },
-  { icon: Star, text: 'Premium product discounts' }
+// Booth Rental Benefits
+const boothBenefits = [
+  { icon: Heart, title: 'Collaborative Atmosphere', description: 'Positive, supportive studio culture.' },
+  { icon: Share2, title: 'Client Referrals', description: 'Cross-promotion on our website, booking & socials.' },
+  { icon: Megaphone, title: 'Marketing Support', description: 'Business, social media, and marketing guidance.' },
+  { icon: Camera, title: 'Team Photoshoots', description: 'Professional photography sessions included.' },
+  { icon: Users, title: 'Team Events', description: 'Community gatherings and team bonding.' },
+  { icon: Calendar, title: 'Flexible Options', description: 'Part-time and full-time availability.' },
+  { icon: MapPin, title: 'Coastal Location', description: 'Walkable to beach, coffee shops & restaurants.' },
+  { icon: GraduationCap, title: 'Education Opportunities', description: 'Access to training and skill development.' },
+  { icon: Star, title: 'Career Development', description: 'Grow your business with our support.' },
+  { icon: Clock, title: '24/7 Studio Access', description: 'Work on your own schedule, anytime.' },
+  { icon: Building2, title: 'Locked Personal Storage', description: 'Secure space for your supplies.' },
+  { icon: Coffee, title: 'Break Room Perks', description: 'Coffee and tea bar available.' },
+  { icon: Percent, title: 'Employee Discount', description: '30% off all retail products.' },
+  { icon: Sparkles, title: 'Ring Light & Photo Area', description: 'Professional setup for content creation.' }
 ]
+
+// Booth Rental Pricing
+const getBoothPricing = (days: number) => {
+  if (days >= 5) return { station: 55, private: 65 }
+  if (days === 4) return { station: 65, private: 75 }
+  if (days === 3) return { station: 70, private: 80 }
+  return { station: 75, private: 85 } // 1-2 days
+}
 
 // Specialties for form
 const specialties = [
-  'Lash Extensions', 'Lash Lifts', 'Brow Lamination', 'Microblading',
-  'Permanent Makeup', 'Skincare', 'Waxing', 'Nails', 'Injectables', 'Other'
+  'Lash Extensions', 'Lash Lifts', 'Brows', 'Microblading',
+  'Permanent Makeup', 'Skincare', 'Waxing', 'Injectables', 'Other'
 ]
 
 // Inline Form Component
@@ -78,12 +135,14 @@ function PathForm({
   path,
   onSubmit,
   isSubmitting,
-  isSubmitted
+  isSubmitted,
+  boothDays
 }: {
   path: CareerPath
-  onSubmit: (data: PathFormData, path: CareerPath) => void
+  onSubmit: (data: PathFormData, path: CareerPath, boothDays?: number) => void
   isSubmitting: boolean
   isSubmitted: CareerPath | null
+  boothDays?: number
 }) {
   const [formData, setFormData] = useState<PathFormData>({
     name: '', email: '', phone: '', experience: '', specialty: [], message: '',
@@ -116,7 +175,7 @@ function PathForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData, path)
+    onSubmit(formData, path, path === 'booth' ? boothDays : undefined)
   }
 
   if (isSubmitted === path) {
@@ -328,45 +387,111 @@ function PathForm({
   )
 }
 
+// Slider styles
+const sliderStyles = `
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.15s ease-out;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #cc947f;
+    border: none;
+    margin-top: -5.5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: transform 0.1s ease-out, box-shadow 0.15s ease-out;
+  }
+  input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.1);
+  }
+  input[type="range"]::-moz-range-track {
+    height: 3px;
+    border-radius: 2px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #cc947f;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+`
+
 export default function WorkWithUsPage() {
   const [activeSection, setActiveSection] = useState<CareerPath | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState<CareerPath | null>(null)
+  const [boothDays, setBoothDays] = useState(3)
 
-  const handleFormSubmit = async (data: PathFormData, path: CareerPath) => {
+  const boothPricing = getBoothPricing(boothDays)
+
+  const handleFormSubmit = async (data: PathFormData, path: CareerPath, boothDaysValue?: number) => {
     setIsSubmitting(true)
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsSubmitting(false)
-    setIsSubmitted(path)
+    try {
+      const result = await submitWorkWithUsForm({
+        ...data,
+        boothDays: boothDaysValue
+      }, path)
+
+      if (result.success) {
+        setIsSubmitted(path)
+      } else {
+        console.error('Form submission failed:', result.error)
+        // Could add error state/toast here
+      }
+    } catch (error) {
+      console.error('Form submission error:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const pathCards = [
+  const pathCards: Array<{
+    id: CareerPath
+    icon: typeof Users
+    title: string
+    description: string
+    image: string
+    badge?: string
+  }> = [
     {
-      id: 'employee' as CareerPath,
+      id: 'employee',
       icon: Users,
       title: 'Join as an Employee',
       description: 'Full support, training, and benefits. Perfect for those who want structure and growth.',
-      image: '/lashpop-images/culture/team-working.jpg'
+      image: '/lashpop-images/culture/join-our-team.webp'
     },
     {
-      id: 'booth' as CareerPath,
+      id: 'booth',
       icon: Building2,
       title: 'Booth Rental',
       description: 'Run your own business in our beautiful space. Independence with community.',
-      image: '/lashpop-images/culture/team-front-desk.jpeg'
+      image: '/lashpop-images/culture/booth-rental.webp'
     },
     {
-      id: 'training' as CareerPath,
+      id: 'training',
       icon: GraduationCap,
       title: 'LashPop Pro Training',
-      description: 'Master award-winning techniques. Comprehensive program coming soon.',
-      image: '/lashpop-images/culture/team-lounge.jpg',
-      badge: 'Coming Soon'
+      description: 'Master award-winning techniques. Comprehensive training program.',
+      image: '/lashpop-images/culture/training.webp'
     }
   ]
 
   return (
     <DevModeProvider>
+    <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
     <div className="min-h-screen bg-ivory">
       {/* Shared Navigation Components */}
       <Navigation />
@@ -439,7 +564,7 @@ export default function WorkWithUsPage() {
                       src={card.image}
                       alt={card.title}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      className={`object-cover transition-transform duration-500 group-hover:scale-105 ${card.id === 'employee' ? 'object-top' : card.id === 'booth' ? 'object-top' : ''}`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/40 to-transparent" />
 
@@ -530,46 +655,63 @@ export default function WorkWithUsPage() {
                               <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#cc947f' }}>
                                 Booth Rental
                               </p>
-                              <div className="space-y-3">
+
+                              {/* Days Slider */}
+                              <div className="mb-4">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-[10px] text-charcoal/60">Days per week</span>
+                                  <span className="text-[10px] font-medium" style={{ color: '#cc947f' }}>
+                                    {boothDays === 5 ? '5+' : boothDays} {boothDays === 1 ? 'day' : 'days'}
+                                  </span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="1"
+                                  max="5"
+                                  value={boothDays}
+                                  onChange={(e) => setBoothDays(parseInt(e.target.value))}
+                                  className="w-full"
+                                  style={{
+                                    background: `linear-gradient(to right, #cc947f 0%, #cc947f ${(boothDays - 1) * 25}%, #e5ded9 ${(boothDays - 1) * 25}%, #e5ded9 100%)`,
+                                    height: '3px',
+                                    borderRadius: '2px'
+                                  }}
+                                />
+                                <div className="flex justify-between mt-1 px-0.5">
+                                  {[1, 2, 3, 4, '5+'].map((num) => (
+                                    <span key={num} className="text-[9px] text-charcoal/40">{num}</span>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2">
                                 <div className="p-3 rounded-xl bg-ivory/50 border border-sage/10">
-                                  <div className="flex justify-between items-start mb-1">
-                                    <h4 className="font-display font-medium text-sm text-charcoal">Station Rental</h4>
-                                    <span className="text-xs font-medium" style={{ color: '#cc947f' }}>From $600/mo</span>
-                                  </div>
-                                  <p className="text-[10px] text-charcoal/60 mb-2">Semi-private workspace in our shared studio.</p>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {['Dedicated space', 'Shared amenities', 'Flexible hours'].map(item => (
-                                      <span key={item} className="inline-flex items-center gap-1 text-[10px] text-charcoal/70">
-                                        <CheckCircle2 className="w-2.5 h-2.5 text-green-600" />
-                                        {item}
-                                      </span>
-                                    ))}
-                                  </div>
+                                  <h4 className="font-display font-medium text-xs text-charcoal mb-1">Main Space</h4>
+                                  <SlotMachinePrice value={boothPricing.station} className="text-base font-medium" />
+                                  <p className="text-[9px] text-charcoal/50 mt-1">Semi-private workspace</p>
                                 </div>
                                 <div className="p-3 rounded-xl bg-ivory/50 border border-sage/10">
-                                  <div className="flex justify-between items-start mb-1">
-                                    <h4 className="font-display font-medium text-sm text-charcoal">Private Room</h4>
-                                    <span className="text-xs font-medium" style={{ color: '#cc947f' }}>From $1,200/mo</span>
-                                  </div>
-                                  <p className="text-[10px] text-charcoal/60 mb-2">Your own private space within LashPop.</p>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {['Private room', 'Personal setup', 'Premium amenities'].map(item => (
-                                      <span key={item} className="inline-flex items-center gap-1 text-[10px] text-charcoal/70">
-                                        <CheckCircle2 className="w-2.5 h-2.5 text-green-600" />
-                                        {item}
-                                      </span>
-                                    ))}
-                                  </div>
+                                  <h4 className="font-display font-medium text-xs text-charcoal mb-1">Private Room</h4>
+                                  <SlotMachinePrice value={boothPricing.private} className="text-base font-medium" />
+                                  <p className="text-[9px] text-charcoal/50 mt-1">Your own private space</p>
                                 </div>
                               </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-1.5">
-                              {boothAmenities.map((amenity) => (
-                                <div key={amenity.text} className="flex flex-col items-center gap-1 p-2 rounded-lg bg-ivory/30 text-center">
-                                  <amenity.icon className="w-4 h-4" style={{ color: '#cc947f' }} />
-                                  <span className="text-[9px] text-charcoal/70 leading-tight">{amenity.text}</span>
-                                </div>
-                              ))}
+                            <div>
+                              <p className="text-xs font-medium tracking-[0.15em] uppercase mb-2" style={{ color: '#cc947f' }}>
+                                Benefits
+                              </p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {boothBenefits.map((benefit) => (
+                                  <div key={benefit.title} className="flex gap-2 p-2.5 rounded-xl bg-ivory/50">
+                                    <benefit.icon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#cc947f' }} />
+                                    <div>
+                                      <h4 className="font-medium text-xs text-charcoal">{benefit.title}</h4>
+                                      <p className="text-[10px] text-charcoal/60 leading-tight">{benefit.description}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </>
                         )}
@@ -585,20 +727,20 @@ export default function WorkWithUsPage() {
                                 <div className="p-3 rounded-xl bg-ivory/50">
                                   <h4 className="font-medium text-xs text-charcoal mb-2">What You&apos;ll Learn</h4>
                                   <ul className="space-y-1">
-                                    {['Signature lash techniques', 'Client consultation', 'Business fundamentals', 'Building clientele'].map(item => (
+                                    {['Lash foundations & technique', 'Client experience from start to finish', 'Safety, sanitation & industry standards', 'How to build and retain a clientele', 'Business foundations'].map(item => (
                                       <li key={item} className="flex items-start gap-1.5 text-[10px] text-charcoal/70">
-                                        <CheckCircle2 className="w-3 h-3 text-green-600 flex-shrink-0 mt-0.5" />
+                                        <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: '#cc947f' }} />
                                         {item}
                                       </li>
                                     ))}
                                   </ul>
                                 </div>
                                 <div className="p-3 rounded-xl bg-ivory/50">
-                                  <h4 className="font-medium text-xs text-charcoal mb-2">What&apos;s Included</h4>
+                                  <h4 className="font-medium text-xs text-charcoal mb-2">What You&apos;ll Get</h4>
                                   <ul className="space-y-1">
-                                    {['Hands-on training', 'Professional starter kit', 'Certification', 'Ongoing mentorship'].map(item => (
+                                    {['Full starter kit ($250 value)', 'Training manual and business forms', '4 hours of hands-on training', 'LashPop merchandise ($100 value)', 'LashPop Pro certification', 'Ongoing support', '3 follow-up shadow sessions'].map(item => (
                                       <li key={item} className="flex items-start gap-1.5 text-[10px] text-charcoal/70">
-                                        <CheckCircle2 className="w-3 h-3 text-green-600 flex-shrink-0 mt-0.5" />
+                                        <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" style={{ color: '#cc947f' }} />
                                         {item}
                                       </li>
                                     ))}
@@ -607,8 +749,7 @@ export default function WorkWithUsPage() {
                               </div>
                             </div>
                             <div className="bg-gradient-to-br from-cream/50 to-peach/20 rounded-xl p-3 text-center">
-                              <p className="text-sm font-display text-charcoal">Be first in line</p>
-                              <p className="text-[10px] text-charcoal/60">Limited spots for inaugural cohort</p>
+                              <p className="text-sm font-display text-charcoal">Enroll with a friend for special pricing!</p>
                             </div>
                           </>
                         )}
@@ -619,6 +760,7 @@ export default function WorkWithUsPage() {
                           onSubmit={handleFormSubmit}
                           isSubmitting={isSubmitting}
                           isSubmitted={isSubmitted}
+                          boothDays={boothDays}
                         />
                       </div>
                     </motion.div>
@@ -709,6 +851,7 @@ export default function WorkWithUsPage() {
                     onSubmit={handleFormSubmit}
                     isSubmitting={isSubmitting}
                     isSubmitted={isSubmitted}
+                    boothDays={boothDays}
                   />
                 </div>
               </div>
@@ -738,56 +881,61 @@ export default function WorkWithUsPage() {
                     Your Business, Our Beautiful Space
                   </h2>
 
+                  {/* Days Slider */}
+                  <div className="mb-6">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-xs text-charcoal/60">Days per week</span>
+                      <span className="text-xs font-medium" style={{ color: '#cc947f' }}>
+                        {boothDays === 5 ? '5+' : boothDays} {boothDays === 1 ? 'day' : 'days'}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={boothDays}
+                      onChange={(e) => setBoothDays(parseInt(e.target.value))}
+                      className="w-full"
+                      style={{
+                        background: `linear-gradient(to right, #cc947f 0%, #cc947f ${(boothDays - 1) * 25}%, #e5ded9 ${(boothDays - 1) * 25}%, #e5ded9 100%)`,
+                        height: '3px',
+                        borderRadius: '2px'
+                      }}
+                    />
+                    <div className="flex justify-between mt-1.5 px-0.5">
+                      {[1, 2, 3, 4, '5+'].map((num) => (
+                        <span key={num} className="text-[10px] text-charcoal/40">{num}</span>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Pricing Options */}
-                  <div className="space-y-4 mb-6">
+                  <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="p-4 rounded-xl bg-ivory/50 border border-sage/10">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-display font-medium text-charcoal">Station Rental</h4>
-                        <span className="text-sm font-medium" style={{ color: '#cc947f' }}>From $600/mo</span>
-                      </div>
-                      <p className="text-xs text-charcoal/60 mb-2">Semi-private workspace in our shared studio.</p>
-                      <div className="flex flex-wrap gap-2">
-                        {['Dedicated space', 'Shared amenities', 'Flexible hours'].map(item => (
-                          <span key={item} className="inline-flex items-center gap-1 text-[10px] text-charcoal/70">
-                            <CheckCircle2 className="w-3 h-3 text-green-600" />
-                            {item}
-                          </span>
-                        ))}
-                      </div>
+                      <h4 className="font-display font-medium text-sm text-charcoal mb-1">Main Space</h4>
+                      <SlotMachinePrice value={boothPricing.station} className="text-xl font-medium" />
+                      <p className="text-xs text-charcoal/50 mt-1">Semi-private workspace</p>
                     </div>
 
                     <div className="p-4 rounded-xl bg-ivory/50 border border-sage/10">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-display font-medium text-charcoal">Private Room</h4>
-                        <span className="text-sm font-medium" style={{ color: '#cc947f' }}>From $1,200/mo</span>
-                      </div>
-                      <p className="text-xs text-charcoal/60 mb-2">Your own private space within LashPop.</p>
-                      <div className="flex flex-wrap gap-2">
-                        {['Private room', 'Personal setup', 'Premium amenities'].map(item => (
-                          <span key={item} className="inline-flex items-center gap-1 text-[10px] text-charcoal/70">
-                            <CheckCircle2 className="w-3 h-3 text-green-600" />
-                            {item}
-                          </span>
-                        ))}
-                      </div>
+                      <h4 className="font-display font-medium text-sm text-charcoal mb-1">Private Room</h4>
+                      <SlotMachinePrice value={boothPricing.private} className="text-xl font-medium" />
+                      <p className="text-xs text-charcoal/50 mt-1">Your own private space</p>
                     </div>
                   </div>
 
-                  {/* Amenities */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
-                    {boothAmenities.map((amenity) => (
-                      <div key={amenity.text} className="flex items-center gap-2 p-2 rounded-lg bg-ivory/30">
-                        <amenity.icon className="w-4 h-4 flex-shrink-0" style={{ color: '#cc947f' }} />
-                        <span className="text-[10px] text-charcoal/70">{amenity.text}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Photo Gallery */}
-                  <div className="grid grid-cols-4 gap-2">
-                    {['/lashpop-images/culture/team-front-desk.jpeg', '/lashpop-images/culture/team-lounge.jpg', '/lashpop-images/culture/team-working.jpg', '/lashpop-images/culture/team-reception.jpg'].map((img, i) => (
-                      <div key={i} className="aspect-square rounded-xl overflow-hidden">
-                        <Image src={img} alt="" width={150} height={150} className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" />
+                  {/* Benefits Grid */}
+                  <p className="text-xs font-medium tracking-[0.15em] uppercase mb-3" style={{ color: '#cc947f' }}>
+                    Benefits
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {boothBenefits.map((benefit) => (
+                      <div key={benefit.title} className="flex gap-3 p-3 rounded-xl bg-ivory/50">
+                        <benefit.icon className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#cc947f' }} />
+                        <div>
+                          <h4 className="font-medium text-sm text-charcoal">{benefit.title}</h4>
+                          <p className="text-xs text-charcoal/60">{benefit.description}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -800,6 +948,7 @@ export default function WorkWithUsPage() {
                     onSubmit={handleFormSubmit}
                     isSubmitting={isSubmitting}
                     isSubmitted={isSubmitted}
+                    boothDays={boothDays}
                   />
                 </div>
               </div>
@@ -823,10 +972,6 @@ export default function WorkWithUsPage() {
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
                 {/* Left: Info */}
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-4" style={{ backgroundColor: 'rgba(219, 178, 164, 0.15)', color: '#ac4d3c' }}>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Coming Soon
-                  </div>
                   <h2 className="font-display text-2xl md:text-3xl font-medium mb-2" style={{ color: '#3d3632' }}>
                     LashPop Pro
                   </h2>
@@ -838,20 +983,20 @@ export default function WorkWithUsPage() {
                     <div className="p-4 rounded-xl bg-ivory/50">
                       <h4 className="font-medium text-sm text-charcoal mb-2">What You&apos;ll Learn</h4>
                       <ul className="space-y-1.5">
-                        {['Signature lash techniques', 'Client consultation', 'Business fundamentals', 'Building clientele'].map(item => (
+                        {['Lash foundations & technique', 'Client experience from start to finish', 'Safety, sanitation & industry standards', 'How to build and retain a clientele', 'Business foundations'].map(item => (
                           <li key={item} className="flex items-start gap-2 text-xs text-charcoal/70">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+                            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: '#cc947f' }} />
                             {item}
                           </li>
                         ))}
                       </ul>
                     </div>
                     <div className="p-4 rounded-xl bg-ivory/50">
-                      <h4 className="font-medium text-sm text-charcoal mb-2">What&apos;s Included</h4>
+                      <h4 className="font-medium text-sm text-charcoal mb-2">What You&apos;ll Get</h4>
                       <ul className="space-y-1.5">
-                        {['Hands-on training', 'Professional starter kit', 'Certification', 'Ongoing mentorship'].map(item => (
+                        {['Full starter kit ($250 value)', 'Training manual and business forms', '4 hours of hands-on training', 'LashPop merchandise ($100 value)', 'LashPop Pro certification', 'Ongoing support', '3 follow-up shadow sessions'].map(item => (
                           <li key={item} className="flex items-start gap-2 text-xs text-charcoal/70">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0 mt-0.5" />
+                            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" style={{ color: '#cc947f' }} />
                             {item}
                           </li>
                         ))}
@@ -862,15 +1007,14 @@ export default function WorkWithUsPage() {
                   {/* Image */}
                   <div className="relative rounded-2xl overflow-hidden h-48">
                     <Image
-                      src="/lashpop-images/culture/team-lounge.jpg"
+                      src="/lashpop-images/culture/training.webp"
                       alt="LashPop training"
                       fill
                       className="object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-charcoal/60 to-transparent" />
                     <div className="absolute bottom-4 left-4">
-                      <p className="text-white font-display text-lg">Be first in line</p>
-                      <p className="text-white/70 text-xs">Limited spots for inaugural cohort</p>
+                      <p className="text-white font-display text-lg">Enroll with a friend for special pricing!</p>
                     </div>
                   </div>
                 </div>
@@ -882,6 +1026,7 @@ export default function WorkWithUsPage() {
                     onSubmit={handleFormSubmit}
                     isSubmitting={isSubmitting}
                     isSubmitted={isSubmitted}
+                    boothDays={boothDays}
                   />
                 </div>
               </div>
@@ -891,80 +1036,178 @@ export default function WorkWithUsPage() {
         )}
       </AnimatePresence>
 
-      {/* WHY LASHPOP SECTION */}
-      <section className="py-14 md:py-20 px-5 md:px-8 bg-gradient-to-b from-ivory to-cream/30">
-        <div className="container max-w-6xl">
+      {/* Team Photo Carousel */}
+      <TeamCarousel />
+
+      {/* WHY LASHPOP SECTION - The LashPop Way */}
+      <section className="py-14 md:py-24 bg-gradient-to-b from-ivory to-cream/30">
+
+        {/* Hero Quote Block */}
+        <div className="container max-w-4xl px-5 md:px-8 mb-14 md:mb-20">
           <motion.div
-            className="text-center mb-10"
+            className="text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="font-display text-2xl md:text-3xl font-medium mb-3" style={{ color: '#cc947f' }}>
-              Why LashPop?
-            </h2>
-            <p className="text-charcoal/70 max-w-xl mx-auto text-sm md:text-base">
-              A place where talent thrives, creativity flows, and everyone supports each other.
+            <p className="text-xs md:text-sm font-medium tracking-[0.2em] uppercase mb-4" style={{ color: '#cc947f' }}>
+              The LashPop Way
             </p>
+            <blockquote className="font-display text-2xl md:text-4xl font-medium leading-relaxed mb-6" style={{ color: '#3d3632' }}>
+              &ldquo;When our team members thrive, our entire salon flourishes.&rdquo;
+            </blockquote>
+            <p className="text-charcoal/60 text-sm md:text-base max-w-2xl mx-auto leading-relaxed">
+              We prioritize the well-being and success of our team while cultivating a supportive, positive environment.
+              Empowering our team to achieve their goals and live balanced lives translates to exceptional service and studio culture.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-charcoal/50">
+              <span className="w-8 h-px bg-charcoal/20" />
+              <span className="italic">Founded 2016 in Emily&apos;s living room</span>
+              <span className="w-8 h-px bg-charcoal/20" />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Core Values Grid */}
+        <div className="container max-w-6xl px-5 md:px-8 mb-14 md:mb-20">
+          <motion.div
+            className="text-center mb-8 md:mb-10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="font-display text-xl md:text-2xl font-medium" style={{ color: '#3d3632' }}>
+              Our Core Values
+            </h2>
           </motion.div>
 
-          {/* Feature Images */}
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-10">
-            <motion.div
-              className="relative rounded-2xl overflow-hidden h-52 md:h-64"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <Image src="/lashpop-images/culture/team-working.jpg" alt="" fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
-              <div className="absolute bottom-4 left-4">
-                <p className="text-white font-display text-lg">A team that grows together</p>
-              </div>
-            </motion.div>
-            <motion.div
-              className="relative rounded-2xl overflow-hidden h-52 md:h-64"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-            >
-              <Image src="/lashpop-images/culture/team-lounge.jpg" alt="" fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
-              <div className="absolute bottom-4 left-4">
-                <p className="text-white font-display text-lg">Community like family</p>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Benefits Grid */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {[
-              { icon: Users, title: 'Real Community', desc: 'Not just coworkers, but a family that celebrates wins together.' },
-              { icon: Sparkles, title: 'Cross-Promotion', desc: 'When one wins, we all win. Active client referrals.' },
-              { icon: Heart, title: 'Fun Environment', desc: 'Good music, great energy, a space you want to be in.' },
-              { icon: Star, title: 'Brand Power', desc: 'Benefit from established reputation and marketing.' },
-              { icon: GraduationCap, title: 'Continuous Learning', desc: 'Regular training and skill-sharing sessions.' },
-              { icon: Building2, title: 'Business Support', desc: 'Guidance, social media support, growth strategies.' }
-            ].map((item, i) => (
+              {
+                title: 'Results First',
+                desc: 'We provide the best product, experience, and customer service in every session.',
+                icon: Star
+              },
+              {
+                title: 'Sweat the Details',
+                desc: 'From lash application to studio design, we pay attention to every detail.',
+                icon: Sparkles
+              },
+              {
+                title: 'Clients Are Friends',
+                desc: 'We treat our customers like friends — relatable, upbeat, and empathetic.',
+                icon: Heart
+              },
+              {
+                title: 'No Woman Left Behind',
+                desc: 'We\'re a team that supports, helps, and encourages each other in the studio.',
+                icon: Users
+              },
+              {
+                title: 'Don\'t Bat an Eye(lash)',
+                desc: 'Mishaps don\'t shake us. We handle any situation with confidence and poise.',
+                icon: CheckCircle2
+              },
+              {
+                title: 'Positive Vibes Only',
+                desc: 'We actively cultivate uplifting energy. Vent sessions saved for team meetings.',
+                icon: Sparkles
+              },
+              {
+                title: 'Professional & Friendly',
+                desc: 'Friendliness never negates professionalism. We bring both, always.',
+                icon: Star
+              },
+              {
+                title: 'Stand-Up Humans',
+                desc: 'We live with integrity in and out of the studio.',
+                icon: Heart
+              },
+              {
+                title: 'Work-Life Rhythm',
+                desc: 'Embrace the balance between hustle and relaxation.',
+                icon: Clock
+              }
+            ].map((value, i) => (
               <motion.div
-                key={item.title}
-                className="flex gap-3 p-4 rounded-xl bg-white/50"
+                key={value.title}
+                className="group p-4 md:p-5 rounded-2xl bg-white/60 hover:bg-white transition-all duration-300 hover:shadow-lg"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: i * 0.03 }}
               >
-                <div className="w-10 h-10 rounded-full bg-dusty-rose/20 flex items-center justify-center flex-shrink-0">
-                  <item.icon className="w-5 h-5" style={{ color: '#cc947f' }} />
-                </div>
-                <div>
-                  <h3 className="font-medium text-sm text-charcoal mb-0.5">{item.title}</h3>
-                  <p className="text-xs text-charcoal/60">{item.desc}</p>
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-dusty-rose/15 flex items-center justify-center flex-shrink-0 group-hover:bg-dusty-rose/25 transition-colors">
+                    <value.icon className="w-4 h-4" style={{ color: '#cc947f' }} />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-medium text-sm md:text-base text-charcoal mb-1">
+                      {value.title}
+                    </h3>
+                    <p className="text-xs md:text-sm text-charcoal/60 leading-relaxed">
+                      {value.desc}
+                    </p>
+                  </div>
                 </div>
               </motion.div>
             ))}
           </div>
+        </div>
+
+        {/* The Experience Promise */}
+        <div className="container max-w-4xl px-5 md:px-8">
+          <motion.div
+            className="relative rounded-3xl overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            {/* Background Image */}
+            <div className="absolute inset-0">
+              <Image
+                src="/lashpop-images/culture/team-lounge.jpg"
+                alt="LashPop studio"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-charcoal/70" />
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10 py-12 md:py-16 px-6 md:px-12 text-center">
+              <p className="text-xs font-medium tracking-[0.2em] uppercase mb-4 text-white/60">
+                The Client Experience
+              </p>
+              <blockquote className="font-display text-xl md:text-3xl font-medium leading-relaxed mb-6 text-white">
+                &ldquo;Every client leaves feeling effortlessly beautiful — and with a much shorter morning routine.&rdquo;
+              </blockquote>
+              <p className="text-white/70 text-sm md:text-base max-w-xl mx-auto mb-8">
+                We&apos;re committed to creating lasting impressions. A clean, organized, aesthetically pleasing space
+                where clients feel empowered, inspired, confident, and beautiful.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
+                {['Friendliness', 'Excellence', 'Patience', 'Professionalism', 'Positivity'].map((word) => (
+                  <span
+                    key={word}
+                    className="text-xs md:text-sm font-medium tracking-wide text-white/80 px-3 py-1.5 rounded-full border border-white/20"
+                  >
+                    {word}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Final tagline */}
+          <motion.p
+            className="text-center mt-8 text-charcoal/50 text-sm italic"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            We really care — and we prove it by personally getting to know each of our clients.
+          </motion.p>
         </div>
       </section>
 
