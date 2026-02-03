@@ -157,10 +157,11 @@ const databaseUrl = process.env.DATABASE_URL
 // Detect pooled connection
 const isPooledConnection = databaseUrl?.includes("pooler") ?? false
 
-// Pool size configuration - match whh-portal pattern
+// Pool size configuration - keep low for serverless + Supabase Session pooler
 function defaultPoolSize(): number {
   if (isPooledConnection) {
-    return isProduction ? 10 : 5
+    // Session mode pooler has limited connections - keep client pool small
+    return isProduction ? 2 : 2
   }
   return isProduction ? 5 : 3
 }
