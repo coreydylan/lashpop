@@ -29,7 +29,8 @@ import {
   FileText,
   Type,
   GripVertical,
-  ArrowUpDown
+  ArrowUpDown,
+  FolderOpen
 } from 'lucide-react'
 import clsx from 'clsx'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
@@ -43,7 +44,9 @@ import {
   tagAssetWithService,
   updateServiceCategoryContent,
   resetServiceToVagaroImage,
-  updateSubcategoryDisplayOrders
+  updateSubcategoryDisplayOrders,
+  updateServiceSubcategory,
+  getAllSubcategories
 } from '@/actions/services'
 
 // Types
@@ -160,16 +163,40 @@ export default function ServicesAdminPage() {
   // Drag state for reordering
   const [draggedSubcatIndex, setDraggedSubcatIndex] = useState<number | null>(null)
 
+  // Service subcategory editor state
+  const [serviceSubcatEditor, setServiceSubcatEditor] = useState<{
+    isOpen: boolean
+    serviceId: string
+    serviceName: string
+    currentSubcategoryId: string | null
+    currentCategoryId: string | null
+  } | null>(null)
+
+  // All subcategories for dropdown (grouped by category)
+  const [allSubcategories, setAllSubcategories] = useState<Array<{
+    id: string
+    name: string
+    slug: string
+    categoryId: string
+    categoryName: string | null
+    categorySlug: string | null
+    displayOrder: number
+  }>>([])
+  const [subcategoriesFetched, setSubcategoriesFetched] = useState(false)
+
   // Fetch data
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [servicesData, categoriesData] = await Promise.all([
+      const [servicesData, categoriesData, subcategoriesData] = await Promise.all([
         getAllServicesAdmin(),
-        getServiceCategoriesWithSubcategories()
+        getServiceCategoriesWithSubcategories(),
+        getAllSubcategories()
       ])
       setServices(servicesData)
       setCategories(categoriesData)
+      setAllSubcategories(subcategoriesData)
+      setSubcategoriesFetched(true)
 
       // Expand all categories by default
       setExpandedCategories(new Set(categoriesData.map((c: Category) => c.id)))
@@ -472,6 +499,40 @@ export default function ServicesAdminPage() {
       ))
     } catch (error) {
       console.error('Error resetting to Vagaro image:', error)
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  // Handle saving service subcategory assignment
+  const handleSaveServiceSubcategory = async (newSubcategoryId: string | null) => {
+    if (!serviceSubcatEditor) return
+
+    setSaving(serviceSubcatEditor.serviceId)
+    try {
+      await updateServiceSubcategory(serviceSubcatEditor.serviceId, newSubcategoryId)
+
+      // Find the new subcategory info
+      const newSubcat = allSubcategories.find(s => s.id === newSubcategoryId)
+
+      // Update local state
+      setServices(prev => prev.map(s =>
+        s.id === serviceSubcatEditor.serviceId
+          ? {
+              ...s,
+              subcategoryId: newSubcategoryId,
+              subcategoryName: newSubcat?.name || null,
+              subcategorySlug: newSubcat?.slug || null,
+              categoryId: newSubcat?.categoryId || s.categoryId,
+              categoryName: newSubcat?.categoryName || s.categoryName,
+              categorySlug: newSubcat?.categorySlug || s.categorySlug,
+            }
+          : s
+      ))
+
+      setServiceSubcatEditor(null)
+    } catch (error) {
+      console.error('Error saving service subcategory:', error)
     } finally {
       setSaving(null)
     }
@@ -1095,6 +1156,24 @@ export default function ServicesAdminPage() {
                                             </div>
                                           </div>
 
+                                          {/* Change Subcategory Button */}
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              setServiceSubcatEditor({
+                                                isOpen: true,
+                                                serviceId: service.id,
+                                                serviceName: service.name,
+                                                currentSubcategoryId: service.subcategoryId,
+                                                currentCategoryId: service.categoryId,
+                                              })
+                                            }}
+                                            className="p-1.5 rounded-md hover:bg-ocean-mist/10 text-ocean-mist/50 hover:text-ocean-mist transition-colors"
+                                            title="Change subcategory"
+                                          >
+                                            <FolderOpen className="w-3.5 h-3.5" />
+                                          </button>
+
                                           {/* Demo Toggle */}
                                           <button
                                             onClick={(e) => {
@@ -1141,6 +1220,23 @@ export default function ServicesAdminPage() {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-dune truncate">{service.name}</p>
                                   </div>
+                                  {/* Change Subcategory Button */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setServiceSubcatEditor({
+                                        isOpen: true,
+                                        serviceId: service.id,
+                                        serviceName: service.name,
+                                        currentSubcategoryId: service.subcategoryId,
+                                        currentCategoryId: service.categoryId,
+                                      })
+                                    }}
+                                    className="p-1.5 rounded-md hover:bg-ocean-mist/10 text-ocean-mist/50 hover:text-ocean-mist transition-colors"
+                                    title="Assign to subcategory"
+                                  >
+                                    <FolderOpen className="w-3.5 h-3.5" />
+                                  </button>
                                 </div>
                               ))}
                             </div>
@@ -1610,6 +1706,121 @@ export default function ServicesAdminPage() {
                     </>
                   )}
                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Service Subcategory Editor Modal */}
+      <AnimatePresence>
+        {serviceSubcatEditor?.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-dune/40 backdrop-blur-sm"
+              onClick={() => setServiceSubcatEditor(null)}
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-sage/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
+                    <FolderOpen className="w-5 h-5 text-ocean-mist" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-xl text-dune">Change Subcategory</h2>
+                    <p className="text-sm text-dune/60 truncate max-w-[250px]">{serviceSubcatEditor.serviceName}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setServiceSubcatEditor(null)}
+                  className="p-2 rounded-lg hover:bg-sage/10 transition-colors"
+                >
+                  <X className="w-5 h-5 text-dune/60" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <p className="text-sm text-dune/60 mb-4">
+                  Select which subcategory this service should appear under in the service browser.
+                </p>
+
+                {/* Grouped subcategories by category */}
+                <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                  {categories.map(category => {
+                    const categorySubcats = allSubcategories.filter(s => s.categoryId === category.id)
+                    if (categorySubcats.length === 0) return null
+
+                    return (
+                      <div key={category.id}>
+                        <p className="text-xs font-medium text-dune/50 uppercase tracking-wider mb-2">
+                          {category.name}
+                        </p>
+                        <div className="space-y-1">
+                          {categorySubcats.map(subcat => {
+                            const isSelected = serviceSubcatEditor.currentSubcategoryId === subcat.id
+                            return (
+                              <button
+                                key={subcat.id}
+                                onClick={() => handleSaveServiceSubcategory(subcat.id)}
+                                disabled={saving === serviceSubcatEditor.serviceId}
+                                className={clsx(
+                                  "w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
+                                  isSelected
+                                    ? "border-ocean-mist bg-ocean-mist/10"
+                                    : "border-sage/20 hover:border-ocean-mist/50 hover:bg-cream"
+                                )}
+                              >
+                                {isSelected && (
+                                  <Check className="w-4 h-4 text-ocean-mist flex-shrink-0" />
+                                )}
+                                <span className={clsx(
+                                  "text-sm font-medium",
+                                  isSelected ? "text-ocean-mist" : "text-dune"
+                                )}>
+                                  {subcat.name}
+                                </span>
+                                {isSelected && (
+                                  <span className="ml-auto text-[10px] text-ocean-mist/60">Current</span>
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-sage/10 bg-cream/30">
+                <button
+                  onClick={() => setServiceSubcatEditor(null)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-dune/60 hover:text-dune hover:bg-sage/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                {saving === serviceSubcatEditor.serviceId && (
+                  <div className="flex items-center gap-2 text-sm text-ocean-mist">
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    Saving...
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

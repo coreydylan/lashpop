@@ -514,3 +514,58 @@ export async function resetServiceToVagaroImage(serviceId: string) {
 
   return { success: true }
 }
+
+// Update a service's subcategory assignment
+export async function updateServiceSubcategory(
+  serviceId: string,
+  subcategoryId: string | null
+) {
+  const db = getDb()
+
+  // If a subcategory is specified, get its category to ensure consistency
+  let categoryId: string | null = null
+  if (subcategoryId) {
+    const [subcategory] = await db
+      .select({ categoryId: serviceSubcategories.categoryId })
+      .from(serviceSubcategories)
+      .where(eq(serviceSubcategories.id, subcategoryId))
+      .limit(1)
+
+    if (subcategory) {
+      categoryId = subcategory.categoryId
+    }
+  }
+
+  await db
+    .update(services)
+    .set({
+      subcategoryId,
+      ...(categoryId && { categoryId }),
+      updatedAt: new Date()
+    })
+    .where(eq(services.id, serviceId))
+
+  return { success: true }
+}
+
+// Get all subcategories (for service assignment dropdown)
+export async function getAllSubcategories() {
+  const db = getDb()
+
+  const allSubcategories = await db
+    .select({
+      id: serviceSubcategories.id,
+      name: serviceSubcategories.name,
+      slug: serviceSubcategories.slug,
+      categoryId: serviceSubcategories.categoryId,
+      categoryName: serviceCategories.name,
+      categorySlug: serviceCategories.slug,
+      displayOrder: serviceSubcategories.displayOrder,
+    })
+    .from(serviceSubcategories)
+    .leftJoin(serviceCategories, eq(serviceSubcategories.categoryId, serviceCategories.id))
+    .where(eq(serviceSubcategories.isActive, true))
+    .orderBy(asc(serviceCategories.displayOrder), asc(serviceSubcategories.displayOrder))
+
+  return allSubcategories
+}
