@@ -93,12 +93,12 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
       {/* Mobile Layout - Simple static scroll */}
       <div className="md:hidden relative" style={{ backgroundColor: '#d8c9c0' }}>
-        {/* Emily Arch Image - static, full width */}
+        {/* Emily Arch Image - static, full width, aligned with hero bottom */}
         <div className="w-full overflow-hidden">
           <img
             src="/lashpop-images/founder-letter-bg-mobile.jpg"
             alt="Emily in studio archway"
-            className="w-full h-auto scale-110 translate-y-[10%]"
+            className="w-full h-auto"
           />
         </div>
 

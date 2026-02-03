@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="95" height="40" viewBox="0 0 95 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Lash lift icon - curved lashes fanning upward from a curved lash line -->
+  <g stroke="#cc947f" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <!-- Curved lash line base -->
+    <path d="M10 36 Q48 32 85 36"/>
+
+    <!-- Left lashes - curving up and left -->
+    <path d="M18 34 Q14 22 8 10"/>
+    <path d="M26 33 Q24 20 20 8"/>
+
+    <!-- Center-left lashes -->
+    <path d="M34 32 Q34 18 32 5"/>
+    <path d="M42 32 Q44 17 46 4"/>
+
+    <!-- Center lash -->
+    <path d="M48 32 Q50 16 52 3"/>
+
+    <!-- Center-right lashes -->
+    <path d="M54 32 Q56 17 60 4"/>
+    <path d="M62 32 Q64 18 68 5"/>
+
+    <!-- Right lashes - curving up and right -->
+    <path d="M70 33 Q74 20 80 8"/>
+    <path d="M78 34 Q82 22 88 10"/>
+  </g>
+</svg>

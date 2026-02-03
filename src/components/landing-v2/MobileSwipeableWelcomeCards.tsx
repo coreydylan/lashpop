@@ -269,7 +269,7 @@ export function MobileSwipeableWelcomeCards({
           onDragStart={handleDragStart}
           onDrag={handleDrag}
           onDragEnd={handleDragEnd}
-          style={{ touchAction: 'none' }}
+          style={{ touchAction: 'pan-y' }}
           whileDrag={{ scale: 1.02 }}
         >
           <div
@@ -361,7 +361,7 @@ export function MobileSwipeableWelcomeCards({
             onDragEnd={handleDragEnd}
             className="absolute cursor-grab active:cursor-grabbing"
             style={{
-              touchAction: 'none',
+              touchAction: 'pan-y',
               zIndex: 10,
               // Extended touch area: add padding on left/right for easier swipe initiation
               top: 0,

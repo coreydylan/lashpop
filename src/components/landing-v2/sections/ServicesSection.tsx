@@ -33,7 +33,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'LASH LIFTS',
     tagline: 'Your lashes, but better.',
     description: 'A lash lift gives your lashes a natural lifted and tinted look for effortless definition. A low-maintenance lash look that lasts 6–8 weeks.',
-    icon: '/lashpop-images/services/thin/lash-lifts-icon.png',
+    icon: '/lashpop-images/services/thin/lash-lifts-icon.svg',
   },
   {
     id: 'brows',
@@ -85,9 +85,6 @@ export const defaultServiceCategories: ServiceCategory[] = [
   },
 ]
 
-// Check if icon is a PNG (needs CSS filter for coloring)
-const isPngIcon = (iconPath: string) => iconPath.endsWith('.png')
-
 // Service Card Component for Desktop
 function ServiceCard({
   category,
@@ -96,8 +93,6 @@ function ServiceCard({
   category: ServiceCategory
   onClick: () => void
 }) {
-  const needsColorFilter = isPngIcon(category.icon)
-
   return (
     <button
       onClick={onClick}
@@ -115,9 +110,7 @@ function ServiceCard({
             alt={category.title}
             fill
             className="object-contain"
-            style={needsColorFilter ? {
-              filter: 'invert(66%) sepia(20%) saturate(600%) hue-rotate(330deg) brightness(85%) contrast(95%)',
-            } : undefined}
+            loading="eager"
           />
         </div>
       </div>
@@ -191,15 +184,13 @@ function MobileSwipeableServiceCards({
       const deltaY = Math.abs(currentY - touchStartY.current)
 
       // Determine swipe direction on first significant movement
-      if (isHorizontalSwipe.current === null && (deltaX > 8 || deltaY > 8)) {
-        // More lenient horizontal detection - 1.2x ratio instead of equal
-        isHorizontalSwipe.current = deltaX > deltaY * 0.8
+      if (isHorizontalSwipe.current === null && (deltaX > 10 || deltaY > 10)) {
+        // Strict horizontal detection - must be clearly horizontal (2x ratio)
+        isHorizontalSwipe.current = deltaX > deltaY * 2
       }
 
-      // If it's a horizontal swipe, prevent vertical scroll
-      if (isHorizontalSwipe.current === true) {
-        e.preventDefault()
-      }
+      // Let the browser handle scrolling - touchAction: pan-y does the work
+      // We just track the direction for processing on touchend
     }
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -225,7 +216,7 @@ function MobileSwipeableServiceCards({
     }
 
     container.addEventListener('touchstart', handleTouchStart, { passive: true })
-    container.addEventListener('touchmove', handleTouchMove, { passive: false })
+    container.addEventListener('touchmove', handleTouchMove, { passive: true })
     container.addEventListener('touchend', handleTouchEnd, { passive: true })
 
     return () => {
@@ -261,9 +252,8 @@ function MobileSwipeableServiceCards({
                 alt={currentCategory.title}
                 fill
                 className="object-contain"
-                style={isPngIcon(currentCategory.icon) ? {
-                  filter: 'invert(66%) sepia(20%) saturate(600%) hue-rotate(330deg) brightness(85%) contrast(95%)',
-                } : undefined}
+                loading="eager"
+                priority
               />
             </div>
 
@@ -390,6 +380,12 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
 
   // Handle category click - open the service browser modal for that category
   const handleCategoryClick = useCallback((categorySlug: string) => {
+    // Special case: lash-lifts opens lashes category with lash-lifts-tints subcategory
+    if (categorySlug === 'lash-lifts') {
+      browserActions.openModal('lashes', 'Lashes', 'lash-lifts-tints')
+      return
+    }
+
     const category = serviceCategories.find(c => c.slug === categorySlug)
     if (category) {
       browserActions.openModal(categorySlug, category.title)
@@ -448,7 +444,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
         {/* Services Grid - 4 on top, 4 on bottom */}
         <div className="space-y-8">
           {/* Top row - 4 items */}
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-6 items-start">
             {serviceCategories.slice(0, 4).map((category, index) => (
               <ServiceCard
                 key={category.id || `cat-${index}`}
@@ -458,7 +454,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
             ))}
           </div>
           {/* Bottom row - 4 items */}
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-6 items-start">
             {serviceCategories.slice(4).map((category, index) => (
               <ServiceCard
                 key={category.id || `cat-bottom-${index}`}

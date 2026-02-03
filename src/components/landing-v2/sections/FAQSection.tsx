@@ -126,7 +126,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     <section
       ref={sectionRef}
       id="faq"
-      className="pt-8 pb-20 bg-cream"
+      className="pt-8 pb-8 md:pb-20 bg-cream"
     >
       <div className="container max-w-4xl">
         {/* Section Header */}
@@ -145,11 +145,9 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           ref={stickyHeaderRef}
           className="mb-4 md:mb-12 sticky md:static top-[60px] z-40 md:top-0 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
           style={isMobile ? {
-            background: 'linear-gradient(180deg, rgba(250, 246, 242, 0.98) 0%, rgba(250, 246, 242, 0.95) 60%, rgba(250, 246, 242, 0) 100%)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
+            backgroundColor: '#f0e0db',
             paddingTop: '16px',
-            paddingBottom: '24px',
+            paddingBottom: '12px',
             marginTop: '-4px',
           } : undefined}
         >

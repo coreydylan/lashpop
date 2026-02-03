@@ -182,7 +182,7 @@ const mobileScrollStyles = `
       height: 100vh;
       height: 100dvh; /* Dynamic viewport height for mobile browsers */
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: contain;
+      overscroll-behavior-y: auto;
       background: transparent !important;
     }
 
@@ -214,11 +214,9 @@ const mobileScrollStyles = `
 
     /* Add bottom padding to content sections */
     .mobile-section[data-section-id="services"],
-    .mobile-section[data-section-id="team"],
     .mobile-section[data-section-id="instagram"],
     .mobile-section[data-section-id="reviews"],
-    .mobile-section[data-section-id="faq"],
-    .mobile-section[data-section-id="map"] {
+    .mobile-section[data-section-id="faq"] {
       padding-bottom: 60px;
     }
 

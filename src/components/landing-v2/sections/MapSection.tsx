@@ -28,7 +28,7 @@ export function MapSection() {
           observer.disconnect()
         }
       },
-      { rootMargin: '-20%' }
+      { rootMargin: '100% 0px 100% 0px' }
     )
 
     observer.observe(section)
@@ -175,7 +175,7 @@ export function MapSection() {
   }, [isInView])
 
   return (
-    <section ref={sectionRef} id="find-us" className="relative bg-ivory">
+    <section ref={sectionRef} id="find-us" className="relative bg-ivory md:mt-0 -mt-[60px]">
       {/* Two-column layout: Photo first on mobile, Map left / Photo right on desktop */}
       <div className="flex flex-col md:flex-row md:h-[600px]">
         {/* Storefront Photo - Shows first on mobile, right side on desktop */}
@@ -188,7 +188,7 @@ export function MapSection() {
         </div>
 
         {/* Map Container - Shows second on mobile, left side on desktop */}
-        <div className="relative w-full h-[50dvh] md:h-full md:w-1/2 md:order-1">
+        <div className="relative w-full h-[60dvh] md:h-full md:w-1/2 md:order-1">
           <div ref={mapContainer} className="w-full h-full" />
 
           {/* Loading state */}
@@ -201,7 +201,7 @@ export function MapSection() {
             </div>
           )}
 
-          {/* Address Card Overlay - Desktop */}
+          {/* Address Card Overlay - Desktop only */}
           <div className="hidden md:block absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm">
             <h3 className="heading-4 text-charcoal mb-3">LashPop Studios</h3>
             <address className="body-text text-charcoal not-italic mb-4">
@@ -231,9 +231,11 @@ export function MapSection() {
               </a>
             </div>
           </div>
+        </div>
 
-          {/* Address Card Overlay - Mobile, positioned at bottom of map */}
-          <div className="md:hidden absolute bottom-8 left-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl z-10">
+        {/* Address Card - Mobile only, below the map */}
+        <div className="md:hidden bg-ivory px-4 py-4">
+          <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="heading-4 text-charcoal leading-tight">LashPop Studios</h3>

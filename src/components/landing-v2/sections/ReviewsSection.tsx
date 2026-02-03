@@ -187,7 +187,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   return (
     <>
       <style jsx>{scrollbarStyles}</style>
-      <section ref={ref} id="reviews" className="relative pt-4 md:pt-16 pb-12 overflow-hidden" style={{ backgroundColor: '#e9d1c8' }}>
+      <section ref={ref} id="reviews" className="relative pt-8 md:pt-16 pb-6 md:pb-12 overflow-hidden" style={{ backgroundColor: '#e9d1c8' }}>
         <div className="relative">
 
         {/* Section Header */}

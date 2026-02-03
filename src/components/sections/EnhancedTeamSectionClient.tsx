@@ -1160,7 +1160,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         </div>
 
         {/* Team Group Photo - Full Width */}
-        <div className="mt-12 md:mt-16 -mx-4 md:-mx-8 lg:-mx-12">
+        <div className="mt-8 md:mt-16 -mx-4 md:-mx-8 lg:-mx-12">
           <img
             src="/lashpop-images/team/team-group-photo.jpg"
             alt="The LashPop Studios team"
@@ -1333,24 +1333,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               </motion.div>
                             </AnimatePresence>
 
-                            {/* Photo carousel dots - only show if multiple photos */}
+                            {/* Photo indicator - subtle tap hint when multiple photos */}
                             {portfolioImages.length > 1 && (
-                              <div className="absolute bottom-8 left-0 right-0 z-10 flex justify-center gap-1.5">
-                                {portfolioImages.map((_, idx) => (
-                                  <button
-                                    key={idx}
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setCurrentImageIndex(idx)
-                                    }}
-                                    className={`transition-all duration-200 rounded-full ${
-                                      idx === currentImageIndex
-                                        ? 'w-6 h-2 bg-white'
-                                        : 'w-2 h-2 bg-white/50'
-                                    }`}
-                                    aria-label={`View photo ${idx + 1}`}
-                                  />
-                                ))}
+                              <div className="absolute bottom-12 left-0 right-0 z-10 flex justify-center">
+                                <div className="bg-black/30 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1.5">
+                                  <span className="text-white/90 text-[10px] font-sans">{currentImageIndex + 1}/{portfolioImages.length}</span>
+                                </div>
                               </div>
                             )}
 
@@ -1416,6 +1404,36 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               </p>
                             )}
                           </div>
+
+                          {/* Portfolio Image Thumbnails - below Instagram, above About */}
+                          {portfolioImages.length > 1 && (
+                            <div className="relative px-5 pb-4 pointer-events-auto z-10">
+                              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-1">
+                                {portfolioImages.map((img, idx) => (
+                                  <button
+                                    key={img.id || `thumb-${idx}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setCurrentImageIndex(idx)
+                                    }}
+                                    className={`relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all duration-200 ${
+                                      idx === currentImageIndex
+                                        ? 'ring-2 ring-dusty-rose ring-offset-1 ring-offset-cream scale-105'
+                                        : 'opacity-70 hover:opacity-100'
+                                    }`}
+                                  >
+                                    <Image
+                                      src={img.url}
+                                      alt={`Photo ${idx + 1}`}
+                                      fill
+                                      className="object-cover"
+                                      sizes="56px"
+                                    />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Content Sections */}
                           <div className="relative px-5 pb-6 space-y-6 bg-cream pointer-events-auto z-0">
