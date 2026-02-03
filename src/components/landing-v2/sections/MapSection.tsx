@@ -176,80 +176,92 @@ export function MapSection() {
 
   return (
     <section ref={sectionRef} id="find-us" className="relative bg-ivory">
-      {/* Map Container - Full viewport height on mobile, fixed on desktop */}
-      <div className="relative w-full h-[100dvh] md:h-[600px]">
-        <div ref={mapContainer} className="w-full h-full" />
-
-        {/* Loading state */}
-        {!mapLoaded && (
-          <div className="absolute inset-0 bg-warm-sand/20 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto border-2 border-dusty-rose border-t-transparent rounded-full" />
-              <p className="caption text-charcoal mt-4">Loading map...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Address Card Overlay - Desktop */}
-        <div className="hidden md:block absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm">
-          <h3 className="heading-4 text-charcoal mb-3">LashPop Studios</h3>
-          <address className="body-text text-charcoal not-italic mb-4">
-            429 S Coast Hwy<br />
-            Oceanside, CA 92054
-          </address>
-          <div className="space-y-1">
-            <p className="caption text-charcoal">
-              <span className="caption-bold">Open Daily:</span> 8:00 AM – 7:30 PM
-            </p>
-            <p className="caption text-charcoal text-sm">
-              By Appointment Only
-            </p>
-          </div>
-          <div className="mt-4 pt-4 border-t border-sage/10">
-            <a
-              href={GOOGLE_MAPS_DIRECTIONS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-terracotta hover:text-terracotta/80 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="caption-bold">Get Directions</span>
-            </a>
-          </div>
+      {/* Two-column layout: Photo first on mobile, Map left / Photo right on desktop */}
+      <div className="flex flex-col md:flex-row md:h-[600px]">
+        {/* Storefront Photo - Shows first on mobile, right side on desktop */}
+        <div className="relative w-full h-[50dvh] md:h-full md:w-1/2 md:order-2">
+          <img
+            src="/lashpop-images/storefront.jpeg"
+            alt="LashPop Studios storefront"
+            className="w-full h-full object-cover"
+          />
         </div>
 
-        {/* Address Card Overlay - Mobile, positioned at bottom of map */}
-        <div className="md:hidden absolute bottom-32 left-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl z-10">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="heading-4 text-charcoal leading-tight">LashPop Studios</h3>
-              <address className="caption text-charcoal not-italic mt-1">
-                429 S Coast Hwy, Oceanside, CA 92054
-              </address>
+        {/* Map Container - Shows second on mobile, left side on desktop */}
+        <div className="relative w-full h-[50dvh] md:h-full md:w-1/2 md:order-1">
+          <div ref={mapContainer} className="w-full h-full" />
+
+          {/* Loading state */}
+          {!mapLoaded && (
+            <div className="absolute inset-0 bg-warm-sand/20 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 mx-auto border-2 border-dusty-rose border-t-transparent rounded-full" />
+                <p className="caption text-charcoal mt-4">Loading map...</p>
+              </div>
             </div>
-            <a
-              href={GOOGLE_MAPS_DIRECTIONS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-shrink-0 inline-flex items-center gap-1.5 text-terracotta hover:text-terracotta/80 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span className="caption-bold">Directions</span>
-            </a>
+          )}
+
+          {/* Address Card Overlay - Desktop */}
+          <div className="hidden md:block absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm">
+            <h3 className="heading-4 text-charcoal mb-3">LashPop Studios</h3>
+            <address className="body-text text-charcoal not-italic mb-4">
+              429 S Coast Hwy<br />
+              Oceanside, CA 92054
+            </address>
+            <div className="space-y-1">
+              <p className="caption text-charcoal">
+                <span className="caption-bold">Open Daily:</span> 8:00 AM – 7:30 PM
+              </p>
+              <p className="caption text-charcoal text-sm">
+                By Appointment Only
+              </p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-sage/10">
+              <a
+                href={GOOGLE_MAPS_DIRECTIONS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-terracotta hover:text-terracotta/80 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="caption-bold">Get Directions</span>
+              </a>
+            </div>
           </div>
-          <div className="mt-2">
-            <p className="caption text-charcoal">
-              <span className="caption-bold">Open Daily</span> 8A–7:30P
-            </p>
-            <p className="caption text-charcoal text-xs mt-0.5">
-              By Appointment Only
-            </p>
+
+          {/* Address Card Overlay - Mobile, positioned at bottom of map */}
+          <div className="md:hidden absolute bottom-8 left-4 right-4 bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-xl z-10">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="heading-4 text-charcoal leading-tight">LashPop Studios</h3>
+                <address className="caption text-charcoal not-italic mt-1">
+                  429 S Coast Hwy, Oceanside, CA 92054
+                </address>
+              </div>
+              <a
+                href={GOOGLE_MAPS_DIRECTIONS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 text-terracotta hover:text-terracotta/80 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="caption-bold">Directions</span>
+              </a>
+            </div>
+            <div className="mt-2">
+              <p className="caption text-charcoal">
+                <span className="caption-bold">Open Daily</span> 8A–7:30P
+              </p>
+              <p className="caption text-charcoal text-xs mt-0.5">
+                By Appointment Only
+              </p>
+            </div>
           </div>
         </div>
       </div>
