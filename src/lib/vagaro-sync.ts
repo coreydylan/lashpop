@@ -57,6 +57,7 @@ export async function syncService(vagaroService: any) {
         priceStarting: Math.round(priceStarting * 100), // Convert to cents
         vagaroParentServiceId: vagaroService.parentServiceId,
         vagaroData: vagaroService,
+        vagaroImageUrl: vagaroService.image_url || vagaroService.imageUrl || null,
         lastSyncedAt: new Date(),
         updatedAt: new Date()
       })
@@ -75,6 +76,7 @@ export async function syncService(vagaroService: any) {
         vagaroServiceId: serviceId,
         vagaroParentServiceId: vagaroService.parentServiceId,
         vagaroData: vagaroService,
+        vagaroImageUrl: vagaroService.image_url || vagaroService.imageUrl || null,
         name: title,
         slug,
         subtitle: parentTitle,

@@ -39,7 +39,8 @@ import {
   updateServiceCategoryImage,
   updateServiceSubcategoryImage,
   tagAssetWithService,
-  updateServiceCategoryContent
+  updateServiceCategoryContent,
+  resetServiceToVagaroImage
 } from '@/actions/services'
 
 // Types
@@ -52,6 +53,7 @@ interface Service {
   durationMinutes: number
   priceStarting: number
   imageUrl: string | null
+  vagaroImageUrl: string | null
   color: string | null
   displayOrder: number
   categoryId: string | null
@@ -63,10 +65,13 @@ interface Service {
   vagaroWidgetUrl: string | null
   vagaroServiceCode: string | null
   keyImageAssetId: string | null
+  keyImagePath: string | null
   useDemoPhotos: boolean
   isActive: boolean
   vagaroServiceId: string | null
   lastSyncedAt: Date | null
+  imageSource: 'dam' | 'vagaro' | 'subcategory' | 'none'
+  resolvedImageUrl: string | null
 }
 
 interface Subcategory {
@@ -364,7 +369,14 @@ export default function ServicesAdminPage() {
 
       setServices(prev => prev.map(s =>
         s.id === serviceImagePicker.serviceId
-          ? { ...s, keyImageAssetId: asset.id, imageUrl: asset.filePath }
+          ? {
+              ...s,
+              keyImageAssetId: asset.id,
+              keyImagePath: asset.filePath,
+              imageUrl: asset.filePath,
+              imageSource: 'dam' as const,
+              resolvedImageUrl: asset.filePath
+            }
           : s
       ))
 
@@ -422,6 +434,30 @@ export default function ServicesAdminPage() {
       ))
     } catch (error) {
       console.error('Error toggling demo photos:', error)
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  // Reset service to Vagaro image (remove DAM override)
+  const handleResetToVagaro = async (serviceId: string, vagaroImageUrl: string | null) => {
+    setSaving(serviceId)
+    try {
+      await resetServiceToVagaroImage(serviceId)
+      setServices(prev => prev.map(s =>
+        s.id === serviceId
+          ? {
+              ...s,
+              keyImageAssetId: null,
+              keyImagePath: null,
+              imageUrl: null,
+              imageSource: vagaroImageUrl ? 'vagaro' : 'none',
+              resolvedImageUrl: vagaroImageUrl
+            }
+          : s
+      ))
+    } catch (error) {
+      console.error('Error resetting to Vagaro image:', error)
     } finally {
       setSaving(null)
     }
@@ -494,40 +530,57 @@ export default function ServicesAdminPage() {
     )
   }
 
-  // Render service image cell with the enhanced two-tier picker
+  // Render service image cell with source badge and appropriate controls
   const renderServiceImageCell = (
-    serviceId: string,
-    serviceName: string,
-    assetId: string | null,
+    service: Service,
     size: 'sm' | 'md' = 'md'
   ) => {
-    const asset = assetId ? assetLookup.get(assetId) : null
-    const isSaving = saving === serviceId
+    const isSaving = saving === service.id
     const dimensions = size === 'sm' ? 'w-12 h-12' : 'w-16 h-16'
+    const hasImage = !!service.resolvedImageUrl
+
+    // Get source badge styling
+    const getSourceBadge = () => {
+      switch (service.imageSource) {
+        case 'dam':
+          return { label: 'DAM', className: 'bg-dusty-rose/20 text-dusty-rose border-dusty-rose/30' }
+        case 'vagaro':
+          return { label: 'Vagaro', className: 'bg-ocean-mist/20 text-ocean-mist border-ocean-mist/30' }
+        case 'subcategory':
+          return { label: 'Subcategory', className: 'bg-sage/20 text-sage border-sage/30' }
+        default:
+          return null
+      }
+    }
+
+    const sourceBadge = getSourceBadge()
 
     return (
       <div className="flex items-center gap-2">
+        {/* Image thumbnail - click to open picker */}
         <button
           onClick={() => setServiceImagePicker({
             isOpen: true,
-            serviceId,
-            serviceName,
-            currentAssetId: assetId
+            serviceId: service.id,
+            serviceName: service.name,
+            currentAssetId: service.keyImageAssetId
           })}
           disabled={isSaving}
           className={clsx(
             dimensions,
             "rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 group relative",
-            asset
-              ? "border-dusty-rose/30 hover:border-dusty-rose"
+            hasImage
+              ? service.imageSource === 'dam'
+                ? "border-dusty-rose/30 hover:border-dusty-rose"
+                : "border-ocean-mist/30 hover:border-ocean-mist"
               : "border-dashed border-sage/30 hover:border-sage/60 bg-sage/5"
           )}
         >
-          {asset ? (
+          {hasImage ? (
             <>
               <Image
-                src={asset.filePath}
-                alt={asset.fileName}
+                src={service.resolvedImageUrl!}
+                alt={service.name}
                 fill
                 className="object-cover"
               />
@@ -545,16 +598,43 @@ export default function ServicesAdminPage() {
             </div>
           )}
         </button>
-        {asset && (
-          <button
-            onClick={() => handleRemoveImage('service', serviceId)}
-            disabled={isSaving}
-            className="p-1 rounded-md hover:bg-terracotta/10 text-terracotta/60 hover:text-terracotta transition-colors"
-            title="Remove image"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        )}
+
+        {/* Source badge and actions */}
+        <div className="flex flex-col gap-1">
+          {/* Source badge */}
+          {sourceBadge && (
+            <span className={clsx(
+              "px-1.5 py-0.5 rounded text-[9px] font-medium border whitespace-nowrap",
+              sourceBadge.className
+            )}>
+              {sourceBadge.label}
+            </span>
+          )}
+
+          {/* Reset to Vagaro button (only show if DAM override is active and Vagaro image exists) */}
+          {service.imageSource === 'dam' && service.vagaroImageUrl && (
+            <button
+              onClick={() => handleResetToVagaro(service.id, service.vagaroImageUrl)}
+              disabled={isSaving}
+              className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-ocean-mist/10 text-ocean-mist hover:bg-ocean-mist/20 transition-colors whitespace-nowrap"
+              title="Reset to Vagaro image"
+            >
+              Reset
+            </button>
+          )}
+
+          {/* Remove DAM override button */}
+          {service.imageSource === 'dam' && (
+            <button
+              onClick={() => handleRemoveImage('service', service.id)}
+              disabled={isSaving}
+              className="p-0.5 rounded hover:bg-terracotta/10 text-terracotta/40 hover:text-terracotta transition-colors"
+              title="Remove DAM override"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
     )
   }
@@ -722,22 +802,22 @@ export default function ServicesAdminPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-dune">
-                {services.filter(s => s.keyImageAssetId).length}
+                {services.filter(s => s.imageSource === 'dam').length}
               </p>
-              <p className="text-xs text-dune/60">With Key Images</p>
+              <p className="text-xs text-dune/60">DAM Overrides</p>
             </div>
           </div>
         </div>
         <div className="glass rounded-2xl p-4 border border-sage/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-golden/10 flex items-center justify-center">
-              <Eye className="w-5 h-5 text-golden" />
+            <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
+              <ImageIcon className="w-5 h-5 text-ocean-mist" />
             </div>
             <div>
               <p className="text-2xl font-semibold text-dune">
-                {services.filter(s => s.useDemoPhotos).length}
+                {services.filter(s => s.vagaroImageUrl).length}
               </p>
-              <p className="text-xs text-dune/60">Demo Mode Active</p>
+              <p className="text-xs text-dune/60">Vagaro Images</p>
             </div>
           </div>
         </div>
@@ -888,7 +968,7 @@ export default function ServicesAdminPage() {
                                           key={service.id}
                                           className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/50 transition-colors"
                                         >
-                                          {renderServiceImageCell(service.id, service.name, service.keyImageAssetId, 'sm')}
+                                          {renderServiceImageCell(service, 'sm')}
 
                                           <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-dune truncate">{service.name}</p>
@@ -947,7 +1027,7 @@ export default function ServicesAdminPage() {
                                   key={service.id}
                                   className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/50 transition-colors"
                                 >
-                                  {renderServiceImageCell(service.id, service.name, service.keyImageAssetId, 'sm')}
+                                  {renderServiceImageCell(service, 'sm')}
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-dune truncate">{service.name}</p>
                                   </div>
@@ -987,7 +1067,7 @@ export default function ServicesAdminPage() {
                     )}
                   >
                     <td className="px-4 py-3">
-                      {renderServiceImageCell(service.id, service.name, service.keyImageAssetId)}
+                      {renderServiceImageCell(service)}
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-medium text-dune text-sm">{service.name}</p>
@@ -1064,20 +1144,20 @@ export default function ServicesAdminPage() {
         <h3 className="font-serif text-lg text-dune mb-3">Quick Tips</h3>
         <ul className="space-y-2 text-sm text-dune/70">
           <li className="flex items-start gap-2">
+            <span className="text-ocean-mist">&#8226;</span>
+            <span><strong>Vagaro Images</strong> (blue badge) are automatically synced from your Vagaro account.</span>
+          </li>
+          <li className="flex items-start gap-2">
             <span className="text-dusty-rose">&#8226;</span>
-            <span><strong>Key Images</strong> are used as thumbnails in service cards. Click on any image cell to select from your DAM.</span>
+            <span><strong>DAM Overrides</strong> (pink badge) let you replace the Vagaro image with a custom DAM image. Click &quot;Reset&quot; to revert.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-sage">&#8226;</span>
+            <span><strong>Image Priority:</strong> DAM override → Vagaro image → Subcategory fallback.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-golden">&#8226;</span>
             <span><strong>Demo Mode</strong> shows curated demo photos instead of real service photos - great for new services or staging.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-ocean-mist">&#8226;</span>
-            <span>Images cascade: Service image overrides Subcategory image, which overrides Category image.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-sage">&#8226;</span>
-            <span>Vagaro sync status shows whether the service is linked to your Vagaro account for booking.</span>
           </li>
         </ul>
       </motion.div>

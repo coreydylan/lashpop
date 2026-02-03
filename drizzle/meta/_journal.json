@@ -148,6 +148,34 @@
       "when": 1769634454314,
       "tag": "0020_youthful_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1770086235693,
+      "tag": "0021_high_lightspeed",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1770088311502,
+      "tag": "0022_majestic_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1770090096703,
+      "tag": "0023_clean_garia",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1770090508614,
+      "tag": "0024_add_vagaro_image_url",
+      "breakpoints": true
     }
   ]
 }

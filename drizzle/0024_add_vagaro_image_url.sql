@@ -1,0 +1,1 @@
+ALTER TABLE "services" ADD COLUMN "vagaro_image_url" text;

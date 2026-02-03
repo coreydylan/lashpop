@@ -12,6 +12,7 @@ export const services = pgTable("services", {
   vagaroWidgetUrl: text("vagaro_widget_url"), // DEPRECATED: Use vagaroServiceCode instead
   vagaroServiceCode: text("vagaro_service_code"), // 5-char code from Vagaro widget URL (e.g., "6XoR0")
   vagaroData: jsonb("vagaro_data").$type<any>(), // Store full Vagaro response for reference
+  vagaroImageUrl: text("vagaro_image_url"), // Original image from Vagaro sync
 
   // Local enrichment fields (not in Vagaro)
   categoryId: uuid("category_id")

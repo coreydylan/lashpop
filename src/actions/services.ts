@@ -112,10 +112,10 @@ export async function getAllServices() {
       description: services.description,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
-      // Resolve image URL with fallback: service.imageUrl -> serviceKeyImage -> subcategoryKeyImage
+      // Resolve image URL with priority: DAM override -> Vagaro image -> Subcategory fallback
       imageUrl: sql<string | null>`COALESCE(
-        ${services.imageUrl},
         ${serviceKeyImage.filePath},
+        ${services.vagaroImageUrl},
         ${subcategoryKeyImage.filePath}
       )`,
       color: services.color,
@@ -150,6 +150,10 @@ export async function getAllServices() {
 export async function getAllServicesAdmin() {
   const db = getDb()
 
+  // Create aliases for assets table to join
+  const serviceKeyImage = alias(assets, "service_key_image")
+  const subcategoryKeyImage = alias(assets, "subcategory_key_image")
+
   const allServices = await db
     .select({
       id: services.id,
@@ -160,6 +164,7 @@ export async function getAllServicesAdmin() {
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
       imageUrl: services.imageUrl,
+      vagaroImageUrl: services.vagaroImageUrl,
       color: services.color,
       displayOrder: services.displayOrder,
       categoryId: services.categoryId,
@@ -168,9 +173,11 @@ export async function getAllServicesAdmin() {
       subcategoryId: services.subcategoryId,
       subcategoryName: serviceSubcategories.name,
       subcategorySlug: serviceSubcategories.slug,
+      subcategoryKeyImagePath: subcategoryKeyImage.filePath,
       vagaroWidgetUrl: services.vagaroWidgetUrl,
       vagaroServiceCode: services.vagaroServiceCode,
       keyImageAssetId: services.keyImageAssetId,
+      keyImagePath: serviceKeyImage.filePath,
       useDemoPhotos: services.useDemoPhotos,
       isActive: services.isActive,
       vagaroServiceId: services.vagaroServiceId,
@@ -179,9 +186,32 @@ export async function getAllServicesAdmin() {
     .from(services)
     .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))
     .leftJoin(serviceSubcategories, eq(services.subcategoryId, serviceSubcategories.id))
+    .leftJoin(serviceKeyImage, eq(services.keyImageAssetId, serviceKeyImage.id))
+    .leftJoin(subcategoryKeyImage, eq(serviceSubcategories.keyImageAssetId, subcategoryKeyImage.id))
     .orderBy(asc(services.displayOrder))
 
-  return allServices
+  // Compute imageSource for each service
+  return allServices.map(service => {
+    let imageSource: 'dam' | 'vagaro' | 'subcategory' | 'none' = 'none'
+    let resolvedImageUrl: string | null = null
+
+    if (service.keyImageAssetId && service.keyImagePath) {
+      imageSource = 'dam'
+      resolvedImageUrl = service.keyImagePath
+    } else if (service.vagaroImageUrl) {
+      imageSource = 'vagaro'
+      resolvedImageUrl = service.vagaroImageUrl
+    } else if (service.subcategoryKeyImagePath) {
+      imageSource = 'subcategory'
+      resolvedImageUrl = service.subcategoryKeyImagePath
+    }
+
+    return {
+      ...service,
+      imageSource,
+      resolvedImageUrl
+    }
+  })
 }
 
 // Update service key image and demo settings
@@ -467,4 +497,20 @@ export async function getServiceCategoriesForLanding() {
     .orderBy(asc(serviceCategories.displayOrder))
 
   return categories
+}
+
+// Reset service to use Vagaro image (removes DAM override)
+export async function resetServiceToVagaroImage(serviceId: string) {
+  const db = getDb()
+
+  await db
+    .update(services)
+    .set({
+      keyImageAssetId: null,
+      imageUrl: null,
+      updatedAt: new Date()
+    })
+    .where(eq(services.id, serviceId))
+
+  return { success: true }
 }
