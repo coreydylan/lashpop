@@ -176,19 +176,8 @@ export function MapSection() {
 
   return (
     <section ref={sectionRef} id="find-us" className="relative bg-ivory">
-      {/* Section Header - Above Map */}
-      <div className="text-center py-8 md:py-12">
-        <h2
-          className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-          style={{ color: '#ac4d3c' }}
-        >
-          Find Us
-        </h2>
-        <div className="w-24 h-px bg-terracotta/30 mx-auto" />
-      </div>
-
       {/* Map Container - Full viewport height on mobile, fixed on desktop */}
-      <div className="relative w-full h-[calc(100dvh-120px)] md:h-[600px]">
+      <div className="relative w-full h-[100dvh] md:h-[600px]">
         <div ref={mapContainer} className="w-full h-full" />
 
         {/* Loading state */}
