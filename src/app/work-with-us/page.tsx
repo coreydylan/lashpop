@@ -635,7 +635,7 @@ export default function WorkWithUsPage() {
                             <div className="bg-gradient-to-br from-cream/50 to-peach/20 rounded-xl p-4">
                               <h4 className="font-display font-medium text-sm mb-3 text-charcoal">How to Join</h4>
                               <div className="flex flex-col gap-2">
-                                {['Apply below', 'Meet the team', 'Skills check', 'Welcome!'].map((step, i) => (
+                                {['Apply', 'Coffee Date', 'Skills Check', 'Welcome'].map((step, i) => (
                                   <div key={step} className="flex items-center gap-2">
                                     <span className="w-5 h-5 rounded-full bg-rust/10 flex items-center justify-center text-[10px] font-medium" style={{ color: '#cc947f' }}>
                                       {i + 1}
@@ -811,7 +811,7 @@ export default function WorkWithUsPage() {
                   <div className="lg:hidden bg-gradient-to-br from-cream/50 to-peach/20 rounded-2xl p-5 mb-8">
                     <h4 className="font-display font-medium mb-4 text-charcoal">How to Join</h4>
                     <div className="flex flex-col gap-3">
-                      {['Apply below', 'Meet the team', 'Skills check', 'Welcome!'].map((step, i) => (
+                      {['Apply', 'Coffee Date', 'Skills Check', 'Welcome'].map((step, i) => (
                         <div key={step} className="flex items-center gap-3">
                           <span className="w-6 h-6 rounded-full bg-rust/10 flex items-center justify-center text-xs font-medium" style={{ color: '#cc947f' }}>
                             {i + 1}
@@ -833,7 +833,7 @@ export default function WorkWithUsPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
                     <div className="absolute bottom-4 left-4 right-4">
                       <div className="flex gap-2">
-                        {['Apply', 'Interview', 'Skills check', 'Welcome!'].map((step, i) => (
+                        {['Apply', 'Coffee Date', 'Skills Check', 'Welcome'].map((step, i) => (
                           <div key={step} className="flex-1 text-center">
                             <div className="text-lg font-display text-white/90 mb-1">0{i + 1}</div>
                             <div className="text-[10px] text-white/70">{step}</div>
