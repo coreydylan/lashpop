@@ -26,12 +26,12 @@ const CATEGORIES = [
 
 // Subcategory definitions with their parent category
 const SUBCATEGORIES = [
-  // Lashes
+  // Lashes - Order: Classic, Wet/Angel, Hybrid, Volume, Mega Volume, Enhancements
   { categorySlug: 'lashes', name: 'Classic Extensions', slug: 'classic-extensions', displayOrder: 1 },
-  { categorySlug: 'lashes', name: 'Volume Extensions', slug: 'volume-extensions', displayOrder: 2 },
-  { categorySlug: 'lashes', name: 'Mega Volume Extensions', slug: 'mega-volume-extensions', displayOrder: 3 },
-  { categorySlug: 'lashes', name: 'Hybrid Extensions', slug: 'hybrid-extensions', displayOrder: 4 },
-  { categorySlug: 'lashes', name: 'Wet/Angel Extensions', slug: 'wet-angel-extensions', displayOrder: 5 },
+  { categorySlug: 'lashes', name: 'Wet/Angel Extensions', slug: 'wet-angel-extensions', displayOrder: 2 },
+  { categorySlug: 'lashes', name: 'Hybrid Extensions', slug: 'hybrid-extensions', displayOrder: 3 },
+  { categorySlug: 'lashes', name: 'Volume Extensions', slug: 'volume-extensions', displayOrder: 4 },
+  { categorySlug: 'lashes', name: 'Mega Volume Extensions', slug: 'mega-volume-extensions', displayOrder: 5 },
   { categorySlug: 'lashes', name: 'Enhancements', slug: 'lash-enhancements', displayOrder: 6 },
 
   // Brows

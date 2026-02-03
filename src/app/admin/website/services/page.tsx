@@ -27,7 +27,9 @@ import {
   ExternalLink,
   Edit3,
   FileText,
-  Type
+  Type,
+  GripVertical,
+  ArrowUpDown
 } from 'lucide-react'
 import clsx from 'clsx'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
@@ -40,7 +42,8 @@ import {
   updateServiceSubcategoryImage,
   tagAssetWithService,
   updateServiceCategoryContent,
-  resetServiceToVagaroImage
+  resetServiceToVagaroImage,
+  updateSubcategoryDisplayOrders
 } from '@/actions/services'
 
 // Types
@@ -145,6 +148,17 @@ export default function ServicesAdminPage() {
     tagline: string
     icon: string
   } | null>(null)
+
+  // Subcategory reorder modal state
+  const [subcategoryReorder, setSubcategoryReorder] = useState<{
+    isOpen: boolean
+    categoryId: string
+    categoryName: string
+    subcategories: Subcategory[]
+  } | null>(null)
+
+  // Drag state for reordering
+  const [draggedSubcatIndex, setDraggedSubcatIndex] = useState<number | null>(null)
 
   // Fetch data
   const fetchData = useCallback(async () => {
@@ -461,6 +475,84 @@ export default function ServicesAdminPage() {
     } finally {
       setSaving(null)
     }
+  }
+
+  // Handle saving subcategory order
+  const handleSaveSubcategoryOrder = async () => {
+    if (!subcategoryReorder) return
+
+    setSaving(subcategoryReorder.categoryId)
+    try {
+      const updates = subcategoryReorder.subcategories.map((sub, index) => ({
+        subcategoryId: sub.id,
+        displayOrder: index + 1
+      }))
+
+      await updateSubcategoryDisplayOrders(updates)
+
+      // Update local state
+      setCategories(prev => prev.map(c =>
+        c.id === subcategoryReorder.categoryId
+          ? {
+              ...c,
+              subcategories: subcategoryReorder.subcategories.map((sub, index) => ({
+                ...sub,
+                displayOrder: index + 1
+              }))
+            }
+          : c
+      ))
+
+      setSubcategoryReorder(null)
+    } catch (error) {
+      console.error('Error saving subcategory order:', error)
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  // Handle drag start for subcategory reordering
+  const handleDragStart = (index: number) => {
+    setDraggedSubcatIndex(index)
+  }
+
+  // Handle drag over for subcategory reordering
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (draggedSubcatIndex === null || draggedSubcatIndex === index || !subcategoryReorder) return
+
+    const newSubcategories = [...subcategoryReorder.subcategories]
+    const draggedItem = newSubcategories[draggedSubcatIndex]
+    newSubcategories.splice(draggedSubcatIndex, 1)
+    newSubcategories.splice(index, 0, draggedItem)
+
+    setSubcategoryReorder({
+      ...subcategoryReorder,
+      subcategories: newSubcategories
+    })
+    setDraggedSubcatIndex(index)
+  }
+
+  // Handle drag end for subcategory reordering
+  const handleDragEnd = () => {
+    setDraggedSubcatIndex(null)
+  }
+
+  // Move subcategory up/down
+  const moveSubcategory = (index: number, direction: 'up' | 'down') => {
+    if (!subcategoryReorder) return
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= subcategoryReorder.subcategories.length) return
+
+    const newSubcategories = [...subcategoryReorder.subcategories]
+    const temp = newSubcategories[index]
+    newSubcategories[index] = newSubcategories[newIndex]
+    newSubcategories[newIndex] = temp
+
+    setSubcategoryReorder({
+      ...subcategoryReorder,
+      subcategories: newSubcategories
+    })
   }
 
   // Render image thumbnail with picker button for categories/subcategories
@@ -880,6 +972,24 @@ export default function ServicesAdminPage() {
                   </button>
 
                   <div className="flex items-center gap-3">
+                    {/* Reorder Subcategories Button */}
+                    {category.subcategories.length > 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSubcategoryReorder({
+                            isOpen: true,
+                            categoryId: category.id,
+                            categoryName: category.name,
+                            subcategories: [...category.subcategories].sort((a, b) => a.displayOrder - b.displayOrder)
+                          })
+                        }}
+                        className="p-2 rounded-lg hover:bg-ocean-mist/10 text-ocean-mist/60 hover:text-ocean-mist transition-colors"
+                        title="Reorder subcategories"
+                      >
+                        <ArrowUpDown className="w-4 h-4" />
+                      </button>
+                    )}
                     {/* Edit Content Button */}
                     <button
                       onClick={(e) => {
@@ -1357,6 +1467,146 @@ export default function ServicesAdminPage() {
                     <>
                       <Save className="w-4 h-4" />
                       Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Subcategory Reorder Modal */}
+      <AnimatePresence>
+        {subcategoryReorder?.isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-dune/40 backdrop-blur-sm"
+              onClick={() => setSubcategoryReorder(null)}
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-sage/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
+                    <ArrowUpDown className="w-5 h-5 text-ocean-mist" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-xl text-dune">Reorder Subcategories</h2>
+                    <p className="text-sm text-dune/60">{subcategoryReorder.categoryName}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSubcategoryReorder(null)}
+                  className="p-2 rounded-lg hover:bg-sage/10 transition-colors"
+                >
+                  <X className="w-5 h-5 text-dune/60" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <p className="text-sm text-dune/60 mb-4">
+                  Drag items or use arrows to reorder. This order will be reflected in the service browser tabs.
+                </p>
+
+                <div className="space-y-2">
+                  {subcategoryReorder.subcategories.map((subcategory, index) => (
+                    <div
+                      key={subcategory.id}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={clsx(
+                        "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-grab active:cursor-grabbing",
+                        draggedSubcatIndex === index
+                          ? "border-ocean-mist bg-ocean-mist/10 scale-[1.02] shadow-md"
+                          : "border-sage/20 bg-cream/50 hover:bg-cream"
+                      )}
+                    >
+                      {/* Drag handle */}
+                      <div className="text-sage/40">
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+
+                      {/* Order number */}
+                      <span className="w-6 h-6 rounded-full bg-ocean-mist/20 text-ocean-mist text-xs font-medium flex items-center justify-center">
+                        {index + 1}
+                      </span>
+
+                      {/* Name */}
+                      <span className="flex-1 text-sm font-medium text-dune">
+                        {subcategory.name}
+                      </span>
+
+                      {/* Up/Down buttons */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => moveSubcategory(index, 'up')}
+                          disabled={index === 0}
+                          className={clsx(
+                            "p-1 rounded transition-colors",
+                            index === 0
+                              ? "text-sage/20 cursor-not-allowed"
+                              : "text-sage hover:text-ocean-mist hover:bg-ocean-mist/10"
+                          )}
+                        >
+                          <ChevronRight className="w-4 h-4 -rotate-90" />
+                        </button>
+                        <button
+                          onClick={() => moveSubcategory(index, 'down')}
+                          disabled={index === subcategoryReorder.subcategories.length - 1}
+                          className={clsx(
+                            "p-1 rounded transition-colors",
+                            index === subcategoryReorder.subcategories.length - 1
+                              ? "text-sage/20 cursor-not-allowed"
+                              : "text-sage hover:text-ocean-mist hover:bg-ocean-mist/10"
+                          )}
+                        >
+                          <ChevronRight className="w-4 h-4 rotate-90" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-sage/10 bg-cream/30">
+                <button
+                  onClick={() => setSubcategoryReorder(null)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-dune/60 hover:text-dune hover:bg-sage/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveSubcategoryOrder}
+                  disabled={saving === subcategoryReorder.categoryId}
+                  className="btn btn-primary"
+                >
+                  {saving === subcategoryReorder.categoryId ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Order
                     </>
                   )}
                 </button>
