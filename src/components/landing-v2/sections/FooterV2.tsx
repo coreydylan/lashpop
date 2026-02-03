@@ -107,7 +107,7 @@ export function FooterV2() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="caption-bold text-charcoal mb-4">Services</h4>
+            <h4 className="font-serif text-lg text-charcoal mb-4">Services</h4>
             <ul className="space-y-3">
               <li>
                 <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
@@ -161,7 +161,7 @@ export function FooterV2() {
 
           {/* Contact Info */}
           <div>
-            <h4 className="caption-bold text-charcoal mb-4">Visit Us</h4>
+            <h4 className="font-serif text-lg text-charcoal mb-4">Visit Us</h4>
             <address className="not-italic space-y-4">
               <a
                 href="https://maps.app.goo.gl/mozm5VjGqw8qCuzL8"
@@ -214,7 +214,7 @@ export function FooterV2() {
 
           {/* Newsletter */}
           <div>
-            <h4 className="caption-bold text-charcoal mb-4">Stay Connected</h4>
+            <h4 className="font-serif text-lg text-charcoal mb-4">Stay Connected</h4>
             <p className="caption text-charcoal mb-4">
               Subscribe for exclusive offers and beauty tips
             </p>
