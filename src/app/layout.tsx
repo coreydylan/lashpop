@@ -8,6 +8,9 @@ import { getSEOSettings } from '@/actions/seo'
 import { LocalBusinessSchema, WebSiteSchema, FAQSchema, ServicesSchema, ReviewSchema } from '@/components/seo'
 import { DesignMode } from '@/components/dev/DesignMode'
 
+// Force dynamic rendering for all pages - root layout fetches SEO settings from database
+export const dynamic = 'force-dynamic'
+
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
