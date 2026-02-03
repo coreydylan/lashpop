@@ -148,24 +148,16 @@ export function getDb() {
     }
 
     // Configure postgres-js with connection pooling optimized for Supabase
+    const isServerless = process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
     clientInstance = postgres(connectionUrl, {
       prepare: false,
-      // Limit connections for Supabase pooler
-      // Vercel Edge/Serverless functions should use 1 connection max to avoid exhausting the pool
-      max: 1,
-      idle_timeout: 15, // Close idle connections after 15 seconds
-      max_lifetime: 60 * 5, // Close connections after 5 minutes
-      connect_timeout: 60, // Increased to 60s for high latency cold starts
-      keep_alive: 30, // Send keep-alive every 30s to prevent drops
+      max: isServerless ? 1 : 5, // More connections for local dev
+      idle_timeout: 20,
+      max_lifetime: 60 * 5,
+      connect_timeout: isServerless ? 30 : 15, // Longer timeout for serverless cold starts
       connection: {
         application_name: 'lashpop_app',
       },
-
-      // Supabase pooler works best with minimal connections
-      ...(process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
-        ? { max: 1 }
-        : {}
-      )
     })
     dbInstance = drizzlePostgres(clientInstance, { schema: dbSchema })
   }
