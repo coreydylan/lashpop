@@ -1,25 +1,18 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import Image from 'next/image'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
-import { getEnabledCarouselPhotos } from '@/actions/work-with-us-carousel'
 
-export function TeamCarousel() {
+interface TeamCarouselProps {
+  photos: { filePath: string }[]
+}
+
+export function TeamCarousel({ photos }: TeamCarouselProps) {
   const ref = useRef(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [photos, setPhotos] = useState<{ filePath: string }[]>([])
-  const [loading, setLoading] = useState(true)
-
-  // Fetch photos on mount
-  useEffect(() => {
-    getEnabledCarouselPhotos().then((data) => {
-      setPhotos(data)
-      setLoading(false)
-    })
-  }, [])
 
   // Initialize Embla with AutoScroll
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -48,7 +41,7 @@ export function TeamCarousel() {
   // Triple the items for seamless infinite scroll
   const displayItems = [...photos, ...photos, ...photos]
 
-  if (loading || photos.length === 0) {
+  if (photos.length === 0) {
     return null
   }
 
