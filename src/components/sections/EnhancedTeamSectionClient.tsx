@@ -737,45 +737,23 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       </div>
 
                       {/* Content Below Image */}
-                      <div className="px-4 py-4 text-center">
+                      <div className="px-4 py-3 text-center">
                         {/* Name */}
-                        <h3 className="text-lg font-serif font-light text-gray-900 mb-1">
+                        <h3 className="text-lg font-serif font-light text-gray-900 mb-0.5">
                           {displayName}
                         </h3>
 
                         {/* Separator Line */}
-                        <div className="w-12 h-px bg-terracotta/30 mx-auto mb-1" />
+                        <div className="w-12 h-px bg-terracotta/30 mx-auto mb-0.5" />
 
-                        {/* Title/Role - clickable to IG if they have one */}
-                        {member.instagram && member.instagram.trim() ? (
-                          <a
-                            href={`https://instagram.com/${member.instagram.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onTouchEnd={(e) => {
-                              e.stopPropagation()
-                              window.open(`https://instagram.com/${member.instagram!.replace('@', '')}`, '_blank')
-                            }}
-                            className="inline-flex items-center justify-center gap-1 text-xs font-sans font-light text-gray-500 hover:text-dusty-rose transition-colors"
-                          >
-                            <Instagram className="w-3 h-3" />
-                            <span>
-                              {member.name.toLowerCase().startsWith('emily')
-                                ? 'LashPop Owner'
-                                : member.type === 'employee'
-                                  ? 'LashPop Team Artist'
-                                  : member.businessName || 'Independent Artist'}
-                            </span>
-                          </a>
-                        ) : (
-                          <p className="text-xs font-sans font-light text-gray-500">
-                            {member.name.toLowerCase().startsWith('emily')
-                              ? 'LashPop Owner'
-                              : member.type === 'employee'
-                                ? 'LashPop Team Artist'
-                                : member.businessName || 'Independent Artist'}
-                          </p>
-                        )}
+                        {/* Title/Role */}
+                        <p className="text-xs font-serif font-light text-gray-500">
+                          {member.name.toLowerCase().startsWith('emily')
+                            ? 'LashPop Owner'
+                            : member.type === 'employee'
+                              ? 'LashPop Team Artist'
+                              : member.businessName || 'Independent Artist'}
+                        </p>
                       </div>
 
                       {/* Highlight Ring */}
