@@ -22,10 +22,18 @@ export const defaultServiceCategories: ServiceCategory[] = [
   {
     id: 'lashes',
     slug: 'lashes',
-    title: 'LASHES',
+    title: 'LASH EXTENSIONS',
     tagline: 'Wake up ready.',
-    description: 'From soft and natural to full and fluffy, every lash look is personalized to your eye shape, natural lashes and your preferences, so getting ready feels like a breeze (and way more fun). Choose from any style of lash extensions or a lash lift + tint.',
+    description: 'From soft and natural to full and fluffy, every lash look is personalized to your eye shape, natural lashes and your preferences, so getting ready feels like a breeze (and way more fun).',
     icon: '/lashpop-images/services/thin/lashes-icon.svg',
+  },
+  {
+    id: 'lash-lifts',
+    slug: 'lash-lifts',
+    title: 'LASH LIFTS',
+    tagline: 'Your lashes, but better.',
+    description: 'A lash lift gives your lashes a natural lifted and tinted look for effortless definition. A low-maintenance lash look that lasts 6–8 weeks.',
+    icon: '/lashpop-images/services/thin/lash-lifts-icon.png',
   },
   {
     id: 'brows',
@@ -77,6 +85,9 @@ export const defaultServiceCategories: ServiceCategory[] = [
   },
 ]
 
+// Check if icon is a PNG (needs CSS filter for coloring)
+const isPngIcon = (iconPath: string) => iconPath.endsWith('.png')
+
 // Service Card Component for Desktop
 function ServiceCard({
   category,
@@ -85,6 +96,8 @@ function ServiceCard({
   category: ServiceCategory
   onClick: () => void
 }) {
+  const needsColorFilter = isPngIcon(category.icon)
+
   return (
     <button
       onClick={onClick}
@@ -93,7 +106,7 @@ function ServiceCard({
       {/* Icon */}
       <div className="flex justify-center mb-4">
         <div className={`relative ${
-          category.slug === 'lashes' || category.slug === 'brows'
+          category.slug === 'lashes' || category.slug === 'lash-lifts' || category.slug === 'brows'
             ? 'w-20 h-10'
             : 'w-24 h-12'
         }`}>
@@ -102,6 +115,9 @@ function ServiceCard({
             alt={category.title}
             fill
             className="object-contain"
+            style={needsColorFilter ? {
+              filter: 'invert(66%) sepia(20%) saturate(600%) hue-rotate(330deg) brightness(85%) contrast(95%)',
+            } : undefined}
           />
         </div>
       </div>
@@ -236,7 +252,7 @@ function MobileSwipeableServiceCards({
           <div className="flex flex-col items-center text-center px-6 py-6 flex-1">
             {/* Icon */}
             <div className={`relative mb-4 ${
-              currentCategory.slug === 'lashes' || currentCategory.slug === 'brows'
+              currentCategory.slug === 'lashes' || currentCategory.slug === 'lash-lifts' || currentCategory.slug === 'brows'
                 ? 'w-16 h-8'
                 : 'w-20 h-10'
             }`}>
@@ -245,6 +261,9 @@ function MobileSwipeableServiceCards({
                 alt={currentCategory.title}
                 fill
                 className="object-contain"
+                style={isPngIcon(currentCategory.icon) ? {
+                  filter: 'invert(66%) sepia(20%) saturate(600%) hue-rotate(330deg) brightness(85%) contrast(95%)',
+                } : undefined}
               />
             </div>
 
@@ -426,7 +445,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
           <div className="w-24 h-px bg-terracotta/30 mx-auto" />
         </div>
 
-        {/* Services Grid - 4 on top, 3 centered on bottom */}
+        {/* Services Grid - 4 on top, 4 on bottom */}
         <div className="space-y-8">
           {/* Top row - 4 items */}
           <div className="grid grid-cols-4 gap-6">
@@ -438,15 +457,14 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
               />
             ))}
           </div>
-          {/* Bottom row - 3 items centered */}
-          <div className="flex justify-center gap-6">
+          {/* Bottom row - 4 items */}
+          <div className="grid grid-cols-4 gap-6">
             {serviceCategories.slice(4).map((category, index) => (
-              <div key={category.id || `cat-bottom-${index}`} className="w-[calc(25%-1.125rem)]">
-                <ServiceCard
-                  category={category}
-                  onClick={() => handleCategoryClick(category.slug)}
-                />
-              </div>
+              <ServiceCard
+                key={category.id || `cat-bottom-${index}`}
+                category={category}
+                onClick={() => handleCategoryClick(category.slug)}
+              />
             ))}
           </div>
         </div>

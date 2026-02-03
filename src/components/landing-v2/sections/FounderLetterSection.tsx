@@ -70,7 +70,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                   ))}
 
                   <img
-                    src="/lashpop-images/emily-signature.webp"
+                    src="/lashpop-images/emily-signature-2.png"
                     alt="Xo, Emily"
                     className="h-16 w-auto"
                   />
@@ -128,7 +128,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               ))}
 
               <img
-                src="/lashpop-images/emily-signature.webp"
+                src="/lashpop-images/emily-signature-2.png"
                 alt="Xo, Emily"
                 className="h-14 w-auto"
               />

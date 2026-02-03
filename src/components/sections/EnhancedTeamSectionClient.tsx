@@ -577,8 +577,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         {/* Section Header */}
         <div className="text-center mb-12 px-4 pt-12 md:pt-16">
           <h2
-            className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-6"
-            style={{ color: '#cc947f' }}
+            className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-6 text-charcoal"
           >
             Find Your Stylist
           </h2>
