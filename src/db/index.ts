@@ -1,7 +1,6 @@
 import { config } from "dotenv"
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
-import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import postgres, { type Sql } from "postgres"
+import postgres from "postgres"
 
 // Auth schemas (BetterAuth)
 import { user } from "./schema/auth_user"
@@ -63,27 +62,23 @@ import { businessLocations } from "./schema/business_locations"
 import { formResponses } from "./schema/form_responses"
 import { transactions } from "./schema/transactions"
 
-// Environment setup - match whh-portal pattern exactly
-const nodeEnv = process.env.NODE_ENV ?? "development"
-const isProduction = nodeEnv === "production"
+// Load from .env.local first, fall back to .env
+config({ path: ".env.local" })
+config({ path: ".env" })
 
-if (!isProduction) {
-  config({ path: ".env.local" })
-  config({ path: ".env" })
-}
+const databaseUrl = process.env.DATABASE_URL
 
-const APPLICATION_NAME = "lashpop_app"
-
-// Schema definition
 const dbSchema = {
   // Auth tables
   user,
   session,
   verification,
+
   // Profile tables
   profiles,
   vagaroSyncMappings,
   friendBookingRequests,
+
   // Local tables
   customers,
   teamMembers,
@@ -113,6 +108,7 @@ const dbSchema = {
   quizLashStyle,
   quizResultSettings,
   workWithUsCarouselPhotos,
+
   // Scrollytelling CMS tables
   compositions,
   layers,
@@ -128,6 +124,7 @@ const dbSchema = {
   drawerStates,
   collisionRules,
   playbackEvents,
+
   // Vagaro mirror tables
   appointments,
   vagaroCustomers,
@@ -136,183 +133,48 @@ const dbSchema = {
   transactions
 }
 
-// Types
-type DrizzleDatabase = PostgresJsDatabase<typeof dbSchema>
-type SqlClient = Sql
+let dbInstance: ReturnType<typeof drizzlePostgres> | null = null
+let clientInstance: ReturnType<typeof postgres> | null = null
 
-interface DatabaseHandles {
-  sql: SqlClient
-  db: DrizzleDatabase
-}
-
-// Global singleton declaration (survives hot reload in development)
-declare global {
-  // eslint-disable-next-line no-var
-  var __lashpopDatabaseHandles__: DatabaseHandles | undefined
-}
-
-// Get database URL
-const databaseUrl = process.env.DATABASE_URL
-
-// Detect pooled connection
-const isPooledConnection = databaseUrl?.includes("pooler") ?? false
-
-// Pool size configuration - keep low for serverless + Supabase Session pooler
-function defaultPoolSize(): number {
-  if (isPooledConnection) {
-    // Session mode pooler has limited connections - keep client pool small
-    return isProduction ? 2 : 2
-  }
-  return isProduction ? 5 : 3
-}
-
-const connectionPoolSize = defaultPoolSize()
-
-// Retry configuration
-const retryableErrorCodes = new Set([
-  "53300", // too_many_connections
-  "57P03", // cannot_connect_now
-  "08006", // connection_failure
-  "08001", // sqlclient_unable_to_establish_sqlconnection
-  "08000", // connection_exception
-  "08003"  // connection_does_not_exist
-])
-
-const maxRetryAttempts = 3
-const baseRetryDelayMs = 200
-const maxRetryDelayMs = 2000
-
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-function isRetryableError(error: unknown): error is { code?: string; errno?: string } {
-  if (typeof error !== "object" || error === null) {
-    return false
-  }
-
-  const code = (error as { code?: string }).code
-  const errno = (error as { errno?: string }).errno
-
-  // Handle CONNECT_TIMEOUT from postgres.js client
-  if (errno === "CONNECT_TIMEOUT" || code === "CONNECT_TIMEOUT") {
-    return true
-  }
-
-  if (code === "53300") {
-    return true
-  }
-
-  return typeof code === "string" && retryableErrorCodes.has(code)
-}
-
-async function executeWithRetry<T>(operation: () => Promise<T> | T, attempt = 1): Promise<T> {
-  try {
-    return await operation()
-  } catch (error) {
-    const isRetryable = isRetryableError(error)
-    const shouldRetry = attempt < maxRetryAttempts && isRetryable
-
-    if (!shouldRetry) {
-      if (isRetryable) {
-        console.error(`[DB] Retryable error failed after ${attempt} attempts:`, error)
-      }
-      throw error
-    }
-
-    const backoff = Math.min(baseRetryDelayMs * 2 ** (attempt - 1), maxRetryDelayMs)
-    console.warn(`[DB] Retrying operation (attempt ${attempt + 1}/${maxRetryAttempts}) after ${backoff}ms:`,
-      error instanceof Error ? error.message : error)
-    await delay(backoff)
-    return executeWithRetry(operation, attempt + 1)
-  }
-}
-
-function createSqlClient(url: string): SqlClient {
-  // Connection settings - match whh-portal exactly
-  const connectTimeout = isProduction ? 30 : 10
-  const idleTimeout = isProduction ? 60 : 20
-  const maxLifetime = 60 * 30 // 30 minutes
-  const statementTimeout = 30000 // 30 seconds
-
-  const client = postgres(url, {
-    prepare: false,
-    connect_timeout: connectTimeout,
-    idle_timeout: idleTimeout,
-    max_lifetime: maxLifetime,
-    max: connectionPoolSize,
-    ssl: "require",
-    connection: {
-      application_name: APPLICATION_NAME,
-      statement_timeout: statementTimeout
-    },
-    fetch_types: false,
-    onnotice: () => {}
-  })
-
-  return client
-}
-
-function createHandles(): DatabaseHandles {
+export function getDb() {
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is not set")
   }
-
-  const sql = createSqlClient(databaseUrl)
-  const db = drizzlePostgres(sql, { schema: dbSchema })
-
-  const connectionMode = isPooledConnection ? "Pooler" : "Direct"
-  console.log(
-    "[DB] Connection initialized:",
-    connectionMode,
-    `env=${nodeEnv}`,
-    `pool_max=${connectionPoolSize}`,
-    `connect_timeout=${isProduction ? 30 : 10}s`,
-    `statement_timeout=30s`
-  )
-
-  return { sql, db }
-}
-
-// Eager initialization at module load - match whh-portal pattern
-const globalScope = globalThis as typeof globalThis & { __lashpopDatabaseHandles__?: DatabaseHandles }
-
-// Only initialize if DATABASE_URL is available (skip during build)
-if (databaseUrl) {
-  globalScope.__lashpopDatabaseHandles__ ??= createHandles()
-}
-
-// Get handles (creates if needed)
-function getHandles(): DatabaseHandles {
-  if (!globalScope.__lashpopDatabaseHandles__) {
-    if (!databaseUrl) {
-      throw new Error("DATABASE_URL is not set")
+  if (!dbInstance || !clientInstance) {
+    // Add pgbouncer parameter for Supabase pooler if not present
+    let connectionUrl = databaseUrl
+    if (databaseUrl.includes('pooler.supabase.com') && !databaseUrl.includes('pgbouncer=true')) {
+      connectionUrl = databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'pgbouncer=true'
     }
-    globalScope.__lashpopDatabaseHandles__ = createHandles()
+
+    // Configure postgres-js with connection pooling optimized for Supabase
+    const isServerless = process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
+    clientInstance = postgres(connectionUrl, {
+      prepare: false,
+      max: isServerless ? 1 : 5, // More connections for local dev
+      idle_timeout: 20,
+      max_lifetime: 60 * 5,
+      connect_timeout: isServerless ? 30 : 15, // Longer timeout for serverless cold starts
+      connection: {
+        application_name: 'lashpop_app',
+      },
+    })
+    dbInstance = drizzlePostgres(clientInstance, { schema: dbSchema })
   }
-  return globalScope.__lashpopDatabaseHandles__
-}
-
-// Main exports - match whh-portal pattern
-export function getDb(): DrizzleDatabase {
-  return getHandles().db
-}
-
-export function getSql(): SqlClient {
-  return getHandles().sql
-}
-
-export async function runWithDbRetry<T>(operation: (database: DrizzleDatabase) => Promise<T> | T): Promise<T> {
-  return executeWithRetry(() => operation(getHandles().db))
+  return dbInstance
 }
 
 // Export cleanup function for graceful shutdown
-export async function closeDb(): Promise<void> {
-  if (globalScope.__lashpopDatabaseHandles__) {
-    await globalScope.__lashpopDatabaseHandles__.sql.end()
-    globalScope.__lashpopDatabaseHandles__ = undefined
+export async function closeDb() {
+  if (clientInstance) {
+    await clientInstance.end()
+    clientInstance = null
+    dbInstance = null
   }
 }
+
+// NOTE: Do not export an eagerly-initialized `db` instance here.
+// Use getDb() for lazy initialization to avoid build errors when DATABASE_URL isn't set.
 
 // Re-export schema tables for convenience
 export {
@@ -376,6 +238,3 @@ export {
   formResponses,
   transactions
 }
-
-// Export types
-export type { DrizzleDatabase as Database, SqlClient as DatabaseSqlClient }
