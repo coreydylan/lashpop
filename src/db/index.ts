@@ -243,7 +243,7 @@ function createSqlClient(url: string): SqlClient {
     ssl: "require",
     connection: {
       application_name: APPLICATION_NAME,
-      statement_timeout: String(statementTimeout) // Must be string for postgres
+      statement_timeout: statementTimeout
     },
     fetch_types: false,
     onnotice: () => {}
