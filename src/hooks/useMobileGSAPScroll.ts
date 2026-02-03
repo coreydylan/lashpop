@@ -45,8 +45,8 @@ const getDefaultSectionConfigs = (): Record<string, SectionSnapConfig> => {
     // Higher anchorOffset = section appears lower on viewport (snaps higher up from bottom)
     'welcome': { threshold: 0.6, anchorOffset: vh * 0.25 },
 
-    // Founder letter: position for comfortable reading
-    'founder': { threshold: 0.7, anchorOffset: vh * 0.10 },
+    // Founder letter: disabled snap so user can scroll freely
+    'founder': { threshold: 0.7, anchorOffset: vh * 0.10, disableSnap: true },
 
     // Team: disable snap so user can freely scroll through team cards
     'team': { threshold: 0.7, anchorOffset: vh * 0.03, disableSnap: true },

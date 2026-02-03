@@ -82,12 +82,12 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
 
   return (
     <>
-      <section ref={ref} id="gallery" className="relative py-12 overflow-hidden bg-ivory">
+      <section ref={ref} id="gallery" className="relative py-12 md:py-20 overflow-hidden bg-ivory">
         {/* Section Header */}
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: '#ac4d3c' }}
+            style={{ color: '#cc947f' }}
           >
             Gallery
           </h2>

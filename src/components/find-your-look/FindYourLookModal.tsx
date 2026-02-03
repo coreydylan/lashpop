@@ -3,7 +3,20 @@
 import React, { useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, X, ArrowRight } from 'lucide-react';
+import { ChevronLeft, X, ArrowRight, AlertCircle } from 'lucide-react';
+
+import { useQuizAlgorithm } from './useQuizAlgorithm';
+import { PhotoComparisonRound } from './PhotoComparisonRound';
+import {
+  type LashStyle,
+  type QuizPhoto,
+  type Q1Answer,
+  type Q2Answer,
+  LASH_STYLE_DETAILS,
+  RESULT_IMAGES,
+  QUIZ_CONFIG,
+} from './types';
+import { getQuizPhotosForQuiz } from '@/actions/quiz-photos';
 
 // Animation variants
 const backdropVariants = {
@@ -25,198 +38,15 @@ const modalVariantsMobile = {
   exit: { opacity: 0, y: '100%' },
 };
 
-// Quiz Question Images (Q3) - Photos from Emily for the Find Your Look quiz
-// Optimized versions (resized to 800px, converted to JPEG) for fast loading
-const Q3_IMAGES = {
-  lashLift: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/lash-lift-q3.jpg',
-  classic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/classic-q3.jpg',
-  hybrid: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/hybrid-q3.jpg',
-  wet: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945191194-ahfs4b-IMG_3859.jpeg',
-  volume: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945191750-burzjk-FullSizeRender_VSCO.jpeg',
-} as const;
-
-// Q4 Follow-up images (2 options each for paths that need refinement)
-// Optimized versions for fast loading
-const Q4_IMAGES = {
-  // For Classic path (B) - choose between Classic or Hybrid
-  classicOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/q4-classic1.jpg',
-  classicOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/q4-classic2.jpg',
-  // For Hybrid/Wet path (C) - choose between Hybrid or Wet/Angel
-  hybridOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/q4-hybrid1.jpg',
-  hybridOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945191512-d4g84r-IMG_5272_VSCO.jpeg',
-  // For Volume path (D) - choose between Volume or Hybrid
-  volumeOption1: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/1768945192028-4c4kyh-IMG_3927.jpeg',
-  volumeOption2: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/q4-classic2.jpg',
-} as const;
-
-// Quiz Result Images - Photos from Emily for results pages
-// Optimized versions for fast loading
-const RESULT_IMAGES = {
-  lashLift: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-lashlift.jpg',
-  classic: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-classic.jpg',
-  hybrid: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-hybrid.jpg',
-  wetAngel: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-wetangel.jpg',
-  volume: 'https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-volume.jpg',
-} as const;
-
-// Collect all quiz images for preloading
-const ALL_QUIZ_IMAGES = [
-  ...Object.values(Q3_IMAGES),
-  ...Object.values(Q4_IMAGES),
-  ...Object.values(RESULT_IMAGES),
-];
-
-// Preload quiz images using native browser preloading
-function preloadQuizImages() {
-  ALL_QUIZ_IMAGES.forEach((src) => {
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'image';
-    link.href = src;
-    // Check if already preloaded to avoid duplicates
-    if (!document.querySelector(`link[href="${src}"]`)) {
-      document.head.appendChild(link);
-    }
-  });
-}
-
 // Blur placeholder for smooth image loading - neutral warm tone matching brand
-const BLUR_DATA_URL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAcI/8QAIhAAAQMEAgIDAAAAAAAAAAAAAQIDBAUGEQASIQcxQVFh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAaEQACAwEBAAAAAAAAAAAAAAABAgADESEE/9oADAMBAAIRAxEAPwC08j0+mVqm0eo02owZkCpR0TYr8d5LjT7TgCkLQoHCkqBBBHBBHJJFj8fUiDT+P7cZp0GOxAbpkJLLLLSUNttBhGkJSAAlKR4AAAHjnOc0xWzGvBFy6mf/2Q==';
+const BLUR_DATA_URL = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAcI/8QAIhAAAQMEAgIDAAAAAAAAAAAAAQIDBAUGEQASIQcxQVFh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAaEQACAwEBAAAAAAAAAAAAAAABAgADESEE/9oADAMBAAIRAxEAPwC08j0+mVqm0eo02owZkCpR0TYr8d5LjT7TgCkLQoHCkqBBBHBBHJJFj8fUiDT+P7cZp0GOxAbpkJLLLSUNttBhGkJSAAlKR4AAAHjnOc0xWzGvBFy6mf/2Q==';
 
-// Quiz step type - 0 = intro, 1-4 = questions, 5 = results
-type QuizStep = 0 | 1 | 2 | 3 | 4 | 5;
-
-// Q1 Answer: Beauty routine
-type Q1Answer = 'A' | 'B' | 'C' | 'D';
-
-// Q2 Answer: Lash look feel
-type Q2Answer = 'A' | 'B' | 'C' | 'D';
-
-// Q3 Answer: Photo selection (4 lash types)
-type Q3Answer = 'A' | 'B' | 'C' | 'D';
-
-// Q4 Answer: Follow-up photo selection (only for B, C, D paths)
-type Q4Answer = '1' | '2';
-
-// Lash style result
-type LashStyleResult = 'lashLift' | 'classic' | 'wetAngel' | 'hybrid' | 'volume';
-
-interface QuizAnswers {
-  q1?: Q1Answer;
-  q2?: Q2Answer;
-  q3?: Q3Answer;
-  q4?: Q4Answer;
-}
-
-// Lash style details for results
-const lashStyleDetails: Record<LashStyleResult, {
-  name: string;
-  displayName: string;
-  recommendedService: string;
-  description: string;
-  bestFor: string[];
-  duration?: string;
-  bookingLabel: string;
-}> = {
-  lashLift: {
-    name: 'Lash Lift',
-    displayName: 'Lash Lift + Tint',
-    recommendedService: 'Lash Lift + Tint',
-    description: 'You love a natural, low-maintenance look that still makes your eyes pop, and a lash lift is perfect for that. A lash lift gently curls and lifts your own natural lashes from the base, making them look longer, darker, and more defined without adding extensions. Easier mornings with minimal maintenance. Pair it with a tint and you\'ll look like you\'re wearing mascara.',
-    bestFor: [
-      'You want the lowest maintenance option',
-      'You want very natural results',
-      'You want a fresh makeup-free look',
-    ],
-    duration: 'Results last about 6–8 weeks',
-    bookingLabel: 'Book Lash Lift + Tint',
-  },
-  classic: {
-    name: 'Classic',
-    displayName: 'Classic Lashes',
-    recommendedService: 'Classic Lashes',
-    description: 'You love a natural, polished look that still makes your eyes stand out. Classic lashes add length and definition by placing one extension on each natural lash, while keeping things soft and effortless. That "better than mascara" but without the mascara look.',
-    bestFor: [
-      'First-time extension clients',
-      'Natural makeup lovers',
-      'Everyday wear',
-    ],
-    bookingLabel: 'Book Classic Full Set',
-  },
-  wetAngel: {
-    name: 'Wet / Angel',
-    displayName: 'Wet / Angel Lashes',
-    recommendedService: 'Wet / Angel Set',
-    description: 'You love a modern, clean, model-off-duty look. Wet and Angel sets give you glossy, defined lashes that feel natural but elevated. Wet / angel lashes create soft, wispy spikes that give your eyes a bright, fresh look. Perfect if you want definition and texture while still keeping things light and airy.',
-    bestFor: [
-      'You like a soft but noticeable lash look',
-      'You love a fresh, dewy, "model off duty" vibe',
-      'You love a minimal makeup routine',
-    ],
-    bookingLabel: 'Book Wet / Angel Set',
-  },
-  hybrid: {
-    name: 'Hybrid',
-    displayName: 'Hybrid Lashes',
-    recommendedService: 'Hybrid Lashes',
-    description: 'You like your lashes a little fuller and more textured but still a soft and everyday look. Hybrid lashes blend classic and volume techniques for the perfect balance of texture and fullness.',
-    bestFor: [
-      'You want more fullness than classic, but not too dramatic',
-      'You love a fluffy, textured finish',
-      'You want a look that transitions easily from day to night',
-    ],
-    bookingLabel: 'Book Hybrid Full Set',
-  },
-  volume: {
-    name: 'Volume',
-    displayName: 'Volume Lashes',
-    recommendedService: 'Volume Lashes',
-    description: 'You love bold, fluffy lashes that make a statement. Volume sets give you maximum fullness and drama for a high-impact look.',
-    bestFor: [
-      'Full glam fans',
-      'Sparse natural lashes',
-      'You love a dark and full lash line',
-    ],
-    bookingLabel: 'Book Volume Full Set',
-  },
-};
-
-// Determine result based on Q3 and Q4 answers
-function calculateResult(answers: QuizAnswers): LashStyleResult {
-  const { q3, q4 } = answers;
-
-  // If Q3 = A (Lash Lift), go directly to Lash Lift result
-  if (q3 === 'A') {
-    return 'lashLift';
-  }
-
-  // If Q3 = B (Classic path) - Classic or Hybrid
-  if (q3 === 'B') {
-    if (q4 === '1') return 'classic';
-    if (q4 === '2') return 'hybrid';
-    return 'classic'; // fallback
-  }
-
-  // If Q3 = C (Hybrid/Wet path) - Hybrid or Wet/Angel
-  if (q3 === 'C') {
-    if (q4 === '1') return 'hybrid';
-    if (q4 === '2') return 'wetAngel';
-    return 'hybrid'; // fallback
-  }
-
-  // If Q3 = D (Volume path) - Volume or Hybrid
-  if (q3 === 'D') {
-    if (q4 === '1') return 'volume';
-    if (q4 === '2') return 'hybrid';
-    return 'volume'; // fallback
-  }
-
-  return 'classic'; // fallback
-}
+// Quiz step type - 0 = intro, 1 = q1, 2 = q2, 3 = photo comparison, 4 = results
+type QuizStep = 0 | 1 | 2 | 3 | 4;
 
 // Export types for external use
-export type { LashStyleResult, QuizStep };
-export { lashStyleDetails, RESULT_IMAGES };
+export type { LashStyle, QuizStep };
+export { LASH_STYLE_DETAILS as lashStyleDetails, RESULT_IMAGES };
 
 // Ref handle for controlling quiz from parent
 export interface FindYourLookContentRef {
@@ -231,184 +61,222 @@ interface FindYourLookContentProps {
   onBook: (lashStyle: string) => void;
   onClose: () => void;
   isMobile: boolean;
-  disableAutoBook?: boolean; // When true, don't auto-call onBook on results
-  onStepChange?: (step: QuizStep, headerTitle: string) => void; // Notify parent of step changes
+  disableAutoBook?: boolean;
+  onStepChange?: (step: QuizStep, headerTitle: string) => void;
 }
 
 export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLookContentProps>(
   function FindYourLookContent({ onBook, onClose, isMobile, disableAutoBook, onStepChange }, ref) {
-  const [step, setStep] = useState<QuizStep>(0);
-  const [answers, setAnswers] = useState<QuizAnswers>({});
-  const [result, setResult] = useState<LashStyleResult | null>(null);
+    const [step, setStep] = useState<QuizStep>(0);
+    const [photosByStyle, setPhotosByStyle] = useState<Record<LashStyle, QuizPhoto[]>>({
+      classic: [],
+      hybrid: [],
+      wetAngel: [],
+      volume: [],
+    });
+    const [photosLoading, setPhotosLoading] = useState(false);
+    const [photosError, setPhotosError] = useState<string | null>(null);
 
-  const handleBack = useCallback(() => {
-    if (step > 0) {
-      if (step === 5) {
-        if (answers.q3 === 'A') {
-          setStep(3);
-        } else {
-          setStep(4);
+    // Quiz algorithm hook
+    const quiz = useQuizAlgorithm({ photosByStyle });
+
+    // Fetch photos when quiz starts
+    useEffect(() => {
+      const loadPhotos = async () => {
+        setPhotosLoading(true);
+        setPhotosError(null);
+        try {
+          const photos = await getQuizPhotosForQuiz();
+          setPhotosByStyle(photos as Record<LashStyle, QuizPhoto[]>);
+        } catch (error) {
+          console.error('Error loading quiz photos:', error);
+          setPhotosError('Failed to load quiz photos');
+        } finally {
+          setPhotosLoading(false);
         }
-        setResult(null);
-      } else {
+      };
+
+      loadPhotos();
+    }, []);
+
+    const handleBack = useCallback(() => {
+      if (step === 4) {
+        // From results, go back to last photo comparison
+        setStep(3);
+        quiz.reset();
+      } else if (step > 0) {
         setStep((s) => (s - 1) as QuizStep);
+        if (step === 3) {
+          // Reset quiz algorithm when going back from photo comparison
+          quiz.reset();
+        }
       }
-    }
-  }, [step, answers.q3]);
+    }, [step, quiz]);
 
-  const getTotalSteps = () => {
-    if (step === 0) return 4;
-    if (answers.q3 === 'A') return 4;
-    return 5;
-  };
+    const getTotalSteps = () => {
+      // Intro (0) + Q1 (1) + Q2 (2) + Photo rounds (3) + Result (4)
+      // We show steps 1-4 in the indicator, with step 3 being "dynamic"
+      return 4;
+    };
 
-  const getCurrentStepNumber = () => {
-    if (step === 0) return 0;
-    if (step === 5) return getTotalSteps();
-    return step;
-  };
+    const getCurrentStepNumber = () => {
+      if (step === 0) return 0;
+      if (step === 4) return 4;
+      if (step === 3) {
+        // Photo comparison phase - show round progress
+        return 3;
+      }
+      return step;
+    };
 
-  const getHeaderTitle = useCallback(() => {
-    if (step === 0) return 'Find Your Look';
-    if (step === 5) return 'Your Result';
-    const totalSteps = answers.q3 === 'A' ? 4 : 5;
-    return `Question ${step} of ${totalSteps}`;
-  }, [step, answers.q3]);
+    const getHeaderTitle = useCallback(() => {
+      if (step === 0) return 'Find Your Look';
+      if (step === 4) return 'Your Result';
+      if (step === 3) {
+        return `Comparing Looks`;
+      }
+      return `Question ${step} of 2`;
+    }, [step]);
 
-  // Notify parent of step changes for header updates
-  useEffect(() => {
-    if (onStepChange) {
-      onStepChange(step, getHeaderTitle());
-    }
-  }, [step, getHeaderTitle, onStepChange]);
+    // Notify parent of step changes for header updates
+    useEffect(() => {
+      if (onStepChange) {
+        onStepChange(step, getHeaderTitle());
+      }
+    }, [step, getHeaderTitle, onStepChange]);
 
-  // Expose methods to parent via ref
-  useImperativeHandle(ref, () => ({
-    handleBack,
-    canGoBack: step > 0,
-    currentStep: step,
-    getHeaderTitle,
-  }), [handleBack, step, getHeaderTitle]);
+    // Expose methods to parent via ref
+    useImperativeHandle(ref, () => ({
+      handleBack,
+      canGoBack: step > 0,
+      currentStep: step,
+      getHeaderTitle,
+    }), [handleBack, step, getHeaderTitle]);
 
-  const handleStartQuiz = () => {
-    setStep(1);
-  };
+    const handleStartQuiz = () => {
+      setStep(1);
+    };
 
-  const handleQ1Answer = (answer: Q1Answer) => {
-    setAnswers((prev) => ({ ...prev, q1: answer }));
-    setStep(2);
-  };
+    const handleQ1Answer = (answer: Q1Answer) => {
+      quiz.applyQ1Answer(answer);
+      setStep(2);
+    };
 
-  const handleQ2Answer = (answer: Q2Answer) => {
-    setAnswers((prev) => ({ ...prev, q2: answer }));
-    setStep(3);
-  };
+    const handleQ2Answer = (answer: Q2Answer) => {
+      quiz.applyQ2Answer(answer);
+      // Start photo comparison
+      quiz.startPhotoComparison();
+      setStep(3);
+    };
 
-  const handleQ3Answer = (answer: Q3Answer) => {
-    const newAnswers = { ...answers, q3: answer };
-    setAnswers(newAnswers);
+    const handlePhotoSelect = (selectedStyle: LashStyle) => {
+      quiz.selectPhoto(selectedStyle);
 
-    if (answer === 'A') {
-      setResult('lashLift');
-      setStep(5);
-    } else {
-      setStep(4);
-    }
-  };
+      // Check if quiz is complete
+      if (quiz.result) {
+        setStep(4);
+      }
+    };
 
-  const handleQ4Answer = (answer: Q4Answer) => {
-    const newAnswers = { ...answers, q4: answer };
-    setAnswers(newAnswers);
-    const calculatedResult = calculateResult(newAnswers);
-    setResult(calculatedResult);
-    setStep(5);
-  };
+    // Watch for quiz result
+    useEffect(() => {
+      if (quiz.result && step === 3) {
+        setStep(4);
+      }
+    }, [quiz.result, step]);
 
-  const handleBookNow = () => {
-    if (result) {
-      onBook(result);
-    }
-  };
+    const handleBookNow = () => {
+      if (quiz.result) {
+        onBook(quiz.result);
+      }
+    };
 
-  return (
-    <div
-      className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-y-auto"
-      style={isMobile ? {
-        WebkitOverflowScrolling: 'touch',
-        overscrollBehavior: 'contain'
-      } : undefined}
-    >
-      {/* Step indicator dots (hidden on intro) */}
-      {step > 0 && (
-        <div className="flex justify-center gap-2 md:gap-2.5 mb-4 md:mb-5 shrink-0">
-          {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((s) => (
-            <div
-              key={s}
-              className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
-                s === getCurrentStepNumber()
-                  ? 'bg-terracotta w-5 md:w-6'
-                  : s < getCurrentStepNumber()
-                  ? 'bg-terracotta/40 w-1.5 md:w-2'
-                  : 'bg-cream w-1.5 md:w-2'
-              }`}
-            />
-          ))}
-        </div>
-      )}
+    // Check if quiz has enough photos
+    const hasEnoughPhotos = Object.values(photosByStyle).every(
+      photos => photos.filter(p => p.isEnabled !== false).length >= 2
+    );
 
-      {/* Step content */}
-      <motion.div
-        className="flex-1 min-h-0 overflow-hidden"
-        layout
-        transition={{
-          layout: {
-            type: 'spring',
-            stiffness: 180,
-            damping: 28,
-            mass: 1,
-          }
-        }}
+    return (
+      <div
+        className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-y-auto"
+        style={isMobile ? {
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain'
+        } : undefined}
       >
-        <AnimatePresence mode="wait">
-          {step === 0 && (
-            <IntroScreen key="intro" onStart={handleStartQuiz} />
-          )}
+        {/* Step indicator dots (hidden on intro) */}
+        {step > 0 && (
+          <div className="flex justify-center gap-2 md:gap-2.5 mb-4 md:mb-5 shrink-0">
+            {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((s) => (
+              <div
+                key={s}
+                className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
+                  s === getCurrentStepNumber()
+                    ? 'bg-terracotta w-5 md:w-6'
+                    : s < getCurrentStepNumber()
+                    ? 'bg-terracotta/40 w-1.5 md:w-2'
+                    : 'bg-cream w-1.5 md:w-2'
+                }`}
+              />
+            ))}
+          </div>
+        )}
 
-          {step === 1 && (
-            <Q1BeautyRoutine key="q1" onAnswer={handleQ1Answer} />
-          )}
+        {/* Step content */}
+        <motion.div
+          className="flex-1 min-h-0 overflow-hidden"
+          layout
+          transition={{
+            layout: {
+              type: 'spring',
+              stiffness: 180,
+              damping: 28,
+              mass: 1,
+            }
+          }}
+        >
+          <AnimatePresence mode="wait">
+            {step === 0 && (
+              <IntroScreen
+                key="intro"
+                onStart={handleStartQuiz}
+                loading={photosLoading}
+                error={photosError}
+                hasEnoughPhotos={hasEnoughPhotos}
+              />
+            )}
 
-          {step === 2 && (
-            <Q2LashLookFeel key="q2" onAnswer={handleQ2Answer} />
-          )}
+            {step === 1 && (
+              <Q1BeautyRoutine key="q1" onAnswer={handleQ1Answer} />
+            )}
 
-          {step === 3 && (
-            <Q3PhotoSelection key="q3" onAnswer={handleQ3Answer} images={Q3_IMAGES} />
-          )}
+            {step === 2 && (
+              <Q2LashLookFeel key="q2" onAnswer={handleQ2Answer} />
+            )}
 
-          {step === 4 && (
-            <Q4FollowUp
-              key="q4"
-              q3Answer={answers.q3!}
-              onAnswer={handleQ4Answer}
-              images={Q4_IMAGES}
-            />
-          )}
+            {step === 3 && quiz.currentPair && (
+              <PhotoComparisonRound
+                key={`comparison-${quiz.roundNumber}`}
+                pair={quiz.currentPair}
+                onSelect={handlePhotoSelect}
+              />
+            )}
 
-          {step === 5 && result && (
-            <ResultScreen
-              key="result"
-              result={lashStyleDetails[result]}
-              resultImage={RESULT_IMAGES[result]}
-              onBook={handleBookNow}
-              isMobile={isMobile}
-            />
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </div>
-  );
-});
+            {step === 4 && quiz.result && (
+              <ResultScreen
+                key="result"
+                result={LASH_STYLE_DETAILS[quiz.result]}
+                resultImage={RESULT_IMAGES[quiz.result]}
+                onBook={handleBookNow}
+                isMobile={isMobile}
+              />
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    );
+  }
+);
 
 interface FindYourLookModalProps {
   isOpen: boolean;
@@ -418,19 +286,42 @@ interface FindYourLookModalProps {
 
 export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModalProps) {
   const [step, setStep] = useState<QuizStep>(0);
-  const [answers, setAnswers] = useState<QuizAnswers>({});
-  const [result, setResult] = useState<LashStyleResult | null>(null);
+  const [photosByStyle, setPhotosByStyle] = useState<Record<LashStyle, QuizPhoto[]>>({
+    classic: [],
+    hybrid: [],
+    wetAngel: [],
+    volume: [],
+  });
+  const [photosLoading, setPhotosLoading] = useState(false);
+  const [photosError, setPhotosError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Reset quiz state when modal opens (ensures fresh start each time)
-  // Also preload all quiz images for instant loading
+  // Quiz algorithm hook
+  const quiz = useQuizAlgorithm({ photosByStyle });
+
+  // Reset quiz state when modal opens
+  // Also fetch photos
   useEffect(() => {
     if (isOpen) {
       setStep(0);
-      setAnswers({});
-      setResult(null);
-      // Preload all quiz images when modal opens
-      preloadQuizImages();
+      quiz.reset();
+      setPhotosError(null);
+
+      // Fetch photos
+      const loadPhotos = async () => {
+        setPhotosLoading(true);
+        try {
+          const photos = await getQuizPhotosForQuiz();
+          setPhotosByStyle(photos as Record<LashStyle, QuizPhoto[]>);
+        } catch (error) {
+          console.error('Error loading quiz photos:', error);
+          setPhotosError('Failed to load quiz photos');
+        } finally {
+          setPhotosLoading(false);
+        }
+      };
+
+      loadPhotos();
     }
   }, [isOpen]);
 
@@ -453,103 +344,77 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
   }, [isOpen]);
 
   const handleBack = useCallback(() => {
-    if (step > 0) {
-      // If on results, go back to Q4 or Q3 depending on path
-      if (step === 5) {
-        if (answers.q3 === 'A') {
-          setStep(3); // Go back to Q3 for lash lift path (no Q4)
-        } else {
-          setStep(4); // Go back to Q4 for B, C, D paths
-        }
-        setResult(null);
-      } else {
-        setStep((s) => (s - 1) as QuizStep);
-      }
+    if (step === 4) {
+      setStep(3);
+      // Don't reset quiz - keep scores, but need to restart photo comparison
+    } else if (step === 3) {
+      setStep(2);
+      quiz.reset();
+    } else if (step > 0) {
+      setStep((s) => (s - 1) as QuizStep);
     }
-  }, [step, answers.q3]);
+  }, [step, quiz]);
 
   const handleClose = useCallback(() => {
     setStep(0);
-    setAnswers({});
-    setResult(null);
+    quiz.reset();
     onClose();
-  }, [onClose]);
+  }, [onClose, quiz]);
 
   const handleStartQuiz = () => {
     setStep(1);
   };
 
   const handleQ1Answer = (answer: Q1Answer) => {
-    setAnswers((prev) => ({ ...prev, q1: answer }));
+    quiz.applyQ1Answer(answer);
     setStep(2);
   };
 
   const handleQ2Answer = (answer: Q2Answer) => {
-    setAnswers((prev) => ({ ...prev, q2: answer }));
+    quiz.applyQ2Answer(answer);
+    quiz.startPhotoComparison();
     setStep(3);
   };
 
-  const handleQ3Answer = (answer: Q3Answer) => {
-    const newAnswers = { ...answers, q3: answer };
-    setAnswers(newAnswers);
+  const handlePhotoSelect = (selectedStyle: LashStyle) => {
+    quiz.selectPhoto(selectedStyle);
+  };
 
-    // Only Lash Lift (A) goes directly to results
-    if (answer === 'A') {
-      setResult('lashLift');
-      setStep(5);
-    } else {
-      // B, C, D all go to Q4 for follow-up refinement
+  // Watch for quiz result
+  useEffect(() => {
+    if (quiz.result && step === 3) {
       setStep(4);
     }
-  };
-
-  const handleQ4Answer = (answer: Q4Answer) => {
-    const newAnswers = { ...answers, q4: answer };
-    setAnswers(newAnswers);
-    const calculatedResult = calculateResult(newAnswers);
-    setResult(calculatedResult);
-    setStep(5);
-  };
+  }, [quiz.result, step]);
 
   // Auto-open services modal when quiz completes with results
   useEffect(() => {
-    if (step === 5 && result && onBook) {
-      // Small delay to let the results page render briefly before transitioning
+    if (step === 4 && quiz.result && onBook) {
       const timer = setTimeout(() => {
-        onBook(result);
+        onBook(quiz.result!);
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [step, result, onBook]);
+  }, [step, quiz.result, onBook]);
 
   const handleBookNow = () => {
-    if (result && onBook) {
-      onBook(result);
-      // Note: handleQuizResult in ServiceBrowserContext already closes the quiz
-      // and opens the services modal, so we don't call handleClose() here
+    if (quiz.result && onBook) {
+      onBook(quiz.result);
     }
   };
 
-  // Calculate total steps based on path (4 for lash lift, 5 for others with Q4)
-  const getTotalSteps = () => {
-    if (step === 0) return 4; // Before starting
-    if (answers.q3 === 'A') return 4; // Lash lift path: no Q4
-    return 5; // B, C, D paths: includes Q4 for refinement
-  };
-
-  // Get current step number for display (excluding intro)
-  const getCurrentStepNumber = () => {
-    if (step === 0) return 0;
-    if (step === 5) return getTotalSteps();
-    return step;
-  };
-
-  // Get title for mobile header
+  // Get mobile title
   const getMobileTitle = () => {
     if (step === 0) return 'Find Your Look';
-    if (step === 5) return 'Your Result';
-    return `Question ${step} of ${getTotalSteps()}`;
+    if (step === 4) return 'Your Result';
+    if (step === 3) return `Round ${quiz.roundNumber}`;
+    return `Question ${step} of 2`;
   };
+
+  // Check if quiz has enough photos
+  const hasEnoughPhotos = Object.values(photosByStyle).every(
+    photos => photos.filter(p => p.isEnabled !== false).length >= 2
+  );
 
   return (
     <AnimatePresence>
@@ -588,10 +453,9 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 paddingBottom: 'env(safe-area-inset-bottom)'
               } : undefined}
             >
-              {/* Mobile Header - Full-width with safe area support */}
+              {/* Mobile Header */}
               {isMobile ? (
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 shrink-0 bg-rose-mist/95 backdrop-blur-sm">
-                  {/* Left side - Back button or spacer */}
                   <div className="w-10 flex justify-start">
                     {step > 0 && (
                       <motion.button
@@ -607,12 +471,10 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                     )}
                   </div>
 
-                  {/* Center - Title */}
                   <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
                     {getMobileTitle()}
                   </h2>
 
-                  {/* Right side - Close button */}
                   <div className="w-10 flex justify-end">
                     <button
                       onClick={handleClose}
@@ -624,7 +486,6 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                   </div>
                 </div>
               ) : (
-                /* Desktop floating buttons */
                 <>
                   <button
                     onClick={handleClose}
@@ -657,14 +518,14 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 {/* Step indicator dots (hidden on intro) */}
                 {step > 0 && (
                   <div className="flex justify-center gap-2 md:gap-2.5 mb-4 md:mb-5 shrink-0">
-                    {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((s) => (
+                    {[1, 2, 3, 4].map((s) => (
                       <div
                         key={s}
                         className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
-                          s === getCurrentStepNumber()
-                            ? 'bg-terracotta w-5 md:w-6'
-                            : s < getCurrentStepNumber()
-                            ? 'bg-terracotta/40 w-1.5 md:w-2'
+                          (s <= 2 && step >= s) || (s === 3 && step === 3) || (s === 4 && step === 4)
+                            ? s === step || (s === 3 && step === 3)
+                              ? 'bg-terracotta w-5 md:w-6'
+                              : 'bg-terracotta/40 w-1.5 md:w-2'
                             : 'bg-cream w-1.5 md:w-2'
                         }`}
                       />
@@ -676,7 +537,13 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 <div className="flex-1 min-h-0 overflow-hidden">
                   <AnimatePresence mode="wait">
                     {step === 0 && (
-                      <IntroScreen key="intro" onStart={handleStartQuiz} />
+                      <IntroScreen
+                        key="intro"
+                        onStart={handleStartQuiz}
+                        loading={photosLoading}
+                        error={photosError}
+                        hasEnoughPhotos={hasEnoughPhotos}
+                      />
                     )}
 
                     {step === 1 && (
@@ -687,24 +554,19 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                       <Q2LashLookFeel key="q2" onAnswer={handleQ2Answer} />
                     )}
 
-                    {step === 3 && (
-                      <Q3PhotoSelection key="q3" onAnswer={handleQ3Answer} images={Q3_IMAGES} />
-                    )}
-
-                    {step === 4 && (
-                      <Q4FollowUp
-                        key="q4"
-                        q3Answer={answers.q3!}
-                        onAnswer={handleQ4Answer}
-                        images={Q4_IMAGES}
+                    {step === 3 && quiz.currentPair && (
+                      <PhotoComparisonRound
+                        key={`comparison-${quiz.roundNumber}`}
+                        pair={quiz.currentPair}
+                        onSelect={handlePhotoSelect}
                       />
                     )}
 
-                    {step === 5 && result && (
+                    {step === 4 && quiz.result && (
                       <ResultScreen
                         key="result"
-                        result={lashStyleDetails[result]}
-                        resultImage={RESULT_IMAGES[result]}
+                        result={LASH_STYLE_DETAILS[quiz.result]}
+                        resultImage={RESULT_IMAGES[quiz.result]}
                         onBook={handleBookNow}
                         isMobile={isMobile}
                       />
@@ -721,7 +583,19 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
 }
 
 // Intro Screen
-function IntroScreen({ onStart }: { onStart: () => void }) {
+function IntroScreen({
+  onStart,
+  loading,
+  error,
+  hasEnoughPhotos
+}: {
+  onStart: () => void;
+  loading?: boolean;
+  error?: string | null;
+  hasEnoughPhotos?: boolean;
+}) {
+  const canStart = !loading && !error && hasEnoughPhotos !== false;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -734,17 +608,42 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
         Find Your Perfect Lash Look
       </h1>
       <p className="text-charcoal text-base md:text-lg leading-relaxed mb-8 max-w-sm">
-        Answer a few quick questions and we&apos;ll match you with the lash style that fits your vibe, lifestyle, and natural lashes.
+        Answer a few quick questions and compare photo pairs to discover the lash style that fits your vibe.
       </p>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-terracotta/10 border border-terracotta/30 flex items-start gap-3 max-w-sm">
+          <AlertCircle className="w-5 h-5 text-terracotta flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-charcoal">{error}</p>
+        </div>
+      )}
+
+      {!hasEnoughPhotos && !loading && !error && (
+        <div className="mb-6 p-4 rounded-xl bg-golden/10 border border-golden/30 flex items-start gap-3 max-w-sm">
+          <AlertCircle className="w-5 h-5 text-golden flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-charcoal">Quiz photos are being set up. Please try again later.</p>
+        </div>
+      )}
+
       <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        whileHover={canStart ? { scale: 1.02 } : {}}
+        whileTap={canStart ? { scale: 0.98 } : {}}
         onClick={onStart}
+        disabled={!canStart}
         className="flex items-center gap-2 px-8 py-4 rounded-full border-2 border-white text-white font-medium
-                   hover:bg-white/10 transition-all duration-200"
+                   hover:bg-white/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Start Quiz
-        <ArrowRight className="w-4 h-4" />
+        {loading ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            Loading...
+          </>
+        ) : (
+          <>
+            Start Quiz
+            <ArrowRight className="w-4 h-4" />
+          </>
+        )}
       </motion.button>
     </motion.div>
   );
@@ -812,7 +711,7 @@ function Q2LashLookFeel({ onAnswer }: { onAnswer: (answer: Q2Answer) => void }) 
     >
       <div className="text-center mb-8">
         <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
-          When it comes to your lashes, you love a look that feels…
+          When it comes to your lashes, you love a look that feels...
         </h2>
       </div>
 
@@ -836,143 +735,9 @@ function Q2LashLookFeel({ onAnswer }: { onAnswer: (answer: Q2Answer) => void }) 
   );
 }
 
-// Q3: Photo Selection (4 main lash types in 2x2 grid)
-interface Q3Props {
-  onAnswer: (answer: Q3Answer) => void;
-  images: typeof Q3_IMAGES;
-}
-
-function Q3PhotoSelection({ onAnswer, images }: Q3Props) {
-  // Show 4 main lash types in a 2x2 grid for clear visibility
-  const options: { value: Q3Answer; image: string; label: string }[] = [
-    { value: 'A', image: images.lashLift, label: 'Lash Lift' },
-    { value: 'B', image: images.classic, label: 'Classic' },
-    { value: 'C', image: images.hybrid, label: 'Hybrid' },
-    { value: 'D', image: images.wet, label: 'Wet / Angel' },
-  ];
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-      className="h-full flex flex-col"
-    >
-      <div className="text-center mb-4 shrink-0">
-        <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal mb-2">
-          Tap the look you&apos;re most drawn to
-        </h2>
-        <p className="text-xs md:text-sm text-charcoal leading-relaxed max-w-xs mx-auto">
-          We&apos;ll customize everything to you at your appointment.
-        </p>
-      </div>
-
-      {/* 2x2 grid with large, visible images */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 flex-1 min-h-0">
-        {options.map((option) => (
-          <motion.button
-            key={option.value}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onAnswer(option.value)}
-            className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md"
-          >
-            <Image
-              src={option.image}
-              alt={option.label}
-              fill
-              priority
-              sizes="(max-width: 768px) 45vw, 200px"
-              placeholder="blur"
-              blurDataURL={BLUR_DATA_URL}
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          </motion.button>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
-// Q4: Follow-up Photo Selection (2 images based on Q3)
-interface Q4Props {
-  q3Answer: Q3Answer;
-  onAnswer: (answer: Q4Answer) => void;
-  images: typeof Q4_IMAGES;
-}
-
-function Q4FollowUp({ q3Answer, onAnswer, images }: Q4Props) {
-  // Get the two image options based on Q3 answer
-  const getOptions = (): { value: Q4Answer; image: string; label: string }[] => {
-    switch (q3Answer) {
-      case 'B': // Classic path - Classic or Hybrid
-        return [
-          { value: '1', image: images.classicOption1, label: 'Classic' },
-          { value: '2', image: images.classicOption2, label: 'Hybrid' },
-        ];
-      case 'C': // Hybrid/Wet path - Hybrid or Wet/Angel
-        return [
-          { value: '1', image: images.hybridOption1, label: 'Hybrid' },
-          { value: '2', image: images.hybridOption2, label: 'Wet / Angel' },
-        ];
-      case 'D': // Volume path - Volume or Hybrid
-        return [
-          { value: '1', image: images.volumeOption1, label: 'Volume' },
-          { value: '2', image: images.volumeOption2, label: 'Hybrid' },
-        ];
-      default:
-        return [];
-    }
-  };
-
-  const options = getOptions();
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
-      className="h-full flex flex-col"
-    >
-      <div className="text-center mb-4 shrink-0">
-        <h2 className="text-lg md:text-xl font-display font-medium text-charcoal mb-2">
-          Which style feels most like you?
-        </h2>
-        <p className="text-xs md:text-sm text-charcoal leading-relaxed max-w-sm mx-auto">
-          Length, curl and color can all be customized by your lash stylist to fit your preference.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 md:gap-4 flex-1">
-        {options.map((option) => (
-          <motion.button
-            key={option.value}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => onAnswer(option.value)}
-            className="relative aspect-[3/4] rounded-xl overflow-hidden group"
-          >
-            <Image
-              src={option.image}
-              alt={option.label}
-              fill
-              sizes="(max-width: 768px) 45vw, 200px"
-              placeholder="blur"
-              blurDataURL={BLUR_DATA_URL}
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          </motion.button>
-        ))}
-      </div>
-    </motion.div>
-  );
-}
-
 // Result Screen
 interface ResultScreenProps {
-  result: typeof lashStyleDetails[LashStyleResult];
+  result: typeof LASH_STYLE_DETAILS[LashStyle];
   resultImage: string;
   onBook: () => void;
   isMobile?: boolean;
@@ -1029,11 +794,6 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
           </ul>
         </div>
 
-        {/* Duration (for Lash Lift only) */}
-        {result.duration && (
-          <p className="text-charcoal text-sm italic mb-3 md:mb-4 shrink-0">{result.duration}</p>
-        )}
-
         {/* Customization Note */}
         <div className="bg-cream/60 rounded-xl p-3 md:p-4 mb-3 md:mb-4 shrink-0">
           <p className="text-charcoal text-xs md:text-sm leading-relaxed">
@@ -1055,7 +815,6 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
               {result.bookingLabel} →
             </motion.button>
 
-            {/* Universal Note */}
             <p className="text-xs text-charcoal/70 text-center leading-relaxed shrink-0">
               Every set is customized to your eye shape and natural lashes. Your artist will fine-tune your look during your appointment so you leave loving your lashes.
             </p>

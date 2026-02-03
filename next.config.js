@@ -13,6 +13,11 @@ const nextConfig = {
         hostname: 'lashpop-dam-assets.s3.us-west-2.amazonaws.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'eabdc1907c2f84bfe65a-cfc7a6bba052cea084198d4ff3e0b991.ssl.cf2.rackcdn.com',
+        pathname: '/**',
+      },
     ],
   },
   experimental: {

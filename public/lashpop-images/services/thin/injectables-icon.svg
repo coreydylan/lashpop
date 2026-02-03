@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50" width="200" height="100">
+  <g fill="none" stroke="#cc947f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Syringe body outline -->
+    <rect x="25" y="18" width="50" height="14" rx="3"/>
+    <!-- Plunger -->
+    <rect x="13" y="21" width="14" height="8" rx="2"/>
+    <rect x="7" y="19" width="8" height="12" rx="2"/>
+    <!-- Needle hub -->
+    <path d="M75 22 L80 22 Q83 22 83 25 Q83 28 80 28 L75 28"/>
+    <!-- Needle -->
+    <line x1="82" y1="25" x2="95" y2="25"/>
+    <!-- Measurement lines inside barrel -->
+    <line x1="40" y1="20" x2="40" y2="24"/>
+    <line x1="50" y1="20" x2="50" y2="24"/>
+    <line x1="60" y1="20" x2="60" y2="24"/>
+    <!-- Finger grips -->
+    <line x1="30" y1="15" x2="30" y2="35"/>
+    <line x1="35" y1="16" x2="35" y2="34"/>
+  </g>
+  <!-- Droplet at tip - this one stays filled -->
+  <ellipse cx="97" cy="28" rx="1.5" ry="2" fill="#cc947f"/>
+</svg>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 // LashPop Brand Colors
 const BRAND_COLORS = [
@@ -21,28 +21,43 @@ const BRAND_COLORS = [
   { name: 'Black', hex: '#000000' },
 ]
 
-const FONT_WEIGHTS = [
-  { label: 'Light', value: '300' },
-  { label: 'Reg', value: '400' },
-  { label: 'Med', value: '500' },
-  { label: 'Semi', value: '600' },
-  { label: 'Bold', value: '700' },
-]
+const FONT_WEIGHTS = ['300', '400', '500', '600', '700', '800']
+const FONT_SIZES = ['12', '14', '16', '18', '20', '24', '28', '32', '36', '40', '48', '56', '64']
+const TEXT_ALIGNS = ['left', 'center', 'right']
+const LINE_HEIGHTS = ['1', '1.2', '1.4', '1.5', '1.6', '1.8', '2']
+const LETTER_SPACINGS = ['-1', '0', '0.5', '1', '2', '3']
+const PADDINGS = ['0', '4', '8', '12', '16', '24', '32', '48']
+const BORDER_RADII = ['0', '4', '8', '12', '16', '24', '999']
 
-type StyleMode = 'color' | 'bg' | 'border'
+type ColorMode = 'color' | 'bg' | 'border'
+type ToolbarSection = 'colors' | 'weight' | 'size' | 'align' | 'spacing' | 'padding' | 'radius'
 
 export function DesignMode() {
   const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null)
   const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null)
-  const [styleMode, setStyleMode] = useState<StyleMode>('color')
-  const [isMinimized, setIsMinimized] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [colorMode, setColorMode] = useState<ColorMode>('color')
+  const [activeSection, setActiveSection] = useState<ToolbarSection>('colors')
+  const [isHidden, setIsHidden] = useState(false)
+  const [selectMode, setSelectMode] = useState(true) // Toggle for element selection
   const [currentStyles, setCurrentStyles] = useState({
     color: '',
     backgroundColor: '',
     borderColor: '',
     fontWeight: '',
     fontStyle: '',
+    textAlign: '',
+    textTransform: '',
+    fontSize: '',
+    letterSpacing: '',
+    lineHeight: '',
+    padding: '',
+    borderRadius: '',
   })
+
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const touchStartPos = useRef({ x: 0, y: 0 })
+  const isSwiping = useRef(false)
 
   // Read current styles when element is selected
   useEffect(() => {
@@ -54,32 +69,70 @@ export function DesignMode() {
         borderColor: computed.borderColor,
         fontWeight: computed.fontWeight,
         fontStyle: computed.fontStyle,
+        textAlign: computed.textAlign,
+        textTransform: computed.textTransform,
+        fontSize: computed.fontSize,
+        letterSpacing: computed.letterSpacing,
+        lineHeight: computed.lineHeight,
+        padding: computed.padding,
+        borderRadius: computed.borderRadius,
       })
     }
   }, [selectedElement])
 
-  // Handle element click (works for both mouse and touch)
-  const handleClick = useCallback((e: MouseEvent | TouchEvent) => {
-    if (isMinimized) return
+  // Track touch start for swipe detection
+  const handleTouchStart = useCallback((e: TouchEvent) => {
+    if (!selectMode) return
+    touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    isSwiping.current = false
+  }, [selectMode])
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!selectMode) return
+    const dx = Math.abs(e.touches[0].clientX - touchStartPos.current.x)
+    const dy = Math.abs(e.touches[0].clientY - touchStartPos.current.y)
+    if (dx > 10 || dy > 10) {
+      isSwiping.current = true
+    }
+  }, [selectMode])
+
+  // Handle element click (desktop)
+  const handleClick = useCallback((e: MouseEvent) => {
+    if (isHidden || !selectMode) return
+    const target = e.target as HTMLElement
+    if (target.closest('.design-mode-panel')) return
+    // Don't interfere with interactive elements when selectMode is on
+    if (target.closest('button, a, input, select, textarea')) {
+      // Still select the element but don't prevent default
+      setSelectedElement(target)
+      return
+    }
+    e.preventDefault()
+    setSelectedElement(target)
+    setHoveredElement(null)
+  }, [isHidden, selectMode])
+
+  // Handle touch end - only select if not swiping (mobile)
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    if (isHidden || !selectMode) return
+    if (isSwiping.current) return // Don't select if user was swiping
 
     const target = e.target as HTMLElement
     if (target.closest('.design-mode-panel')) return
 
-    e.preventDefault()
-    e.stopPropagation()
     setSelectedElement(target)
     setHoveredElement(null)
-  }, [isMinimized])
+  }, [isHidden, selectMode])
 
-  // Handle hover (mouse only)
+  // Handle hover
   const handleMouseOver = useCallback((e: MouseEvent) => {
-    if (isMinimized) return
+    if (isHidden || !selectMode) return
     const target = e.target as HTMLElement
     if (target.closest('.design-mode-panel')) return
     if (!selectedElement) {
       setHoveredElement(target)
     }
-  }, [isMinimized, selectedElement])
+  }, [selectedElement, isHidden, selectMode])
 
   const handleMouseOut = useCallback(() => {
     setHoveredElement(null)
@@ -97,30 +150,27 @@ export function DesignMode() {
   useEffect(() => {
     document.addEventListener('mouseover', handleMouseOver)
     document.addEventListener('mouseout', handleMouseOut)
-    document.addEventListener('click', handleClick, true)
-    document.addEventListener('touchend', handleClick, true)
+    document.addEventListener('click', handleClick)
+    document.addEventListener('touchstart', handleTouchStart, { passive: true })
+    document.addEventListener('touchmove', handleTouchMove, { passive: true })
+    document.addEventListener('touchend', handleTouchEnd)
     document.addEventListener('keydown', handleKeyDown)
 
     return () => {
       document.removeEventListener('mouseover', handleMouseOver)
       document.removeEventListener('mouseout', handleMouseOut)
-      document.removeEventListener('click', handleClick, true)
-      document.removeEventListener('touchend', handleClick, true)
+      document.removeEventListener('click', handleClick)
+      document.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [handleMouseOver, handleMouseOut, handleClick, handleKeyDown])
+  }, [handleMouseOver, handleMouseOut, handleClick, handleTouchStart, handleTouchMove, handleTouchEnd, handleKeyDown])
 
-  // Deselect
-  const deselect = () => {
-    setSelectedElement(null)
-    setHoveredElement(null)
-  }
-
-  // Apply color
+  // Apply styles
   const applyColor = (hex: string) => {
     if (!selectedElement) return
-
-    switch (styleMode) {
+    switch (colorMode) {
       case 'color':
         selectedElement.style.color = hex
         break
@@ -135,8 +185,17 @@ export function DesignMode() {
         }
         break
     }
+    updateCurrentStyles()
+  }
 
-    // Update current styles
+  const applyStyle = (property: string, value: string) => {
+    if (!selectedElement) return
+    ;(selectedElement.style as any)[property] = value
+    updateCurrentStyles()
+  }
+
+  const updateCurrentStyles = () => {
+    if (!selectedElement) return
     const computed = window.getComputedStyle(selectedElement)
     setCurrentStyles({
       color: computed.color,
@@ -144,93 +203,73 @@ export function DesignMode() {
       borderColor: computed.borderColor,
       fontWeight: computed.fontWeight,
       fontStyle: computed.fontStyle,
+      textAlign: computed.textAlign,
+      textTransform: computed.textTransform,
+      fontSize: computed.fontSize,
+      letterSpacing: computed.letterSpacing,
+      lineHeight: computed.lineHeight,
+      padding: computed.padding,
+      borderRadius: computed.borderRadius,
     })
   }
 
-  // Apply font weight
-  const applyFontWeight = (weight: string) => {
-    if (!selectedElement) return
-    selectedElement.style.fontWeight = weight
-    setCurrentStyles(prev => ({ ...prev, fontWeight: weight }))
-  }
-
-  // Toggle italic
-  const toggleItalic = () => {
-    if (!selectedElement) return
-    const isItalic = currentStyles.fontStyle === 'italic'
-    selectedElement.style.fontStyle = isItalic ? 'normal' : 'italic'
-    setCurrentStyles(prev => ({ ...prev, fontStyle: isItalic ? 'normal' : 'italic' }))
-  }
-
-  // Reset styles
   const resetStyles = () => {
     if (!selectedElement) return
-    selectedElement.style.color = ''
-    selectedElement.style.backgroundColor = ''
-    selectedElement.style.borderColor = ''
-    selectedElement.style.borderWidth = ''
-    selectedElement.style.borderStyle = ''
-    selectedElement.style.fontWeight = ''
-    selectedElement.style.fontStyle = ''
-
-    const computed = window.getComputedStyle(selectedElement)
-    setCurrentStyles({
-      color: computed.color,
-      backgroundColor: computed.backgroundColor,
-      borderColor: computed.borderColor,
-      fontWeight: computed.fontWeight,
-      fontStyle: computed.fontStyle,
-    })
+    selectedElement.removeAttribute('style')
+    updateCurrentStyles()
   }
 
-  // Copy styles to clipboard
   const copyStyles = () => {
     if (!selectedElement) return
-
-    const styles: string[] = []
-    if (selectedElement.style.color) styles.push(`color: ${selectedElement.style.color};`)
-    if (selectedElement.style.backgroundColor) styles.push(`background-color: ${selectedElement.style.backgroundColor};`)
-    if (selectedElement.style.borderColor) styles.push(`border-color: ${selectedElement.style.borderColor};`)
-    if (selectedElement.style.fontWeight) styles.push(`font-weight: ${selectedElement.style.fontWeight};`)
-    if (selectedElement.style.fontStyle) styles.push(`font-style: ${selectedElement.style.fontStyle};`)
-
-    if (styles.length > 0) {
-      navigator.clipboard.writeText(styles.join('\n'))
+    const style = selectedElement.getAttribute('style')
+    if (style) {
+      navigator.clipboard.writeText(style)
     }
   }
 
-  // Get element info
   const getElementInfo = (el: HTMLElement) => {
     let info = el.tagName.toLowerCase()
     if (el.className && typeof el.className === 'string') {
-      const classes = el.className.split(' ').slice(0, 2).join('.')
+      const classes = el.className.split(' ').filter(c => c && !c.includes('[')).slice(0, 1).join('.')
       if (classes) info += `.${classes}`
     }
-    return info.slice(0, 30)
+    return info.slice(0, 20)
   }
 
-  // Minimized state - just show a small button
-  if (isMinimized) {
+  const sections: { key: ToolbarSection; label: string }[] = [
+    { key: 'colors', label: '🎨' },
+    { key: 'weight', label: 'W' },
+    { key: 'size', label: 'Sz' },
+    { key: 'align', label: '≡' },
+    { key: 'spacing', label: 'Sp' },
+    { key: 'padding', label: 'Pd' },
+    { key: 'radius', label: '◐' },
+  ]
+
+  const disabled = !selectedElement
+
+  // Completely hidden - just show a tiny button
+  if (isHidden) {
     return (
       <button
         className="design-mode-panel"
-        onClick={() => setIsMinimized(false)}
+        onClick={() => setIsHidden(false)}
         style={{
           position: 'fixed',
-          bottom: '20px',
-          right: '20px',
+          bottom: '10px',
+          right: '10px',
           zIndex: 99999,
-          width: '50px',
-          height: '50px',
+          width: '40px',
+          height: '40px',
           borderRadius: '50%',
           backgroundColor: '#1a1a1a',
           border: '2px solid #ac4d3c',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '24px',
+          fontSize: '18px',
         }}
       >
         🎨
@@ -274,202 +313,495 @@ export function DesignMode() {
         />
       )}
 
-      {/* Control Panel - Fixed at bottom on mobile */}
+      {/* Toolbar */}
       <div
         className="design-mode-panel"
         style={{
           position: 'fixed',
-          left: '50%',
-          bottom: '10px',
-          transform: 'translateX(-50%)',
+          left: 0,
+          right: 0,
+          bottom: 0,
           zIndex: 99999,
           backgroundColor: '#1a1a1a',
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-          width: 'calc(100vw - 20px)',
-          maxWidth: '360px',
+          borderTopLeftRadius: isExpanded ? '20px' : '0',
+          borderTopRightRadius: isExpanded ? '20px' : '0',
+          boxShadow: '0 -2px 20px rgba(0,0,0,0.4)',
           fontFamily: 'system-ui, sans-serif',
-          fontSize: '13px',
+          fontSize: '12px',
           color: '#fff',
-          overflow: 'hidden',
+          transition: 'border-radius 0.2s',
         }}
       >
-        {/* Header */}
+        {/* Drag handle to hide */}
         <div
+          onClick={() => setIsHidden(true)}
           style={{
-            padding: '10px 12px',
-            borderBottom: '1px solid #333',
+            padding: '8px',
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
           }}
         >
-          <span style={{ fontWeight: 600, color: '#e2c2b6', fontSize: '14px' }}>🎨 Design Mode</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {selectedElement && (
+          <div style={{
+            width: '40px',
+            height: '4px',
+            backgroundColor: '#555',
+            borderRadius: '2px',
+          }} />
+        </div>
+
+        {/* Compact Toolbar - Always Visible */}
+        <div style={{ padding: '0 0 8px' }}>
+          {/* Top row: Scrollable section tabs + controls */}
+          <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', marginBottom: '8px' }}>
+            {/* Select Mode Toggle */}
+            <button
+              onClick={() => setSelectMode(!selectMode)}
+              style={{
+                minWidth: '36px',
+                height: '32px',
+                borderRadius: '6px',
+                border: selectMode ? '2px solid #18f0ed' : '1px solid #444',
+                background: selectMode ? '#18f0ed' : '#333',
+                color: selectMode ? '#000' : '#666',
+                cursor: 'pointer',
+                fontSize: '14px',
+                marginRight: '6px',
+                fontWeight: 700,
+                flexShrink: 0,
+              }}
+              title={selectMode ? 'Selection ON - tap to disable' : 'Selection OFF - tap to enable'}
+            >
+              {selectMode ? '◎' : '○'}
+            </button>
+
+            {/* Scrollable section selector + color mode */}
+            <div
+              className="design-mode-scroll-container"
+              style={{
+                display: 'flex',
+                gap: '4px',
+                flex: 1,
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                scrollbarWidth: 'none',
+                touchAction: 'pan-x',
+                paddingRight: '8px',
+              }}
+            >
+              {sections.map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setActiveSection(s.key)}
+                  style={{
+                    minWidth: '36px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: activeSection === s.key ? '#ac4d3c' : '#333',
+                    color: activeSection === s.key ? '#fff' : '#888',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    flexShrink: 0,
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+
+              {/* Divider */}
+              <div style={{ width: '1px', background: '#444', margin: '4px 2px', flexShrink: 0 }} />
+
+              {/* Color mode toggle (always visible, highlighted when on colors) */}
+              {(['color', 'bg', 'border'] as ColorMode[]).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => { setColorMode(mode); setActiveSection('colors'); }}
+                  style={{
+                    minWidth: '36px',
+                    height: '32px',
+                    borderRadius: '6px',
+                    border: activeSection === 'colors' && colorMode === mode ? '2px solid #ac4d3c' : '1px solid #444',
+                    background: activeSection === 'colors' && colorMode === mode ? '#ac4d3c' : '#2a2a2a',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    flexShrink: 0,
+                  }}
+                >
+                  {mode === 'color' ? 'Txt' : mode === 'bg' ? 'BG' : 'Bdr'}
+                </button>
+              ))}
+            </div>
+
+            {/* Fixed controls on right */}
+            <div style={{ display: 'flex', gap: '4px', marginLeft: '6px', flexShrink: 0 }}>
+              {/* Element info */}
+              <span style={{
+                fontFamily: 'monospace',
+                fontSize: '9px',
+                color: selectedElement ? '#18f0ed' : selectMode ? '#555' : '#ac4d3c',
+                alignSelf: 'center',
+                maxWidth: '60px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {selectedElement ? getElementInfo(selectedElement) : selectMode ? 'tap' : 'off'}
+              </span>
+
+              {/* Deselect */}
+              {selectedElement && (
+                <button
+                  onClick={() => { setSelectedElement(null); setHoveredElement(null); }}
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: '#333',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontSize: '10px',
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+
+              {/* Expand/Collapse */}
               <button
-                onClick={deselect}
+                onClick={() => setIsExpanded(!isExpanded)}
                 style={{
-                  padding: '4px 10px',
+                  padding: '6px 8px',
                   borderRadius: '6px',
                   border: 'none',
                   background: '#333',
                   color: '#fff',
-                  fontSize: '12px',
                   cursor: 'pointer',
+                  fontSize: '10px',
                 }}
               >
-                Deselect
+                {isExpanded ? '▼' : '▲'}
               </button>
-            )}
-            <button
-              onClick={() => setIsMinimized(true)}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: 'none',
-                background: '#333',
-                color: '#fff',
-                fontSize: '12px',
-                cursor: 'pointer',
-              }}
-            >
-              Hide
-            </button>
+            </div>
           </div>
-        </div>
 
-        {/* Selected Element Info */}
-        <div style={{ padding: '8px 12px', borderBottom: '1px solid #333', background: '#222' }}>
-          <div style={{ fontFamily: 'monospace', fontSize: '12px', color: selectedElement ? '#18f0ed' : '#666' }}>
-            {selectedElement ? getElementInfo(selectedElement) : 'Tap any element to select'}
-          </div>
-        </div>
-
-        {/* Style Mode Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #333' }}>
-          {(['color', 'bg', 'border'] as StyleMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setStyleMode(mode)}
-              style={{
-                flex: 1,
-                padding: '10px',
-                border: 'none',
-                background: styleMode === mode ? '#ac4d3c' : 'transparent',
-                color: styleMode === mode ? '#fff' : '#888',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontWeight: styleMode === mode ? 600 : 400,
-              }}
-            >
-              {mode === 'bg' ? 'Background' : mode.charAt(0).toUpperCase() + mode.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Color Swatches */}
-        <div style={{ padding: '10px 12px', borderBottom: '1px solid #333' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
-            {BRAND_COLORS.map((color) => (
+          {/* Scrollable options row */}
+          <div
+            ref={scrollRef}
+            className="design-mode-scroll-container"
+            style={{
+              display: 'flex',
+              gap: '6px',
+              overflowX: 'auto',
+              padding: '0 8px 8px',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              touchAction: 'pan-x',
+              minHeight: '44px',
+            }}
+          >
+            {/* Colors */}
+            {activeSection === 'colors' && BRAND_COLORS.map((color) => (
               <button
                 key={color.hex}
                 onClick={() => applyColor(color.hex)}
                 title={color.name}
                 style={{
-                  width: '100%',
-                  aspectRatio: '1',
+                  minWidth: '36px',
+                  height: '36px',
                   borderRadius: '8px',
                   border: color.hex === '#ffffff' ? '1px solid #444' : 'none',
                   backgroundColor: color.hex,
-                  cursor: selectedElement ? 'pointer' : 'not-allowed',
-                  opacity: selectedElement ? 1 : 0.4,
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.4 : 1,
+                  flexShrink: 0,
                 }}
               />
             ))}
-          </div>
-        </div>
 
-        {/* Font Controls */}
-        <div style={{ padding: '10px 12px', borderBottom: '1px solid #333' }}>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {FONT_WEIGHTS.map((fw) => (
+            {/* Font Weight */}
+            {activeSection === 'weight' && FONT_WEIGHTS.map((w) => (
               <button
-                key={fw.value}
-                onClick={() => applyFontWeight(fw.value)}
+                key={w}
+                onClick={() => applyStyle('fontWeight', w)}
                 style={{
-                  flex: 1,
-                  padding: '8px 4px',
-                  borderRadius: '6px',
-                  border: currentStyles.fontWeight === fw.value ? '2px solid #ac4d3c' : '1px solid #444',
-                  background: currentStyles.fontWeight === fw.value ? '#ac4d3c' : '#2a2a2a',
+                  minWidth: '44px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  border: currentStyles.fontWeight === w ? '2px solid #ac4d3c' : '1px solid #444',
+                  background: currentStyles.fontWeight === w ? '#ac4d3c' : '#2a2a2a',
                   color: '#fff',
-                  cursor: selectedElement ? 'pointer' : 'not-allowed',
-                  opacity: selectedElement ? 1 : 0.4,
-                  fontSize: '11px',
-                  fontWeight: parseInt(fw.value),
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.4 : 1,
+                  fontSize: '12px',
+                  fontWeight: parseInt(w),
+                  flexShrink: 0,
                 }}
               >
-                {fw.label}
+                {w}
               </button>
             ))}
-            <button
-              onClick={toggleItalic}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '6px',
-                border: currentStyles.fontStyle === 'italic' ? '2px solid #ac4d3c' : '1px solid #444',
-                background: currentStyles.fontStyle === 'italic' ? '#ac4d3c' : '#2a2a2a',
-                color: '#fff',
-                cursor: selectedElement ? 'pointer' : 'not-allowed',
-                opacity: selectedElement ? 1 : 0.4,
-                fontSize: '12px',
-                fontStyle: 'italic',
-              }}
-            >
-              I
-            </button>
+
+            {/* Font Size */}
+            {activeSection === 'size' && FONT_SIZES.map((s) => (
+              <button
+                key={s}
+                onClick={() => applyStyle('fontSize', `${s}px`)}
+                style={{
+                  minWidth: '44px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  border: currentStyles.fontSize === `${s}px` ? '2px solid #ac4d3c' : '1px solid #444',
+                  background: currentStyles.fontSize === `${s}px` ? '#ac4d3c' : '#2a2a2a',
+                  color: '#fff',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.4 : 1,
+                  fontSize: '12px',
+                  flexShrink: 0,
+                }}
+              >
+                {s}
+              </button>
+            ))}
+
+            {/* Text Align */}
+            {activeSection === 'align' && (
+              <>
+                {TEXT_ALIGNS.map((a) => (
+                  <button
+                    key={a}
+                    onClick={() => applyStyle('textAlign', a)}
+                    style={{
+                      minWidth: '50px',
+                      height: '36px',
+                      borderRadius: '8px',
+                      border: currentStyles.textAlign?.startsWith(a) ? '2px solid #ac4d3c' : '1px solid #444',
+                      background: currentStyles.textAlign?.startsWith(a) ? '#ac4d3c' : '#2a2a2a',
+                      color: '#fff',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      opacity: disabled ? 0.4 : 1,
+                      fontSize: '11px',
+                      flexShrink: 0,
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {a}
+                  </button>
+                ))}
+                <div style={{ width: '1px', background: '#444', margin: '0 4px', flexShrink: 0 }} />
+                <button
+                  onClick={() => applyStyle('fontStyle', currentStyles.fontStyle === 'italic' ? 'normal' : 'italic')}
+                  style={{
+                    minWidth: '44px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    border: currentStyles.fontStyle === 'italic' ? '2px solid #ac4d3c' : '1px solid #444',
+                    background: currentStyles.fontStyle === 'italic' ? '#ac4d3c' : '#2a2a2a',
+                    color: '#fff',
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    opacity: disabled ? 0.4 : 1,
+                    fontSize: '12px',
+                    fontStyle: 'italic',
+                    flexShrink: 0,
+                  }}
+                >
+                  I
+                </button>
+                <button
+                  onClick={() => applyStyle('textTransform', currentStyles.textTransform === 'uppercase' ? 'none' : 'uppercase')}
+                  style={{
+                    minWidth: '44px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    border: currentStyles.textTransform === 'uppercase' ? '2px solid #ac4d3c' : '1px solid #444',
+                    background: currentStyles.textTransform === 'uppercase' ? '#ac4d3c' : '#2a2a2a',
+                    color: '#fff',
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    opacity: disabled ? 0.4 : 1,
+                    fontSize: '12px',
+                    flexShrink: 0,
+                  }}
+                >
+                  AA
+                </button>
+              </>
+            )}
+
+            {/* Letter Spacing & Line Height */}
+            {activeSection === 'spacing' && (
+              <>
+                <span style={{ color: '#666', fontSize: '10px', alignSelf: 'center', marginRight: '4px', flexShrink: 0 }}>LS:</span>
+                {LETTER_SPACINGS.map((ls) => (
+                  <button
+                    key={`ls-${ls}`}
+                    onClick={() => applyStyle('letterSpacing', `${ls}px`)}
+                    style={{
+                      minWidth: '40px',
+                      height: '36px',
+                      borderRadius: '8px',
+                      border: '1px solid #444',
+                      background: '#2a2a2a',
+                      color: '#fff',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      opacity: disabled ? 0.4 : 1,
+                      fontSize: '11px',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {ls}
+                  </button>
+                ))}
+                <div style={{ width: '1px', background: '#444', margin: '0 4px', flexShrink: 0 }} />
+                <span style={{ color: '#666', fontSize: '10px', alignSelf: 'center', marginRight: '4px', flexShrink: 0 }}>LH:</span>
+                {LINE_HEIGHTS.map((lh) => (
+                  <button
+                    key={`lh-${lh}`}
+                    onClick={() => applyStyle('lineHeight', lh)}
+                    style={{
+                      minWidth: '40px',
+                      height: '36px',
+                      borderRadius: '8px',
+                      border: '1px solid #444',
+                      background: '#2a2a2a',
+                      color: '#fff',
+                      cursor: disabled ? 'not-allowed' : 'pointer',
+                      opacity: disabled ? 0.4 : 1,
+                      fontSize: '11px',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {lh}
+                  </button>
+                ))}
+              </>
+            )}
+
+            {/* Padding */}
+            {activeSection === 'padding' && PADDINGS.map((p) => (
+              <button
+                key={p}
+                onClick={() => applyStyle('padding', p === '0' ? '0' : `${p}px`)}
+                style={{
+                  minWidth: '44px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  border: '1px solid #444',
+                  background: '#2a2a2a',
+                  color: '#fff',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.4 : 1,
+                  fontSize: '12px',
+                  flexShrink: 0,
+                }}
+              >
+                {p}
+              </button>
+            ))}
+
+            {/* Border Radius */}
+            {activeSection === 'radius' && BORDER_RADII.map((r) => (
+              <button
+                key={r}
+                onClick={() => applyStyle('borderRadius', r === '0' ? '0' : r === '999' ? '9999px' : `${r}px`)}
+                style={{
+                  minWidth: '44px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  border: '1px solid #444',
+                  background: '#2a2a2a',
+                  color: '#fff',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.4 : 1,
+                  fontSize: '11px',
+                  flexShrink: 0,
+                }}
+              >
+                {r === '999' ? 'Full' : r}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Actions */}
-        <div style={{ padding: '10px 12px', display: 'flex', gap: '8px' }}>
-          <button
-            onClick={resetStyles}
-            style={{
-              flex: 1,
-              padding: '10px',
-              borderRadius: '8px',
-              border: '1px solid #444',
-              background: '#2a2a2a',
-              color: '#fff',
-              cursor: selectedElement ? 'pointer' : 'not-allowed',
-              opacity: selectedElement ? 1 : 0.4,
-              fontSize: '13px',
-              fontWeight: 500,
-            }}
-          >
-            Reset
-          </button>
-          <button
-            onClick={copyStyles}
-            style={{
-              flex: 1,
-              padding: '10px',
-              borderRadius: '8px',
-              border: 'none',
-              background: '#ac4d3c',
-              color: '#fff',
-              cursor: selectedElement ? 'pointer' : 'not-allowed',
-              opacity: selectedElement ? 1 : 0.4,
-              fontSize: '13px',
-              fontWeight: 500,
-            }}
-          >
-            Copy CSS
-          </button>
-        </div>
+        {/* Expanded Section - Additional Controls */}
+        {isExpanded && (
+          <div style={{ borderTop: '1px solid #333', padding: '12px' }}>
+            {/* Quick Actions */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <button
+                onClick={resetStyles}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: '1px solid #444',
+                  background: '#2a2a2a',
+                  color: '#fff',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.4 : 1,
+                  fontSize: '13px',
+                }}
+              >
+                Reset All
+              </button>
+              <button
+                onClick={copyStyles}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#ac4d3c',
+                  color: '#fff',
+                  cursor: disabled ? 'not-allowed' : 'pointer',
+                  opacity: disabled ? 0.4 : 1,
+                  fontSize: '13px',
+                }}
+              >
+                Copy CSS
+              </button>
+            </div>
+
+            {/* Current Styles Preview */}
+            {selectedElement && (
+              <div style={{
+                background: '#222',
+                borderRadius: '8px',
+                padding: '10px',
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                color: '#888',
+                maxHeight: '120px',
+                overflow: 'auto',
+              }}>
+                <div style={{ color: '#18f0ed', marginBottom: '4px' }}>Applied styles:</div>
+                {selectedElement.getAttribute('style')?.split(';').filter(Boolean).map((s, i) => (
+                  <div key={i} style={{ color: '#aaa' }}>{s.trim()};</div>
+                )) || <div style={{ color: '#555' }}>No inline styles</div>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Hide scrollbar + scroll fade hint */}
+      <style>{`
+        .design-mode-panel *::-webkit-scrollbar {
+          display: none;
+        }
+        .design-mode-scroll-container {
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+        }
+        .design-mode-scroll-container::after {
+          content: '';
+          min-width: 8px;
+          flex-shrink: 0;
+        }
+      `}</style>
     </>
   )
 }

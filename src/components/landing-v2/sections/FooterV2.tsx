@@ -1,20 +1,35 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { subscribeToNewsletter } from '@/app/actions/newsletter'
 
 export function FooterV2() {
   const ref = useRef(null)
   const [email, setEmail] = useState('')
-  const [isSubscribed, setIsSubscribed] = useState(false)
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [message, setMessage] = useState('')
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (email) {
-      // Handle newsletter subscription
-      setIsSubscribed(true)
+    if (!email) return
+
+    setStatus('loading')
+    const result = await subscribeToNewsletter(email)
+
+    if (result.success) {
+      setStatus('success')
+      setMessage(result.message)
       setTimeout(() => {
         setEmail('')
-        setIsSubscribed(false)
+        setStatus('idle')
+        setMessage('')
+      }, 3000)
+    } else {
+      setStatus('error')
+      setMessage(result.message)
+      setTimeout(() => {
+        setStatus('idle')
+        setMessage('')
       }, 3000)
     }
   }
@@ -234,9 +249,9 @@ export function FooterV2() {
                   background: 'transparent',
                   border: '1px solid rgb(var(--terracotta))',
                 }}
-                disabled={isSubscribed}
+                disabled={status === 'loading' || status === 'success'}
               >
-                {isSubscribed ? 'Subscribed!' : 'Subscribe'}
+                {status === 'loading' ? 'Subscribing...' : status === 'success' ? message : status === 'error' ? message : 'Subscribe'}
               </button>
             </form>
           </div>

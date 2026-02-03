@@ -32,6 +32,14 @@ const sections = [
     stats: 'Database + DAM'
   },
   {
+    id: 'quiz',
+    label: 'Find Your Look Quiz',
+    icon: Search,
+    description: 'Manage quiz photos for each lash style (Classic, Hybrid, Wet/Angel, Volume)',
+    color: 'terracotta',
+    stats: 'Database + DAM'
+  },
+  {
     id: 'founder-letter',
     label: 'Founder Letter',
     icon: FileText,
@@ -77,6 +85,14 @@ const sections = [
     icon: Search,
     description: 'Configure meta tags, social images, and structured data settings',
     color: 'ocean-mist',
+    stats: 'Database + DAM'
+  },
+  {
+    id: 'work-with-us',
+    label: 'Work With Us Carousel',
+    icon: Users,
+    description: 'Manage the team photo carousel on the careers page',
+    color: 'dusty-rose',
     stats: 'Database + DAM'
   },
 ]

@@ -34,6 +34,8 @@ import { damUserSettings } from "./schema/dam_user_settings"
 import { damUserActions } from "./schema/dam_user_actions"
 import { websiteSettings, homepageReviews } from "./schema/website_settings"
 import { faqCategories, faqItems } from "./schema/faqs"
+import { quizPhotos, quizLashStyle, quizResultSettings } from "./schema/quiz_photos"
+import { workWithUsCarouselPhotos } from "./schema/work_with_us_carousel"
 
 // Scrollytelling CMS schemas
 import {
@@ -102,6 +104,10 @@ const dbSchema = {
   homepageReviews,
   faqCategories,
   faqItems,
+  quizPhotos,
+  quizLashStyle,
+  quizResultSettings,
+  workWithUsCarouselPhotos,
 
   // Scrollytelling CMS tables
   compositions,
@@ -214,6 +220,10 @@ export {
   homepageReviews,
   faqCategories,
   faqItems,
+  quizPhotos,
+  quizLashStyle,
+  quizResultSettings,
+  workWithUsCarouselPhotos,
   // Scrollytelling CMS
   compositions,
   layers,

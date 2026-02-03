@@ -1,0 +1,18 @@
+<?xml version="1.0" standalone="no"?>
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="200" height="100" viewBox="0 0 200 100"
+ preserveAspectRatio="xMidYMid meet">
+<g fill="none" stroke="#cc947f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Chain links -->
+  <!-- Left link -->
+  <ellipse cx="50" cy="50" rx="28" ry="16"/>
+  <!-- Center link (overlapping) -->
+  <ellipse cx="100" cy="50" rx="28" ry="16"/>
+  <!-- Right link -->
+  <ellipse cx="150" cy="50" rx="28" ry="16"/>
+  <!-- Small sparkle/weld point -->
+  <line x1="72" y1="40" x2="78" y2="46"/>
+  <line x1="78" y1="40" x2="72" y2="46"/>
+  <line x1="75" y1="36" x2="75" y2="50"/>
+</g>
+</svg>
