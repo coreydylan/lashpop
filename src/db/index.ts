@@ -243,43 +243,13 @@ function createSqlClient(url: string): SqlClient {
     ssl: "require",
     connection: {
       application_name: APPLICATION_NAME,
-      statement_timeout: statementTimeout
+      statement_timeout: String(statementTimeout) // Must be string for postgres
     },
     fetch_types: false,
-    onnotice: () => {},
-    debug: !isProduction
+    onnotice: () => {}
   })
 
   return client
-}
-
-// Wrap SQL client with retry logic for transient errors
-function wrapSqlClientWithRetry(rawClient: SqlClient): SqlClient {
-  const rawCallable = rawClient as unknown as (...args: unknown[]) => Promise<unknown>
-
-  const handler: ProxyHandler<SqlClient> = {
-    apply(_target, _thisArg, argArray) {
-      const parameters = Array.from(argArray ?? [])
-      return executeWithRetry(() => Reflect.apply(rawCallable, rawClient, parameters))
-    },
-    get(_target, property, receiver) {
-      const originalValue = Reflect.get(rawClient, property, receiver)
-
-      if (typeof originalValue !== "function") {
-        return originalValue
-      }
-
-      // Don't wrap cleanup methods
-      if (property === "end") {
-        return (...args: unknown[]) => Reflect.apply(originalValue, rawClient, args)
-      }
-
-      // Wrap all other methods with retry
-      return (...args: unknown[]) => executeWithRetry(() => Reflect.apply(originalValue, rawClient, args))
-    }
-  }
-
-  return new Proxy(rawClient, handler)
 }
 
 function createHandles(): DatabaseHandles {
@@ -287,8 +257,7 @@ function createHandles(): DatabaseHandles {
     throw new Error("DATABASE_URL is not set")
   }
 
-  const sqlClient = createSqlClient(databaseUrl)
-  const sql = wrapSqlClientWithRetry(sqlClient)
+  const sql = createSqlClient(databaseUrl)
   const db = drizzlePostgres(sql, { schema: dbSchema })
 
   const connectionMode = isPooledConnection ? "Pooler" : "Direct"
