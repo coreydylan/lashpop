@@ -20,6 +20,15 @@ export interface Service {
   vagaroServiceCode?: string | null
 }
 
+export interface ServiceCategory {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  icon: string | null
+  displayOrder: number
+}
+
 interface ServiceBrowserState {
   isOpen: boolean
   categorySlug: string | null
@@ -44,6 +53,7 @@ interface ServiceBrowserActions {
   selectService: (service: Service) => void
   goBack: () => void
   setActiveSubcategory: (subcategorySlug: string | null) => void
+  setCategory: (categorySlug: string) => void
   openBooking: () => void
   closeBooking: () => void
   // Lash quiz prompt actions
@@ -61,6 +71,7 @@ interface ServiceBrowserContextValue {
   state: ServiceBrowserState
   actions: ServiceBrowserActions
   services: Service[]
+  categories: ServiceCategory[]
 }
 
 const ServiceBrowserContext = createContext<ServiceBrowserContextValue | null>(null)
@@ -68,6 +79,7 @@ const ServiceBrowserContext = createContext<ServiceBrowserContextValue | null>(n
 interface ServiceBrowserProviderProps {
   children: ReactNode
   services: Service[]
+  categories?: ServiceCategory[]
 }
 
 const initialState: ServiceBrowserState = {
@@ -85,7 +97,7 @@ const initialState: ServiceBrowserState = {
   morphTargetSubcategory: null,
 }
 
-export function ServiceBrowserProvider({ children, services }: ServiceBrowserProviderProps) {
+export function ServiceBrowserProvider({ children, services, categories = [] }: ServiceBrowserProviderProps) {
   const [state, setState] = useState<ServiceBrowserState>(initialState)
 
   const openModal = useCallback((categorySlug: string, categoryName: string) => {
@@ -134,6 +146,19 @@ export function ServiceBrowserProvider({ children, services }: ServiceBrowserPro
       activeSubcategory: subcategorySlug,
     }))
   }, [])
+
+  // Switch to a different category (resets subcategory filter)
+  const setCategory = useCallback((categorySlug: string) => {
+    const category = categories.find(c => c.slug === categorySlug)
+    setState(prev => ({
+      ...prev,
+      categorySlug,
+      categoryName: category?.name || categorySlug,
+      activeSubcategory: null, // Reset subcategory when switching categories
+      view: 'browse',
+      selectedService: null,
+    }))
+  }, [categories])
 
   // Change view to booking (embedded in same modal)
   const openBooking = useCallback(() => {
@@ -214,6 +239,7 @@ export function ServiceBrowserProvider({ children, services }: ServiceBrowserPro
     selectService,
     goBack,
     setActiveSubcategory,
+    setCategory,
     openBooking,
     closeBooking,
     closeLashQuizPrompt,
@@ -222,13 +248,14 @@ export function ServiceBrowserProvider({ children, services }: ServiceBrowserPro
     closeFindYourLookQuiz,
     handleQuizResult,
     completeMorph,
-  }), [openModal, closeModal, selectService, goBack, setActiveSubcategory, openBooking, closeBooking, closeLashQuizPrompt, confirmLashQuizSkip, openFindYourLookQuiz, closeFindYourLookQuiz, handleQuizResult, completeMorph])
+  }), [openModal, closeModal, selectService, goBack, setActiveSubcategory, setCategory, openBooking, closeBooking, closeLashQuizPrompt, confirmLashQuizSkip, openFindYourLookQuiz, closeFindYourLookQuiz, handleQuizResult, completeMorph])
 
   const value = useMemo<ServiceBrowserContextValue>(() => ({
     state,
     actions,
     services,
-  }), [state, actions, services])
+    categories,
+  }), [state, actions, services, categories])
 
   return (
     <ServiceBrowserContext.Provider value={value}>

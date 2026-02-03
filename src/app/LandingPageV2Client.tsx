@@ -259,7 +259,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
   return (
     <DevModeProvider>
     <BookingOrchestratorProvider>
-        <ServiceBrowserProvider services={services}>
+        <ServiceBrowserProvider services={services} categories={serviceCategories}>
         <VagaroWidgetProvider>
         <DrawerProvider>
           <PanelManagerProvider>
@@ -356,7 +356,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     </div>
 
                     {/* Map Section */}
-                    <div className={`pt-20 ${isMobile ? "mobile-section" : ""}`} data-section-id="map" id="find-us">
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="map" id="find-us">
                       <MapSection />
                     </div>
 
