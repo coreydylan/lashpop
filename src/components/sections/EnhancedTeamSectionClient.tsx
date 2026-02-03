@@ -368,9 +368,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     }
   }, [selectedMember, isMobile])
 
-  // Fetch portfolio images when a member is selected (desktop only)
+  // Fetch portfolio images when a member is selected (both mobile and desktop)
   useEffect(() => {
-    if (selectedMember?.uuid && !isMobile) {
+    if (selectedMember?.uuid) {
       setCurrentImageIndex(0)
 
       // Check if we already have cached photos from preloading
@@ -409,7 +409,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     } else {
       setPortfolioImages([])
     }
-  }, [selectedMember?.uuid, isMobile])
+  }, [selectedMember?.uuid])
 
   // Auto-advance carousel when there are multiple images
   useEffect(() => {
@@ -744,20 +744,38 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </h3>
 
                         {/* Separator Line */}
-                        <div className="flex items-center justify-center gap-2 mx-auto mb-1">
-                          <div className="w-6 h-px bg-terracotta/30" />
-                          <div className="w-1 h-1 rounded-full bg-terracotta/40" />
-                          <div className="w-6 h-px bg-terracotta/30" />
-                        </div>
+                        <div className="w-12 h-px bg-terracotta/30 mx-auto mb-1" />
 
-                        {/* Title/Role */}
-                        <p className="text-xs font-serif font-light text-gray-500">
-                          {member.name.toLowerCase().startsWith('emily')
-                            ? 'LashPop Owner'
-                            : member.type === 'employee'
-                              ? 'LashPop Team Artist'
-                              : member.businessName || 'Independent Artist'}
-                        </p>
+                        {/* Title/Role - clickable to IG if they have one */}
+                        {member.instagram && member.instagram.trim() ? (
+                          <a
+                            href={`https://instagram.com/${member.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onTouchEnd={(e) => {
+                              e.stopPropagation()
+                              window.open(`https://instagram.com/${member.instagram!.replace('@', '')}`, '_blank')
+                            }}
+                            className="inline-flex items-center justify-center gap-1 text-xs font-sans font-light text-gray-500 hover:text-dusty-rose transition-colors"
+                          >
+                            <Instagram className="w-3 h-3" />
+                            <span>
+                              {member.name.toLowerCase().startsWith('emily')
+                                ? 'LashPop Owner'
+                                : member.type === 'employee'
+                                  ? 'LashPop Team Artist'
+                                  : member.businessName || 'Independent Artist'}
+                            </span>
+                          </a>
+                        ) : (
+                          <p className="text-xs font-sans font-light text-gray-500">
+                            {member.name.toLowerCase().startsWith('emily')
+                              ? 'LashPop Owner'
+                              : member.type === 'employee'
+                                ? 'LashPop Team Artist'
+                                : member.businessName || 'Independent Artist'}
+                          </p>
+                        )}
                       </div>
 
                       {/* Highlight Ring */}
@@ -863,14 +881,33 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 {/* Separator Line */}
                                 <div className="w-24 h-px bg-terracotta/30 mx-auto mb-2" />
 
-                                {/* Title/Role */}
-                                <p className="font-serif font-light text-gray-500">
-                                  {member.name.toLowerCase().startsWith('emily')
-                                    ? 'LashPop Owner'
-                                    : member.type === 'employee'
-                                      ? 'LashPop Team Artist'
-                                      : member.businessName || 'Independent Artist'}
-                                </p>
+                                {/* Title/Role - clickable to IG if they have one */}
+                                {member.instagram && member.instagram.trim() ? (
+                                  <a
+                                    href={`https://instagram.com/${member.instagram.replace('@', '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center justify-center gap-1.5 font-sans font-light text-gray-500 hover:text-dusty-rose transition-colors"
+                                  >
+                                    <Instagram className="w-3.5 h-3.5" />
+                                    <span>
+                                      {member.name.toLowerCase().startsWith('emily')
+                                        ? 'LashPop Owner'
+                                        : member.type === 'employee'
+                                          ? 'LashPop Team Artist'
+                                          : member.businessName || 'Independent Artist'}
+                                    </span>
+                                  </a>
+                                ) : (
+                                  <p className="font-sans font-light text-gray-500">
+                                    {member.name.toLowerCase().startsWith('emily')
+                                      ? 'LashPop Owner'
+                                      : member.type === 'employee'
+                                        ? 'LashPop Team Artist'
+                                        : member.businessName || 'Independent Artist'}
+                                  </p>
+                                )}
                               </div>
 
                               {/* Hover Glow Effect */}
@@ -1034,7 +1071,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                                 {/* Name, Title & Instagram */}
                                 <div className="mb-6 pr-12">
-                                  <h2 className="font-serif text-3xl text-dune">
+                                  <h2 className="font-serif text-3xl" style={{ color: 'rgb(61, 54, 50)' }}>
                                     {selectedMember.name}
                                   </h2>
                                   {selectedMember.instagram ? (
@@ -1042,7 +1079,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                       href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1.5 text-dusty-rose font-medium mt-1 hover:text-dusty-rose/80 transition-colors"
+                                      className="inline-flex items-center gap-1.5 font-sans text-dusty-rose font-medium mt-1 hover:text-dusty-rose/80 transition-colors"
                                     >
                                       <Instagram className="w-4 h-4" />
                                       <span>
@@ -1052,7 +1089,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                       </span>
                                     </a>
                                   ) : (
-                                    <p className="text-dusty-rose font-medium mt-1">
+                                    <p className="font-sans text-dusty-rose font-medium mt-1">
                                       {selectedMember.type === 'independent' && selectedMember.businessName
                                         ? selectedMember.businessName
                                         : 'LashPop Artist'}
@@ -1063,15 +1100,15 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 {/* Bio */}
                                 {selectedMember.bio && (
                                   <div className="mb-6">
-                                    <h3 className="font-serif text-lg text-dune mb-2">About</h3>
-                                    <p className="text-sage leading-relaxed">{selectedMember.bio}</p>
+                                    <h3 className="font-serif text-lg mb-2" style={{ color: 'rgb(61, 54, 50)' }}>About</h3>
+                                    <p className="leading-relaxed" style={{ color: 'rgb(61, 54, 50)' }}>{selectedMember.bio}</p>
                                   </div>
                                 )}
 
                                 {/* Services */}
                                 {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
                                   <div className="mb-6">
-                                    <h3 className="font-serif text-lg text-dune mb-3">Services</h3>
+                                    <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>Services</h3>
                                     <div className="flex flex-wrap gap-2">
                                       {(selectedMember.serviceCategories?.length
                                         ? selectedMember.serviceCategories
@@ -1079,7 +1116,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                       ).map((category, idx) => (
                                         <span
                                           key={idx}
-                                          className="px-4 py-2 text-sm font-medium bg-sage/10 text-sage rounded-full"
+                                          className="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full"
+                                          style={{ color: 'rgb(61, 54, 50)' }}
                                         >
                                           {category}
                                         </span>
@@ -1091,17 +1129,17 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 {/* Quick Facts Grid */}
                                 {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
                                   <div>
-                                    <h3 className="font-serif text-lg text-dune mb-3">Quick Facts</h3>
+                                    <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>Quick Facts</h3>
                                     <QuickFactsGrid facts={selectedMember.quickFacts} />
                                   </div>
                                 ) : selectedMember.funFact && (
                                   /* Fallback to single Fun Fact if no quick facts */
                                   <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
-                                    <h3 className="font-serif text-base text-dune mb-2 flex items-center gap-2">
+                                    <h3 className="font-serif text-base mb-2 flex items-center gap-2" style={{ color: 'rgb(61, 54, 50)' }}>
                                       <Sparkles className="w-4 h-4 text-dusty-rose" />
                                       Fun Fact
                                     </h3>
-                                    <p className="text-dune/80 text-sm leading-relaxed">{selectedMember.funFact}</p>
+                                    <p className="text-sm leading-relaxed" style={{ color: 'rgb(61, 54, 50)' }}>{selectedMember.funFact}</p>
                                   </div>
                                 )}
                               </div>
@@ -1269,7 +1307,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     {/* Base background - prevents flash during image swap */}
                     <div className="absolute inset-0 z-0 bg-cream" />
 
-                    {/* Fixed Hero Image - crossfades between team members */}
+                    {/* Fixed Hero Image - crossfades between team members, with photo carousel */}
                     <div className="absolute inset-0 z-[1]">
                       <AnimatePresence mode="popLayout">
                         <motion.div
@@ -1281,13 +1319,53 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           transition={{ duration: 0.5, ease: 'easeInOut' }}
                         >
                           <div className="relative h-[70vh] overflow-hidden">
-                            <Image
-                              src={selectedMember.image}
-                              alt={selectedMember.name}
-                              fill
-                              className="object-cover object-top"
-                              priority
-                            />
+                            {/* Photo carousel - tap to cycle through album photos */}
+                            <AnimatePresence mode="wait">
+                              <motion.div
+                                key={portfolioImages.length > 0 ? `photo-${currentImageIndex}` : 'headshot'}
+                                className="absolute inset-0"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                onClick={() => {
+                                  // Cycle to next photo on tap (only if multiple photos)
+                                  if (portfolioImages.length > 1) {
+                                    setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
+                                  }
+                                }}
+                              >
+                                <Image
+                                  src={portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image}
+                                  alt={selectedMember.name}
+                                  fill
+                                  className="object-cover object-top"
+                                  priority
+                                />
+                              </motion.div>
+                            </AnimatePresence>
+
+                            {/* Photo carousel dots - only show if multiple photos */}
+                            {portfolioImages.length > 1 && (
+                              <div className="absolute bottom-8 left-0 right-0 z-10 flex justify-center gap-1.5">
+                                {portfolioImages.map((_, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setCurrentImageIndex(idx)
+                                    }}
+                                    className={`transition-all duration-200 rounded-full ${
+                                      idx === currentImageIndex
+                                        ? 'w-6 h-2 bg-white'
+                                        : 'w-2 h-2 bg-white/50'
+                                    }`}
+                                    aria-label={`View photo ${idx + 1}`}
+                                  />
+                                ))}
+                              </div>
+                            )}
+
                             {/* Gradient overlay on photo - positioned to align with content gradient */}
                             <div className="absolute inset-x-0 bottom-[-5vh] h-32 bg-gradient-to-t from-cream from-30% via-cream/90 via-60% to-transparent" />
                           </div>
@@ -1325,7 +1403,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                           {/* Name and biz - no card, just floating on gradient */}
                           <div className="relative px-5 pb-4 pointer-events-auto z-10">
-                            <h1 className="font-serif text-3xl text-dune leading-tight">
+                            <h1 className="font-serif text-3xl leading-tight" style={{ color: 'rgb(61, 54, 50)' }}>
                               <span className="font-bold">{selectedMember.name.split(' ')[0]}</span>{selectedMember.name.includes(' ') ? ` ${selectedMember.name.split(' ').slice(1).join(' ')}` : ''}
                             </h1>
                             {selectedMember.instagram ? (
@@ -1333,7 +1411,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 mt-1.5 text-dusty-rose hover:text-dusty-rose/80 transition-colors"
+                                className="inline-flex items-center gap-1.5 mt-1.5 font-sans text-dusty-rose hover:text-dusty-rose/80 transition-colors"
                               >
                                 <Instagram className="w-3.5 h-3.5" />
                                 <span className="text-xs uppercase tracking-wider font-medium">
@@ -1343,7 +1421,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 </span>
                               </a>
                             ) : (
-                              <p className="text-xs uppercase tracking-wider font-medium text-dusty-rose mt-1.5">
+                              <p className="font-sans text-xs uppercase tracking-wider font-medium text-dusty-rose mt-1.5">
                                 {selectedMember.type === 'independent' && selectedMember.businessName
                                   ? selectedMember.businessName
                                   : 'LashPop Artist'}
@@ -1356,15 +1434,15 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           {/* Bio Section */}
                           {selectedMember.bio && (
                             <div>
-                              <h3 className="font-serif text-lg text-dune mb-3">About</h3>
-                              <p className="text-sage leading-relaxed text-sm">{selectedMember.bio}</p>
+                              <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>About</h3>
+                              <p className="leading-relaxed text-sm" style={{ color: 'rgb(61, 54, 50)' }}>{selectedMember.bio}</p>
                             </div>
                           )}
 
                           {/* Services */}
                           {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
                             <div>
-                              <h3 className="font-serif text-lg text-dune mb-3">Services</h3>
+                              <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>Services</h3>
                               <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
                                 <div className="flex gap-1.5 min-w-max">
                                   {(selectedMember.serviceCategories?.length
@@ -1373,7 +1451,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   ).map((category, idx) => (
                                     <span
                                       key={idx}
-                                      className="px-3 py-1.5 text-xs font-medium bg-sage/10 text-sage rounded-full whitespace-nowrap"
+                                      className="px-3 py-1.5 text-xs font-medium bg-sage/10 rounded-full whitespace-nowrap"
+                                      style={{ color: 'rgb(61, 54, 50)' }}
                                     >
                                       {category}
                                     </span>
@@ -1386,7 +1465,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           {/* Quick Facts (Mobile) - swipeable if multiple */}
                           {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
                             <div>
-                              <h3 className="font-serif text-lg text-dune mb-3">
+                              <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>
                                 Get to know {selectedMember.name.split(' ')[0]}
                               </h3>
                               {selectedMember.quickFacts.length === 1 ? (
@@ -1419,11 +1498,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           ) : selectedMember.funFact && (
                             /* Fallback to single Fun Fact if no quick facts */
                             <div className="bg-white/50 backdrop-blur-xl rounded-2xl p-5 border border-white/60 shadow-lg">
-                              <h3 className="font-serif text-lg text-dune mb-2 flex items-center gap-2">
+                              <h3 className="font-serif text-lg mb-2 flex items-center gap-2" style={{ color: 'rgb(61, 54, 50)' }}>
                                 <Sparkles className="w-4 h-4 text-dusty-rose" />
                                 Get to know {selectedMember.name.split(' ')[0]}
                               </h3>
-                              <p className="text-dune/80 text-sm leading-relaxed">{selectedMember.funFact}</p>
+                              <p className="text-sm leading-relaxed" style={{ color: 'rgb(61, 54, 50)' }}>{selectedMember.funFact}</p>
                             </div>
                           )}
 
