@@ -8,6 +8,7 @@ export function FooterV2() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
+  const currentYear = new Date().getFullYear()
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -261,7 +262,7 @@ export function FooterV2() {
         <div className="pt-8 border-t border-sage/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="caption text-charcoal">
-              © 2025 LashPop Studios. All rights reserved.
+              © {currentYear} LashPop Studios. All rights reserved.
             </p>
 
             <div className="flex items-center gap-6">
