@@ -147,14 +147,21 @@ export function getDb() {
       connectionUrl = databaseUrl + (databaseUrl.includes('?') ? '&' : '?') + 'pgbouncer=true'
     }
 
-    // Configure postgres-js with connection pooling optimized for Supabase
+    // Configure postgres-js with connection pooling optimized for Supabase Transaction Pooler
     const isServerless = process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
     clientInstance = postgres(connectionUrl, {
+      // Required for Supabase Transaction Pooler (pgbouncer) - no prepared statements
       prepare: false,
-      max: isServerless ? 1 : 5, // More connections for local dev
-      idle_timeout: 20,
+      // Serverless: 1 connection per function instance; Local: up to 5
+      max: isServerless ? 1 : 5,
+      // Close idle connections faster in serverless (functions are short-lived)
+      idle_timeout: isServerless ? 10 : 20,
+      // Max connection lifetime before recycling
       max_lifetime: 60 * 5,
-      connect_timeout: isServerless ? 30 : 15, // Longer timeout for serverless cold starts
+      // Longer timeout for serverless cold starts, shorter for local dev
+      connect_timeout: isServerless ? 30 : 10,
+      // Skip fetching custom types on connection - faster startup
+      fetch_types: false,
       connection: {
         application_name: 'lashpop_app',
       },
