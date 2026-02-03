@@ -24,10 +24,14 @@ import {
   X,
   Lock,
   FileText,
-  Sparkles
+  Sparkles,
+  Trash2,
+  ImagePlus,
+  Images
 } from 'lucide-react'
 import { QuickFactsEditor } from '@/components/team/QuickFactsEditor'
 import { CredentialsEditor } from '@/components/team/CredentialsEditor'
+import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
 
 interface QuickFact {
@@ -37,6 +41,13 @@ interface QuickFact {
   value: string
   customIcon: string | null
   displayOrder: number
+}
+
+interface AlbumPhoto {
+  id: string
+  fileName: string
+  filePath: string
+  isPrimary: boolean
 }
 
 interface TeamMember {
@@ -88,6 +99,12 @@ export default function TeamManagerPage() {
   const [hasChanges, setHasChanges] = useState(false)
   const [editingBio, setEditingBio] = useState<string | null>(null)
   const [bioValue, setBioValue] = useState('')
+  const [showImagePicker, setShowImagePicker] = useState(false)
+  const [editingImageMemberId, setEditingImageMemberId] = useState<string | null>(null)
+  const [showAlbumPicker, setShowAlbumPicker] = useState(false)
+  const [albumPickerMemberId, setAlbumPickerMemberId] = useState<string | null>(null)
+  const [albumPhotos, setAlbumPhotos] = useState<Record<string, AlbumPhoto[]>>({})
+  const [loadingAlbum, setLoadingAlbum] = useState<string | null>(null)
 
   useEffect(() => {
     fetchTeamMembers()
@@ -144,6 +161,112 @@ export default function TeamManagerPage() {
     } catch (error) {
       console.error('Error updating bio:', error)
     }
+  }
+
+  const updateProfileImage = async (memberId: string, imageUrl: string) => {
+    try {
+      const response = await fetch('/api/admin/website/team', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, imageUrl })
+      })
+
+      if (response.ok) {
+        setTeamMembers(prev => prev.map(m =>
+          m.id === memberId ? { ...m, imageUrl } : m
+        ))
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+    } catch (error) {
+      console.error('Error updating profile image:', error)
+    }
+  }
+
+  const handleImageSelect = (asset: Asset) => {
+    if (editingImageMemberId) {
+      updateProfileImage(editingImageMemberId, asset.filePath)
+    }
+    setShowImagePicker(false)
+    setEditingImageMemberId(null)
+  }
+
+  const openImagePicker = (memberId: string) => {
+    setEditingImageMemberId(memberId)
+    setShowImagePicker(true)
+  }
+
+  // Album photo functions
+  const fetchAlbumPhotos = async (memberId: string) => {
+    setLoadingAlbum(memberId)
+    try {
+      const response = await fetch(`/api/dam/team/${memberId}/photos`)
+      if (response.ok) {
+        const data = await response.json()
+        setAlbumPhotos(prev => ({ ...prev, [memberId]: data.photos || [] }))
+      }
+    } catch (error) {
+      console.error('Error fetching album photos:', error)
+    } finally {
+      setLoadingAlbum(null)
+    }
+  }
+
+  const addPhotosToAlbum = async (memberId: string, assetIds: string[]) => {
+    try {
+      const response = await fetch(`/api/dam/team/${memberId}/photos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assetIds })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        // Refresh album photos
+        await fetchAlbumPhotos(memberId)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+        return data
+      }
+    } catch (error) {
+      console.error('Error adding photos to album:', error)
+    }
+  }
+
+  const removePhotoFromAlbum = async (memberId: string, photoId: string) => {
+    try {
+      const response = await fetch(`/api/dam/team/photos/${photoId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setAlbumPhotos(prev => ({
+          ...prev,
+          [memberId]: (prev[memberId] || []).filter(p => p.id !== photoId)
+        }))
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+    } catch (error) {
+      console.error('Error removing photo from album:', error)
+    }
+  }
+
+  const handleAlbumSelect = async (selectedAssets: Asset[]) => {
+    if (albumPickerMemberId && selectedAssets.length > 0) {
+      await addPhotosToAlbum(albumPickerMemberId, selectedAssets.map(a => a.id))
+    }
+    setShowAlbumPicker(false)
+    setAlbumPickerMemberId(null)
+  }
+
+  const openAlbumPicker = (memberId: string) => {
+    // Fetch existing photos if not already loaded
+    if (!albumPhotos[memberId]) {
+      fetchAlbumPhotos(memberId)
+    }
+    setAlbumPickerMemberId(memberId)
+    setShowAlbumPicker(true)
   }
 
   const toggleVisibility = (memberId: string) => {
@@ -444,6 +567,128 @@ export default function TeamManagerPage() {
                       className="mt-4 pt-4 border-t border-sage/10"
                     >
                       <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                        {/* Profile Image */}
+                        <div className="sm:col-span-2 p-4 bg-golden/5 rounded-2xl border border-golden/10">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium flex items-center gap-2">
+                              <Users className="w-3.5 h-3.5" />
+                              Profile Image
+                            </h4>
+                            <button
+                              onClick={() => openImagePicker(member.id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-golden/20 text-golden hover:bg-golden/30 rounded-lg transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              Select from DAM
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-warm-sand border border-sage/20">
+                              {member.imageUrl && member.imageUrl.length > 0 ? (
+                                <Image
+                                  src={member.imageUrl}
+                                  alt={member.name}
+                                  fill
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-dune/30">
+                                  <Users className="w-8 h-8" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-dune/70 truncate">
+                                {member.imageUrl ? (
+                                  <>Current: <span className="text-dune">{member.imageUrl.split('/').pop()}</span></>
+                                ) : (
+                                  <span className="text-dune/40 italic">No image set</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-dune/50 mt-1">
+                                Click &quot;Select from DAM&quot; to choose a profile photo from your media library
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Portfolio Album */}
+                        <div className="sm:col-span-2 p-4 bg-dusty-rose/5 rounded-2xl border border-dusty-rose/10">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium flex items-center gap-2">
+                              <Images className="w-3.5 h-3.5" />
+                              Portfolio Album
+                              {albumPhotos[member.id] && (
+                                <span className="text-dune/40">({albumPhotos[member.id].length} photos)</span>
+                              )}
+                            </h4>
+                            <button
+                              onClick={() => openAlbumPicker(member.id)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-dusty-rose/20 text-dusty-rose hover:bg-dusty-rose/30 rounded-lg transition-colors"
+                            >
+                              <ImagePlus className="w-3.5 h-3.5" />
+                              Add Photos
+                            </button>
+                          </div>
+
+                          {/* Album Photos Grid */}
+                          {loadingAlbum === member.id ? (
+                            <div className="flex items-center justify-center py-8">
+                              <RefreshCw className="w-5 h-5 animate-spin text-dune/40" />
+                            </div>
+                          ) : albumPhotos[member.id] && albumPhotos[member.id].length > 0 ? (
+                            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                              {albumPhotos[member.id].map((photo) => (
+                                <div key={photo.id} className="relative group aspect-square">
+                                  <div className="relative w-full h-full rounded-lg overflow-hidden bg-warm-sand border border-sage/20">
+                                    <Image
+                                      src={photo.filePath}
+                                      alt={photo.fileName}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                    {photo.isPrimary && (
+                                      <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-dusty-rose rounded text-[8px] text-white font-medium">
+                                        Primary
+                                      </div>
+                                    )}
+                                  </div>
+                                  {!photo.isPrimary && (
+                                    <button
+                                      onClick={() => removePhotoFromAlbum(member.id, photo.id)}
+                                      className="absolute -top-1 -right-1 w-5 h-5 bg-terracotta rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                      title="Remove from album"
+                                    >
+                                      <X className="w-3 h-3 text-white" />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-6 text-dune/50">
+                              <Images className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                              <p className="text-xs">No portfolio photos yet</p>
+                              <button
+                                onClick={() => openAlbumPicker(member.id)}
+                                className="mt-2 text-xs text-dusty-rose hover:underline"
+                              >
+                                Add photos to showcase their work
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Load photos button if not loaded */}
+                          {!albumPhotos[member.id] && loadingAlbum !== member.id && (
+                            <button
+                              onClick={() => fetchAlbumPhotos(member.id)}
+                              className="w-full py-3 text-xs text-dune/60 hover:text-dune hover:bg-sage/10 rounded-lg transition-colors"
+                            >
+                              Load album photos
+                            </button>
+                          )}
+                        </div>
+
                         {/* Contact Info */}
                         <div className="space-y-2">
                           <h4 className="text-xs uppercase tracking-wider text-dune/40 font-medium">Contact</h4>
@@ -458,7 +703,7 @@ export default function TeamManagerPage() {
                             </div>
                           )}
                           {member.instagram && (
-                            <a 
+                            <a
                               href={`https://instagram.com/${member.instagram}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -702,6 +947,34 @@ export default function TeamManagerPage() {
           </Reorder.Group>
         )}
       </motion.div>
+
+      {/* DAM Image Picker Modal - Profile Image */}
+      <MiniDamExplorer
+        isOpen={showImagePicker}
+        onClose={() => {
+          setShowImagePicker(false)
+          setEditingImageMemberId(null)
+        }}
+        onSelect={handleImageSelect}
+        selectedAssetId={editingImageMemberId ? teamMembers.find(m => m.id === editingImageMemberId)?.imageUrl : undefined}
+        title="Select Profile Image"
+        subtitle={editingImageMemberId ? `Choose a photo for ${teamMembers.find(m => m.id === editingImageMemberId)?.name}` : 'Choose a profile photo'}
+      />
+
+      {/* DAM Image Picker Modal - Album Photos */}
+      <MiniDamExplorer
+        isOpen={showAlbumPicker}
+        onClose={() => {
+          setShowAlbumPicker(false)
+          setAlbumPickerMemberId(null)
+        }}
+        onSelect={() => {}} // Required but not used for multi-select
+        allowMultiple={true}
+        selectedAssetIds={[]}
+        onMultiSelect={handleAlbumSelect}
+        title="Add Portfolio Photos"
+        subtitle={albumPickerMemberId ? `Select photos for ${teamMembers.find(m => m.id === albumPickerMemberId)?.name}'s portfolio` : 'Select portfolio photos'}
+      />
     </div>
   )
 }

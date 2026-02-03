@@ -124,12 +124,12 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// PATCH - Update a single team member's details (manual categories, bio, funFact, credentials)
+// PATCH - Update a single team member's details (manual categories, bio, funFact, credentials, imageUrl)
 export async function PATCH(request: NextRequest) {
   try {
     const db = getDb()
     const body = await request.json()
-    const { memberId, manualServiceCategories, bio, funFact, credentials } = body
+    const { memberId, manualServiceCategories, bio, funFact, credentials, imageUrl } = body
 
     if (!memberId) {
       return NextResponse.json(
@@ -170,6 +170,17 @@ export async function PATCH(request: NextRequest) {
         )
       }
       updateData.credentials = credentials
+    }
+
+    // Handle imageUrl (from DAM)
+    if (imageUrl !== undefined) {
+      if (typeof imageUrl !== 'string') {
+        return NextResponse.json(
+          { error: 'imageUrl must be a string' },
+          { status: 400 }
+        )
+      }
+      updateData.imageUrl = imageUrl
     }
 
     await db
