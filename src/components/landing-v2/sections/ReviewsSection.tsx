@@ -187,14 +187,14 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
   return (
     <>
       <style jsx>{scrollbarStyles}</style>
-      <section ref={ref} id="reviews" className="relative pt-8 pb-12 overflow-hidden bg-cream">
+      <section ref={ref} id="reviews" className="relative pt-4 md:pt-16 pb-12 overflow-hidden" style={{ backgroundColor: '#e9d1c8' }}>
         <div className="relative">
 
         {/* Section Header */}
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: '#ac4d3c' }}
+            style={{ color: '#cc947f' }}
           >
             What People Are Saying
           </h2>
@@ -206,7 +206,10 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
           <>
             {/* Desktop View */}
             <div className="hidden md:flex justify-center gap-6 mb-8">
-              {reviewStats.map((stat, index) => (
+              {[...reviewStats].sort((a, b) => {
+                const order: Record<string, number> = { google: 0, yelp: 1, vagaro: 2 }
+                return (order[a.source.toLowerCase()] ?? 1) - (order[b.source.toLowerCase()] ?? 1)
+              }).map((stat, index) => (
                 <a
                   key={stat.id || `stat-${index}`}
                   href={reviewPlatformUrls[stat.source.toLowerCase()]}
@@ -230,7 +233,10 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
 
             {/* Mobile View */}
             <div className="md:hidden flex justify-center gap-3 mb-6 px-4">
-              {reviewStats.map((stat, index) => (
+              {[...reviewStats].sort((a, b) => {
+                const order: Record<string, number> = { google: 0, yelp: 1, vagaro: 2 }
+                return (order[a.source.toLowerCase()] ?? 1) - (order[b.source.toLowerCase()] ?? 1)
+              }).map((stat, index) => (
                 <a
                   key={stat.id || `stat-${index}`}
                   href={reviewPlatformUrls[stat.source.toLowerCase()]}
