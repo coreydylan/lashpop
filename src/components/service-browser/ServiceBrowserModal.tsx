@@ -9,6 +9,7 @@ import { DetailView } from './views/DetailView'
 import { BookingView } from './views/BookingView'
 import { LashQuizPrompt } from './LashQuizPrompt'
 import { FindYourLookModal, FindYourLookContent, type FindYourLookContentRef } from '@/components/find-your-look/FindYourLookModal'
+import { CategoryTabs } from './components/CategoryTabs'
 
 const backdropVariants = {
   hidden: { opacity: 0 },
@@ -30,8 +31,8 @@ const modalVariantsMobile = {
 }
 
 export function ServiceBrowserModal() {
-  const { state, actions } = useServiceBrowser()
-  const { isOpen, view, categoryName, selectedService, showLashQuizPrompt, showFindYourLookQuiz, isMorphingQuiz, morphTargetSubcategory } = state
+  const { state, actions, categories } = useServiceBrowser()
+  const { isOpen, view, categorySlug, categoryName, selectedService, showLashQuizPrompt, showFindYourLookQuiz, isMorphingQuiz, morphTargetSubcategory } = state
   const [isMobile, setIsMobile] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
   const quizContentRef = useRef<FindYourLookContentRef>(null)
@@ -129,7 +130,8 @@ export function ServiceBrowserModal() {
     }
     if (view === 'booking') return `Book ${selectedService?.name || ''}`
     if (view === 'detail') return selectedService?.name || ''
-    return categoryName || ''
+    // Browse view: no title needed since category tabs show the current category
+    return ''
   }
 
   // Handle back navigation based on current view
@@ -211,7 +213,9 @@ export function ServiceBrowserModal() {
               className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-6 pointer-events-none"
             >
               <motion.div
-                className={`relative bg-ivory md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col ${
+                className={`relative md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col ${
+                  isMorphingQuiz && !isMorphing ? 'bg-rose-mist' : 'bg-ivory'
+                } ${
                   isMobile
                     ? 'w-full h-full'
                     : isMorphingQuiz && !isMorphing
@@ -236,7 +240,11 @@ export function ServiceBrowserModal() {
               >
                 {/* Mobile Header - Full-width with safe area support */}
                 {isMobile ? (
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-sage/10 shrink-0 bg-ivory/95 backdrop-blur-sm sticky top-0 z-10">
+                  <div className={`flex items-center justify-between px-4 shrink-0 backdrop-blur-sm sticky top-0 z-10 ${
+                    isMorphingQuiz && !isMorphing ? 'bg-rose-mist/95' : 'bg-ivory/95'
+                  } ${
+                    getHeaderTitle() ? `py-3 border-b ${isMorphingQuiz && !isMorphing ? 'border-white/20' : 'border-sage/10'}` : 'py-2'
+                  }`}>
                     {/* Left side - Back button or spacer */}
                     <div className="w-10 flex justify-start">
                       {showBackButton() && (
@@ -254,13 +262,15 @@ export function ServiceBrowserModal() {
                       )}
                     </div>
 
-                    {/* Center - Title */}
-                    <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
-                      {getHeaderTitle()}
-                    </h2>
+                    {/* Center - Title (only show if we have one) */}
+                    {getHeaderTitle() && (
+                      <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
+                        {getHeaderTitle()}
+                      </h2>
+                    )}
 
                     {/* Right side - Close button */}
-                    <div className="w-10 flex justify-end">
+                    <div className={getHeaderTitle() ? 'w-10 flex justify-end' : 'flex-1 flex justify-end'}>
                       <button
                         onClick={actions.closeModal}
                         className="p-2 -mr-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
@@ -272,7 +282,11 @@ export function ServiceBrowserModal() {
                   </div>
                 ) : (
                   /* Desktop Header */
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-sage/10 shrink-0 bg-ivory">
+                  <div className={`flex items-center justify-between px-6 shrink-0 ${
+                    isMorphingQuiz && !isMorphing ? 'bg-rose-mist' : 'bg-ivory'
+                  } ${
+                    getHeaderTitle() ? `py-4 border-b ${isMorphingQuiz && !isMorphing ? 'border-white/20' : 'border-sage/10'}` : 'py-3'
+                  }`}>
                     <div className="flex items-center gap-2 min-w-0">
                       {showBackButton() && (
                         <motion.button
@@ -287,9 +301,11 @@ export function ServiceBrowserModal() {
                           <ChevronLeft className="w-5 h-5 text-dune" />
                         </motion.button>
                       )}
-                      <h2 className="text-xl font-display font-medium text-charcoal truncate">
-                        {getHeaderTitle()}
-                      </h2>
+                      {getHeaderTitle() && (
+                        <h2 className="text-xl font-display font-medium text-charcoal truncate">
+                          {getHeaderTitle()}
+                        </h2>
+                      )}
                     </div>
                     <button
                       onClick={actions.closeModal}
@@ -298,6 +314,17 @@ export function ServiceBrowserModal() {
                     >
                       <X className="w-5 h-5 text-dune" />
                     </button>
+                  </div>
+                )}
+
+                {/* Category Tabs - Show only in browse view when not in quiz mode */}
+                {view === 'browse' && !isMorphingQuiz && categories.length > 1 && (
+                  <div className="shrink-0 px-4 md:px-6 bg-ivory border-b border-sage/10">
+                    <CategoryTabs
+                      categories={categories}
+                      activeCategory={categorySlug}
+                      onSelect={actions.setCategory}
+                    />
                   </div>
                 )}
 

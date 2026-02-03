@@ -581,7 +581,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
             className="fixed inset-0 z-50 flex items-end md:items-center justify-center md:p-6 pointer-events-none"
           >
             <div
-              className="relative w-full h-full md:w-full md:max-w-[480px] md:h-auto md:max-h-[90vh] bg-ivory md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
+              className="relative w-full h-full md:w-full md:max-w-[480px] md:h-auto md:max-h-[90vh] bg-rose-mist md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
               onClick={(e) => e.stopPropagation()}
               style={isMobile ? {
                 paddingTop: 'env(safe-area-inset-top)',
@@ -590,7 +590,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
             >
               {/* Mobile Header - Full-width with safe area support */}
               {isMobile ? (
-                <div className="flex items-center justify-between px-4 py-3 border-b border-sage/10 shrink-0 bg-ivory/95 backdrop-blur-sm">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 shrink-0 bg-rose-mist/95 backdrop-blur-sm">
                   {/* Left side - Back button or spacer */}
                   <div className="w-10 flex justify-start">
                     {step > 0 && (
@@ -629,7 +629,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                   <button
                     onClick={handleClose}
                     className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
-                               text-sage hover:text-charcoal transition-all shadow-sm"
+                               text-charcoal hover:text-charcoal transition-all shadow-sm"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -638,7 +638,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                     <button
                       onClick={handleBack}
                       className="absolute top-4 left-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
-                                 text-sage hover:text-charcoal transition-all shadow-sm"
+                                 text-charcoal hover:text-charcoal transition-all shadow-sm"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
@@ -733,15 +733,15 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
       <h1 className="text-3xl md:text-4xl font-display font-medium text-charcoal mb-4">
         Find Your Perfect Lash Look
       </h1>
-      <p className="text-sage text-base md:text-lg leading-relaxed mb-8 max-w-sm">
+      <p className="text-charcoal text-base md:text-lg leading-relaxed mb-8 max-w-sm">
         Answer a few quick questions and we&apos;ll match you with the lash style that fits your vibe, lifestyle, and natural lashes.
       </p>
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={onStart}
-        className="flex items-center gap-2 px-8 py-4 rounded-full bg-terracotta hover:bg-rust text-white font-medium
-                   shadow-lg shadow-terracotta/30 transition-all duration-200"
+        className="flex items-center gap-2 px-8 py-4 rounded-full border-2 border-white text-white font-medium
+                   hover:bg-white/10 transition-all duration-200"
       >
         Start Quiz
         <ArrowRight className="w-4 h-4" />
@@ -863,7 +863,7 @@ function Q3PhotoSelection({ onAnswer, images }: Q3Props) {
         <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal mb-2">
           Tap the look you&apos;re most drawn to
         </h2>
-        <p className="text-xs md:text-sm text-sage leading-relaxed max-w-xs mx-auto">
+        <p className="text-xs md:text-sm text-charcoal leading-relaxed max-w-xs mx-auto">
           We&apos;ll customize everything to you at your appointment.
         </p>
       </div>
@@ -888,12 +888,6 @@ function Q3PhotoSelection({ onAnswer, images }: Q3Props) {
               blurDataURL={BLUR_DATA_URL}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-              <span className="text-white text-sm md:text-base font-medium drop-shadow-lg">
-                {option.label}
-              </span>
-            </div>
           </motion.button>
         ))}
       </div>
@@ -946,7 +940,7 @@ function Q4FollowUp({ q3Answer, onAnswer, images }: Q4Props) {
         <h2 className="text-lg md:text-xl font-display font-medium text-charcoal mb-2">
           Which style feels most like you?
         </h2>
-        <p className="text-xs md:text-sm text-sage leading-relaxed max-w-sm mx-auto">
+        <p className="text-xs md:text-sm text-charcoal leading-relaxed max-w-sm mx-auto">
           Length, curl and color can all be customized by your lash stylist to fit your preference.
         </p>
       </div>
@@ -969,12 +963,6 @@ function Q4FollowUp({ q3Answer, onAnswer, images }: Q4Props) {
               blurDataURL={BLUR_DATA_URL}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3">
-              <span className="text-white text-sm font-medium">
-                {option.label}
-              </span>
-            </div>
           </motion.button>
         ))}
       </div>
@@ -1007,7 +995,7 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
           <h2 className="text-lg md:text-2xl font-display font-medium text-charcoal">
             {result.displayName}
           </h2>
-          <p className="text-[11px] md:text-xs text-sage mt-1">Recommended Service: {result.recommendedService}</p>
+          <p className="text-[11px] md:text-xs text-charcoal mt-1">Recommended Service: {result.recommendedService}</p>
         </div>
 
         {/* Result Image */}
@@ -1024,7 +1012,7 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
         </div>
 
         {/* Description */}
-        <p className="text-sage text-sm leading-relaxed mb-3 md:mb-4 shrink-0">
+        <p className="text-charcoal text-sm leading-relaxed mb-3 md:mb-4 shrink-0">
           {result.description}
         </p>
 
@@ -1033,8 +1021,8 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
           <p className="text-charcoal font-medium text-sm mb-2">Best for you if:</p>
           <ul className="space-y-1 md:space-y-1.5">
             {result.bestFor.map((item, index) => (
-              <li key={index} className="flex items-start gap-2 text-sage text-sm">
-                <span className="text-terracotta mt-0.5">•</span>
+              <li key={index} className="flex items-start gap-2 text-charcoal text-sm">
+                <span className="text-dusty-rose mt-0.5">•</span>
                 {item}
               </li>
             ))}
@@ -1043,12 +1031,12 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
 
         {/* Duration (for Lash Lift only) */}
         {result.duration && (
-          <p className="text-sage text-sm italic mb-3 md:mb-4 shrink-0">{result.duration}</p>
+          <p className="text-charcoal text-sm italic mb-3 md:mb-4 shrink-0">{result.duration}</p>
         )}
 
         {/* Customization Note */}
         <div className="bg-cream/60 rounded-xl p-3 md:p-4 mb-3 md:mb-4 shrink-0">
-          <p className="text-sage text-xs md:text-sm leading-relaxed">
+          <p className="text-charcoal text-xs md:text-sm leading-relaxed">
             <span className="font-medium text-charcoal">Love this vibe but want some adjustments?</span>{' '}
             Length, curl, color, shape and fullness are fully customizable. Feel free to save any lash photos you love and bring them to your appointment to show your lash artist for inspiration.
           </p>
@@ -1061,14 +1049,14 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={onBook}
-              className="w-full py-4 rounded-full bg-terracotta hover:bg-rust text-white font-medium
-                         shadow-lg shadow-terracotta/30 transition-all duration-200 mb-3 shrink-0"
+              className="w-full py-4 rounded-full bg-dusty-rose hover:bg-dusty-rose/90 text-white font-medium
+                         shadow-lg shadow-dusty-rose/30 transition-all duration-200 mb-3 shrink-0"
             >
               {result.bookingLabel} →
             </motion.button>
 
             {/* Universal Note */}
-            <p className="text-xs text-sage/70 text-center leading-relaxed shrink-0">
+            <p className="text-xs text-charcoal/70 text-center leading-relaxed shrink-0">
               Every set is customized to your eye shape and natural lashes. Your artist will fine-tune your look during your appointment so you leave loving your lashes.
             </p>
           </>
@@ -1078,14 +1066,14 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
       {/* Mobile Sticky Book CTA */}
       {isMobile && (
         <div
-          className="absolute bottom-0 left-0 right-0 p-4 bg-ivory/95 backdrop-blur-sm border-t border-sage/10"
+          className="absolute bottom-0 left-0 right-0 p-4 bg-rose-mist/95 backdrop-blur-sm border-t border-white/20"
           style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
         >
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={onBook}
-            className="w-full py-3.5 rounded-full bg-terracotta text-white font-medium
-                       shadow-lg shadow-terracotta/30 active:shadow-md transition-shadow"
+            className="w-full py-3.5 rounded-full bg-dusty-rose text-white font-medium
+                       shadow-lg shadow-dusty-rose/30 active:shadow-md transition-shadow"
           >
             {result.bookingLabel} →
           </motion.button>
