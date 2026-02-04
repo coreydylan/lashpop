@@ -1144,7 +1144,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         )}
 
         {/* Join The Team CTA */}
-        <div className="text-center mt-12 md:mt-16 px-4">
+        <div className="text-center mt-12 md:mt-16 pb-12 md:pb-16 px-4">
           <a
             href="/work-with-us"
             className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#ac4d3c] hover:text-white hover:border-[#ac4d3c]"
@@ -1159,14 +1159,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </a>
         </div>
 
-        {/* Team Group Photo - Full Width */}
-        <div className="mt-8 md:mt-16 -mx-4 md:-mx-8 lg:-mx-12">
-          <img
-            src="/lashpop-images/team/team-group-photo.jpg"
-            alt="The LashPop Studios team"
-            className="w-full h-auto"
-          />
-        </div>
       </section>
 
       {/* Team Member Modal - Full Screen on Mobile (Portaled to body) */}

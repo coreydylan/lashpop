@@ -1,8 +1,30 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import type { ServiceCategory } from '../ServiceBrowserContext'
+
+// Display names matching the main services section titles
+const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
+  'lashes': 'Lashes',
+  'brows': 'Brows',
+  'facials': 'Skincare',
+  'waxing': 'Waxing',
+  'permanent-makeup': 'Permanent Makeup',
+  'specialty': 'Permanent Jewelry',
+  'injectables': 'Botox',
+}
+
+// Order matching the main services section (excluding lash-lifts which opens lashes with subcategory)
+const CATEGORY_ORDER: string[] = [
+  'lashes',
+  'brows',
+  'facials',
+  'waxing',
+  'permanent-makeup',
+  'specialty',
+  'injectables',
+]
 
 interface CategoryTabsProps {
   categories: ServiceCategory[]
@@ -11,6 +33,17 @@ interface CategoryTabsProps {
 }
 
 export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryTabsProps) {
+  // Sort categories to match the order on the main services section
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => {
+      const aIndex = CATEGORY_ORDER.indexOf(a.slug)
+      const bIndex = CATEGORY_ORDER.indexOf(b.slug)
+      // If not in order array, put at end
+      const aOrder = aIndex === -1 ? 999 : aIndex
+      const bOrder = bIndex === -1 ? 999 : bIndex
+      return aOrder - bOrder
+    })
+  }, [categories])
   const scrollRef = useRef<HTMLDivElement>(null)
   const [showLeftGradient, setShowLeftGradient] = useState(false)
   const [showRightGradient, setShowRightGradient] = useState(false)
@@ -34,7 +67,7 @@ export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryT
       container.removeEventListener('scroll', checkScroll)
       window.removeEventListener('resize', checkScroll)
     }
-  }, [categories])
+  }, [sortedCategories])
 
   // Scroll active tab into view when it changes
   useEffect(() => {
@@ -53,7 +86,7 @@ export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryT
     }
   }, [activeCategory])
 
-  if (categories.length <= 1) {
+  if (sortedCategories.length <= 1) {
     return null
   }
 
@@ -86,8 +119,10 @@ export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryT
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {categories.map((category) => {
+        {sortedCategories.map((category) => {
           const isActive = activeCategory === category.slug
+          // Use display name if available, otherwise fall back to database name
+          const displayName = CATEGORY_DISPLAY_NAMES[category.slug] || category.name
           return (
             <motion.button
               key={category.id}
@@ -102,7 +137,7 @@ export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryT
               `}
               whileTap={{ scale: 0.98 }}
             >
-              {category.name}
+              {displayName}
             </motion.button>
           )
         })}
