@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { useSession } from '@/lib/auth-client';
 import { nanoid } from 'nanoid';
 
 // ============================================================================
@@ -195,7 +194,6 @@ function createEmptyKnowledge(): UserKnowledge {
 }
 
 export function UserKnowledgeProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
   const [knowledge, setKnowledge] = useState<UserKnowledge>(getInitialKnowledge);
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -219,27 +217,6 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
       }
     };
   }, [knowledge]);
-
-  // Link to authenticated user - use specific values to avoid re-running on session object changes
-  const sessionUserId = session?.user?.id;
-  const sessionPhoneNumber = (session?.user as any)?.phoneNumber;
-  
-  useEffect(() => {
-    if (sessionUserId) {
-      setKnowledge(prev => {
-        // Prevent infinite loop by checking if values actually changed
-        if (prev.userId === sessionUserId && prev.phoneNumber === (sessionPhoneNumber || prev.phoneNumber)) {
-          return prev;
-        }
-
-        return {
-          ...prev,
-          userId: sessionUserId,
-          phoneNumber: sessionPhoneNumber || prev.phoneNumber
-        };
-      });
-    }
-  }, [sessionUserId, sessionPhoneNumber]);
 
   // Track service view
   const trackServiceView = useCallback((serviceId: string, serviceName: string, categoryId: string) => {
@@ -366,8 +343,8 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
 
   // Should show save nudge
   const shouldShowSaveNudge = useCallback((): boolean => {
-    // Don't show if already authenticated
-    if (sessionUserId) return false;
+    // Don't show if already has userId (authenticated)
+    if (knowledge.userId) return false;
 
     // Don't show if dismissed recently (within 24 hours)
     if (knowledge.lastNudgeDismissal) {
@@ -385,7 +362,7 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
     if (knowledge.serviceInteractions.length < 3) return false;
 
     return true;
-  }, [knowledge, sessionUserId]);
+  }, [knowledge]);
 
   // Dismiss save nudge
   const dismissSaveNudge = useCallback(() => {
@@ -396,21 +373,12 @@ export function UserKnowledgeProvider({ children }: { children: React.ReactNode 
     }));
   }, []);
 
-  // Sync to server
+  // Sync to server (placeholder for future implementation)
   const syncToServer = useCallback(async () => {
-    if (!sessionUserId) return;
-
-    try {
-      // TODO: Implement server sync
-      // await fetch('/api/user-knowledge/sync', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(knowledge)
-      // });
-    } catch (error) {
-      console.error('Failed to sync user knowledge to server:', error);
-    }
-  }, [sessionUserId]);
+    // TODO: Implement server sync when auth is added
+    // if (!knowledge.userId) return;
+    // await fetch('/api/user-knowledge/sync', { ... });
+  }, []);
 
   // Get service history
   const getServiceHistory = useCallback((categoryId?: string): ServiceInteraction[] => {
