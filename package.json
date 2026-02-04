@@ -70,6 +70,14 @@
     "twilio": "^5.10.5",
     "typescript": "^5.9.2"
   },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions",
+    "iOS >= 15",
+    "not dead"
+  ],
   "devDependencies": {
     "detect-port": "^2.1.0",
     "drizzle-kit": "^0.31.1",

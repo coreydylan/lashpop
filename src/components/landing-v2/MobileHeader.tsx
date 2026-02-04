@@ -266,6 +266,8 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
               <img
                 src="/lashpop-images/branding/logo-terracotta.png"
                 alt="LashPop Studios"
+                width={68}
+                height={24}
                 className="h-6 w-auto"
               />
             </button>

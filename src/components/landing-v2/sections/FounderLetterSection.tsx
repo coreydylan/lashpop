@@ -103,6 +103,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             <img
               src="/lashpop-images/founder-letter-bg-mobile.jpg"
               alt="Emily in studio archway"
+              width={1441}
+              height={925}
               className="w-full h-auto"
             />
           </picture>
