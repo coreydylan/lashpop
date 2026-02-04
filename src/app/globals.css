@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Hanken+Grotesk:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Outfit:wght@200;300;400;500&family=Libre+Baskerville:ital@0;1&family=TikTok+Sans:wght@400;500;600;700&display=swap');
+/* Google Fonts moved to next/font in layout.tsx to eliminate render-blocking */
 
 @font-face {
     font-family: 'Corey Nice';

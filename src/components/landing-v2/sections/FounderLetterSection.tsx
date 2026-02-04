@@ -74,6 +74,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                     <img
                       src="/lashpop-images/emily-signature-2.png"
                       alt="Xo, Emily"
+                      width={88}
+                      height={64}
                       className="h-16 w-auto"
                     />
                   </picture>
@@ -140,6 +142,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 <img
                   src="/lashpop-images/emily-signature-2.png"
                   alt="Xo, Emily"
+                  width={77}
+                  height={56}
                   className="h-14 w-auto"
                 />
               </picture>
