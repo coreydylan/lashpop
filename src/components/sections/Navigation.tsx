@@ -132,13 +132,16 @@ export function Navigation() {
                 whileHover={{ scale: 1.05 }}
                 className="flex items-center gap-2"
               >
-                <img
-                  src="/lashpop-images/branding/logo-terracotta.png"
-                  alt="LashPop Studios"
-                  width={120}
-                  height={40}
-                  className={`w-auto transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
-                />
+                <picture>
+                  <source srcSet="/lashpop-images/branding/logo-terracotta.webp" type="image/webp" />
+                  <img
+                    src="/lashpop-images/branding/logo-terracotta.png"
+                    alt="LashPop Studios"
+                    width={120}
+                    height={42}
+                    className={`w-auto transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
+                  />
+                </picture>
               </motion.div>
             </Link>
             

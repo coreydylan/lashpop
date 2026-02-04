@@ -99,17 +99,15 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       {/* Mobile Layout - Simple static scroll */}
       <div className="md:hidden relative" style={{ backgroundColor: '#d8c9c0' }}>
         {/* Emily Arch Image - static, full width, aligned with hero bottom */}
-        <div className="w-full overflow-hidden">
-          <picture>
-            <source srcSet="/lashpop-images/founder-letter-bg-mobile.webp" type="image/webp" />
-            <img
-              src="/lashpop-images/founder-letter-bg-mobile.jpg"
-              alt="Emily in studio archway"
-              width={1441}
-              height={925}
-              className="w-full h-auto"
-            />
-          </picture>
+        <div className="w-full overflow-hidden relative" style={{ aspectRatio: '1441/925' }}>
+          <Image
+            src="/lashpop-images/founder-letter-bg-mobile.webp"
+            alt="Emily in studio archway"
+            fill
+            sizes="100vw"
+            className="object-cover"
+            quality={85}
+          />
         </div>
 
         {/* Text Container */}
