@@ -79,9 +79,7 @@ export async function ServicesSchema({ siteSettings }: ServicesSchemaProps) {
         name: service.name,
         description: service.description || `${service.name} service`,
         provider: {
-          '@type': 'LocalBusiness',
-          name: siteSettings.businessName,
-          url: siteSettings.siteUrl
+          '@id': `${siteSettings.siteUrl}/#organization`
         },
         ...(service.priceStarting && {
           offers: {

@@ -99,9 +99,7 @@ export async function ReviewSchema({
     '@type': 'Review',
     '@id': `${siteSettings.siteUrl}/#review-${review.id}`,
     itemReviewed: {
-      '@type': 'LocalBusiness',
-      '@id': `${siteSettings.siteUrl}/#organization`,
-      name: siteSettings.businessName
+      '@id': `${siteSettings.siteUrl}/#organization`
     },
     author: {
       '@type': 'Person',
@@ -122,8 +120,7 @@ export async function ReviewSchema({
       comment: {
         '@type': 'Comment',
         author: {
-          '@type': 'LocalBusiness',
-          name: siteSettings.businessName
+          '@id': `${siteSettings.siteUrl}/#organization`
         },
         text: review.responseText
       }

@@ -291,6 +291,15 @@ function createFallbackSchema(
     url: settings.siteUrl,
     telephone: settings.phone,
     email: settings.email,
+    // Hardcoded fallback address for LashPop Studios
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: '429 S Coast Hwy',
+      addressLocality: 'Oceanside',
+      addressRegion: 'CA',
+      postalCode: '92054',
+      addressCountry: 'US'
+    },
   }
 
   if (settings.logo?.url) {
