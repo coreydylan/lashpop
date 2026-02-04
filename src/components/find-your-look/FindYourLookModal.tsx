@@ -343,23 +343,6 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
     };
   }, [isOpen]);
 
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [isOpen, handleClose]);
-
   const handleBack = useCallback(() => {
     if (step === 4) {
       setStep(3);
@@ -377,6 +360,23 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
     quiz.reset();
     onClose();
   }, [onClose, quiz]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, handleClose]);
 
   const handleStartQuiz = () => {
     setStep(1);
