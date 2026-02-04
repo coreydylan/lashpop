@@ -141,18 +141,12 @@ export function getDb() {
     throw new Error("DATABASE_URL is not set")
   }
   if (!dbInstance || !clientInstance) {
-    let connectionUrl = databaseUrl
+    // Trim any whitespace/newlines from the URL
+    let connectionUrl = databaseUrl.trim()
 
-    // For Supabase pooler: use Transaction mode (port 6543) instead of Session mode (port 5432)
-    // Session mode exhausts connections quickly in serverless environments
-    if (databaseUrl.includes('pooler.supabase.com')) {
-      // Switch from Session mode (5432) to Transaction mode (6543)
-      connectionUrl = connectionUrl.replace(':5432/', ':6543/')
-
-      // Add pgbouncer parameter if not present (required for Transaction mode)
-      if (!connectionUrl.includes('pgbouncer=true')) {
-        connectionUrl = connectionUrl + (connectionUrl.includes('?') ? '&' : '?') + 'pgbouncer=true'
-      }
+    // Add pgbouncer parameter for Supabase pooler if not present
+    if (connectionUrl.includes('pooler.supabase.com') && !connectionUrl.includes('pgbouncer=true')) {
+      connectionUrl = connectionUrl + (connectionUrl.includes('?') ? '&' : '?') + 'pgbouncer=true'
     }
 
     // Configure postgres-js with connection pooling optimized for Supabase
