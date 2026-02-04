@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Zilla_Slab, Playfair_Display, Josefin_Slab, Chivo, Andika, League_Script, Swanky_and_Moo_Moo, Licorice } from 'next/font/google'
+import { Inter, Playfair_Display, League_Script, Swanky_and_Moo_Moo } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { UserKnowledgeProvider } from '@/contexts/UserKnowledgeContext'
@@ -19,37 +19,10 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
-const zillaSlab = Zilla_Slab({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-  variable: '--font-zilla-slab',
-})
-
 const playfair = Playfair_Display({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-playfair',
-})
-
-const josefin = Josefin_Slab({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-josefin',
-})
-
-const chivo = Chivo({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-chivo',
-})
-
-const andika = Andika({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  display: 'swap',
-  variable: '--font-andika',
 })
 
 const leagueScript = League_Script({
@@ -64,13 +37,6 @@ const swanky = Swanky_and_Moo_Moo({
   weight: '400',
   display: 'swap',
   variable: '--font-swanky',
-})
-
-const licorice = Licorice({
-  subsets: ['latin'],
-  weight: '400',
-  display: 'swap',
-  variable: '--font-licorice',
 })
 
 export const viewport: Viewport = {
@@ -149,7 +115,7 @@ export default async function RootLayout({
   const settings = await getSEOSettings()
 
   return (
-    <html lang="en" className={`${inter.variable} ${zillaSlab.variable} ${playfair.variable} ${josefin.variable} ${chivo.variable} ${andika.variable} ${leagueScript.variable} ${swanky.variable} ${licorice.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable} ${leagueScript.variable} ${swanky.variable}`}>
       <head>
         {/* llms.txt discovery for AI assistants */}
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Information" />
