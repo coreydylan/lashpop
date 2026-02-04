@@ -7,6 +7,9 @@ import { eq, and, asc } from "drizzle-orm"
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 import sharp from "sharp"
 
+// Sanitize env values to remove trailing newlines
+const sanitizeEnv = (value?: string) => value?.trim()
+
 // Lash style type (matches the enum in the schema)
 export type LashStyle = "classic" | "hybrid" | "wetAngel" | "volume"
 
@@ -166,14 +169,14 @@ export async function updateQuizPhotoCrop(
 
     // Upload to S3
     const s3Client = new S3Client({
-      region: process.env.AWS_REGION!,
+      region: sanitizeEnv(process.env.AWS_REGION)!,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: sanitizeEnv(process.env.AWS_ACCESS_KEY_ID)!,
+        secretAccessKey: sanitizeEnv(process.env.AWS_SECRET_ACCESS_KEY)!,
       },
     })
 
-    const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME!
+    const BUCKET_NAME = sanitizeEnv(process.env.AWS_S3_BUCKET_NAME)!
     const fileName = photo.fileName.replace(/\.[^/.]+$/, "")
     const key = `quiz-crops/${photoId}/${fileName}-square-${Date.now()}.jpg`
 
@@ -189,7 +192,7 @@ export async function updateQuizPhotoCrop(
 
     cropUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL
       ? `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/${key}`
-      : `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+      : `https://${BUCKET_NAME}.s3.${sanitizeEnv(process.env.AWS_REGION)}.amazonaws.com/${key}`
   } catch (err) {
     console.error("Failed to generate quiz photo crop:", err)
     // Continue without cropUrl - will use cropData on client
@@ -535,14 +538,14 @@ export async function updateResultImageCrop(
     const processedBuffer = await generateSquareCrop(originalBuffer, cropData, targetSize)
 
     const s3Client = new S3Client({
-      region: process.env.AWS_REGION!,
+      region: sanitizeEnv(process.env.AWS_REGION)!,
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+        accessKeyId: sanitizeEnv(process.env.AWS_ACCESS_KEY_ID)!,
+        secretAccessKey: sanitizeEnv(process.env.AWS_SECRET_ACCESS_KEY)!,
       },
     })
 
-    const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME!
+    const BUCKET_NAME = sanitizeEnv(process.env.AWS_S3_BUCKET_NAME)!
     const fileName = settings.fileName?.replace(/\.[^/.]+$/, "") || "result"
     const key = `quiz-results/${lashStyle}/${fileName}-result-${Date.now()}.jpg`
 
@@ -558,7 +561,7 @@ export async function updateResultImageCrop(
 
     cropUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL
       ? `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/${key}`
-      : `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`
+      : `https://${BUCKET_NAME}.s3.${sanitizeEnv(process.env.AWS_REGION)}.amazonaws.com/${key}`
   } catch (err) {
     console.error("Failed to generate result image crop:", err)
   }
