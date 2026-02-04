@@ -46,13 +46,24 @@ function createAuth() {
   })
 }
 
-// Export auth as a getter that lazily initializes
+// Export auth getter function for direct use
+export function getAuth(): ReturnType<typeof betterAuth> {
+  if (!_auth) {
+    _auth = createAuth()
+  }
+  return _auth
+}
+
+// Export auth as a getter that lazily initializes (for backwards compatibility)
 export const auth = new Proxy({} as ReturnType<typeof betterAuth>, {
   get(_target, prop) {
-    if (!_auth) {
-      _auth = createAuth()
+    const instance = getAuth()
+    const value = (instance as any)[prop]
+    // Bind functions to the instance to preserve 'this' context
+    if (typeof value === 'function') {
+      return value.bind(instance)
     }
-    return (_auth as any)[prop]
+    return value
   }
 })
 

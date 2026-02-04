@@ -7,6 +7,8 @@ import { FindYourLookProvider } from '@/components/find-your-look'
 import { getSEOSettings } from '@/actions/seo'
 import { LocalBusinessSchema, WebSiteSchema, FAQSchema, ServicesSchema, ReviewSchema } from '@/components/seo'
 import { DesignMode } from '@/components/dev/DesignMode'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 // Force dynamic rendering for all pages - root layout fetches SEO settings from database
 export const dynamic = 'force-dynamic'
@@ -170,6 +172,8 @@ export default async function RootLayout({
             </FindYourLookProvider>
           </UserKnowledgeProvider>
         </AuthProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

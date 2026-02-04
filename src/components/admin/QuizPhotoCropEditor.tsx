@@ -95,7 +95,14 @@ export function QuizPhotoCropEditor({
 
   // Clamp crop when aspect ratio changes
   useEffect(() => {
-    setCrop(prev => clampCropToBounds(prev, safeAspect))
+    setCrop(prev => {
+      const clamped = clampCropToBounds(prev, safeAspect)
+      // Only update if values actually changed to prevent infinite loops
+      if (clamped.x === prev.x && clamped.y === prev.y && clamped.scale === prev.scale) {
+        return prev
+      }
+      return clamped
+    })
   }, [safeAspect])
 
   // Track container size

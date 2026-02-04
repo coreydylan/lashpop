@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Brow Icon - Thickness Tests</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 40px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    h1, h2 { color: #cc947f; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+    .icon-card {
+      background: #2a2a2a;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .icon-card img {
+      width: 220px;
+      height: auto;
+      max-height: 80px;
+      object-fit: contain;
+      margin-bottom: 10px;
+    }
+    .icon-card p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #888;
+    }
+    .icon-card h3 {
+      margin: 10px 0 5px;
+      color: #cc947f;
+      font-size: 16px;
+    }
+    .preview-bg {
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60px;
+    }
+    .light-bg { background: #f5f5f5; }
+    .dark-bg { background: #1a1a1a; border: 1px solid #333; }
+    .label { font-size: 11px; color: #666; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Brow Icon - Geometric Inset Variations</h1>
+  <p>Properly thinned using shapely polygon buffer (maintains exact shape)</p>
+
+  <div class="grid">
+    <div class="icon-card">
+      <h3>Original</h3>
+      <div class="label">Light background</div>
+      <div class="preview-bg light-bg">
+        <img src="../lashpop-images/services/thin/brows-icon.svg" alt="Original">
+      </div>
+      <div class="label">Dark background</div>
+      <div class="preview-bg dark-bg">
+        <img src="../lashpop-images/services/thin/brows-icon.svg" alt="Original">
+      </div>
+      <p>100% thickness</p>
+    </div>
+
+    <div class="icon-card">
+      <h3>Reference (processed)</h3>
+      <div class="label">Light background</div>
+      <div class="preview-bg light-bg">
+        <img src="brows-original-ref.svg" alt="Reference">
+      </div>
+      <div class="label">Dark background</div>
+      <div class="preview-bg dark-bg">
+        <img src="brows-original-ref.svg" alt="Reference">
+      </div>
+      <p>100% - same shape, processed</p>
+    </div>
+
+    <div class="icon-card">
+      <h3>V1 - Slight</h3>
+      <div class="label">Light background</div>
+      <div class="preview-bg light-bg">
+        <img src="brows-v1-slight.svg" alt="V1">
+      </div>
+      <div class="label">Dark background</div>
+      <div class="preview-bg dark-bg">
+        <img src="brows-v1-slight.svg" alt="V1">
+      </div>
+      <p>~80% thickness (inset 5)</p>
+    </div>
+
+    <div class="icon-card">
+      <h3>V2 - Medium</h3>
+      <div class="label">Light background</div>
+      <div class="preview-bg light-bg">
+        <img src="brows-v2-medium.svg" alt="V2">
+      </div>
+      <div class="label">Dark background</div>
+      <div class="preview-bg dark-bg">
+        <img src="brows-v2-medium.svg" alt="V2">
+      </div>
+      <p>~60% thickness (inset 10)</p>
+    </div>
+
+    <div class="icon-card">
+      <h3>V3 - Thin</h3>
+      <div class="label">Light background</div>
+      <div class="preview-bg light-bg">
+        <img src="brows-v3-thin.svg" alt="V3">
+      </div>
+      <div class="label">Dark background</div>
+      <div class="preview-bg dark-bg">
+        <img src="brows-v3-thin.svg" alt="V3">
+      </div>
+      <p>~40% thickness (inset 15)</p>
+    </div>
+
+    <div class="icon-card">
+      <h3>V4 - Very Thin</h3>
+      <div class="label">Light background</div>
+      <div class="preview-bg light-bg">
+        <img src="brows-v4-very-thin.svg" alt="V4">
+      </div>
+      <div class="label">Dark background</div>
+      <div class="preview-bg dark-bg">
+        <img src="brows-v4-very-thin.svg" alt="V4">
+      </div>
+      <p>~20% thickness (inset 20)</p>
+    </div>
+  </div>
+
+  <h2 style="margin-top: 50px;">Side-by-side (same display size)</h2>
+  <div style="background: #f5f5f5; padding: 30px; border-radius: 12px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; align-items: center;">
+    <div style="text-align: center;">
+      <img src="../lashpop-images/services/thin/brows-icon.svg" style="width: 160px; height: 50px; object-fit: contain;">
+      <p style="color: #333; font-size: 11px; margin: 5px 0 0;">Original</p>
+    </div>
+    <div style="text-align: center;">
+      <img src="brows-v1-slight.svg" style="width: 160px; height: 50px; object-fit: contain;">
+      <p style="color: #333; font-size: 11px; margin: 5px 0 0;">80%</p>
+    </div>
+    <div style="text-align: center;">
+      <img src="brows-v2-medium.svg" style="width: 160px; height: 50px; object-fit: contain;">
+      <p style="color: #333; font-size: 11px; margin: 5px 0 0;">60%</p>
+    </div>
+    <div style="text-align: center;">
+      <img src="brows-v3-thin.svg" style="width: 160px; height: 50px; object-fit: contain;">
+      <p style="color: #333; font-size: 11px; margin: 5px 0 0;">40%</p>
+    </div>
+    <div style="text-align: center;">
+      <img src="brows-v4-very-thin.svg" style="width: 160px; height: 50px; object-fit: contain;">
+      <p style="color: #333; font-size: 11px; margin: 5px 0 0;">20%</p>
+    </div>
+  </div>
+</body>
+</html>

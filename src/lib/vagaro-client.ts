@@ -235,18 +235,57 @@ export class VagaroClient {
     categoryId?: string
     status?: 'active' | 'inactive'
   }): Promise<VagaroService[]> {
-    const response = await this.requestWithRetry<any>(
-      'POST',
-      '/api/v2/services',
-      {
+    const allServices: VagaroService[] = []
+    const seenServiceIds = new Set<string>()
+    let nextPage: string | null = null
+    let pageCount = 0
+    const maxPages = 100 // Safety limit
+
+    do {
+      pageCount++
+      const requestBody: any = {
         businessId: this.businessId,
         ...filters
       }
-    )
 
-    // API returns { status, responseId, message, data: { services: [...], nextPage: "..." } }
-    const services = response.data?.services || response.services || response.data || []
-    return services
+      if (nextPage) {
+        requestBody.nextPage = nextPage
+      }
+
+      const response = await this.requestWithRetry<any>(
+        'POST',
+        '/api/v2/services',
+        requestBody
+      )
+
+      // API returns { status, responseId, message, data: { services: [...], nextPage: "..." } }
+      const services = response.data?.services || response.services || response.data || []
+
+      // Deduplicate services by ID to detect infinite loops
+      let newServicesCount = 0
+      for (const service of services) {
+        const serviceId = service.serviceId || service.id
+        if (serviceId && !seenServiceIds.has(serviceId)) {
+          seenServiceIds.add(serviceId)
+          allServices.push(service)
+          newServicesCount++
+        }
+      }
+
+      // If no new services were found, we're likely in a loop
+      if (newServicesCount === 0 && services.length > 0) {
+        break
+      }
+
+      // Get next page token if available
+      nextPage = response.data?.nextPage || response.nextPage || null
+
+      if (pageCount >= maxPages) {
+        break
+      }
+    } while (nextPage)
+
+    return allServices
   }
 
   /**

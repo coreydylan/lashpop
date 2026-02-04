@@ -37,10 +37,27 @@ export function BrowseView() {
     return Array.from(subcatMap.values()).sort((a, b) => a.displayOrder - b.displayOrder)
   }, [categoryServices])
 
-  // Filter by active subcategory
+  // Filter by active subcategory and sort by subcategory order, then service order
   const filteredServices = useMemo(() => {
-    if (!activeSubcategory) return categoryServices
-    return categoryServices.filter(s => s.subcategorySlug === activeSubcategory)
+    let filtered = activeSubcategory
+      ? categoryServices.filter(s => s.subcategorySlug === activeSubcategory)
+      : categoryServices
+
+    // Sort by: 1) subcategory display order, 2) service display order
+    // Services without a subcategory go to the end
+    return [...filtered].sort((a, b) => {
+      const aSubcatOrder = a.subcategoryDisplayOrder ?? 999
+      const bSubcatOrder = b.subcategoryDisplayOrder ?? 999
+
+      if (aSubcatOrder !== bSubcatOrder) {
+        return aSubcatOrder - bSubcatOrder
+      }
+
+      // Within same subcategory, sort by service display order
+      const aOrder = a.displayOrder ?? 999
+      const bOrder = b.displayOrder ?? 999
+      return aOrder - bOrder
+    })
   }, [categoryServices, activeSubcategory])
 
   return (

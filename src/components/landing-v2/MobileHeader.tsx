@@ -175,9 +175,12 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     // Services section needs header offset to show "Choose a Service" heading
     if (item.href === '#services') {
       smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
-    } else if (item.href === '#gallery' || item.href === '#reviews') {
-      // Gallery and reviews use center alignment with header offset
+    } else if (item.href === '#gallery') {
+      // Gallery uses center alignment with header offset
       smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'center')
+    } else if (item.href === '#reviews') {
+      // Reviews: scroll to show header + review cards visible below the stat chips
+      smoothScrollToElement(item.href, HEADER_HEIGHT + 120, 800, 'top')
     } else {
       // All other sections: offset by header height
       smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')

@@ -8,7 +8,7 @@ import { getDb } from '@/db'
 import { services } from '@/db/schema/services'
 import { teamMembers } from '@/db/schema/team_members'
 import { getVagaroClient } from './vagaro-client'
-import { eq } from 'drizzle-orm'
+import { eq, isNotNull } from 'drizzle-orm'
 
 /**
  * Sync a single service from Vagaro to local DB
@@ -195,36 +195,46 @@ export async function syncTeamMember(vagaroEmployee: any) {
 
 /**
  * Sync all team members from Vagaro
+ *
+ * Note: Vagaro API requires serviceProviderId for employee lookups, so we
+ * fetch team members from our DB that have vagaro_employee_id and sync each individually
  */
 export async function syncAllTeamMembers() {
   console.log('🔄 Syncing all team members from Vagaro...')
 
+  const db = getDb()
   const client = getVagaroClient()
 
-  // Fetch active and inactive employees separately (Vagaro API requires status filter)
-  const activeEmployees = await client.getEmployees({ status: 'active' })
-  const inactiveEmployees = await client.getEmployees({ status: 'inactive' })
+  // Get all team members that have a Vagaro employee ID
+  const membersToSync = await db
+    .select({
+      id: teamMembers.id,
+      name: teamMembers.name,
+      vagaroEmployeeId: teamMembers.vagaroEmployeeId,
+    })
+    .from(teamMembers)
+    .where(isNotNull(teamMembers.vagaroEmployeeId))
 
-  // Combine both lists
-  const vagaroEmployees = [...activeEmployees, ...inactiveEmployees]
+  console.log(`  Found ${membersToSync.length} team members with Vagaro IDs`)
 
-  console.log(`  Found ${activeEmployees?.length || 0} active employees in Vagaro`)
-  console.log(`  Found ${inactiveEmployees?.length || 0} inactive employees in Vagaro`)
-  console.log(`  Total: ${vagaroEmployees?.length || 0} employees`)
+  let syncedCount = 0
+  let errorCount = 0
 
-  if (!Array.isArray(vagaroEmployees)) {
-    console.error('  ❌ Invalid response from Vagaro API')
-    console.error('  Response:', vagaroEmployees)
-    return
-  }
-
-  for (const employee of vagaroEmployees) {
+  for (const member of membersToSync) {
     try {
-      await syncTeamMember(employee)
+      // Fetch fresh data from Vagaro using their employee ID
+      const vagaroEmployee = await client.getEmployee(member.vagaroEmployeeId!)
+
+      if (vagaroEmployee) {
+        await syncTeamMember(vagaroEmployee)
+        syncedCount++
+        console.log(`✓ Synced: ${member.name}`)
+      }
     } catch (error) {
-      console.error(`  ❌ Failed to sync employee:`, error)
+      errorCount++
+      console.error(`  ❌ Failed to sync ${member.name}:`, error instanceof Error ? error.message : error)
     }
   }
 
-  console.log('✅ Team member sync complete')
+  console.log(`✅ Team member sync complete: ${syncedCount} synced, ${errorCount} errors`)
 }

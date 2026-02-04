@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 30" fill="none" stroke="#cc947f" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Tapered look with variable stroke - starts thick, tapers -->
+  <path d="M 5 22 C 15 10, 35 5, 50 8 C 65 11, 85 14, 95 17" stroke-width="2.5"/>
+</svg>

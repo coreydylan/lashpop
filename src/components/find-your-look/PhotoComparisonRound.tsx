@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import type { PhotoPair, LashStyle } from "./types"
 
-// Blur placeholder for smooth image loading
+// Blur placeholder for smooth image loading - warm cream tone matching brand palette
 const BLUR_DATA_URL =
-  "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMCwsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAcI/8QAIhAAAQMEAgIDAAAAAAAAAAAAAQIDBAUGEQASIQcxQVFh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAaEQACAwEBAAAAAAAAAAAAAAABAgADESEE/9oADAMBAAIRAxEAPwC08j0+mVqm0eo02owZkCpR0TYr8d5LjT7TgCkLQoHCkqBBBHBBHJJFj8fUiDT+P7cZp0GOxAbpkJLLLSUNttBhGkJSAAlKR4AAAHjnOc0xWzGvBFy6mf/2Q=="
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZDlkMCIvPjwvc3ZnPg=="
 
 // Lash/Eye icon for tap indicator
 const LashIcon = () => (
@@ -53,11 +53,8 @@ export function PhotoComparisonRound({
       {/* Header - static, doesn't animate between rounds */}
       <div className="text-center mb-4 shrink-0">
         <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
-          Which look speaks to you?
+          Tap the look you love
         </h2>
-        <p className="text-xs md:text-sm text-charcoal/70 mt-1 max-w-sm mx-auto">
-          Tap the lash style you prefer
-        </p>
       </div>
 
       {/* Photo Comparison */}
@@ -77,7 +74,7 @@ export function PhotoComparisonRound({
           whileTap={disabled ? {} : { scale: 0.97 }}
           onClick={() => !disabled && onSelect(pair.leftStyle)}
           disabled={disabled}
-          className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-shadow hover:shadow-xl"
+          className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <Image
             src={getPhotoUrl(pair.left)}
@@ -110,7 +107,7 @@ export function PhotoComparisonRound({
           whileTap={disabled ? {} : { scale: 0.97 }}
           onClick={() => !disabled && onSelect(pair.rightStyle)}
           disabled={disabled}
-          className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-shadow hover:shadow-xl"
+          className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <Image
             src={getPhotoUrl(pair.right)}
@@ -129,12 +126,6 @@ export function PhotoComparisonRound({
         </motion.button>
       </div>
 
-      {/* Helper text - static */}
-      <div className="text-center mt-3 shrink-0">
-        <p className="text-[11px] text-charcoal/50">
-          Don&apos;t overthink it - go with your gut!
-        </p>
-      </div>
     </div>
   )
 }

@@ -54,6 +54,53 @@ const nextConfig = {
       },
     ]
   },
+  // Redirects from old lashpopstudios.com site structure
+  async redirects() {
+    return [
+      // Old homepage alternate URL
+      {
+        source: '/home',
+        destination: '/',
+        permanent: true,
+      },
+      // Old about/team page → team section on homepage
+      {
+        source: '/about-us-1',
+        destination: '/#team',
+        permanent: true,
+      },
+      // Old services page → services section on homepage
+      {
+        source: '/services',
+        destination: '/#services',
+        permanent: true,
+      },
+      // Old booking/contact page → find-us/map section on homepage
+      {
+        source: '/book-contact-1',
+        destination: '/#find-us',
+        permanent: true,
+      },
+      // Old join the team section → new careers page
+      {
+        source: '/about-us-1/:path*',
+        destination: '/work-with-us',
+        permanent: true,
+      },
+      // Cart page (no longer needed - external booking via Vagaro)
+      {
+        source: '/cart',
+        destination: '/',
+        permanent: true,
+      },
+      // Search page
+      {
+        source: '/search',
+        destination: '/',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig
