@@ -17,6 +17,7 @@ export interface Service {
   subcategorySlug: string | null
   subcategoryName: string | null
   subcategoryDisplayOrder?: number | null
+  displayOrder?: number | null
   vagaroServiceCode?: string | null
 }
 
@@ -48,7 +49,7 @@ interface ServiceBrowserState {
 }
 
 interface ServiceBrowserActions {
-  openModal: (categorySlug: string, categoryName: string) => void
+  openModal: (categorySlug: string, categoryName: string, subcategorySlug?: string) => void
   closeModal: () => void
   selectService: (service: Service) => void
   goBack: () => void
@@ -100,9 +101,10 @@ const initialState: ServiceBrowserState = {
 export function ServiceBrowserProvider({ children, services, categories = [] }: ServiceBrowserProviderProps) {
   const [state, setState] = useState<ServiceBrowserState>(initialState)
 
-  const openModal = useCallback((categorySlug: string, categoryName: string) => {
+  const openModal = useCallback((categorySlug: string, categoryName: string, subcategorySlug?: string) => {
     // Check if this is the lashes category and user hasn't seen the quiz prompt
-    if (categorySlug === 'lashes' && !hasSeenLashQuizPrompt()) {
+    // Skip the quiz prompt if a specific subcategory is requested (like lash-enhancements)
+    if (categorySlug === 'lashes' && !subcategorySlug && !hasSeenLashQuizPrompt()) {
       setState({
         ...initialState,
         showLashQuizPrompt: true,
@@ -116,6 +118,7 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
         isOpen: true,
         categorySlug,
         categoryName,
+        activeSubcategory: subcategorySlug || null,
       })
     }
   }, [])
@@ -207,7 +210,7 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
   const handleQuizResult = useCallback((lashStyle: string) => {
     // Map quiz result to subcategory slug
     const styleToSubcategory: Record<string, string> = {
-      'lashLift': 'lash-enhancements', // Lash lift is in enhancements
+      'lashLift': 'lash-lifts-tints', // Lash lift is in Lifts & Tints
       'classic': 'classic-extensions',
       'wetAngel': 'wet-angel-extensions',
       'hybrid': 'hybrid-extensions',
