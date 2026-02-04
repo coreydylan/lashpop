@@ -333,7 +333,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Lock body scroll when open
+  // Lock body scroll when open and handle ESC key
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -342,6 +342,23 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
       document.body.style.overflow = '';
     };
   }, [isOpen]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen, handleClose]);
 
   const handleBack = useCallback(() => {
     if (step === 4) {
