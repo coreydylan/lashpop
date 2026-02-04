@@ -124,7 +124,6 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
               className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
               style={{ objectPosition: `${archImage.position.x}% ${archImage.position.y}%` }}
               priority
-              fetchPriority="high"
               quality={85}
               sizes="80vw"
             />

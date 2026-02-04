@@ -297,7 +297,6 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
           className={currentImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
           style={{ objectPosition: `${currentImage.position.x}% ${currentImage.position.y}%` }}
           priority
-          fetchPriority="high"
           quality={85}
           sizes="100vw"
         />
@@ -346,7 +345,6 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
             className={currentImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
             style={{ objectPosition: `${currentImage.position.x}% ${currentImage.position.y}%` }}
             priority
-            fetchPriority="high"
             quality={85}
             sizes="100vw"
           />
