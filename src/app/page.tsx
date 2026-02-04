@@ -7,8 +7,9 @@ import { getFAQsGroupedByCategory } from "@/actions/faqs"
 import { getSlideshowConfigs } from "@/actions/hero-slideshow"
 import LandingPageV2Client from "./LandingPageV2Client"
 
-// Ensure fresh data on each request (for admin-managed content)
-export const dynamic = 'force-dynamic'
+// Use ISR with 60-second revalidation for better performance
+// Data is cached but refreshes every 60 seconds in the background
+export const revalidate = 60
 
 export default async function HomePage() {
   // Fetch all data in parallel for faster loads
