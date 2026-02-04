@@ -90,3 +90,4 @@ vendor/
 .env.production
 .env.production.lashpop
 vercel-dam-env-vars.txt
+public/lashpop-images/_originals/
