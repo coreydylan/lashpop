@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useDevMode } from '@/contexts/DevModeContext'
@@ -133,14 +132,16 @@ export function Navigation() {
                 whileHover={{ scale: 1.05 }}
                 className="flex items-center gap-2"
               >
-                <Image
-                  src="/lashpop-images/branding/logo-terracotta.png"
-                  alt="LashPop Studios"
-                  width={120}
-                  height={40}
-                  className={`w-auto transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
-                  priority
-                />
+                <picture>
+                  <source srcSet="/lashpop-images/branding/logo-terracotta.webp" type="image/webp" />
+                  <img
+                    src="/lashpop-images/branding/logo-terracotta-optimized.png"
+                    alt="LashPop Studios"
+                    width={120}
+                    height={42}
+                    className={`w-auto transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
+                  />
+                </picture>
               </motion.div>
             </Link>
             

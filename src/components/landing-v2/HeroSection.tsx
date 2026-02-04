@@ -241,7 +241,8 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               fill
               className="object-cover"
               priority
-              quality={90}
+              fetchPriority="high"
+              quality={85}
               sizes="100vw"
               style={{
                 objectPosition: `${archImage.position.x}% ${archImage.position.y}%`

@@ -87,39 +87,51 @@ export async function getQuickFactsForMember(memberId: string) {
 /**
  * Get team members with their service categories
  * Merges Vagaro-derived categories with manually set categories
+ *
+ * OPTIMIZED: Single query for all services instead of N+1 queries
  */
 export async function getTeamMembersWithServices() {
   const db = getDb()
 
-  const members = await db
-    .select()
-    .from(teamMembers)
-    .where(eq(teamMembers.isActive, true))
-    .orderBy(teamMembers.displayOrder)
+  // Run all initial queries in parallel for better performance
+  const [members, allServices] = await Promise.all([
+    db.select()
+      .from(teamMembers)
+      .where(eq(teamMembers.isActive, true))
+      .orderBy(teamMembers.displayOrder),
+    // Fetch ALL services with Vagaro data once (instead of per-member)
+    db.select()
+      .from(services)
+      .where(
+        and(
+          isNotNull(services.vagaroData),
+          eq(services.isActive, true)
+        )
+      )
+  ])
 
-  // Fetch all quick facts for all members in one query
   const memberIds = members.map(m => m.id)
-  const allQuickFacts = memberIds.length > 0
-    ? await db
-        .select()
-        .from(teamQuickFacts)
-        .where(inArray(teamQuickFacts.teamMemberId, memberIds))
-        .orderBy(asc(teamQuickFacts.displayOrder))
-    : []
 
-  // Group quick facts by member ID
-  const quickFactsByMember = allQuickFacts.reduce((acc, fact) => {
-    if (!acc[fact.teamMemberId]) {
-      acc[fact.teamMemberId] = []
-    }
-    acc[fact.teamMemberId].push(fact)
-    return acc
-  }, {} as Record<string, typeof allQuickFacts>)
+  // Define types for the query results
+  type QuickFact = typeof teamQuickFacts.$inferSelect
+  type PhotoCrop = {
+    teamMemberId: string
+    cropSquareUrl: string | null
+    cropCloseUpCircleUrl: string | null
+    cropMediumCircleUrl: string | null
+    cropFullVerticalUrl: string | null
+  }
 
-  // Fetch primary photos with crop URLs for all members
-  const primaryPhotos = memberIds.length > 0
-    ? await db
-        .select({
+  // Fetch quick facts and photos in parallel
+  const [allQuickFacts, primaryPhotos] = await Promise.all([
+    memberIds.length > 0
+      ? db.select()
+          .from(teamQuickFacts)
+          .where(inArray(teamQuickFacts.teamMemberId, memberIds))
+          .orderBy(asc(teamQuickFacts.displayOrder))
+      : Promise.resolve([] as QuickFact[]),
+    memberIds.length > 0
+      ? db.select({
           teamMemberId: teamMemberPhotos.teamMemberId,
           cropSquareUrl: teamMemberPhotos.cropSquareUrl,
           cropCloseUpCircleUrl: teamMemberPhotos.cropCloseUpCircleUrl,
@@ -133,7 +145,17 @@ export async function getTeamMembersWithServices() {
             eq(teamMemberPhotos.isPrimary, true)
           )
         )
-    : []
+      : Promise.resolve([] as PhotoCrop[])
+  ])
+
+  // Group quick facts by member ID
+  const quickFactsByMember = allQuickFacts.reduce((acc, fact) => {
+    if (!acc[fact.teamMemberId]) {
+      acc[fact.teamMemberId] = []
+    }
+    acc[fact.teamMemberId].push(fact)
+    return acc
+  }, {} as Record<string, typeof allQuickFacts>)
 
   // Create a map of member ID to photo crops
   const photoCropsByMember = primaryPhotos.reduce((acc, photo) => {
@@ -146,40 +168,65 @@ export async function getTeamMembersWithServices() {
     return acc
   }, {} as Record<string, { cropSquareUrl: string | null; cropCloseUpCircleUrl: string | null; cropMediumCircleUrl: string | null; cropFullVerticalUrl: string | null }>)
 
-  // Fetch service categories for all members in parallel
-  const membersWithServices = await Promise.all(
-    members.map(async (member) => {
-      // Get Vagaro-derived categories
-      const vagaroCategories = await getServicesForTeamMember(member.vagaroEmployeeId)
+  // Build a map of vagaroEmployeeId -> service categories (in-memory, no extra queries)
+  const serviceCategoriesByEmployee = new Map<string, Set<string>>()
+  for (const service of allServices) {
+    const vagaroData = service.vagaroData as any
+    if (!vagaroData?.servicePerformedBy) continue
 
-      // Get manual categories (for services not in Vagaro like injectables)
-      const manualCategories = (member.manualServiceCategories as string[]) || []
+    const performers = vagaroData.servicePerformedBy || []
+    for (const performer of performers) {
+      const employeeId = performer.serviceProviderId || performer.employeeId
+      if (!employeeId || !service.mainCategory) continue
 
-      // Merge and dedupe, keeping order: Vagaro first, then manual
-      const allCategories = [...vagaroCategories]
-      for (const cat of manualCategories) {
-        if (!allCategories.includes(cat)) {
-          allCategories.push(cat)
-        }
+      if (!serviceCategoriesByEmployee.has(employeeId)) {
+        serviceCategoriesByEmployee.set(employeeId, new Set())
       }
+      serviceCategoriesByEmployee.get(employeeId)!.add(service.mainCategory)
+    }
+  }
 
-      // Get photo crops for this member
-      const photoCrops = photoCropsByMember[member.id] || {}
+  // Process all members (no additional queries - just in-memory operations)
+  const membersWithServices = members.map((member) => {
+    // Get Vagaro-derived categories from the pre-built map
+    const vagaroCategoriesSet = member.vagaroEmployeeId
+      ? serviceCategoriesByEmployee.get(member.vagaroEmployeeId) || new Set<string>()
+      : new Set<string>()
 
-      return {
-        ...member,
-        serviceCategories: allCategories.slice(0, 4), // Max 4 tags
-        vagaroServiceCategories: vagaroCategories, // Keep track of which came from Vagaro
-        manualServiceCategories: manualCategories, // Keep track of manual ones
-        quickFacts: quickFactsByMember[member.id] || [], // Add quick facts
-        // Photo crop URLs for different formats
-        cropSquareUrl: photoCrops.cropSquareUrl || null,
-        cropCloseUpCircleUrl: photoCrops.cropCloseUpCircleUrl || null,
-        cropMediumCircleUrl: photoCrops.cropMediumCircleUrl || null,
-        cropFullVerticalUrl: photoCrops.cropFullVerticalUrl || null,
+    // Clean and format category names
+    const vagaroCategories = Array.from(vagaroCategoriesSet).map(cat => {
+      let cleaned = cat.replace(' Services', '').replace(' Service', '')
+      if (cleaned === 'Lash') cleaned = 'Lashes'
+      return cleaned
+    }).slice(0, 4)
+
+    // Get manual categories (for services not in Vagaro like injectables)
+    const manualCategories = (member.manualServiceCategories as string[]) || []
+
+    // Merge and dedupe, keeping order: Vagaro first, then manual
+    const allCategories = [...vagaroCategories]
+    for (const cat of manualCategories) {
+      if (!allCategories.includes(cat)) {
+        allCategories.push(cat)
       }
-    })
-  )
+    }
+
+    // Get photo crops for this member
+    const photoCrops = photoCropsByMember[member.id] || {}
+
+    return {
+      ...member,
+      serviceCategories: allCategories.slice(0, 4), // Max 4 tags
+      vagaroServiceCategories: vagaroCategories, // Keep track of which came from Vagaro
+      manualServiceCategories: manualCategories, // Keep track of manual ones
+      quickFacts: quickFactsByMember[member.id] || [], // Add quick facts
+      // Photo crop URLs for different formats
+      cropSquareUrl: photoCrops.cropSquareUrl || null,
+      cropCloseUpCircleUrl: photoCrops.cropCloseUpCircleUrl || null,
+      cropMediumCircleUrl: photoCrops.cropMediumCircleUrl || null,
+      cropFullVerticalUrl: photoCrops.cropFullVerticalUrl || null,
+    }
+  })
 
   return membersWithServices
 }

@@ -136,13 +136,6 @@ const dbSchema = {
 let dbInstance: ReturnType<typeof drizzlePostgres> | null = null
 let clientInstance: ReturnType<typeof postgres> | null = null
 
-/**
- * Get database connection with proper pooling for Supabase + Vercel
- *
- * IMPORTANT: For serverless (Vercel), use Transaction mode (port 6543), not Session mode (port 5432)
- * Session mode: max clients = pool_size (strict limit, causes "MaxClientsInSessionMode" errors)
- * Transaction mode: releases connections after each query (ideal for serverless)
- */
 export function getDb() {
   if (!databaseUrl) {
     throw new Error("DATABASE_URL is not set")
@@ -151,27 +144,19 @@ export function getDb() {
     // Trim any whitespace/newlines from the URL
     let connectionUrl = databaseUrl.trim()
 
-    // CRITICAL: Convert Session mode (5432) to Transaction mode (6543) for serverless
-    // Transaction mode is required for serverless functions to avoid connection exhaustion
-    if (connectionUrl.includes('pooler.supabase.com:5432')) {
-      connectionUrl = connectionUrl.replace(':5432', ':6543')
-      console.log('[DB] Converted to Transaction mode (port 6543) for serverless compatibility')
+    // Add pgbouncer parameter for Supabase pooler if not present
+    if (connectionUrl.includes('pooler.supabase.com') && !connectionUrl.includes('pgbouncer=true')) {
+      connectionUrl = connectionUrl + (connectionUrl.includes('?') ? '&' : '?') + 'pgbouncer=true'
     }
 
-    // Configure postgres-js optimized for Supabase Transaction mode
+    // Configure postgres-js with connection pooling optimized for Supabase
     const isServerless = process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
     clientInstance = postgres(connectionUrl, {
-      // REQUIRED for Transaction mode (Supavisor) - prepared statements not supported
       prepare: false,
-      // Serverless: 1 connection per function instance
-      // Local dev: small pool for concurrent requests
-      max: isServerless ? 1 : 3,
-      // Release idle connections quickly in serverless
-      idle_timeout: isServerless ? 10 : 20,
-      // Short max lifetime for serverless
-      max_lifetime: isServerless ? 60 : 60 * 5,
-      // Generous timeout for cold starts
-      connect_timeout: 30,
+      max: isServerless ? 1 : 5, // More connections for local dev
+      idle_timeout: 20,
+      max_lifetime: 60 * 5,
+      connect_timeout: isServerless ? 30 : 15, // Longer timeout for serverless cold starts
       connection: {
         application_name: 'lashpop_app',
       },
