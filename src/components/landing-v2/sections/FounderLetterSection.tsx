@@ -69,11 +69,14 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                     </p>
                   ))}
 
-                  <img
-                    src="/lashpop-images/emily-signature-2.png"
-                    alt="Xo, Emily"
-                    className="h-16 w-auto"
-                  />
+                  <picture>
+                    <source srcSet="/lashpop-images/emily-signature-2.webp" type="image/webp" />
+                    <img
+                      src="/lashpop-images/emily-signature-2.png"
+                      alt="Xo, Emily"
+                      className="h-16 w-auto"
+                    />
+                  </picture>
                 </div>
 
                 {/* Hidden accessible text for screen readers and SEO */}
@@ -95,11 +98,14 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       <div className="md:hidden relative" style={{ backgroundColor: '#d8c9c0' }}>
         {/* Emily Arch Image - static, full width, aligned with hero bottom */}
         <div className="w-full overflow-hidden">
-          <img
-            src="/lashpop-images/founder-letter-bg-mobile.jpg"
-            alt="Emily in studio archway"
-            className="w-full h-auto"
-          />
+          <picture>
+            <source srcSet="/lashpop-images/founder-letter-bg-mobile.webp" type="image/webp" />
+            <img
+              src="/lashpop-images/founder-letter-bg-mobile.jpg"
+              alt="Emily in studio archway"
+              className="w-full h-auto"
+            />
+          </picture>
         </div>
 
         {/* Text Container */}
@@ -127,24 +133,18 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 </p>
               ))}
 
-              <img
-                src="/lashpop-images/emily-signature-2.png"
-                alt="Xo, Emily"
-                className="h-14 w-auto"
-              />
+              <picture>
+                <source srcSet="/lashpop-images/emily-signature-2.webp" type="image/webp" />
+                <img
+                  src="/lashpop-images/emily-signature-2.png"
+                  alt="Xo, Emily"
+                  className="h-14 w-auto"
+                />
+              </picture>
             </div>
           </div>
         </div>
 
-        {/* Hidden accessible text for screen readers */}
-        <div id="founder-letter-text-mobile" className="sr-only">
-          <h2>A Letter from Our Founder</h2>
-          <p>{letterContent.greeting}</p>
-          {letterContent.paragraphs.map((paragraph, index) => (
-            <p key={index}>{paragraph}</p>
-          ))}
-          <p>{letterContent.signOff} {letterContent.signature}</p>
-        </div>
       </div>
     </section>
   )

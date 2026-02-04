@@ -76,8 +76,6 @@ const licorice = Licorice({
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover', // iOS safe area support
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#faf6f2' }, // ivory color

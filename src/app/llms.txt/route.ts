@@ -6,6 +6,7 @@ import { serviceCategories } from '@/db/schema/service_categories'
 import { serviceSubcategories } from '@/db/schema/service_subcategories'
 import { faqItems } from '@/db/schema/faqs'
 import { businessLocations } from '@/db/schema/business_locations'
+import { teamMembers } from '@/db/schema/team_members'
 import { eq } from 'drizzle-orm'
 
 /**
@@ -34,8 +35,15 @@ export async function GET() {
 
     // Business Information
     content += `## About\n\n`
-    content += `${site.businessName} is a ${site.businessType.replace(/([A-Z])/g, ' $1').trim().toLowerCase()} located in Los Angeles, California.\n\n`
+    content += `${site.businessName} is an award-winning beauty salon in Oceanside, California, specializing in lash extensions, brow services, skincare, and more. Founded in 2016, LashPop has grown from Emily's living room to a full-service beauty collective with a team of expert artists.\n\n`
+    content += `### What Makes LashPop Special\n\n`
+    content += `- **Expert Artists:** Certified lash technicians with years of experience\n`
+    content += `- **Premium Products:** High-quality lashes and skincare products\n`
+    content += `- **Relaxing Environment:** Beautiful coastal studio designed for comfort\n`
+    content += `- **Personalized Service:** Every client receives a customized consultation\n`
+    content += `- **5-Star Rated:** Over 300 five-star reviews on Google and Yelp\n\n`
 
+    content += `### Contact Information\n\n`
     if (site.phone) {
       content += `- **Phone:** ${site.phone}\n`
     }
@@ -43,6 +51,16 @@ export async function GET() {
       content += `- **Email:** ${site.email}\n`
     }
     content += `- **Website:** ${site.siteUrl}\n`
+    content += `- **Address:** 429 S Coast Hwy, Oceanside, CA 92054\n`
+
+    content += `\n### Service Areas\n\n`
+    content += `LashPop Studios serves clients from throughout North County San Diego including:\n`
+    content += `- Oceanside (home location)\n`
+    content += `- Carlsbad (12 min drive)\n`
+    content += `- Encinitas (18 min drive)\n`
+    content += `- Vista (15 min drive)\n`
+    content += `- San Marcos (20 min drive)\n`
+    content += `- Del Mar, Solana Beach, Leucadia, and surrounding areas\n`
 
     // Social profiles
     const socialLinks = Object.entries(site.socialProfiles)
@@ -107,6 +125,38 @@ export async function GET() {
       // Services table might not exist
     }
 
+    // Team Members Section
+    try {
+      const team = await db
+        .select({
+          name: teamMembers.name,
+          role: teamMembers.role,
+          specialties: teamMembers.specialties,
+          bio: teamMembers.bio
+        })
+        .from(teamMembers)
+        .where(eq(teamMembers.isActive, true))
+        .limit(20)
+
+      if (team.length > 0) {
+        content += '## Our Team\n\n'
+        content += `LashPop Studios has a team of ${team.length} talented beauty professionals.\n\n`
+        for (const member of team) {
+          content += `### ${member.name}\n`
+          content += `**${member.role}**\n`
+          if (member.specialties && Array.isArray(member.specialties) && member.specialties.length > 0) {
+            content += `Specialties: ${member.specialties.join(', ')}\n`
+          }
+          if (member.bio) {
+            content += `${member.bio.slice(0, 150)}${member.bio.length > 150 ? '...' : ''}\n`
+          }
+          content += '\n'
+        }
+      }
+    } catch {
+      // Team members table might not exist
+    }
+
     // Locations Section
     try {
       const locations = await db
@@ -166,6 +216,20 @@ export async function GET() {
     // Booking Information
     content += '## Booking\n\n'
     content += `To book an appointment, visit ${site.siteUrl} or call ${site.phone || 'us directly'}.\n\n`
+    content += `### Booking Policies\n\n`
+    content += `- **Appointments Required:** Walk-ins welcome based on availability, but appointments are recommended\n`
+    content += `- **Cancellation Policy:** Please provide 24-hour notice for cancellations\n`
+    content += `- **Late Arrivals:** Appointments may be shortened or rescheduled if more than 15 minutes late\n`
+    content += `- **New Clients:** First-time lash extension appointments include a consultation\n\n`
+
+    // Careers section
+    content += '## Careers\n\n'
+    content += `LashPop Studios is always looking for talented beauty professionals to join our team.\n\n`
+    content += `### Career Opportunities\n\n`
+    content += `- **Employee Positions:** Full benefits, training, flexible scheduling, competitive commission\n`
+    content += `- **Booth Rental:** Independence with community support, starting at $55-85/day depending on space and days per week\n`
+    content += `- **LashPop Pro Training:** Comprehensive lash extension training program for aspiring artists\n\n`
+    content += `Visit ${site.siteUrl}/work-with-us to learn more or apply.\n\n`
 
     // Footer
     content += '---\n\n'
@@ -182,7 +246,7 @@ export async function GET() {
 
     // Return a minimal fallback
     return new NextResponse(
-      '# LashPop Studios\n\n> Premium lash extension services in Los Angeles.\n\nVisit https://lashpopstudios.com for more information.\n',
+      '# LashPop Studios\n\n> Premium lash extensions and beauty services in Oceanside, California. Serving North County San Diego including Carlsbad, Encinitas, Vista, and San Marcos.\n\nVisit https://lashpopstudios.com for more information.\n',
       {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
