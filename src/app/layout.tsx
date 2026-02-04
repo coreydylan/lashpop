@@ -168,7 +168,8 @@ export default async function RootLayout({
           <UserKnowledgeProvider>
             <FindYourLookProvider>
               {children}
-              {process.env.NODE_ENV === 'development' && <DesignMode />}
+              {/* Temporarily disabled - set to true to re-enable */}
+              {false && process.env.NODE_ENV === 'development' && <DesignMode />}
             </FindYourLookProvider>
           </UserKnowledgeProvider>
         </AuthProvider>
