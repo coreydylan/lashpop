@@ -108,8 +108,6 @@ export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryT
         })}
       </div>
 
-      {/* Bottom border line */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-sage/10" />
     </div>
   )
 }

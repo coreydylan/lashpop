@@ -238,94 +238,130 @@ export function ServiceBrowserModal() {
                 }}
                 onLayoutAnimationComplete={() => setLayoutSettled(true)}
               >
-                {/* Mobile Header - Full-width with safe area support */}
+                {/* Header - Combined with Category Tabs in browse view */}
                 {isMobile ? (
-                  <div className={`flex items-center justify-between px-4 shrink-0 backdrop-blur-sm sticky top-0 z-10 ${
-                    isMorphingQuiz && !isMorphing ? 'bg-rose-mist/95' : 'bg-ivory/95'
-                  } ${
-                    getHeaderTitle() ? `py-3 border-b ${isMorphingQuiz && !isMorphing ? 'border-white/20' : 'border-sage/10'}` : 'py-2'
-                  }`}>
-                    {/* Left side - Back button or spacer */}
-                    <div className="w-10 flex justify-start">
-                      {showBackButton() && (
-                        <motion.button
-                          key="mobile-back-btn"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.15 }}
-                          onClick={handleBack}
-                          className="p-2 -ml-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
-                          aria-label="Go back"
+                  // Mobile Header
+                  view === 'browse' && !isMorphingQuiz && categories.length > 1 ? (
+                    // Browse view: Tabs + Close on same row
+                    <div className="flex items-center pt-3 shrink-0 backdrop-blur-sm sticky top-0 z-10 bg-ivory/95 border-b border-sage/10">
+                      <div className="flex-1 min-w-0 pl-4">
+                        <CategoryTabs
+                          categories={categories}
+                          activeCategory={categorySlug}
+                          onSelect={actions.setCategory}
+                        />
+                      </div>
+                      <div className="shrink-0 px-2">
+                        <button
+                          onClick={actions.closeModal}
+                          className="p-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
+                          aria-label="Close"
                         >
-                          <ChevronLeft className="w-5 h-5 text-dune" />
-                        </motion.button>
-                      )}
+                          <X className="w-5 h-5 text-dune" />
+                        </button>
+                      </div>
                     </div>
+                  ) : (
+                    // Other views: Standard header with back/title/close
+                    <div className={`flex items-center justify-between px-4 shrink-0 backdrop-blur-sm sticky top-0 z-10 ${
+                      isMorphingQuiz && !isMorphing ? 'bg-rose-mist/95' : 'bg-ivory/95'
+                    } ${
+                      getHeaderTitle() ? `py-3 border-b ${isMorphingQuiz && !isMorphing ? 'border-white/20' : 'border-sage/10'}` : 'py-2'
+                    }`}>
+                      {/* Left side - Back button or spacer */}
+                      <div className="w-10 flex justify-start">
+                        {showBackButton() && (
+                          <motion.button
+                            key="mobile-back-btn"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.15 }}
+                            onClick={handleBack}
+                            className="p-2 -ml-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
+                            aria-label="Go back"
+                          >
+                            <ChevronLeft className="w-5 h-5 text-dune" />
+                          </motion.button>
+                        )}
+                      </div>
 
-                    {/* Center - Title (only show if we have one) */}
-                    {getHeaderTitle() && (
-                      <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
-                        {getHeaderTitle()}
-                      </h2>
-                    )}
+                      {/* Center - Title (only show if we have one) */}
+                      {getHeaderTitle() && (
+                        <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
+                          {getHeaderTitle()}
+                        </h2>
+                      )}
 
-                    {/* Right side - Close button */}
-                    <div className={getHeaderTitle() ? 'w-10 flex justify-end' : 'flex-1 flex justify-end'}>
+                      {/* Right side - Close button */}
+                      <div className={getHeaderTitle() ? 'w-10 flex justify-end' : 'flex-1 flex justify-end'}>
+                        <button
+                          onClick={actions.closeModal}
+                          className="p-2 -mr-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
+                          aria-label="Close"
+                        >
+                          <X className="w-5 h-5 text-dune" />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  // Desktop Header
+                  view === 'browse' && !isMorphingQuiz && categories.length > 1 ? (
+                    // Browse view: Tabs + Close on same row
+                    <div className="flex items-center pt-3 shrink-0 bg-ivory border-b border-sage/10">
+                      <div className="flex-1 min-w-0 pl-6">
+                        <CategoryTabs
+                          categories={categories}
+                          activeCategory={categorySlug}
+                          onSelect={actions.setCategory}
+                        />
+                      </div>
+                      <div className="shrink-0 px-4">
+                        <button
+                          onClick={actions.closeModal}
+                          className="p-2 rounded-full hover:bg-sage/10 transition-colors"
+                          aria-label="Close modal"
+                        >
+                          <X className="w-5 h-5 text-dune" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Other views: Standard header with back/title/close
+                    <div className={`flex items-center justify-between px-6 shrink-0 ${
+                      isMorphingQuiz && !isMorphing ? 'bg-rose-mist' : 'bg-ivory'
+                    } ${
+                      getHeaderTitle() ? `py-4 border-b ${isMorphingQuiz && !isMorphing ? 'border-white/20' : 'border-sage/10'}` : 'py-3'
+                    }`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        {showBackButton() && (
+                          <motion.button
+                            key="desktop-back-btn"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.15 }}
+                            onClick={handleBack}
+                            className="p-2 -ml-2 rounded-full hover:bg-sage/10 transition-colors shrink-0"
+                            aria-label="Go back"
+                          >
+                            <ChevronLeft className="w-5 h-5 text-dune" />
+                          </motion.button>
+                        )}
+                        {getHeaderTitle() && (
+                          <h2 className="text-xl font-display font-medium text-charcoal truncate">
+                            {getHeaderTitle()}
+                          </h2>
+                        )}
+                      </div>
                       <button
                         onClick={actions.closeModal}
-                        className="p-2 -mr-2 rounded-full hover:bg-sage/10 active:bg-sage/20 transition-colors"
-                        aria-label="Close"
+                        className="p-2 rounded-full hover:bg-sage/10 transition-colors shrink-0"
+                        aria-label="Close modal"
                       >
                         <X className="w-5 h-5 text-dune" />
                       </button>
                     </div>
-                  </div>
-                ) : (
-                  /* Desktop Header */
-                  <div className={`flex items-center justify-between px-6 shrink-0 ${
-                    isMorphingQuiz && !isMorphing ? 'bg-rose-mist' : 'bg-ivory'
-                  } ${
-                    getHeaderTitle() ? `py-4 border-b ${isMorphingQuiz && !isMorphing ? 'border-white/20' : 'border-sage/10'}` : 'py-3'
-                  }`}>
-                    <div className="flex items-center gap-2 min-w-0">
-                      {showBackButton() && (
-                        <motion.button
-                          key="desktop-back-btn"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.15 }}
-                          onClick={handleBack}
-                          className="p-2 -ml-2 rounded-full hover:bg-sage/10 transition-colors shrink-0"
-                          aria-label="Go back"
-                        >
-                          <ChevronLeft className="w-5 h-5 text-dune" />
-                        </motion.button>
-                      )}
-                      {getHeaderTitle() && (
-                        <h2 className="text-xl font-display font-medium text-charcoal truncate">
-                          {getHeaderTitle()}
-                        </h2>
-                      )}
-                    </div>
-                    <button
-                      onClick={actions.closeModal}
-                      className="p-2 rounded-full hover:bg-sage/10 transition-colors shrink-0"
-                      aria-label="Close modal"
-                    >
-                      <X className="w-5 h-5 text-dune" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Category Tabs - Show only in browse view when not in quiz mode */}
-                {view === 'browse' && !isMorphingQuiz && categories.length > 1 && (
-                  <div className="shrink-0 px-4 md:px-6 bg-ivory border-b border-sage/10">
-                    <CategoryTabs
-                      categories={categories}
-                      activeCategory={categorySlug}
-                      onSelect={actions.setCategory}
-                    />
-                  </div>
+                  )
                 )}
 
                 {/* Content with View Transitions */}
