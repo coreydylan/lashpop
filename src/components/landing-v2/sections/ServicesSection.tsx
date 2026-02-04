@@ -189,8 +189,10 @@ function MobileSwipeableServiceCards({
         isHorizontalSwipe.current = deltaX > deltaY * 2
       }
 
-      // Let the browser handle scrolling - touchAction: pan-y does the work
-      // We just track the direction for processing on touchend
+      // If it's a horizontal swipe, prevent vertical scroll
+      if (isHorizontalSwipe.current === true) {
+        e.preventDefault()
+      }
     }
 
     const handleTouchEnd = (e: TouchEvent) => {
@@ -216,7 +218,7 @@ function MobileSwipeableServiceCards({
     }
 
     container.addEventListener('touchstart', handleTouchStart, { passive: true })
-    container.addEventListener('touchmove', handleTouchMove, { passive: true })
+    container.addEventListener('touchmove', handleTouchMove, { passive: false })
     container.addEventListener('touchend', handleTouchEnd, { passive: true })
 
     return () => {

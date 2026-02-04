@@ -263,16 +263,13 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
               className="active:opacity-60 transition-opacity flex-shrink-0"
               aria-label="Scroll to top"
             >
-              <picture>
-                <source srcSet="/lashpop-images/branding/logo-terracotta.webp" type="image/webp" />
-                <img
-                  src="/lashpop-images/branding/logo-terracotta-optimized.png"
-                  alt="LashPop Studios"
-                  width={68}
-                  height={24}
-                  className="h-6 w-auto"
-                />
-              </picture>
+              <img
+                src="/lashpop-images/branding/logo-terracotta.png"
+                alt="LashPop Studios"
+                width={68}
+                height={24}
+                className="h-6 w-auto"
+              />
             </button>
 
             {/* Right side: Book Now + Hamburger */}
