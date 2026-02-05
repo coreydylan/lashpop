@@ -521,25 +521,6 @@ export default function WorkWithUsPage() {
             </p>
           </motion.div>
 
-          {/* Mobile Hero Image */}
-          <motion.div
-            className="md:hidden mb-8 -mx-5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="relative h-48 overflow-hidden">
-              <Image
-                src="/lashpop-images/culture/team-hallway.jpeg"
-                alt="LashPop team"
-                fill
-                className="object-cover"
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-ivory via-ivory/30 to-transparent" />
-            </div>
-          </motion.div>
-
           {/* Path Cards */}
           <div className="grid md:grid-cols-3 gap-4 md:gap-5">
             {pathCards.map((card, index) => (
