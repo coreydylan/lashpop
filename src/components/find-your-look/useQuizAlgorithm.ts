@@ -31,6 +31,7 @@ interface UseQuizAlgorithmReturn {
   applyQ1Answer: (answer: Q1Answer) => void
   applyQ2Answer: (answer: Q2Answer) => void
   selectPhoto: (selectedStyle: LashStyle) => void
+  skipPair: () => void
   startPhotoComparison: () => PhotoPair | null
   reset: () => void
 
@@ -262,6 +263,67 @@ export function useQuizAlgorithm({
     [scores, roundNumber, selectNextStylePair, getRandomPhoto]
   )
 
+  // Handle "neither" skip — deduct 1 point from both styles, advance round
+  const skipPair = useCallback(() => {
+    if (!currentPair) return
+
+    const newScores = {
+      ...scores,
+      [currentPair.leftStyle]: scores[currentPair.leftStyle] - 1,
+      [currentPair.rightStyle]: scores[currentPair.rightStyle] - 1,
+    }
+    setScores(newScores)
+
+    const newRoundNumber = roundNumber + 1
+
+    // Check win condition
+    const winner = checkWinCondition(newScores, newRoundNumber)
+    if (winner) {
+      setResult(winner)
+      setCurrentPair(null)
+      return
+    }
+
+    // Select next pair
+    setRoundNumber(newRoundNumber)
+
+    const stylePair = selectNextStylePair()
+    if (!stylePair) {
+      const sortedStyles = (Object.entries(newScores) as [LashStyle, number][])
+        .sort((a, b) => b[1] - a[1])
+      setResult(sortedStyles[0][0])
+      setCurrentPair(null)
+      return
+    }
+
+    const [style1, style2] = stylePair
+    const photo1 = getRandomPhoto(style1)
+    const photo2 = getRandomPhoto(style2)
+
+    if (!photo1 || !photo2) {
+      const sortedStyles = (Object.entries(newScores) as [LashStyle, number][])
+        .sort((a, b) => b[1] - a[1])
+      setResult(sortedStyles[0][0])
+      setCurrentPair(null)
+      return
+    }
+
+    const isSwapped = Math.random() > 0.5
+    const pair: PhotoPair = isSwapped
+      ? { left: photo2, right: photo1, leftStyle: style2, rightStyle: style1 }
+      : { left: photo1, right: photo2, leftStyle: style1, rightStyle: style2 }
+
+    setCurrentPair(pair)
+
+    setUsedPairs((prev) => new Set(prev).add(getPairKey(style1, style2)))
+    setUsedPhotoIds((prev) => {
+      const next = new Set(prev)
+      next.add(photo1.id)
+      next.add(photo2.id)
+      return next
+    })
+  }, [scores, roundNumber, currentPair, selectNextStylePair, getRandomPhoto])
+
   // Reset quiz state
   const reset = useCallback(() => {
     setScores(createEmptyScores())
@@ -285,6 +347,7 @@ export function useQuizAlgorithm({
     applyQ1Answer,
     applyQ2Answer,
     selectPhoto,
+    skipPair,
     startPhotoComparison,
     reset,
 

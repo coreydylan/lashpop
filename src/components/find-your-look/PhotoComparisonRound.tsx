@@ -35,12 +35,14 @@ const LashIcon = () => (
 interface PhotoComparisonRoundProps {
   pair: PhotoPair
   onSelect: (selectedStyle: LashStyle) => void
+  onSkip: () => void
   disabled?: boolean
 }
 
 export function PhotoComparisonRound({
   pair,
   onSelect,
+  onSkip,
   disabled = false,
 }: PhotoComparisonRoundProps) {
   // Get the display URL for a photo (prefer cropUrl, fallback to filePath)
@@ -53,7 +55,7 @@ export function PhotoComparisonRound({
       {/* Header - static, doesn't animate between rounds */}
       <div className="text-center mb-4 shrink-0">
         <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
-          Tap the look you love
+          Tap the look you love more
         </h2>
       </div>
 
@@ -126,6 +128,17 @@ export function PhotoComparisonRound({
         </motion.button>
       </div>
 
+      {/* Neither button */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4, duration: 0.3 }}
+        onClick={() => !disabled && onSkip()}
+        disabled={disabled}
+        className="mt-3 py-2 text-sm text-charcoal/50 hover:text-charcoal/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+      >
+        Neither of these
+      </motion.button>
     </div>
   )
 }

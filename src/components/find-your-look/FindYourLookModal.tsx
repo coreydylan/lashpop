@@ -178,6 +178,10 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
       }
     };
 
+    const handlePhotoSkip = () => {
+      quiz.skipPair();
+    };
+
     // Watch for quiz result
     useEffect(() => {
       if (quiz.result && step === 3) {
@@ -259,6 +263,7 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
                 key={`comparison-${quiz.roundNumber}`}
                 pair={quiz.currentPair}
                 onSelect={handlePhotoSelect}
+                onSkip={handlePhotoSkip}
               />
             )}
 
@@ -395,6 +400,10 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
 
   const handlePhotoSelect = (selectedStyle: LashStyle) => {
     quiz.selectPhoto(selectedStyle);
+  };
+
+  const handlePhotoSkip = () => {
+    quiz.skipPair();
   };
 
   // Watch for quiz result
@@ -576,6 +585,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                         key={`comparison-${quiz.roundNumber}`}
                         pair={quiz.currentPair}
                         onSelect={handlePhotoSelect}
+                        onSkip={handlePhotoSkip}
                       />
                     )}
 
