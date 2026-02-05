@@ -96,7 +96,7 @@ function ServiceCard({
   return (
     <button
       onClick={onClick}
-      className="group text-center p-6 rounded-2xl transition-all duration-300 hover:bg-white/40 hover:shadow-md hover:scale-[1.02] hover:-translate-y-1"
+      className="group text-center p-6 rounded-2xl transition-[transform,opacity,background-color] duration-300 hover:bg-white/40 hover:scale-[1.02] hover:-translate-y-1"
     >
       {/* Icon */}
       <div className="flex justify-center mb-4">

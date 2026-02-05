@@ -506,7 +506,9 @@ export default function WorkWithUsPage() {
               >
                 <button
                   onClick={() => setActiveSection(activeSection === card.id ? null : card.id)}
-                  className={`w-full text-left group relative overflow-hidden transition-all duration-300 ${
+                  aria-expanded={activeSection === card.id}
+                  aria-label={`${card.title} - ${activeSection === card.id ? 'collapse' : 'expand'}`}
+                  className={`w-full text-left group relative overflow-hidden transition-shadow duration-300 ${
                     activeSection === card.id
                       ? 'shadow-xl md:ring-2 md:ring-rust/50 rounded-t-2xl rounded-b-none md:rounded-2xl'
                       : 'hover:shadow-lg rounded-2xl'

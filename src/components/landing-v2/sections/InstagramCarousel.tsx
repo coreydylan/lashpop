@@ -165,7 +165,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50 group-hover:opacity-70 transition-opacity" />
 
                 {/* Main badge */}
-                <div className="relative px-5 py-3 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-300 group-hover:bg-white/60 group-hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_2px_6px_rgba(0,0,0,0.12)]">
+                <div className="relative px-5 py-3 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] transition-[background-color] duration-300 group-hover:bg-white/60">
                   <div className="flex items-center gap-3">
                     {/* Instagram Icon */}
                     <svg className="w-5 h-5" style={{ color: '#cc947f' }} fill="currentColor" viewBox="0 0 24 24">
@@ -213,6 +213,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
             </div>
             <button
               onClick={() => setSelectedImage(null)}
+              aria-label="Close enlarged image"
               className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
             >
               <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">

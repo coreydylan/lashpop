@@ -216,10 +216,10 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
         break
 
       case 'blur':
-        // Blur transition (using filter)
-        gsap.set(currentEl, { opacity: 0, filter: 'blur(20px)' })
-        tl.to(previousEl, { opacity: 0, filter: 'blur(20px)', duration, ease }, 0)
-          .to(currentEl, { opacity: 1, filter: 'blur(0px)', duration, ease }, 0)
+        // Blur-like transition using scale + opacity (GPU-composited)
+        gsap.set(currentEl, { opacity: 0, scale: 1.05 })
+        tl.to(previousEl, { opacity: 0, scale: 1.05, duration, ease }, 0)
+          .to(currentEl, { opacity: 1, scale: 1, duration, ease }, 0)
         break
 
       case 'wipeLeft':

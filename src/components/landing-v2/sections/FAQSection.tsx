@@ -158,6 +158,8 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                 <button
                   key={category.id || `cat-${index}`}
                   onClick={() => handleCategoryChange(category.id)}
+                  aria-label={`Filter by ${category.label}`}
+                  aria-pressed={activeCategory === category.id}
                   className="relative group shrink-0 focus:outline-none focus-visible:outline-none"
                 >
                   {/* Active/Hover State Background */}
@@ -200,6 +202,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
             >
               <button
                 onClick={() => toggleFAQ(faq.id)}
+                aria-expanded={expandedIndex === faq.id}
                 className="w-full px-4 py-3.5 md:px-6 md:py-5 text-left flex items-center justify-between group"
               >
                 <div className="flex flex-col items-start gap-0.5 md:gap-1">

@@ -15,10 +15,13 @@ import HeroSection from '@/components/landing-v2/HeroSection';
 import { ServicesSection } from '@/components/landing-v2/sections/ServicesSection';
 import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
-import { InstagramCarousel } from '@/components/landing-v2/sections/InstagramCarousel';
-import { ReviewsSection } from '@/components/landing-v2/sections/ReviewsSection';
-import { FAQSection } from '@/components/landing-v2/sections/FAQSection';
-import { MapSection } from '@/components/landing-v2/sections/MapSection';
+import dynamic from 'next/dynamic';
+
+// Lazy-load below-fold sections to reduce initial JS bundle
+const InstagramCarousel = dynamic(() => import('@/components/landing-v2/sections/InstagramCarousel').then(m => ({ default: m.InstagramCarousel })), { ssr: false });
+const ReviewsSection = dynamic(() => import('@/components/landing-v2/sections/ReviewsSection').then(m => ({ default: m.ReviewsSection })), { ssr: false });
+const FAQSection = dynamic(() => import('@/components/landing-v2/sections/FAQSection').then(m => ({ default: m.FAQSection })), { ssr: false });
+const MapSection = dynamic(() => import('@/components/landing-v2/sections/MapSection').then(m => ({ default: m.MapSection })), { ssr: false });
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
@@ -271,7 +274,8 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 =====================================================
                 Renders the arch image behind the hero section.
               */}
-              {isMobile && <MobileHeroBackground heroConfig={heroConfig?.mobile} />}
+              {/* Always render so priority image gets SSR preloaded; component has md:hidden CSS */}
+              <MobileHeroBackground heroConfig={heroConfig?.mobile} />
 
               {/*
                 =====================================================

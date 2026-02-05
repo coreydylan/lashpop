@@ -115,7 +115,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     fontSize: '0.9rem',
                     letterSpacing: '0.03em',
                     fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                    color: '#cc947f',
+                    color: '#a07260',
                     borderWidth: '1px',
                     borderStyle: 'solid',
                     borderColor: 'rgba(204, 148, 127, 0.8)',
@@ -186,6 +186,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               {totalReviews > 0 && (
                 <button
                   onClick={() => smoothScrollToElement('#reviews', 60, 800, 'center')}
+                  aria-label={`${totalReviews.toLocaleString()} reviews - scroll to reviews`}
                   className="relative group w-full"
                 >
                   <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
@@ -204,7 +205,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                           </svg>
                         ))}
                       </div>
-                      <span className="text-xs font-sans font-medium" style={{ color: '#cc947f' }}>Reviews</span>
+                      <span className="text-xs font-sans font-medium" style={{ color: '#a07260' }}>Reviews</span>
                     </div>
                   </div>
                 </button>
@@ -279,6 +280,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                       window.scrollTo({ top: targetPosition, behavior: 'smooth' });
                     }
                   }}
+                  aria-label={`${totalReviews.toLocaleString()} reviews - scroll to reviews`}
                   className="relative group cursor-pointer text-left"
                 >
                   <div className="absolute inset-0 rounded-full bg-cream/30 blur-lg opacity-30" />
@@ -323,7 +325,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     fontSize: 'clamp(1rem, 2vw, 1.5rem)',
                     letterSpacing: '0.03em',
                     fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                    color: '#cc947f',
+                    color: '#a07260',
                     borderWidth: '2px',
                     borderStyle: 'solid',
                     borderColor: 'rgba(204, 148, 127, 0.8)',
@@ -341,7 +343,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 className="relative group"
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
-                <div className="relative px-8 py-3.5 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] transition-all" style={{ backgroundColor: '#cc947f', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
+                <div className="relative px-8 py-3.5 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] transition-[transform,opacity]" style={{ backgroundColor: '#cc947f', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
                   <span className="font-sans font-medium text-white">Book Now</span>
                 </div>
               </button>
@@ -350,7 +352,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 className="relative group"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
-                <div className="relative px-8 py-3.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-white/60 transition-all">
+                <div className="relative px-8 py-3.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-white/60 transition-[background-color,transform,opacity]">
                   <span className="font-sans font-medium text-dune">Take Our Lash Quiz</span>
                 </div>
               </button>
