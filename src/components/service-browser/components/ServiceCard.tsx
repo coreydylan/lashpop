@@ -4,18 +4,20 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Clock, DollarSign } from 'lucide-react'
 import type { Service } from '../ServiceBrowserContext'
-import { useServiceBrowser } from '../ServiceBrowserContext'
 
-// Static fallback mapping of category slug → icon path
+// Mapping of category slug → icon SVG path
 const categoryIconMap: Record<string, string> = {
   'lashes': '/lashpop-images/services/thin/lashes-icon.svg',
   'lash-lifts': '/lashpop-images/services/thin/lash-lifts-icon.svg',
   'brows': '/lashpop-images/services/thin/brows-icon.svg',
   'facials': '/lashpop-images/services/thin/skincare-icon.svg',
+  'skincare': '/lashpop-images/services/thin/skincare-icon.svg',
   'waxing': '/lashpop-images/services/thin/waxing-icon.svg',
   'permanent-makeup': '/lashpop-images/services/thin/permanent-makeup-icon.svg',
   'specialty': '/lashpop-images/services/thin/permanent-jewelry-icon.svg',
+  'permanent-jewelry': '/lashpop-images/services/thin/permanent-jewelry-icon.svg',
   'injectables': '/lashpop-images/services/thin/injectables-icon.svg',
+  'nails': '/lashpop-images/services/thin/nails-icon.svg',
 }
 
 interface ServiceCardProps {
@@ -25,15 +27,14 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
-  const { categories } = useServiceBrowser()
-
   const priceDisplay = service.priceStarting
     ? `$${(service.priceStarting / 100).toFixed(0)}+`
     : null
 
-  // Resolve the category icon: try context categories first, then static fallback
+  // Resolve the category icon SVG path from the static map
+  // (DB icons are emojis, not file paths, so we use the static map directly)
   const categoryIcon = service.categorySlug
-    ? categories.find(c => c.slug === service.categorySlug)?.icon || categoryIconMap[service.categorySlug]
+    ? categoryIconMap[service.categorySlug]
     : null
 
   return (
