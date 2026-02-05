@@ -68,7 +68,7 @@ export function MapSection() {
               <h3 className="text-xl font-light text-dune mb-2">Contact</h3>
               <p className="body text-dune/70">
                 Phone: (760) 212-0448<br />
-                Email: hello@lashpopstudios.com
+                Email: lashpopstudios@gmail.com
               </p>
             </div>
 

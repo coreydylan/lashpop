@@ -142,8 +142,8 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="mailto:hello@lashpopstudios.com" className="hover:text-[#cc947f] transition-colors">
-                  hello@lashpopstudios.com
+                <a href="mailto:lashpopstudios@gmail.com" className="hover:text-[#cc947f] transition-colors">
+                  lashpopstudios@gmail.com
                 </a>
               </li>
             </ul>

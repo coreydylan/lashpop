@@ -501,7 +501,7 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
               value={site.email || ''}
               onChange={(e) => updateSite({ email: e.target.value })}
               className="w-full mt-1 px-4 py-2.5 rounded-xl bg-cream/50 border border-sage/20 text-dune focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
-              placeholder="hello@lashpopstudios.com"
+              placeholder="lashpopstudios@gmail.com"
             />
           </div>
         </div>

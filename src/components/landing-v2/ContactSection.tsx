@@ -75,7 +75,7 @@ export default function ContactSection() {
                   </div>
                   <div>
                     <h3 className="font-sans font-medium text-gray-900 mb-1">Email</h3>
-                    <p className="font-sans font-light text-gray-600">hello@lashpopstudios.com</p>
+                    <p className="font-sans font-light text-gray-600">lashpopstudios@gmail.com</p>
                     <p className="font-sans font-light text-sm text-gray-500 mt-1">We respond within 24 hours</p>
                   </div>
                 </div>
