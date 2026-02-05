@@ -287,7 +287,7 @@ function MobileSwipeableServiceCards({
           {/* Bottom button area - full width, pinned to bottom */}
           <button
             onClick={() => onCategoryClick(currentCategory.slug)}
-            className="w-full py-3 border-t border-warm-sand/40 bg-white/30 transition-all duration-300 active:bg-white/50 mt-auto flex items-center justify-center"
+            className="w-full py-3 border-t border-warm-sand/40 bg-white/30 transition-colors duration-300 active:bg-white/50 mt-auto flex items-center justify-center"
           >
             <span
               className="text-[10px] font-sans font-medium tracking-[0.1em] uppercase"
@@ -471,7 +471,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
         <div className="text-center mt-14">
           <button
             onClick={handleBookNowClick}
-            className="px-10 py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#ac4d3c] hover:text-white"
+            className="px-10 py-3.5 rounded-full border-2 transition-colors duration-300 hover:bg-[#ac4d3c] hover:text-white"
             style={{
               borderColor: '#ac4d3c',
               color: '#ac4d3c',

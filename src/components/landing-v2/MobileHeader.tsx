@@ -252,7 +252,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       {/* Mini Header - transparent at top, frosted glass on scroll */}
       {isVisible && (
         <header
-          className="fixed top-0 left-0 right-0 z-50 md:hidden transition-all duration-300"
+          className="fixed top-0 left-0 right-0 z-50 md:hidden transition-[background-color,backdrop-filter] duration-300"
           style={{
             paddingTop: 'env(safe-area-inset-top, 0px)',
             background: isScrolled
@@ -292,7 +292,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                     smoothScrollToElement('#services', 60, 800, 'top')
                   }
                 }}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-all"
+                className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-colors"
               >
                 Book
               </button>
@@ -303,7 +303,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className={`
                   flex-shrink-0 w-10 h-10 flex flex-col items-center justify-center gap-1.5
-                  rounded-lg transition-all duration-150
+                  rounded-lg transition-colors duration-150
                   ${isMenuOpen
                     ? 'bg-terracotta-light/10'
                     : 'active:bg-warm-sand/40'
@@ -312,13 +312,13 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 aria-label="Menu"
               >
                 <span
-                  className={`block w-5 h-0.5 bg-terracotta-light transition-all duration-200 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-[transform,opacity] duration-200 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-terracotta-light transition-all duration-200 ${isMenuOpen ? 'opacity-0' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-opacity duration-200 ${isMenuOpen ? 'opacity-0' : ''}`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-terracotta-light transition-all duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-[transform,opacity] duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
                 />
               </button>
             </div>

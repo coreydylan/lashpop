@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import Image from 'next/image'
 import { subscribeToNewsletter } from '@/app/actions/newsletter'
 
 export function FooterV2() {
@@ -51,7 +52,7 @@ export function FooterV2() {
                 href="https://instagram.com/lashpopstudios"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-colors"
                 aria-label="Instagram"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -62,7 +63,7 @@ export function FooterV2() {
                 href="https://facebook.com/lashpopstudios"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-colors"
                 aria-label="Facebook"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -73,7 +74,7 @@ export function FooterV2() {
                 href="https://tiktok.com/@lashpopstudios_"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-colors"
                 aria-label="TikTok"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -84,7 +85,7 @@ export function FooterV2() {
                 href="https://www.yelp.com/biz/lashpop-studios-oceanside"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-colors"
                 aria-label="Yelp"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 384 512">
@@ -95,7 +96,7 @@ export function FooterV2() {
                 href="https://maps.app.goo.gl/mozm5VjGqw8qCuzL8"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-colors"
                 aria-label="Google"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -109,13 +110,15 @@ export function FooterV2() {
                 href="https://www.vagaro.com/lashpop32"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-all overflow-hidden group"
+                className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-colors overflow-hidden group"
                 aria-label="Vagaro"
               >
-                <img
+                <Image
                   src="/lashpop-images/Vagaro_Logo.png"
                   alt="Vagaro"
-                  className="w-6 h-6 object-contain brightness-0 group-hover:brightness-0 group-hover:invert"
+                  width={24}
+                  height={24}
+                  className="object-contain brightness-0 group-hover:brightness-0 group-hover:invert"
                 />
               </a>
             </div>
@@ -163,7 +166,7 @@ export function FooterV2() {
               <li>
                 <a
                   href="/work-with-us"
-                  className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 text-terracotta hover:bg-terracotta hover:text-cream"
+                  className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium transition-colors duration-300 text-terracotta hover:bg-terracotta hover:text-cream"
                   style={{
                     background: 'transparent',
                     border: '1px solid rgb(var(--terracotta))',
@@ -245,7 +248,7 @@ export function FooterV2() {
               />
               <button
                 type="submit"
-                className="w-full inline-flex items-center justify-center px-6 py-3 rounded-full font-medium transition-all duration-300 text-terracotta hover:bg-terracotta hover:text-cream disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center px-6 py-3 rounded-full font-medium transition-colors duration-300 text-terracotta hover:bg-terracotta hover:text-cream disabled:opacity-50"
                 style={{
                   background: 'transparent',
                   border: '1px solid rgb(var(--terracotta))',

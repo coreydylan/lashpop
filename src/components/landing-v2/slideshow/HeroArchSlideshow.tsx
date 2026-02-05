@@ -297,8 +297,9 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
           className={currentImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
           style={{ objectPosition: `${currentImage.position.x}% ${currentImage.position.y}%` }}
           priority
+          fetchPriority="high"
           quality={75}
-          sizes="100vw"
+          sizes="80vw"
         />
       </div>
     )
@@ -326,7 +327,7 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
             className={previousImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
             style={{ objectPosition: `${previousImage.position.x}% ${previousImage.position.y}%` }}
             quality={75}
-            sizes="100vw"
+            sizes="80vw"
           />
         )}
       </div>
@@ -345,8 +346,9 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
             className={currentImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
             style={{ objectPosition: `${currentImage.position.x}% ${currentImage.position.y}%` }}
             priority
+            fetchPriority="high"
             quality={75}
-            sizes="100vw"
+            sizes="80vw"
           />
         )}
       </div>

@@ -215,7 +215,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                   href={reviewPlatformUrls[stat.source.toLowerCase()]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-full px-5 py-2.5 shadow-sm border border-white/40 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:bg-white/80"
+                  className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-full px-5 py-2.5 shadow-sm border border-white/40 transition-[transform,box-shadow,background-color] duration-200 hover:scale-105 hover:shadow-lg hover:bg-white/80"
                 >
                   <div className="scale-100">
                     {getSourceLogoCompact(stat.source)}
@@ -242,7 +242,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                   href={reviewPlatformUrls[stat.source.toLowerCase()]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm border border-white/40 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:bg-white/80"
+                  className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm border border-white/40 transition-[transform,box-shadow,background-color] duration-200 hover:scale-105 hover:shadow-lg hover:bg-white/80"
                 >
                   <div className="scale-90">
                     {getSourceLogoCompact(stat.source)}
@@ -280,7 +280,7 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                 >
                   <div className="relative">
                     {/* Frosted Glass Card */}
-                    <div className="bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-white/60 relative overflow-hidden group h-[420px] md:h-[280px] flex flex-col w-full">
+                    <div className="bg-white/50 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-white/60 relative overflow-hidden group h-[420px] md:h-[280px] flex flex-col w-full">
                       {/* Subtle gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-br from-dusty-rose/3 via-transparent to-sage/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

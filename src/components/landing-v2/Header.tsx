@@ -76,7 +76,7 @@ export default function Header() {
             >
               <Link
                 href="#careers"
-                className="btn transition-all duration-300 border-terracotta text-terracotta hover:bg-terracotta hover:text-cream"
+                className="btn transition-colors duration-300 border-terracotta text-terracotta hover:bg-terracotta hover:text-cream"
                 style={{
                   background: 'transparent',
                   border: '1px solid rgb(var(--terracotta))',
@@ -104,7 +104,7 @@ export default function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden p-3 rounded-full transition-all text-dune hover:bg-sage/10"
+            className="md:hidden p-3 rounded-full transition-colors text-dune hover:bg-sage/10"
           >
             <AnimatePresence mode="wait">
               {isMobileMenuOpen ? (
@@ -157,7 +157,7 @@ export default function Header() {
                 ))}
                 <Link
                   href="/work-with-us"
-                  className="btn w-full mt-4 transition-all duration-300 border-terracotta text-terracotta hover:bg-terracotta hover:text-cream"
+                  className="btn w-full mt-4 transition-colors duration-300 border-terracotta text-terracotta hover:bg-terracotta hover:text-cream"
                   style={{
                     background: 'transparent',
                     border: '1px solid rgb(var(--terracotta))',
