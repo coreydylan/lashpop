@@ -67,7 +67,13 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   }, [])
 
   // Track scroll position for transparent/frosted glass transition
+  // On non-home pages, always show the frosted background
   useEffect(() => {
+    if (!isHomePage) {
+      setIsScrolled(true)
+      return
+    }
+
     const scrollContainer = getScrollContainer()
     if (!scrollContainer) return
 
@@ -79,7 +85,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     handleScroll() // Check initial state
 
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
-  }, [getScrollContainer])
+  }, [getScrollContainer, isHomePage])
 
   // Update menu position when opened - align to right with padding
   useEffect(() => {

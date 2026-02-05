@@ -48,13 +48,19 @@ export function Navigation() {
   }, [])
 
   useEffect(() => {
+    // On non-home pages, always show the compact frosted header
+    if (!isHomePage) {
+      setIsScrolled(true)
+      return
+    }
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
 
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [isHomePage])
 
   const handleNavClick = (item: any, e: React.MouseEvent) => {
     // Handle Logo click (home link)
