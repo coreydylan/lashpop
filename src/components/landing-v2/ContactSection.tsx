@@ -25,7 +25,7 @@ export default function ContactSection() {
               Visit Our Studio
             </h2>
             <p className="text-lg md:text-xl font-sans font-light text-gray-600 max-w-3xl mx-auto">
-              Experience luxury lash services in the heart of Los Angeles.
+              Experience luxury lash services in the heart of Oceanside.
               Book your appointment today and discover your perfect look.
             </p>
           </motion.div>

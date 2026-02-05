@@ -226,19 +226,13 @@ function createLocationSchema(
   // Add price range (typical for beauty services)
   schema.priceRange = '$$'
 
-  // Add opening hours (generic for now - could be made dynamic)
+  // Opening hours: 8a-7:30p every day, by appointment only
   schema.openingHoursSpecification = [
     {
       '@type': 'OpeningHoursSpecification',
-      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      opens: '09:00',
-      closes: '19:00'
-    },
-    {
-      '@type': 'OpeningHoursSpecification',
-      dayOfWeek: ['Saturday'],
-      opens: '09:00',
-      closes: '17:00'
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      opens: '08:00',
+      closes: '19:30'
     }
   ]
 
@@ -325,6 +319,16 @@ function createFallbackSchema(
   }
 
   schema.priceRange = '$$'
+
+  // Opening hours: 8a-7:30p every day, by appointment only
+  schema.openingHoursSpecification = [
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      opens: '08:00',
+      closes: '19:30'
+    }
+  ]
 
   // Add business credentials (licenses, certifications)
   if (settings.credentials && settings.credentials.length > 0) {

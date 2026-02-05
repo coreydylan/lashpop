@@ -145,7 +145,7 @@ export const DEFAULT_PAGE_SEO: PageSEO = {
 
 export const DEFAULT_SITE_SEO: SiteSEO = {
   businessName: 'LashPop Studios',
-  businessDescription: 'Experience luxury lash services in Los Angeles. From classic to mega volume, discover your perfect lash look with our expert artists.',
+  businessDescription: 'Experience luxury lash services in Oceanside, CA. From classic to mega volume, discover your perfect lash look with our expert artists.',
   businessType: 'BeautySalon',
   socialProfiles: {},
   siteUrl: 'https://lashpopstudios.com',
@@ -158,9 +158,9 @@ export const DEFAULT_SEO_SETTINGS: SEOSettings = {
   pages: {
     homepage: {
       title: 'LashPop Studios - Effortless Beauty for the Modern Woman',
-      metaDescription: 'Experience luxury lash services in Los Angeles. From classic to mega volume, discover your perfect lash look with our expert artists.',
+      metaDescription: 'Experience luxury lash services in Oceanside, CA. From classic to mega volume, discover your perfect lash look with our expert artists.',
       ogTitle: 'LashPop Studios - Effortless Beauty for the Modern Woman',
-      ogDescription: 'Experience luxury lash services in Los Angeles. Book your appointment today.',
+      ogDescription: 'Experience luxury lash services in Oceanside, CA. Book your appointment today.',
       ...DEFAULT_PAGE_SEO
     },
     services: {

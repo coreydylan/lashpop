@@ -75,7 +75,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: homepage.title || `${site.siteName} - ${site.businessDescription.slice(0, 50)}`,
     description: homepage.metaDescription || site.businessDescription,
-    keywords: 'lash extensions, eyelash extensions, volume lashes, classic lashes, mega volume, lash lift, Los Angeles, beauty studio',
+    keywords: 'lash extensions, eyelash extensions, volume lashes, classic lashes, mega volume, lash lift, Oceanside, North County San Diego, beauty studio',
     metadataBase: new URL(site.siteUrl),
     alternates: {
       canonical: homepage.canonicalUrl || site.siteUrl,

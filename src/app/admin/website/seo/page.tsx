@@ -657,7 +657,7 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
           className="w-full px-4 py-2.5 rounded-xl bg-cream/50 border border-sage/20 text-dune focus:outline-none focus:ring-2 focus:ring-dusty-rose/30 resize-none font-mono text-sm"
           placeholder="# LashPop Studios
 
-Premium lash extension services in Los Angeles..."
+Premium lash extension services in Oceanside, CA..."
         />
       </div>
     </motion.div>
