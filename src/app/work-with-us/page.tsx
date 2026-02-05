@@ -31,36 +31,11 @@ import {
   Megaphone
 } from 'lucide-react'
 
-// Slot Machine Price Component
+// Price Component
 function SlotMachinePrice({ value, className }: { value: number; className?: string }) {
-  const digits = value.toString().split('')
-
   return (
     <span className={`inline-flex items-baseline ${className || ''}`} style={{ color: '#cc947f' }}>
-      <span className="mr-0.5">$</span>
-      <span className="inline-flex overflow-hidden">
-        {digits.map((digit, index) => (
-          <span key={index} className="relative inline-block" style={{ width: '0.6em' }}>
-            <AnimatePresence mode="popLayout">
-              <motion.span
-                key={`${index}-${digit}`}
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 20, opacity: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 300,
-                  damping: 25,
-                  delay: index * 0.03
-                }}
-                className="inline-block"
-              >
-                {digit}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-        ))}
-      </span>
+      ${value}
       <span className="text-[0.6em] ml-0.5 opacity-70">/day</span>
     </span>
   )
@@ -235,10 +210,8 @@ function PathForm({
   const config = formConfig[path]
 
   return (
-    <motion.form
+    <form
       onSubmit={handleSubmit}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
       <div className="mb-6">
@@ -383,7 +356,7 @@ function PathForm({
           </>
         )}
       </button>
-    </motion.form>
+    </form>
   )
 }
 
@@ -587,11 +560,11 @@ export default function WorkWithUsPage() {
                 <AnimatePresence>
                   {activeSection === card.id && (
                     <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.3, ease: smoothEase }}
-                      className="md:hidden overflow-hidden bg-white rounded-b-2xl shadow-lg"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeOut' }}
+                      className="md:hidden bg-white rounded-b-2xl shadow-lg"
                     >
                       <div className="p-4 space-y-5">
                         {/* Employee Mobile Content */}
@@ -759,11 +732,11 @@ export default function WorkWithUsPage() {
       <AnimatePresence>
         {activeSection === 'employee' && (
           <motion.section
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.4, ease: smoothEase }}
-            className="hidden md:block overflow-hidden bg-white border-t border-sage/10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="hidden md:block bg-white border-t border-sage/10"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
@@ -845,11 +818,11 @@ export default function WorkWithUsPage() {
       <AnimatePresence>
         {activeSection === 'booth' && (
           <motion.section
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.4, ease: smoothEase }}
-            className="hidden md:block overflow-hidden bg-white border-t border-sage/10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="hidden md:block bg-white border-t border-sage/10"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
@@ -943,11 +916,11 @@ export default function WorkWithUsPage() {
         {activeSection === 'training' && (
           <div className="hidden md:block">
           <motion.section
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.4, ease: smoothEase }}
-            className="overflow-hidden bg-white border-t border-sage/10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="bg-white border-t border-sage/10"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
