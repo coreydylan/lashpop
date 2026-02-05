@@ -4,6 +4,19 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Clock, DollarSign } from 'lucide-react'
 import type { Service } from '../ServiceBrowserContext'
+import { useServiceBrowser } from '../ServiceBrowserContext'
+
+// Static fallback mapping of category slug → icon path
+const categoryIconMap: Record<string, string> = {
+  'lashes': '/lashpop-images/services/thin/lashes-icon.svg',
+  'lash-lifts': '/lashpop-images/services/thin/lash-lifts-icon.svg',
+  'brows': '/lashpop-images/services/thin/brows-icon.svg',
+  'facials': '/lashpop-images/services/thin/skincare-icon.svg',
+  'waxing': '/lashpop-images/services/thin/waxing-icon.svg',
+  'permanent-makeup': '/lashpop-images/services/thin/permanent-makeup-icon.svg',
+  'specialty': '/lashpop-images/services/thin/permanent-jewelry-icon.svg',
+  'injectables': '/lashpop-images/services/thin/injectables-icon.svg',
+}
 
 interface ServiceCardProps {
   service: Service
@@ -12,8 +25,15 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
+  const { categories } = useServiceBrowser()
+
   const priceDisplay = service.priceStarting
     ? `$${(service.priceStarting / 100).toFixed(0)}+`
+    : null
+
+  // Resolve the category icon: try context categories first, then static fallback
+  const categoryIcon = service.categorySlug
+    ? categories.find(c => c.slug === service.categorySlug)?.icon || categoryIconMap[service.categorySlug]
     : null
 
   return (
@@ -36,8 +56,19 @@ export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             sizes="(max-width: 768px) 50vw, 33vw"
           />
+        ) : categoryIcon ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-ivory">
+            <div className="relative w-16 h-16 md:w-20 md:h-20 opacity-80">
+              <Image
+                src={categoryIcon}
+                alt={service.name}
+                fill
+                className="object-contain"
+              />
+            </div>
+          </div>
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center bg-ivory">
             <span className="text-sage/40 font-display text-lg">No image</span>
           </div>
         )}
