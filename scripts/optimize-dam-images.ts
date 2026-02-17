@@ -12,24 +12,11 @@
 import { getDb } from '../src/db'
 import { assets } from '../src/db/schema/assets'
 import { teamMemberPhotos } from '../src/db/schema/team_member_photos'
-import { eq, and, like, or, isNotNull } from 'drizzle-orm'
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { eq, and, like } from 'drizzle-orm'
+import { downloadBuffer, uploadBufferWithOptions, getStorageBucketUrl } from '../src/lib/dam/r2-client'
 import sharp from 'sharp'
 
-// Configuration
-const AWS_REGION = process.env.AWS_REGION || 'us-west-2'
-const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID!
-const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY!
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'lashpop-dam-assets'
-const BUCKET_URL = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com`
-
-const s3Client = new S3Client({
-  region: AWS_REGION,
-  credentials: {
-    accessKeyId: AWS_ACCESS_KEY_ID,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY
-  }
-})
+const BUCKET_URL = getStorageBucketUrl()
 
 // Parse command line args
 const args = process.argv.slice(2)
@@ -50,36 +37,18 @@ interface OptimizationResult {
   height: number
 }
 
-async function downloadFromS3(url: string): Promise<Buffer> {
-  // Extract key from URL
+async function downloadFromR2(url: string): Promise<Buffer> {
   const key = url.replace(`${BUCKET_URL}/`, '')
-
-  const command = new GetObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: key
-  })
-
-  const response = await s3Client.send(command)
-  const stream = response.Body as NodeJS.ReadableStream
-  const chunks: Buffer[] = []
-
-  for await (const chunk of stream) {
-    chunks.push(Buffer.from(chunk))
-  }
-
-  return Buffer.concat(chunks)
+  return downloadBuffer(key)
 }
 
-async function uploadToS3(buffer: Buffer, key: string, contentType: string): Promise<string> {
-  const command = new PutObjectCommand({
-    Bucket: BUCKET_NAME,
-    Key: key,
-    Body: buffer,
-    ContentType: contentType
+async function uploadToR2(buffer: Buffer, key: string, contentType: string): Promise<string> {
+  const result = await uploadBufferWithOptions({
+    buffer,
+    key,
+    contentType,
   })
-
-  await s3Client.send(command)
-  return `${BUCKET_URL}/${key}`
+  return result.url
 }
 
 async function optimizeImage(buffer: Buffer): Promise<{
@@ -104,14 +73,13 @@ async function optimizeImage(buffer: Buffer): Promise<{
 }
 
 function getOptimizedKey(originalUrl: string): string {
-  // Extract key from URL and change extension to .webp
   const key = originalUrl.replace(`${BUCKET_URL}/`, '')
   const baseName = key.replace(/\.[^.]+$/, '')
   return `${baseName}.webp`
 }
 
 async function optimizeDamAssets() {
-  console.log('🖼️  DAM Image Optimization Script')
+  console.log('DAM Image Optimization Script')
   console.log('================================')
   console.log(`Mode: ${dryRun ? 'DRY RUN (no changes will be made)' : 'LIVE'}`)
   console.log(`Min size threshold: ${(minSize / 1024).toFixed(0)}KB`)
@@ -120,8 +88,6 @@ async function optimizeDamAssets() {
 
   const db = getDb()
 
-  // Fetch all image assets that might need optimization
-  // We look for images that are NOT already webp and have S3 URLs
   const allAssets = await db
     .select()
     .from(assets)
@@ -132,13 +98,10 @@ async function optimizeDamAssets() {
       )
     )
 
-  // Filter to images that need optimization
   const assetsToOptimize = allAssets.filter(asset => {
-    // Skip if already webp
     if (asset.mimeType === 'image/webp' || asset.filePath.endsWith('.webp')) {
       return false
     }
-    // Skip if below size threshold (if we have size info)
     if (asset.fileSize && asset.fileSize < minSize) {
       return false
     }
@@ -165,27 +128,21 @@ async function optimizeDamAssets() {
       console.log(`${progress} Processing: ${asset.fileName}`)
 
       if (dryRun) {
-        console.log(`  ⏭️  Would optimize (dry run)`)
+        console.log(`  Would optimize (dry run)`)
         continue
       }
 
-      // Download original
-      const originalBuffer = await downloadFromS3(asset.filePath)
+      const originalBuffer = await downloadFromR2(asset.filePath)
       const originalSize = originalBuffer.length
       totalOriginalSize += originalSize
 
-      // Optimize
       const optimized = await optimizeImage(originalBuffer)
       const newSize = optimized.buffer.length
       totalNewSize += newSize
 
-      // Generate new key
       const newKey = getOptimizedKey(asset.filePath)
+      const newUrl = await uploadToR2(optimized.buffer, newKey, 'image/webp')
 
-      // Upload optimized version
-      const newUrl = await uploadToS3(optimized.buffer, newKey, 'image/webp')
-
-      // Update database
       await db
         .update(assets)
         .set({
@@ -199,7 +156,7 @@ async function optimizeDamAssets() {
         .where(eq(assets.id, asset.id))
 
       const reduction = ((1 - newSize / originalSize) * 100).toFixed(1)
-      console.log(`  ✅ ${(originalSize / 1024).toFixed(0)}KB → ${(newSize / 1024).toFixed(0)}KB (${reduction}% smaller)`)
+      console.log(`  ${(originalSize / 1024).toFixed(0)}KB -> ${(newSize / 1024).toFixed(0)}KB (${reduction}% smaller)`)
 
       results.push({
         id: asset.id,
@@ -212,15 +169,14 @@ async function optimizeDamAssets() {
         height: optimized.height
       })
     } catch (error) {
-      console.log(`  ❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.log(`  Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
       errors++
     }
   }
 
-  // Summary
   console.log('')
   console.log('================================')
-  console.log('📊 Summary')
+  console.log('Summary')
   console.log('================================')
 
   if (dryRun) {
@@ -230,27 +186,24 @@ async function optimizeDamAssets() {
     console.log(`Errors: ${errors}`)
     if (results.length > 0) {
       const totalReduction = ((1 - totalNewSize / totalOriginalSize) * 100).toFixed(1)
-      console.log(`Total size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)}MB → ${(totalNewSize / 1024 / 1024).toFixed(2)}MB (${totalReduction}% reduction)`)
+      console.log(`Total size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)}MB -> ${(totalNewSize / 1024 / 1024).toFixed(2)}MB (${totalReduction}% reduction)`)
     }
   }
 }
 
 async function optimizeTeamMemberPhotos() {
   console.log('')
-  console.log('👥 Team Member Photos Optimization')
+  console.log('Team Member Photos Optimization')
   console.log('===================================')
 
   const db = getDb()
 
-  // Fetch all team member photos that might need optimization
   const allPhotos = await db
     .select()
     .from(teamMemberPhotos)
     .where(like(teamMemberPhotos.filePath, `${BUCKET_URL}%`))
 
-  // Filter to images that need optimization
   const photosToOptimize = allPhotos.filter(photo => {
-    // Skip if already webp
     if (photo.filePath.endsWith('.webp')) {
       return false
     }
@@ -277,27 +230,21 @@ async function optimizeTeamMemberPhotos() {
       console.log(`${progress} Processing: ${photo.fileName}`)
 
       if (dryRun) {
-        console.log(`  ⏭️  Would optimize (dry run)`)
+        console.log(`  Would optimize (dry run)`)
         continue
       }
 
-      // Download original
-      const originalBuffer = await downloadFromS3(photo.filePath)
+      const originalBuffer = await downloadFromR2(photo.filePath)
       const originalSize = originalBuffer.length
       totalOriginalSize += originalSize
 
-      // Optimize
       const result = await optimizeImage(originalBuffer)
       const newSize = result.buffer.length
       totalNewSize += newSize
 
-      // Generate new key
       const newKey = getOptimizedKey(photo.filePath)
+      const newUrl = await uploadToR2(result.buffer, newKey, 'image/webp')
 
-      // Upload optimized version
-      const newUrl = await uploadToS3(result.buffer, newKey, 'image/webp')
-
-      // Update database
       await db
         .update(teamMemberPhotos)
         .set({
@@ -307,20 +254,19 @@ async function optimizeTeamMemberPhotos() {
         .where(eq(teamMemberPhotos.id, photo.id))
 
       const reduction = ((1 - newSize / originalSize) * 100).toFixed(1)
-      console.log(`  ✅ ${(originalSize / 1024).toFixed(0)}KB → ${(newSize / 1024).toFixed(0)}KB (${reduction}% smaller)`)
+      console.log(`  ${(originalSize / 1024).toFixed(0)}KB -> ${(newSize / 1024).toFixed(0)}KB (${reduction}% smaller)`)
       optimized++
     } catch (error) {
-      console.log(`  ❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.log(`  Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
       errors++
     }
   }
 
-  // Summary
   console.log('')
   if (!dryRun && optimized > 0) {
     const totalReduction = ((1 - totalNewSize / totalOriginalSize) * 100).toFixed(1)
     console.log(`Team photos optimized: ${optimized}`)
-    console.log(`Total size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)}MB → ${(totalNewSize / 1024 / 1024).toFixed(2)}MB (${totalReduction}% reduction)`)
+    console.log(`Total size: ${(totalOriginalSize / 1024 / 1024).toFixed(2)}MB -> ${(totalNewSize / 1024 / 1024).toFixed(2)}MB (${totalReduction}% reduction)`)
   }
 }
 
@@ -329,7 +275,7 @@ async function main() {
     await optimizeDamAssets()
     await optimizeTeamMemberPhotos()
     console.log('')
-    console.log('✨ Done!')
+    console.log('Done!')
     process.exit(0)
   } catch (error) {
     console.error('Fatal error:', error)

@@ -9,7 +9,12 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'lashpop-dam-assets.s3.us-west-2.amazonaws.com',
+        hostname: '*.r2.dev',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dam.lashpopstudios.com',
         pathname: '/**',
       },
       {

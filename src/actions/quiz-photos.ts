@@ -4,11 +4,8 @@ import { getDb } from "@/db"
 import { quizPhotos, quizResultSettings, type QuizPhotoCropData } from "@/db/schema/quiz_photos"
 import { assets } from "@/db/schema/assets"
 import { eq, and, asc } from "drizzle-orm"
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 import sharp from "sharp"
-
-// Sanitize env values to remove trailing newlines
-const sanitizeEnv = (value?: string) => value?.trim()
+import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
 
 // Lash style type (matches the enum in the schema)
 export type LashStyle = "classic" | "hybrid" | "wetAngel" | "volume"
@@ -167,32 +164,18 @@ export async function updateQuizPhotoCrop(
       targetSize
     )
 
-    // Upload to S3
-    const s3Client = new S3Client({
-      region: sanitizeEnv(process.env.AWS_REGION)!,
-      credentials: {
-        accessKeyId: sanitizeEnv(process.env.AWS_ACCESS_KEY_ID)!,
-        secretAccessKey: sanitizeEnv(process.env.AWS_SECRET_ACCESS_KEY)!,
-      },
-    })
-
-    const BUCKET_NAME = sanitizeEnv(process.env.AWS_S3_BUCKET_NAME)!
+    // Upload to R2
     const fileName = photo.fileName.replace(/\.[^/.]+$/, "")
     const key = `quiz-crops/${photoId}/${fileName}-square-${Date.now()}.jpg`
 
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: processedBuffer,
-        ContentType: "image/jpeg",
-        CacheControl: "max-age=31536000",
-      })
-    )
+    const result = await uploadBufferWithOptions({
+      buffer: processedBuffer,
+      key,
+      contentType: "image/jpeg",
+      cacheControl: "max-age=31536000",
+    })
 
-    cropUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL
-      ? `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/${key}`
-      : `https://${BUCKET_NAME}.s3.${sanitizeEnv(process.env.AWS_REGION)}.amazonaws.com/${key}`
+    cropUrl = result.url
   } catch (err) {
     console.error("Failed to generate quiz photo crop:", err)
     // Continue without cropUrl - will use cropData on client
@@ -537,31 +520,17 @@ export async function updateResultImageCrop(
     const targetSize = 800
     const processedBuffer = await generateSquareCrop(originalBuffer, cropData, targetSize)
 
-    const s3Client = new S3Client({
-      region: sanitizeEnv(process.env.AWS_REGION)!,
-      credentials: {
-        accessKeyId: sanitizeEnv(process.env.AWS_ACCESS_KEY_ID)!,
-        secretAccessKey: sanitizeEnv(process.env.AWS_SECRET_ACCESS_KEY)!,
-      },
-    })
-
-    const BUCKET_NAME = sanitizeEnv(process.env.AWS_S3_BUCKET_NAME)!
     const fileName = settings.fileName?.replace(/\.[^/.]+$/, "") || "result"
     const key = `quiz-results/${lashStyle}/${fileName}-result-${Date.now()}.jpg`
 
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: processedBuffer,
-        ContentType: "image/jpeg",
-        CacheControl: "max-age=31536000",
-      })
-    )
+    const result = await uploadBufferWithOptions({
+      buffer: processedBuffer,
+      key,
+      contentType: "image/jpeg",
+      cacheControl: "max-age=31536000",
+    })
 
-    cropUrl = process.env.NEXT_PUBLIC_S3_BUCKET_URL
-      ? `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/${key}`
-      : `https://${BUCKET_NAME}.s3.${sanitizeEnv(process.env.AWS_REGION)}.amazonaws.com/${key}`
+    cropUrl = result.url
   } catch (err) {
     console.error("Failed to generate result image crop:", err)
   }

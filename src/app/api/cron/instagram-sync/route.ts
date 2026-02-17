@@ -1,22 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDb, assets, tags, tagCategories, assetTags } from "@/db"
 import { eq, and } from "drizzle-orm"
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 import { nanoid } from "nanoid"
+import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
 
-// Initialize S3 Client
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-})
-
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || "lashpop-dam-assets"
-const BUCKET_URL = process.env.NEXT_PUBLIC_S3_BUCKET_URL || `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`
-
-async function uploadImageToS3(imageUrl: string, id: string): Promise<string | null> {
+async function uploadImageToStorage(imageUrl: string, id: string): Promise<string | null> {
   try {
     const response = await fetch(imageUrl)
     if (!response.ok) return null
@@ -26,17 +14,16 @@ async function uploadImageToS3(imageUrl: string, id: string): Promise<string | n
 
     const key = `instagram/${id}_${Date.now()}.jpg`
 
-    await s3Client.send(new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: 'image/jpeg',
-      CacheControl: 'public, max-age=31536000',
-    }))
+    const result = await uploadBufferWithOptions({
+      buffer,
+      key,
+      contentType: 'image/jpeg',
+      cacheControl: 'public, max-age=31536000',
+    })
 
-    return `${BUCKET_URL}/${key}`
+    return result.url
   } catch (error) {
-    console.error('Error uploading to S3:', error)
+    console.error('Error uploading to R2:', error)
     return null
   }
 }
@@ -142,9 +129,9 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Upload to S3
-        const s3Url = await uploadImageToS3(mediaUrl, post.id)
-        if (!s3Url) {
+        // Upload to R2
+        const r2Url = await uploadImageToStorage(mediaUrl, post.id)
+        if (!r2Url) {
           results.errors.push(`Failed to upload ${post.id}`)
           continue
         }
@@ -153,7 +140,7 @@ export async function POST(request: NextRequest) {
         const [newAsset] = await db.insert(assets).values({
           id: nanoid(),
           fileName: `${post.id}.jpg`,
-          filePath: s3Url,
+          filePath: r2Url,
           fileType: 'image',
           mimeType: 'image/jpeg',
           fileSize: 0, // We don't have the exact size from Instagram API

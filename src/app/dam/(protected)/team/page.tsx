@@ -94,7 +94,7 @@ export default function TeamManagementPage() {
       const allUploadedPhotos: TeamMemberPhoto[] = []
       const allErrors: Array<{ fileName: string; error: string }> = []
 
-      // Upload files directly to S3 (no size limits!)
+      // Upload files directly to R2 (no size limits!)
       for (const file of files) {
         try {
           // Step 1: Get presigned URL
@@ -114,7 +114,7 @@ export default function TeamManagementPage() {
 
           const { presignedUrl, key, url } = await presignedResponse.json()
 
-          // Step 2: Upload directly to S3
+          // Step 2: Upload directly to R2
           const uploadResponse = await fetch(presignedUrl, {
             method: "PUT",
             body: file,
@@ -124,7 +124,7 @@ export default function TeamManagementPage() {
           })
 
           if (!uploadResponse.ok) {
-            throw new Error("Failed to upload to S3")
+            throw new Error("Failed to upload file")
           }
 
           // Step 3: Save metadata to database

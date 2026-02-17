@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
-import { uploadToS3, generateAssetKey } from "@/lib/dam/s3-client"
+import { uploadFile, generateAssetKey } from "@/lib/dam/r2-client"
 
 // Allow 5 minute execution for large uploads
 export const maxDuration = 300
@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
     // Process each file
     for (const file of files) {
       try {
-        // Upload to S3
+        // Upload to R2
         const key = generateAssetKey(file.name, teamMemberId)
-        const { url } = await uploadToS3({
+        const { url } = await uploadFile({
           file,
           key,
           contentType: file.type

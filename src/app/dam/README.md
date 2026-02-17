@@ -48,7 +48,7 @@ A lightweight, mobile-first Digital Asset Management system for organizing and t
 - **Animations**: Framer Motion
 - **Icons**: Lucide React
 - **Database**: PostgreSQL with Drizzle ORM
-- **Storage**: AWS S3
+- **Storage**: Cloudflare R2
 - **File Uploads**: Native browser APIs
 
 ## Database Schema
@@ -70,12 +70,12 @@ A lightweight, mobile-first Digital Asset Management system for organizing and t
 Add these to your `.env.local`:
 
 ```bash
-# AWS S3 (DAM Asset Storage)
-AWS_REGION=us-west-2
-AWS_S3_BUCKET_NAME=lashpop-dam-assets
-AWS_ACCESS_KEY_ID=your_access_key_id
-AWS_SECRET_ACCESS_KEY=your_secret_access_key
-NEXT_PUBLIC_S3_BUCKET_URL=https://lashpop-dam-assets.s3.us-west-2.amazonaws.com
+# Cloudflare R2 (DAM Asset Storage)
+R2_ACCOUNT_ID=your_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key
+R2_SECRET_ACCESS_KEY=your_r2_secret_key
+R2_BUCKET_NAME=lashpop-dam
+NEXT_PUBLIC_R2_BUCKET_URL=https://pub-xxx.r2.dev
 ```
 
 ### 2. Database Migration
@@ -86,12 +86,9 @@ Run the migration to create the DAM tables:
 npm run db:migrate
 ```
 
-### 3. AWS Credentials
+### 3. R2 Credentials
 
-Ensure your AWS credentials have the following S3 permissions:
-- `s3:PutObject`
-- `s3:GetObject`
-- `s3:DeleteObject`
+Create an R2 API token in the Cloudflare dashboard with read/write access to the `lashpop-dam` bucket.
 
 ### 4. Access the DAM
 
@@ -161,7 +158,7 @@ src/db/schema/
 └── asset_services.ts         # Junction table schema
 
 src/lib/dam/
-└── s3-client.ts              # S3 utility functions
+└── r2-client.ts              # Cloudflare R2 storage client
 ```
 
 ## Future Enhancements
@@ -190,8 +187,8 @@ src/lib/dam/
 
 ## Notes
 
-- Assets are stored in S3 with public read access
-- File uploads are direct to S3 (not streamed through server)
-- Images are not optimized on upload (consider adding sharp for production)
+- Assets are stored in Cloudflare R2 with public read access
+- File uploads use presigned URLs (direct to R2, not streamed through server)
+- Images are automatically optimized on upload via Sharp (WebP conversion)
 - Video thumbnails are not generated (consider adding ffmpeg for production)
 - Team members and services currently use mock data (connect to real API)

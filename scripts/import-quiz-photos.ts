@@ -3,7 +3,7 @@ import { tagCategories } from "../src/db/schema/tag_categories"
 import { tags } from "../src/db/schema/tags"
 import { assets } from "../src/db/schema/assets"
 import { assetTags } from "../src/db/schema/asset_tags"
-import { uploadToS3, generateAssetKey } from "../src/lib/dam/s3-client"
+import { uploadFile, generateAssetKey } from "../src/lib/dam/r2-client"
 import { eq } from "drizzle-orm"
 import * as fs from "fs"
 import * as path from "path"
@@ -172,11 +172,11 @@ async function main() {
     const blob = new Blob([fileBuffer], { type: mimeType })
     const file = new File([blob], fileName, { type: mimeType })
 
-    // Generate S3 key
+    // Generate storage key
     const key = generateAssetKey(fileName)
 
-    // Upload to S3
-    const { url } = await uploadToS3({
+    // Upload to R2
+    const { url } = await uploadFile({
       file,
       key,
       contentType: mimeType

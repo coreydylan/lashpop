@@ -125,12 +125,13 @@ export const LASH_STYLE_DETAILS: Record<LashStyle, {
   },
 }
 
-// Result images (legacy, can be replaced with dynamic photos)
+// Result images — these are re-uploaded after R2 migration, paths use the uploads/quiz/ prefix
+const R2_BASE = process.env.NEXT_PUBLIC_R2_BUCKET_URL || ""
 export const RESULT_IMAGES: Record<LashStyle, string> = {
-  classic: "https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-classic.jpg",
-  wetAngel: "https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-wetangel.jpg",
-  hybrid: "https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-hybrid.jpg",
-  volume: "https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/uploads/quiz/result-volume.jpg",
+  classic: `${R2_BASE}/uploads/quiz/result-classic.jpg`,
+  wetAngel: `${R2_BASE}/uploads/quiz/result-wetangel.jpg`,
+  hybrid: `${R2_BASE}/uploads/quiz/result-hybrid.jpg`,
+  volume: `${R2_BASE}/uploads/quiz/result-volume.jpg`,
 }
 
 // Quiz configuration

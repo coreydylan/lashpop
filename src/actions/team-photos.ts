@@ -3,9 +3,8 @@
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { eq } from "drizzle-orm"
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3"
 import sharp from "sharp"
-import { uploadToS3 } from "@/lib/dam/s3-client"
+import { uploadFile, uploadBufferWithOptions } from "@/lib/dam/r2-client"
 
 import { promises as fs } from 'fs'
 import path from 'path'
@@ -106,41 +105,14 @@ export async function saveTeamPhotoCrops({ photoId, crops }: SaveCropsParams) {
       
       const fileName = photo.fileName.replace(/\.[^/.]+$/, "")
       const key = `team-crops/${photo.teamMemberId}/${fileName}-${cropType}-${Date.now()}.jpg`
-      
-      // Use existing uploadToS3 helper but we need a File object... 
-      // The helper expects a File. We can mock it or use the S3 client directly.
-      // Let's use S3 client directly to avoid File object creation in Node environment
-      
-      const s3Client = new S3Client({
-        region: process.env.AWS_REGION!,
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-        },
+
+      const { url } = await uploadBufferWithOptions({
+        buffer: processedBuffer,
+        key,
+        contentType: "image/jpeg",
+        cacheControl: "max-age=31536000"
       })
-      
-      const BUCKET_NAME = process.env.AWS_BUCKET_NAME!
-      const BUCKET_URL = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`
-      // Or construct URL based on environment
-      
-      await s3Client.send(new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: processedBuffer,
-        ContentType: "image/jpeg",
-        CacheControl: "max-age=31536000"
-      }))
-      
-      // Construct URL
-      // We need to match the URL format used in the app.
-      // Looking at s3-client.ts, it returns `${BUCKET_URL}/${key}`
-      // I need to ensure I use the correct base URL.
-      // I will read process.env.AWS_BUCKET_URL if available, or construct it.
-      
-      const url = process.env.AWS_BUCKET_URL 
-        ? `${process.env.AWS_BUCKET_URL}/${key}`
-        : `https://${BUCKET_NAME}.s3.amazonaws.com/${key}`
-      
+
       return { type: cropType, url }
       
     } catch (err) {

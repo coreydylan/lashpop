@@ -3,7 +3,7 @@ import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
 import { assetServices } from "@/db/schema/asset_services"
 import { eq, inArray } from "drizzle-orm"
-import { deleteFromS3 } from "@/lib/dam/s3-client"
+import { deleteObject } from "@/lib/dam/r2-client"
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,22 +19,22 @@ export async function POST(request: NextRequest) {
 
     const db = getDb()
 
-    // Get assets to delete from S3
+    // Get assets to delete from R2
     const assetsToDelete = await db
       .select()
       .from(assets)
       .where(inArray(assets.id, assetIds))
 
-    // Delete from S3
+    // Delete from R2
     for (const asset of assetsToDelete) {
       try {
         // Extract key from filePath
         const url = new URL(asset.filePath)
         const key = url.pathname.substring(1) // Remove leading slash
-        await deleteFromS3(key)
+        await deleteObject(key)
       } catch (error) {
-        console.error("Failed to delete from S3:", error)
-        // Continue with database deletion even if S3 fails
+        console.error("Failed to delete from R2:", error)
+        // Continue with database deletion even if R2 delete fails
       }
     }
 

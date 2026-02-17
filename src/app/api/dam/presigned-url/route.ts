@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getPresignedUploadUrl, generateAssetKey } from "@/lib/dam/s3-client"
+import { getPresignedUploadUrl, generateAssetKey, getStorageBucketUrl } from "@/lib/dam/r2-client"
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       presignedUrl,
       key,
-      url: `${process.env.NEXT_PUBLIC_S3_BUCKET_URL || `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`}/${key}`
+      url: `${getStorageBucketUrl()}/${key}`
     })
   } catch (error) {
     console.error("Error generating presigned URL:", error)

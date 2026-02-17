@@ -1,7 +1,5 @@
 "use server";
 
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-
 // Types matching the form data
 export type CareerPath = "employee" | "booth" | "training";
 
@@ -24,13 +22,12 @@ interface SubmitResult {
   error?: string;
 }
 
-const sesClient = new SESClient({
-  region: "us-east-1", // Production SES is in us-east-1
-});
+const MOX_API_URL = process.env.MOX_API_URL || "https://mox-api.experialstudio.com";
+const MOX_API_KEY = process.env.MOX_API_KEY!;
 
 const RECIPIENT_EMAIL = "lashpopstudios@gmail.com";
 const BCC_EMAIL = "me@coreydylan.net";
-const SENDER_EMAIL = process.env.SES_SENDER_EMAIL || "noreply@lashpopstudios.com";
+const SENDER_EMAIL = "noreply@lashpopstudios.com";
 
 function formatPathTitle(path: CareerPath): string {
   switch (path) {
@@ -169,31 +166,26 @@ export async function submitWorkWithUsForm(
     const textBody = buildEmailBody(data, path);
     const htmlBody = buildHtmlEmailBody(data, path);
 
-    const command = new SendEmailCommand({
-      Source: SENDER_EMAIL,
-      Destination: {
-        ToAddresses: [RECIPIENT_EMAIL],
-        BccAddresses: [BCC_EMAIL],
+    // Send to primary recipient
+    const res = await fetch(`${MOX_API_URL}/api/v1/emails/send`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${MOX_API_KEY}`,
+        "Content-Type": "application/json",
       },
-      Message: {
-        Subject: {
-          Data: subject,
-          Charset: "UTF-8",
-        },
-        Body: {
-          Text: {
-            Data: textBody,
-            Charset: "UTF-8",
-          },
-          Html: {
-            Data: htmlBody,
-            Charset: "UTF-8",
-          },
-        },
-      },
+      body: JSON.stringify({
+        from: SENDER_EMAIL,
+        to: [RECIPIENT_EMAIL, BCC_EMAIL],
+        subject,
+        text: textBody,
+        html: htmlBody,
+      }),
     });
 
-    await sesClient.send(command);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Mox API error (${res.status}): ${body}`);
+    }
 
     return { success: true };
   } catch (error) {

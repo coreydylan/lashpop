@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
-import { uploadToS3, uploadBufferToS3, generateAssetKey } from "@/lib/dam/s3-client"
+import { uploadFile, uploadBuffer, generateAssetKey } from "@/lib/dam/r2-client"
 import { optimizeImage, isOptimizableImage, getOptimizedFilename } from "@/lib/dam/image-optimizer"
 
 const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024 // 200MB
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
             uploadKey = generateAssetKey(optimizedFilename, teamMemberId || undefined)
 
             // Upload optimized version
-            const result = await uploadBufferToS3({
+            const result = await uploadBuffer({
               buffer: optimized.buffer,
               key: uploadKey,
               contentType: optimized.mimeType
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
         // If not optimized (either by choice or failure), upload original
         if (!wasOptimized) {
           uploadKey = generateAssetKey(file.name, teamMemberId || undefined)
-          const result = await uploadToS3({
+          const result = await uploadFile({
             file,
             key: uploadKey,
             contentType: file.type

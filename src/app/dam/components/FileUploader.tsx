@@ -243,9 +243,9 @@ export function FileUploader({
         }
 
         const { presignedUrl, key, url } = await presignedResponse.json()
-        console.log("[Upload] Got presigned URL, uploading to S3...", { key })
+        console.log("[Upload] Got presigned URL, uploading to R2...", { key })
 
-        // Step 2: Upload directly to S3
+        // Step 2: Upload directly to R2
         const uploadResponse = await fetch(presignedUrl, {
           method: "PUT",
           body: pendingFile.file,
@@ -255,11 +255,11 @@ export function FileUploader({
         })
 
         if (!uploadResponse.ok) {
-          console.error("[Upload] S3 upload failed:", uploadResponse.status, uploadResponse.statusText)
-          throw new Error(`Failed to upload to S3: ${uploadResponse.status}`)
+          console.error("[Upload] R2 upload failed:", uploadResponse.status, uploadResponse.statusText)
+          throw new Error(`Failed to upload: ${uploadResponse.status}`)
         }
         
-        console.log("[Upload] S3 upload complete. Saving metadata...")
+        console.log("[Upload] R2 upload complete. Saving metadata...")
 
         // Step 3: Save metadata to database
         const fileType = pendingFile.file.type.startsWith("video/") ? "video" : "image"

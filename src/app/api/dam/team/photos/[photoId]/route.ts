@@ -3,7 +3,7 @@ import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { eq } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
-import { deleteFromS3 } from "@/lib/dam/s3-client"
+import { deleteObject } from "@/lib/dam/r2-client"
 
 export async function DELETE(request: NextRequest, context: any) {
   try {
@@ -36,15 +36,13 @@ export async function DELETE(request: NextRequest, context: any) {
       )
     }
 
-    // If the photo is stored in S3, delete it from there too
-    if (photo.filePath.includes('s3.') || photo.filePath.includes('amazonaws.com')) {
+    // If the photo is stored in R2, delete it from there too
+    if (photo.filePath.startsWith('http')) {
       try {
-        // Extract the key from the URL
-        // URL format: https://lashpop-dam-assets.s3.us-west-2.amazonaws.com/team/...
         const url = new URL(photo.filePath)
         const key = url.pathname.substring(1) // Remove leading slash
 
-        await deleteFromS3(key)
+        await deleteObject(key)
 
         // Also delete any crop URLs if they exist
         const cropUrls = [
@@ -59,14 +57,14 @@ export async function DELETE(request: NextRequest, context: any) {
           try {
             const cropUrlObj = new URL(cropUrl!)
             const cropKey = cropUrlObj.pathname.substring(1)
-            await deleteFromS3(cropKey)
+            await deleteObject(cropKey)
           } catch {
             // Ignore errors deleting crop URLs
           }
         }
-      } catch (s3Error) {
-        console.error("Error deleting from S3:", s3Error)
-        // Continue with database deletion even if S3 fails
+      } catch (r2Error) {
+        console.error("Error deleting from R2:", r2Error)
+        // Continue with database deletion even if R2 delete fails
       }
     }
 
