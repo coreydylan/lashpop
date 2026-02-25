@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import {
@@ -13,7 +13,10 @@ import {
   ChevronDown,
   Users,
   Tag,
-  Layers
+  Layers,
+  Upload,
+  Loader2,
+  AlertCircle
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -102,6 +105,14 @@ export function MiniDamExplorer({
 
   // Multi-select state
   const [localSelectedIds, setLocalSelectedIds] = useState<Set<string>>(new Set(selectedAssetIds))
+
+  // Upload state
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadCount, setUploadCount] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const dragDepthRef = useRef(0)
 
   // Sync local selection with prop
   useEffect(() => {
@@ -279,6 +290,94 @@ export function MiniDamExplorer({
 
   const hasActiveFilters = selectedTagIds.size > 0 || selectedTeamMemberIds.size > 0 || searchQuery
 
+  // Upload handler
+  const handleUpload = useCallback(async (files: FileList | File[]) => {
+    const fileArray = Array.from(files).filter(f =>
+      f.type.startsWith('image/') || f.type.startsWith('video/')
+    )
+    if (fileArray.length === 0) return
+
+    setUploading(true)
+    setUploadError(null)
+    setUploadCount(fileArray.length)
+
+    try {
+      const formData = new FormData()
+      fileArray.forEach(f => formData.append('files', f))
+
+      const res = await fetch('/api/dam/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        throw new Error(`Upload failed (${res.status})`)
+      }
+
+      const data = await res.json()
+      if (data.assets && data.assets.length > 0) {
+        // Prepend new assets so they appear first in the grid
+        setAssets(prev => [
+          ...data.assets.map((a: any) => ({
+            id: a.id,
+            fileName: a.fileName,
+            filePath: a.filePath,
+            fileType: a.fileType,
+            uploadedAt: a.uploadedAt || new Date().toISOString(),
+            teamMemberId: a.teamMemberId || null,
+            tags: [],
+          })),
+          ...prev,
+        ])
+      }
+
+      const failCount = data.results?.filter((r: any) => r.status === 'error').length || 0
+      if (failCount > 0) {
+        setUploadError(`${data.assets.length} uploaded, ${failCount} failed`)
+      }
+    } catch (err) {
+      console.error('Upload error:', err)
+      setUploadError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+      setUploadCount(0)
+    }
+  }, [])
+
+  // Drag and drop handlers for the modal content area
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragDepthRef.current += 1
+    if (e.dataTransfer?.types?.includes('Files')) {
+      setIsDragging(true)
+    }
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragDepthRef.current = Math.max(0, dragDepthRef.current - 1)
+    if (dragDepthRef.current === 0) {
+      setIsDragging(false)
+    }
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragDepthRef.current = 0
+    setIsDragging(false)
+    if (e.dataTransfer?.files?.length) {
+      handleUpload(e.dataTransfer.files)
+    }
+  }, [handleUpload])
+
   if (!isOpen) return null
 
   return (
@@ -301,7 +400,36 @@ export function MiniDamExplorer({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="fixed inset-4 md:inset-10 lg:inset-20 bg-cream rounded-3xl shadow-2xl z-50 flex flex-col overflow-hidden"
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
           >
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              onChange={(e) => {
+                if (e.target.files?.length) {
+                  handleUpload(e.target.files)
+                  e.target.value = '' // reset so same file can be re-selected
+                }
+              }}
+              className="hidden"
+            />
+
+            {/* Drag overlay */}
+            {isDragging && (
+              <div className="absolute inset-0 z-[60] bg-dusty-rose/10 backdrop-blur-sm border-4 border-dashed border-dusty-rose/40 rounded-3xl flex items-center justify-center">
+                <div className="text-center bg-cream/90 rounded-2xl px-8 py-6 shadow-xl border border-dusty-rose/20">
+                  <Upload className="w-10 h-10 text-dusty-rose mx-auto mb-2" />
+                  <p className="text-dune font-semibold">Drop images here</p>
+                  <p className="text-xs text-dune/60 mt-1">They&apos;ll be uploaded to your media library</p>
+                </div>
+              </div>
+            )}
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-sage/10 bg-cream/80 backdrop-blur-sm">
               <div className="flex items-center gap-4">
@@ -314,6 +442,24 @@ export function MiniDamExplorer({
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* Upload button */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className={clsx(
+                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                    uploading
+                      ? "bg-sage/20 text-dune/40 cursor-wait"
+                      : "bg-dusty-rose/10 text-dusty-rose hover:bg-dusty-rose/20 border border-dusty-rose/20"
+                  )}
+                >
+                  {uploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4" />
+                  )}
+                  {uploading ? `Uploading ${uploadCount}...` : 'Upload'}
+                </button>
                 {allowMultiple && localSelectedIds.size > 0 && (
                   <button
                     onClick={handleConfirmMultiSelect}
@@ -472,6 +618,17 @@ export function MiniDamExplorer({
               </AnimatePresence>
             </div>
 
+            {/* Upload status banner */}
+            {uploadError && (
+              <div className="mx-6 mt-3 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-terracotta/10 border border-terracotta/20 text-sm text-terracotta">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1">{uploadError}</span>
+                <button onClick={() => setUploadError(null)} className="text-terracotta/60 hover:text-terracotta">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             {/* Asset Grid */}
             <div className="flex-1 overflow-y-auto p-6">
               {loading ? (
@@ -494,6 +651,13 @@ export function MiniDamExplorer({
                     <ImageIcon className="w-8 h-8 text-sage/40" />
                   </div>
                   <p className="text-sm text-dune/60">No images found</p>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-dusty-rose hover:bg-dusty-rose/10 border border-dusty-rose/20 transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload images
+                  </button>
                   {hasActiveFilters && (
                     <button
                       onClick={clearFilters}

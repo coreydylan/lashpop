@@ -287,15 +287,20 @@ export function DesignMode() {
     if (isHidden || !selectMode) return
     const target = e.target as HTMLElement
     if (target.closest('.design-mode-panel')) return
-    if (!target.closest('button, a, input, select, textarea')) {
-      e.preventDefault()
-    }
+    e.preventDefault()
+    e.stopPropagation()
     selectTarget(target)
   }, [isHidden, selectMode, selectTarget])
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
     if (isHidden || !selectMode || isSwiping.current) return
-    selectTarget(e.target as HTMLElement)
+    const target = e.target as HTMLElement
+    if (target.closest('.design-mode-panel')) return
+    // Prevent link navigation and button actions
+    if (target.closest('a, button')) {
+      e.preventDefault()
+    }
+    selectTarget(target)
   }, [isHidden, selectMode, selectTarget])
 
   const handleMouseOver = useCallback((e: MouseEvent) => {
@@ -315,7 +320,7 @@ export function DesignMode() {
   useEffect(() => {
     document.addEventListener('mouseover', handleMouseOver)
     document.addEventListener('mouseout', handleMouseOut)
-    document.addEventListener('click', handleClick)
+    document.addEventListener('click', handleClick, true) // capture phase to intercept before links
     document.addEventListener('touchstart', handleTouchStart, { passive: true })
     document.addEventListener('touchmove', handleTouchMove, { passive: true })
     document.addEventListener('touchend', handleTouchEnd)
@@ -323,7 +328,7 @@ export function DesignMode() {
     return () => {
       document.removeEventListener('mouseover', handleMouseOver)
       document.removeEventListener('mouseout', handleMouseOut)
-      document.removeEventListener('click', handleClick)
+      document.removeEventListener('click', handleClick, true)
       document.removeEventListener('touchstart', handleTouchStart)
       document.removeEventListener('touchmove', handleTouchMove)
       document.removeEventListener('touchend', handleTouchEnd)
