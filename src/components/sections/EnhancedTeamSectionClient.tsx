@@ -129,6 +129,11 @@ interface TeamMember {
   cropFullVerticalUrl?: string
 }
 
+const PLACEHOLDER_IMAGE = "/placeholder-team.svg"
+function isPlaceholderImage(src: string) {
+  return src.endsWith('.svg') || src.includes('placeholder')
+}
+
 interface PortfolioImage {
   id: string
   url: string
@@ -614,6 +619,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                   // Use square crop for face-focused image, fallback to regular image
                   const cardImage = member.cropSquareUrl || member.image
+                  const isPlaceholder = isPlaceholderImage(cardImage)
 
                   // Format name as "First L."
                   const nameParts = member.name.split(' ')
@@ -729,8 +735,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             src={cardImage}
                             alt={member.name}
                             fill
-                            className="object-cover"
+                            className={isPlaceholder ? "object-contain p-4" : "object-cover"}
                             sizes="155px"
+                            unoptimized={isPlaceholder}
                           />
                         </div>
                       </div>
@@ -860,8 +867,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                     src={member.image}
                                     alt={member.name}
                                     fill
-                                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                                    className={isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover transition-transform duration-700 group-hover:scale-105"}
                                     sizes="(max-width: 640px) 155px, (max-width: 1024px) 280px, 280px"
+                                    unoptimized={isPlaceholderImage(member.image)}
                                   />
                                 </div>
                               </div>
@@ -990,10 +998,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                           alt={selectedMember.name}
                                           fill
                                           className={`${
-                                            portfolioImages.length > 0 && isCurrentImageHorizontal
-                                              ? 'object-contain'
-                                              : 'object-cover'
+                                            portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)
+                                              ? 'object-contain p-8'
+                                              : portfolioImages.length > 0 && isCurrentImageHorizontal
+                                                ? 'object-contain'
+                                                : 'object-cover'
                                           }`}
+                                          unoptimized={portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)}
                                         />
                                       </motion.div>
                                     </AnimatePresence>
@@ -1328,8 +1339,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   src={portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image}
                                   alt={selectedMember.name}
                                   fill
-                                  className="object-cover object-top"
+                                  className={portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image) ? "object-contain p-8" : "object-cover object-top"}
                                   priority
+                                  unoptimized={portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)}
                                 />
                               </motion.div>
                             </AnimatePresence>
@@ -1537,7 +1549,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         src={selectedMember.image}
                         alt={selectedMember.name}
                         fill
-                        className="object-cover"
+                        className={isPlaceholderImage(selectedMember.image) ? "object-contain p-8 bg-[#EBE0CB]" : "object-cover"}
+                        unoptimized={isPlaceholderImage(selectedMember.image)}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
