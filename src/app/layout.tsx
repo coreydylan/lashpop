@@ -6,7 +6,7 @@ import { UserKnowledgeProvider } from '@/contexts/UserKnowledgeContext'
 import { FindYourLookProvider } from '@/components/find-your-look'
 import { getSEOSettings } from '@/actions/seo'
 import { LocalBusinessSchema, WebSiteSchema, FAQSchema, ServicesSchema, ReviewSchema } from '@/components/seo'
-import { DesignMode } from '@/components/dev/DesignMode'
+import { DesignModeGate } from '@/components/dev/DesignModeGate'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 
@@ -132,8 +132,7 @@ export default async function RootLayout({
           <UserKnowledgeProvider>
             <FindYourLookProvider>
               {children}
-              {/* Temporarily disabled - set to true to re-enable */}
-              {false && process.env.NODE_ENV === 'development' && <DesignMode />}
+              <DesignModeGate />
             </FindYourLookProvider>
           </UserKnowledgeProvider>
         </AuthProvider>

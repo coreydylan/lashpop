@@ -1160,6 +1160,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </a>
         </div>
 
+        {/* Team Group Photo - Full Width */}
+        <div className="mt-8 md:mt-16 -mx-4 md:-mx-8 lg:-mx-12">
+          <img
+            src="/lashpop-images/team/team-group-photo.jpg"
+            alt="The LashPop Studios team"
+            className="w-full h-auto"
+          />
+        </div>
       </section>
 
       {/* Team Member Modal - Full Screen on Mobile (Portaled to body) */}
