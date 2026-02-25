@@ -1,6 +1,12 @@
 import { getTeamMembersWithServices } from "@/actions/team"
 import { EnhancedTeamSectionClient } from "./EnhancedTeamSectionClient"
 
+const PLACEHOLDER_IMAGE = "/placeholder-team.svg"
+
+function isPlaceholderOrMissing(url: string): boolean {
+  return !url || url.includes("placeholder") || url === ""
+}
+
 export async function EnhancedTeamSection() {
   const teamMembers = await getTeamMembersWithServices()
 
@@ -12,7 +18,7 @@ export async function EnhancedTeamSection() {
     role: member.role,
     type: member.type as 'employee' | 'independent',
     businessName: member.businessName || undefined,
-    image: member.imageUrl,
+    image: isPlaceholderOrMissing(member.imageUrl) ? PLACEHOLDER_IMAGE : member.imageUrl,
     phone: member.phone,
     specialties: member.specialties as string[],
     // Service categories pulled directly from Vagaro service assignments
