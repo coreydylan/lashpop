@@ -35,6 +35,13 @@ const FONT_WEIGHTS = [
   { value: '800', label: 'Extra Bold' },
 ]
 
+const FONT_FAMILIES = [
+  { value: "var(--font-inter, 'Inter'), system-ui, sans-serif", label: 'Inter', preview: 'var(--font-inter, Inter)' },
+  { value: "var(--font-playfair, 'Playfair Display'), serif", label: 'Playfair', preview: 'var(--font-playfair, Playfair Display)' },
+  { value: "var(--font-league-script, 'League Script'), cursive", label: 'League Script', preview: 'var(--font-league-script, League Script)' },
+  { value: "var(--font-swanky, 'Swanky and Moo Moo'), cursive", label: 'Swanky', preview: 'var(--font-swanky, Swanky and Moo Moo)' },
+]
+
 const FONT_SIZES = ['12', '14', '16', '18', '20', '24', '28', '32', '36', '40', '48', '56', '64']
 
 const TEXT_ALIGNS = [
@@ -227,7 +234,7 @@ export function DesignMode() {
 
   // Current element computed styles
   const [currentStyles, setCurrentStyles] = useState({
-    fontWeight: '', fontSize: '', textAlign: '', fontStyle: '',
+    fontFamily: '', fontWeight: '', fontSize: '', textAlign: '', fontStyle: '',
     textTransform: '', letterSpacing: '', lineHeight: '',
     padding: '', borderRadius: '',
   })
@@ -246,6 +253,7 @@ export function DesignMode() {
     if (!selectedElement) return
     const c = window.getComputedStyle(selectedElement)
     setCurrentStyles({
+      fontFamily: c.fontFamily,
       fontWeight: c.fontWeight,
       fontSize: c.fontSize,
       textAlign: c.textAlign,
@@ -343,6 +351,7 @@ export function DesignMode() {
     if (!selectedElement) return
     const c = window.getComputedStyle(selectedElement)
     setCurrentStyles({
+      fontFamily: c.fontFamily,
       fontWeight: c.fontWeight,
       fontSize: c.fontSize,
       textAlign: c.textAlign,
@@ -774,6 +783,32 @@ export function DesignMode() {
             {/* ======================== FONT TAB ======================== */}
             {activeTab === 'font' && (
               <div style={{ padding: '0 12px' }}>
+                {/* Font Family */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, color: '#666', textTransform: 'uppercase', fontWeight: 600, marginBottom: 6 }}>Font</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {FONT_FAMILIES.map(f => {
+                      const active = currentStyles.fontFamily?.includes(f.label.split(' ')[0])
+                      return (
+                        <button
+                          key={f.label}
+                          onClick={() => applyStyle('fontFamily', f.value, 'Font Family', f.label)}
+                          style={{
+                            padding: '8px 12px', borderRadius: 8, textAlign: 'left',
+                            border: active ? '2px solid #ac4d3c' : '1px solid #444',
+                            background: active ? '#ac4d3c' : '#2a2a2a',
+                            color: '#fff', cursor: disabled ? 'not-allowed' : 'pointer',
+                            opacity: disabled ? 0.4 : 1,
+                            fontFamily: f.preview, fontSize: 14,
+                          }}
+                        >
+                          {f.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 {/* Font Weight */}
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 10, color: '#666', textTransform: 'uppercase', fontWeight: 600, marginBottom: 6 }}>Weight</div>
