@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { subscribeToNewsletter } from '@/app/actions/newsletter'
 
 export function FooterV2() {
@@ -274,15 +275,15 @@ export function FooterV2() {
             </p>
 
             <div className="flex items-center gap-6">
-              <a href="/privacy" className="caption text-charcoal hover:text-terracotta transition-colors">
+              <Link href="/privacy" className="caption text-charcoal hover:text-terracotta transition-colors">
                 Privacy Policy
-              </a>
-              <a href="/terms" className="caption text-charcoal hover:text-terracotta transition-colors">
+              </Link>
+              <Link href="/terms" className="caption text-charcoal hover:text-terracotta transition-colors">
                 Terms of Service
-              </a>
-              <a href="/#faq" className="caption text-charcoal hover:text-terracotta transition-colors">
+              </Link>
+              <Link href="/#faq" className="caption text-charcoal hover:text-terracotta transition-colors">
                 Cancellation Policy
-              </a>
+              </Link>
             </div>
           </div>
         </div>
