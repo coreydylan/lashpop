@@ -54,13 +54,13 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                 <div className="mb-6">
                   <h2
                     className="text-4xl font-display font-semibold tracking-wide"
-                    style={{ color: '#1a1a1a' }}
+                    style={{ color: '#3d3632' }}
                   >
                     Welcome to LashPop Studios
                   </h2>
                 </div>
                 {/* Letter Content */}
-                <div className="relative w-full border-l-2 pl-4 text-[#1a1a1a] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic" style={{ borderColor: '#b09080' }}>
+                <div className="relative w-full border-l-2 pl-4 text-[#3d3632] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic" style={{ borderColor: '#b5563d' }}>
                   <p className="mb-[1.5vh]">{letterContent.greeting}</p>
 
                   {letterContent.paragraphs.map((paragraph, index) => (
@@ -97,7 +97,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       </div>
 
       {/* Mobile Layout - Simple static scroll */}
-      <div className="md:hidden relative" style={{ backgroundColor: '#d8c9c0' }}>
+      <div className="md:hidden relative" style={{ backgroundColor: '#e9d1c8' }}>
         {/* Emily Arch Image - static, full width, aligned with hero bottom */}
         <div className="w-full overflow-hidden relative" style={{ aspectRatio: '1441/925' }}>
           <Image
@@ -111,19 +111,19 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
         </div>
 
         {/* Text Container */}
-        <div className="px-6 pt-6 pb-16" style={{ backgroundColor: '#d8c9c0' }}>
+        <div className="px-6 pt-6 pb-16" style={{ backgroundColor: '#e9d1c8' }}>
           {/* Section Header */}
           <div className="mb-6 max-w-lg mx-auto">
             <h2
               className="text-2xl font-display font-medium tracking-wide leading-tight"
-              style={{ color: '#1a1a1a' }}
+              style={{ color: '#3d3632' }}
             >
               Welcome to<br />LashPop Studios
             </h2>
           </div>
           {/* Letter content */}
-          <div className="max-w-lg mx-auto border-l-2 pl-4" style={{ borderColor: '#b09080' }}>
-            <div className="text-[#1a1a1a] text-base leading-relaxed font-normal font-sans italic">
+          <div className="max-w-lg mx-auto border-l-2 pl-4" style={{ borderColor: '#b5563d' }}>
+            <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic">
               <p className="mb-4">{letterContent.greeting}</p>
 
               {letterContent.paragraphs.map((paragraph, index) => (

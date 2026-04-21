@@ -62,15 +62,19 @@ const employeeBenefits = [
   { icon: Calendar, title: 'Flexible Scheduling', description: 'Build your own schedule around your life.' },
   { icon: DollarSign, title: 'Competitive Pay', description: 'Commission-based with guaranteed minimums.' },
   { icon: GraduationCap, title: 'Ongoing Training', description: 'Continuous education at no cost to you.' },
-  { icon: Users, title: 'Team Community', description: 'A supportive team that lifts each other up.' },
+  { icon: Users, title: 'Collaborative Atmosphere', description: 'A supportive team that lifts each other up.' },
   { icon: Star, title: 'Career Growth', description: 'Clear pathways to advance your career.' },
   { icon: Share2, title: 'Client Referrals', description: 'Cross-promotion and referrals within the team.' },
   { icon: Megaphone, title: 'Marketing Support', description: 'Social media and marketing assistance provided.' },
-  { icon: Camera, title: 'Team Photoshoots', description: 'Professional photography sessions included.' },
+  { icon: Camera, title: 'Photo Area & Tripod', description: 'Professional setup for content creation.' },
   { icon: Sparkles, title: 'Complimentary Lashes', description: 'One free lash service per month.' },
   { icon: MapPin, title: 'Coastal Location', description: 'Walkable to beach, coffee shops & restaurants.' },
   { icon: Coffee, title: 'Break Room Perks', description: 'Coffee and tea bar available.' },
-  { icon: Percent, title: 'Employee Discount', description: '30% off all retail products.' }
+  { icon: Percent, title: 'Employee Discount', description: '30% off all retail products.' },
+  { icon: Calendar, title: 'Unlimited Vacation', description: 'Take the time you need to recharge.' },
+  { icon: Users, title: 'Team Events', description: 'Community gatherings and team bonding.' },
+  { icon: Star, title: 'Beautiful Natural Light', description: 'Natural light for content creation.' },
+  { icon: Camera, title: 'Team Photoshoots', description: 'Professional photography sessions included.' }
 ]
 
 // Booth Rental Benefits
@@ -78,17 +82,24 @@ const boothBenefits = [
   { icon: Heart, title: 'Collaborative Atmosphere', description: 'Positive, supportive studio culture.' },
   { icon: Share2, title: 'Client Referrals', description: 'Cross-promotion on our website, booking & socials.' },
   { icon: Megaphone, title: 'Marketing Support', description: 'Business, social media, and marketing guidance.' },
-  { icon: Camera, title: 'Team Photoshoots', description: 'Professional photography sessions included.' },
+  { icon: Camera, title: 'Photo Area & Tripod', description: 'Professional setup for content creation.' },
+  { icon: Star, title: 'Beautiful Natural Light', description: 'Natural light for content creation.' },
   { icon: Users, title: 'Team Events', description: 'Community gatherings and team bonding.' },
+  { icon: Camera, title: 'Team Photoshoots', description: 'Professional photography sessions included.' },
   { icon: Calendar, title: 'Flexible Options', description: 'Part-time and full-time availability.' },
+  { icon: DollarSign, title: 'Weekly Booth Rent Payments', description: 'Simple weekly payment schedule.' },
   { icon: MapPin, title: 'Coastal Location', description: 'Walkable to beach, coffee shops & restaurants.' },
   { icon: GraduationCap, title: 'Education Opportunities', description: 'Access to training and skill development.' },
   { icon: Star, title: 'Career Development', description: 'Grow your business with our support.' },
   { icon: Clock, title: '24/7 Studio Access', description: 'Work on your own schedule, anytime.' },
   { icon: Building2, title: 'Locked Personal Storage', description: 'Secure space for your supplies.' },
   { icon: Coffee, title: 'Break Room Perks', description: 'Coffee and tea bar available.' },
-  { icon: Percent, title: 'Employee Discount', description: '30% off all retail products.' },
-  { icon: Sparkles, title: 'Ring Light & Photo Area', description: 'Professional setup for content creation.' }
+  { icon: Sparkles, title: 'Laundry On Site', description: 'Convenient laundry facilities available.' },
+  { icon: Megaphone, title: 'Featured on Website & Social Media', description: 'Exposure on our website and social channels.' },
+  { icon: Building2, title: 'All Station Furniture & Amenities Provided', description: 'Everything you need is included.' },
+  { icon: Percent, title: '1 Month Free Rent', description: 'One month of free rent with a 1 year lease.' },
+  { icon: Calendar, title: '1 Week Free for Vacation', description: 'One week of free booth rent for vacation.' },
+  { icon: Percent, title: 'Employee Discount', description: '30% off all retail products.' }
 ]
 
 // Booth Rental Pricing
@@ -101,8 +112,8 @@ const getBoothPricing = (days: number) => {
 
 // Specialties for form
 const specialties = [
-  'Lash Extensions', 'Lash Lifts', 'Brows', 'Microblading',
-  'Permanent Makeup', 'Skincare', 'Waxing', 'Injectables', 'Other'
+  'Lash Extensions', 'Lash Lifts', 'Brows', 'Permanent Makeup',
+  'Skincare', 'Waxing', 'Other'
 ]
 
 // Inline Form Component
@@ -457,7 +468,7 @@ export default function WorkWithUsPage() {
       id: 'training',
       icon: GraduationCap,
       title: 'LashPop Pro Training',
-      description: 'Master award-winning techniques. Comprehensive training program.',
+      description: 'Master the LashPop approach to lash artistry. Comprehensive training program.',
       image: '/lashpop-images/culture/training.webp'
     }
   ]
@@ -677,7 +688,7 @@ export default function WorkWithUsPage() {
                           <>
                             <div>
                               <p className="text-base italic mb-3" style={{ color: '#cc947f' }}>
-                                Master the award-winning LashPop way
+                                Master the LashPop approach to lash artistry
                               </p>
                               <div className="grid grid-cols-2 gap-3">
                                 <div className="p-3 rounded-xl bg-ivory/50">
@@ -932,7 +943,7 @@ export default function WorkWithUsPage() {
                     LashPop Pro
                   </h2>
                   <p className="text-base italic mb-6" style={{ color: '#cc947f' }}>
-                    Master the award-winning LashPop way
+                    Master the LashPop approach to lash artistry
                   </p>
 
                   <div className="grid sm:grid-cols-2 gap-4 mb-6">
@@ -1139,7 +1150,7 @@ export default function WorkWithUsPage() {
                 &ldquo;Every client leaves feeling effortlessly beautiful — and with a much shorter morning routine.&rdquo;
               </blockquote>
               <p className="text-white/70 text-sm md:text-base max-w-xl mx-auto mb-8">
-                We&apos;re committed to creating lasting impressions. A clean, organized, aesthetically pleasing space
+                We&apos;re committed to creating lasting impressions through a clean, organized, and aesthetically pleasing space
                 where clients feel empowered, inspired, confident, and beautiful.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">

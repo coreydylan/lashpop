@@ -40,7 +40,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     slug: 'brows',
     title: 'BROWS',
     tagline: 'Frame your face.',
-    description: 'Customized brow services that shape, define and enhance what you already have. Each service tailored so you leave looking refreshed and effortlessly put together. Choose from brow laminations, waxing, tinting, micro blading and nano-brows.',
+    description: 'Customized brow services that shape, define and enhance what you already have. Each service tailored so you leave looking refreshed and effortlessly put together. Choose from brow laminations, waxing, tinting, microblading and nano-brows.',
     icon: '/lashpop-images/services/thin/brows-icon.svg',
   },
   {
@@ -48,7 +48,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     slug: 'facials',
     title: 'SKINCARE',
     tagline: 'Glow-y and fresh.',
-    description: 'Personalized skincare treatments designed to support your skin, restore your glow, and leave you feeling refreshed and radiant. Choose from basic facials, hydra facials, derma planing, fibroblast, jet plasma and more.',
+    description: 'Personalized skincare treatments designed to support your skin, restore your glow, and leave you feeling refreshed and radiant. Choose from basic facials, hydrafacials, dermaplaning, fibroblast, jet plasma and more.',
     icon: '/lashpop-images/services/thin/skincare-icon.svg',
   },
   {
@@ -64,7 +64,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     slug: 'permanent-makeup',
     title: 'PERMANENT MAKEUP',
     tagline: 'High impact, low maintenance.',
-    description: 'Natural looking results that streamline your routine and elevate your look without feeling overdone. Choose from micro blading and nano-brow services, lip blushing, and faux freckles/beauty marks.',
+    description: 'Natural looking results that streamline your routine and elevate your look without feeling overdone. Choose from microblading and nano-brow services, lip blushing, and faux freckles/beauty marks.',
     icon: '/lashpop-images/services/thin/permanent-makeup-icon.svg',
   },
   {
@@ -118,7 +118,7 @@ function ServiceCard({
       {/* Title */}
       <h3
         className="text-lg font-display font-semibold tracking-[0.15em] mb-3"
-        style={{ color: 'rgb(204, 148, 127)' }}
+        style={{ color: 'rgb(var(--dusty-rose))' }}
       >
         {category.title}
       </h3>
@@ -238,8 +238,9 @@ function MobileSwipeableServiceCards({
     >
       {/* Card container - wider */}
       <div className="w-full">
-        <div
-          className="rounded-2xl bg-white/40 border border-warm-sand/30 shadow-sm overflow-hidden h-[340px] flex flex-col"
+        <button
+          onClick={() => onCategoryClick(currentCategory.slug)}
+          className="rounded-2xl bg-white/40 border border-warm-sand/30 shadow-sm overflow-hidden h-[340px] flex flex-col w-full text-left active:scale-[0.98] transition-transform"
         >
           {/* Top content */}
           <div className="flex flex-col items-center text-center px-6 py-6 flex-1">
@@ -262,7 +263,7 @@ function MobileSwipeableServiceCards({
             {/* Title */}
             <h3
               className="text-base font-display font-semibold tracking-[0.15em] mb-2"
-              style={{ color: 'rgb(204, 148, 127)' }}
+              style={{ color: 'rgb(var(--dusty-rose))' }}
             >
               {currentCategory.title}
             </h3>
@@ -284,19 +285,18 @@ function MobileSwipeableServiceCards({
             </p>
           </div>
 
-          {/* Bottom button area - full width, pinned to bottom */}
-          <button
-            onClick={() => onCategoryClick(currentCategory.slug)}
-            className="w-full py-3 border-t border-warm-sand/40 bg-white/30 transition-colors duration-300 active:bg-white/50 mt-auto flex items-center justify-center"
+          {/* Bottom label - full width, pinned to bottom */}
+          <div
+            className="w-full py-3 border-t border-warm-sand/40 bg-white/30 mt-auto flex items-center justify-center"
           >
             <span
               className="text-[10px] font-sans font-medium tracking-[0.1em] uppercase"
               style={{ color: '#ac4d3c' }}
             >
-              Explore {currentCategory.title.toLowerCase() === 'skincare' ? 'Skincare' : currentCategory.title.charAt(0) + currentCategory.title.slice(1).toLowerCase()} Services
+              Tap to Book
             </span>
-          </button>
-        </div>
+          </div>
+        </button>
       </div>
 
       {/* Progress indicator - all dots visible */}
@@ -411,7 +411,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
         <div className="text-center mb-6">
           <h2
             className="text-2xl font-display font-medium tracking-wide mb-4"
-            style={{ color: 'rgb(204, 148, 127)' }}
+            style={{ color: 'rgb(var(--dusty-rose))' }}
           >
             Choose a Service
           </h2>
@@ -436,7 +436,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
         <div className="text-center mb-12">
           <h2
             className="text-5xl font-display font-medium tracking-wide mb-6"
-            style={{ color: 'rgb(204, 148, 127)' }}
+            style={{ color: 'rgb(var(--dusty-rose))' }}
           >
             Choose a Service
           </h2>

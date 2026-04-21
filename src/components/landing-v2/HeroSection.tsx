@@ -115,10 +115,10 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     fontSize: '0.9rem',
                     letterSpacing: '0.03em',
                     fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                    color: '#a07260',
+                    color: '#b5563d',
                     borderWidth: '1px',
                     borderStyle: 'solid',
-                    borderColor: 'rgba(204, 148, 127, 0.8)',
+                    borderColor: 'rgba(181, 86, 61, 0.8)',
                   }}
                 >
                   for the modern woman
@@ -205,7 +205,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                           </svg>
                         ))}
                       </div>
-                      <span className="text-xs font-sans font-medium" style={{ color: '#a07260' }}>Reviews</span>
+                      <span className="text-xs font-sans font-medium" style={{ color: '#b5563d' }}>Reviews</span>
                     </div>
                   </div>
                 </button>
@@ -325,10 +325,10 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     fontSize: 'clamp(1rem, 2vw, 1.5rem)',
                     letterSpacing: '0.03em',
                     fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                    color: '#a07260',
+                    color: '#b5563d',
                     borderWidth: '2px',
                     borderStyle: 'solid',
-                    borderColor: 'rgba(204, 148, 127, 0.8)',
+                    borderColor: 'rgba(181, 86, 61, 0.8)',
                   }}
                 >
                   for the modern woman

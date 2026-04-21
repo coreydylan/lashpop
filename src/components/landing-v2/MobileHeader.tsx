@@ -182,11 +182,11 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     if (item.href === '#services') {
       smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
     } else if (item.href === '#gallery') {
-      // Gallery uses center alignment with header offset
-      smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'center')
+      // Gallery: scroll to top of section with header offset
+      smoothScrollToElement(item.href, HEADER_HEIGHT + 20, 800, 'top')
     } else if (item.href === '#reviews') {
-      // Reviews: scroll to show header + review cards visible below the stat chips
-      smoothScrollToElement(item.href, HEADER_HEIGHT + 120, 800, 'top')
+      // Reviews: scroll to show the "What People Are Saying" title
+      smoothScrollToElement(item.href, HEADER_HEIGHT + 20, 800, 'top')
     } else {
       // All other sections: offset by header height
       smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
