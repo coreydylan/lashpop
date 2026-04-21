@@ -125,8 +125,8 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
               style={{ objectPosition: `${archImage.position.x}% ${archImage.position.y}%` }}
               priority
               fetchPriority="high"
-              quality={75}
-              sizes="80vw"
+              quality={90}
+              sizes="100vw"
             />
           )}
         </div>
