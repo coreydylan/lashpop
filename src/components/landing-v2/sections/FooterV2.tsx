@@ -61,7 +61,7 @@ export function FooterV2() {
                 </svg>
               </a>
               <a
-                href="https://facebook.com/lashpopstudios"
+                href="https://www.facebook.com/lashpopCA"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-dusty-rose/20 rounded-full flex items-center justify-center hover:bg-terracotta hover:text-white transition-colors"
