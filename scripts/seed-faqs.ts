@@ -266,6 +266,9 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
 async function seedFAQs() {
   console.log('🌱 Starting FAQ seed...\n')
 
+  // Disable statement timeout for this connection (Supabase pooler defaults to short timeout)
+  await client.unsafe(`SET statement_timeout = 0`)
+
   // First, clear existing data
   console.log('Clearing existing FAQ data...')
   await db.delete(faqItems)
