@@ -178,7 +178,7 @@ export function CredentialsEditor({
             )}
           </h4>
           <p className="text-xs text-dune/50 mt-0.5">
-            For search engines only (not displayed publicly)
+            Shown on the homepage Credentials section and in JSON-LD for search engines
           </p>
         </div>
         <button
@@ -294,7 +294,7 @@ export function CredentialsEditor({
         <div className="text-center py-6 text-dune/40 text-sm border border-dashed border-sage/20 rounded-xl">
           No credentials yet. Add licenses, certifications, training...
           <p className="text-xs mt-1 text-dune/30">
-            These appear in search engine data to boost E-E-A-T signals
+            These appear on the homepage Credentials section and in search engine data
           </p>
         </div>
       )}

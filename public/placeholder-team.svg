@@ -1,6 +1,34 @@
-<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
-  <rect width="400" height="400" fill="#EBE0CB"/>
-  <circle cx="200" cy="160" r="60" fill="#A19781"/>
-  <path d="M 200 240 Q 160 260, 120 340 L 280 340 Q 240 260, 200 240" fill="#A19781"/>
-  <text x="200" y="380" font-family="Arial" font-size="18" fill="#8A7C69" text-anchor="middle">Photo Coming Soon</text>
+<svg width="400" height="500" viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <!-- Background: matches the blush card backdrop -->
+  <rect width="400" height="500" fill="#e9d1c8"/>
+
+  <!-- Soft inner glow -->
+  <defs>
+    <radialGradient id="vignette" cx="50%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#f0e0db" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#e9d1c8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#vignette)"/>
+
+  <!-- Stylized portrait silhouette in dusty-rose -->
+  <g fill="#dbb2a4">
+    <!-- Hair behind -->
+    <path d="M 200 110 C 150 110, 118 145, 116 195 C 114 225, 122 250, 130 268 L 140 245 C 138 220, 142 195, 152 180 C 168 162, 188 158, 200 158 C 212 158, 232 162, 248 180 C 258 195, 262 220, 260 245 L 270 268 C 278 250, 286 225, 284 195 C 282 145, 250 110, 200 110 Z" opacity="0.78"/>
+    <!-- Head -->
+    <ellipse cx="200" cy="200" rx="58" ry="68"/>
+    <!-- Neck -->
+    <rect x="184" y="252" width="32" height="36" rx="8"/>
+    <!-- Shoulders / chest -->
+    <path d="M 100 500 L 100 410 C 100 360, 140 320, 184 312 L 216 312 C 260 320, 300 360, 300 410 L 300 500 Z"/>
+  </g>
+
+  <!-- Caption -->
+  <text x="200" y="450"
+        font-family="ui-serif, Georgia, 'Times New Roman', serif"
+        font-size="18"
+        font-style="italic"
+        fill="#b5563d"
+        text-anchor="middle"
+        letter-spacing="0.5">photo coming soon</text>
 </svg>

@@ -79,13 +79,13 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
         setPhotos([
           {
             id: '1',
-            url: '/placeholder-team.jpg',
+            url: '/placeholder-team.svg',
             cropData: { x: 50, y: 50, scale: 1 },
             caption: 'Volume lash set - Natural glam',
           },
           {
             id: '2',
-            url: '/placeholder-team.jpg',
+            url: '/placeholder-team.svg',
             cropData: { x: 50, y: 50, scale: 1 },
             caption: 'Classic lash extension',
           },

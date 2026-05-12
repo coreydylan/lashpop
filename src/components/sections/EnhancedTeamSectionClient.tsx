@@ -11,6 +11,8 @@ import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team/QuickFactCard'
+import type { TeamMemberCredential } from '@/db/schema/team_members'
+import { CredentialsSection } from './CredentialsSection'
 
 // Parse an instagram field that may contain multiple handles separated by / or ,
 // Returns an array of { handle, url } objects (without @ prefix on handle).

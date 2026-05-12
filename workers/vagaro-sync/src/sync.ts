@@ -241,14 +241,15 @@ export async function syncPublicStaff(
         stats.matched++
         stats.updated++
       } else {
-        // Auto-create
-        if (!photoUrl) {
-          stats.errors.push(`skipped create for ${fullName}: no photo URL`)
-          continue
-        }
+        // Auto-create. If Vagaro hasn't uploaded a real photo yet (placeholder
+        // was filtered to null), still create the row using the local branded
+        // "photo coming soon" placeholder. The frontend's vagaroPhotoUrl ||
+        // imageUrl fallback then shows the placeholder until a real photo
+        // appears in Vagaro.
+        const PLACEHOLDER = '/placeholder-team.svg'
         await db.insert(teamMembers).values({
           vagaroPublicProviderId: p.ServiceProviderID,
-          vagaroPhotoUrl: photoUrl,
+          vagaroPhotoUrl: photoUrl, // null when only a Vagaro placeholder is available
           vagaroBio: p.BusinessSummary?.trim() || null,
           name: fullName || `Provider ${p.ServiceProviderID}`,
           phone: phone || '',
@@ -257,7 +258,7 @@ export async function syncPublicStaff(
           type: 'employee',
           bookingUrl: 'https://www.vagaro.com/lashpop32',
           usesLashpopBooking: true,
-          imageUrl: photoUrl, // notNull — use vagaro photo as the seed local image
+          imageUrl: photoUrl ?? PLACEHOLDER, // notNull — seed local with vagaro photo or branded placeholder
           specialties: [],
           displayOrder: sortOrder,
           isActive: true,

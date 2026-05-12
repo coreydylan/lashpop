@@ -86,6 +86,7 @@ export default async function HomePage() {
       customIcon: fact.customIcon,
       displayOrder: fact.displayOrder
     })) || [],
+    credentials: (member.credentials as any[] | null) || [],
     // Photo crop URLs
     cropSquareUrl: member.cropSquareUrl || undefined,
     cropCloseUpCircleUrl: member.cropCloseUpCircleUrl || undefined,

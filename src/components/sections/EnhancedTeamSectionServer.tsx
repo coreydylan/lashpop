@@ -47,6 +47,7 @@ export async function EnhancedTeamSection() {
       customIcon: fact.customIcon,
       displayOrder: fact.displayOrder
     })) || [],
+    credentials: (member.credentials as any[] | null) || [],
     // Photo crop URLs for different formats
     cropSquareUrl: member.cropSquareUrl || undefined,
     cropCloseUpCircleUrl: member.cropCloseUpCircleUrl || undefined,

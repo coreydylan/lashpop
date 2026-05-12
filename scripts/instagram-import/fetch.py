@@ -22,6 +22,7 @@ USERNAME = "lashpopstudios"
 HERE = os.path.dirname(os.path.abspath(__file__))
 IMG_DIR = os.path.join(HERE, "images")
 MANIFEST = os.path.join(HERE, "manifest.json")
+SESSION_FILE = os.path.join(HERE, "session.json")
 
 BASE_DELAY = 1.5
 
@@ -63,6 +64,12 @@ def main():
     os.makedirs(IMG_DIR, exist_ok=True)
     cl = Client()
     cl.delay_range = [1, 3]
+
+    if os.path.exists(SESSION_FILE):
+        cl.load_settings(SESSION_FILE)
+        print(f"Loaded saved Instagram session from {SESSION_FILE}")
+    else:
+        print("No session.json found - running anonymously (will likely fail on cloud IPs)")
 
     print(f"Resolving @{USERNAME}...")
     user_id = cl.user_id_from_username(USERNAME)

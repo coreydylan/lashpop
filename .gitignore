@@ -100,3 +100,4 @@ public/lashpop-images/_originals/
 .venv-scrape/
 scripts/instagram-import/images/
 scripts/instagram-import/manifest.json
+scripts/instagram-import/session.json
