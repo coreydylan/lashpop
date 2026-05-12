@@ -29,7 +29,8 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "Independent stylists vs. employees - what's the difference?",
-      answer: `<p class="mb-2">We're a hybrid salon, meaning we have both LashPop employees and independent beauty businesses renting space under our roof. Each independent service provider sets their own pricing/policies and handles their own bookings and client relationships.</p><p class="mb-2">Each team member has been carefully hand selected to be under the LashPop brand, so either way, you'll be in great hands whether you book with an employee or independent artist.</p><p>When you book with a specific stylist, your deposit, rescheduling, and cancellation policies follow their terms, though we aim for consistency in standards across all stylists.</p>`
+      answer: `<p class="mb-2">We're a hybrid salon, meaning we have both LashPop employees and independent beauty businesses renting space under our roof. Each independent service provider sets their own pricing/policies and handles their own bookings and client relationships.</p><p class="mb-2">Each team member has been carefully hand selected to be under the LashPop brand, so either way, you'll be in great hands whether you book with an employee or independent artist.</p><p>When you book with a specific stylist, your deposit, rescheduling, and cancellation policies follow their terms, though we aim for consistency in standards across all stylists.</p>`,
+      isFeatured: true
     },
     {
       question: "How to Prepare for Your Appointment",
@@ -38,7 +39,8 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "Parking & Studio Entry/Door Code",
-      answer: `<p class="mb-2"><strong>Parking:</strong> Free street parking is available all around near the studio. There is also a shared parking lot on the north end of the building.</p><p class="mb-2"><strong>Why we use a door code:</strong> The front door will be locked when you arrive. This helps us create a peaceful, uninterrupted environment for your service and ensures that only scheduled clients and team members have access to the studio. It's simply an extra layer of comfort and safety for both our guests and our team — while keeping out unexpected solicitors or walk-ins. :)</p><p class="mb-2">You will receive the door code from your stylist after booking. Be sure to save the code for your future appointments :) and reach out to your stylist if you are having any issues entering the space.</p><p>Please arrive a few minutes early and make yourself at home in our waiting area. Use the restroom and grab a complimentary coffee or tea while you wait for your stylist to come get you.</p>`
+      answer: `<p class="mb-2"><strong>Parking:</strong> Free street parking is available all around near the studio. There is also a shared parking lot on the north end of the building.</p><p class="mb-2"><strong>Why we use a door code:</strong> The front door will be locked when you arrive. This helps us create a peaceful, uninterrupted environment for your service and ensures that only scheduled clients and team members have access to the studio. It's simply an extra layer of comfort and safety for both our guests and our team — while keeping out unexpected solicitors or walk-ins. :)</p><p class="mb-2">You will receive the door code from your stylist after booking. Be sure to save the code for your future appointments :) and reach out to your stylist if you are having any issues entering the space.</p><p>Please arrive a few minutes early and make yourself at home in our waiting area. Use the restroom and grab a complimentary coffee or tea while you wait for your stylist to come get you.</p>`,
+      isFeatured: true
     }
   ],
   'Policies': [
@@ -49,7 +51,8 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "Cell Phones & Courtesy",
-      answer: `<ul class="list-disc pl-5 space-y-1"><li>During your service, we ask that you silence your phone to help keep our shared space a peaceful atmosphere for other guests.</li><li>We try to keep conversation at a soft level to allow for others to relax.</li></ul>`
+      answer: `<ul class="list-disc pl-5 space-y-1"><li>During your service, we ask that you silence your phone to help keep our shared space a peaceful atmosphere for other guests.</li><li>We try to keep conversation at a soft level to allow for others to relax.</li></ul>`,
+      isFeatured: true
     },
     {
       question: "Policies for our Independent LP team members",
@@ -58,7 +61,8 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "Referral Program & Discounts",
-      answer: `<p class="mb-2">Receive $25 off with any LashPop employee if you refer a friend. Your friend will also receive $25 off their first appointment. It must be used with that specific LashPop employee.</p><p>Because our team is made up of independent stylists, each artist chooses their own client pricing, and promotions. You can always check with your service provider about any referral programs or promos.</p>`
+      answer: `<p class="mb-2">Receive $25 off with any LashPop employee if you refer a friend. Your friend will also receive $25 off their first appointment. It must be used with that specific LashPop employee.</p><p>Because our team is made up of independent stylists, each artist chooses their own client pricing, and promotions. You can always check with your service provider about any referral programs or promos.</p>`,
+      isFeatured: true
     },
     {
       question: "Cancellation Policy",
@@ -79,11 +83,13 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "What is the process and how long will they last?",
-      answer: `<p class="mb-2">Getting eyelash extensions is a simple, relaxing process. Your appointment starts with a consultation where your stylist talks through your desired look, eye shape, natural lash health, and options for style, curl, length, and color. Once your lashes are cleansed and prepped, you will lay back with your eyes closed while individual extensions are carefully applied to each of your natural lashes.</p><p class="mb-2">When your appointment is finished, you will leave with fuller, customized lashes and aftercare instructions to help them last as long as possible.</p><p>A full set of lashes will last 2-4 weeks, depending on your natural lash cycle, lifestyle, and how well you care for them. Because your natural lashes shed daily, your extensions will shed with them (this is completely normal). We recommend coming in for lash fills every 2-3 weeks.</p>`
+      answer: `<p class="mb-2">Getting eyelash extensions is a simple, relaxing process. Your appointment starts with a consultation where your stylist talks through your desired look, eye shape, natural lash health, and options for style, curl, length, and color. Once your lashes are cleansed and prepped, you will lay back with your eyes closed while individual extensions are carefully applied to each of your natural lashes.</p><p class="mb-2">When your appointment is finished, you will leave with fuller, customized lashes and aftercare instructions to help them last as long as possible.</p><p>A full set of lashes will last 2-4 weeks, depending on your natural lash cycle, lifestyle, and how well you care for them. Because your natural lashes shed daily, your extensions will shed with them (this is completely normal). We recommend coming in for lash fills every 2-3 weeks.</p>`,
+      isFeatured: true
     },
     {
       question: "How to Prepare",
-      answer: `<ul class="list-disc pl-5 space-y-1"><li>Arrive with clean, makeup-free lashes.</li><li>Silence your phone.</li><li>Keep talking to a minimum to avoid eye movement during application.</li><li>Use the restroom before your appointment if needed.</li><li>Bring headphones and your phone if you'd like to listen to your own music or podcasts.</li><li>Bring a blanket or sweater (we keep our studio at 70-72 degrees for certain products).</li></ul>`
+      answer: `<ul class="list-disc pl-5 space-y-1"><li>Arrive with clean, makeup-free lashes.</li><li>Silence your phone.</li><li>Keep talking to a minimum to avoid eye movement during application.</li><li>Use the restroom before your appointment if needed.</li><li>Bring headphones and your phone if you'd like to listen to your own music or podcasts.</li><li>Bring a blanket or sweater (we keep our studio at 70-72 degrees for certain products).</li></ul>`,
+      isFeatured: true
     },
     {
       question: "Aftercare & Maintenance",
@@ -92,7 +98,8 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "Will lash extensions damage my natural lashes?",
-      answer: `<p class="mb-2">Damage only happens if they are done incorrectly (we've got you covered here), or do not care for them properly (pulling at them, rubbing your eyes, sleeping on your face, not keeping them clean).</p><p>We are committed to best practices in application, to ensure healthy lashes for our clients! So as long as you are committed to following the simple aftercare instructions, you'll be good.</p>`
+      answer: `<p class="mb-2">Damage only happens if they are done incorrectly (we've got you covered here), or do not care for them properly (pulling at them, rubbing your eyes, sleeping on your face, not keeping them clean).</p><p>We are committed to best practices in application, to ensure healthy lashes for our clients! So as long as you are committed to following the simple aftercare instructions, you'll be good.</p>`,
+      isFeatured: true
     },
     {
       question: "How often do I need to come in for fills/touchups?",
@@ -101,7 +108,8 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "Can I have an allergic reaction to lash extensions?",
-      answer: `<p class="mb-2">Unfortunately reactions can happen if you are allergic to any ingredients in the lash glue. However, we do have a sensitive glue option as an alternative.</p><p>We can always do a "mini" appointment for new clients to test if you are allergic before doing the full set.</p>`
+      answer: `<p class="mb-2">Unfortunately reactions can happen if you are allergic to any ingredients in the lash glue. However, we do have a sensitive glue option as an alternative.</p><p>We can always do a "mini" appointment for new clients to test if you are allergic before doing the full set.</p>`,
+      isFeatured: true
     }
   ],
   'Lash Lifts & Tints': [
@@ -127,8 +135,7 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "Will lash lifts damage my natural lashes?",
-      answer: `When done professionally, lash lifts are gentle and safe.`,
-      isFeatured: true
+      answer: `When done professionally, lash lifts are gentle and safe.`
     }
   ],
   'Brows': [
@@ -150,8 +157,7 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
     },
     {
       question: "How to Prepare",
-      answer: `<p class="mb-2"><strong>Brow Lamination + Tint:</strong> Avoid using retinol, exfoliants, and active skincare around the brow area for 5 - 7 days beforehand to prevent sensitivity. Do not wax, tweeze, or trim your brows prior to your appointment, as your artist will shape them as needed. Arrive with clean, dry brows free of makeup, oils, or skincare, and avoid using oil-based products leading up to your service to ensure the best results. It's also important to avoid sunburn or any irritation in the brow area before your appointment.</p><p class="mb-2"><strong>Brow Wax/Shaping:</strong> Come with clean make-up free brows. Let your brows grow out for 2–3 weeks for the best shape. Avoid sun exposure or tanning before your appointment. Skip strong exfoliants or acne treatments near the brow area. Avoid using oil-based products around the brows before your appointment.</p><p class="mb-2"><strong>Microblading:</strong> See Microblading and PMU FAQ section</p><p class="mb-2"><strong>Nanobrows:</strong> See Microblading and PMU FAQ section</p><p><strong>General Preparation:</strong> Silence your phone. Use the restroom before your appointment if needed. Bring headphones and your phone if you'd like to listen to your own music or podcasts. Bring a blanket or sweater (we keep our studio at 70-72 degrees for certain products).</p>`,
-      isFeatured: true
+      answer: `<p class="mb-2"><strong>Brow Lamination + Tint:</strong> Avoid using retinol, exfoliants, and active skincare around the brow area for 5 - 7 days beforehand to prevent sensitivity. Do not wax, tweeze, or trim your brows prior to your appointment, as your artist will shape them as needed. Arrive with clean, dry brows free of makeup, oils, or skincare, and avoid using oil-based products leading up to your service to ensure the best results. It's also important to avoid sunburn or any irritation in the brow area before your appointment.</p><p class="mb-2"><strong>Brow Wax/Shaping:</strong> Come with clean make-up free brows. Let your brows grow out for 2–3 weeks for the best shape. Avoid sun exposure or tanning before your appointment. Skip strong exfoliants or acne treatments near the brow area. Avoid using oil-based products around the brows before your appointment.</p><p class="mb-2"><strong>Microblading:</strong> See Microblading and PMU FAQ section</p><p class="mb-2"><strong>Nanobrows:</strong> See Microblading and PMU FAQ section</p><p><strong>General Preparation:</strong> Silence your phone. Use the restroom before your appointment if needed. Bring headphones and your phone if you'd like to listen to your own music or podcasts. Bring a blanket or sweater (we keep our studio at 70-72 degrees for certain products).</p>`
     },
     {
       question: "Aftercare",
