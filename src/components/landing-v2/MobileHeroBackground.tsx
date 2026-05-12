@@ -50,16 +50,16 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
 
   // Handle scroll effects: arch zoom and visibility toggle
   useEffect(() => {
-    const scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement
-    if (!scrollContainer) return
-
+    let scrollContainer: HTMLElement | null = null
     let rafId: number
     let lastScrollTop = 0
+    let cancelled = false
 
     const handleScroll = () => {
       if (rafId) cancelAnimationFrame(rafId)
 
       rafId = requestAnimationFrame(() => {
+        if (!scrollContainer) return
         const scrollTop = scrollContainer.scrollTop
         if (Math.abs(scrollTop - lastScrollTop) < 0.5) return
         lastScrollTop = scrollTop
@@ -80,11 +80,28 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
       })
     }
 
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
+    // The scroll container class is added by the parent only after its
+    // isMobile state flips to true (post-mount). Child useEffects run before
+    // parent useEffects, so on first mount the element may not exist yet —
+    // retry on animation frames until it does.
+    const tryAttach = () => {
+      if (cancelled) return
+      scrollContainer = document.querySelector('.mobile-scroll-container') as HTMLElement | null
+      if (!scrollContainer) {
+        requestAnimationFrame(tryAttach)
+        return
+      }
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
+      handleScroll()
+    }
+
+    tryAttach()
 
     return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll)
+      cancelled = true
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleScroll)
+      }
       if (rafId) cancelAnimationFrame(rafId)
     }
   }, [])
