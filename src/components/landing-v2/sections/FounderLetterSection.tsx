@@ -60,7 +60,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                   </h2>
                 </div>
                 {/* Letter Content */}
-                <div className="relative w-full border-l-2 pl-4 text-[#3d3632] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic" style={{ borderColor: '#b5563d' }}>
+                <div className="relative w-full text-[#3d3632] text-[clamp(0.95rem,1.3vw,1.25rem)] leading-relaxed font-normal font-sans italic">
                   <p className="mb-[1.5vh]">{letterContent.greeting}</p>
 
                   {letterContent.paragraphs.map((paragraph, index) => (
@@ -122,7 +122,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             </h2>
           </div>
           {/* Letter content */}
-          <div className="max-w-lg mx-auto border-l-2 pl-4" style={{ borderColor: '#b5563d' }}>
+          <div className="max-w-lg mx-auto">
             <div className="text-[#3d3632] text-base leading-relaxed font-normal font-sans italic">
               <p className="mb-4">{letterContent.greeting}</p>
 
