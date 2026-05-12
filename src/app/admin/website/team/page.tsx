@@ -48,6 +48,7 @@ interface AlbumPhoto {
   fileName: string
   filePath: string
   isPrimary: boolean
+  source?: 'album' | 'dam'
 }
 
 interface TeamMember {
@@ -234,10 +235,19 @@ export default function TeamManagerPage() {
   }
 
   const removePhotoFromAlbum = async (memberId: string, photoId: string) => {
+    const photo = (albumPhotos[memberId] || []).find(p => p.id === photoId)
+    const isDamTagged = photo?.source === 'dam'
+
     try {
-      const response = await fetch(`/api/dam/team/photos/${photoId}`, {
-        method: 'DELETE'
-      })
+      const response = isDamTagged
+        ? await fetch('/api/dam/assets/remove-team', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assetIds: [photoId] })
+          })
+        : await fetch(`/api/dam/team/photos/${photoId}`, {
+            method: 'DELETE'
+          })
 
       if (response.ok) {
         setAlbumPhotos(prev => ({

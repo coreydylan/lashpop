@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { assets } from "@/db/schema/assets"
-import { eq, desc, inArray } from "drizzle-orm"
+import { and, eq, desc, inArray } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
 
 export async function GET(request: NextRequest, context: any) {
@@ -17,11 +17,49 @@ export async function GET(request: NextRequest, context: any) {
 
     const db = getDb()
 
-    const photos = await db
-      .select()
-      .from(teamMemberPhotos)
-      .where(eq(teamMemberPhotos.teamMemberId, memberId))
-      .orderBy(desc(teamMemberPhotos.isPrimary), desc(teamMemberPhotos.uploadedAt))
+    const [albumPhotos, taggedAssets] = await Promise.all([
+      db
+        .select()
+        .from(teamMemberPhotos)
+        .where(eq(teamMemberPhotos.teamMemberId, memberId))
+        .orderBy(desc(teamMemberPhotos.isPrimary), desc(teamMemberPhotos.uploadedAt)),
+      db
+        .select({
+          id: assets.id,
+          fileName: assets.fileName,
+          filePath: assets.filePath,
+          width: assets.width,
+          height: assets.height,
+          caption: assets.caption,
+          uploadedAt: assets.uploadedAt,
+        })
+        .from(assets)
+        .where(and(eq(assets.teamMemberId, memberId), eq(assets.fileType, "image")))
+        .orderBy(desc(assets.uploadedAt)),
+    ])
+
+    // Drop the primary headshot — it's already shown as the avatar.
+    const portfolioAlbum = albumPhotos
+      .filter((p) => !p.isPrimary)
+      .map((p) => ({ ...p, source: "album" as const }))
+
+    // Dedupe DAM-tagged assets against album entries by filePath.
+    const seenPaths = new Set(albumPhotos.map((p) => p.filePath))
+    const taggedShaped = taggedAssets
+      .filter((a) => !seenPaths.has(a.filePath))
+      .map((a) => ({
+        id: a.id,
+        fileName: a.fileName,
+        filePath: a.filePath,
+        width: a.width,
+        height: a.height,
+        caption: a.caption,
+        isPrimary: false,
+        uploadedAt: a.uploadedAt,
+        source: "dam" as const,
+      }))
+
+    const photos = [...portfolioAlbum, ...taggedShaped]
 
     return NextResponse.json({ photos })
   } catch (error) {
@@ -33,7 +71,8 @@ export async function GET(request: NextRequest, context: any) {
   }
 }
 
-// POST - Add photos from DAM assets to team member's album
+// POST - Tag DAM assets to this team member. Same op as the DAM's "assign to team"
+// (assets.team_member_id is the single source of truth for portfolio photos).
 export async function POST(request: NextRequest, context: any) {
   try {
     const memberId = await getRouteParam(context, "memberId")
@@ -56,58 +95,20 @@ export async function POST(request: NextRequest, context: any) {
 
     const db = getDb()
 
-    // Fetch the assets to get their file information
-    const selectedAssets = await db
-      .select()
-      .from(assets)
+    const updated = await db
+      .update(assets)
+      .set({ teamMemberId: memberId })
       .where(inArray(assets.id, assetIds))
-
-    if (selectedAssets.length === 0) {
-      return NextResponse.json(
-        { error: "No valid assets found" },
-        { status: 404 }
-      )
-    }
-
-    // Check if any photos already exist for this member (to avoid duplicates)
-    const existingPhotos = await db
-      .select({ filePath: teamMemberPhotos.filePath })
-      .from(teamMemberPhotos)
-      .where(eq(teamMemberPhotos.teamMemberId, memberId))
-
-    const existingPaths = new Set(existingPhotos.map(p => p.filePath))
-
-    // Create team_member_photos entries for each asset (skip duplicates)
-    const newPhotos = []
-    for (const asset of selectedAssets) {
-      // Skip if this file path already exists for this member
-      if (existingPaths.has(asset.filePath)) {
-        continue
-      }
-
-      const [photo] = await db
-        .insert(teamMemberPhotos)
-        .values({
-          teamMemberId: memberId,
-          fileName: asset.fileName,
-          filePath: asset.filePath,
-          isPrimary: false
-        })
-        .returning()
-
-      newPhotos.push(photo)
-    }
+      .returning({ id: assets.id })
 
     return NextResponse.json({
       success: true,
-      added: newPhotos.length,
-      skipped: selectedAssets.length - newPhotos.length,
-      photos: newPhotos
+      added: updated.length,
     })
   } catch (error) {
-    console.error("Error adding photos to album:", error)
+    console.error("Error tagging assets to team member:", error)
     return NextResponse.json(
-      { error: "Failed to add photos to album" },
+      { error: "Failed to add photos" },
       { status: 500 }
     )
   }
