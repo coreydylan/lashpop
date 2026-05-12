@@ -577,22 +577,22 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       <section
         ref={sectionRef}
         className="relative pt-0 pb-0 overflow-x-hidden"
-        style={{ backgroundColor: 'rgb(238, 217, 200)' }}
+        style={{ backgroundColor: '#e9d1c8' }}
       >
         {/* Section Header */}
         <div className="text-center mb-12 px-4 pt-12 md:pt-16">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-6"
-            style={{ color: '#b5563d' }}
+            style={{ color: '#cc947f' }}
           >
             Find Your Stylist
           </h2>
           <div className="w-24 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
-            <p className="text-base md:text-lg leading-relaxed text-pretty" style={{ color: '#b5563d' }}>
+            <p className="text-base md:text-lg leading-relaxed text-pretty" style={{ color: '#cc947f' }}>
               LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules,&nbsp;and&nbsp;policies.
             </p>
-            <p className="text-xs md:text-sm leading-relaxed uppercase tracking-wider font-medium mt-10" style={{ color: '#b5563d' }}>
+            <p className="text-xs md:text-sm leading-relaxed uppercase tracking-wider font-medium mt-10" style={{ color: '#cc947f' }}>
               <span className="font-semibold block md:inline">Click the profiles</span>
               <span className="block md:inline"> below to find a stylist that fits your vibe.</span>
             </p>
