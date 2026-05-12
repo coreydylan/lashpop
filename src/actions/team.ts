@@ -197,6 +197,9 @@ export async function getTeamMembersWithServices() {
     const vagaroCategories = Array.from(vagaroCategoriesSet).map(cat => {
       let cleaned = cat.replace(' Services', '').replace(' Service', '')
       if (cleaned === 'Lash') cleaned = 'Lashes'
+      if (cleaned === 'Brow') cleaned = 'Brows'
+      if (cleaned === 'Facials' || cleaned === 'Facial' || cleaned === 'Skin Care' || cleaned === 'Facials and Skin Care') cleaned = 'Skincare'
+      if (cleaned === 'Injectables' || cleaned === 'Injectable') cleaned = 'Botox'
       return cleaned
     }).slice(0, 4)
 
