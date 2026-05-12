@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lashpop-vagaro-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "8276973f31803dc6a1597c1396d64c4c",
+  "triggers": {
+    // 3x/day at 06:00, 14:00, 22:00 UTC — same schedule as the (now-removed) Vercel cron
+    "crons": ["0 6,14,22 * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
+  // Secrets (set via `wrangler secret put`):
+  //   VAGARO_REGION
+  //   VAGARO_CLIENT_ID
+  //   VAGARO_CLIENT_SECRET
+  //   VAGARO_API_BASE_URL
+  //   VAGARO_BUSINESS_ID
+  //   DATABASE_URL
+}
