@@ -12,6 +12,17 @@ import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team/QuickFactCard'
 
+// Parse an instagram field that may contain multiple handles separated by / or ,
+// Returns an array of { handle, url } objects (without @ prefix on handle).
+function parseInstagramHandles(value?: string | null): Array<{ handle: string; url: string }> {
+  if (!value) return []
+  return value
+    .split(/[\/,]/)
+    .map(s => s.trim().replace(/^@+/, ''))
+    .filter(s => s.length > 0)
+    .map(handle => ({ handle, url: `https://instagram.com/${handle}` }))
+}
+
 // Swipe Tutorial Hint Component - subtle wiggling icon in center
 function SwipeHint() {
   return (
@@ -760,25 +771,36 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </p>
                       </div>
 
-                      {/* Bottom IG section - like service cards */}
-                      {member.instagram && member.instagram.trim() && (
-                        <a
-                          href={`https://instagram.com/${member.instagram.replace('@', '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          onTouchEnd={(e) => {
-                            e.stopPropagation()
-                            window.open(`https://instagram.com/${member.instagram!.replace('@', '')}`, '_blank')
-                          }}
-                          className="w-full py-2 border-t border-warm-sand/40 bg-white/30 flex items-center justify-center gap-1.5 active:bg-white/50 transition-colors"
-                        >
-                          <Instagram className="w-3 h-3 text-dusty-rose" />
-                          <span className="text-[10px] font-sans font-medium tracking-wide text-dusty-rose">
-                            {member.instagram.replace('@', '')}
-                          </span>
-                        </a>
-                      )}
+                      {/* Bottom IG section - stacks multiple handles vertically */}
+                      {(() => {
+                        const handles = parseInstagramHandles(member.instagram)
+                        if (handles.length === 0) return null
+                        return (
+                          <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-col">
+                            {handles.map(({ handle, url }, i) => (
+                              <a
+                                key={handle}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                onTouchEnd={(e) => {
+                                  e.stopPropagation()
+                                  window.open(url, '_blank')
+                                }}
+                                className={`w-full py-2 flex items-center justify-center gap-1.5 active:bg-white/50 transition-colors ${
+                                  i > 0 ? 'border-t border-warm-sand/30' : ''
+                                }`}
+                              >
+                                <Instagram className="w-3 h-3 text-dusty-rose" />
+                                <span className="text-[10px] font-sans font-medium tracking-wide text-dusty-rose">
+                                  {handle}
+                                </span>
+                              </a>
+                            ))}
+                          </div>
+                        )
+                      })()}
 
                       {/* Highlight Ring */}
                       {isHighlighted(member.id) && (
@@ -892,21 +914,32 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 </p>
                               </div>
 
-                              {/* Bottom IG section - like service cards */}
-                              {member.instagram && member.instagram.trim() && (
-                                <a
-                                  href={`https://instagram.com/${member.instagram.replace('@', '')}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-full py-2.5 border-t border-warm-sand/40 bg-white/30 flex items-center justify-center gap-1.5 hover:bg-white/50 transition-colors"
-                                >
-                                  <Instagram className="w-3.5 h-3.5 text-dusty-rose" />
-                                  <span className="text-xs font-sans font-medium tracking-wide text-dusty-rose">
-                                    {member.instagram.replace('@', '')}
-                                  </span>
-                                </a>
-                              )}
+                              {/* Bottom IG section - stacks multiple handles vertically */}
+                              {(() => {
+                                const handles = parseInstagramHandles(member.instagram)
+                                if (handles.length === 0) return null
+                                return (
+                                  <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-col">
+                                    {handles.map(({ handle, url }, i) => (
+                                      <a
+                                        key={handle}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className={`w-full py-2.5 flex items-center justify-center gap-1.5 hover:bg-white/50 transition-colors ${
+                                          i > 0 ? 'border-t border-warm-sand/30' : ''
+                                        }`}
+                                      >
+                                        <Instagram className="w-3.5 h-3.5 text-dusty-rose" />
+                                        <span className="text-xs font-sans font-medium tracking-wide text-dusty-rose">
+                                          {handle}
+                                        </span>
+                                      </a>
+                                    ))}
+                                  </div>
+                                )
+                              })()}
 
                               {/* Hover Glow Effect */}
                               <AnimatePresence>
@@ -1075,27 +1108,26 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   <h2 className="font-serif text-3xl" style={{ color: 'rgb(61, 54, 50)' }}>
                                     {selectedMember.name}
                                   </h2>
-                                  {selectedMember.instagram ? (
-                                    <a
-                                      href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1.5 font-sans text-dusty-rose font-medium mt-1 hover:text-dusty-rose/80 transition-colors"
-                                    >
-                                      <Instagram className="w-4 h-4" />
-                                      <span>
-                                        {selectedMember.type === 'independent' && selectedMember.businessName
-                                          ? selectedMember.businessName
-                                          : 'LashPop Artist'}
-                                      </span>
-                                    </a>
-                                  ) : (
-                                    <p className="font-sans text-dusty-rose font-medium mt-1">
-                                      {selectedMember.type === 'independent' && selectedMember.businessName
-                                        ? selectedMember.businessName
-                                        : 'LashPop Artist'}
-                                    </p>
-                                  )}
+                                  {(() => {
+                                    const handles = parseInstagramHandles(selectedMember.instagram)
+                                    const label = selectedMember.type === 'independent' && selectedMember.businessName
+                                      ? selectedMember.businessName
+                                      : 'LashPop Artist'
+                                    if (handles.length === 0) {
+                                      return <p className="font-sans text-dusty-rose font-medium mt-1">{label}</p>
+                                    }
+                                    return (
+                                      <a
+                                        href={handles[0].url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 font-sans text-dusty-rose font-medium mt-1 hover:text-dusty-rose/80 transition-colors"
+                                      >
+                                        <Instagram className="w-4 h-4" />
+                                        <span>{label}</span>
+                                      </a>
+                                    )
+                                  })()}
                                 </div>
 
                                 {/* Bio */}
@@ -1291,16 +1323,20 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {selectedMember.instagram && (
-                            <a
-                              href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md"
-                            >
-                              <Instagram className="w-5 h-5 text-white" />
-                            </a>
-                          )}
+                          {(() => {
+                            const handles = parseInstagramHandles(selectedMember.instagram)
+                            if (handles.length === 0) return null
+                            return (
+                              <a
+                                href={handles[0].url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md"
+                              >
+                                <Instagram className="w-5 h-5 text-white" />
+                              </a>
+                            )
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1396,27 +1432,30 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             <h1 className="font-serif text-3xl leading-tight" style={{ color: 'rgb(61, 54, 50)' }}>
                               <span className="font-bold">{selectedMember.name.split(' ')[0]}</span>{selectedMember.name.includes(' ') ? ` ${selectedMember.name.split(' ').slice(1).join(' ')}` : ''}
                             </h1>
-                            {selectedMember.instagram ? (
-                              <a
-                                href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 mt-1.5 font-sans text-dusty-rose hover:text-dusty-rose/80 transition-colors"
-                              >
-                                <Instagram className="w-3.5 h-3.5" />
-                                <span className="text-xs uppercase tracking-wider font-medium">
-                                  {selectedMember.type === 'independent' && selectedMember.businessName
-                                    ? selectedMember.businessName
-                                    : 'LashPop Artist'}
-                                </span>
-                              </a>
-                            ) : (
-                              <p className="font-sans text-xs uppercase tracking-wider font-medium text-dusty-rose mt-1.5">
-                                {selectedMember.type === 'independent' && selectedMember.businessName
-                                  ? selectedMember.businessName
-                                  : 'LashPop Artist'}
-                              </p>
-                            )}
+                            {(() => {
+                              const handles = parseInstagramHandles(selectedMember.instagram)
+                              const label = selectedMember.type === 'independent' && selectedMember.businessName
+                                ? selectedMember.businessName
+                                : 'LashPop Artist'
+                              if (handles.length === 0) {
+                                return (
+                                  <p className="font-sans text-xs uppercase tracking-wider font-medium text-dusty-rose mt-1.5">
+                                    {label}
+                                  </p>
+                                )
+                              }
+                              return (
+                                <a
+                                  href={handles[0].url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 mt-1.5 font-sans text-dusty-rose hover:text-dusty-rose/80 transition-colors"
+                                >
+                                  <Instagram className="w-3.5 h-3.5" />
+                                  <span className="text-xs uppercase tracking-wider font-medium">{label}</span>
+                                </a>
+                              )
+                            })()}
                           </div>
 
                           {/* Portfolio Image Thumbnails - below Instagram, above About */}
@@ -1647,17 +1686,21 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           <span className="font-medium">Call</span>
                         </a>
 
-                        {selectedMember.instagram && (
-                          <a
-                            href={`https://instagram.com/${selectedMember.instagram.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
-                          >
-                            <Instagram className="w-4 h-4" />
-                            <span className="font-medium">Instagram</span>
-                          </a>
-                        )}
+                        {(() => {
+                          const handles = parseInstagramHandles(selectedMember.instagram)
+                          if (handles.length === 0) return null
+                          return (
+                            <a
+                              href={handles[0].url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
+                            >
+                              <Instagram className="w-4 h-4" />
+                              <span className="font-medium">Instagram</span>
+                            </a>
+                          )
+                        })()}
 
                         <a
                           href={selectedMember.bookingUrl}

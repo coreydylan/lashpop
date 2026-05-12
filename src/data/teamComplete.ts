@@ -60,7 +60,7 @@ export const teamMembers: TeamMember[] = [
     name: 'Paige',
     role: 'Lash Artist',
     certification: 'Esthetician',
-    image: '/lashpop-images/team/placeholder.svg',
+    image: '/lashpop-images/team/paige.jpeg',
     phone: '760-212-0448',
     specialties: ['Lash Extensions'],
     bio: 'Paige brings a fresh perspective and meticulous attention to detail to every lash set.',
