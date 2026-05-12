@@ -198,7 +198,8 @@ export async function getTeamMembersWithServices() {
       let cleaned = cat.replace(' Services', '').replace(' Service', '')
       if (cleaned === 'Lash') cleaned = 'Lashes'
       if (cleaned === 'Brow') cleaned = 'Brows'
-      if (cleaned === 'Facials' || cleaned === 'Facial' || cleaned === 'Skin Care' || cleaned === 'Facials and Skin Care') cleaned = 'Skincare'
+      // Normalize anything mentioning facials/skin care -> Skincare
+      if (/facial|skin\s?care/i.test(cleaned)) cleaned = 'Skincare'
       if (cleaned === 'Injectables' || cleaned === 'Injectable') cleaned = 'Botox'
       return cleaned
     }).slice(0, 4)
