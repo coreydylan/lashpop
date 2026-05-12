@@ -23,7 +23,8 @@ export async function getServices() {
       description: services.description,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
-      imageUrl: services.imageUrl,
+      // Vagaro is source of truth; fall back to local override then nothing
+      imageUrl: sql<string | null>`COALESCE(${services.vagaroImageUrl}, ${services.imageUrl})`,
       color: services.color,
       displayOrder: services.displayOrder,
       category: serviceCategories.slug
@@ -48,7 +49,8 @@ export async function getServiceBySlug(slug: string) {
       description: services.description,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
-      imageUrl: services.imageUrl,
+      // Vagaro is source of truth; fall back to local override then nothing
+      imageUrl: sql<string | null>`COALESCE(${services.vagaroImageUrl}, ${services.imageUrl})`,
       color: services.color,
       categoryId: services.categoryId,
       categoryName: serviceCategories.name,
@@ -112,10 +114,10 @@ export async function getAllServices() {
       description: services.description,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
-      // Resolve image URL with priority: DAM override -> Vagaro image -> Subcategory fallback
+      // Resolve image URL with priority: Vagaro (source of truth) -> DAM override -> Subcategory fallback
       imageUrl: sql<string | null>`COALESCE(
-        ${serviceKeyImage.filePath},
         ${services.vagaroImageUrl},
+        ${serviceKeyImage.filePath},
         ${subcategoryKeyImage.filePath}
       )`,
       color: services.color,
@@ -195,12 +197,12 @@ export async function getAllServicesAdmin() {
     let imageSource: 'dam' | 'vagaro' | 'subcategory' | 'none' = 'none'
     let resolvedImageUrl: string | null = null
 
-    if (service.keyImageAssetId && service.keyImagePath) {
-      imageSource = 'dam'
-      resolvedImageUrl = service.keyImagePath
-    } else if (service.vagaroImageUrl) {
+    if (service.vagaroImageUrl) {
       imageSource = 'vagaro'
       resolvedImageUrl = service.vagaroImageUrl
+    } else if (service.keyImageAssetId && service.keyImagePath) {
+      imageSource = 'dam'
+      resolvedImageUrl = service.keyImagePath
     } else if (service.subcategoryKeyImagePath) {
       imageSource = 'subcategory'
       resolvedImageUrl = service.subcategoryKeyImagePath
