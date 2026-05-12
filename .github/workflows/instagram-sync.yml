@@ -1,0 +1,58 @@
+name: Instagram Gallery Sync
+
+on:
+  schedule:
+    # Run every Monday at 6am Pacific (13:00 UTC during PDT, 14:00 during PST).
+    # GitHub runs this in UTC so we pick a single value year-round.
+    - cron: '0 14 * * 1'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Number of posts to fetch'
+        required: false
+        default: '24'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Python dependencies
+        run: pip install instagrapi pillow
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Fetch Instagram posts
+        run: python scripts/instagram-import/fetch.py --limit ${{ github.event.inputs.limit || '24' }}
+
+      - name: Upload to R2 and update DB
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          NEXT_PUBLIC_R2_BUCKET_URL: ${{ secrets.NEXT_PUBLIC_R2_BUCKET_URL }}
+        run: npx tsx scripts/instagram-import/upload.ts
+
+      - name: Cleanup workspace
+        if: always()
+        run: |
+          rm -rf scripts/instagram-import/images
+          rm -f scripts/instagram-import/manifest.json

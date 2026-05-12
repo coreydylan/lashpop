@@ -89,9 +89,9 @@ async function main() {
             `[OK] ${post.shortcode}#${img.index} -> ${result.url} (${(buffer.length / 1024).toFixed(0)}KB)`
           )
 
-          // Insert a new asset row (we keep old rows so nothing breaks if
-          // there's a stale page render mid-deploy; cleanup happens at the end).
-          await sql`
+          // Insert a new asset row. Re-runs are safe: ON CONFLICT skips
+          // existing rows (matched by external_id which is "{shortcode}_{idx}").
+          const inserted = await sql`
             INSERT INTO assets (
               file_name, file_path, file_type, mime_type, file_size,
               external_id, source, source_metadata, caption, alt_text,
@@ -116,8 +116,10 @@ async function main() {
               NOW(),
               NOW()
             )
+            ON CONFLICT (external_id) DO NOTHING
+            RETURNING id
           `
-          dbUpdates++
+          if (inserted.length > 0) dbUpdates++
         }
       } catch (e) {
         errors++

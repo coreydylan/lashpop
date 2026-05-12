@@ -164,13 +164,45 @@ def main():
 
         time.sleep(BASE_DELAY)
 
+    # Filter: keep only images >= MIN_WIDTH px wide (drops video thumbnails)
+    MIN_WIDTH = 1000
+    from PIL import Image as PILImage
+
+    filtered_posts = []
+    removed_imgs = 0
+    removed_posts = 0
+    for post in manifest["posts"]:
+        kept = []
+        for img in post["images"]:
+            try:
+                im = PILImage.open(img["local_path"])
+                w, h = im.size
+                if w >= MIN_WIDTH:
+                    img["width"] = w
+                    img["height"] = h
+                    kept.append(img)
+                else:
+                    removed_imgs += 1
+                    try:
+                        os.remove(img["local_path"])
+                    except FileNotFoundError:
+                        pass
+            except Exception:
+                removed_imgs += 1
+        if kept:
+            post["images"] = kept
+            filtered_posts.append(post)
+        else:
+            removed_posts += 1
+    manifest["posts"] = filtered_posts
+
     with open(MANIFEST, "w") as f:
         json.dump(manifest, f, indent=2)
 
     total_images = sum(len(p["images"]) for p in manifest["posts"])
     print(f"\nWrote {MANIFEST}")
-    print(f"  posts:  {len(manifest['posts'])}")
-    print(f"  images: {total_images}")
+    print(f"  posts:  {len(manifest['posts'])} (dropped {removed_posts})")
+    print(f"  images: {total_images} (dropped {removed_imgs} < {MIN_WIDTH}px)")
 
 
 if __name__ == "__main__":
