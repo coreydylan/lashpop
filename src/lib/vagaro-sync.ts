@@ -96,9 +96,11 @@ export async function syncService(vagaroService: any) {
 }
 
 /**
- * Sync all services from Vagaro
+ * Sync all services from Vagaro.
+ * Returns counts and throws if every service failed (signals a broken connection
+ * rather than per-row failures we should ignore).
  */
-export async function syncAllServices() {
+export async function syncAllServices(): Promise<{ synced: number; failed: number; total: number }> {
   console.log('🔄 Syncing all services from Vagaro...')
 
   const client = getVagaroClient()
@@ -107,21 +109,38 @@ export async function syncAllServices() {
   console.log(`  Found ${vagaroServices?.length || 0} services in Vagaro`)
 
   if (!Array.isArray(vagaroServices)) {
-    console.error('  ❌ Invalid response from Vagaro API')
-    console.error('  Response:', vagaroServices)
-    return
+    throw new Error(`Invalid response from Vagaro getServices(): ${JSON.stringify(vagaroServices)}`)
   }
+
+  const total = vagaroServices.length
+  let synced = 0
+  let failed = 0
+  let lastError: unknown = null
 
   for (const service of vagaroServices) {
     try {
       await syncService(service)
+      synced++
     } catch (error) {
+      failed++
+      lastError = error
       const serviceName = (service as any)?.serviceTitle ?? (service as any)?.name ?? 'service'
       console.error(`  ❌ Failed to sync service ${serviceName}:`, error)
     }
   }
 
-  console.log('✅ Service sync complete')
+  console.log(`✅ Service sync: ${synced} synced, ${failed} failed, ${total} total`)
+
+  // If we had services to sync but none succeeded, the connection is broken — fail loudly.
+  if (total > 0 && synced === 0) {
+    throw new Error(
+      `All ${total} service upserts failed — likely a DB connection issue. Last error: ${
+        lastError instanceof Error ? lastError.message : String(lastError)
+      }`
+    )
+  }
+
+  return { synced, failed, total }
 }
 
 /**
@@ -199,7 +218,7 @@ export async function syncTeamMember(vagaroEmployee: any) {
  * Note: Vagaro API requires serviceProviderId for employee lookups, so we
  * fetch team members from our DB that have vagaro_employee_id and sync each individually
  */
-export async function syncAllTeamMembers() {
+export async function syncAllTeamMembers(): Promise<{ synced: number; failed: number; total: number }> {
   console.log('🔄 Syncing all team members from Vagaro...')
 
   const db = getDb()
@@ -217,8 +236,10 @@ export async function syncAllTeamMembers() {
 
   console.log(`  Found ${membersToSync.length} team members with Vagaro IDs`)
 
-  let syncedCount = 0
-  let errorCount = 0
+  const total = membersToSync.length
+  let synced = 0
+  let failed = 0
+  let lastError: unknown = null
 
   for (const member of membersToSync) {
     try {
@@ -227,14 +248,26 @@ export async function syncAllTeamMembers() {
 
       if (vagaroEmployee) {
         await syncTeamMember(vagaroEmployee)
-        syncedCount++
+        synced++
         console.log(`✓ Synced: ${member.name}`)
       }
     } catch (error) {
-      errorCount++
+      failed++
+      lastError = error
       console.error(`  ❌ Failed to sync ${member.name}:`, error instanceof Error ? error.message : error)
     }
   }
 
-  console.log(`✅ Team member sync complete: ${syncedCount} synced, ${errorCount} errors`)
+  console.log(`✅ Team member sync: ${synced} synced, ${failed} failed, ${total} total`)
+
+  // If we had members to sync but none succeeded, connection is broken — fail loudly.
+  if (total > 0 && synced === 0) {
+    throw new Error(
+      `All ${total} team member upserts failed — likely a DB connection issue. Last error: ${
+        lastError instanceof Error ? lastError.message : String(lastError)
+      }`
+    )
+  }
+
+  return { synced, failed, total }
 }
