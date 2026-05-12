@@ -25,7 +25,7 @@ const MapSection = dynamic(() => import('@/components/landing-v2/sections/MapSec
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
-import { ServiceBrowserProvider, ServiceBrowserModal } from '@/components/service-browser';
+import { ServiceBrowserProvider, ServiceBrowserModal, useServiceBrowser } from '@/components/service-browser';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -236,6 +236,31 @@ const mobileScrollStyles = `
   }
 `;
 
+// Reads ?service=<slug>&subcategory=<slug> from the URL and opens the
+// service browser modal. Lets the footer (and any other link) deep-link
+// into the services menu from another page like /work-with-us.
+function ServiceQueryDeepLink() {
+  const { actions, categories } = useServiceBrowser();
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('service');
+    if (!slug) return;
+    const subcategory = params.get('subcategory') ?? undefined;
+    const category = categories.find(c => c.slug === slug);
+    const categoryName = category?.name ?? slug;
+    actions.openModal(slug, categoryName, subcategory);
+
+    // Strip the query params so reloads/back nav don't re-open the modal.
+    params.delete('service');
+    params.delete('subcategory');
+    const remaining = params.toString();
+    const newUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ''}${window.location.hash}`;
+    window.history.replaceState(null, '', newUrl);
+  }, [actions, categories]);
+  return null;
+}
+
 export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
@@ -292,6 +317,9 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                 {/* Service Browser Modal - New simplified service exploration */}
                 <ServiceBrowserModal />
+
+                {/* Reads ?service= query param to deep-link into the services menu */}
+                <ServiceQueryDeepLink />
 
                 {/* Z-2: Drawer System Layer */}
                 <DrawerSystem services={services} />

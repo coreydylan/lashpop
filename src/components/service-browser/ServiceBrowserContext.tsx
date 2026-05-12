@@ -274,3 +274,7 @@ export function useServiceBrowser() {
   }
   return context
 }
+
+export function useServiceBrowserOptional() {
+  return useContext(ServiceBrowserContext)
+}

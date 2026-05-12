@@ -1,9 +1,30 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { subscribeToNewsletter } from '@/app/actions/newsletter'
+import { useServiceBrowserOptional } from '@/components/service-browser'
+
+// Footer service links — label + the deeplink params used to open the
+// service browser modal (categorySlug + subcategorySlug). These mirror
+// the special-case logic in ServicesSection.tsx so the footer and the
+// services menu stay in sync.
+type FooterService =
+  | { label: string; slug: string; subcategorySlug?: string; externalUrl?: undefined }
+  | { label: string; externalUrl: string; slug?: undefined; subcategorySlug?: undefined }
+
+const FOOTER_SERVICES: FooterService[] = [
+  { label: 'Lash Extensions', slug: 'lashes' },
+  { label: 'Lash Lifts', slug: 'lashes', subcategorySlug: 'lash-lifts-tints' },
+  { label: 'Brows', slug: 'brows' },
+  { label: 'Skincare', slug: 'facials' },
+  { label: 'Waxing', slug: 'waxing' },
+  { label: 'Permanent Makeup', slug: 'permanent-makeup' },
+  { label: 'Permanent Jewelry', slug: 'specialty' },
+  { label: 'Botox', externalUrl: 'https://www.naturtox.com/' },
+]
 
 export function FooterV2() {
   const ref = useRef(null)
@@ -11,6 +32,31 @@ export function FooterV2() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
   const currentYear = new Date().getFullYear()
+  const router = useRouter()
+  const browserContext = useServiceBrowserOptional()
+
+  const handleServiceClick = useCallback((service: FooterService) => {
+    if (service.externalUrl) {
+      window.open(service.externalUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+    if (!service.slug) return
+
+    // If the service browser context is available (home page), open the
+    // modal directly for an instant transition.
+    if (browserContext) {
+      const category = browserContext.categories.find(c => c.slug === service.slug)
+      const categoryName = category?.name ?? service.label
+      browserContext.actions.openModal(service.slug, categoryName, service.subcategorySlug)
+      return
+    }
+
+    // Otherwise we're on a page without the provider (e.g. /work-with-us).
+    // Navigate home with a query param so the landing page can open it.
+    const params = new URLSearchParams({ service: service.slug })
+    if (service.subcategorySlug) params.set('subcategory', service.subcategorySlug)
+    router.push(`/?${params.toString()}`)
+  }, [browserContext, router])
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -129,46 +175,17 @@ export function FooterV2() {
           <div>
             <h4 className="font-serif text-lg text-terracotta mb-4">Services</h4>
             <ul className="space-y-3">
-              <li>
-                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
-                  Lash Extensions
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
-                  Lash Lifts
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
-                  Brows
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
-                  Skincare
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
-                  Waxing
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
-                  Permanent Makeup
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
-                  Permanent Jewelry
-                </a>
-              </li>
-              <li>
-                <a href="#services" className="caption text-charcoal hover:text-terracotta transition-colors">
-                  Botox
-                </a>
-              </li>
+              {FOOTER_SERVICES.map((service) => (
+                <li key={service.label}>
+                  <button
+                    type="button"
+                    onClick={() => handleServiceClick(service)}
+                    className="caption text-charcoal hover:text-terracotta transition-colors text-left bg-transparent border-0 p-0 cursor-pointer"
+                  >
+                    {service.label}
+                  </button>
+                </li>
+              ))}
               <li>
                 <a
                   href="/work-with-us"
