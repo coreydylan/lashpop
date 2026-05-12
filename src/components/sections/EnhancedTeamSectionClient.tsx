@@ -144,6 +144,11 @@ const PLACEHOLDER_IMAGE = "/placeholder-team.svg"
 function isPlaceholderImage(src: string) {
   return src.endsWith('.svg') || src.includes('placeholder')
 }
+// Vagaro CDN photos are served via Rackspace. We hotlink direct — no Vercel image
+// optimization — so Vagaro stays source of truth without a transformation layer.
+function isVagaroPhoto(src: string | undefined | null) {
+  return !!src && src.includes('ssl.cf2.rackcdn.com')
+}
 
 interface PortfolioImage {
   id: string
@@ -632,7 +637,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                   // Vagaro is source of truth for staff photos. member.image is already
                   // resolved Vagaro-first by the server (with local imageUrl as fallback).
                   // Local DAM cropSquareUrl is only used if member.image is empty.
-                  const cardImage = member.image || member.cropSquareUrl
+                  const cardImage: string = member.image || member.cropSquareUrl || PLACEHOLDER_IMAGE
                   const isPlaceholder = isPlaceholderImage(cardImage)
 
                   // Format name as "First L."
@@ -751,7 +756,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             fill
                             className={isPlaceholder ? "object-contain p-4" : "object-cover"}
                             sizes="155px"
-                            unoptimized={isPlaceholder}
+                            unoptimized={isPlaceholder || isVagaroPhoto(cardImage)}
                           />
                         </div>
                       </div>
@@ -894,7 +899,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                     fill
                                     className={isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover transition-transform duration-700 group-hover:scale-105"}
                                     sizes="(max-width: 640px) 155px, (max-width: 1024px) 280px, 280px"
-                                    unoptimized={isPlaceholderImage(member.image)}
+                                    unoptimized={isPlaceholderImage(member.image) || isVagaroPhoto(member.image)}
                                   />
                                 </div>
                               </div>
@@ -1004,13 +1009,19 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   {/* Blurred background for horizontal images */}
                                   {(portfolioImages.length > 0 ? isCurrentImageHorizontal : false) && (
                                     <div className="absolute inset-0 overflow-hidden">
-                                      <Image
-                                        src={portfolioImages[currentImageIndex]?.url || selectedMember.image}
-                                        alt=""
-                                        fill
-                                        className="object-cover scale-150 blur-2xl opacity-60"
-                                        aria-hidden="true"
-                                      />
+                                      {(() => {
+                                        const blurredSrc = portfolioImages[currentImageIndex]?.url || selectedMember.image
+                                        return (
+                                          <Image
+                                            src={blurredSrc}
+                                            alt=""
+                                            fill
+                                            className="object-cover scale-150 blur-2xl opacity-60"
+                                            aria-hidden="true"
+                                            unoptimized={isVagaroPhoto(blurredSrc)}
+                                          />
+                                        )
+                                      })()}
                                     </div>
                                   )}
 
@@ -1029,19 +1040,27 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                         transition={{ duration: 0.3 }}
                                         className="absolute inset-0 flex items-center justify-center"
                                       >
-                                        <Image
-                                          src={portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image}
-                                          alt={selectedMember.name}
-                                          fill
-                                          className={`${
-                                            portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)
-                                              ? 'object-contain p-8'
-                                              : portfolioImages.length > 0 && isCurrentImageHorizontal
-                                                ? 'object-contain'
-                                                : 'object-cover'
-                                          }`}
-                                          unoptimized={portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)}
-                                        />
+                                        {(() => {
+                                          const mainSrc = portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image
+                                          return (
+                                            <Image
+                                              src={mainSrc}
+                                              alt={selectedMember.name}
+                                              fill
+                                              className={`${
+                                                portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)
+                                                  ? 'object-contain p-8'
+                                                  : portfolioImages.length > 0 && isCurrentImageHorizontal
+                                                    ? 'object-contain'
+                                                    : 'object-cover'
+                                              }`}
+                                              unoptimized={
+                                                (portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)) ||
+                                                isVagaroPhoto(mainSrc)
+                                              }
+                                            />
+                                          )
+                                        })()}
                                       </motion.div>
                                     </AnimatePresence>
                                   )}
@@ -1374,14 +1393,22 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   }
                                 }}
                               >
-                                <Image
-                                  src={portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image}
-                                  alt={selectedMember.name}
-                                  fill
-                                  className={portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image) ? "object-contain p-8" : "object-cover object-top"}
-                                  priority
-                                  unoptimized={portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)}
-                                />
+                                {(() => {
+                                  const drawerSrc = portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image
+                                  return (
+                                    <Image
+                                      src={drawerSrc}
+                                      alt={selectedMember.name}
+                                      fill
+                                      className={portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image) ? "object-contain p-8" : "object-cover object-top"}
+                                      priority
+                                      unoptimized={
+                                        (portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)) ||
+                                        isVagaroPhoto(drawerSrc)
+                                      }
+                                    />
+                                  )
+                                })()}
                               </motion.div>
                             </AnimatePresence>
 
@@ -1592,7 +1619,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         alt={selectedMember.name}
                         fill
                         className={isPlaceholderImage(selectedMember.image) ? "object-contain p-8 bg-[#EBE0CB]" : "object-cover"}
-                        unoptimized={isPlaceholderImage(selectedMember.image)}
+                        unoptimized={isPlaceholderImage(selectedMember.image) || isVagaroPhoto(selectedMember.image)}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 

@@ -1,0 +1,22 @@
+{
+  "name": "lashpop-staffphoto-optimize",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "@jsquash/jpeg": "^1.5.0",
+    "@jsquash/png": "^3.1.0",
+    "@jsquash/resize": "^2.1.0",
+    "@jsquash/webp": "^1.4.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251001.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^4.61.0"
+  }
+}
