@@ -95,3 +95,8 @@ vendor/
 vercel-dam-env-vars.txt
 public/lashpop-images/_originals/
 .playwright-mcp/
+
+# Instagram import workspace
+.venv-scrape/
+scripts/instagram-import/images/
+scripts/instagram-import/manifest.json
