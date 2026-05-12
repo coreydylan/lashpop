@@ -629,8 +629,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                   const isFirstSwipeable = hasSwipeableTags && firstSwipeableIndex === -1
                   if (isFirstSwipeable) firstSwipeableIndex = index
 
-                  // Use square crop for face-focused image, fallback to regular image
-                  const cardImage = member.cropSquareUrl || member.image
+                  // Vagaro is source of truth for staff photos. member.image is already
+                  // resolved Vagaro-first by the server (with local imageUrl as fallback).
+                  // Local DAM cropSquareUrl is only used if member.image is empty.
+                  const cardImage = member.image || member.cropSquareUrl
                   const isPlaceholder = isPlaceholderImage(cardImage)
 
                   // Format name as "First L."
