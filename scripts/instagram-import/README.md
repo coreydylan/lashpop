@@ -5,9 +5,9 @@ gallery with sharp images.
 
 ## Schedule
 
-Runs weekly on Monday at 6:30 AM Pacific via macOS launchd.
+Runs daily at 6:30 AM Pacific via macOS launchd.
 **Only fires when the machine is awake** — closed laptop → no run that week,
-will catch up next Monday.
+will catch up next day the machine is on.
 
 ## Files
 
