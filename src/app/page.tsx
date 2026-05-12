@@ -63,11 +63,13 @@ export default async function HomePage() {
     role: member.role,
     type: member.type as 'employee' | 'independent',
     businessName: member.businessName || undefined,
-    image: member.imageUrl,
+    // Vagaro is source of truth for staff photos; fall back to local imageUrl, then nothing.
+    image: member.vagaroPhotoUrl || member.imageUrl,
     phone: member.phone,
     specialties: member.specialties as string[],
     serviceCategories: member.serviceCategories, // Service categories from Vagaro
-    bio: member.bio || undefined,
+    // Vagaro bio (BusinessSummary) wins; fall back to locally-entered bio
+    bio: member.vagaroBio || member.bio || undefined,
     quote: member.quote || undefined,
     availability: member.availability || undefined,
     instagram: member.instagram || undefined,
