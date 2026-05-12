@@ -415,28 +415,30 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
       setIsLoadingPortfolio(true)
 
+      // Headshot is always the first image in the carousel.
+      const headshot: PortfolioImage = {
+        id: 'headshot',
+        url: selectedMember.image,
+      }
+
       // Fetch DAM assets tagged to this team member
       fetch(`/api/dam/team/${selectedMember.uuid}/photos`)
         .then(res => res.json())
         .then(data => {
-          if (data.photos && data.photos.length > 0) {
-            const images: PortfolioImage[] = data.photos.map((photo: any, index: number) => ({
-              id: photo.id || `photo-${index}`,
-              url: photo.filePath,
-              width: photo.width,
-              height: photo.height,
-              caption: photo.caption
-            }))
-            setPortfolioImages(images)
-            // Cache for future use
-            if (selectedMember.uuid) {
-              preloadedPhotosCache.current.set(selectedMember.uuid, images)
-            }
-          } else {
-            setPortfolioImages([])
+          const workImages: PortfolioImage[] = (data.photos || []).map((photo: any, index: number) => ({
+            id: photo.id || `photo-${index}`,
+            url: photo.filePath,
+            width: photo.width,
+            height: photo.height,
+            caption: photo.caption
+          }))
+          const images = [headshot, ...workImages]
+          setPortfolioImages(images)
+          if (selectedMember.uuid) {
+            preloadedPhotosCache.current.set(selectedMember.uuid, images)
           }
         })
-        .catch(() => setPortfolioImages([]))
+        .catch(() => setPortfolioImages([headshot]))
         .finally(() => setIsLoadingPortfolio(false))
     } else {
       setPortfolioImages([])
@@ -515,34 +517,37 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   }
 
   // Preload portfolio photos on hover (desktop only)
-  const preloadPhotosForMember = useCallback((memberUuid: string | undefined) => {
+  const preloadPhotosForMember = useCallback((memberUuid: string | undefined, headshotUrl: string) => {
     if (!memberUuid || isMobile || preloadedPhotosCache.current.has(memberUuid)) return
+
+    const headshot: PortfolioImage = { id: 'headshot', url: headshotUrl }
 
     // Fetch photos in the background
     fetch(`/api/dam/team/${memberUuid}/photos`)
       .then(res => res.json())
       .then(data => {
-        if (data.photos && data.photos.length > 0) {
-          const images: PortfolioImage[] = data.photos.map((photo: any, index: number) => ({
-            id: photo.id || `photo-${index}`,
-            url: photo.filePath,
-            width: photo.width,
-            height: photo.height,
-            caption: photo.caption
-          }))
-          preloadedPhotosCache.current.set(memberUuid, images)
+        const workImages: PortfolioImage[] = (data.photos || []).map((photo: any, index: number) => ({
+          id: photo.id || `photo-${index}`,
+          url: photo.filePath,
+          width: photo.width,
+          height: photo.height,
+          caption: photo.caption
+        }))
+        const images = [headshot, ...workImages]
+        preloadedPhotosCache.current.set(memberUuid, images)
 
-          // Also preload the actual image files
-          images.forEach(img => {
-            const link = document.createElement('link')
-            link.rel = 'preload'
-            link.as = 'image'
-            link.href = img.url
-            document.head.appendChild(link)
-          })
-        }
+        // Also preload the work image files (headshot is typically already shown elsewhere)
+        workImages.forEach(img => {
+          const link = document.createElement('link')
+          link.rel = 'preload'
+          link.as = 'image'
+          link.href = img.url
+          document.head.appendChild(link)
+        })
       })
-      .catch(() => {})
+      .catch(() => {
+        preloadedPhotosCache.current.set(memberUuid, [headshot])
+      })
   }, [isMobile])
 
   const isHighlighted = (memberId: number) => highlights.includes(memberId.toString())
@@ -873,7 +878,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             onClick={() => handleMemberClick(member, absoluteIndex)}
                             onMouseEnter={() => {
                               setHoveredId(member.id)
-                              preloadPhotosForMember(member.uuid)
+                              preloadPhotosForMember(member.uuid, member.image)
                             }}
                             onMouseLeave={() => setHoveredId(null)}
                           >
@@ -1053,22 +1058,20 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                       >
                                         {(() => {
                                           const mainSrc = portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image
+                                          const isPlaceholder = isPlaceholderImage(mainSrc)
                                           return (
                                             <Image
                                               src={mainSrc}
                                               alt={selectedMember.name}
                                               fill
                                               className={`${
-                                                portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)
+                                                isPlaceholder
                                                   ? 'object-contain p-8'
-                                                  : portfolioImages.length > 0 && isCurrentImageHorizontal
+                                                  : isCurrentImageHorizontal
                                                     ? 'object-contain'
                                                     : 'object-cover'
                                               }`}
-                                              unoptimized={
-                                                (portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)) ||
-                                                isVagaroPhoto(mainSrc)
-                                              }
+                                              unoptimized={isPlaceholder || isVagaroPhoto(mainSrc)}
                                             />
                                           )
                                         })()}
@@ -1220,8 +1223,27 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </div>
         )}
 
+        {/* Credentials Section - inline within team section */}
+        <div className="pt-12 md:pt-20 pb-12 md:pb-20">
+          <CredentialsSection teamMembers={sortedTeamMembers} />
+        </div>
+
+        {/* Team Group Photo - Full Width, taller crop, equal spacing top/bottom */}
+        <div className="py-12 md:py-20">
+          <div className="relative w-full overflow-hidden aspect-[4/3] sm:aspect-[3/2] md:aspect-[16/9] xl:aspect-[2/1] max-h-[820px]">
+            <Image
+              src="/lashpop-images/team/team-group-photo.jpg"
+              alt="The LashPop Studios team"
+              fill
+              priority={false}
+              sizes="100vw"
+              className="object-cover object-center"
+            />
+          </div>
+        </div>
+
         {/* Join The Team CTA */}
-        <div className="text-center mt-12 md:mt-16 pb-12 md:pb-16 px-4">
+        <div className="text-center pt-0 pb-16 md:pb-20 px-4">
           <a
             href="/work-with-us"
             className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#ac4d3c] hover:text-white hover:border-[#ac4d3c]"
@@ -1234,15 +1256,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
               Join The Team
             </span>
           </a>
-        </div>
-
-        {/* Team Group Photo - Full Width */}
-        <div className="mt-8 md:mt-16 -mx-4 md:-mx-8 lg:-mx-12">
-          <img
-            src="/lashpop-images/team/team-group-photo.jpg"
-            alt="The LashPop Studios team"
-            className="w-full h-auto"
-          />
         </div>
       </section>
 
@@ -1406,17 +1419,15 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               >
                                 {(() => {
                                   const drawerSrc = portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image
+                                  const isPlaceholder = isPlaceholderImage(drawerSrc)
                                   return (
                                     <Image
                                       src={drawerSrc}
                                       alt={selectedMember.name}
                                       fill
-                                      className={portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image) ? "object-contain p-8" : "object-cover object-top"}
+                                      className={isPlaceholder ? "object-contain p-8" : "object-cover object-top"}
                                       priority
-                                      unoptimized={
-                                        (portfolioImages.length === 0 && isPlaceholderImage(selectedMember.image)) ||
-                                        isVagaroPhoto(drawerSrc)
-                                      }
+                                      unoptimized={isPlaceholder || isVagaroPhoto(drawerSrc)}
                                     />
                                   )
                                 })()}
