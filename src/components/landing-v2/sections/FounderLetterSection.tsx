@@ -98,15 +98,15 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
       {/* Mobile Layout - Simple static scroll */}
       <div className="md:hidden relative" style={{ backgroundColor: '#e9d1c8' }}>
-        {/* Emily Arch Image - static, full width, aligned with hero bottom */}
-        <div className="w-full overflow-hidden relative" style={{ aspectRatio: '1441/925' }}>
+        {/* Emily at studio counter - static, full width, aligned with hero bottom */}
+        <div className="w-full overflow-hidden relative" style={{ aspectRatio: '2161/1575' }}>
           <Image
             src="/lashpop-images/founder-letter-bg-mobile.webp"
-            alt="Emily in studio archway"
+            alt="Emily at LashPop Studios"
             fill
             sizes="100vw"
             className="object-cover"
-            quality={75}
+            quality={90}
           />
         </div>
 
