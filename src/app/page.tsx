@@ -73,6 +73,7 @@ export default async function HomePage() {
     quote: member.quote || undefined,
     availability: member.availability || undefined,
     instagram: member.instagram || undefined,
+    instagramUrl: member.instagramUrl || undefined,
     bookingUrl: member.bookingUrl,
     favoriteServices: member.favoriteServices as string[] | undefined,
     funFact: member.funFact || undefined,

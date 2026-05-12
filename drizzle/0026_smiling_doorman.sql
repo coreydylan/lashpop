@@ -1,0 +1,1 @@
+ALTER TABLE "team_members" ADD COLUMN "instagram_url" text;

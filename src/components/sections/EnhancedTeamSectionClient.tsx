@@ -14,13 +14,23 @@ import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team
 
 // Parse an instagram field that may contain multiple handles separated by / or ,
 // Returns an array of { handle, url } objects (without @ prefix on handle).
-function parseInstagramHandles(value?: string | null): Array<{ handle: string; url: string }> {
+// If overrideUrl is provided, the FIRST handle's url is replaced with it
+// (label still rendered from the handle string). Used to point an IG link at
+// a specific highlight/reel URL while keeping the @handle display.
+function parseInstagramHandles(
+  value?: string | null,
+  overrideUrl?: string | null
+): Array<{ handle: string; url: string }> {
   if (!value) return []
-  return value
+  const items = value
     .split(/[\/,]/)
     .map(s => s.trim().replace(/^@+/, ''))
     .filter(s => s.length > 0)
     .map(handle => ({ handle, url: `https://instagram.com/${handle}` }))
+  if (overrideUrl && items.length > 0) {
+    items[0] = { ...items[0], url: overrideUrl }
+  }
+  return items
 }
 
 // Swipe Tutorial Hint Component - subtle wiggling icon in center
@@ -129,6 +139,7 @@ interface TeamMember {
   quote?: string
   availability?: string
   instagram?: string
+  instagramUrl?: string
   bookingUrl: string
   favoriteServices?: string[]
   funFact?: string
@@ -780,7 +791,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                       {/* Bottom IG section - stacks multiple handles vertically */}
                       {(() => {
-                        const handles = parseInstagramHandles(member.instagram)
+                        const handles = parseInstagramHandles(member.instagram, member.instagramUrl)
                         if (handles.length === 0) return null
                         return (
                           <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-col">
@@ -923,7 +934,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                               {/* Bottom IG section - stacks multiple handles vertically */}
                               {(() => {
-                                const handles = parseInstagramHandles(member.instagram)
+                                const handles = parseInstagramHandles(member.instagram, member.instagramUrl)
                                 if (handles.length === 0) return null
                                 return (
                                   <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-col">
@@ -1130,7 +1141,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                     {selectedMember.name}
                                   </h2>
                                   {(() => {
-                                    const handles = parseInstagramHandles(selectedMember.instagram)
+                                    const handles = parseInstagramHandles(selectedMember.instagram, selectedMember.instagramUrl)
                                     const label = selectedMember.type === 'independent' && selectedMember.businessName
                                       ? selectedMember.businessName
                                       : 'LashPop Artist'
@@ -1345,7 +1356,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                         <div className="flex items-center gap-2">
                           {(() => {
-                            const handles = parseInstagramHandles(selectedMember.instagram)
+                            const handles = parseInstagramHandles(selectedMember.instagram, selectedMember.instagramUrl)
                             if (handles.length === 0) return null
                             return (
                               <a
@@ -1462,7 +1473,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               <span className="font-bold">{selectedMember.name.split(' ')[0]}</span>{selectedMember.name.includes(' ') ? ` ${selectedMember.name.split(' ').slice(1).join(' ')}` : ''}
                             </h1>
                             {(() => {
-                              const handles = parseInstagramHandles(selectedMember.instagram)
+                              const handles = parseInstagramHandles(selectedMember.instagram, selectedMember.instagramUrl)
                               const label = selectedMember.type === 'independent' && selectedMember.businessName
                                 ? selectedMember.businessName
                                 : 'LashPop Artist'
@@ -1716,7 +1727,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </a>
 
                         {(() => {
-                          const handles = parseInstagramHandles(selectedMember.instagram)
+                          const handles = parseInstagramHandles(selectedMember.instagram, selectedMember.instagramUrl)
                           if (handles.length === 0) return null
                           return (
                             <a

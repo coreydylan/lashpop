@@ -40,6 +40,9 @@ export const teamMembers = pgTable("team_members", {
   bio: text("bio"),
   quote: text("quote"),
   instagram: text("instagram"),
+  // Optional override: if set, the IG link in the profile modal uses this URL
+  // instead of the default https://instagram.com/{instagram}. Label stays @{instagram}.
+  instagramUrl: text("instagram_url"),
   bookingUrl: text("booking_url").notNull(),
   usesLashpopBooking: boolean("uses_lashpop_booking").default(true).notNull(),
   imageUrl: text("image_url").notNull(),

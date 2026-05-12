@@ -183,6 +183,13 @@
       "when": 1778614666909,
       "tag": "0025_smiling_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1778623734434,
+      "tag": "0026_smiling_doorman",
+      "breakpoints": true
     }
   ]
 }
