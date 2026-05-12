@@ -29,6 +29,7 @@
     "vendor",
     "drizzle",
     "scripts",
+    "workers",
     "src/components/theatre",
     "src/components/scrollytelling",
     "src/lib/scrollytelling",
