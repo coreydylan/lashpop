@@ -21,15 +21,28 @@ export interface VagaroPublicProvider {
   IsAcceptAppOnline?: boolean
 }
 
+// Vagaro serves generic silhouettes when a provider has no real photo.
+// Filenames look like `user-female-img_155.jpg`, `user-male-img_155.jpg`, etc.
+// Skip these so we don't overwrite a good local photo with a placeholder.
+function isGenericVagaroPlaceholder(filename: string | null | undefined): boolean {
+  if (!filename) return false
+  return /\/?Images\/user-[a-z]+-img(?:_\d+)?\.(?:jpe?g|png|webp)$/i.test(filename) ||
+         /^user-[a-z]+-img(?:_\d+)?\.(?:jpe?g|png|webp)$/i.test(filename)
+}
+
 // Build the highest-resolution photo URL by swapping the size segment to Original.
 // The Vagaro CDN exposes: /155x155/, /300x300/, and /Original/ — the rest 404.
+// Returns null when the source is a generic Vagaro placeholder so callers can
+// preserve any local photo instead.
 export function originalPhotoUrl(p: VagaroPublicProvider): string | null {
   if (p.CDNUrl && p.Photo) {
+    if (isGenericVagaroPlaceholder(p.Photo)) return null
     return `${p.CDNUrl.replace(/\/+$/, '')}/Original/${p.Photo}`
   }
   // Fallback: swap a 155x155 or 300x300 in any known URL field
   const seed = p.ServiceProviderPhotoURLForReviewPopup || p.ServiceProviderPhotoURL || ''
   if (!seed) return null
+  if (isGenericVagaroPlaceholder(seed)) return null
   return seed.replace(/\/(155x155|300x300|400x400)\//, '/Original/')
 }
 

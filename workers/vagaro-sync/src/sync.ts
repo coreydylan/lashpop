@@ -216,12 +216,18 @@ export async function syncPublicStaff(
 
       if (matchByName) {
         matchedExistingIds.add(matchByName.id)
+        // Normalize empty bio strings to null so the frontend's vagaroBio || bio
+        // fallback works cleanly (empty string is technically falsy but ugly to store).
+        const cleanBio = p.BusinessSummary?.trim() || null
         await db
           .update(teamMembers)
           .set({
             vagaroPublicProviderId: p.ServiceProviderID,
+            // photoUrl is null when Vagaro returns a generic silhouette placeholder
+            // (see originalPhotoUrl). Writing null lets the local imageUrl win on the
+            // frontend until a real photo is uploaded in Vagaro.
             vagaroPhotoUrl: photoUrl,
-            vagaroBio: p.BusinessSummary ?? null,
+            vagaroBio: cleanBio,
             displayOrder: sortOrder,
             // Re-activate if Vagaro is showing them again
             isActive: true,
@@ -243,7 +249,7 @@ export async function syncPublicStaff(
         await db.insert(teamMembers).values({
           vagaroPublicProviderId: p.ServiceProviderID,
           vagaroPhotoUrl: photoUrl,
-          vagaroBio: p.BusinessSummary ?? null,
+          vagaroBio: p.BusinessSummary?.trim() || null,
           name: fullName || `Provider ${p.ServiceProviderID}`,
           phone: phone || '',
           email: email || null,
