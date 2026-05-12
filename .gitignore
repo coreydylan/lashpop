@@ -94,3 +94,4 @@ vendor/
 .env.production.lashpop
 vercel-dam-env-vars.txt
 public/lashpop-images/_originals/
+.playwright-mcp/

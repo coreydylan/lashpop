@@ -176,6 +176,13 @@
       "when": 1770090508614,
       "tag": "0024_add_vagaro_image_url",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1778614666909,
+      "tag": "0025_smiling_rattler",
+      "breakpoints": true
     }
   ]
 }

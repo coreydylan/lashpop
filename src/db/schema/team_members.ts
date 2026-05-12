@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, jsonb, boolean } from "drizzle-orm/pg-core"
+import { pgEnum, pgTable, text, timestamp, uuid, jsonb, boolean, integer } from "drizzle-orm/pg-core"
 
 /**
  * Credential/Certification for structured data (Schema.org)
@@ -20,8 +20,13 @@ export const teamMembers = pgTable("team_members", {
   id: uuid("id").defaultRandom().primaryKey(),
 
   // Vagaro Integration - Source of truth for employee data
-  vagaroEmployeeId: text("vagaro_employee_id").unique(), // Links to Vagaro employee/service provider
-  vagaroData: jsonb("vagaro_data").$type<any>(), // Store full Vagaro response for reference
+  vagaroEmployeeId: text("vagaro_employee_id").unique(), // Base64 ID from v2 API
+  vagaroData: jsonb("vagaro_data").$type<any>(), // Full v2 API response for reference
+
+  // Public Vagaro staff page (vagaro.com/lashpop32/staff) — source of truth for photo + bio + order
+  vagaroPublicProviderId: integer("vagaro_public_provider_id").unique(), // Numeric ID from public composite-staff endpoint
+  vagaroPhotoUrl: text("vagaro_photo_url"), // Original-resolution photo URL from Vagaro CDN
+  vagaroBio: text("vagaro_bio"), // BusinessSummary from Vagaro public profile
 
   // Core fields (synced from Vagaro or entered locally)
   name: text("name").notNull(),

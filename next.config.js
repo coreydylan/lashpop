@@ -22,6 +22,12 @@ const nextConfig = {
         hostname: 'eabdc1907c2f84bfe65a-cfc7a6bba052cea084198d4ff3e0b991.ssl.cf2.rackcdn.com',
         pathname: '/**',
       },
+      {
+        // Vagaro hosts staff/service photos across multiple Rackspace CDN subdomains
+        protocol: 'https',
+        hostname: '**.ssl.cf2.rackcdn.com',
+        pathname: '/**',
+      },
     ],
   },
   experimental: {

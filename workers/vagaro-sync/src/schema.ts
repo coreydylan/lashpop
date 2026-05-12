@@ -1,4 +1,6 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+
+export const teamMemberType = pgEnum('team_member_type', ['employee', 'independent'])
 
 // Minimal mirror of src/db/schema/services.ts — only the fields this worker writes.
 export const services = pgTable('services', {
@@ -27,10 +29,16 @@ export const teamMembers = pgTable('team_members', {
   id: uuid('id').defaultRandom().primaryKey(),
   vagaroEmployeeId: text('vagaro_employee_id').unique(),
   vagaroData: jsonb('vagaro_data').$type<unknown>(),
+  // Public Vagaro staff page fields
+  vagaroPublicProviderId: integer('vagaro_public_provider_id').unique(),
+  vagaroPhotoUrl: text('vagaro_photo_url'),
+  vagaroBio: text('vagaro_bio'),
+  // Core
   name: text('name').notNull(),
   phone: text('phone').notNull(),
   email: text('email'),
   role: text('role').notNull(),
+  type: teamMemberType('type').notNull(),
   bookingUrl: text('booking_url').notNull(),
   usesLashpopBooking: boolean('uses_lashpop_booking').default(true).notNull(),
   imageUrl: text('image_url').notNull(),

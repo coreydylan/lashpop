@@ -1,14 +1,22 @@
 import { sql } from 'drizzle-orm'
 import { closeDb, openDb } from './db'
-import { syncAllServices, syncAllTeamMembers, type SyncStats } from './sync'
+import {
+  syncAllServices,
+  syncAllTeamMembers,
+  syncPublicStaff,
+  type PublicStaffStats,
+  type SyncStats,
+} from './sync'
 import { VagaroClient, type VagaroEnv } from './vagaro-client'
 
 interface Env extends VagaroEnv {
   DATABASE_URL: string
+  VAGARO_PUBLIC_BUSINESS_ID: string // numeric business ID for the public staff endpoint
 }
 
 interface Result {
   services: { success: boolean; stats?: SyncStats; error?: string }
+  publicStaff: { success: boolean; stats?: PublicStaffStats; error?: string }
   teamMembers: { success: boolean; stats?: SyncStats; error?: string }
 }
 
@@ -18,6 +26,7 @@ async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
 
   const result: Result = {
     services: { success: false },
+    publicStaff: { success: false },
     teamMembers: { success: false },
   }
 
@@ -36,6 +45,16 @@ async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
     console.error('services sync threw:', err)
   }
 
+  // Public staff mirror (photos, bios, order, list parity) — runs BEFORE the v2
+  // team sync so contact-info refreshes don't get overwritten by the older API.
+  try {
+    result.publicStaff.stats = await syncPublicStaff(db, env.VAGARO_PUBLIC_BUSINESS_ID)
+    result.publicStaff.success = true
+  } catch (err) {
+    result.publicStaff.error = err instanceof Error ? err.message : String(err)
+    console.error('public staff sync threw:', err)
+  }
+
   try {
     result.teamMembers.stats = await syncAllTeamMembers(db, vagaro)
     result.teamMembers.success = true
@@ -46,7 +65,8 @@ async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
 
   await closeDb(client)
 
-  return { result, allOk: result.services.success && result.teamMembers.success }
+  const allOk = result.services.success && result.publicStaff.success && result.teamMembers.success
+  return { result, allOk }
 }
 
 export default {

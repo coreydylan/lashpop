@@ -3,8 +3,15 @@ import { EnhancedTeamSectionClient } from "./EnhancedTeamSectionClient"
 
 const PLACEHOLDER_IMAGE = "/placeholder-team.svg"
 
-function isPlaceholderOrMissing(url: string): boolean {
+function isPlaceholderOrMissing(url: string | null | undefined): boolean {
   return !url || url.includes("placeholder") || url === ""
+}
+
+// Vagaro is source of truth for photos; fall back to local override, then placeholder.
+function resolveStaffImage(vagaroPhotoUrl: string | null | undefined, imageUrl: string | null | undefined): string {
+  if (vagaroPhotoUrl && !isPlaceholderOrMissing(vagaroPhotoUrl)) return vagaroPhotoUrl
+  if (imageUrl && !isPlaceholderOrMissing(imageUrl)) return imageUrl
+  return PLACEHOLDER_IMAGE
 }
 
 export async function EnhancedTeamSection() {
@@ -18,12 +25,13 @@ export async function EnhancedTeamSection() {
     role: member.role,
     type: member.type as 'employee' | 'independent',
     businessName: member.businessName || undefined,
-    image: isPlaceholderOrMissing(member.imageUrl) ? PLACEHOLDER_IMAGE : member.imageUrl,
+    image: resolveStaffImage(member.vagaroPhotoUrl, member.imageUrl),
     phone: member.phone,
     specialties: member.specialties as string[],
     // Service categories pulled directly from Vagaro service assignments
     serviceCategories: member.serviceCategories,
-    bio: member.bio || undefined,
+    // Vagaro bio (BusinessSummary) wins; fall back to locally-entered bio
+    bio: member.vagaroBio || member.bio || undefined,
     quote: member.quote || undefined,
     availability: member.availability || undefined,
     instagram: member.instagram || undefined,

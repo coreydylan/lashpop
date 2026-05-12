@@ -5,7 +5,7 @@ import { teamMembers } from "@/db/schema/team_members"
 import { teamQuickFacts } from "@/db/schema/team_quick_facts"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { services } from "@/db/schema/services"
-import { and, eq, inArray, isNotNull, asc } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, asc, sql } from "drizzle-orm"
 
 export async function getTeamMembers() {
   const db = getDb()
@@ -98,7 +98,8 @@ export async function getTeamMembersWithServices() {
     db.select()
       .from(teamMembers)
       .where(eq(teamMembers.isActive, true))
-      .orderBy(teamMembers.displayOrder),
+      // displayOrder is TEXT — cast to int so "2" < "10". Vagaro sends EmployeeSortOrder as a number.
+      .orderBy(sql`CAST(${teamMembers.displayOrder} AS INTEGER) ASC NULLS LAST`),
     // Fetch ALL services with Vagaro data once (instead of per-member)
     db.select()
       .from(services)
@@ -168,41 +169,52 @@ export async function getTeamMembersWithServices() {
     return acc
   }, {} as Record<string, { cropSquareUrl: string | null; cropCloseUpCircleUrl: string | null; cropMediumCircleUrl: string | null; cropFullVerticalUrl: string | null }>)
 
-  // Build a map of vagaroEmployeeId -> service categories (in-memory, no extra queries)
-  const serviceCategoriesByEmployee = new Map<string, Set<string>>()
+  // Map a Vagaro parentServiceTitle (sub-category) to one or more frontend tag labels.
+  // Source of truth for this mapping is the spec Corey set when wiring up Vagaro-as-source-of-truth.
+  function vagaroParentToTags(parentTitle: string | null | undefined): string[] {
+    const p = (parentTitle ?? '').toLowerCase().trim()
+    if (!p) return []
+    if (p.includes('eyelash extension')) return ['Lash Extensions', 'Lashes']
+    if (p.includes('lash lift')) return ['Lash Extensions', 'Lashes']
+    if (p.includes('brow')) return ['Brows']
+    if (p.includes('permanent makeup') || p.includes('microblading') || p.includes('nanobrow')) return ['Permanent Makeup']
+    if (p.includes('skin care') || p.includes('skincare') || p.includes('facial')) return ['Skincare']
+    if (p.includes('permanent jewelry') || p.includes('perm jewelry')) return ['Perm Jewelry']
+    if (p.includes('wax')) return ['waxing']
+    // Bundles, training, misc — skip (no tag)
+    return []
+  }
+
+  // Build a map of vagaroEmployeeId -> ordered list of frontend tag labels.
+  // We accumulate the FIRST time each tag appears (preserves a stable order across renders).
+  const tagsByEmployee = new Map<string, string[]>()
   for (const service of allServices) {
     const vagaroData = service.vagaroData as any
     if (!vagaroData?.servicePerformedBy) continue
 
+    const parentTitle = vagaroData.parentServiceTitle as string | undefined
+    const tags = vagaroParentToTags(parentTitle)
+    if (tags.length === 0) continue
+
     const performers = vagaroData.servicePerformedBy || []
     for (const performer of performers) {
       const employeeId = performer.serviceProviderId || performer.employeeId
-      if (!employeeId || !service.mainCategory) continue
+      if (!employeeId) continue
 
-      if (!serviceCategoriesByEmployee.has(employeeId)) {
-        serviceCategoriesByEmployee.set(employeeId, new Set())
+      const list = tagsByEmployee.get(employeeId) ?? []
+      for (const tag of tags) {
+        if (!list.includes(tag)) list.push(tag)
       }
-      serviceCategoriesByEmployee.get(employeeId)!.add(service.mainCategory)
+      tagsByEmployee.set(employeeId, list)
     }
   }
 
   // Process all members (no additional queries - just in-memory operations)
   const membersWithServices = members.map((member) => {
-    // Get Vagaro-derived categories from the pre-built map
-    const vagaroCategoriesSet = member.vagaroEmployeeId
-      ? serviceCategoriesByEmployee.get(member.vagaroEmployeeId) || new Set<string>()
-      : new Set<string>()
-
-    // Clean and format category names
-    const vagaroCategories = Array.from(vagaroCategoriesSet).map(cat => {
-      let cleaned = cat.replace(' Services', '').replace(' Service', '')
-      if (cleaned === 'Lash') cleaned = 'Lashes'
-      if (cleaned === 'Brow') cleaned = 'Brows'
-      // Normalize anything mentioning facials/skin care -> Skincare
-      if (/facial|skin\s?care/i.test(cleaned)) cleaned = 'Skincare'
-      if (cleaned === 'Injectables' || cleaned === 'Injectable') cleaned = 'Botox'
-      return cleaned
-    }).slice(0, 4)
+    // Get Vagaro-derived tags from the pre-built map
+    const vagaroCategories = member.vagaroEmployeeId
+      ? (tagsByEmployee.get(member.vagaroEmployeeId) ?? []).slice(0, 4)
+      : []
 
     // Get manual categories (for services not in Vagaro like injectables)
     const manualCategories = (member.manualServiceCategories as string[]) || []
