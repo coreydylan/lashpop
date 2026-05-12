@@ -382,6 +382,12 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
 
   // Handle category click - open the service browser modal for that category
   const handleCategoryClick = useCallback((categorySlug: string) => {
+    // Special case: Botox links directly to Grace's Naturtox site
+    if (categorySlug === 'injectables') {
+      window.open('https://www.naturtox.com/', '_blank', 'noopener,noreferrer')
+      return
+    }
+
     // Special case: lash-lifts opens lashes category with lash-lifts-tints subcategory
     if (categorySlug === 'lash-lifts') {
       browserActions.openModal('lashes', 'Lashes', 'lash-lifts-tints')
