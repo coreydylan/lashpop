@@ -55,25 +55,49 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     const slugify = (s: string) =>
       s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 
+    let targetId: string | null = null
     const featured = featuredItems.find(f => slugify(f.question) === openFaqSlug)
     if (featured) {
       setActiveCategory('top-faqs')
       setExpandedIndex(featured.id)
+      targetId = featured.id
     } else {
       for (const cat of categories) {
         const item = (itemsByCategory[cat.id] || []).find(f => slugify(f.question) === openFaqSlug)
         if (item) {
           setActiveCategory(cat.id)
           setExpandedIndex(item.id)
+          targetId = item.id
           break
         }
       }
     }
 
-    // Ensure we land at the FAQ section (hash auto-scroll can race with our state changes)
+    if (!targetId) return
+
+    // After state updates render, scroll the specific card just below the sticky header.
+    // Mobile uses a custom scroll container; desktop uses the window.
     const t = window.setTimeout(() => {
-      document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 100)
+      const card = document.getElementById(`faq-card-${targetId}`)
+      if (!card) return
+
+      const mobileHeaderHeight = parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height') || '44'
+      )
+      const stickyChipsHeight = stickyHeaderRef.current?.offsetHeight || 0
+      const mobileOffset = mobileHeaderHeight + stickyChipsHeight + 8
+      const desktopOffset = 96 // matches scroll-mt-24 on the section
+
+      const mobileContainer = document.querySelector('.mobile-scroll-container') as HTMLElement | null
+      if (mobileContainer && window.getComputedStyle(mobileContainer).overflowY !== 'visible') {
+        const cardRect = card.getBoundingClientRect()
+        const targetScrollY = mobileContainer.scrollTop + cardRect.top - mobileOffset
+        mobileContainer.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+      } else {
+        const targetScrollY = window.scrollY + card.getBoundingClientRect().top - desktopOffset
+        window.scrollTo({ top: targetScrollY, behavior: 'smooth' })
+      }
+    }, 150)
     return () => window.clearTimeout(t)
   }, [categories, itemsByCategory, featuredItems])
 
@@ -230,6 +254,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           {filteredFAQs.map((faq, index) => (
             <div
               key={faq.id || `faq-${index}`}
+              id={faq.id ? `faq-card-${faq.id}` : undefined}
               className="bg-white rounded-xl md:rounded-2xl overflow-hidden shadow-sm hover:shadow-md border border-dusty-rose/20"
             >
               <button
