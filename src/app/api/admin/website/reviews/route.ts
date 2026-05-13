@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { homepageReviews } from '@/db/schema/website_settings'
-import { desc, gte, asc } from 'drizzle-orm'
+import { desc, gte, asc, inArray } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +68,18 @@ export async function PUT(request: NextRequest) {
 
     console.log(`[Reviews API] Saving ${selectedReviews.length} reviews`)
 
+    // Diff old selection vs new so we can track which reviews the admin explicitly
+    // removed (homepageDismissed=true so the cron doesn't auto-re-add them) and
+    // which they explicitly added back (homepageDismissed=false).
+    const previous = await db
+      .select({ reviewId: homepageReviews.reviewId })
+      .from(homepageReviews)
+    const previousIds = new Set(previous.map(r => r.reviewId))
+    const newIds = new Set(selectedReviews.map((item: { id: string }) => item.id))
+
+    const removedIds = Array.from(previousIds).filter(id => !newIds.has(id))
+    const addedIds = Array.from(newIds).filter(id => !previousIds.has(id))
+
     // Clear existing selections
     await db.delete(homepageReviews)
     console.log('[Reviews API] Cleared existing selections')
@@ -81,6 +93,22 @@ export async function PUT(request: NextRequest) {
 
       await db.insert(homepageReviews).values(insertData)
       console.log('[Reviews API] Inserted new selections')
+    }
+
+    // Update homepageDismissed flags so cron auto-promote respects admin intent.
+    if (removedIds.length > 0) {
+      await db
+        .update(reviews)
+        .set({ homepageDismissed: true, updatedAt: new Date() })
+        .where(inArray(reviews.id, removedIds))
+      console.log(`[Reviews API] Marked ${removedIds.length} reviews as dismissed`)
+    }
+    if (addedIds.length > 0) {
+      await db
+        .update(reviews)
+        .set({ homepageDismissed: false, updatedAt: new Date() })
+        .where(inArray(reviews.id, addedIds))
+      console.log(`[Reviews API] Cleared dismissed flag on ${addedIds.length} reviews`)
     }
 
     // Revalidate the homepage so it fetches fresh reviews

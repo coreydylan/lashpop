@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { syncVagaroReviews } from '@/lib/review-scrapers/vagaro'
 import { syncBrightDataReviews } from '@/lib/review-scrapers/brightdata'
+import { applyStaleTeamMemberFilter, autoPromoteToHomepage } from '@/lib/review-filters'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300 // 5 minutes max
@@ -19,7 +21,9 @@ export async function GET(request: NextRequest) {
   console.log('🔄 Starting daily review sync...')
   const results = {
     vagaro: { success: false, error: null as string | null, stats: null as any },
-    brightdata: { success: false, error: null as string | null, stats: null as any }
+    brightdata: { success: false, error: null as string | null, stats: null as any },
+    filter: { success: false, error: null as string | null, stats: null as any },
+    autoPromote: { success: false, error: null as string | null, stats: null as any }
   }
 
   // Sync Vagaro reviews
@@ -46,7 +50,39 @@ export async function GET(request: NextRequest) {
     results.brightdata.error = error.message
   }
 
-  const allSucceeded = results.vagaro.success && results.brightdata.success
+  // Hide reviews that mention team members no longer on the staff page.
+  // Runs every sync so the filter also reacts to team_members changes since last run.
+  try {
+    console.log('🧹 Applying stale-team-member filter...')
+    const filterStats = await applyStaleTeamMemberFilter()
+    results.filter.success = true
+    results.filter.stats = filterStats
+    console.log('✅ Filter complete:', filterStats)
+  } catch (error: any) {
+    console.error('❌ Filter failed:', error)
+    results.filter.error = error.message
+  }
+
+  // Auto-promote eligible 5-star reviews to the homepage selection.
+  try {
+    console.log('⭐ Auto-promoting 5-star reviews to homepage...')
+    const promoteStats = await autoPromoteToHomepage()
+    results.autoPromote.success = true
+    results.autoPromote.stats = promoteStats
+    console.log('✅ Auto-promote complete:', promoteStats)
+    if (promoteStats.promoted > 0) {
+      revalidatePath('/')
+    }
+  } catch (error: any) {
+    console.error('❌ Auto-promote failed:', error)
+    results.autoPromote.error = error.message
+  }
+
+  const allSucceeded =
+    results.vagaro.success &&
+    results.brightdata.success &&
+    results.filter.success &&
+    results.autoPromote.success
   console.log(allSucceeded ? '✅ Daily review sync completed successfully' : '⚠️ Daily review sync completed with errors')
 
   return NextResponse.json({

@@ -20,6 +20,12 @@ export const reviews = pgTable("reviews", {
   showOnWebsite: boolean("show_on_website").default(true),
   includeInSchema: boolean("include_in_schema").default(true),
 
+  // Auto-promote bookkeeping
+  // homepageDismissed: admin explicitly removed this from the homepage — don't auto-re-add
+  // hiddenReason: when set to 'stale_team_member', show_on_website was flipped automatically and can be auto-restored
+  homepageDismissed: boolean("homepage_dismissed").default(false).notNull(),
+  hiddenReason: text("hidden_reason"),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 })

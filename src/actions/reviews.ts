@@ -4,7 +4,7 @@ import { getDb } from "@/db"
 import { reviews } from "@/db/schema/reviews"
 import { reviewStats } from "@/db/schema/review_stats"
 import { homepageReviews } from "@/db/schema/website_settings"
-import { desc, gte, inArray, asc } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, asc } from "drizzle-orm"
 
 export async function getReviews(limit = 20) {
   try {
@@ -35,14 +35,14 @@ export async function getHomepageReviews(fallbackLimit = 10) {
       .from(homepageReviews)
       .orderBy(asc(homepageReviews.displayOrder))
 
-    // If we have selected reviews, fetch them
+    // If we have selected reviews, fetch them (excluding any that have been hidden)
     if (selectedData.length > 0) {
       const selectedIds = selectedData.map(r => r.reviewId)
-      
+
       const selectedReviews = await db
         .select()
         .from(reviews)
-        .where(inArray(reviews.id, selectedIds))
+        .where(and(inArray(reviews.id, selectedIds), eq(reviews.showOnWebsite, true)))
 
       // Sort by the display order from homepage_reviews
       const orderMap = new Map(selectedData.map(r => [r.reviewId, r.displayOrder]))
@@ -70,7 +70,7 @@ export async function getHighRatedReviews(limit = 10) {
     const topReviews = await db
       .select()
       .from(reviews)
-      .where(gte(reviews.rating, 4))
+      .where(and(gte(reviews.rating, 4), eq(reviews.showOnWebsite, true)))
       .orderBy(desc(reviews.reviewDate))
       .limit(limit)
 
