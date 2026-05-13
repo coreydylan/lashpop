@@ -40,7 +40,7 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
     [
       AutoScroll({
         playOnInit: true,
-        speed: 1.2,
+        speed: 1.5,
         stopOnInteraction: false,
         stopOnMouseEnter: true,
         rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement
@@ -66,7 +66,7 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
           {/* Embla Viewport */}
           <div className="overflow-hidden" ref={emblaRef}>
             {/* Embla Container */}
-            <div className="flex touch-pan-y gap-3 px-4">
+            <div className="flex touch-pan-y gap-4 px-4">
               {displayItems.map((item, index) => (
                 <div
                   key={`${index}-${item.filePath}`}
@@ -83,15 +83,7 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
                       draggable={false}
                     />
 
-                    {/* Overlay on hover */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center pointer-events-none">
-                      <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <svg className="w-5 h-5 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </div>
-                    </div>
+                    {/* Clean hover - no dark overlay or icon */}
                   </div>
                 </div>
               ))}
