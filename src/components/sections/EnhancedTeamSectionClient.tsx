@@ -1267,7 +1267,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
         {/* Team Group Photo - Full Width, taller crop, equal spacing top/bottom */}
         <div className="py-12 md:py-20">
-          <div className="relative w-full overflow-hidden aspect-[4/3] sm:aspect-[3/2] md:aspect-[16/9] xl:aspect-[2/1] max-h-[820px]">
+          <div className="relative w-full overflow-hidden aspect-[767/409] max-h-[820px]">
             <Image
               src="/lashpop-images/team/team-group-photo.jpg"
               alt="The LashPop Studios team"
