@@ -1346,8 +1346,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       const deltaX = Math.abs(touch.clientX - startX)
                       const deltaY = Math.abs(touch.clientY - startY)
 
-                      // Once we've moved enough to decide direction, lock it in
-                      if (target.dataset.isHorizontalSwipe === 'undecided' && (deltaX > 10 || deltaY > 10)) {
+                      // Once we've moved enough to decide direction, lock it in.
+                      // 25px raises the bar above casual taps/scrolls so a tiny drift
+                      // doesn't get misread as a member-change swipe.
+                      if (target.dataset.isHorizontalSwipe === 'undecided' && (deltaX > 25 || deltaY > 25)) {
                         target.dataset.isHorizontalSwipe = deltaX > deltaY ? 'yes' : 'no'
                       }
 
@@ -1365,7 +1367,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       const deltaY = touch.clientY - startY
 
                       // Only trigger swipe if we detected a horizontal swipe and it exceeds threshold
-                      const threshold = 80
+                      const threshold = 120
                       if (target.dataset.isHorizontalSwipe === 'yes' && Math.abs(deltaX) > threshold) {
                         if (deltaX > 0) {
                           goToPrevMember()
@@ -1437,8 +1439,62 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.5, ease: 'easeInOut' }}
                         >
-                          <div className="relative h-[70vh] overflow-hidden">
-                            {/* Photo carousel - tap to cycle through album photos */}
+                          <div
+                            className="relative h-[70vh] overflow-hidden"
+                            // The photo zone owns horizontal gestures when there are
+                            // multiple album photos — swipe cycles photos, tap also
+                            // cycles. With <=1 photo, touches fall through to the
+                            // outer wrapper so member-change still works here.
+                            onTouchStart={(e) => {
+                              if (portfolioImages.length <= 1) return
+                              e.stopPropagation()
+                              const touch = e.touches[0]
+                              const target = e.currentTarget as HTMLDivElement
+                              target.dataset.photoStartX = touch.clientX.toString()
+                              target.dataset.photoStartY = touch.clientY.toString()
+                              target.dataset.photoGesture = 'undecided'
+                            }}
+                            onTouchMove={(e) => {
+                              if (portfolioImages.length <= 1) return
+                              const target = e.currentTarget as HTMLDivElement
+                              const startX = parseFloat(target.dataset.photoStartX || '0')
+                              const startY = parseFloat(target.dataset.photoStartY || '0')
+                              const touch = e.touches[0]
+                              const deltaX = Math.abs(touch.clientX - startX)
+                              const deltaY = Math.abs(touch.clientY - startY)
+                              if (target.dataset.photoGesture === 'undecided' && (deltaX > 12 || deltaY > 12)) {
+                                target.dataset.photoGesture = deltaX > deltaY ? 'horizontal' : 'vertical'
+                              }
+                              // Only swallow events once we've claimed horizontal —
+                              // vertical drags should propagate to the content scroll.
+                              if (target.dataset.photoGesture === 'horizontal') {
+                                e.stopPropagation()
+                              }
+                            }}
+                            onTouchEnd={(e) => {
+                              if (portfolioImages.length <= 1) return
+                              const target = e.currentTarget as HTMLDivElement
+                              const gesture = target.dataset.photoGesture
+                              const startX = parseFloat(target.dataset.photoStartX || '0')
+                              const touch = e.changedTouches[0]
+                              const deltaX = touch.clientX - startX
+                              if (gesture === 'horizontal') {
+                                e.stopPropagation()
+                                if (Math.abs(deltaX) > 50) {
+                                  if (deltaX < 0) {
+                                    setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
+                                  } else {
+                                    setCurrentImageIndex(prev => (prev - 1 + portfolioImages.length) % portfolioImages.length)
+                                  }
+                                }
+                              } else if (gesture === 'undecided') {
+                                // True tap — cycle forward
+                                e.stopPropagation()
+                                setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
+                              }
+                            }}
+                          >
+                            {/* Photo carousel - swipe or tap to cycle album photos */}
                             <AnimatePresence mode="wait">
                               <motion.div
                                 key={portfolioImages.length > 0 ? `photo-${currentImageIndex}` : 'headshot'}
@@ -1447,12 +1503,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.3 }}
-                                onClick={() => {
-                                  // Cycle to next photo on tap (only if multiple photos)
-                                  if (portfolioImages.length > 1) {
-                                    setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
-                                  }
-                                }}
                               >
                                 {(() => {
                                   const drawerSrc = portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image
