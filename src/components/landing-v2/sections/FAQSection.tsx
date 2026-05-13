@@ -45,6 +45,38 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Auto-open a specific FAQ when navigated via ?openFaq=<question-slug> (e.g. footer "Cancellation Policy" link)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const openFaqSlug = params.get('openFaq')
+    if (!openFaqSlug) return
+
+    const slugify = (s: string) =>
+      s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
+    const featured = featuredItems.find(f => slugify(f.question) === openFaqSlug)
+    if (featured) {
+      setActiveCategory('top-faqs')
+      setExpandedIndex(featured.id)
+    } else {
+      for (const cat of categories) {
+        const item = (itemsByCategory[cat.id] || []).find(f => slugify(f.question) === openFaqSlug)
+        if (item) {
+          setActiveCategory(cat.id)
+          setExpandedIndex(item.id)
+          break
+        }
+      }
+    }
+
+    // Ensure we land at the FAQ section (hash auto-scroll can race with our state changes)
+    const t = window.setTimeout(() => {
+      document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
+    return () => window.clearTimeout(t)
+  }, [categories, itemsByCategory, featuredItems])
+
   // Scroll to align first FAQ card with bottom of sticky header when category changes
   const handleCategoryChange = (categoryId: string) => {
     setActiveCategory(categoryId)

@@ -298,7 +298,7 @@ export function FooterV2() {
               <Link href="/terms" className="caption text-charcoal hover:text-terracotta transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/#faq" className="caption text-charcoal hover:text-terracotta transition-colors">
+              <Link href="/?openFaq=cancellation-policy#faq" className="caption text-charcoal hover:text-terracotta transition-colors">
                 Cancellation Policy
               </Link>
             </div>
