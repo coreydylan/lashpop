@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
-import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check, UserPlus } from 'lucide-react'
+import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check, UserPlus, Award, FileCheck, GraduationCap, Trophy, BookOpen } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
@@ -12,7 +12,43 @@ import { useInView } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
-import { CredentialsSection } from './CredentialsSection'
+
+const CRED_ICON: Record<string, typeof Award> = {
+  license: FileCheck,
+  certification: Award,
+  training: BookOpen,
+  education: GraduationCap,
+  award: Trophy,
+}
+
+function MemberCredentialsList({ credentials }: { credentials?: TeamMemberCredential[] | null }) {
+  if (!credentials || credentials.length === 0) return null
+  return (
+    <div className="mb-6">
+      <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>Credentials</h3>
+      <ul className="space-y-2">
+        {credentials.map((cred, idx) => {
+          const Icon = CRED_ICON[cred.type] || Award
+          return (
+            <li
+              key={idx}
+              className="flex items-start gap-2.5 text-sm leading-snug"
+              style={{ color: 'rgb(61, 54, 50)' }}
+            >
+              <Icon className="w-4 h-4 mt-0.5 flex-shrink-0 text-dusty-rose" />
+              <span>
+                <span className="font-medium">{cred.name}</span>
+                {cred.issuer && (
+                  <span className="opacity-60"> &middot; {cred.issuer}</span>
+                )}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
 
 // Parse an instagram field that may contain multiple handles separated by / or ,
 // Returns an array of { handle, url } objects (without @ prefix on handle).
@@ -146,6 +182,7 @@ interface TeamMember {
   favoriteServices?: string[]
   funFact?: string
   quickFacts?: QuickFact[]
+  credentials?: TeamMemberCredential[]
   // Photo crop URLs for different formats
   cropSquareUrl?: string
   cropCloseUpCircleUrl?: string
@@ -1175,6 +1212,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   </div>
                                 )}
 
+                                {/* Credentials */}
+                                <MemberCredentialsList credentials={selectedMember.credentials} />
+
                                 {/* Services */}
                                 {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
                                   <div className="mb-6">
@@ -1224,11 +1264,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
             </div>
           </div>
         )}
-
-        {/* Credentials Section - inline within team section */}
-        <div className="pt-12 md:pt-20 pb-12 md:pb-20">
-          <CredentialsSection teamMembers={sortedTeamMembers} />
-        </div>
 
         {/* Team Group Photo - Full Width, taller crop, equal spacing top/bottom */}
         <div className="py-12 md:py-20">
@@ -1551,6 +1586,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             </div>
                           )}
 
+                          {/* Credentials */}
+                          <MemberCredentialsList credentials={selectedMember.credentials} />
+
                           {/* Services */}
                           {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
                             <div>
@@ -1691,6 +1729,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           <p className="text-dune/70 leading-relaxed">{selectedMember.bio}</p>
                         </div>
                       )}
+
+                      {/* Credentials */}
+                      <MemberCredentialsList credentials={selectedMember.credentials} />
 
                       {/* Quote */}
                       {selectedMember.quote && (
