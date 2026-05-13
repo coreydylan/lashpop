@@ -245,7 +245,7 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
 
     return (
       <div
-        className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-y-auto"
+        className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-hidden"
         style={isMobile ? {
           WebkitOverflowScrolling: 'touch',
           overscrollBehavior: 'contain'
@@ -271,7 +271,7 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
 
         {/* Step content */}
         <motion.div
-          className="flex-1 min-h-0 overflow-hidden"
+          className="flex-1 min-h-0 overflow-hidden flex flex-col"
           layout
           transition={{
             layout: {
@@ -587,7 +587,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
 
               {/* Content */}
               <div
-                className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-y-auto"
+                className="flex-1 min-h-0 p-4 md:p-8 flex flex-col overflow-hidden"
                 style={isMobile ? {
                   WebkitOverflowScrolling: 'touch',
                   overscrollBehavior: 'contain'
@@ -612,7 +612,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 )}
 
                 {/* Step content */}
-                <div className="flex-1 min-h-0 overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
                   <AnimatePresence mode="wait">
                     {step === 0 && (
                       <IntroScreen
@@ -835,10 +835,10 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="h-full flex flex-col"
+      className="flex-1 min-h-0 flex flex-col"
     >
       {/* Scrollable content area */}
-      <div className={`flex-1 overflow-y-auto ${isMobile ? 'pb-20' : ''}`}>
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Header */}
         <div className="text-center mb-3 md:mb-4 shrink-0">
           <p className="text-xs md:text-sm text-terracotta font-medium mb-1">Your Perfect Match</p>
@@ -886,43 +886,29 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
             Length, curl, color, shape and fullness are fully customizable. Feel free to save any lash photos you love and bring them to your appointment to show your lash artist for inspiration.
           </p>
         </div>
-
-        {/* Desktop Book CTA */}
-        {!isMobile && (
-          <>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onBook}
-              className="w-full py-4 rounded-full bg-dusty-rose hover:bg-dusty-rose/90 text-white font-medium
-                         shadow-lg shadow-dusty-rose/30 transition-all duration-200 mb-3 shrink-0"
-            >
-              {result.bookingLabel} →
-            </motion.button>
-
-            <p className="text-xs text-charcoal/70 text-center leading-relaxed shrink-0">
-              Every set is customized to your eye shape and natural lashes. Your artist will fine-tune your look during your appointment so you leave loving your lashes.
-            </p>
-          </>
-        )}
       </div>
 
-      {/* Mobile Sticky Book CTA */}
-      {isMobile && (
-        <div
-          className="absolute bottom-0 left-0 right-0 p-4 bg-rose-mist/95 backdrop-blur-sm border-t border-white/20"
-          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+      {/* Always-visible Book CTA pinned to the bottom of the result screen */}
+      <div
+        className="shrink-0 px-4 pt-3 pb-4 md:px-0 md:pt-4 md:pb-0 bg-rose-mist/95 backdrop-blur-sm border-t border-white/20 md:bg-transparent md:backdrop-blur-none md:border-t-0"
+        style={isMobile ? { paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' } : undefined}
+      >
+        <motion.button
+          whileHover={!isMobile ? { scale: 1.02 } : undefined}
+          whileTap={{ scale: 0.98 }}
+          onClick={onBook}
+          className="w-full py-3.5 md:py-4 rounded-full bg-dusty-rose hover:bg-dusty-rose/90 text-white font-medium
+                     shadow-lg shadow-dusty-rose/30 active:shadow-md transition-all duration-200"
         >
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={onBook}
-            className="w-full py-3.5 rounded-full bg-dusty-rose text-white font-medium
-                       shadow-lg shadow-dusty-rose/30 active:shadow-md transition-shadow"
-          >
-            {result.bookingLabel} →
-          </motion.button>
-        </div>
-      )}
+          {result.bookingLabel} →
+        </motion.button>
+
+        {!isMobile && (
+          <p className="text-xs text-charcoal/70 text-center leading-relaxed mt-3">
+            Every set is customized to your eye shape and natural lashes. Your artist will fine-tune your look during your appointment so you leave loving your lashes.
+          </p>
+        )}
+      </div>
     </motion.div>
   );
 }
