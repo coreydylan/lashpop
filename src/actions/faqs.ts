@@ -96,7 +96,8 @@ export async function getFAQsGroupedByCategory(): Promise<{
       itemsByCategory[category.id] = items.filter(item => item.categoryId === category.id)
     }
 
-    // Get featured items with category info
+    // Get featured items with category info, sorted by category displayOrder then item displayOrder
+    const categoryOrder = new Map(categories.map((c, idx) => [c.id, idx]))
     const featuredItems: FAQWithCategory[] = items
       .filter(item => item.isFeatured)
       .map(item => {
@@ -106,6 +107,13 @@ export async function getFAQsGroupedByCategory(): Promise<{
           categoryName: category?.name || '',
           categoryDisplayName: category?.displayName || ''
         }
+      })
+      .sort((a, b) => {
+        const catDiff =
+          (categoryOrder.get(a.categoryId) ?? Number.MAX_SAFE_INTEGER) -
+          (categoryOrder.get(b.categoryId) ?? Number.MAX_SAFE_INTEGER)
+        if (catDiff !== 0) return catDiff
+        return a.displayOrder - b.displayOrder
       })
 
     return {
@@ -133,6 +141,7 @@ export async function getFeaturedFAQs(): Promise<FAQWithCategory[]> {
       .select()
       .from(faqCategories)
       .where(eq(faqCategories.isActive, true))
+      .orderBy(asc(faqCategories.displayOrder))
 
     const items = await db
       .select()
@@ -145,14 +154,23 @@ export async function getFeaturedFAQs(): Promise<FAQWithCategory[]> {
       )
       .orderBy(asc(faqItems.displayOrder))
 
-    return items.map(item => {
-      const category = categories.find(c => c.id === item.categoryId)
-      return {
-        ...item,
-        categoryName: category?.name || '',
-        categoryDisplayName: category?.displayName || ''
-      }
-    })
+    const categoryOrder = new Map(categories.map((c, idx) => [c.id, idx]))
+    return items
+      .map(item => {
+        const category = categories.find(c => c.id === item.categoryId)
+        return {
+          ...item,
+          categoryName: category?.name || '',
+          categoryDisplayName: category?.displayName || ''
+        }
+      })
+      .sort((a, b) => {
+        const catDiff =
+          (categoryOrder.get(a.categoryId) ?? Number.MAX_SAFE_INTEGER) -
+          (categoryOrder.get(b.categoryId) ?? Number.MAX_SAFE_INTEGER)
+        if (catDiff !== 0) return catDiff
+        return a.displayOrder - b.displayOrder
+      })
   } catch (error) {
     console.error('Error fetching featured FAQs:', error)
     return []
