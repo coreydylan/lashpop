@@ -3,9 +3,19 @@
 import { getDb } from "@/db"
 import { quizPhotos, quizResultSettings, type QuizPhotoCropData } from "@/db/schema/quiz_photos"
 import { assets } from "@/db/schema/assets"
-import { eq, and, asc } from "drizzle-orm"
+import { tags } from "@/db/schema/tags"
+import { assetTags } from "@/db/schema/asset_tags"
+import { eq, and, asc, isNull } from "drizzle-orm"
 import sharp from "sharp"
 import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
+
+// Lash style → lash_type tag name used by import-quiz-photos.ts
+const LASH_STYLE_TO_TAG_NAME: Record<LashStyle, string> = {
+  classic: "classic",
+  hybrid: "hybrid",
+  wetAngel: "wet",
+  volume: "volume",
+}
 
 // Lash style type (matches the enum in the schema)
 export type LashStyle = "classic" | "hybrid" | "wetAngel" | "volume"
@@ -418,6 +428,10 @@ export async function getAllResultSettings(): Promise<QuizResultSettingsWithAsse
     }
   }
 
+  // Auto-seed result images from quiz_result-tagged DAM assets for any rows
+  // that don't have an image yet. Uses photos uploaded by import-quiz-photos.ts.
+  await autoSeedMissingResultImages(db)
+
   // Now fetch all with asset data
   const results = await db
     .select({
@@ -440,6 +454,61 @@ export async function getAllResultSettings(): Promise<QuizResultSettingsWithAsse
     .leftJoin(assets, eq(quizResultSettings.resultImageAssetId, assets.id))
 
   return results as QuizResultSettingsWithAsset[]
+}
+
+// For any quiz_result_settings row missing an image, look up an asset tagged
+// with both "quiz_result" and the matching lash_type tag, and link it.
+// Best-effort: silently skips styles with no matching asset.
+async function autoSeedMissingResultImages(db: ReturnType<typeof getDb>) {
+  const missingRows = await db
+    .select({
+      id: quizResultSettings.id,
+      lashStyle: quizResultSettings.lashStyle,
+    })
+    .from(quizResultSettings)
+    .where(isNull(quizResultSettings.resultImageAssetId))
+
+  if (missingRows.length === 0) return
+
+  // quiz_result tag is shared across all styles
+  const [quizResultTag] = await db
+    .select({ id: tags.id })
+    .from(tags)
+    .where(eq(tags.name, "quiz_result"))
+    .limit(1)
+  if (!quizResultTag) return
+
+  const quizResultAssetRows = await db
+    .select({ assetId: assetTags.assetId })
+    .from(assetTags)
+    .where(eq(assetTags.tagId, quizResultTag.id))
+  const quizResultAssetIds = new Set(quizResultAssetRows.map((r) => r.assetId))
+  if (quizResultAssetIds.size === 0) return
+
+  for (const row of missingRows) {
+    const tagName = LASH_STYLE_TO_TAG_NAME[row.lashStyle as LashStyle]
+    if (!tagName) continue
+
+    const [styleTag] = await db
+      .select({ id: tags.id })
+      .from(tags)
+      .where(eq(tags.name, tagName))
+      .limit(1)
+    if (!styleTag) continue
+
+    const styleAssetRows = await db
+      .select({ assetId: assetTags.assetId })
+      .from(assetTags)
+      .where(eq(assetTags.tagId, styleTag.id))
+
+    const candidateId = styleAssetRows.find((r) => quizResultAssetIds.has(r.assetId))?.assetId
+    if (!candidateId) continue
+
+    await db
+      .update(quizResultSettings)
+      .set({ resultImageAssetId: candidateId, updatedAt: new Date() })
+      .where(eq(quizResultSettings.id, row.id))
+  }
 }
 
 // Update result settings text fields
@@ -545,6 +614,56 @@ export async function updateResultImageCrop(
     .where(eq(quizResultSettings.lashStyle, lashStyle))
 
   return { success: true, cropUrl }
+}
+
+// Shape consumed by the public quiz ResultScreen
+export interface QuizResultForDisplay {
+  displayName: string
+  description: string
+  bestFor: string[]
+  recommendedService: string
+  bookingLabel: string
+  resultImage: string | null
+}
+
+// Public read for the quiz result screen — keyed by lash style.
+// Seeds default rows on first call (via getAllResultSettings) so this is safe
+// to call without auth. resultImage prefers cropUrl, falls back to filePath,
+// and is null if no image is set (caller should provide a fallback).
+export async function getResultSettingsForQuiz(): Promise<Record<LashStyle, QuizResultForDisplay>> {
+  const rows = await getAllResultSettings()
+
+  const out: Record<LashStyle, QuizResultForDisplay> = {
+    classic: emptyResultDisplay("classic"),
+    hybrid: emptyResultDisplay("hybrid"),
+    wetAngel: emptyResultDisplay("wetAngel"),
+    volume: emptyResultDisplay("volume"),
+  }
+
+  for (const row of rows) {
+    out[row.lashStyle] = {
+      displayName: row.displayName,
+      description: row.description,
+      bestFor: row.bestFor,
+      recommendedService: row.recommendedService,
+      bookingLabel: row.bookingLabel,
+      resultImage: row.resultImageCropUrl || row.resultImageFilePath || null,
+    }
+  }
+
+  return out
+}
+
+function emptyResultDisplay(style: LashStyle): QuizResultForDisplay {
+  const d = DEFAULT_RESULT_SETTINGS[style]
+  return {
+    displayName: d.displayName,
+    description: d.description,
+    bestFor: d.bestFor,
+    recommendedService: d.recommendedService,
+    bookingLabel: d.bookingLabel,
+    resultImage: null,
+  }
 }
 
 // Remove result image

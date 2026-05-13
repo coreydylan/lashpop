@@ -16,7 +16,43 @@ import {
   RESULT_IMAGES,
   QUIZ_CONFIG,
 } from './types';
-import { getQuizPhotosForQuiz } from '@/actions/quiz-photos';
+import {
+  getQuizPhotosForQuiz,
+  getResultSettingsForQuiz,
+  type QuizResultForDisplay,
+} from '@/actions/quiz-photos';
+
+const EMPTY_RESULT_SETTINGS: Record<LashStyle, QuizResultForDisplay> | null = null;
+
+// Merge DB-backed result settings with hardcoded fallbacks (text + image).
+// resultImage is guaranteed to be a string because the hardcoded fallback always exists.
+interface ResolvedResultDisplay {
+  displayName: string;
+  description: string;
+  bestFor: string[];
+  recommendedService: string;
+  bookingLabel: string;
+  resultImage: string;
+}
+
+function buildResultDisplay(
+  style: LashStyle,
+  settings: Record<LashStyle, QuizResultForDisplay> | null,
+): ResolvedResultDisplay {
+  const fallbackDetails = LASH_STYLE_DETAILS[style];
+  const fallbackImage = RESULT_IMAGES[style];
+  const fromDb = settings?.[style];
+
+  return {
+    displayName: fromDb?.displayName || fallbackDetails.displayName,
+    description: fromDb?.description || fallbackDetails.description,
+    bestFor: fromDb?.bestFor?.length ? fromDb.bestFor : fallbackDetails.bestFor,
+    recommendedService:
+      fromDb?.recommendedService || fallbackDetails.recommendedService,
+    bookingLabel: fromDb?.bookingLabel || fallbackDetails.bookingLabel,
+    resultImage: fromDb?.resultImage || fallbackImage,
+  };
+}
 
 // Animation variants
 const backdropVariants = {
@@ -74,29 +110,36 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
       wetAngel: [],
       volume: [],
     });
+    const [resultSettings, setResultSettings] = useState<
+      Record<LashStyle, QuizResultForDisplay> | null
+    >(EMPTY_RESULT_SETTINGS);
     const [photosLoading, setPhotosLoading] = useState(false);
     const [photosError, setPhotosError] = useState<string | null>(null);
 
     // Quiz algorithm hook
     const quiz = useQuizAlgorithm({ photosByStyle });
 
-    // Fetch photos when quiz starts
+    // Fetch photos + result settings when quiz mounts
     useEffect(() => {
-      const loadPhotos = async () => {
+      const load = async () => {
         setPhotosLoading(true);
         setPhotosError(null);
         try {
-          const photos = await getQuizPhotosForQuiz();
+          const [photos, settings] = await Promise.all([
+            getQuizPhotosForQuiz(),
+            getResultSettingsForQuiz(),
+          ]);
           setPhotosByStyle(photos as Record<LashStyle, QuizPhoto[]>);
+          setResultSettings(settings);
         } catch (error) {
-          console.error('Error loading quiz photos:', error);
+          console.error('Error loading quiz data:', error);
           setPhotosError('Failed to load quiz photos');
         } finally {
           setPhotosLoading(false);
         }
       };
 
-      loadPhotos();
+      load();
     }, []);
 
     const handleBack = useCallback(() => {
@@ -267,15 +310,18 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
               />
             )}
 
-            {step === 4 && quiz.result && (
-              <ResultScreen
-                key="result"
-                result={LASH_STYLE_DETAILS[quiz.result]}
-                resultImage={RESULT_IMAGES[quiz.result]}
-                onBook={handleBookNow}
-                isMobile={isMobile}
-              />
-            )}
+            {step === 4 && quiz.result && (() => {
+              const display = buildResultDisplay(quiz.result, resultSettings);
+              return (
+                <ResultScreen
+                  key="result"
+                  result={display}
+                  resultImage={display.resultImage}
+                  onBook={handleBookNow}
+                  isMobile={isMobile}
+                />
+              );
+            })()}
           </AnimatePresence>
         </motion.div>
       </div>
@@ -297,6 +343,9 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
     wetAngel: [],
     volume: [],
   });
+  const [resultSettings, setResultSettings] = useState<
+    Record<LashStyle, QuizResultForDisplay> | null
+  >(EMPTY_RESULT_SETTINGS);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [photosError, setPhotosError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -305,28 +354,31 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
   const quiz = useQuizAlgorithm({ photosByStyle });
 
   // Reset quiz state when modal opens
-  // Also fetch photos
+  // Also fetch photos + result settings
   useEffect(() => {
     if (isOpen) {
       setStep(0);
       quiz.reset();
       setPhotosError(null);
 
-      // Fetch photos
-      const loadPhotos = async () => {
+      const load = async () => {
         setPhotosLoading(true);
         try {
-          const photos = await getQuizPhotosForQuiz();
+          const [photos, settings] = await Promise.all([
+            getQuizPhotosForQuiz(),
+            getResultSettingsForQuiz(),
+          ]);
           setPhotosByStyle(photos as Record<LashStyle, QuizPhoto[]>);
+          setResultSettings(settings);
         } catch (error) {
-          console.error('Error loading quiz photos:', error);
+          console.error('Error loading quiz data:', error);
           setPhotosError('Failed to load quiz photos');
         } finally {
           setPhotosLoading(false);
         }
       };
 
-      loadPhotos();
+      load();
     }
   }, [isOpen]);
 
@@ -589,15 +641,18 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                       />
                     )}
 
-                    {step === 4 && quiz.result && (
-                      <ResultScreen
-                        key="result"
-                        result={LASH_STYLE_DETAILS[quiz.result]}
-                        resultImage={RESULT_IMAGES[quiz.result]}
-                        onBook={handleBookNow}
-                        isMobile={isMobile}
-                      />
-                    )}
+                    {step === 4 && quiz.result && (() => {
+                      const display = buildResultDisplay(quiz.result, resultSettings);
+                      return (
+                        <ResultScreen
+                          key="result"
+                          result={display}
+                          resultImage={display.resultImage}
+                          onBook={handleBookNow}
+                          isMobile={isMobile}
+                        />
+                      );
+                    })()}
                   </AnimatePresence>
                 </div>
               </div>
@@ -764,7 +819,10 @@ function Q2LashLookFeel({ onAnswer }: { onAnswer: (answer: Q2Answer) => void }) 
 
 // Result Screen
 interface ResultScreenProps {
-  result: typeof LASH_STYLE_DETAILS[LashStyle];
+  result: Pick<
+    QuizResultForDisplay,
+    'displayName' | 'description' | 'bestFor' | 'recommendedService' | 'bookingLabel'
+  >;
   resultImage: string;
   onBook: () => void;
   isMobile?: boolean;
