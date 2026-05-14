@@ -130,14 +130,22 @@ export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryT
               onClick={() => onSelect(category.slug)}
               className={`
                 relative px-4 py-2.5 text-sm font-sans font-medium whitespace-nowrap shrink-0
-                transition-all duration-200 border-b-2
+                transition-colors duration-200
                 ${isActive
-                  ? 'text-charcoal border-terracotta'
-                  : 'text-dune/70 border-transparent hover:text-charcoal hover:border-sage/30'}
+                  ? 'text-charcoal'
+                  : 'text-dune/70 hover:text-charcoal'}
               `}
               whileTap={{ scale: 0.98 }}
             >
               {displayName}
+              {isActive && (
+                <motion.div
+                  layoutId="categoryTabUnderline"
+                  className="absolute left-0 right-0 bottom-0 h-[2px]"
+                  style={{ backgroundColor: '#d3a392' }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                />
+              )}
             </motion.button>
           )
         })}

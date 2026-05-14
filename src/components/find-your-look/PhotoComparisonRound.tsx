@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import type { PhotoPair, LashStyle } from "./types"
@@ -45,10 +46,22 @@ export function PhotoComparisonRound({
   onSkip,
   disabled = false,
 }: PhotoComparisonRoundProps) {
+  const [feedbackSide, setFeedbackSide] = useState<"left" | "right" | null>(null)
+
   // Get the display URL for a photo (prefer cropUrl, fallback to filePath)
   const getPhotoUrl = (photo: PhotoPair["left"]) => {
     return photo.cropUrl || photo.filePath
   }
+
+  const handleSelect = (side: "left" | "right", style: LashStyle) => {
+    if (disabled || feedbackSide) return
+    setFeedbackSide(side)
+    window.setTimeout(() => {
+      onSelect(style)
+    }, 550)
+  }
+
+  const isLocked = disabled || feedbackSide !== null
 
   return (
     <div className="h-full flex flex-col">
@@ -72,11 +85,11 @@ export function PhotoComparisonRound({
             stiffness: 100,
             damping: 15
           }}
-          whileHover={disabled ? {} : { scale: 1.03, y: -4 }}
-          whileTap={disabled ? {} : { scale: 0.97 }}
-          onClick={() => !disabled && onSelect(pair.leftStyle)}
-          disabled={disabled}
-          className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
+          whileHover={isLocked ? {} : { scale: 1.03, y: -4 }}
+          whileTap={isLocked ? {} : { scale: 0.97 }}
+          onClick={() => handleSelect("left", pair.leftStyle)}
+          disabled={isLocked}
+          className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <Image
             src={getPhotoUrl(pair.left)}
@@ -105,11 +118,11 @@ export function PhotoComparisonRound({
             stiffness: 100,
             damping: 15
           }}
-          whileHover={disabled ? {} : { scale: 1.03, y: -4 }}
-          whileTap={disabled ? {} : { scale: 0.97 }}
-          onClick={() => !disabled && onSelect(pair.rightStyle)}
-          disabled={disabled}
-          className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
+          whileHover={isLocked ? {} : { scale: 1.03, y: -4 }}
+          whileTap={isLocked ? {} : { scale: 0.97 }}
+          onClick={() => handleSelect("right", pair.rightStyle)}
+          disabled={isLocked}
+          className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <Image
             src={getPhotoUrl(pair.right)}
@@ -133,12 +146,22 @@ export function PhotoComparisonRound({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.3 }}
-        onClick={() => !disabled && onSkip()}
-        disabled={disabled}
+        onClick={() => !isLocked && onSkip()}
+        disabled={isLocked}
         className="mt-3 py-2 text-sm text-charcoal/50 hover:text-charcoal/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
       >
         Neither of these
       </motion.button>
+
+      <AnimatePresence>
+        {feedbackSide && (
+          <PhotoSelectionFeedback
+            key={`feedback-${feedbackSide}`}
+            selectedSide={feedbackSide}
+            onComplete={() => {}}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

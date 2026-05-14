@@ -250,6 +250,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                               ? `${photos[currentPhotoIndex].cropData!.x}% ${photos[currentPhotoIndex].cropData!.y}%`
                               : 'center',
                           }}
+                          quality={90}
                           priority
                         />
                       </motion.div>
@@ -431,25 +432,37 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                 >
                   <h3 className="font-serif text-lg text-dune mb-3">Portfolio</h3>
                   <div className="grid grid-cols-3 gap-2">
-                    {photos.map((photo, idx) => (
-                      <motion.button
-                        key={photo.id || `mobile-photo-${idx}`}
-                        onClick={() => setCurrentPhotoIndex(idx)}
-                        className={`relative aspect-square rounded-xl overflow-hidden ${
-                          idx === currentPhotoIndex
-                            ? 'ring-2 ring-dusty-rose shadow-lg'
-                            : 'opacity-70'
-                        }`}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Image
-                          src={photo.url}
-                          alt={photo.caption || `Photo ${idx + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </motion.button>
-                    ))}
+                    {photos.map((photo, idx) => {
+                      const isActive = idx === currentPhotoIndex
+                      return (
+                        <motion.button
+                          key={photo.id || `mobile-photo-${idx}`}
+                          onClick={() => setCurrentPhotoIndex(idx)}
+                          className={`relative aspect-square rounded-xl overflow-hidden ${
+                            isActive ? 'shadow-lg' : 'opacity-70'
+                          }`}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Image
+                            src={photo.url}
+                            alt={photo.caption || `Photo ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                          {isActive && (
+                            <motion.div
+                              layoutId="portfolioThumbRingMobile"
+                              className="absolute inset-0 rounded-xl"
+                              style={{
+                                border: '2px solid #d3a392',
+                                pointerEvents: 'none',
+                              }}
+                              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                            />
+                          )}
+                        </motion.button>
+                      )
+                    })}
                   </div>
                 </motion.div>
               )}
@@ -639,6 +652,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                               ? `${photos[currentPhotoIndex].cropData!.x}% ${photos[currentPhotoIndex].cropData!.y}%`
                               : 'center',
                           }}
+                          quality={90}
                           onLoad={() => handleImageLoad(photos[currentPhotoIndex].id)}
                         />
 
@@ -678,29 +692,41 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
 
                 {/* Right Panel - Thumbnail Gallery */}
                 <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                  {photos.map((photo, idx) => (
-                    <motion.button
-                      key={photo.id || `desktop-photo-${idx}`}
-                      onClick={() => setCurrentPhotoIndex(idx)}
-                      className={`relative aspect-square w-full rounded-xl overflow-hidden ${
-                        idx === currentPhotoIndex
-                          ? 'ring-2 ring-dusty-rose shadow-lg'
-                          : 'opacity-60 hover:opacity-100'
-                      } transition-all`}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <Image
-                        src={photo.url}
-                        alt={photo.caption || `Photo ${idx + 1}`}
-                        fill
-                        className={`object-cover transition-all duration-500 ${
-                          loadedImages.has(photo.id) ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'
-                        }`}
-                        onLoad={() => handleImageLoad(photo.id)}
-                      />
-                    </motion.button>
-                  ))}
+                  {photos.map((photo, idx) => {
+                    const isActive = idx === currentPhotoIndex
+                    return (
+                      <motion.button
+                        key={photo.id || `desktop-photo-${idx}`}
+                        onClick={() => setCurrentPhotoIndex(idx)}
+                        className={`relative aspect-square w-full rounded-xl overflow-hidden ${
+                          isActive ? 'shadow-lg' : 'opacity-60 hover:opacity-100'
+                        } transition-all`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Image
+                          src={photo.url}
+                          alt={photo.caption || `Photo ${idx + 1}`}
+                          fill
+                          className={`object-cover transition-all duration-500 ${
+                            loadedImages.has(photo.id) ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'
+                          }`}
+                          onLoad={() => handleImageLoad(photo.id)}
+                        />
+                        {isActive && (
+                          <motion.div
+                            layoutId="portfolioThumbRingDesktop"
+                            className="absolute inset-0 rounded-xl"
+                            style={{
+                              border: '2px solid #d3a392',
+                              pointerEvents: 'none',
+                            }}
+                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                          />
+                        )}
+                      </motion.button>
+                    )
+                  })}
                 </div>
               </div>
             ) : (

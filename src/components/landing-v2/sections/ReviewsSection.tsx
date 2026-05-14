@@ -2,9 +2,29 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
+import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { ChevronUp } from 'lucide-react'
 import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
+import { SectionRule } from '../SectionRule'
+
+function CountUp({ to, inView }: { to: number; inView: boolean }) {
+  const mv = useMotionValue(0)
+  const rounded = useTransform(mv, (latest) => Math.round(latest).toLocaleString())
+  const [display, setDisplay] = useState('0')
+
+  useEffect(() => {
+    if (!inView) return
+    const controls = animate(mv, to, { duration: 0.9, ease: [0.22, 1, 0.36, 1] })
+    const unsubscribe = rounded.on('change', (v) => setDisplay(v))
+    return () => {
+      controls.stop()
+      unsubscribe()
+    }
+  }, [inView, to, mv, rounded])
+
+  return <>{display}</>
+}
 
 // Custom CSS for hidden scrollbars
 const scrollbarStyles = `
@@ -60,6 +80,8 @@ const reviewPlatformUrls: Record<string, string> = {
 
 export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProps) {
   const ref = useRef(null)
+  const statsRef = useRef<HTMLDivElement>(null)
+  const statsInView = useInView(statsRef, { once: true, margin: '-80px' })
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     align: 'center',
@@ -198,23 +220,26 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
           >
             What People Are Saying
           </h2>
-          <div className="w-24 h-px bg-terracotta/30 mx-auto" />
+          <SectionRule />
         </div>
 
         {/* Review Stats Chips - Between Header and Carousel */}
         {reviewStats.length > 0 && (
-          <>
+          <div ref={statsRef}>
             {/* Desktop View */}
             <div className="hidden md:flex justify-center gap-6 mb-8">
               {[...reviewStats].sort((a, b) => {
                 const order: Record<string, number> = { google: 0, yelp: 1, vagaro: 2 }
                 return (order[a.source.toLowerCase()] ?? 1) - (order[b.source.toLowerCase()] ?? 1)
               }).map((stat, index) => (
-                <a
+                <motion.a
                   key={stat.id || `stat-${index}`}
                   href={reviewPlatformUrls[stat.source.toLowerCase()]}
                   target="_blank"
                   rel="noopener noreferrer"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={statsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                  transition={{ delay: index * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                   className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-full px-5 py-2.5 shadow-sm border border-white/40 transition-[transform,box-shadow,background-color] duration-200 hover:scale-105 hover:shadow-lg hover:bg-white/80"
                 >
                   <div className="scale-100">
@@ -225,9 +250,9 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                     <svg className="w-4 h-4 text-golden" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    <span className="text-dune/60 text-xs">({stat.reviewCount})</span>
+                    <span className="text-dune/60 text-xs tabular-nums">(<CountUp to={stat.reviewCount} inView={statsInView} />)</span>
                   </div>
-                </a>
+                </motion.a>
               ))}
             </div>
 
@@ -237,11 +262,14 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                 const order: Record<string, number> = { google: 0, yelp: 1, vagaro: 2 }
                 return (order[a.source.toLowerCase()] ?? 1) - (order[b.source.toLowerCase()] ?? 1)
               }).map((stat, index) => (
-                <a
+                <motion.a
                   key={stat.id || `stat-${index}`}
                   href={reviewPlatformUrls[stat.source.toLowerCase()]}
                   target="_blank"
                   rel="noopener noreferrer"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={statsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                  transition={{ delay: index * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
                   className="flex items-center gap-2 bg-white/60 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-sm border border-white/40 transition-[transform,box-shadow,background-color] duration-200 hover:scale-105 hover:shadow-lg hover:bg-white/80"
                 >
                   <div className="scale-90">
@@ -251,10 +279,10 @@ export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProp
                   <svg className="w-3 h-3 text-golden" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                </a>
+                </motion.a>
               ))}
             </div>
-          </>
+          </div>
         )}
 
         {/* Full-width Reviews Container with Beautiful Frosted Glass */}

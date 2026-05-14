@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
 
@@ -195,55 +196,65 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
 
   // Render the dropdown menu (inline, not portal - portal was breaking on mobile)
   const renderMenu = () => {
-    if (!isMenuOpen) return null
-
     return (
-      <div
-        ref={menuRef}
-        className="fixed z-[9999] rounded-xl overflow-hidden"
-        style={{
-          top: menuPosition.top,
-          left: menuPosition.left,
-          minWidth: 140,
-          background: 'rgba(250, 246, 242, 0.96)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          border: '1px solid rgba(161, 151, 129, 0.12)',
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)'
-        }}
-      >
-        <div className="py-1.5">
-          {MENU_ITEMS.map((item) => {
-            const isActive = item.id === currentSection ||
-              (item.id === 'map' && currentSection === 'footer')
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            ref={menuRef}
+            initial={{ opacity: 0, y: -6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+            className="fixed z-[9999] rounded-xl overflow-hidden"
+            style={{
+              top: menuPosition.top,
+              left: menuPosition.left,
+              minWidth: 140,
+              transformOrigin: 'top',
+              background: 'rgba(250, 246, 242, 0.96)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(161, 151, 129, 0.12)',
+              boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03)'
+            }}
+          >
+            <div className="py-1.5">
+              {MENU_ITEMS.map((item) => {
+                const isActive = item.id === currentSection ||
+                  (item.id === 'map' && currentSection === 'footer')
 
-            return (
-              <button
-                key={item.id}
-                onClick={() => handleMenuItemClick(item)}
-                className={`
-                  w-full flex items-center justify-between gap-3 px-4 py-2.5
-                  text-left transition-colors duration-150
-                  ${isActive
-                    ? 'bg-terracotta/8'
-                    : 'active:bg-warm-sand/50'
-                  }
-                `}
-              >
-                <span className={`
-                  text-[11px] font-sans font-medium tracking-wide
-                  ${isActive ? 'text-terracotta' : 'text-terracotta/70'}
-                `}>
-                  {item.label}
-                </span>
-                {isActive && (
-                  <div className="w-1 h-1 rounded-full bg-terracotta/60" />
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleMenuItemClick(item)}
+                    className={`
+                      w-full flex items-center justify-between gap-3 px-4 py-2.5
+                      text-left transition-colors duration-150
+                      ${isActive
+                        ? 'bg-terracotta/8'
+                        : 'active:bg-warm-sand/50'
+                      }
+                    `}
+                  >
+                    <span className={`
+                      text-[11px] font-sans font-medium tracking-wide
+                      ${isActive ? 'text-terracotta' : 'text-terracotta/70'}
+                    `}>
+                      {item.label}
+                    </span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="mobileMenuActive"
+                        className="w-1 h-1 rounded-full bg-terracotta/60"
+                      />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     )
   }
 

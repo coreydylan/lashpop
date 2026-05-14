@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
+import { AnimatePresence, motion } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
@@ -97,35 +98,45 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
       </div>
 
       {/* Modal for enlarged image view */}
-      {selectedImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-          onClick={() => setSelectedImage(null)}
-        >
-          <div
-            className="relative max-w-4xl max-h-[90vh] m-4"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            onClick={() => setSelectedImage(null)}
           >
-            <div className="relative w-full h-full min-h-[50vh] min-w-[50vw]">
-              <Image
-                src={selectedImage}
-                alt="Enlarged view"
-                fill
-                className="object-contain rounded-lg"
-                sizes="100vw"
-              />
-            </div>
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+              className="relative max-w-4xl max-h-[90vh] m-4"
+              onClick={(e) => e.stopPropagation()}
             >
-              <svg className="w-6 h-6 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+              <div className="relative w-full h-full min-h-[50vh] min-w-[50vw]">
+                <Image
+                  src={selectedImage}
+                  alt="Enlarged view"
+                  fill
+                  className="object-contain rounded-lg"
+                  sizes="100vw"
+                />
+              </div>
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
+              >
+                <svg className="w-6 h-6 text-charcoal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

@@ -33,9 +33,44 @@ import {
 
 // Price Component
 function SlotMachinePrice({ value, className }: { value: number; className?: string }) {
+  const formatted = String(value)
+  const chars = formatted.split('')
+
   return (
-    <span className={`inline-flex items-baseline ${className || ''}`} style={{ color: '#cc947f' }}>
-      ${value}
+    <span
+      className={`inline-flex items-baseline ${className || ''}`}
+      style={{ color: '#cc947f', fontVariantNumeric: 'tabular-nums' }}
+    >
+      <span aria-hidden="true" className="inline-flex items-baseline">
+        <span>$</span>
+        {chars.map((char, index) => {
+          const isDigit = /[0-9]/.test(char)
+          if (!isDigit) {
+            return <span key={`s-${index}`}>{char}</span>
+          }
+          return (
+            <span
+              key={`slot-${index}`}
+              className="relative inline-block overflow-hidden"
+              style={{ height: '1em', lineHeight: '1em' }}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.span
+                  key={char}
+                  initial={{ y: 14, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -14, opacity: 0 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                  className="inline-block"
+                >
+                  {char}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+          )
+        })}
+      </span>
+      <span className="sr-only">${formatted}</span>
       <span className="text-[0.6em] ml-0.5 opacity-70">/day</span>
     </span>
   )

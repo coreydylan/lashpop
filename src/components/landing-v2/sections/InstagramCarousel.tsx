@@ -4,7 +4,9 @@ import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
+import { SectionRule } from '../SectionRule'
 
 // Stub data using gallery images for now
 const galleryImages = [
@@ -38,6 +40,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   const ref = useRef(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
 
   // Check if mobile
   useEffect(() => {
@@ -91,7 +94,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
           >
             Gallery
           </h2>
-          <div className="w-24 h-px bg-terracotta/30 mx-auto" />
+          <SectionRule />
         </div>
 
         {/* Carousel Container */}
@@ -121,8 +124,15 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                       alt={`Gallery image ${index + 1}`}
                       fill
                       sizes="(max-width: 768px) 100vw, 320px"
-                      className="object-cover"
-                      draggable={false} // Prevent default image drag ghost
+                      className="object-cover transition-opacity duration-300 ease-out"
+                      style={{ opacity: loadedImages.has(item.mediaUrl) ? 1 : 0 }}
+                      draggable={false}
+                      onLoad={() => setLoadedImages((prev) => {
+                        if (prev.has(item.mediaUrl)) return prev
+                        const next = new Set(prev)
+                        next.add(item.mediaUrl)
+                        return next
+                      })}
                     />
 
                     {/* Clean hover - no dark overlay or icon */}
@@ -179,36 +189,48 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
       </section>
 
       {/* Modal for enlarged image view */}
-      {selectedImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-          onClick={() => setSelectedImage(null)}
-        >
-          <div
-            className="relative max-w-4xl max-h-[90vh] m-4"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            key="gallery-modal-backdrop"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            onClick={() => setSelectedImage(null)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
           >
-            <div className="relative w-full h-full min-h-[50vh] min-w-[50vw]">
-              <Image
-                src={selectedImage}
-                alt="Enlarged view"
-                fill
-                className="object-contain rounded-lg"
-                sizes="100vw"
-              />
-            </div>
-            <button
-              onClick={() => setSelectedImage(null)}
-              aria-label="Close enlarged image"
-              className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
+            <motion.div
+              key={selectedImage}
+              className="relative max-w-4xl max-h-[90vh] m-4"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
-              <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
+              <div className="relative w-full h-full min-h-[50vh] min-w-[50vw]">
+                <Image
+                  src={selectedImage}
+                  alt="Enlarged view"
+                  fill
+                  className="object-contain rounded-lg"
+                  sizes="100vw"
+                />
+              </div>
+              <button
+                onClick={() => setSelectedImage(null)}
+                aria-label="Close enlarged image"
+                className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
+              >
+                <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

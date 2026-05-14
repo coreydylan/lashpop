@@ -254,18 +254,27 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
         {/* Step indicator dots (hidden on intro) */}
         {step > 0 && (
           <div className="flex justify-center gap-2 md:gap-2.5 mb-4 md:mb-5 shrink-0">
-            {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((s) => (
-              <div
-                key={s}
-                className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
-                  s === getCurrentStepNumber()
-                    ? 'bg-terracotta w-5 md:w-6'
-                    : s < getCurrentStepNumber()
-                    ? 'bg-terracotta/40 w-1.5 md:w-2'
-                    : 'bg-cream w-1.5 md:w-2'
-                }`}
-              />
-            ))}
+            {Array.from({ length: getTotalSteps() }, (_, i) => i + 1).map((s) => {
+              const isActive = s === getCurrentStepNumber()
+              if (isActive) {
+                return (
+                  <motion.div
+                    key={s}
+                    layoutId="quizProgressActive"
+                    transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    className="h-1.5 md:h-2 rounded-full bg-terracotta w-5 md:w-6"
+                  />
+                )
+              }
+              return (
+                <div
+                  key={s}
+                  className={`h-1.5 md:h-2 rounded-full w-1.5 md:w-2 ${
+                    s < getCurrentStepNumber() ? 'bg-terracotta/40' : 'bg-cream'
+                  }`}
+                />
+              )
+            })}
           </div>
         )}
 
@@ -596,18 +605,28 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 {/* Step indicator dots (hidden on intro) */}
                 {step > 0 && (
                   <div className="flex justify-center gap-2 md:gap-2.5 mb-4 md:mb-5 shrink-0">
-                    {[1, 2, 3, 4].map((s) => (
-                      <div
-                        key={s}
-                        className={`h-1.5 md:h-2 rounded-full transition-all duration-300 ${
-                          (s <= 2 && step >= s) || (s === 3 && step === 3) || (s === 4 && step === 4)
-                            ? s === step || (s === 3 && step === 3)
-                              ? 'bg-terracotta w-5 md:w-6'
-                              : 'bg-terracotta/40 w-1.5 md:w-2'
-                            : 'bg-cream w-1.5 md:w-2'
-                        }`}
-                      />
-                    ))}
+                    {[1, 2, 3, 4].map((s) => {
+                      const isActive = s === step
+                      const isCompleted = s < step && s <= 2
+                      if (isActive) {
+                        return (
+                          <motion.div
+                            key={s}
+                            layoutId="quizProgressActive"
+                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                            className="h-1.5 md:h-2 rounded-full bg-terracotta w-5 md:w-6"
+                          />
+                        )
+                      }
+                      return (
+                        <div
+                          key={s}
+                          className={`h-1.5 md:h-2 rounded-full w-1.5 md:w-2 ${
+                            isCompleted ? 'bg-terracotta/40' : 'bg-cream'
+                          }`}
+                        />
+                      )
+                    })}
                   </div>
                 )}
 

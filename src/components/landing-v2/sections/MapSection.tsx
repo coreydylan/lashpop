@@ -208,10 +208,24 @@ export function MapSection() {
               429 S Coast Hwy<br />
               Oceanside, CA 92054
             </address>
-            <div className="space-y-1">
-              <p className="caption text-charcoal">
-                <span className="caption-bold">Open Daily:</span> 8:00 AM – 7:30 PM
-              </p>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-baseline gap-2">
+                <span className="font-medium" style={{ color: '#2f2a26' }}>Open Daily</span>
+                <span
+                  aria-hidden="true"
+                  className="flex-1 self-end"
+                  style={{
+                    height: 4,
+                    marginBottom: '0.45em',
+                    backgroundImage: 'radial-gradient(circle, rgba(204,148,127,0.4) 1px, transparent 1.5px)',
+                    backgroundSize: '7px 4px',
+                    backgroundRepeat: 'repeat-x',
+                  }}
+                />
+                <span className="font-medium tabular-nums whitespace-nowrap" style={{ color: '#cc947f' }}>
+                  8:00 AM – 7:30 PM
+                </span>
+              </div>
               <p className="caption text-charcoal text-sm">
                 By Appointment Only
               </p>
@@ -256,11 +270,25 @@ export function MapSection() {
                 <span className="caption-bold">Directions</span>
               </a>
             </div>
-            <div className="mt-2">
-              <p className="caption text-charcoal">
-                <span className="caption-bold">Open Daily</span> 8A–7:30P
-              </p>
-              <p className="caption text-charcoal text-xs mt-0.5">
+            <div className="mt-2 flex flex-col gap-1.5">
+              <div className="flex items-baseline gap-2">
+                <span className="font-medium text-sm" style={{ color: '#2f2a26' }}>Open Daily</span>
+                <span
+                  aria-hidden="true"
+                  className="flex-1 self-end"
+                  style={{
+                    height: 4,
+                    marginBottom: '0.45em',
+                    backgroundImage: 'radial-gradient(circle, rgba(204,148,127,0.4) 1px, transparent 1.5px)',
+                    backgroundSize: '7px 4px',
+                    backgroundRepeat: 'repeat-x',
+                  }}
+                />
+                <span className="font-medium text-sm tabular-nums whitespace-nowrap" style={{ color: '#cc947f' }}>
+                  8A–7:30P
+                </span>
+              </div>
+              <p className="caption text-charcoal text-xs">
                 By Appointment Only
               </p>
             </div>

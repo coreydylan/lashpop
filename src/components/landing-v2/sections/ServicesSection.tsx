@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useServiceBrowser } from '@/components/service-browser'
+import { SectionRule } from '../SectionRule'
 
 // Service category type for data from database
 export interface ServiceCategory {
@@ -96,7 +97,7 @@ function ServiceCard({
   return (
     <button
       onClick={onClick}
-      className="group text-center p-6 rounded-2xl transition-[transform,opacity,background-color] duration-300 hover:bg-white/40 hover:scale-[1.02] hover:-translate-y-1"
+      className="group text-center p-6 rounded-2xl transition-all duration-300 ease-out hover:bg-white/40 hover:-translate-y-1 hover:shadow-lg"
     >
       {/* Icon */}
       <div className="flex justify-center mb-4">
@@ -301,17 +302,28 @@ function MobileSwipeableServiceCards({
 
       {/* Progress indicator - all dots visible */}
       <div className="flex justify-center gap-2 mt-8">
-        {categories.map((_, index) => (
-          <div
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-              index === currentIndex
-                ? 'bg-terracotta w-5'
-                : 'bg-terracotta/40 w-1.5'
-            }`}
-          />
-        ))}
+        {categories.map((_, index) => {
+          const isActive = index === currentIndex
+          return (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              aria-label={`Go to slide ${index + 1}`}
+              className="relative h-1.5 cursor-pointer"
+              style={{ width: isActive ? 20 : 6 }}
+            >
+              {isActive ? (
+                <motion.div
+                  layoutId="activeServiceDot"
+                  className="absolute inset-0 rounded-full bg-terracotta"
+                  transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                />
+              ) : (
+                <div className="absolute inset-0 rounded-full bg-terracotta/40" />
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Swipe to explore with arrows on sides */}
@@ -421,7 +433,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
           >
             Choose a Service
           </h2>
-          <div className="w-24 h-px bg-terracotta/30 mx-auto" />
+          <SectionRule />
         </div>
 
         {/* Swipeable Cards */}
@@ -446,7 +458,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
           >
             Choose a Service
           </h2>
-          <div className="w-24 h-px bg-terracotta/30 mx-auto" />
+          <SectionRule />
         </div>
 
         {/* Services Grid - 4 on top, 4 on bottom */}

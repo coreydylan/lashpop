@@ -144,12 +144,20 @@ export function SubcategoryTabs({ subcategories, activeSubcategory, onSelect }: 
                 relative px-2.5 py-1 rounded-full text-xs font-sans font-medium whitespace-nowrap shrink-0
                 transition-colors duration-200
                 ${isActive
-                  ? 'bg-terracotta text-white'
+                  ? 'text-white'
                   : 'bg-white/60 text-dune hover:bg-white/80 border border-sage/20'}
               `}
               whileTap={{ scale: 0.97 }}
             >
-              {tab.name}
+              {isActive && (
+                <motion.div
+                  layoutId="subcategoryActivePill"
+                  className="absolute inset-0 rounded-full"
+                  style={{ backgroundColor: '#d3a392' }}
+                  transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                />
+              )}
+              <span className="relative z-10">{tab.name}</span>
             </motion.button>
           )
         })}
