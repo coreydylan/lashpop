@@ -60,8 +60,12 @@ export function MapSection() {
 
         if (!isMounted || !mapContainer.current) return
 
-        // Set Mapbox access token
-        mapboxgl.default.accessToken = 'pk.eyJ1IjoiY29yZXlkeWxhbiIsImEiOiJjbWk5a2E1Z2YwbjNsMmtvZzBxeTZxNnhqIn0.b92WsE5LmoVB7wVXNQGeiw'
+        const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+        if (!mapboxToken) {
+          console.warn('NEXT_PUBLIC_MAPBOX_TOKEN is not set — map will not render')
+          return
+        }
+        mapboxgl.default.accessToken = mapboxToken
 
         // Initialize map
         const newMap = new mapboxgl.default.Map({
