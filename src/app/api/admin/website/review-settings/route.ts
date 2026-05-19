@@ -8,7 +8,19 @@ export const dynamic = 'force-dynamic'
 
 const SECTION = 'review_pipeline'
 
-const DEFAULTS = {
+interface ReviewSettings {
+  homepage_capacity: number
+  editor_pass_interval_days: number
+  auto_promote_min_quality_score: number
+  auto_promote_min_text_length: number
+  auto_promote_recency_months: number
+  diversity_cap_per_source: number
+  diversity_cap_per_stylist: number
+  highlights_per_stylist: number
+  editor_pass_enabled: boolean
+}
+
+const DEFAULTS: ReviewSettings = {
   homepage_capacity: 9,
   editor_pass_interval_days: 7,
   auto_promote_min_quality_score: 5,
@@ -18,9 +30,7 @@ const DEFAULTS = {
   diversity_cap_per_stylist: 2,
   highlights_per_stylist: 3,
   editor_pass_enabled: true,
-} as const
-
-type ReviewSettings = typeof DEFAULTS
+}
 
 function coerce(raw: Record<string, unknown>): ReviewSettings {
   const c = (v: unknown, fallback: number): number => {
