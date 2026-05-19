@@ -22,6 +22,7 @@ interface ReviewSettings {
   diversity_cap_per_stylist: number
   highlights_per_stylist: number
   editor_pass_enabled: boolean
+  recency_decay_days_per_point: number
 }
 
 interface FieldDef {
@@ -67,6 +68,16 @@ const FIELDS: FieldDef[] = [
     kind: "int",
     min: 1,
     max: 60,
+  },
+  {
+    key: "recency_decay_days_per_point",
+    label: "Recency decay (days per point)",
+    description:
+      "Newer reviews win unless older ones score meaningfully higher. Every N days of age subtract 1 point from a review's quality score for sort purposes. 180 = a 12-month-old 10/10 ties with a brand-new 8/10. Lower = sharper bias toward fresh.",
+    kind: "int",
+    min: 30,
+    max: 9999,
+    step: 30,
   },
   {
     key: "diversity_cap_per_source",

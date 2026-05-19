@@ -18,6 +18,13 @@ export interface ReviewPipelineSettings {
   diversity_cap_per_stylist: number
   highlights_per_stylist: number
   editor_pass_enabled: boolean
+  /**
+   * How many days of age cost ~1 point of effective quality_score for the
+   * carousel sort. Default 180 = a 12-month-old 10/10 ties roughly with a
+   * brand-new 8/10. Lower = sharper bias toward fresh content. Set to a very
+   * large number (e.g. 9999) to disable decay (pure quality_score sort).
+   */
+  recency_decay_days_per_point: number
 }
 
 export const DEFAULT_SETTINGS: ReviewPipelineSettings = {
@@ -30,6 +37,7 @@ export const DEFAULT_SETTINGS: ReviewPipelineSettings = {
   diversity_cap_per_stylist: 2,
   highlights_per_stylist: 3,
   editor_pass_enabled: true,
+  recency_decay_days_per_point: 180,
 }
 
 export async function loadReviewSettings(sql: Sql): Promise<ReviewPipelineSettings> {
@@ -49,5 +57,6 @@ export async function loadReviewSettings(sql: Sql): Promise<ReviewPipelineSettin
     diversity_cap_per_stylist: Number(raw.diversity_cap_per_stylist ?? DEFAULT_SETTINGS.diversity_cap_per_stylist),
     highlights_per_stylist: Number(raw.highlights_per_stylist ?? DEFAULT_SETTINGS.highlights_per_stylist),
     editor_pass_enabled: raw.editor_pass_enabled !== false,
+    recency_decay_days_per_point: Number(raw.recency_decay_days_per_point ?? DEFAULT_SETTINGS.recency_decay_days_per_point),
   }
 }

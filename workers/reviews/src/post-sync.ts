@@ -123,6 +123,10 @@ export async function autoPromoteToHomepage(
   const minLen = settings.auto_promote_min_text_length
   const months = settings.auto_promote_recency_months
   const minScore = settings.auto_promote_min_quality_score
+  // Days of age → 1 point of quality erosion. Sort by an "effective score"
+  // = quality_score - days_old / decay. Unscored reviews are treated as 5
+  // (mid) so they aren't excluded, but won't outrank a high-quality fresh one.
+  const decay = Math.max(1, settings.recency_decay_days_per_point)
 
   // Generic / anonymized reviewer names that should never make the carousel —
   // Vagaro and other platforms use these as placeholders when the reviewer
@@ -151,7 +155,11 @@ export async function autoPromoteToHomepage(
         OR team_member_id IS NULL
         OR team_member_id <> ALL(${inactiveIds}::uuid[])
       )
-    ORDER BY quality_score DESC NULLS LAST, review_date DESC NULLS LAST
+    ORDER BY (
+      COALESCE(quality_score, 5)
+      - EXTRACT(EPOCH FROM (NOW() - review_date)) / 86400 / ${decay}
+    ) DESC NULLS LAST,
+    review_date DESC NULLS LAST
     LIMIT 80
   `
 

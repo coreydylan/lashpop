@@ -18,6 +18,7 @@ interface ReviewSettings {
   diversity_cap_per_stylist: number
   highlights_per_stylist: number
   editor_pass_enabled: boolean
+  recency_decay_days_per_point: number
 }
 
 const DEFAULTS: ReviewSettings = {
@@ -30,6 +31,7 @@ const DEFAULTS: ReviewSettings = {
   diversity_cap_per_stylist: 2,
   highlights_per_stylist: 3,
   editor_pass_enabled: true,
+  recency_decay_days_per_point: 180,
 }
 
 function coerce(raw: Record<string, unknown>): ReviewSettings {
@@ -47,6 +49,7 @@ function coerce(raw: Record<string, unknown>): ReviewSettings {
     diversity_cap_per_stylist: c(raw.diversity_cap_per_stylist, DEFAULTS.diversity_cap_per_stylist),
     highlights_per_stylist: c(raw.highlights_per_stylist, DEFAULTS.highlights_per_stylist),
     editor_pass_enabled: raw.editor_pass_enabled !== false,
+    recency_decay_days_per_point: c(raw.recency_decay_days_per_point, DEFAULTS.recency_decay_days_per_point),
   }
 }
 
