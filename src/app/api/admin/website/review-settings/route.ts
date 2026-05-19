@@ -66,12 +66,16 @@ export async function PUT(req: NextRequest) {
   const settings = coerce(body?.settings ?? {})
 
   const db = getDb()
+  // Drizzle's `config` column expects Record<string, unknown>; cast through
+  // unknown because the typed ReviewSettings interface doesn't carry an
+  // index signature.
+  const configBlob = settings as unknown as Record<string, unknown>
   await db
     .insert(websiteSettings)
-    .values({ section: SECTION, config: settings })
+    .values({ section: SECTION, config: configBlob })
     .onConflictDoUpdate({
       target: websiteSettings.section,
-      set: { config: settings, updatedAt: new Date() },
+      set: { config: configBlob, updatedAt: new Date() },
     })
 
   return NextResponse.json({ success: true, settings })
