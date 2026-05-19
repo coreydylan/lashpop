@@ -1,0 +1,75 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lashpop-reviews",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "8276973f31803dc6a1597c1396d64c4c",
+
+  // Every 6 hours (0:00, 6:00, 12:00, 18:00 UTC)
+  "triggers": {
+    "crons": ["0 */6 * * *"]
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  "limits": {
+    "cpu_ms": 60000
+  },
+
+  "vars": {
+    // Public hostname on the cloak-mesh cloudflared tunnel.
+    // cf1:network warp-routing got toggled off so we go through a proxied
+    // tunnel hostname instead. HMAC signature still gates access; Cloudflare
+    // just transports.
+    //
+    // To switch back to direct mesh: set BRIDGE_HOST to "[2606:4700:cf1:1000::a]",
+    // BRIDGE_PORT to "8484", and uncomment the vpc_networks block below.
+    "BRIDGE_HOST": "claude-bridge.experialstudio.com",
+    "BRIDGE_PORT": "443"
+  },
+
+  // VPC binding kept commented out — flip back when warp-routing returns.
+  // "vpc_networks": [
+  //   {
+  //     "binding": "MESH",
+  //     "network_id": "cf1:network",
+  //     "remote": true
+  //   }
+  // ],
+
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "ReviewEditor",
+        "name": "REVIEW_EDITOR"
+      }
+    ]
+  },
+
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["ReviewEditor"]
+    }
+  ]
+
+  // Secrets (set via `wrangler secret put`):
+  //   DATABASE_URL                 — Supabase Postgres connection string
+  //   VAGARO_CLIENT_ID             — OAuth client id
+  //   VAGARO_CLIENT_SECRET         — OAuth client secret
+  //   VAGARO_BUSINESS_ID           — encrypted business id (e.g. gPkAwudgKVSOL3jl3AV9aw==)
+  //   GOOGLE_PLACES_KEY            — public iOS Maps key (AIzaSy…); place_id resolver uses same key
+  //   GOOGLE_PLACE_ID              — LashPop's Google place_id (or set GOOGLE_PLACE_QUERY to text-search by name)
+  //   GOOGLE_PLACE_QUERY           — fallback: "LashPop Studios Oceanside"
+  //   YELP_BUSINESS_URL            — e.g. https://www.yelp.com/biz/lashpop-studios-oceanside
+  //   CLOAK_TOKEN                  — bearer for cloak.experialstudio.com/svc/yelp/...
+  //   CLOAK_BASE                   — defaults to https://cloak.experialstudio.com
+  //   MANUAL_TRIGGER_SECRET        — bearer for the /run endpoint (optional)
+  //
+  // Vars (set in wrangler.jsonc when stable, else as secrets):
+  //   VAGARO_API_BASE_URL          — defaults to https://api.vagaro.com
+  //   VAGARO_REGION                — defaults to us02
+}

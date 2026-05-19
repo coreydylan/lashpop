@@ -20,6 +20,7 @@ import { services } from "./schema/services"
 import { testimonials } from "./schema/testimonials"
 import { reviews } from "./schema/reviews"
 import { reviewStats } from "./schema/review_stats"
+import { teamMemberHighlights } from "./schema/team_member_highlights"
 import { teamMemberCategories } from "./schema/team_member_categories"
 import { teamQuickFacts, QUICK_FACT_TYPES } from "./schema/team_quick_facts"
 import { assets } from "./schema/assets"
@@ -89,6 +90,7 @@ const dbSchema = {
   testimonials,
   reviews,
   reviewStats,
+  teamMemberHighlights,
   teamMemberCategories,
   assets,
   assetServices,
@@ -199,6 +201,7 @@ export {
   testimonials,
   reviews,
   reviewStats,
+  teamMemberHighlights,
   teamMemberCategories,
   assets,
   assetServices,

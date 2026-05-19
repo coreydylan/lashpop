@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, jsonb } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, jsonb, boolean } from "drizzle-orm/pg-core"
 
 /**
  * Website Settings Table
@@ -27,10 +27,14 @@ export const homepageReviews = pgTable("homepage_reviews", {
   
   // Reference to the review
   reviewId: uuid("review_id").notNull(),
-  
+
   // Display order (0 = first)
   displayOrder: integer("display_order").notNull().default(0),
-  
+
+  // Admin-pinned rows survive auto-rotation. Auto-promoted rows are deleted
+  // and re-inserted every Worker tick.
+  isPinned: boolean("is_pinned").notNull().default(false),
+
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull()
 })

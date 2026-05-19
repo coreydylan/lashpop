@@ -1,150 +1,82 @@
 # Automated Review Syncing
 
-LashPop has an automated system that syncs reviews from Vagaro, Yelp, and Google Maps every 24 hours.
+LashPop's review sync lives in a **Cloudflare Worker** at `workers/reviews/`,
+not in the Next.js app. It runs every 6 hours, fetches reviews from Vagaro,
+Google, and Yelp, deduplicates them, runs post-sync filters, and rotates the
+homepage selection.
 
-## How It Works
+## Source-by-source
 
-The system uses **Vercel Cron Jobs** to automatically run review scrapers daily at midnight UTC (4 PM PST / 5 PM PDT).
+| Source | Path | Cloak Mesh? | Cost | Status |
+|---|---|---|---|---|
+| Vagaro | OAuth Merchant API (`/api/v2/merchants/{businessId}/reviews`) | No | $0 | live |
+| Google | `/maps/preview/place` web RPC | No | $0 | live (cookies refreshed via local script) |
+| Yelp | `/gql/batch` persisted queries via Cloak Mesh | Yes | $0 | needs CLOAK_TOKEN |
 
-### Cron Schedule
-- **Frequency**: Once per day
-- **Time**: `0 0 * * *` (midnight UTC)
-- **Endpoint**: `/api/cron/sync-reviews`
+## Worker schedule
 
-### What Gets Synced
+Configured via `workers/reviews/wrangler.jsonc`:
 
-Every 24 hours, the system:
-1. **Scrapes Vagaro reviews** via Jina.ai reader
-2. **Fetches Yelp reviews** via BrightData API
-3. **Fetches Google Maps reviews** via BrightData API
-4. **Deduplicates** and stores reviews in database
-5. **Auto-approves** new reviews to testimonials table
+```jsonc
+"triggers": { "crons": ["0 */6 * * *"] }
+```
 
-## Database Tables
+Every 6 hours, the Worker runs `scheduled()` which:
+1. Fans out to all three fetchers in parallel
+2. Looks up team_member_id for each review (matching subject ↔ team_members.name)
+3. Upserts new reviews + testimonials, deduping on `(source, lower(reviewer_name), lower(review_text))`
+4. Runs `applyStaleTeamMemberFilter` — hides reviews about ex-staff using the FK
+5. Runs `autoPromoteToHomepage` — rebuilds the auto-rotating homepage slots
 
-### `reviews`
-Raw review data with full metadata from all sources (Vagaro, Yelp, Google).
+Manual trigger:
+```bash
+curl -H "Authorization: Bearer $MANUAL_TRIGGER_SECRET" \
+  https://lashpop-reviews.<...>.workers.dev/run
+```
 
-### `testimonials`
-Approved reviews displayed on the website. Auto-synced from `reviews` table.
+## Secrets (managed via `wrangler secret put`)
 
-## Configuration
+| Name | Used by | How to refresh |
+|---|---|---|
+| `DATABASE_URL` | all | same as the Next.js app's Supabase pooler URL |
+| `VAGARO_CLIENT_ID` / `VAGARO_CLIENT_SECRET` / `VAGARO_BUSINESS_ID` | vagaro | mirrors `.env.local` |
+| `GOOGLE_PLACE_FID` | google | LashPop's Maps FID — `0x80dc73710da0172f:0x49e879bec593fc5e` |
+| `GOOGLE_PREVIEW_URL` / `GOOGLE_COOKIES` | google | `python3 workers/reviews/scripts/mint-google-session.py` |
+| `YELP_BUSINESS_URL` / `CLOAK_TOKEN` | yelp | mint via cloak.experialstudio.com once the daemon is healthy |
+| `MANUAL_TRIGGER_SECRET` | manual `/run` | random hex |
 
-### Required Environment Variables
+## When Google reviews stop flowing
+
+The Worker logs `preview/place stripped to <N>B (expected >=50KB) — cookies
+likely expired.` Re-mint:
 
 ```bash
-# BrightData API (for Yelp & Google scraping)
-BRIGHTDATA_API_TOKEN=your_api_token
-BRIGHTDATA_YELP_DATASET_ID=gd_lgzhlu9323u3k24jkv
-BRIGHTDATA_GOOGLE_DATASET_ID=gd_luzfs1dn2oa0teb81
-YELP_BUSINESS_URL=https://www.yelp.com/biz/lashpop-studios-oceanside
-YELP_INCLUDE_UNRECOMMENDED=true
-GOOGLE_MAPS_URL=https://www.google.com/maps/place/LashPop+Studios/@...
-
-# Cron job authentication
-CRON_SECRET=your_secure_random_secret
+cd workers/reviews
+python3 scripts/mint-google-session.py
 ```
 
-### Setting Up in Vercel
+That opens Chromium, navigates LashPop's Maps page, captures the rich
+`/maps/preview/place` URL + cookies, and uploads them as Worker secrets.
 
-1. Add environment variables to Vercel project settings
-2. Deploy the app - cron job will automatically be registered
-3. Monitor cron executions in Vercel dashboard > Cron tab
+## Homepage promotion
 
-## Manual Sync
+`homepage_reviews` has two row types via `is_pinned`:
+- **Pinned** (`is_pinned=true`) — admin curation. Immortal. Managed by `/admin/website/reviews`.
+- **Auto** (`is_pinned=false`) — rebuilt every cron run with the newest eligible 5★ reviews up to cap (`DEFAULT_HOMEPAGE_CAP = 9`).
 
-You can also manually trigger review syncs:
+Eligibility for auto-promotion:
+- `rating = 5`
+- `show_on_website = true`
+- `homepage_dismissed = false`
+- Not already pinned
+- `team_member_id` is null OR not pointing at an inactive staff member
 
-### Sync All Sources
-```bash
-curl -X GET "https://yoursite.com/api/cron/sync-reviews" \
-  -H "Authorization: Bearer YOUR_CRON_SECRET"
-```
+## Migrating away from the old setup
 
-### Sync Individual Sources
-```bash
-# Vagaro only
-npx tsx scripts/scrape-vagaro-reviews.ts
+Pre-2026 sync used:
+- Vercel cron (`/api/cron/sync-reviews`, `/api/cron/sync-review-stats`) → **deleted**
+- BrightData snapshots for Yelp + Google → **deleted**
+- Jina.ai for Vagaro → **deleted**
+- Various CLI scripts in `scripts/scrape-*.ts` → **deleted**
 
-# BrightData (Yelp + Google) only
-npx tsx scripts/fetch-brightdata-reviews.ts
-```
-
-## Monitoring
-
-### Vercel Dashboard
-- Go to your project > Cron tab
-- View execution history and logs
-- See success/failure status
-
-### Response Format
-```json
-{
-  "success": true,
-  "timestamp": "2025-11-14T00:00:00.000Z",
-  "results": {
-    "vagaro": {
-      "success": true,
-      "error": null,
-      "stats": {
-        "source": "vagaro",
-        "parsed": 28,
-        "inserted": 5,
-        "testimonials": 3
-      }
-    },
-    "brightdata": {
-      "success": true,
-      "error": null,
-      "stats": {
-        "sources": [
-          {
-            "source": "yelp",
-            "parsed": 20,
-            "inserted": 2,
-            "testimonials": 2
-          },
-          {
-            "source": "google",
-            "parsed": 176,
-            "inserted": 10,
-            "testimonials": 10
-          }
-        ]
-      }
-    }
-  }
-}
-```
-
-## Security
-
-The cron endpoint is protected by:
-- **Bearer token authentication** - Only requests with valid `CRON_SECRET` are accepted
-- **Vercel-signed requests** - In production, Vercel adds verification headers
-- **Rate limiting** - Max 5-minute execution time
-
-## Troubleshooting
-
-### Cron job not running
-1. Check Vercel dashboard > Cron tab for errors
-2. Verify `vercel.json` has correct cron configuration
-3. Ensure `CRON_SECRET` is set in environment variables
-
-### No new reviews synced
-- Reviews are automatically deduped
-- If no new reviews exist, the count will be 0
-- Check individual source logs for errors
-
-### BrightData errors
-- Verify API token is valid
-- Check dataset IDs match your BrightData account
-- Ensure business URLs are correct
-
-## Cost Considerations
-
-- **Vagaro**: Free (uses Jina.ai reader proxy)
-- **BrightData**: Paid per record
-  - Yelp: ~$0.0011 per review
-  - Google Maps: ~$0.0011 per review
-- Running daily will accumulate costs based on new reviews
+If you find any lingering references to those, they're dead code.

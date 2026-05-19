@@ -1,0 +1,66 @@
+import type { Env } from './types'
+
+export { ReviewEditor } from './editor-do'
+
+/**
+ * Thin Worker entry — routes to the ReviewEditor Durable Object. The DO owns
+ * all state (last-fetch timestamps, last-editor timestamps, alarms) so this
+ * Worker is essentially a router.
+ *
+ * Routes:
+ *   GET /run               → trigger one cycle (fetch + filter + promote;
+ *                            editor pass runs iff ≥7d since last run)
+ *   GET /run?editor=1      → trigger one cycle and force the editor pass
+ *   GET /state             → introspection (last run, next alarm, last result)
+ *   GET /schedule          → ensure the alarm is set (idempotent)
+ *
+ * All routes auth'd via MANUAL_TRIGGER_SECRET when set.
+ */
+
+function getStub(env: Env): DurableObjectStub {
+  const id = env.REVIEW_EDITOR.idFromName('lashpop')
+  return env.REVIEW_EDITOR.get(id)
+}
+
+export default {
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    // Cron triggers also hit the DO. Mostly redundant (DO alarm self-schedules)
+    // but useful belt-and-suspenders if the alarm ever drops.
+    ctx.waitUntil(
+      (async () => {
+        try {
+          const stub = getStub(env)
+          const res = await stub.fetch('https://do/run')
+          console.log('cron tick result:', (await res.text()).slice(0, 500))
+        } catch (err) {
+          console.error('cron tick failed:', err)
+        }
+      })(),
+    )
+  },
+
+  async fetch(req: Request, env: Env): Promise<Response> {
+    const url = new URL(req.url)
+
+    if (url.pathname === '/' || url.pathname === '') {
+      return new Response('lashpop-reviews — GET /run | /run?editor=1 | /state | /schedule', {
+        headers: { 'content-type': 'text/plain' },
+      })
+    }
+
+    // Bearer auth on every triggering endpoint
+    if (env.MANUAL_TRIGGER_SECRET) {
+      const auth = req.headers.get('authorization') ?? ''
+      if (auth !== `Bearer ${env.MANUAL_TRIGGER_SECRET}`) {
+        return new Response('Unauthorized', { status: 401 })
+      }
+    }
+
+    const stub = getStub(env)
+    return stub.fetch(`https://do${url.pathname}${url.search}`, {
+      method: req.method,
+      headers: req.headers,
+      body: req.body,
+    })
+  },
+} satisfies ExportedHandler<Env>

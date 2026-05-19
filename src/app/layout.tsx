@@ -120,12 +120,14 @@ export default async function RootLayout({
         {/* llms.txt discovery for AI assistants */}
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Information" />
 
-        {/* JSON-LD Structured Data */}
+        {/* JSON-LD Structured Data — site-wide schemas only.
+            ReviewSchema renders on the homepage (app/page.tsx) so the full
+            review corpus is attached to one canonical page rather than
+            duplicated on every URL. */}
         <WebSiteSchema siteSettings={settings.site} />
         <LocalBusinessSchema siteSettings={settings.site} />
         <FAQSchema />
         <ServicesSchema siteSettings={settings.site} />
-        <ReviewSchema siteSettings={settings.site} />
       </head>
       <body className={`${inter.className} antialiased bg-ivory text-gray-800`}>
         <AuthProvider>

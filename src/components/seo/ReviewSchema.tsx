@@ -1,32 +1,29 @@
 /**
  * Review Schema Component
  *
- * Generates JSON-LD structured data for individual reviews.
- * Uses the includeInSchema flag to include reviews in structured data
- * even if they're not displayed publicly on the website.
+ * Renders one <script type="application/ld+json"> per review on the page.
+ * Used on the homepage (app/page.tsx) only — not in the global layout — so
+ * the review corpus is attached to one canonical URL.
  *
- * This is legitimate SEO - providing accurate review data to search engines
- * for rich results, regardless of what's shown on the public website.
+ * When a review has team_member_id, the schema's itemReviewed points at the
+ * team member's @id (`siteUrl/team/{slug}#person`) so AI search engines
+ * (Perplexity, ChatGPT, Claude) can answer "who's the best stylist at LashPop"
+ * with grounded citations.
  */
 
 import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
-import { eq, and, isNotNull, gte, or } from 'drizzle-orm'
+import { teamMembers } from '@/db/schema/team_members'
+import { eq, and, isNotNull, gte, or, sql } from 'drizzle-orm'
 
 interface ReviewSchemaProps {
   siteSettings: {
     businessName: string
     siteUrl: string
   }
-  /**
-   * If true, only include reviews marked with includeInSchema=true
-   * If false, include all reviews with ratings
-   */
+  /** When true, honor reviews.include_in_schema. Defaults to true. */
   respectSchemaFlag?: boolean
-  /**
-   * Maximum number of reviews to include in schema
-   * Default: 50 (to avoid bloating the page)
-   */
+  /** Cap on rows emitted. Default 1000 — sized for the whole corpus. */
   maxReviews?: number
 }
 
@@ -37,95 +34,107 @@ interface ReviewData {
   rating: number
   reviewDate: Date | null
   responseText: string | null
+  responseDate: Date | null
+  teamMemberId: string | null
+  teamMemberName: string | null
 }
 
 async function getReviewsForSchema(
   respectSchemaFlag: boolean,
-  maxReviews: number
+  maxReviews: number,
 ): Promise<ReviewData[]> {
   try {
     const db = getDb()
 
-    // Build the query conditions
     const conditions = [
       isNotNull(reviews.rating),
-      gte(reviews.rating, 1)
+      gte(reviews.rating, 1),
+      eq(reviews.showOnWebsite, true), // never emit hidden reviews
     ]
 
-    // If respecting the schema flag, only include reviews marked for schema
     if (respectSchemaFlag) {
       conditions.push(
         or(
           eq(reviews.includeInSchema, true),
-          // Also include null (for backwards compatibility before the column existed)
-          isNotNull(reviews.includeInSchema)
-        )!
+          isNotNull(reviews.includeInSchema),
+        )!,
       )
     }
 
-    const reviewList = await db
+    return await db
       .select({
         id: reviews.id,
         reviewerName: reviews.reviewerName,
         reviewText: reviews.reviewText,
         rating: reviews.rating,
         reviewDate: reviews.reviewDate,
-        responseText: reviews.responseText
+        responseText: reviews.responseText,
+        responseDate: reviews.responseDate,
+        teamMemberId: reviews.teamMemberId,
+        teamMemberName: teamMembers.name,
       })
       .from(reviews)
+      .leftJoin(teamMembers, eq(reviews.teamMemberId, teamMembers.id))
       .where(and(...conditions))
+      .orderBy(sql`${reviews.reviewDate} DESC NULLS LAST`)
       .limit(maxReviews)
-
-    return reviewList
   } catch {
     return []
   }
 }
 
+function teamMemberSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 export async function ReviewSchema({
   siteSettings,
   respectSchemaFlag = true,
-  maxReviews = 50
+  maxReviews = 1000,
 }: ReviewSchemaProps) {
   const reviewList = await getReviewsForSchema(respectSchemaFlag, maxReviews)
+  if (reviewList.length === 0) return null
 
-  if (reviewList.length === 0) {
-    return null
-  }
+  const orgId = `${siteSettings.siteUrl}/#organization`
 
-  // Create individual Review schemas
-  const reviewSchemas = reviewList.map(review => ({
-    '@context': 'https://schema.org',
-    '@type': 'Review',
-    '@id': `${siteSettings.siteUrl}/#review-${review.id}`,
-    itemReviewed: {
-      '@id': `${siteSettings.siteUrl}/#organization`
-    },
-    author: {
-      '@type': 'Person',
-      name: review.reviewerName
-    },
-    reviewRating: {
-      '@type': 'Rating',
-      ratingValue: review.rating,
-      bestRating: 5,
-      worstRating: 1
-    },
-    reviewBody: review.reviewText,
-    ...(review.reviewDate && {
-      datePublished: review.reviewDate.toISOString().split('T')[0]
-    }),
-    // Include business response if available
-    ...(review.responseText && {
-      comment: {
-        '@type': 'Comment',
-        author: {
-          '@id': `${siteSettings.siteUrl}/#organization`
+  const reviewSchemas = reviewList.map(review => {
+    // If linked to a team member, point itemReviewed at their canonical @id.
+    // Falls back to the organization for venue-level reviews.
+    const itemReviewedId = review.teamMemberId && review.teamMemberName
+      ? `${siteSettings.siteUrl}/team/${teamMemberSlug(review.teamMemberName)}#person`
+      : orgId
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Review',
+      '@id': `${siteSettings.siteUrl}/#review-${review.id}`,
+      itemReviewed: { '@id': itemReviewedId },
+      author: { '@type': 'Person', name: review.reviewerName },
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: review.rating,
+        bestRating: 5,
+        worstRating: 1,
+      },
+      reviewBody: review.reviewText,
+      ...(review.reviewDate && {
+        datePublished: review.reviewDate.toISOString().split('T')[0],
+      }),
+      ...(review.responseText && {
+        comment: {
+          '@type': 'Comment',
+          author: { '@id': orgId },
+          text: review.responseText,
+          ...(review.responseDate && {
+            datePublished: review.responseDate.toISOString().split('T')[0],
+          }),
         },
-        text: review.responseText
-      }
-    })
-  }))
+      }),
+    }
+  })
 
   return (
     <>

@@ -5,6 +5,8 @@ import { getInstagramPosts } from "@/actions/instagram"
 import { getServiceCategories } from "@/actions/categories"
 import { getFAQsGroupedByCategory } from "@/actions/faqs"
 import { getSlideshowConfigs } from "@/actions/hero-slideshow"
+import { getSEOSettings } from "@/actions/seo"
+import { ReviewSchema } from "@/components/seo"
 import LandingPageV2Client from "./LandingPageV2Client"
 
 // Ensure fresh data on each request (for admin-managed content)
@@ -23,6 +25,7 @@ export default async function HomePage() {
     serviceCategories,
     faqData,
     heroConfig,
+    seoSettings,
   ] = await Promise.all([
     getAllServices(),
     getTeamMembersWithServices(),
@@ -32,6 +35,7 @@ export default async function HomePage() {
     getServiceCategories(),
     getFAQsGroupedByCategory(),
     getSlideshowConfigs(),
+    getSEOSettings(),
   ])
 
   // Format services for the drawer (keep hierarchy structure)
@@ -99,14 +103,19 @@ export default async function HomePage() {
   const allowedCategorySlugs = ['lashes', 'brows', 'facials', 'waxing', 'permanent-makeup', 'specialty', 'injectables']
   const filteredServiceCategories = serviceCategories.filter(cat => allowedCategorySlugs.includes(cat.slug))
 
-  return <LandingPageV2Client
-    services={formattedServices}
-    teamMembers={formattedTeamMembers}
-    reviews={reviews}
-    reviewStats={reviewStats}
-    instagramPosts={instagramPosts}
-    serviceCategories={filteredServiceCategories}
-    faqData={faqData}
-    heroConfig={heroConfig}
-  />
+  return <>
+    <LandingPageV2Client
+      services={formattedServices}
+      teamMembers={formattedTeamMembers}
+      reviews={reviews}
+      reviewStats={reviewStats}
+      instagramPosts={instagramPosts}
+      serviceCategories={filteredServiceCategories}
+      faqData={faqData}
+      heroConfig={heroConfig}
+    />
+    {/* Embed the full review corpus on the homepage only — one canonical
+        location for the review JSON-LD instead of duplicating it on every page. */}
+    <ReviewSchema siteSettings={seoSettings.site} maxReviews={1000} />
+  </>
 }

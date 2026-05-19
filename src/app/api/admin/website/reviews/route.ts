@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { homepageReviews } from '@/db/schema/website_settings'
-import { desc, gte, asc, inArray } from 'drizzle-orm'
+import { desc, gte, asc, inArray, eq } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,17 +11,21 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const db = getDb()
-    // Fetch all reviews with rating >= 3
+    // Fetch all reviews ≥3★. Order by quality_score (admin overrides + LLM
+    // editor) then recency, so the highest-signal stuff floats to the top
+    // of the admin list.
     const allReviews = await db
       .select()
       .from(reviews)
       .where(gte(reviews.rating, 3))
-      .orderBy(desc(reviews.reviewDate))
+      .orderBy(desc(reviews.qualityScore), desc(reviews.reviewDate))
 
-    // Fetch selected reviews from homepage_reviews table
+    // Fetch admin-pinned reviews from homepage_reviews (we ignore the
+    // auto-promoted rows here so the admin UI shows their own curation only).
     const selectedReviewsData = await db
       .select()
       .from(homepageReviews)
+      .where(eq(homepageReviews.isPinned, true))
       .orderBy(asc(homepageReviews.displayOrder))
 
     // Create a map of selected review IDs to their display order
@@ -68,31 +72,33 @@ export async function PUT(request: NextRequest) {
 
     console.log(`[Reviews API] Saving ${selectedReviews.length} reviews`)
 
-    // Diff old selection vs new so we can track which reviews the admin explicitly
-    // removed (homepageDismissed=true so the cron doesn't auto-re-add them) and
-    // which they explicitly added back (homepageDismissed=false).
+    // Diff old admin-pinned selection vs new. Only touch is_pinned=true rows;
+    // auto-promoted rows (is_pinned=false) are managed by the Worker cron and
+    // we leave them alone here.
     const previous = await db
       .select({ reviewId: homepageReviews.reviewId })
       .from(homepageReviews)
+      .where(eq(homepageReviews.isPinned, true))
     const previousIds = new Set(previous.map(r => r.reviewId))
     const newIds = new Set(selectedReviews.map((item: { id: string }) => item.id))
 
     const removedIds = Array.from(previousIds).filter(id => !newIds.has(id))
     const addedIds = Array.from(newIds).filter(id => !previousIds.has(id))
 
-    // Clear existing selections
-    await db.delete(homepageReviews)
-    console.log('[Reviews API] Cleared existing selections')
+    // Clear existing pinned selections (preserve auto-promoted rows)
+    await db.delete(homepageReviews).where(eq(homepageReviews.isPinned, true))
+    console.log('[Reviews API] Cleared existing pinned selections')
 
-    // Insert new selections
+    // Insert new pins
     if (selectedReviews.length > 0) {
       const insertData = selectedReviews.map((item: { id: string; displayOrder: number }) => ({
         reviewId: item.id,
-        displayOrder: item.displayOrder
+        displayOrder: item.displayOrder,
+        isPinned: true,
       }))
 
       await db.insert(homepageReviews).values(insertData)
-      console.log('[Reviews API] Inserted new selections')
+      console.log('[Reviews API] Inserted new pinned selections')
     }
 
     // Update homepageDismissed flags so cron auto-promote respects admin intent.

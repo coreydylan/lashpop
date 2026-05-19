@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, notInArray, sql } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm"
 
 import { getDb } from "@/db"
 import { reviews } from "@/db/schema/reviews"
@@ -59,139 +59,235 @@ export type StaleFilterStats = {
 }
 
 /**
- * Hides reviews that name a team member who is no longer on the public staff page
- * (teamMembers.isActive = false). Restores previously auto-hidden reviews if the
- * referenced team member is back on staff.
+ * Hides reviews about team members no longer on the public staff page
+ * (teamMembers.isActive = false). Restores previously auto-hidden reviews when
+ * the referenced staff member is back on staff.
  *
- * Only touches rows where hidden_reason is null/STALE_TEAM_MEMBER so it doesn't
- * stomp on manual admin hides.
+ * Primary mechanism is the `team_member_id` FK on reviews — accurate, fast,
+ * no false positives. The regex-on-text path remains as a fallback for rows
+ * where the FK is null (Yelp/Google reviews that mention a stylist's name in
+ * free text but didn't get linked via a structured field).
+ *
+ * Only touches rows where hidden_reason is null/STALE_TEAM_MEMBER so it
+ * doesn't stomp on manual admin hides.
  */
 export async function applyStaleTeamMemberFilter(): Promise<StaleFilterStats> {
   const db = getDb()
 
   const allMembers = await db
-    .select({ name: teamMembers.name, isActive: teamMembers.isActive })
+    .select({ id: teamMembers.id, name: teamMembers.name, isActive: teamMembers.isActive })
     .from(teamMembers)
 
+  const inactiveIds = allMembers.filter(m => !m.isActive).map(m => m.id)
   const activeFulls = allMembers.filter(m => m.isActive).map(m => m.name).filter(Boolean)
   const inactiveFulls = allMembers.filter(m => !m.isActive).map(m => m.name).filter(Boolean)
   const tokens = buildStaleNamePatterns(activeFulls, inactiveFulls)
 
-  // Always re-check currently-stale reviews so we can restore them if the name
-  // is no longer stale (team member returned).
+  const toRestore = new Set<string>()
+  const toHide = new Set<string>()
+
+  // PATH A: FK-based (accurate, no false positives).
+  // Hide every review whose team_member_id matches an inactive staff row.
+  if (inactiveIds.length) {
+    const fkHide = await db
+      .select({ id: reviews.id })
+      .from(reviews)
+      .where(
+        and(
+          inArray(reviews.teamMemberId, inactiveIds),
+          isNull(reviews.hiddenReason), // don't overwrite manual hides
+        ),
+      )
+    for (const row of fkHide) toHide.add(row.id)
+  }
+
+  // Restore any auto-hidden row whose FK now points at an active member,
+  // or whose FK is null AND no longer matches the regex fallback (handled below).
   const currentlyHidden = await db
-    .select({ id: reviews.id, reviewText: reviews.reviewText, subject: reviews.subject })
+    .select({
+      id: reviews.id,
+      reviewText: reviews.reviewText,
+      subject: reviews.subject,
+      teamMemberId: reviews.teamMemberId,
+    })
     .from(reviews)
     .where(eq(reviews.hiddenReason, STALE_TEAM_MEMBER))
 
-  // Restore any auto-hidden review whose mentioned name is no longer stale.
-  const toRestore: string[] = []
   for (const row of currentlyHidden) {
-    const stillStale = mentionsAnyToken(row.subject, tokens) || mentionsAnyToken(row.reviewText, tokens)
-    if (!stillStale) toRestore.push(row.id)
-  }
-  if (toRestore.length) {
-    await db
-      .update(reviews)
-      .set({ showOnWebsite: true, hiddenReason: null, updatedAt: new Date() })
-      .where(inArray(reviews.id, toRestore))
+    if (row.teamMemberId) {
+      // FK present — restore iff that team_member is now active
+      if (!inactiveIds.includes(row.teamMemberId)) toRestore.add(row.id)
+    } else {
+      // FK absent — fall back to regex on subject + reviewText
+      const stillStale =
+        mentionsAnyToken(row.subject, tokens) || mentionsAnyToken(row.reviewText, tokens)
+      if (!stillStale) toRestore.add(row.id)
+    }
   }
 
-  // Find reviews that are NOT auto-hidden (hiddenReason is null) and check for matches.
-  // We skip rows with non-null hiddenReason — those were either auto-hidden already or
-  // hidden by some other future reason we don't want to overwrite.
-  let hiddenCount = 0
+  // PATH B: regex fallback for the FK-null rows (Yelp/Google mentions).
+  // Limited to rows that the FK path didn't already mark, and that aren't
+  // currently hidden.
   if (tokens.length) {
     const candidates = await db
       .select({ id: reviews.id, reviewText: reviews.reviewText, subject: reviews.subject })
       .from(reviews)
-      .where(isNull(reviews.hiddenReason))
-
-    const idsToHide: string[] = []
+      .where(and(isNull(reviews.hiddenReason), isNull(reviews.teamMemberId)))
     for (const row of candidates) {
-      const matched = mentionsAnyToken(row.subject, tokens) || mentionsAnyToken(row.reviewText, tokens)
-      if (matched) idsToHide.push(row.id)
-    }
-
-    if (idsToHide.length) {
-      await db
-        .update(reviews)
-        .set({
-          showOnWebsite: false,
-          hiddenReason: STALE_TEAM_MEMBER,
-          updatedAt: new Date()
-        })
-        .where(inArray(reviews.id, idsToHide))
-      hiddenCount = idsToHide.length
+      const matched =
+        mentionsAnyToken(row.subject, tokens) || mentionsAnyToken(row.reviewText, tokens)
+      if (matched) toHide.add(row.id)
     }
   }
 
+  // Apply restores first (FK-correct view of "no longer stale").
+  // Both writes skip rows where admin locked show_on_website.
+  if (toRestore.size) {
+    await db
+      .update(reviews)
+      .set({ showOnWebsite: true, hiddenReason: null, updatedAt: new Date() })
+      .where(and(
+        inArray(reviews.id, Array.from(toRestore)),
+        sql`NOT (admin_locked_fields ? 'show_on_website')`,
+      ))
+  }
+  if (toHide.size) {
+    await db
+      .update(reviews)
+      .set({
+        showOnWebsite: false,
+        hiddenReason: STALE_TEAM_MEMBER,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        inArray(reviews.id, Array.from(toHide)),
+        sql`NOT (admin_locked_fields ? 'show_on_website')`,
+      ))
+  }
+
   return {
-    hidden: hiddenCount,
-    restored: toRestore.length,
-    inactiveTeamMembers: inactiveFulls.length
+    hidden: toHide.size,
+    restored: toRestore.size,
+    inactiveTeamMembers: inactiveFulls.length,
   }
 }
 
 export type AutoPromoteStats = {
+  /** Number of rows newly inserted as auto-picks this run. */
   promoted: number
+  /** Total rows on the homepage after the run (pinned + auto). */
   homepageSize: number
+  /** Number of admin-pinned rows (immortal). */
+  pinned: number
+  /** Configured cap. */
   capacity: number
 }
 
-const DEFAULT_HOMEPAGE_CAP = 12
+const DEFAULT_HOMEPAGE_CAP = 9
 
 /**
- * Adds eligible 5-star reviews to homepage_reviews. Eligible = rating 5, show_on_website
- * true, not dismissed by admin, not already on the homepage. Newest first by reviewDate,
- * appended after existing display orders.
+ * Refreshes the auto-rotating slots on the homepage.
+ *
+ * Two-layer model:
+ *   - Admin-pinned rows (is_pinned=true) are immortal. The admin UI manages them.
+ *   - Auto-rotating rows (is_pinned=false) are rebuilt from scratch every run:
+ *     DELETE WHERE is_pinned=false, then INSERT the newest N 5-star reviews
+ *     that pass the eligibility filter.
+ *
+ * Eligibility: rating=5, show_on_website=true, homepage_dismissed=false,
+ * team_member_id NOT in inactive team members (reviews about ex-staff are
+ * confusing for new bookings — they get hidden via the stale filter too,
+ * but we double-belt here just in case).
+ *
+ * Cap defaults to 9 (carousel sweet spot). If admin pins more than cap, all
+ * pins stay and no auto-fill happens — the cap is a target for total
+ * visible reviews, but admin curation always wins.
  */
 export async function autoPromoteToHomepage(options?: { maxCount?: number }): Promise<AutoPromoteStats> {
   const db = getDb()
   const cap = options?.maxCount ?? DEFAULT_HOMEPAGE_CAP
 
-  const current = await db
+  // Snapshot current state.
+  const pinnedRows = await db
     .select({ reviewId: homepageReviews.reviewId, displayOrder: homepageReviews.displayOrder })
     .from(homepageReviews)
-    .orderBy(desc(homepageReviews.displayOrder))
+    .where(eq(homepageReviews.isPinned, true))
+    .orderBy(asc(homepageReviews.displayOrder))
 
-  const remaining = cap - current.length
-  if (remaining <= 0) {
-    return { promoted: 0, homepageSize: current.length, capacity: cap }
+  // Wipe yesterday's auto-picks. Admin pins stay.
+  await db.delete(homepageReviews).where(eq(homepageReviews.isPinned, false))
+
+  const remaining = Math.max(0, cap - pinnedRows.length)
+  if (remaining === 0) {
+    return {
+      promoted: 0,
+      homepageSize: pinnedRows.length,
+      pinned: pinnedRows.length,
+      capacity: cap,
+    }
   }
 
-  const existingIds = current.map(r => r.reviewId)
-  const baseFilter = and(
+  // Find inactive team member ids so we can exclude reviews about ex-staff.
+  const inactiveStaff = await db
+    .select({ id: teamMembers.id })
+    .from(teamMembers)
+    .where(eq(teamMembers.isActive, false))
+  const inactiveIds = inactiveStaff.map(r => r.id)
+
+  const pinnedIds = pinnedRows.map(r => r.reviewId)
+
+  // Build the candidate filter. Eligible 5★ + visible + not dismissed +
+  // not already pinned + not about an inactive stylist.
+  const baseConditions = [
     eq(reviews.rating, 5),
     eq(reviews.showOnWebsite, true),
-    eq(reviews.homepageDismissed, false)
-  )
-  const conditions = existingIds.length
-    ? and(baseFilter, notInArray(reviews.id, existingIds))
-    : baseFilter
+    eq(reviews.homepageDismissed, false),
+  ]
+  if (pinnedIds.length) baseConditions.push(notInArray(reviews.id, pinnedIds))
+  if (inactiveIds.length) {
+    // FK-null rows survive (rating=5 anonymous reviews on Yelp/Google with no
+    // staff attribution). Only EXCLUDE rows whose FK actively points at
+    // someone inactive.
+    baseConditions.push(
+      or(
+        isNull(reviews.teamMemberId),
+        notInArray(reviews.teamMemberId, inactiveIds),
+      )!,
+    )
+  }
 
   const candidates = await db
     .select({ id: reviews.id })
     .from(reviews)
-    .where(conditions)
+    .where(and(...baseConditions))
     .orderBy(sql`${reviews.reviewDate} DESC NULLS LAST`)
     .limit(remaining)
 
   if (!candidates.length) {
-    return { promoted: 0, homepageSize: current.length, capacity: cap }
+    return {
+      promoted: 0,
+      homepageSize: pinnedRows.length,
+      pinned: pinnedRows.length,
+      capacity: cap,
+    }
   }
 
-  const maxOrder = current[0]?.displayOrder ?? -1
+  // Place auto-picks AFTER pinned rows in display order.
+  const maxPinnedOrder = pinnedRows.length
+    ? Math.max(...pinnedRows.map(r => r.displayOrder))
+    : -1
   const inserts = candidates.map((row, index) => ({
     reviewId: row.id,
-    displayOrder: maxOrder + index + 1
+    displayOrder: maxPinnedOrder + index + 1,
+    isPinned: false,
   }))
 
   await db.insert(homepageReviews).values(inserts)
 
   return {
     promoted: inserts.length,
-    homepageSize: current.length + inserts.length,
-    capacity: cap
+    homepageSize: pinnedRows.length + inserts.length,
+    pinned: pinnedRows.length,
+    capacity: cap,
   }
 }

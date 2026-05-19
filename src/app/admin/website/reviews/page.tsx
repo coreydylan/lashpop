@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { motion, Reorder } from 'framer-motion'
-import { 
-  Star, 
-  Eye, 
-  EyeOff, 
-  RefreshCw, 
-  Save, 
-  Check, 
+import {
+  Star,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Save,
+  Check,
   AlertCircle,
   GripVertical,
   Calendar,
@@ -16,8 +17,13 @@ import {
   Filter,
   Search,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Pencil,
+  Settings,
+  Lock,
 } from 'lucide-react'
+
+import ReviewEditDrawer, { type ReviewRow } from './ReviewEditDrawer'
 
 interface Review {
   id: string
@@ -30,9 +36,18 @@ interface Review {
   reviewDate: string | null
   isSelected: boolean
   displayOrder: number
+  // Editor pass + admin override fields
+  qualityScore?: number | null
+  editorNotes?: string | null
+  showOnWebsite?: boolean | null
+  hiddenReason?: string | null
+  teamMemberId?: string | null
+  adminLockedFields?: string[] | null
 }
 
 type FilterSource = 'all' | 'google' | 'yelp' | 'vagaro'
+
+interface TeamOption { id: string; name: string; isActive: boolean }
 
 export default function ReviewsManagerPage() {
   const [reviews, setReviews] = useState<Review[]>([])
@@ -43,12 +58,31 @@ export default function ReviewsManagerPage() {
   const [hasChanges, setHasChanges] = useState(false)
   const [filterSource, setFilterSource] = useState<FilterSource>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [teamOptions, setTeamOptions] = useState<TeamOption[]>([])
+  const [editing, setEditing] = useState<Review | null>(null)
   const [expandedReview, setExpandedReview] = useState<string | null>(null)
   const [showSelectedOnly, setShowSelectedOnly] = useState(false)
 
   useEffect(() => {
     fetchReviews()
+    fetchTeamOptions()
   }, [])
+
+  const fetchTeamOptions = async () => {
+    try {
+      const r = await fetch('/api/admin/website/team')
+      if (!r.ok) return
+      const data = await r.json()
+      const list = (data?.teamMembers ?? data?.members ?? data ?? []) as Array<{
+        id: string; name: string; isActive?: boolean; is_active?: boolean
+      }>
+      setTeamOptions(
+        list.map(m => ({ id: m.id, name: m.name, isActive: m.isActive ?? m.is_active ?? true }))
+      )
+    } catch {
+      // Non-fatal — drawer will work with an empty dropdown.
+    }
+  }
 
   const fetchReviews = async () => {
     setLoading(true)
@@ -200,8 +234,37 @@ export default function ReviewsManagerPage() {
               {review.source}
             </span>
             {renderStars(review.rating)}
+            {/* Quality score chip */}
+            {typeof review.qualityScore === 'number' && (
+              <span
+                className={`px-2 py-0.5 text-xs rounded-full border ${
+                  review.qualityScore >= 8
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : review.qualityScore >= 5
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : 'bg-stone-100 text-stone-600 border-stone-300'
+                }`}
+                title={review.editorNotes ?? 'Editor score'}
+              >
+                {review.qualityScore}/10
+              </span>
+            )}
+            {/* Lock indicator */}
+            {(review.adminLockedFields?.length ?? 0) > 0 && (
+              <span
+                className="text-xs text-dune/50 inline-flex items-center gap-1"
+                title={`Admin-locked from editor: ${review.adminLockedFields!.join(', ')}`}
+              >
+                <Lock className="w-3 h-3" />
+              </span>
+            )}
+            {review.showOnWebsite === false && (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                hidden
+              </span>
+            )}
           </div>
-          
+
           <p className={`text-sm text-dune/70 ${expandedReview === review.id ? '' : 'line-clamp-2'}`}>
             &quot;{review.reviewText}&quot;
           </p>
@@ -220,6 +283,15 @@ export default function ReviewsManagerPage() {
 
         {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Edit drawer trigger */}
+          <button
+            onClick={() => setEditing(review)}
+            className="w-8 h-8 rounded-lg bg-sage/10 hover:bg-sage/20 flex items-center justify-center text-dune/60 hover:text-dune transition-colors"
+            title="Edit (quality / stylist / hide / lock)"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+
           {/* Expand/Collapse */}
           <button
             onClick={() => setExpandedReview(expandedReview === review.id ? null : review.id)}
@@ -282,6 +354,13 @@ export default function ReviewsManagerPage() {
             </div>
           </div>
           <div className="flex gap-3">
+            <Link
+              href="/admin/website/review-settings"
+              className="btn btn-secondary inline-flex items-center gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Settings
+            </Link>
             <button
               onClick={fetchReviews}
               className="btn btn-secondary"
@@ -454,6 +533,15 @@ export default function ReviewsManagerPage() {
           </p>
         )}
       </motion.div>
+
+      {editing && (
+        <ReviewEditDrawer
+          review={editing as ReviewRow}
+          teamOptions={teamOptions}
+          onClose={() => setEditing(null)}
+          onSaved={() => fetchReviews()}
+        />
+      )}
     </div>
   )
 }
