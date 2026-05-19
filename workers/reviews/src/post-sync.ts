@@ -124,6 +124,10 @@ export async function autoPromoteToHomepage(
   const months = settings.auto_promote_recency_months
   const minScore = settings.auto_promote_min_quality_score
 
+  // Generic / anonymized reviewer names that should never make the carousel —
+  // Vagaro and other platforms use these as placeholders when the reviewer
+  // didn't share their name. Real reviews, just no human signal to display.
+  // Kept in JSON-LD / aggregate rating; only excluded from the visual rotation.
   const candidates = await sql<Array<{ id: string; source: string; team_member_id: string | null }>>`
     SELECT id, source, team_member_id FROM reviews
     WHERE rating = 5
@@ -133,6 +137,11 @@ export async function autoPromoteToHomepage(
       AND review_date IS NOT NULL
       AND review_date >= NOW() - (${months}::int * INTERVAL '1 month')
       AND (quality_score IS NULL OR quality_score >= ${minScore})
+      AND lower(trim(reviewer_name)) NOT IN (
+        'verified', 'venue', 'anonymous', 'guest', 'customer', 'client', 'user', 'ok'
+      )
+      AND length(trim(reviewer_name)) >= 2
+      AND reviewer_name !~* '(cancel|appt|appointment|booking)'
       AND (
         ${pinnedIds.length === 0}::boolean
         OR id <> ALL(${pinnedIds}::uuid[])

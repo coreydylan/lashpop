@@ -64,7 +64,9 @@ function extractJson<T>(text: string): T | null {
 }
 
 /** STEP 1 — score every review missing quality_score, in chunks.
- *  Skips reviews where admin has locked the quality_score column. */
+ *  Skips reviews where admin has locked the quality_score column.
+ *  Skips anonymous/placeholder reviewer names so we don't burn LLM budget
+ *  on rows the carousel won't show anyway. */
 async function scoreNewReviews(sql: Sql, env: MeshBridgeBindings, errors: string[]): Promise<number> {
   const rows = await sql<ReviewRow[]>`
     SELECT id, reviewer_name, review_text, rating, source, subject, team_member_id, review_date
@@ -73,6 +75,11 @@ async function scoreNewReviews(sql: Sql, env: MeshBridgeBindings, errors: string
       AND show_on_website = true
       AND length(review_text) >= 20
       AND NOT (admin_locked_fields ? 'quality_score')
+      AND lower(trim(reviewer_name)) NOT IN (
+        'verified', 'venue', 'anonymous', 'guest', 'customer', 'client', 'user', 'ok'
+      )
+      AND length(trim(reviewer_name)) >= 2
+      AND reviewer_name !~* '(cancel|appt|appointment|booking)'
     ORDER BY review_date DESC NULLS LAST
     LIMIT 200
   `
@@ -183,13 +190,19 @@ async function rebuildHighlights(sql: Sql, env: MeshBridgeBindings, errors: stri
 
   let built = 0
   for (const m of members) {
-    // Candidate pool: linked + visible + reasonable length, newest first
+    // Candidate pool: linked + visible + reasonable length + has a real
+    // reviewer name (no Verified / Venue / single-letter placeholders).
     const rows = await sql<Pick<ReviewRow, 'id' | 'review_text' | 'rating' | 'source' | 'review_date'>[]>`
       SELECT id, review_text, rating, source, review_date FROM reviews
       WHERE team_member_id = ${m.id}
         AND show_on_website = true
         AND length(review_text) >= 60
         AND rating >= 4
+        AND lower(trim(reviewer_name)) NOT IN (
+          'verified', 'venue', 'anonymous', 'guest', 'customer', 'client', 'user', 'ok'
+        )
+        AND length(trim(reviewer_name)) >= 2
+        AND reviewer_name !~* '(cancel|appt|appointment|booking)'
       ORDER BY review_date DESC NULLS LAST
       LIMIT 25
     `
