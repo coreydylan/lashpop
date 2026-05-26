@@ -335,22 +335,22 @@ export function MemberTakeover({
             </AnimatePresence>
           </motion.div>
 
-          {/* Top indicator — dots stacked over name, centered, no chrome */}
+          {/* Top indicator — dots over name in a soft cream pill that masks scrolling content */}
           <motion.div
             key="takeover-indicator"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: lightboxOpen ? 0 : 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            className="fixed left-1/2 z-[45] flex -translate-x-1/2 flex-col items-center gap-1.5"
-            style={{ top: 'calc(80px + 18px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="fixed left-1/2 z-[45] flex -translate-x-1/2 flex-col items-center gap-2 rounded-full bg-cream/85 px-6 py-2.5 backdrop-blur-md"
+            style={{ top: 'calc(80px + 14px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
-            <div className="flex gap-1.5">
+            <div className="flex items-center gap-2">
               {members.map((_, i) => (
                 <span
                   key={i}
                   className={`h-1 rounded-full transition-all duration-300 ${
-                    i === selectedIndex ? 'w-4 bg-dusty-rose' : 'w-1 bg-charcoal/25'
+                    i === selectedIndex ? 'w-5 bg-dusty-rose' : 'w-1 bg-charcoal/25'
                   }`}
                 />
               ))}
@@ -361,7 +361,7 @@ export function MemberTakeover({
             </span>
           </motion.div>
 
-          {/* Close — minimal X + ESC, no chrome */}
+          {/* Close — X + ESC in a matching cream backdrop */}
           <motion.button
             key="takeover-close"
             initial={{ opacity: 0 }}
@@ -370,7 +370,7 @@ export function MemberTakeover({
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={onClose}
             aria-label="Close (ESC)"
-            className="group fixed right-7 z-[45] flex items-center gap-1.5 text-charcoal/55 hover:text-charcoal transition-colors"
+            className="group fixed right-6 z-[45] flex items-center gap-1.5 rounded-full bg-cream/85 px-3 py-2 text-charcoal/55 backdrop-blur-md hover:text-charcoal transition-colors"
             style={{ top: 'calc(80px + 22px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
             <X className="h-4 w-4" />
