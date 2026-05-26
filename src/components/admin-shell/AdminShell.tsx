@@ -169,7 +169,17 @@ function Nav({ pathname }: { pathname: string | null }) {
 
               return (
                 <li key={section.id}>
-                  {isComingSoon ? content : <Link href={section.href}>{content}</Link>}
+                  {isComingSoon ? (
+                    content
+                  ) : (
+                    // `block` is load-bearing: without it, the <a> defaults to
+                    // inline display, which can make the clickable region
+                    // smaller than the visual row and produce phantom "click
+                    // does nothing" behavior on parts of the row.
+                    <Link href={section.href} prefetch={false} className="block">
+                      {content}
+                    </Link>
+                  )}
                 </li>
               )
             })}
