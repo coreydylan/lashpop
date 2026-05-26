@@ -43,11 +43,29 @@ export async function POST(request: NextRequest) {
     const { type, data } = body
 
     if (type === 'category') {
+      // Slugify from whatever the admin sent. The form posts `displayName`
+      // (human-readable) but the schema requires a unique `name` slug too,
+      // so derive it. Pre-2026 this read `data.name` which the admin never
+      // sent, so every category-create hit a `.toLowerCase() on undefined`
+      // crash. (Bug from tmp/admin-audit.md, Part 1 § FAQ.)
+      const slugSource = data.name || data.displayName || ''
+      if (!slugSource) {
+        return NextResponse.json(
+          { error: 'Missing name/displayName' },
+          { status: 400 }
+        )
+      }
+      const slug = slugSource
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_|_$/g, '')
+
       const [newCategory] = await db
         .insert(faqCategories)
         .values({
-          name: data.name.toLowerCase().replace(/\s+/g, '_'),
-          displayName: data.displayName,
+          name: slug,
+          displayName: data.displayName || slugSource,
           description: data.description || null,
           displayOrder: data.displayOrder || 0,
           isActive: data.isActive ?? true
