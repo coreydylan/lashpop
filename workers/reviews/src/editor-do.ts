@@ -16,7 +16,7 @@ import { runEditor, type EditorStats } from './editor'
 import { fetchGoogleReviews } from './fetchers/google'
 import { fetchVagaroReviews } from './fetchers/vagaro'
 import { fetchYelpReviews } from './fetchers/yelp'
-import { applyStaleTeamMemberFilter, autoPromoteToHomepage, type AutoPromoteStats, type StaleStats } from './post-sync'
+import { applyStaleTeamMemberFilter, autoPromoteToHomepage, updateReviewStats, type AutoPromoteStats, type ReviewStatsResult, type StaleStats } from './post-sync'
 import { loadReviewSettings, DEFAULT_SETTINGS } from './settings'
 import type { Env, FetcherResult } from './types'
 
@@ -28,6 +28,7 @@ interface RunRecord {
   sources: Record<string, { fetched: number; totalAvailable?: number; errors: string[]; upsert?: UpsertStats }>
   stale?: StaleStats
   autoPromote?: AutoPromoteStats
+  reviewStats?: ReviewStatsResult
   editor?: EditorStats & { ran: boolean; reason: string }
   postSyncErrors?: string[]
 }
@@ -107,6 +108,7 @@ export class ReviewEditor {
     const postSyncErrors: string[] = []
     let stale: StaleStats | undefined
     let autoPromote: AutoPromoteStats | undefined
+    let reviewStats: ReviewStatsResult | undefined
     let editor: RunRecord['editor']
 
     // 1. Fetchers in parallel
@@ -157,6 +159,22 @@ export class ReviewEditor {
         stale = await applyStaleTeamMemberFilter(sql)
       } catch (err) {
         postSyncErrors.push(`stale: ${err instanceof Error ? err.message : String(err)}`)
+      }
+
+      // 2b. Refresh review_stats so the homepage counter reflects the new data.
+      try {
+        const totals = {
+          google: sources.google?.totalAvailable,
+          vagaro: sources.vagaro?.totalAvailable,
+          yelp: sources.yelp?.totalAvailable,
+        }
+        reviewStats = await updateReviewStats(sql, totals)
+        console.log(
+          `[review_stats] updated ${reviewStats.updated.length} source(s): ` +
+            reviewStats.updated.map(r => `${r.source}=${r.reviewCount}@${r.rating}`).join(', '),
+        )
+      } catch (err) {
+        postSyncErrors.push(`reviewStats: ${err instanceof Error ? err.message : String(err)}`)
       }
 
       // 3. Editor pass — gated by lastEditorAt unless forced, or disabled via settings
@@ -215,6 +233,7 @@ export class ReviewEditor {
       sources,
       stale,
       autoPromote,
+      reviewStats,
       editor,
       postSyncErrors: postSyncErrors.length ? postSyncErrors : undefined,
     }
