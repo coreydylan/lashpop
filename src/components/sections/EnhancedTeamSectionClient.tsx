@@ -9,9 +9,9 @@ import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
 import { WheelGesturesPlugin } from 'embla-carousel-wheel-gestures'
 import { useInView } from 'framer-motion'
-import { gsap, initGSAP } from '@/lib/gsap'
 import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
+import { MemberTakeover } from '@/components/team/MemberTakeover'
 
 const CRED_ICON: Record<string, typeof Award> = {
   license: FileCheck,
@@ -322,7 +322,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
-  const expandedRowRef = useRef<HTMLDivElement>(null)
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null)
   const firstCardRef = useRef<HTMLDivElement>(null)
   const hasSnappedOnEntryRef = useRef(false)
@@ -475,45 +474,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Calculate which row a member is in (0-indexed)
-  const getRowForIndex = (index: number): number => Math.floor(index / columnsPerRow)
-
-  // Get the row number for the selected member
-  const selectedRow = selectedMember ? getRowForIndex(selectedMemberIndex) : -1
-
-  // Scroll to center expansion panel with GSAP when it appears
-  useEffect(() => {
-    if (expandedRowRef.current && selectedMember && !isMobile) {
-      // Wait for the spring animation to mostly complete before scrolling
-      const scrollTimeout = setTimeout(async () => {
-        await initGSAP()
-        if (expandedRowRef.current) {
-          // Get the element's position after animation has settled
-          const element = expandedRowRef.current
-          const elementRect = element.getBoundingClientRect()
-          const elementTop = window.scrollY + elementRect.top
-          const elementHeight = element.offsetHeight || 500 // Fallback height
-          const viewportHeight = window.innerHeight
-
-          // Calculate scroll position to center the panel in viewport
-          // We want the center of the panel to be at the center of the viewport
-          const scrollTarget = elementTop - (viewportHeight / 2) + (elementHeight / 2)
-
-          gsap.to(window, {
-            duration: 0.6,
-            scrollTo: {
-              y: Math.max(0, scrollTarget),
-              autoKill: false
-            },
-            ease: 'power2.inOut'
-          })
-        }
-      }, 400) // Wait longer for spring animation to settle
-
-      return () => clearTimeout(scrollTimeout)
-    }
-  }, [selectedMember, isMobile])
-
   // Fetch portfolio images when a member is selected (both mobile and desktop)
   useEffect(() => {
     if (selectedMember?.uuid) {
@@ -623,11 +583,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         setShowModal(false) // Don't use modal on desktop
       }
     }
-  }
-
-  // Close inline expansion
-  const closeExpansion = () => {
-    setSelectedMember(null)
   }
 
   // Preload portfolio photos on hover (desktop only)
@@ -958,377 +913,120 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </div>
         ) : (
           <div className="container px-4">
-            {/* Desktop Grid View with Inline Expansion */}
+            {/* Desktop Grid — full-page takeover opens on click */}
             <div className="max-w-7xl mx-auto">
-              {/* Render cards row by row so we can insert expansion after each row */}
-              {Array.from({ length: Math.ceil(sortedTeamMembers.length / columnsPerRow) }).map((_, rowIndex) => {
-                const rowStart = rowIndex * columnsPerRow
-                const rowMembers = sortedTeamMembers.slice(rowStart, rowStart + columnsPerRow)
-                const isExpansionRow = selectedRow === rowIndex && selectedMember
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {sortedTeamMembers.map((member, absoluteIndex) => {
+                  const memberCategories = member.serviceCategories?.length
+                    ? member.serviceCategories
+                    : getTeamMemberCategories(member.specialties)
+                  const isSelected = selectedMember?.id === member.id
+                  const indexInRow = absoluteIndex % columnsPerRow
 
-                return (
-                  <div key={rowIndex}>
-                    {/* Row of cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-6">
-                      {rowMembers.map((member, indexInRow) => {
-                        const absoluteIndex = rowStart + indexInRow
-                        const memberCategories = member.serviceCategories?.length
-                          ? member.serviceCategories
-                          : getTeamMemberCategories(member.specialties)
-                        const isSelected = selectedMember?.id === member.id
+                  return (
+                    <motion.div
+                      key={member.id}
+                      initial={{ opacity: 0, y: 60, scale: 0.95 }}
+                      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{
+                        duration: 0.7,
+                        delay: indexInRow * 0.12,
+                        ease: [0.22, 1, 0.36, 1]
+                      }}
+                      className="relative group cursor-pointer"
+                      onClick={() => handleMemberClick(member, absoluteIndex)}
+                      onMouseEnter={() => {
+                        setHoveredId(member.id)
+                        preloadPhotosForMember(member.uuid, member.image)
+                      }}
+                      onMouseLeave={() => setHoveredId(null)}
+                    >
+                      <motion.div
+                        className={`relative bg-ivory rounded-[20px] overflow-hidden shadow-md transition-all duration-300 border border-terracotta/10 ${
+                          isSelected ? 'ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream' : ''
+                        }`}
+                        whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+                        animate={{ scale: isSelected ? 1.02 : 1 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {memberCategories.length > 0 && (
+                          <DraggableChipRow categories={memberCategories} />
+                        )}
 
-                        return (
-                          <motion.div
-                            key={member.id}
-                            initial={{ opacity: 0, y: 60, scale: 0.95 }}
-                            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                            viewport={{ once: true, margin: "-100px" }}
-                            transition={{
-                              duration: 0.7,
-                              delay: indexInRow * 0.12,
-                              ease: [0.22, 1, 0.36, 1]
-                            }}
-                            className="relative group cursor-pointer"
-                            onClick={() => handleMemberClick(member, absoluteIndex)}
-                            onMouseEnter={() => {
-                              setHoveredId(member.id)
-                              preloadPhotosForMember(member.uuid, member.image)
-                            }}
-                            onMouseLeave={() => setHoveredId(null)}
-                          >
-                            {/* Arch Card Design */}
-                            <motion.div
-                              className={`relative bg-ivory rounded-[20px] overflow-hidden shadow-md transition-all duration-300 border border-terracotta/10 ${
-                                isSelected ? 'ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream' : ''
-                              }`}
-                              whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
-                              animate={{ scale: isSelected ? 1.02 : 1 }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              {/* Service Tags - Positioned outside arch overflow, overlapping the arch.
-                                  Horizontally scrollable: trackpad 2-finger swipe works natively
-                                  via overflow-x-auto; mouse users can click-and-drag. */}
-                              {memberCategories.length > 0 && (
-                                <DraggableChipRow categories={memberCategories} />
-                              )}
-
-                              {/* Arch Image Container */}
-                              <div className="relative px-4 pt-8">
-                                <div className="relative h-72 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
-                                  {/* Image */}
-                                  <Image
-                                    src={member.image}
-                                    alt={member.name}
-                                    fill
-                                    className={isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover transition-transform duration-700 group-hover:scale-105"}
-                                    sizes="(max-width: 640px) 155px, (max-width: 1024px) 280px, 280px"
-                                    unoptimized={isPlaceholderImage(member.image) || isVagaroPhoto(member.image)}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Content Below Image */}
-                              <div className="px-6 py-5 text-center">
-                                {/* Name */}
-                                <h3 className="text-2xl font-serif font-light text-gray-900 mb-1">
-                                  {member.name}
-                                </h3>
-
-                                {/* Title/Role */}
-                                <p className="font-sans font-light text-gray-500">
-                                  {member.name.toLowerCase().startsWith('emily')
-                                    ? 'LashPop Owner'
-                                    : member.type === 'employee'
-                                      ? 'LashPop Team Artist'
-                                      : member.businessName || 'Independent Artist'}
-                                </p>
-                              </div>
-
-                              {/* Bottom IG section - stacks multiple handles vertically */}
-                              {(() => {
-                                const handles = parseInstagramHandles(member.instagram, member.instagramUrl)
-                                if (handles.length === 0) return null
-                                return (
-                                  <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-col">
-                                    {handles.map(({ handle, url }, i) => (
-                                      <a
-                                        key={handle}
-                                        href={url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className={`w-full py-2.5 flex items-center justify-center gap-1.5 hover:bg-white/50 transition-colors ${
-                                          i > 0 ? 'border-t border-warm-sand/30' : ''
-                                        }`}
-                                      >
-                                        <Instagram className="w-3.5 h-3.5 text-dusty-rose" />
-                                        <span className="text-xs font-sans font-medium tracking-wide text-dusty-rose">
-                                          {handle}
-                                        </span>
-                                      </a>
-                                    ))}
-                                  </div>
-                                )
-                              })()}
-
-                              {/* Hover Glow Effect */}
-                              <AnimatePresence>
-                                {hoveredId === member.id && !isSelected && (
-                                  <motion.div
-                                    className="absolute inset-0 bg-white/5 pointer-events-none"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                  />
-                                )}
-                              </AnimatePresence>
-
-                              {/* Highlight Ring (from orchestrator) */}
-                              {isHighlighted(member.id) && !isSelected && (
-                                <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-[20px] pointer-events-none" />
-                              )}
-                            </motion.div>
-
-                            {/* Connector arrow for selected card */}
-                            <AnimatePresence>
-                              {isSelected && (
-                                <motion.div
-                                  className="absolute left-1/2 -bottom-3 -translate-x-1/2 z-10"
-                                  initial={{ opacity: 0, y: -10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0, y: -10 }}
-                                  transition={{ duration: 0.2 }}
-                                >
-                                  <div className="w-4 h-4 bg-white rotate-45 shadow-lg" />
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </motion.div>
-                        )
-                      })}
-                    </div>
-
-                    {/* Inline Expansion Panel - appears below this row when a member from this row is selected */}
-                    <AnimatePresence>
-                      {isExpansionRow && selectedMember && (
-                        <motion.div
-                          ref={expandedRowRef}
-                          className="mb-6 rounded-3xl shadow-xl overflow-hidden"
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{
-                            height: { type: "spring", damping: 25, stiffness: 200 },
-                            opacity: { duration: 0.2 }
-                          }}
-                        >
-                          <div className="bg-white border border-sage/10 overflow-hidden">
-                            <div className="flex flex-col lg:flex-row">
-                              {/* Left: Portfolio Image Carousel */}
-                              <div className="lg:w-2/5 relative flex flex-col">
-                                {/* Main Image Display */}
-                                <div className="relative aspect-[4/5] lg:aspect-auto lg:flex-1 overflow-hidden bg-dune/5">
-                                  {/* Blurred background for horizontal images */}
-                                  {(portfolioImages.length > 0 ? isCurrentImageHorizontal : false) && (
-                                    <div className="absolute inset-0 overflow-hidden">
-                                      {(() => {
-                                        const blurredSrc = portfolioImages[currentImageIndex]?.url || selectedMember.image
-                                        return (
-                                          <Image
-                                            src={blurredSrc}
-                                            alt=""
-                                            fill
-                                            className="object-cover scale-150 blur-2xl opacity-60"
-                                            aria-hidden="true"
-                                            unoptimized={isVagaroPhoto(blurredSrc)}
-                                          />
-                                        )
-                                      })()}
-                                    </div>
-                                  )}
-
-                                  {/* Loading state */}
-                                  {isLoadingPortfolio ? (
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                      <div className="w-8 h-8 border-2 border-dusty-rose border-t-transparent rounded-full animate-spin" />
-                                    </div>
-                                  ) : (
-                                    <AnimatePresence mode="wait">
-                                      <motion.div
-                                        key={portfolioImages.length > 0 && portfolioImages[currentImageIndex]?.id ? portfolioImages[currentImageIndex].id : 'headshot'}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="absolute inset-0 flex items-center justify-center"
-                                      >
-                                        {(() => {
-                                          const mainSrc = portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image
-                                          const isPlaceholder = isPlaceholderImage(mainSrc)
-                                          return (
-                                            <Image
-                                              src={mainSrc}
-                                              alt={selectedMember.name}
-                                              fill
-                                              className={`${
-                                                isPlaceholder
-                                                  ? 'object-contain p-8'
-                                                  : isCurrentImageHorizontal
-                                                    ? 'object-contain'
-                                                    : 'object-cover'
-                                              }`}
-                                              unoptimized={isPlaceholder || isVagaroPhoto(mainSrc)}
-                                            />
-                                          )
-                                        })()}
-                                      </motion.div>
-                                    </AnimatePresence>
-                                  )}
-
-                                  {/* Navigation arrows for portfolio */}
-                                  {portfolioImages.length > 1 && (
-                                    <>
-                                      <button
-                                        onClick={() => handleImageSelect((currentImageIndex - 1 + portfolioImages.length) % portfolioImages.length)}
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 min-h-0 min-w-0 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-md"
-                                        aria-label="Previous image"
-                                      >
-                                        <ChevronLeft className="w-5 h-5 text-dune" />
-                                      </button>
-                                      <button
-                                        onClick={() => handleImageSelect((currentImageIndex + 1) % portfolioImages.length)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 min-h-0 min-w-0 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-md"
-                                        aria-label="Next image"
-                                      >
-                                        <ChevronRight className="w-5 h-5 text-dune" />
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-
-                                {/* Thumbnail strip */}
-                                {portfolioImages.length > 1 && (
-                                  <div className="bg-dune/5 p-3 lg:rounded-bl-3xl">
-                                    <div className="flex gap-2 overflow-x-auto scrollbar-hide p-1 -m-1">
-                                      {portfolioImages.map((img, idx) => (
-                                        <button
-                                          key={img.id || `portfolio-${idx}`}
-                                          onClick={() => handleImageSelect(idx)}
-                                          className={`relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all ${
-                                            idx === currentImageIndex
-                                              ? 'ring-2 ring-dusty-rose scale-105'
-                                              : 'opacity-60 hover:opacity-100'
-                                          }`}
-                                        >
-                                          <Image
-                                            src={img.url}
-                                            alt={`Portfolio ${idx + 1}`}
-                                            fill
-                                            className="object-cover"
-                                          />
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Right: Content */}
-                              <div className="lg:w-3/5 p-8 lg:p-10 relative">
-                                {/* Close Button */}
-                                <button
-                                  onClick={closeExpansion}
-                                  className="absolute top-6 right-6 w-10 h-10 rounded-full bg-cream hover:bg-sage/10 flex items-center justify-center transition-colors"
-                                  aria-label="Close"
-                                >
-                                  <X className="w-5 h-5 text-dune" />
-                                </button>
-
-                                {/* Name, Title & Instagram */}
-                                <div className="mb-6 pr-12">
-                                  <h2 className="font-serif text-3xl" style={{ color: 'rgb(61, 54, 50)' }}>
-                                    {selectedMember.name}
-                                  </h2>
-                                  {(() => {
-                                    const handles = parseInstagramHandles(selectedMember.instagram, selectedMember.instagramUrl)
-                                    const label = selectedMember.type === 'independent' && selectedMember.businessName
-                                      ? selectedMember.businessName
-                                      : 'LashPop Artist'
-                                    if (handles.length === 0) {
-                                      return <p className="font-sans text-dusty-rose font-medium mt-1">{label}</p>
-                                    }
-                                    return (
-                                      <a
-                                        href={handles[0].url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1.5 font-sans text-dusty-rose font-medium mt-1 hover:text-dusty-rose/80 transition-colors"
-                                      >
-                                        <Instagram className="w-4 h-4" />
-                                        <span>{label}</span>
-                                      </a>
-                                    )
-                                  })()}
-                                </div>
-
-                                {/* Bio */}
-                                {selectedMember.bio && (
-                                  <div className="mb-6">
-                                    <h3 className="font-serif text-lg mb-2" style={{ color: 'rgb(61, 54, 50)' }}>About</h3>
-                                    <p className="leading-relaxed" style={{ color: 'rgb(61, 54, 50)' }}>{selectedMember.bio}</p>
-                                  </div>
-                                )}
-
-                                {/* Credentials */}
-                                <MemberCredentialsList credentials={selectedMember.credentials} />
-
-                                {/* Services */}
-                                {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
-                                  <div className="mb-6">
-                                    <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>Services</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                      {(selectedMember.serviceCategories?.length
-                                        ? selectedMember.serviceCategories
-                                        : getTeamMemberCategories(selectedMember.specialties)
-                                      ).map((category, idx) => (
-                                        <span
-                                          key={idx}
-                                          className="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full"
-                                          style={{ color: 'rgb(61, 54, 50)' }}
-                                        >
-                                          {category}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Quick Facts Grid */}
-                                {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
-                                  <div>
-                                    <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>Quick Facts</h3>
-                                    <QuickFactsGrid facts={selectedMember.quickFacts} />
-                                  </div>
-                                ) : selectedMember.funFact && (
-                                  /* Fallback to single Fun Fact if no quick facts */
-                                  <div className="bg-gradient-to-br from-warm-sand/30 to-dusty-rose/10 rounded-2xl p-5">
-                                    <h3 className="font-serif text-base mb-2 flex items-center gap-2" style={{ color: 'rgb(61, 54, 50)' }}>
-                                      <Sparkles className="w-4 h-4 text-dusty-rose" />
-                                      Fun Fact
-                                    </h3>
-                                    <p className="text-sm leading-relaxed" style={{ color: 'rgb(61, 54, 50)' }}>{selectedMember.funFact}</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
+                        <div className="relative px-4 pt-8">
+                          <div className="relative h-72 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
+                            <Image
+                              src={member.image}
+                              alt={member.name}
+                              fill
+                              className={isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover transition-transform duration-700 group-hover:scale-105"}
+                              sizes="(max-width: 640px) 155px, (max-width: 1024px) 280px, 280px"
+                              unoptimized={isPlaceholderImage(member.image) || isVagaroPhoto(member.image)}
+                            />
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )
-              })}
+                        </div>
+
+                        <div className="px-6 py-5 text-center">
+                          <h3 className="text-2xl font-serif font-light text-gray-900 mb-1">
+                            {member.name}
+                          </h3>
+                          <p className="font-sans font-light text-gray-500">
+                            {member.name.toLowerCase().startsWith('emily')
+                              ? 'LashPop Owner'
+                              : member.type === 'employee'
+                                ? 'LashPop Team Artist'
+                                : member.businessName || 'Independent Artist'}
+                          </p>
+                        </div>
+
+                        {(() => {
+                          const handles = parseInstagramHandles(member.instagram, member.instagramUrl)
+                          if (handles.length === 0) return null
+                          return (
+                            <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-col">
+                              {handles.map(({ handle, url }, i) => (
+                                <a
+                                  key={handle}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`w-full py-2.5 flex items-center justify-center gap-1.5 hover:bg-white/50 transition-colors ${
+                                    i > 0 ? 'border-t border-warm-sand/30' : ''
+                                  }`}
+                                >
+                                  <Instagram className="w-3.5 h-3.5 text-dusty-rose" />
+                                  <span className="text-xs font-sans font-medium tracking-wide text-dusty-rose">
+                                    {handle}
+                                  </span>
+                                </a>
+                              ))}
+                            </div>
+                          )
+                        })()}
+
+                        <AnimatePresence>
+                          {hoveredId === member.id && !isSelected && (
+                            <motion.div
+                              className="absolute inset-0 bg-white/5 pointer-events-none"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                            />
+                          )}
+                        </AnimatePresence>
+
+                        {isHighlighted(member.id) && !isSelected && (
+                          <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-[20px] pointer-events-none" />
+                        )}
+                      </motion.div>
+                    </motion.div>
+                  )
+                })}
+
+              </div>
             </div>
           </div>
         )}
@@ -1364,6 +1062,22 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         </div>
       </section>
 
+      {/* Desktop full-page takeover — renders behind the site header (z-50) */}
+      <MemberTakeover
+        members={sortedTeamMembers}
+        selectedIndex={selectedMember && !isMobile ? selectedMemberIndex : null}
+        portfolioImages={portfolioImages}
+        isLoadingPortfolio={isLoadingPortfolio}
+        onClose={() => setSelectedMember(null)}
+        onSelectIndex={(idx) => {
+          const m = sortedTeamMembers[idx]
+          if (m) {
+            setSelectedMemberIndex(idx)
+            setSelectedMember(m)
+          }
+        }}
+      />
+
       {/* Team Member Modal - Full Screen on Mobile (Portaled to body) */}
       {mounted && createPortal(
         <AnimatePresence>
@@ -1395,7 +1109,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* ===== MOBILE LAYOUT ===== */}
-                {isMobile ? (
+                {isMobile && (
                   <div
                     className="flex flex-col h-full relative touch-pan-x"
                     style={{ height: '100dvh', overscrollBehavior: 'none' }}
@@ -1780,151 +1494,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </div>
                       </motion.div>
                     </AnimatePresence>
-                  </div>
-                ) : (
-                  /* ===== DESKTOP LAYOUT (Original) ===== */
-                  <div className="overflow-y-auto">
-                    {/* Close Button */}
-                    <button
-                      onClick={() => setShowModal(false)}
-                      className="absolute top-6 right-6 z-10 w-10 h-10 rounded-full bg-white/80 backdrop-blur-md border border-white/60 flex items-center justify-center hover:bg-white transition-all"
-                    >
-                      <X className="w-5 h-5 text-dune" />
-                    </button>
-
-                    {/* Modal Header with Image */}
-                    <div className="relative h-80 rounded-t-3xl overflow-hidden">
-                      <Image
-                        src={selectedMember.image}
-                        alt={selectedMember.name}
-                        fill
-                        className={isPlaceholderImage(selectedMember.image) ? "object-contain p-8 bg-[#EBE0CB]" : "object-cover"}
-                        unoptimized={isPlaceholderImage(selectedMember.image) || isVagaroPhoto(selectedMember.image)}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                      {/* Header Content */}
-                      <div className="absolute bottom-6 left-8 right-8">
-                        <h2 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
-                          {selectedMember.name}
-                        </h2>
-                        <p className="text-lg text-white/90 drop-shadow-md">
-                          {selectedMember.role}
-                        </p>
-                        {selectedMember.type === 'independent' && selectedMember.businessName && (
-                          <p className="text-sm text-white/80 italic mt-1 drop-shadow-md">
-                            {selectedMember.businessName}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Modal Body */}
-                    <div className="p-8 space-y-6">
-                      {/* Services - Horizontal scrolling chips */}
-                      {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
-                        <div className="overflow-x-auto scrollbar-hide -mx-2 px-2">
-                          <div className="flex gap-2 min-w-max">
-                            {(selectedMember.serviceCategories?.length
-                              ? selectedMember.serviceCategories
-                              : getTeamMemberCategories(selectedMember.specialties)
-                            ).map((category, idx) => (
-                              <span
-                                key={idx}
-                                className="px-3 py-1.5 text-xs font-semibold bg-dusty-rose/10 text-charcoal rounded-full whitespace-nowrap"
-                              >
-                                {category}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Bio Section */}
-                      {selectedMember.bio && (
-                        <div>
-                          <h3 className="text-lg font-semibold text-dune mb-3">About</h3>
-                          <p className="text-dune/70 leading-relaxed">{selectedMember.bio}</p>
-                        </div>
-                      )}
-
-                      {/* Credentials */}
-                      <MemberCredentialsList credentials={selectedMember.credentials} />
-
-                      {/* Quote */}
-                      {selectedMember.quote && (
-                        <div className="bg-sage/10 rounded-2xl p-6 border border-sage/20">
-                          <Sparkles className="w-5 h-5 text-sage mb-3" />
-                          <p className="text-dune/80 italic">&ldquo;{selectedMember.quote}&rdquo;</p>
-                        </div>
-                      )}
-
-                      {/* Specialties List */}
-                      {selectedMember.specialties.length > 0 && (
-                        <div>
-                          <h3 className="text-lg font-semibold text-dune mb-3">Specialties</h3>
-                          <div className="grid grid-cols-2 gap-3">
-                            {selectedMember.specialties.map((specialty, idx) => (
-                              <div key={idx} className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-dusty-rose" />
-                                <span className="text-dune/70 text-sm">{specialty}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Quick Facts Grid (Desktop Modal) */}
-                      {(selectedMember.quickFacts && selectedMember.quickFacts.length > 0) ? (
-                        <div>
-                          <h3 className="text-lg font-semibold text-dune mb-3">Quick Facts</h3>
-                          <QuickFactsGrid facts={selectedMember.quickFacts} />
-                        </div>
-                      ) : selectedMember.funFact && (
-                        /* Fallback to single Fun Fact if no quick facts */
-                        <div className="bg-golden/10 rounded-2xl p-6 border border-golden/20">
-                          <h3 className="text-sm font-semibold text-dune mb-2">Fun Fact</h3>
-                          <p className="text-dune/70">{selectedMember.funFact}</p>
-                        </div>
-                      )}
-
-                      {/* Contact & Booking */}
-                      <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                        <a
-                          href={`tel:${selectedMember.phone}`}
-                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
-                        >
-                          <Phone className="w-4 h-4" />
-                          <span className="font-medium">Call</span>
-                        </a>
-
-                        {(() => {
-                          const handles = parseInstagramHandles(selectedMember.instagram, selectedMember.instagramUrl)
-                          if (handles.length === 0) return null
-                          return (
-                            <a
-                              href={handles[0].url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white border border-dune/20 text-dune hover:bg-cream transition-all"
-                            >
-                              <Instagram className="w-4 h-4" />
-                              <span className="font-medium">Instagram</span>
-                            </a>
-                          )
-                        })()}
-
-                        <a
-                          href={selectedMember.bookingUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-dusty-rose text-white hover:bg-dusty-rose/90 transition-all"
-                        >
-                          <Calendar className="w-4 h-4" />
-                          <span className="font-medium">Book Now</span>
-                        </a>
-                      </div>
-                    </div>
                   </div>
                 )}
               </motion.div>
