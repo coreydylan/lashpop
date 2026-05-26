@@ -88,6 +88,40 @@ function parseInlineReviews(body: string, sourceUrl: string): NormalizedReview[]
     .filter((r): r is NormalizedReview => r !== null)
 }
 
+/**
+ * Extract Google's published "total review count" from the place response.
+ *
+ * The reviews block lives at json[6][175][9] — there's a sibling counter at
+ * json[6][175][9][2] in many places that holds the integer total. Also seen
+ * at json[6][4][8] (place card "[rating, count]" tuple). We try the known
+ * paths in order and accept the first plausible integer (1..100_000). When
+ * none match we return undefined and the post-sync falls back to local count.
+ */
+function parseTotalReviewCount(body: string): number | undefined {
+  const nl = body.indexOf('\n')
+  const payload = nl >= 0 ? body.slice(nl + 1) : body
+  let json: any
+  try {
+    json = JSON.parse(payload)
+  } catch {
+    return undefined
+  }
+  const candidates: Array<() => unknown> = [
+    () => json[6][175][9][2],
+    () => json[6][175][9][3],
+    () => json[6][4][8],
+    () => json[6][4][7],
+    () => json[6][175][9][0][1],
+  ]
+  for (const get of candidates) {
+    const v = safe(get)
+    if (typeof v === 'number' && Number.isFinite(v) && v >= 1 && v <= 100_000) {
+      return v
+    }
+  }
+  return undefined
+}
+
 export async function fetchGoogleReviews(env: Env): Promise<FetcherResult> {
   const errors: string[] = []
   const reviews: NormalizedReview[] = []
@@ -139,6 +173,8 @@ export async function fetchGoogleReviews(env: Env): Promise<FetcherResult> {
     if (!parsed.length) {
       errors.push(`parsed 0 reviews from ${body.length}B body — schema may have shifted`)
     }
+    const totalAvailable = parseTotalReviewCount(body)
+    return { source: 'google', reviews, totalAvailable, errors }
   } catch (err) {
     errors.push(err instanceof Error ? err.message : String(err))
   }
