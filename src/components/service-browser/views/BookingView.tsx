@@ -6,7 +6,10 @@ import { AlertCircle, ExternalLink } from 'lucide-react'
 import { LPLogoLoader } from '@/components/ui/LPLogoLoader'
 import { useVagaroWidget } from '@/contexts/VagaroWidgetContext'
 import { subscribeToVagaroEvent } from '@/lib/vagaro-events'
+import type { BookingCompletedData } from '@/lib/vagaro-events'
 import { getVagaroWidgetUrl } from '@/lib/vagaro-widget'
+import { BookingConfirmation } from '@/components/booking/BookingConfirmation'
+import { useServiceBrowser } from '../ServiceBrowserContext'
 import type { Service } from '../ServiceBrowserContext'
 
 interface BookingViewProps {
@@ -19,10 +22,13 @@ export function BookingView({ service }: BookingViewProps) {
 
   // Use VagaroWidgetContext for state
   const { state: widgetState, reset: resetWidgetState } = useVagaroWidget()
+  const { actions: browserActions } = useServiceBrowser()
 
   const [scriptLoaded, setScriptLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
+  const [isConfirmed, setIsConfirmed] = useState(false)
+  const [cardOnFile, setCardOnFile] = useState(false)
 
   // Widget is truly ready when Vagaro sends WidgetLoaded event
   const isWidgetReady = widgetState.isLoaded
@@ -38,11 +44,13 @@ export function BookingView({ service }: BookingViewProps) {
     }
   }, [isWidgetReady])
 
-  // Subscribe to BookingCompleted
+  // Subscribe to BookingCompleted — swap the iframe for a branded confirmation
   useEffect(() => {
-    const unsubscribeCompleted = subscribeToVagaroEvent('BookingCompleted', () => {
+    const unsubscribeCompleted = subscribeToVagaroEvent('BookingCompleted', (event) => {
       console.log('[BookingView] BookingCompleted event received')
-      // Booking completed - could trigger a success message or close
+      const data = event.data as BookingCompletedData | null
+      setCardOnFile(Boolean(data?.cardOnFile))
+      setIsConfirmed(true)
     })
 
     return () => {
@@ -55,6 +63,8 @@ export function BookingView({ service }: BookingViewProps) {
     setScriptLoaded(false)
     setHasError(false)
     setIsVisible(false)
+    setIsConfirmed(false)
+    setCardOnFile(false)
     scriptLoadedRef.current = false
     resetWidgetState()
   }, [service.id, resetWidgetState])
@@ -224,6 +234,18 @@ export function BookingView({ service }: BookingViewProps) {
             isVisible ? 'opacity-100' : 'opacity-0'
           }`}
         />
+
+        {/* Branded confirmation overlay (covers the iframe once Vagaro fires BookingCompleted) */}
+        {isConfirmed && (
+          <BookingConfirmation
+            serviceName={service.name}
+            providerName={widgetState.selectedProvider}
+            selectedTimeSlot={widgetState.selectedTimeSlot}
+            cardOnFile={cardOnFile}
+            onClose={browserActions.closeModal}
+            onBookAnother={browserActions.goBack}
+          />
+        )}
       </div>
     </motion.div>
   )
