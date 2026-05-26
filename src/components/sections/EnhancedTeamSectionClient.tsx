@@ -113,6 +113,81 @@ function SwipeSuccess() {
   )
 }
 
+// Horizontally scrollable chip row for desktop team cards.
+// - Trackpad: native horizontal scroll (overflow-x-auto handles 2-finger swipe).
+// - Mouse: click and drag to scroll, with `cursor-grab` affordance.
+// - Suppresses the card click when a drag actually moved the row, so dragging
+//   to peek at chips doesn't accidentally open the member modal.
+function DraggableChipRow({ categories }: { categories: string[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const dragState = useRef({ isDown: false, startX: 0, scrollLeft: 0, hasMoved: false })
+  const [isOverflowing, setIsOverflowing] = useState(false)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const check = () => setIsOverflowing(el.scrollWidth > el.clientWidth + 1)
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [categories])
+
+  return (
+    <div
+      className="absolute top-3 left-4 right-4 z-20"
+      onClick={(e) => {
+        if (dragState.current.hasMoved) {
+          e.stopPropagation()
+          dragState.current.hasMoved = false
+        }
+      }}
+    >
+      <div
+        ref={scrollRef}
+        className={`overflow-x-auto scrollbar-hide ${isOverflowing ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        onMouseDown={(e) => {
+          const el = scrollRef.current
+          if (!el || !isOverflowing) return
+          e.preventDefault()
+          dragState.current = {
+            isDown: true,
+            startX: e.pageX - el.offsetLeft,
+            scrollLeft: el.scrollLeft,
+            hasMoved: false,
+          }
+        }}
+        onMouseMove={(e) => {
+          if (!dragState.current.isDown) return
+          const el = scrollRef.current
+          if (!el) return
+          const x = e.pageX - el.offsetLeft
+          const walk = x - dragState.current.startX
+          if (Math.abs(walk) > 3) dragState.current.hasMoved = true
+          el.scrollLeft = dragState.current.scrollLeft - walk
+        }}
+        onMouseUp={() => {
+          dragState.current.isDown = false
+        }}
+        onMouseLeave={() => {
+          dragState.current.isDown = false
+        }}
+      >
+        <div className="flex flex-nowrap gap-1.5 w-max">
+          {categories.map((category, idx) => (
+            <span
+              key={idx}
+              className="text-xs font-sans font-light px-3 py-1 bg-cream text-dune rounded-full whitespace-nowrap select-none"
+            >
+              {category}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Hook to check/set localStorage for tutorial completion
 function useSwipeTutorial() {
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(true) // Default true to prevent flash
@@ -647,11 +722,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     <>
       <section
         ref={sectionRef}
-        className="relative pt-0 pb-0 overflow-x-hidden"
+        className="relative py-12 md:py-20 overflow-x-hidden"
         style={{ backgroundColor: '#e9d1c8' }}
       >
         {/* Section Header */}
-        <div className="text-center mb-12 px-4 pt-12 md:pt-16">
+        <div className="text-center mb-12 px-4">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-6"
             style={{ color: '#cc947f' }}
@@ -930,18 +1005,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               animate={{ scale: isSelected ? 1.02 : 1 }}
                               transition={{ duration: 0.3 }}
                             >
-                              {/* Service Tags - Positioned outside arch overflow, overlapping the arch */}
+                              {/* Service Tags - Positioned outside arch overflow, overlapping the arch.
+                                  Horizontally scrollable: trackpad 2-finger swipe works natively
+                                  via overflow-x-auto; mouse users can click-and-drag. */}
                               {memberCategories.length > 0 && (
-                                <div className="absolute top-3 left-4 z-20 flex flex-nowrap gap-1.5">
-                                  {memberCategories.slice(0, 3).map((category, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="text-xs font-sans font-light px-3 py-1 bg-cream text-dune rounded-full whitespace-nowrap"
-                                    >
-                                      {category}
-                                    </span>
-                                  ))}
-                                </div>
+                                <DraggableChipRow categories={memberCategories} />
                               )}
 
                               {/* Arch Image Container */}
@@ -1280,7 +1348,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         </div>
 
         {/* Join The Team CTA */}
-        <div className="text-center pt-0 pb-16 md:pb-20 px-4">
+        <div className="text-center px-4">
           <a
             href="/work-with-us"
             className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#ac4d3c] hover:text-white hover:border-[#ac4d3c]"
