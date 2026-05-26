@@ -377,39 +377,54 @@ export function MemberTakeover({
             </span>
           </motion.button>
 
-          {/* Artist nav arrows — quiet circles, no border, soft hover */}
-          <motion.button
-            key="takeover-prev"
+          {/* Artist nav arrows — outer wrapper is pointer-events-none so the
+              full 44px hitbox doesn't intercept clicks meant for photos in the
+              right/left column of content. Only the visible icon itself takes
+              clicks via pointer-events-auto on the inner button. */}
+          <motion.div
+            key="takeover-prev-wrap"
             initial={{ opacity: 0 }}
             animate={{ opacity: lightboxOpen ? 0 : 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            onClick={goPrev}
-            aria-label="Previous artist"
-            className="group fixed left-6 z-[45] flex h-11 w-11 items-center justify-center rounded-full text-charcoal/55 transition-all hover:bg-white/60 hover:text-charcoal"
-            style={{ top: '50%', transform: 'translateY(-50%)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="group pointer-events-none fixed left-6 z-[45] flex h-11 w-11 items-center justify-center"
+            style={{ top: '50%', transform: 'translateY(-50%)' }}
           >
-            <ChevronLeft className="h-6 w-6" />
-            <span className="absolute left-12 top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] tracking-wide text-charcoal/55 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+            <button
+              type="button"
+              onClick={goPrev}
+              aria-label="Previous artist"
+              className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full text-charcoal/55 transition-all hover:bg-white/60 hover:text-charcoal"
+              style={{ pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <span className="pointer-events-none absolute left-12 top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] tracking-wide text-charcoal/55 opacity-0 transition-opacity group-hover:opacity-100">
               {prevName}
             </span>
-          </motion.button>
-          <motion.button
-            key="takeover-next"
+          </motion.div>
+          <motion.div
+            key="takeover-next-wrap"
             initial={{ opacity: 0 }}
             animate={{ opacity: lightboxOpen ? 0 : 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            onClick={goNext}
-            aria-label="Next artist"
-            className="group fixed right-6 z-[45] flex h-11 w-11 items-center justify-center rounded-full text-charcoal/55 transition-all hover:bg-white/60 hover:text-charcoal"
-            style={{ top: '50%', transform: 'translateY(-50%)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="group pointer-events-none fixed right-6 z-[45] flex h-11 w-11 items-center justify-center"
+            style={{ top: '50%', transform: 'translateY(-50%)' }}
           >
-            <ChevronRight className="h-6 w-6" />
-            <span className="absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] tracking-wide text-charcoal/55 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+            <button
+              type="button"
+              onClick={goNext}
+              aria-label="Next artist"
+              className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full text-charcoal/55 transition-all hover:bg-white/60 hover:text-charcoal"
+              style={{ pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+            <span className="pointer-events-none absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] tracking-wide text-charcoal/55 opacity-0 transition-opacity group-hover:opacity-100">
               {nextName}
             </span>
-          </motion.button>
+          </motion.div>
 
           {/* Portfolio lightbox */}
           <AnimatePresence>
