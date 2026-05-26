@@ -245,18 +245,6 @@ export function MemberTakeover({
                         </a>
                       ) : null}
                       <p className="mt-2 text-sm text-charcoal/55">{roleSubtitle(member)}</p>
-
-                      <a
-                        href={member.bookingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-7 block w-full rounded-full bg-dusty-rose px-6 py-4 text-center text-base font-medium text-white shadow-[0_10px_24px_rgba(200,123,110,0.25)] hover:bg-terracotta-deep transition-colors"
-                      >
-                        Book with {member.name.split(' ')[0]}
-                      </a>
-                      <p className="mt-3 text-center text-[11px] tracking-wider text-charcoal/40">
-                        Booking opens at vagaro.com
-                      </p>
                     </div>
                   </aside>
 
@@ -347,7 +335,33 @@ export function MemberTakeover({
             </AnimatePresence>
           </motion.div>
 
-          {/* Close button — top right below header */}
+          {/* Top indicator — pagination dots + active member name, centered below header */}
+          <motion.div
+            key="takeover-indicator"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: lightboxOpen ? 0 : 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
+            className="fixed left-1/2 z-[45] flex -translate-x-1/2 items-center gap-3 rounded-full border border-terracotta/15 bg-white/95 px-[18px] py-2 shadow-[0_6px_20px_rgba(0,0,0,0.08)] backdrop-blur"
+            style={{ top: 'calc(80px + 16px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+          >
+            <div className="flex gap-1.5">
+              {members.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    i === selectedIndex ? 'w-[18px] bg-dusty-rose' : 'w-1.5 bg-charcoal/20'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-xs tracking-wide text-charcoal">
+              <strong className="font-semibold text-charcoal">{member.name}</strong>
+              <span className="text-charcoal/50"> · {selectedIndex! + 1} of {members.length}</span>
+            </span>
+          </motion.div>
+
+          {/* Close button — top right, X + ESC keyboard hint */}
           <motion.button
             key="takeover-close"
             initial={{ opacity: 0 }}
@@ -355,11 +369,14 @@ export function MemberTakeover({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={onClose}
-            aria-label="Close"
-            className="fixed right-6 z-[45]flex h-11 w-11 items-center justify-center rounded-full bg-cream/90 shadow-[0_4px_12px_rgba(0,0,0,0.08)] backdrop-blur hover:bg-white transition-colors"
-            style={{ top: 'calc(80px + 20px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            aria-label="Close (ESC)"
+            className="group fixed right-6 z-[45] flex items-center gap-2 rounded-full border border-terracotta/15 bg-white/95 py-2 pl-2.5 pr-3 shadow-[0_4px_12px_rgba(0,0,0,0.08)] backdrop-blur hover:bg-white transition-colors"
+            style={{ top: 'calc(80px + 16px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
-            <X className="h-5 w-5 text-dune" />
+            <X className="h-4 w-4 text-dune" />
+            <span className="rounded-md border border-charcoal/15 bg-cream/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-charcoal/70 group-hover:bg-cream">
+              ESC
+            </span>
           </motion.button>
 
           {/* Artist nav arrows */}
@@ -371,8 +388,8 @@ export function MemberTakeover({
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={goPrev}
             aria-label="Previous artist"
-            className="group fixed left-6 z-[45]flex h-14 w-14 items-center justify-center rounded-full border border-terracotta/15 bg-white/85 text-dune shadow-[0_10px_30px_rgba(0,0,0,0.1)] backdrop-blur transition-all hover:scale-110 hover:bg-white"
-            style={{ top: 'calc(50% + 40px)', transform: 'translateY(-50%)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="group fixed left-6 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-terracotta/15 bg-white/85 text-dune shadow-[0_10px_30px_rgba(0,0,0,0.1)] backdrop-blur transition-all hover:scale-110 hover:bg-white"
+            style={{ top: '50%', transform: 'translateY(-50%)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
             <ChevronLeft className="h-6 w-6" />
             <span className="absolute left-16 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-white px-3.5 py-2 text-xs text-charcoal shadow-md opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
@@ -387,39 +404,14 @@ export function MemberTakeover({
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={goNext}
             aria-label="Next artist"
-            className="group fixed right-6 z-[45]flex h-14 w-14 items-center justify-center rounded-full border border-terracotta/15 bg-white/85 text-dune shadow-[0_10px_30px_rgba(0,0,0,0.1)] backdrop-blur transition-all hover:scale-110 hover:bg-white"
-            style={{ top: 'calc(50% + 40px)', transform: 'translateY(-50%)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="group fixed right-6 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-terracotta/15 bg-white/85 text-dune shadow-[0_10px_30px_rgba(0,0,0,0.1)] backdrop-blur transition-all hover:scale-110 hover:bg-white"
+            style={{ top: '50%', transform: 'translateY(-50%)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
             <ChevronRight className="h-6 w-6" />
             <span className="absolute right-16 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-white px-3.5 py-2 text-xs text-charcoal shadow-md opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
               Next: {nextName}
             </span>
           </motion.button>
-
-          {/* Bottom counter */}
-          <motion.div
-            key="takeover-counter"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: lightboxOpen ? 0 : 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            className="fixed bottom-6 left-1/2 z-[45]flex -translate-x-1/2 items-center gap-3 rounded-full border border-terracotta/15 bg-white/95 px-[18px] py-2.5 shadow-[0_6px_20px_rgba(0,0,0,0.08)] backdrop-blur"
-            style={{ pointerEvents: lightboxOpen ? 'none' : 'auto' }}
-          >
-            <div className="flex gap-1.5">
-              {members.map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === selectedIndex ? 'w-[18px] bg-dusty-rose' : 'w-1.5 bg-charcoal/20'
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-xs tracking-wide text-charcoal">
-              <strong className="font-semibold text-charcoal">{member.name}</strong> · {selectedIndex! + 1} of {members.length}
-            </span>
-          </motion.div>
 
           {/* Portfolio lightbox */}
           <AnimatePresence>
