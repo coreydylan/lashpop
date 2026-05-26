@@ -33,6 +33,7 @@ import { sets } from "./schema/sets"
 import { setPhotos } from "./schema/set_photos"
 import { damUserSettings } from "./schema/dam_user_settings"
 import { damUserActions } from "./schema/dam_user_actions"
+import { adminAuditLog } from "./schema/admin_audit_log"
 import { websiteSettings, homepageReviews } from "./schema/website_settings"
 import { faqCategories, faqItems } from "./schema/faqs"
 import { quizPhotos, quizLashStyle, quizResultSettings } from "./schema/quiz_photos"
@@ -102,6 +103,7 @@ const dbSchema = {
   setPhotos,
   damUserSettings,
   damUserActions,
+  adminAuditLog,
   websiteSettings,
   homepageReviews,
   faqCategories,
@@ -213,6 +215,7 @@ export {
   setPhotos,
   damUserSettings,
   damUserActions,
+  adminAuditLog,
   websiteSettings,
   homepageReviews,
   faqCategories,

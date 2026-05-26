@@ -17,6 +17,10 @@ export async function getServiceCategories() {
     name: cat.name,
     slug: cat.slug,
     description: cat.description,
+    // `tagline` was previously omitted, which is why the admin Category
+    // Content editor's tagline field was dead-read for the drawer too.
+    // (See tmp/admin-audit.md, Part 1 § services.)
+    tagline: cat.tagline,
     icon: cat.icon,
     displayOrder: cat.displayOrder
   }))

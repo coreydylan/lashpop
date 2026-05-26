@@ -12,7 +12,7 @@ import { Navigation } from '@/components/sections/Navigation';
 import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
 import HeroSection from '@/components/landing-v2/HeroSection';
-import { ServicesSection } from '@/components/landing-v2/sections/ServicesSection';
+import { ServicesSection, defaultServiceCategories } from '@/components/landing-v2/sections/ServicesSection';
 import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
 import dynamic from 'next/dynamic';
@@ -108,6 +108,7 @@ interface ServiceCategory {
   name: string;
   slug: string;
   description: string | null;
+  tagline?: string | null;
   icon: string | null;
   displayOrder: number;
 }
@@ -138,15 +139,10 @@ interface FAQData {
   featuredItems: FAQWithCategory[];
 }
 
-interface FounderLetterContent {
-  greeting: string;
-  paragraphs: string[];
-  signOff: string;
-  signature: string;
-}
-
 // Hero slideshow/image config types
 import type { SlideshowPreset, SlideshowImage } from '@/types/hero-slideshow';
+import type { StudioSettings } from '@/types/studio';
+import type { FounderLetterContent } from '@/types/founder-letter';
 
 interface HeroSlideshowConfig {
   preset: SlideshowPreset | null;
@@ -172,6 +168,7 @@ interface LandingPageV2ClientProps {
   faqData?: FAQData;
   founderLetterContent?: FounderLetterContent;
   heroConfig?: HeroConfig;
+  studio: StudioSettings;
 }
 
 // Minimal mobile styles - GSAP handles the scroll behavior
@@ -261,7 +258,7 @@ function ServiceQueryDeepLink() {
   return null;
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig, studio }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -358,7 +355,40 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                       Desktop: Grid layout | Mobile: Swipeable cards
                     */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="services">
-                      <ServicesSection isMobile={isMobile} />
+                      {/*
+                        Map DB ServiceCategory → ServicesSection.ServiceCategory.
+
+                        Per-field fallback to the hardcoded brand copy in
+                        `defaultServiceCategories`: today the DB has tagline=null
+                        and emoji icons on every category, so a naive "trust the
+                        DB" mapping would visibly degrade the cards. Treat the
+                        hardcoded values as the seed; admin-set DB values
+                        override per field. When the admin later edits a
+                        tagline/description/icon in /admin/website/services, it
+                        wins. Untouched fields keep the brand copy.
+
+                        See tmp/admin-audit.md Part 1 §services.
+                      */}
+                      <ServicesSection
+                        isMobile={isMobile}
+                        categories={
+                          serviceCategories.length > 0
+                            ? serviceCategories.map(cat => {
+                                const fallback = defaultServiceCategories.find(d => d.slug === cat.slug)
+                                const isImagePath = (s: string | null | undefined) =>
+                                  typeof s === 'string' && /^\/.+\.(svg|png|jpe?g|webp)$/i.test(s)
+                                return {
+                                  id: cat.id,
+                                  slug: cat.slug,
+                                  title: fallback?.title ?? cat.name.toUpperCase(),
+                                  tagline: (cat.tagline?.trim()) || (fallback?.tagline ?? ''),
+                                  description: (cat.description?.trim()) || (fallback?.description ?? ''),
+                                  icon: isImagePath(cat.icon) ? cat.icon! : (fallback?.icon ?? ''),
+                                }
+                              })
+                            : undefined
+                        }
+                      />
                     </div>
 
                     {/* Team Section */}
@@ -371,7 +401,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                         Mirroring the id on the wrapper produced duplicates, which can confuse anchor / focus
                         restoration on reload. Keep only data-section-id here. */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews">
-                      <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
+                      <ReviewsSection reviews={reviews} reviewStats={reviewStats} studio={studio} />
                     </div>
 
                     {/* Instagram Carousel */}
@@ -390,12 +420,12 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                     {/* Map Section */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="map">
-                      <MapSection />
+                      <MapSection studio={studio} />
                     </div>
 
                     {/* Footer */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="footer">
-                      <FooterV2 />
+                      <FooterV2 studio={studio} />
                     </div>
                   </div>
                 </div>

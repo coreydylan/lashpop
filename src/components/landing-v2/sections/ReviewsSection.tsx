@@ -7,6 +7,7 @@ import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { ChevronUp } from 'lucide-react'
 import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import { SectionRule } from '../SectionRule'
+import { DEFAULT_STUDIO_SETTINGS, type StudioSettings } from '@/types/studio'
 
 function CountUp({ to, inView }: { to: number; inView: boolean }) {
   const mv = useMotionValue(0)
@@ -69,16 +70,17 @@ interface ReviewStat {
 interface ReviewsSectionProps {
   reviews: Review[]
   reviewStats?: ReviewStat[]
+  studio?: StudioSettings
 }
 
-// Review platform URLs for external links
-const reviewPlatformUrls: Record<string, string> = {
-  yelp: 'https://www.yelp.com/biz/lashpop-studios-oceanside',
-  google: 'https://maps.app.goo.gl/mozm5VjGqw8qCuzL8',
-  vagaro: 'https://www.vagaro.com/lashpop32',
-}
-
-export function ReviewsSection({ reviews, reviewStats = [] }: ReviewsSectionProps) {
+export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STUDIO_SETTINGS }: ReviewsSectionProps) {
+  // Review platform URLs sourced from studio settings; fall back to studio
+  // defaults if a particular network is unset in admin.
+  const reviewPlatformUrls: Record<string, string | undefined> = {
+    yelp: studio.social.yelp,
+    google: studio.social.google,
+    vagaro: studio.social.vagaro ?? studio.vagaroBookingUrl,
+  }
   const ref = useRef(null)
   const statsRef = useRef<HTMLDivElement>(null)
   const statsInView = useInView(statsRef, { once: true, margin: '-80px' })
