@@ -97,7 +97,10 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       </div>
 
       {/* Mobile Layout - Simple static scroll */}
-      <div className="md:hidden relative" style={{ backgroundColor: '#e9d1c8' }}>
+      {/* Background matches surrounding ivory sections so the letter flows with the rest of the page
+          instead of reading as a boxed-off chapter (the prior pink #e9d1c8 created hard horizontal
+          edges against both hero above and services below). */}
+      <div className="md:hidden relative bg-ivory">
         {/* Emily at studio counter - static, full width, aligned with hero bottom */}
         <div className="w-full overflow-hidden relative" style={{ aspectRatio: '2161/1575' }}>
           <Image
@@ -108,10 +111,12 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             className="object-cover"
             quality={90}
           />
+          {/* Soft ivory fade at image bottom — kills the hard horizontal cut where the desk meets the body bg */}
+          <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none bg-gradient-to-b from-transparent to-[#faf6f2]" />
         </div>
 
         {/* Text Container */}
-        <div className="px-6 pt-6 pb-16" style={{ backgroundColor: '#e9d1c8' }}>
+        <div className="px-6 pt-6 pb-16 bg-ivory">
           {/* Section Header */}
           <div className="mb-6 max-w-lg mx-auto">
             <h2
