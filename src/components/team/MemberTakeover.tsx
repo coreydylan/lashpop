@@ -335,30 +335,28 @@ export function MemberTakeover({
             </AnimatePresence>
           </motion.div>
 
-          {/* Top indicator — dots over name in a soft cream pill that masks scrolling content */}
+          {/* Top indicator — bare dots, viewport-centered, no chrome.
+              Each dot is an opaque solid color so it stays legible on any
+              scrolling content without needing a backdrop pill. */}
           <motion.div
             key="takeover-indicator"
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: lightboxOpen ? 0 : 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            className="fixed left-1/2 z-[45] flex -translate-x-1/2 flex-col items-center gap-2 rounded-full bg-cream/85 px-6 py-2.5 backdrop-blur-md"
-            style={{ top: 'calc(80px + 14px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="pointer-events-none fixed inset-x-0 z-[45] flex justify-center"
+            style={{ top: 'calc(80px + 22px)' }}
           >
             <div className="flex items-center gap-2">
               {members.map((_, i) => (
                 <span
                   key={i}
-                  className={`h-1 rounded-full transition-all duration-300 ${
-                    i === selectedIndex ? 'w-5 bg-dusty-rose' : 'w-1 bg-charcoal/25'
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    i === selectedIndex ? 'w-6 bg-dusty-rose' : 'w-1.5 bg-charcoal/35'
                   }`}
                 />
               ))}
             </div>
-            <span className="text-[11px] tracking-wide text-charcoal/55">
-              <span className="font-medium text-charcoal/75">{member.name}</span>
-              <span className="text-charcoal/40"> · {selectedIndex! + 1} of {members.length}</span>
-            </span>
           </motion.div>
 
           {/* Close — X + ESC in a matching cream backdrop */}
