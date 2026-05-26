@@ -576,7 +576,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                 <>
                   <button
                     onClick={handleClose}
-                    className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
+                    className="absolute top-4 right-4 z-10 w-8 h-8 min-h-0 min-w-0 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
                                text-charcoal hover:text-charcoal transition-all shadow-sm"
                   >
                     <X className="w-4 h-4" />
@@ -585,7 +585,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                   {step > 0 && (
                     <button
                       onClick={handleBack}
-                      className="absolute top-4 left-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
+                      className="absolute top-4 left-4 z-10 w-8 h-8 min-h-0 min-w-0 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
                                  text-charcoal hover:text-charcoal transition-all shadow-sm"
                     >
                       <ChevronLeft className="w-4 h-4" />

@@ -309,7 +309,7 @@ function MobileSwipeableServiceCards({
               key={index}
               onClick={() => setCurrentIndex(index)}
               aria-label={`Go to slide ${index + 1}`}
-              className="relative h-1.5 cursor-pointer"
+              className="relative h-1.5 min-h-0 min-w-0 cursor-pointer"
               style={{ width: isActive ? 20 : 6 }}
             >
               {isActive ? (
@@ -331,7 +331,7 @@ function MobileSwipeableServiceCards({
         {/* Left arrow */}
         <motion.button
           onClick={() => setCurrentIndex((prev) => prev === 0 ? categories.length - 1 : prev - 1)}
-          className="w-8 h-8 rounded-full border border-terracotta/30 bg-white/60 flex items-center justify-center"
+          className="w-8 h-8 min-h-0 min-w-0 rounded-full border border-terracotta/30 bg-white/60 flex items-center justify-center"
           animate={{
             opacity: [0.6, 1, 0.6],
           }}
@@ -354,7 +354,7 @@ function MobileSwipeableServiceCards({
         {/* Right arrow */}
         <motion.button
           onClick={() => setCurrentIndex((prev) => (prev + 1) % categories.length)}
-          className="w-8 h-8 rounded-full border border-terracotta/30 bg-white/60 flex items-center justify-center"
+          className="w-8 h-8 min-h-0 min-w-0 rounded-full border border-terracotta/30 bg-white/60 flex items-center justify-center"
           animate={{
             opacity: [0.6, 1, 0.6],
           }}

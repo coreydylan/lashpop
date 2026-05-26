@@ -1191,14 +1191,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                     <>
                                       <button
                                         onClick={() => handleImageSelect((currentImageIndex - 1 + portfolioImages.length) % portfolioImages.length)}
-                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-md"
+                                        className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 min-h-0 min-w-0 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-md"
                                         aria-label="Previous image"
                                       >
                                         <ChevronLeft className="w-5 h-5 text-dune" />
                                       </button>
                                       <button
                                         onClick={() => handleImageSelect((currentImageIndex + 1) % portfolioImages.length)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-md"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 min-h-0 min-w-0 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center hover:bg-white transition-colors shadow-md"
                                         aria-label="Next image"
                                       >
                                         <ChevronRight className="w-5 h-5 text-dune" />
@@ -1333,22 +1333,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </div>
         )}
 
-        {/* Team Group Photo - Full Width, taller crop, equal spacing top/bottom */}
-        <div className="py-12 md:py-20">
-          <div className="relative w-full overflow-hidden aspect-[767/409] max-h-[820px]">
-            <Image
-              src="/lashpop-images/team/team-group-photo.jpg"
-              alt="The LashPop Studios team"
-              fill
-              priority={false}
-              sizes="100vw"
-              className="object-cover object-center"
-            />
-          </div>
-        </div>
-
         {/* Join The Team CTA */}
-        <div className="text-center px-4">
+        <div className="text-center px-4 mt-12 md:mt-20">
           <a
             href="/work-with-us"
             className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-all duration-300 hover:bg-[#ac4d3c] hover:text-white hover:border-[#ac4d3c]"
@@ -1361,6 +1347,20 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
               Join The Team
             </span>
           </a>
+        </div>
+
+        {/* Team Group Photo - Full Width, taller crop */}
+        <div className="mt-12 md:mt-20">
+          <div className="relative w-full overflow-hidden aspect-[767/409] max-h-[820px]">
+            <Image
+              src="/lashpop-images/team/team-group-photo.jpg"
+              alt="The LashPop Studios team"
+              fill
+              priority={false}
+              sizes="100vw"
+              className="object-cover object-center"
+            />
+          </div>
         </div>
       </section>
 
