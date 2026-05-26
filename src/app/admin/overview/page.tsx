@@ -30,22 +30,39 @@ interface RecentAction {
 async function loadDashboardData() {
   const db = getDb()
 
+  // Audit log read is wrapped so the page still renders when the
+  // admin_audit_log migration hasn't been applied yet.
+  const recentActionsPromise = db
+    .select({
+      id: adminAuditLog.id,
+      action: adminAuditLog.action,
+      targetType: adminAuditLog.targetType,
+      targetId: adminAuditLog.targetId,
+      createdAt: adminAuditLog.createdAt,
+      actorName: userSchema.name,
+      actorEmail: userSchema.email,
+      actorPhone: userSchema.phoneNumber,
+    })
+    .from(adminAuditLog)
+    .leftJoin(userSchema, eq(adminAuditLog.actorUserId, userSchema.id))
+    .orderBy(desc(adminAuditLog.createdAt))
+    .limit(10)
+    .catch((err) => {
+      console.warn('[overview] admin_audit_log read failed (migration not applied?)', err.message)
+      return [] as Array<{
+        id: string
+        action: string
+        targetType: string | null
+        targetId: string | null
+        createdAt: Date
+        actorName: string | null
+        actorEmail: string | null
+        actorPhone: string | null
+      }>
+    })
+
   const [recentActions, pendingScore, pinnedCount, studioConfigured, founderConfigured] = await Promise.all([
-    db
-      .select({
-        id: adminAuditLog.id,
-        action: adminAuditLog.action,
-        targetType: adminAuditLog.targetType,
-        targetId: adminAuditLog.targetId,
-        createdAt: adminAuditLog.createdAt,
-        actorName: userSchema.name,
-        actorEmail: userSchema.email,
-        actorPhone: userSchema.phoneNumber,
-      })
-      .from(adminAuditLog)
-      .leftJoin(userSchema, eq(adminAuditLog.actorUserId, userSchema.id))
-      .orderBy(desc(adminAuditLog.createdAt))
-      .limit(10),
+    recentActionsPromise,
 
     // Reviews that haven't been scored AND aren't already hidden
     db

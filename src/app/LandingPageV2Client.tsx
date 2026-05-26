@@ -12,7 +12,7 @@ import { Navigation } from '@/components/sections/Navigation';
 import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
 import HeroSection from '@/components/landing-v2/HeroSection';
-import { ServicesSection } from '@/components/landing-v2/sections/ServicesSection';
+import { ServicesSection, defaultServiceCategories } from '@/components/landing-v2/sections/ServicesSection';
 import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
 import dynamic from 'next/dynamic';
@@ -357,22 +357,35 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="services">
                       {/*
                         Map DB ServiceCategory → ServicesSection.ServiceCategory.
-                        Falls back to the section's own hardcoded copy when admin
-                        hasn't filled in tagline/description. This is the wiring
-                        that was missing — see tmp/admin-audit.md Part 1 §services.
+
+                        Per-field fallback to the hardcoded brand copy in
+                        `defaultServiceCategories`: today the DB has tagline=null
+                        and emoji icons on every category, so a naive "trust the
+                        DB" mapping would visibly degrade the cards. Treat the
+                        hardcoded values as the seed; admin-set DB values
+                        override per field. When the admin later edits a
+                        tagline/description/icon in /admin/website/services, it
+                        wins. Untouched fields keep the brand copy.
+
+                        See tmp/admin-audit.md Part 1 §services.
                       */}
                       <ServicesSection
                         isMobile={isMobile}
                         categories={
                           serviceCategories.length > 0
-                            ? serviceCategories.map(cat => ({
-                                id: cat.id,
-                                slug: cat.slug,
-                                title: cat.name.toUpperCase(),
-                                tagline: cat.tagline ?? '',
-                                description: cat.description ?? '',
-                                icon: cat.icon ?? '',
-                              }))
+                            ? serviceCategories.map(cat => {
+                                const fallback = defaultServiceCategories.find(d => d.slug === cat.slug)
+                                const isImagePath = (s: string | null | undefined) =>
+                                  typeof s === 'string' && /^\/.+\.(svg|png|jpe?g|webp)$/i.test(s)
+                                return {
+                                  id: cat.id,
+                                  slug: cat.slug,
+                                  title: fallback?.title ?? cat.name.toUpperCase(),
+                                  tagline: (cat.tagline?.trim()) || (fallback?.tagline ?? ''),
+                                  description: (cat.description?.trim()) || (fallback?.description ?? ''),
+                                  icon: isImagePath(cat.icon) ? cat.icon! : (fallback?.icon ?? ''),
+                                }
+                              })
                             : undefined
                         }
                       />
