@@ -863,13 +863,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </p>
                       </div>
 
-                      {/* Bottom IG section - stacks multiple handles vertically */}
+                      {/* Bottom IG section - multiple handles share one row to keep card heights even */}
                       {(() => {
                         const handles = parseInstagramHandles(member.instagram, member.instagramUrl)
                         if (handles.length === 0) return null
+                        const isMulti = handles.length > 1
                         return (
-                          <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-col">
-                            {handles.map(({ handle, url }, i) => (
+                          <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-row">
+                            {handles.map(({ handle, url }) => (
                               <a
                                 key={handle}
                                 href={url}
@@ -880,12 +881,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   e.stopPropagation()
                                   window.open(url, '_blank')
                                 }}
-                                className={`w-full py-2 flex items-center justify-center gap-1.5 active:bg-white/50 transition-colors ${
-                                  i > 0 ? 'border-t border-warm-sand/30' : ''
-                                }`}
+                                className="flex-1 min-w-0 py-2 flex items-center justify-center gap-1 active:bg-white/50 transition-colors border-l first:border-l-0 border-warm-sand/40"
                               >
-                                <Instagram className="w-3 h-3 text-dusty-rose" />
-                                <span className="text-[10px] font-sans font-medium tracking-wide text-dusty-rose">
+                                <Instagram className="w-3 h-3 text-dusty-rose flex-shrink-0" />
+                                <span className={`${isMulti ? 'text-[9px]' : 'text-[10px]'} font-sans font-medium tracking-wide text-dusty-rose truncate`}>
                                   {handle}
                                 </span>
                               </a>
@@ -983,21 +982,20 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         {(() => {
                           const handles = parseInstagramHandles(member.instagram, member.instagramUrl)
                           if (handles.length === 0) return null
+                          const isMulti = handles.length > 1
                           return (
-                            <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-col">
-                              {handles.map(({ handle, url }, i) => (
+                            <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-row">
+                              {handles.map(({ handle, url }) => (
                                 <a
                                   key={handle}
                                   href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={(e) => e.stopPropagation()}
-                                  className={`w-full py-2.5 flex items-center justify-center gap-1.5 hover:bg-white/50 transition-colors ${
-                                    i > 0 ? 'border-t border-warm-sand/30' : ''
-                                  }`}
+                                  className="flex-1 min-w-0 py-2.5 flex items-center justify-center gap-1.5 hover:bg-white/50 transition-colors border-l first:border-l-0 border-warm-sand/40"
                                 >
-                                  <Instagram className="w-3.5 h-3.5 text-dusty-rose" />
-                                  <span className="text-xs font-sans font-medium tracking-wide text-dusty-rose">
+                                  <Instagram className={`${isMulti ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-dusty-rose flex-shrink-0`} />
+                                  <span className={`${isMulti ? 'text-[10px]' : 'text-xs'} font-sans font-medium tracking-wide text-dusty-rose truncate`}>
                                     {handle}
                                   </span>
                                 </a>
