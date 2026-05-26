@@ -14,6 +14,13 @@ interface AdminShellProps {
     phoneNumber: string | null
     email: string | null
   }
+  /**
+   * `constrained` (default): main content sits in a max-w-6xl, centered,
+   * padded box — right for forms and dashboards.
+   * `fullbleed`: main content stretches edge-to-edge with no inner padding
+   * — used by the DAM grid + sticky omnibar, which manage their own layout.
+   */
+  contentMode?: 'constrained' | 'fullbleed'
 }
 
 const STATUS_BADGE: Record<SectionStatus, { label: string; className: string } | null> = {
@@ -22,7 +29,7 @@ const STATUS_BADGE: Record<SectionStatus, { label: string; className: string } |
   'coming-soon': { label: 'Soon', className: 'bg-sage/10 text-sage border-sage/20' },
 }
 
-export function AdminShell({ children, user }: AdminShellProps) {
+export function AdminShell({ children, user, contentMode = 'constrained' }: AdminShellProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const currentSection = findSectionByPath(pathname)
@@ -103,7 +110,11 @@ export function AdminShell({ children, user }: AdminShellProps) {
 
       {/* Main */}
       <main className="lg:pl-72 pt-14 lg:pt-0 min-h-screen">
-        <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-10 max-w-6xl mx-auto">{children}</div>
+        {contentMode === 'fullbleed' ? (
+          children
+        ) : (
+          <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-10 max-w-6xl mx-auto">{children}</div>
+        )}
       </main>
     </div>
   )

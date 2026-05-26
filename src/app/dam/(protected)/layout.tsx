@@ -1,53 +1,42 @@
 import { ReactNode } from 'react'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { DAMProviders } from '../components/DAMProviders'
-import { AccessDenied } from './AccessDenied'
-import { getDb } from '@/db'
-import { user as userSchema } from '@/db/schema/auth_user'
-import { session as sessionSchema } from '@/db/schema/auth_session'
-import { eq, and, gt } from 'drizzle-orm'
+import { AdminShell } from '@/components/admin-shell/AdminShell'
+import { getAdminSession } from '@/lib/admin/auth'
 
-// This layout protects all DAM routes except login
-export default async function ProtectedLayout({ children }: { children: ReactNode }) {
-  const cookieStore = await cookies()
-  const authToken = cookieStore.get('auth_token')
+export const dynamic = 'force-dynamic'
 
-  // If no auth token, redirect to login
-  if (!authToken) {
-    redirect('/dam/login')
-  }
-
-  // Validate session and check DAM access
-  const db = getDb()
-
-  const result = await db
-    .select({
-      userId: userSchema.id,
-      damAccess: userSchema.damAccess,
-      sessionExpires: sessionSchema.expiresAt
-    })
-    .from(sessionSchema)
-    .innerJoin(userSchema, eq(sessionSchema.userId, userSchema.id))
-    .where(
-      and(
-        eq(sessionSchema.token, authToken.value),
-        gt(sessionSchema.expiresAt, new Date())
-      )
-    )
-    .limit(1)
-
-  const session = result[0]
-
-  // If session is invalid or expired, redirect to login
+/**
+ * Protected layout for /dam/*.
+ *
+ * Uses the shared `getAdminSession()` helper (same one /admin/layout.tsx
+ * uses) so auth is unified across the studio control panel. Wraps the
+ * DAM in the same AdminShell as the admin pages — in `fullbleed` mode so
+ * the asset grid + sticky omnibar can use the full content area without
+ * the form-page max-width constraint.
+ *
+ * Net effect: navigating between /admin/* and /dam/* feels like one
+ * panel — same sidebar, same user footer, same "Back to lashpop.com".
+ */
+export default async function ProtectedDamLayout({ children }: { children: ReactNode }) {
+  const session = await getAdminSession()
   if (!session) {
     redirect('/dam/login')
   }
-
-  // If user doesn't have DAM access, show access denied
-  if (!session.damAccess) {
-    return <AccessDenied />
+  if (!session.isAdmin) {
+    redirect('/admin/no-access')
   }
 
-  return <DAMProviders>{children}</DAMProviders>
+  return (
+    <AdminShell
+      contentMode="fullbleed"
+      user={{
+        name: session.name,
+        phoneNumber: session.phoneNumber,
+        email: session.email,
+      }}
+    >
+      <DAMProviders>{children}</DAMProviders>
+    </AdminShell>
+  )
 }
