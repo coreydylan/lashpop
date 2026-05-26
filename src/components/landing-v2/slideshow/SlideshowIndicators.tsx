@@ -36,7 +36,7 @@ export function SlideshowIndicators({
           <button
             key={index}
             onClick={() => onSelect(index)}
-            className="group relative p-1"
+            className="group relative p-1 min-h-0 min-w-0"
             aria-label={`Go to slide ${index + 1}`}
           >
             <div
@@ -66,7 +66,7 @@ export function SlideshowIndicators({
           <button
             key={index}
             onClick={() => onSelect(index)}
-            className="group relative"
+            className="group relative min-h-0 min-w-0"
             aria-label={`Go to slide ${index + 1}`}
           >
             <div

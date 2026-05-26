@@ -15,12 +15,11 @@ type Seed = {
 
 const license = (name: string): TeamMemberCredential => ({ type: 'license', name })
 const cert = (name: string): TeamMemberCredential => ({ type: 'certification', name })
-const award = (name: string): TeamMemberCredential => ({ type: 'award', name })
 
 const seeds: Seed[] = [
   {
     match: { name: 'Emily Rogers' },
-    credentials: [license('Licensed Esthetician'), award('Lashpop Pro Boss Bitch')],
+    credentials: [license('Licensed Esthetician')],
   },
   {
     match: { name: 'Rachel Edwards' },

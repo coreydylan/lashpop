@@ -8,12 +8,17 @@ import { getDb } from '@/db'
 import { services } from '@/db/schema/services'
 import { teamMembers } from '@/db/schema/team_members'
 import { getVagaroClient } from './vagaro-client'
+import { fetchPublicServicePhotos, serviceTitleKey } from './vagaro-public-services'
 import { eq, isNotNull } from 'drizzle-orm'
 
 /**
- * Sync a single service from Vagaro to local DB
+ * Sync a single service from Vagaro to local DB.
+ *
+ * `photosByTitle` is an optional title→URL map from the public booking-page
+ * composite endpoint. When omitted (or empty), vagaroImageUrl is left alone
+ * on updates so we don't clobber an existing URL with null.
  */
-export async function syncService(vagaroService: any) {
+export async function syncService(vagaroService: any, photosByTitle?: Map<string, string>) {
   const db = getDb()
 
   // Extract key fields from Vagaro
@@ -39,6 +44,11 @@ export async function syncService(vagaroService: any) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
+  // Photo from the public composite endpoint, matched by service title.
+  // The v2 API itself returns no image fields, so this is the only source.
+  const photoUrl = photosByTitle?.get(serviceTitleKey(title)) ?? null
+  const photosAvailable = (photosByTitle?.size ?? 0) > 0
+
   // Check if service already exists
   const [existing] = await db
     .select()
@@ -57,7 +67,7 @@ export async function syncService(vagaroService: any) {
         priceStarting: Math.round(priceStarting * 100), // Convert to cents
         vagaroParentServiceId: vagaroService.parentServiceId,
         vagaroData: vagaroService,
-        vagaroImageUrl: vagaroService.image_url || vagaroService.imageUrl || null,
+        ...(photosAvailable ? { vagaroImageUrl: photoUrl } : {}),
         lastSyncedAt: new Date(),
         updatedAt: new Date()
       })
@@ -76,7 +86,7 @@ export async function syncService(vagaroService: any) {
         vagaroServiceId: serviceId,
         vagaroParentServiceId: vagaroService.parentServiceId,
         vagaroData: vagaroService,
-        vagaroImageUrl: vagaroService.image_url || vagaroService.imageUrl || null,
+        vagaroImageUrl: photoUrl,
         name: title,
         slug,
         subtitle: parentTitle,
@@ -112,6 +122,22 @@ export async function syncAllServices(): Promise<{ synced: number; failed: numbe
     throw new Error(`Invalid response from Vagaro getServices(): ${JSON.stringify(vagaroServices)}`)
   }
 
+  // Fetch service photos from the public composite endpoint once. The v2 API
+  // doesn't expose them, so this is the only source. A failure here is logged
+  // but non-fatal — services still sync, existing vagaroImageUrl values are kept.
+  let photosByTitle = new Map<string, string>()
+  const publicBusinessId = process.env.VAGARO_PUBLIC_BUSINESS_ID
+  if (publicBusinessId) {
+    try {
+      photosByTitle = await fetchPublicServicePhotos(publicBusinessId)
+      console.log(`  Fetched ${photosByTitle.size} service photos from public endpoint`)
+    } catch (err) {
+      console.error('  ⚠️ Public service photos fetch failed — keeping existing vagaroImageUrl values:', err)
+    }
+  } else {
+    console.warn('  ⚠️ VAGARO_PUBLIC_BUSINESS_ID not set — service photos will not be synced')
+  }
+
   const total = vagaroServices.length
   let synced = 0
   let failed = 0
@@ -119,7 +145,7 @@ export async function syncAllServices(): Promise<{ synced: number; failed: numbe
 
   for (const service of vagaroServices) {
     try {
-      await syncService(service)
+      await syncService(service, photosByTitle)
       synced++
     } catch (error) {
       failed++

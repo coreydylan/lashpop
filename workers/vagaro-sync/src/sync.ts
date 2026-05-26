@@ -3,6 +3,7 @@ import type { Db } from './db'
 import { services, teamMembers } from './schema'
 import type { VagaroClient } from './vagaro-client'
 import { fetchPublicStaff, nameKey, originalPhotoUrl, type VagaroPublicProvider } from './public-staff'
+import { fetchPublicServicePhotos, serviceTitleKey } from './public-services'
 
 export interface SyncStats {
   synced: number
@@ -21,7 +22,11 @@ export interface PublicStaffStats {
   errors: string[]
 }
 
-async function syncService(db: Db, vagaroService: any): Promise<void> {
+async function syncService(
+  db: Db,
+  vagaroService: any,
+  photosByTitle: Map<string, string>
+): Promise<void> {
   const serviceId = vagaroService.serviceId
   const title = vagaroService.serviceTitle || vagaroService.name
   const parentTitle = vagaroService.parentServiceTitle || vagaroService.category
@@ -42,6 +47,12 @@ async function syncService(db: Db, vagaroService: any): Promise<void> {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
+  // Photo from the public composite endpoint, matched by service title.
+  // When the lookup is empty (fetch failed) we skip the field on update to
+  // preserve whatever URL is already in the DB rather than clobber it with null.
+  const photoUrl = photosByTitle.get(serviceTitleKey(title)) ?? null
+  const photosAvailable = photosByTitle.size > 0
+
   const existing = await db.select().from(services).where(eq(services.vagaroServiceId, serviceId)).limit(1)
 
   if (existing.length > 0) {
@@ -54,7 +65,7 @@ async function syncService(db: Db, vagaroService: any): Promise<void> {
         priceStarting: Math.round(priceStarting * 100),
         vagaroParentServiceId: vagaroService.parentServiceId,
         vagaroData: vagaroService,
-        vagaroImageUrl: vagaroService.image_url || vagaroService.imageUrl || null,
+        ...(photosAvailable ? { vagaroImageUrl: photoUrl } : {}),
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -64,7 +75,7 @@ async function syncService(db: Db, vagaroService: any): Promise<void> {
       vagaroServiceId: serviceId,
       vagaroParentServiceId: vagaroService.parentServiceId,
       vagaroData: vagaroService,
-      vagaroImageUrl: vagaroService.image_url || vagaroService.imageUrl || null,
+      vagaroImageUrl: photoUrl,
       name: title,
       slug,
       subtitle: parentTitle,
@@ -109,10 +120,27 @@ async function syncTeamMember(db: Db, vagaroEmployee: any): Promise<void> {
   // main app's syncAllTeamMembers behavior of only syncing existing rows.
 }
 
-export async function syncAllServices(db: Db, client: VagaroClient): Promise<SyncStats> {
+export async function syncAllServices(
+  db: Db,
+  client: VagaroClient,
+  numericBusinessId: string
+): Promise<SyncStats> {
   const list = await client.getServices()
   if (!Array.isArray(list)) {
     throw new Error(`Invalid Vagaro getServices() response: ${JSON.stringify(list).slice(0, 200)}`)
+  }
+
+  // Photos come from the public booking-page composite endpoint, not the v2 API.
+  // We fetch once up front and pass the title→URL map into each upsert. A failure
+  // here is logged but non-fatal — services still sync with whatever photo URL
+  // is already stored.
+  let photosByTitle: Map<string, string>
+  try {
+    photosByTitle = await fetchPublicServicePhotos(numericBusinessId)
+    console.log(`fetched ${photosByTitle.size} service photos from public composite endpoint`)
+  } catch (err) {
+    console.error('public service photos fetch failed — keeping existing vagaroImageUrl values:', err)
+    photosByTitle = new Map()
   }
 
   const total = list.length
@@ -122,7 +150,7 @@ export async function syncAllServices(db: Db, client: VagaroClient): Promise<Syn
 
   for (const s of list) {
     try {
-      await syncService(db, s)
+      await syncService(db, s, photosByTitle)
       synced++
     } catch (err) {
       failed++

@@ -211,7 +211,7 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
   return (
     <>
       <style jsx>{scrollbarStyles}</style>
-      <section ref={ref} id="reviews" className="relative pt-16 md:pt-24 pb-6 md:pb-12 overflow-hidden" style={{ backgroundColor: '#e9d1c8' }}>
+      <section ref={ref} id="reviews" className="relative py-12 md:py-20 overflow-hidden" style={{ backgroundColor: '#e9d1c8' }}>
         <div className="relative">
 
         {/* Section Header */}
@@ -297,7 +297,7 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
             ref={emblaRef}
             className="review-carousel overflow-visible cursor-grab active:cursor-grabbing"
           >
-            <div className="flex touch-pan-x pt-4 pb-16 md:py-10 px-4">
+            <div className="flex touch-pan-x px-4">
               {reviews.map((review, index) => (
                 <div
                   key={review.id || `review-${index}`}

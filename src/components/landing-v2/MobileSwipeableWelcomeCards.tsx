@@ -297,7 +297,7 @@ export function MobileSwipeableWelcomeCards({
             onClick={() => setCurrentIndex(index)}
             type="button"
             aria-label={`Go to card ${index + 1}`}
-            className="flex items-center justify-center h-5"
+            className="flex items-center justify-center h-5 min-h-0 min-w-0"
           >
             <div
               className={`h-1.5 rounded-full transition-all duration-300 ${

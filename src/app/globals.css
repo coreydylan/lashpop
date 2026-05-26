@@ -247,7 +247,19 @@
   padding-left: var(--safe-area-inset-left);
 }
 
-/* iOS Touch Optimization */
+/* iOS Touch Optimization
+ *
+ * Applies tap-delay/highlight fixes and the iOS HIG 44x44pt minimum tap target
+ * to every interactive element by default. This is accessibility-by-default —
+ * good for most buttons, but it WILL inflate any element designed to be smaller
+ * than 44px (pagination dots, indicator pills, decorative icon-only buttons).
+ *
+ * Opt out for elements that must render below 44px by adding Tailwind utilities
+ * `min-h-0 min-w-0` to the element — these win on specificity over the rules
+ * below. Use sparingly and only for non-primary touch targets (pagination
+ * indicators, carousel arrows, decorative hints). Primary actions (modal close,
+ * nav toggle, CTAs) should keep the 44px floor for accessibility.
+ */
 button,
 a,
 [role="button"],
@@ -258,7 +270,7 @@ a,
   touch-action: manipulation;
   /* Remove iOS tap highlight */
   -webkit-tap-highlight-color: transparent;
-  /* Minimum touch target size (44x44pt per iOS HIG) */
+  /* Minimum touch target size (44x44pt per iOS HIG) — opt out with `min-h-0 min-w-0` */
   min-height: 44px;
   min-width: 44px;
 }

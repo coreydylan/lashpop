@@ -27,6 +27,72 @@ export interface AutoPromoteStats {
   capacity: number
 }
 
+export interface ReviewStatsRow {
+  source: string
+  rating: number
+  reviewCount: number
+}
+
+export interface ReviewStatsResult {
+  updated: ReviewStatsRow[]
+}
+
+/**
+ * Refresh the `review_stats` table from current `reviews` data + each fetcher's
+ * upstream `totalAvailable`. This is the table that powers the public review
+ * counter on the homepage (hero chip + carousel header). Without this the
+ * counter is frozen at whatever number was last written by the old BrightData
+ * cron that this Worker replaced.
+ *
+ * Precedence per source:
+ *   - upstream totalAvailable wins when known — that's what the platform
+ *     publicly shows right now, and it's what users compare the counter to
+ *   - fall back to count(*) of rows we hold if upstream is null/missing (e.g.
+ *     Google's fetcher doesn't report a total, or a fetcher errored this cycle)
+ *
+ * NB: we deliberately DON'T take max(local, upstream). Local can drift higher
+ * than upstream when platforms remove reviews (deletes/flags) — those rows
+ * stick in our DB but no longer count on the platform. Counter should match
+ * the platform.
+ *
+ * The average rating is computed from the rows we hold. Sources we didn't
+ * fetch this cycle are left alone so a flaky fetcher run doesn't blank the
+ * count.
+ */
+export async function updateReviewStats(
+  sql: Sql,
+  fetcherTotals: Partial<Record<'google' | 'vagaro' | 'yelp', number | undefined>>,
+): Promise<ReviewStatsResult> {
+  const aggregates = await sql<Array<{ source: string; count: number; avg_rating: string }>>`
+    SELECT source, COUNT(*)::int AS count, AVG(rating)::numeric(3,1)::text AS avg_rating
+    FROM reviews
+    WHERE source IN ('google', 'vagaro', 'yelp')
+    GROUP BY source
+  `
+
+  const updated: ReviewStatsRow[] = []
+  for (const row of aggregates) {
+    const source = row.source as 'google' | 'vagaro' | 'yelp'
+    const upstreamTotal = fetcherTotals[source]
+    const localCount = row.count
+    const reviewCount = upstreamTotal != null && upstreamTotal > 0 ? upstreamTotal : localCount
+    const ratingNum = Number(row.avg_rating)
+    const rating = Number.isFinite(ratingNum) && ratingNum > 0 ? ratingNum : 5.0
+    const ratingStr = rating.toFixed(1)
+
+    await sql`
+      INSERT INTO review_stats (source, rating, review_count, updated_at)
+      VALUES (${source}, ${ratingStr}::numeric, ${reviewCount}, NOW())
+      ON CONFLICT (source) DO UPDATE
+      SET rating = EXCLUDED.rating,
+          review_count = EXCLUDED.review_count,
+          updated_at = NOW()
+    `
+    updated.push({ source, rating, reviewCount })
+  }
+  return { updated }
+}
+
 /** Hide reviews whose team_member_id points at an inactive staff member;
  *  restore previously-hidden reviews whose linked staff are active again.
  *  Skips reviews where admin has locked the show_on_website column. */

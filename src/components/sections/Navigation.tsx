@@ -151,8 +151,10 @@ export function Navigation() {
               </motion.div>
             </Link>
             
-            {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-8">
+            {/* Desktop Nav — only at lg+ (1024px). Below that the hamburger
+                takes over so the 6 items + 2 long-labeled CTAs don't wrap
+                into a squished mess in the 768–1023 range. */}
+            <div className="hidden lg:flex items-center gap-8">
               {navItems.map((item) => (
                 item.href ? (
                   <Link
@@ -195,10 +197,11 @@ export function Navigation() {
               </button>
             </div>
             
-            {/* Mobile Menu Button */}
+            {/* Hamburger — shows below lg (1024). Outer nav hides below md so
+                MobileHeader owns <768; this hamburger fills the 768–1023 gap. */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden w-8 h-8 flex flex-col justify-center gap-1.5"
+              className="lg:hidden w-8 h-8 flex flex-col justify-center gap-1.5"
             >
               <motion.span
                 animate={{ 
@@ -233,7 +236,7 @@ export function Navigation() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 bg-cream z-30 md:hidden"
+            className="fixed inset-0 bg-cream z-30 lg:hidden"
           >
             <div className="flex flex-col justify-center items-center h-full space-y-8">
               {navItems.map((item, index) => (

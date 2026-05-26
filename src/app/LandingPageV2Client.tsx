@@ -397,17 +397,20 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     </div>
 
                     {/* Reviews Section */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews" id="reviews">
+                    {/* The inner <section> in each of these owns its own id (#reviews/#gallery/#faq/#find-us).
+                        Mirroring the id on the wrapper produced duplicates, which can confuse anchor / focus
+                        restoration on reload. Keep only data-section-id here. */}
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews">
                       <ReviewsSection reviews={reviews} reviewStats={reviewStats} studio={studio} />
                     </div>
 
                     {/* Instagram Carousel */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram" id="gallery">
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
                       <InstagramCarousel posts={instagramPosts} />
                     </div>
 
                     {/* FAQ Section */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="faq" id="faq">
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="faq">
                       <FAQSection
                         categories={faqData?.categories || []}
                         itemsByCategory={faqData?.itemsByCategory || {}}
@@ -416,7 +419,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     </div>
 
                     {/* Map Section */}
-                    <div className={isMobile ? "mobile-section" : ""} data-section-id="map" id="find-us">
+                    <div className={isMobile ? "mobile-section" : ""} data-section-id="map">
                       <MapSection studio={studio} />
                     </div>
 

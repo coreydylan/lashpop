@@ -661,14 +661,14 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                           <>
                             <button
                               onClick={handlePrevPhoto}
-                              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full glass hover:bg-white/40 transition-all"
+                              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 min-h-0 min-w-0 rounded-full glass hover:bg-white/40 transition-all"
                               aria-label="Previous photo"
                             >
                               <ChevronLeft className="w-6 h-6 text-white" />
                             </button>
                             <button
                               onClick={handleNextPhoto}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full glass hover:bg-white/40 transition-all"
+                              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 min-h-0 min-w-0 rounded-full glass hover:bg-white/40 transition-all"
                               aria-label="Next photo"
                             >
                               <ChevronRight className="w-6 h-6 text-white" />

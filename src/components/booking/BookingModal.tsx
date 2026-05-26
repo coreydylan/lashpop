@@ -6,7 +6,9 @@ import { X, AlertCircle } from 'lucide-react';
 import { LPLogoLoader } from '@/components/ui/LPLogoLoader';
 import { useVagaroWidget } from '@/contexts/VagaroWidgetContext';
 import { subscribeToVagaroEvent } from '@/lib/vagaro-events';
+import type { BookingCompletedData } from '@/lib/vagaro-events';
 import { getVagaroWidgetUrl } from '@/lib/vagaro-widget';
+import { BookingConfirmation } from './BookingConfirmation';
 
 export interface BookingModalProps {
   isOpen: boolean;
@@ -36,6 +38,8 @@ export function BookingModal({
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [cardOnFile, setCardOnFile] = useState(false);
 
   // Widget is truly ready when Vagaro sends WidgetLoaded event (via context)
   const isWidgetReady = widgetState.isLoaded;
@@ -70,20 +74,23 @@ export function BookingModal({
     }
   }, [isWidgetReady]);
 
-  // Subscribe to BookingCompleted for callback
+  // Subscribe to BookingCompleted — swap the iframe for a branded confirmation
+  // rather than auto-closing (Vagaro sends an email server-side either way).
   useEffect(() => {
     if (!isOpen) return;
 
-    const unsubscribeCompleted = subscribeToVagaroEvent('BookingCompleted', () => {
+    const unsubscribeCompleted = subscribeToVagaroEvent('BookingCompleted', (event) => {
       console.log('[BookingModal] BookingCompleted event received');
+      const data = event.data as BookingCompletedData | null;
+      setCardOnFile(Boolean(data?.cardOnFile));
+      setIsConfirmed(true);
       onBookingCompleted?.();
-      onClose();
     });
 
     return () => {
       unsubscribeCompleted();
     };
-  }, [isOpen, onClose, onBookingCompleted]);
+  }, [isOpen, onBookingCompleted]);
 
   // Handle escape key and body scroll
   useEffect(() => {
@@ -108,6 +115,8 @@ export function BookingModal({
       setScriptLoaded(false);
       setHasError(false);
       setIsVisible(false);
+      setIsConfirmed(false);
+      setCardOnFile(false);
       scriptLoadedRef.current = false;
       // Reset widget context state for fresh start
       resetWidgetState();
@@ -286,6 +295,17 @@ export function BookingModal({
                   className="booking-modal-widget relative w-full h-full transition-opacity duration-500"
                   style={{ opacity: 1 }}
                 />
+
+                {/* Branded confirmation overlay (covers the iframe once Vagaro fires BookingCompleted) */}
+                {isConfirmed && (
+                  <BookingConfirmation
+                    serviceName={serviceName ?? widgetState.selectedService}
+                    providerName={widgetState.selectedProvider}
+                    selectedTimeSlot={widgetState.selectedTimeSlot}
+                    cardOnFile={cardOnFile}
+                    onClose={onClose}
+                  />
+                )}
               </div>
             </div>
           </motion.div>

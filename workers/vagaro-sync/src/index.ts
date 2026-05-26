@@ -38,7 +38,7 @@ async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
   }
 
   try {
-    result.services.stats = await syncAllServices(db, vagaro)
+    result.services.stats = await syncAllServices(db, vagaro, env.VAGARO_PUBLIC_BUSINESS_ID)
     result.services.success = true
   } catch (err) {
     result.services.error = err instanceof Error ? err.message : String(err)
