@@ -1,5 +1,6 @@
 'use client'
 
+import type React from 'react'
 import Image from 'next/image'
 import { DEFAULT_FOUNDER_LETTER, type FounderLetterContent } from '@/types/founder-letter'
 
@@ -100,13 +101,16 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
 
         {/* Text Container */}
         <div className="px-6 pt-6 pb-16 bg-ivory">
-          {/* Section Header */}
+          {/* Section Header — preserve the mobile "Welcome to\nLashPop Studios"
+              line break the original markup had. For default heading text we
+              insert a <br/> after "to "; for admin-customized headings (any
+              other text) we render the raw string and let it wrap naturally. */}
           <div className="mb-6 max-w-lg mx-auto">
             <h2
               className="text-2xl font-display font-medium tracking-wide leading-tight"
               style={{ color: '#3d3632' }}
             >
-              {letterContent.heading}
+              {renderMobileHeading(letterContent.heading)}
             </h2>
           </div>
           {/* Letter content */}
@@ -140,4 +144,20 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
       </div>
     </section>
   )
+}
+
+/**
+ * Mobile-only render: preserves the original "Welcome to<br/>LashPop Studios"
+ * two-line layout for the default heading. Any other heading text is
+ * rendered as-is and wraps naturally.
+ */
+function renderMobileHeading(heading: string): React.ReactNode {
+  if (heading === DEFAULT_FOUNDER_LETTER.heading) {
+    return (
+      <>
+        Welcome to<br />LashPop Studios
+      </>
+    )
+  }
+  return heading
 }

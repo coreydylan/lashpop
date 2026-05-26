@@ -12,7 +12,7 @@ import { Navigation } from '@/components/sections/Navigation';
 import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
 import HeroSection from '@/components/landing-v2/HeroSection';
-import { ServicesSection, defaultServiceCategories } from '@/components/landing-v2/sections/ServicesSection';
+import { ServicesSection } from '@/components/landing-v2/sections/ServicesSection';
 import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
 import dynamic from 'next/dynamic';
@@ -356,39 +356,19 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="services">
                       {/*
-                        Map DB ServiceCategory → ServicesSection.ServiceCategory.
-
-                        Per-field fallback to the hardcoded brand copy in
-                        `defaultServiceCategories`: today the DB has tagline=null
-                        and emoji icons on every category, so a naive "trust the
-                        DB" mapping would visibly degrade the cards. Treat the
-                        hardcoded values as the seed; admin-set DB values
-                        override per field. When the admin later edits a
-                        tagline/description/icon in /admin/website/services, it
-                        wins. Untouched fields keep the brand copy.
-
-                        See tmp/admin-audit.md Part 1 §services.
+                        Reverted to hardcoded `defaultServiceCategories` (no
+                        categories prop). Threading the DB rows through was
+                        making the cards visibly degrade — the per-slug rows
+                        in service_categories have non-null but generic
+                        descriptions (e.g. "Hair removal services") that
+                        overrode the brand copy via the per-field fallback.
+                        Until /admin/website/services has explicit brand copy
+                        seeded into the DB, the homepage uses the hardcoded
+                        fallback as the source of truth. See tmp/admin-audit.md
+                        Part 1 §services — this is the known dead-write the
+                        audit flagged.
                       */}
-                      <ServicesSection
-                        isMobile={isMobile}
-                        categories={
-                          serviceCategories.length > 0
-                            ? serviceCategories.map(cat => {
-                                const fallback = defaultServiceCategories.find(d => d.slug === cat.slug)
-                                const isImagePath = (s: string | null | undefined) =>
-                                  typeof s === 'string' && /^\/.+\.(svg|png|jpe?g|webp)$/i.test(s)
-                                return {
-                                  id: cat.id,
-                                  slug: cat.slug,
-                                  title: fallback?.title ?? cat.name.toUpperCase(),
-                                  tagline: (cat.tagline?.trim()) || (fallback?.tagline ?? ''),
-                                  description: (cat.description?.trim()) || (fallback?.description ?? ''),
-                                  icon: isImagePath(cat.icon) ? cat.icon! : (fallback?.icon ?? ''),
-                                }
-                              })
-                            : undefined
-                        }
-                      />
+                      <ServicesSection isMobile={isMobile} />
                     </div>
 
                     {/* Team Section */}

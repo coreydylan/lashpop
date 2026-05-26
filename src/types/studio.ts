@@ -68,7 +68,11 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
   phone: '(760) 212-0448',
   phoneE164: '+17602120448',
   email: 'lashpopstudios@gmail.com',
-  hoursShort: '8a–7:30p every day, by appointment only',
+  // Original footer markup had a literal `<br/>` between the two lines and
+  // used a hyphen, not an en-dash. The footer renders this field with
+  // `whitespace-pre-line`, so the `\n` materializes as a line break and the
+  // two-line presentation is preserved.
+  hoursShort: '8a-7:30p every day\nby appointment only',
   vagaroBookingUrl: 'https://www.vagaro.com/lashpop32',
   social: {
     instagram: 'https://instagram.com/lashpopstudios',
