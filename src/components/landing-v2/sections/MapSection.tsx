@@ -1,14 +1,29 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { DEFAULT_STUDIO_SETTINGS, type StudioSettings } from '@/types/studio'
 
-// Studio location - Oceanside, CA (you can update with exact coordinates)
-const STUDIO_LOCATION: [number, number] = [-117.3795, 33.1959]
+interface MapSectionProps {
+  studio?: StudioSettings
+}
 
-// Google Maps directions link (shared from Google Maps)
-const GOOGLE_MAPS_DIRECTIONS_URL = 'https://maps.app.goo.gl/mozm5VjGqw8qCuzL8'
+// Studio-provided values are inserted into a Mapbox popup via innerHTML.
+// They're trusted (admin-controlled) but HTML-escape anyway as defense in depth.
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch] as string))
+}
 
-export function MapSection() {
+export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps) {
+  // Mapbox wants [lng, lat]; StudioSettings stores them named.
+  const studioLocation: [number, number] = [studio.coordinates.lng, studio.coordinates.lat]
+  const directionsUrl = studio.social.google ?? DEFAULT_STUDIO_SETTINGS.social.google!
+
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<import('mapbox-gl').Map | null>(null)
   const sectionRef = useRef<HTMLElement>(null)
@@ -71,7 +86,7 @@ export function MapSection() {
         const newMap = new mapboxgl.default.Map({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/light-v11',
-          center: STUDIO_LOCATION,
+          center: studioLocation,
           zoom: 14,
           interactive: true,
           scrollZoom: false, // Disable scroll zoom by default to prevent page scroll blocking
@@ -136,15 +151,15 @@ export function MapSection() {
 
         // Add marker with popup
         const marker = new mapboxgl.default.Marker(el)
-          .setLngLat(STUDIO_LOCATION)
+          .setLngLat(studioLocation)
           .setPopup(
             new mapboxgl.default.Popup({ offset: 25 })
               .setHTML(`
                 <div style="text-align: center; padding: 10px;">
-                  <h3 style="margin: 0 0 5px; color: #3d3632;">LashPop Studios</h3>
-                  <p style="margin: 0 0 10px; color: #3d3632; font-size: 14px;">Oceanside, CA</p>
+                  <h3 style="margin: 0 0 5px; color: #3d3632;">${escapeHtml(studio.name)}</h3>
+                  <p style="margin: 0 0 10px; color: #3d3632; font-size: 14px;">${escapeHtml(studio.address.city)}, ${escapeHtml(studio.address.state)}</p>
                   <a
-                    href="${GOOGLE_MAPS_DIRECTIONS_URL}"
+                    href="${escapeHtml(directionsUrl)}"
                     target="_blank"
                     rel="noopener noreferrer"
                     style="color: #d4907e; text-decoration: none; font-weight: 500;"
@@ -186,7 +201,7 @@ export function MapSection() {
         <div className="relative w-full h-[50dvh] md:h-full md:w-1/2 md:order-2">
           <img
             src="/lashpop-images/storefront.jpeg"
-            alt="LashPop Studios storefront"
+            alt={`${studio.name} storefront`}
             className="w-full h-full object-cover"
           />
         </div>
@@ -207,10 +222,10 @@ export function MapSection() {
 
           {/* Address Card Overlay - Desktop only */}
           <div className="hidden md:block absolute bottom-8 left-8 bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl max-w-sm">
-            <h3 className="heading-4 text-charcoal mb-3">LashPop Studios</h3>
+            <h3 className="heading-4 text-charcoal mb-3">{studio.name}</h3>
             <address className="body-text text-charcoal not-italic mb-4">
-              429 S Coast Hwy<br />
-              Oceanside, CA 92054
+              {studio.address.street}<br />
+              {studio.address.city}, {studio.address.state} {studio.address.zip}
             </address>
             <div className="flex flex-col gap-2">
               <div className="flex items-baseline gap-2">
@@ -236,7 +251,7 @@ export function MapSection() {
             </div>
             <div className="mt-4 pt-4 border-t border-sage/10">
               <a
-                href={GOOGLE_MAPS_DIRECTIONS_URL}
+                href={directionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-terracotta hover:text-terracotta/80 transition-colors"
@@ -256,13 +271,13 @@ export function MapSection() {
           <div className="bg-white/95 backdrop-blur-sm px-5 py-4 rounded-2xl shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="heading-4 text-charcoal leading-tight">LashPop Studios</h3>
+                <h3 className="heading-4 text-charcoal leading-tight">{studio.name}</h3>
                 <address className="caption text-charcoal not-italic mt-1">
-                  429 S Coast Hwy, Oceanside, CA 92054
+                  {studio.address.street}, {studio.address.city}, {studio.address.state} {studio.address.zip}
                 </address>
               </div>
               <a
-                href={GOOGLE_MAPS_DIRECTIONS_URL}
+                href={directionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-shrink-0 inline-flex items-center gap-1.5 text-terracotta hover:text-terracotta/80 transition-colors"

@@ -108,6 +108,7 @@ interface ServiceCategory {
   name: string;
   slug: string;
   description: string | null;
+  tagline?: string | null;
   icon: string | null;
   displayOrder: number;
 }
@@ -138,15 +139,10 @@ interface FAQData {
   featuredItems: FAQWithCategory[];
 }
 
-interface FounderLetterContent {
-  greeting: string;
-  paragraphs: string[];
-  signOff: string;
-  signature: string;
-}
-
 // Hero slideshow/image config types
 import type { SlideshowPreset, SlideshowImage } from '@/types/hero-slideshow';
+import type { StudioSettings } from '@/types/studio';
+import type { FounderLetterContent } from '@/types/founder-letter';
 
 interface HeroSlideshowConfig {
   preset: SlideshowPreset | null;
@@ -172,6 +168,7 @@ interface LandingPageV2ClientProps {
   faqData?: FAQData;
   founderLetterContent?: FounderLetterContent;
   heroConfig?: HeroConfig;
+  studio: StudioSettings;
 }
 
 // Minimal mobile styles - GSAP handles the scroll behavior
@@ -261,7 +258,7 @@ function ServiceQueryDeepLink() {
   return null;
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig, studio }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -358,7 +355,27 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                       Desktop: Grid layout | Mobile: Swipeable cards
                     */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="services">
-                      <ServicesSection isMobile={isMobile} />
+                      {/*
+                        Map DB ServiceCategory → ServicesSection.ServiceCategory.
+                        Falls back to the section's own hardcoded copy when admin
+                        hasn't filled in tagline/description. This is the wiring
+                        that was missing — see tmp/admin-audit.md Part 1 §services.
+                      */}
+                      <ServicesSection
+                        isMobile={isMobile}
+                        categories={
+                          serviceCategories.length > 0
+                            ? serviceCategories.map(cat => ({
+                                id: cat.id,
+                                slug: cat.slug,
+                                title: cat.name.toUpperCase(),
+                                tagline: cat.tagline ?? '',
+                                description: cat.description ?? '',
+                                icon: cat.icon ?? '',
+                              }))
+                            : undefined
+                        }
+                      />
                     </div>
 
                     {/* Team Section */}
@@ -368,7 +385,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                     {/* Reviews Section */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="reviews" id="reviews">
-                      <ReviewsSection reviews={reviews} reviewStats={reviewStats} />
+                      <ReviewsSection reviews={reviews} reviewStats={reviewStats} studio={studio} />
                     </div>
 
                     {/* Instagram Carousel */}
@@ -387,12 +404,12 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                     {/* Map Section */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="map" id="find-us">
-                      <MapSection />
+                      <MapSection studio={studio} />
                     </div>
 
                     {/* Footer */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="footer">
-                      <FooterV2 />
+                      <FooterV2 studio={studio} />
                     </div>
                   </div>
                 </div>

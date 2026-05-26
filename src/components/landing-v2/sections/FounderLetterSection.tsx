@@ -1,34 +1,17 @@
 'use client'
 
 import Image from 'next/image'
-
-
-interface FounderLetterContent {
-  greeting: string
-  paragraphs: string[]
-  signOff: string
-  signature: string
-}
+import { DEFAULT_FOUNDER_LETTER, type FounderLetterContent } from '@/types/founder-letter'
 
 interface FounderLetterSectionProps {
   content?: FounderLetterContent
 }
 
-// Default content fallback
-const defaultContent: FounderLetterContent = {
-  greeting: 'I\'m so glad you\'re here.',
-  paragraphs: [
-    'When I launched LashPop back in 2016, I wanted something simple: a place where women could feel genuinely cared for and walk out looking refreshed without the long routine. That idea grew into the beauty collective we have today: artists who specialize in lashes, brows, skincare, injectables, waxing, permanent jewelry, and more, all with one goal in mind.',
-    'We\'re united by the same mission: helping you feel effortlessly beautiful and confident, with a few less things to stress about during your busy week. If we can give you that "just woke up from eight blissful hours" look with almost no effort (even if you\'re running on five), we\'ll call that a win.',
-    'We can\'t wait to see you soon!'
-  ],
-  signOff: 'Xo,',
-  signature: 'Emily'
-}
-
 export function FounderLetterSection({ content }: FounderLetterSectionProps) {
-  // Use provided content or fallback to defaults
-  const letterContent = content || defaultContent
+  // Fall back to DEFAULT_FOUNDER_LETTER if the parent didn't pass content.
+  // Source of truth lives in `website_settings.section = 'founder_letter'`,
+  // edited at /admin/content/founder-letter.
+  const letterContent = content ?? DEFAULT_FOUNDER_LETTER
 
   return (
     <section className="relative w-full">
@@ -56,7 +39,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                     className="text-4xl font-display font-semibold tracking-wide"
                     style={{ color: '#3d3632' }}
                   >
-                    Welcome to LashPop Studios
+                    {letterContent.heading}
                   </h2>
                 </div>
                 {/* Letter Content */}
@@ -118,7 +101,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               className="text-2xl font-display font-medium tracking-wide leading-tight"
               style={{ color: '#3d3632' }}
             >
-              Welcome to<br />LashPop Studios
+              {letterContent.heading}
             </h2>
           </div>
           {/* Letter content */}
