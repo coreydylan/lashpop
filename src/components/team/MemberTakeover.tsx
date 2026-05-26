@@ -335,33 +335,33 @@ export function MemberTakeover({
             </AnimatePresence>
           </motion.div>
 
-          {/* Top indicator — pagination dots + active member name, centered below header */}
+          {/* Top indicator — dots stacked over name, centered, no chrome */}
           <motion.div
             key="takeover-indicator"
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: lightboxOpen ? 0 : 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
+            exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            className="fixed left-1/2 z-[45] flex -translate-x-1/2 items-center gap-3 rounded-full border border-terracotta/15 bg-white/95 px-[18px] py-2 shadow-[0_6px_20px_rgba(0,0,0,0.08)] backdrop-blur"
-            style={{ top: 'calc(80px + 16px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="fixed left-1/2 z-[45] flex -translate-x-1/2 flex-col items-center gap-1.5"
+            style={{ top: 'calc(80px + 18px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
             <div className="flex gap-1.5">
               {members.map((_, i) => (
                 <span
                   key={i}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === selectedIndex ? 'w-[18px] bg-dusty-rose' : 'w-1.5 bg-charcoal/20'
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    i === selectedIndex ? 'w-4 bg-dusty-rose' : 'w-1 bg-charcoal/25'
                   }`}
                 />
               ))}
             </div>
-            <span className="text-xs tracking-wide text-charcoal">
-              <strong className="font-semibold text-charcoal">{member.name}</strong>
-              <span className="text-charcoal/50"> · {selectedIndex! + 1} of {members.length}</span>
+            <span className="text-[11px] tracking-wide text-charcoal/55">
+              <span className="font-medium text-charcoal/75">{member.name}</span>
+              <span className="text-charcoal/40"> · {selectedIndex! + 1} of {members.length}</span>
             </span>
           </motion.div>
 
-          {/* Close button — top right, X + ESC keyboard hint */}
+          {/* Close — minimal X + ESC, no chrome */}
           <motion.button
             key="takeover-close"
             initial={{ opacity: 0 }}
@@ -370,16 +370,16 @@ export function MemberTakeover({
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={onClose}
             aria-label="Close (ESC)"
-            className="group fixed right-6 z-[45] flex items-center gap-2 rounded-full border border-terracotta/15 bg-white/95 py-2 pl-2.5 pr-3 shadow-[0_4px_12px_rgba(0,0,0,0.08)] backdrop-blur hover:bg-white transition-colors"
-            style={{ top: 'calc(80px + 16px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="group fixed right-7 z-[45] flex items-center gap-1.5 text-charcoal/55 hover:text-charcoal transition-colors"
+            style={{ top: 'calc(80px + 22px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
-            <X className="h-4 w-4 text-dune" />
-            <span className="rounded-md border border-charcoal/15 bg-cream/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-charcoal/70 group-hover:bg-cream">
+            <X className="h-4 w-4" />
+            <span className="rounded border border-charcoal/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-charcoal/50 group-hover:border-charcoal/40 group-hover:text-charcoal/70 transition-colors">
               ESC
             </span>
           </motion.button>
 
-          {/* Artist nav arrows */}
+          {/* Artist nav arrows — quiet circles, no border, soft hover */}
           <motion.button
             key="takeover-prev"
             initial={{ opacity: 0 }}
@@ -388,12 +388,12 @@ export function MemberTakeover({
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={goPrev}
             aria-label="Previous artist"
-            className="group fixed left-6 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-terracotta/15 bg-white/85 text-dune shadow-[0_10px_30px_rgba(0,0,0,0.1)] backdrop-blur transition-all hover:scale-110 hover:bg-white"
+            className="group fixed left-6 z-[45] flex h-11 w-11 items-center justify-center rounded-full text-charcoal/55 transition-all hover:bg-white/60 hover:text-charcoal"
             style={{ top: '50%', transform: 'translateY(-50%)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
             <ChevronLeft className="h-6 w-6" />
-            <span className="absolute left-16 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-white px-3.5 py-2 text-xs text-charcoal shadow-md opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
-              Prev: {prevName}
+            <span className="absolute left-12 top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] tracking-wide text-charcoal/55 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+              {prevName}
             </span>
           </motion.button>
           <motion.button
@@ -404,12 +404,12 @@ export function MemberTakeover({
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={goNext}
             aria-label="Next artist"
-            className="group fixed right-6 z-[45] flex h-14 w-14 items-center justify-center rounded-full border border-terracotta/15 bg-white/85 text-dune shadow-[0_10px_30px_rgba(0,0,0,0.1)] backdrop-blur transition-all hover:scale-110 hover:bg-white"
+            className="group fixed right-6 z-[45] flex h-11 w-11 items-center justify-center rounded-full text-charcoal/55 transition-all hover:bg-white/60 hover:text-charcoal"
             style={{ top: '50%', transform: 'translateY(-50%)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
           >
             <ChevronRight className="h-6 w-6" />
-            <span className="absolute right-16 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-white px-3.5 py-2 text-xs text-charcoal shadow-md opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
-              Next: {nextName}
+            <span className="absolute right-12 top-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] tracking-wide text-charcoal/55 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+              {nextName}
             </span>
           </motion.button>
 
