@@ -211,7 +211,15 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
   return (
     <>
       <style jsx>{scrollbarStyles}</style>
-      <section ref={ref} id="reviews" className="relative py-12 md:py-20 overflow-hidden" style={{ backgroundColor: '#e9d1c8' }}>
+      {/*
+        Reviews and the Team section above share the same pink (#e9d1c8)
+        background. Stacking py-20 on both produced 160px of pink between
+        the last team card and this heading, but only 80px below the cards
+        before the ivory transition — visibly asymmetric. Drop our top
+        padding entirely so the team section's pb-20 is the only space
+        above the heading; bottom stays py-20-equivalent so it matches.
+      */}
+      <section ref={ref} id="reviews" className="relative pb-12 md:pb-20 overflow-hidden" style={{ backgroundColor: '#e9d1c8' }}>
         <div className="relative">
 
         {/* Section Header */}

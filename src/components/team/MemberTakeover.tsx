@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
@@ -153,26 +153,47 @@ export function MemberTakeover({
     }
   }, [isOpen])
 
-  // Layered keyboard handling: lightbox > artist nav
+  // Layered keyboard handling: lightbox > artist nav.
+  //
+  // The callback handles are stashed in refs so the listener doesn't have
+  // to be re-attached on every parent render (previously the dep array
+  // included `onClose`/`goPrev`/`goNext`, all of which are new function
+  // refs each render). That re-attach was harmless in theory but produced
+  // intermittent "ESC does nothing" reports — likely the cleanup running
+  // mid-keypress in some browsers.
+  const handlersRef = useRef({ onClose, goPrev, goNext, goLightboxPrev, goLightboxNext, lightboxOpen })
+  useEffect(() => {
+    handlersRef.current = { onClose, goPrev, goNext, goLightboxPrev, goLightboxNext, lightboxOpen }
+  })
+
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => {
+      const h = handlersRef.current
       if (e.key === 'Escape') {
-        if (lightboxOpen) setLightboxIdx(-1)
-        else onClose()
+        // Block default browser ESC behavior so e.g. focused inputs in the
+        // page underneath don't swallow it.
+        e.preventDefault()
+        if (h.lightboxOpen) {
+          setLightboxIdx(-1)
+        } else {
+          h.onClose()
+        }
         return
       }
-      if (lightboxOpen) {
-        if (e.key === 'ArrowLeft') goLightboxPrev()
-        if (e.key === 'ArrowRight') goLightboxNext()
+      if (h.lightboxOpen) {
+        if (e.key === 'ArrowLeft') h.goLightboxPrev()
+        if (e.key === 'ArrowRight') h.goLightboxNext()
       } else {
-        if (e.key === 'ArrowLeft') goPrev()
-        if (e.key === 'ArrowRight') goNext()
+        if (e.key === 'ArrowLeft') h.goPrev()
+        if (e.key === 'ArrowRight') h.goNext()
       }
     }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [isOpen, lightboxOpen, goPrev, goNext, goLightboxPrev, goLightboxNext, onClose])
+    // Capture phase so we run before any focused element (input, button, iframe
+    // proxy) gets a chance to consume the keydown.
+    window.addEventListener('keydown', handler, true)
+    return () => window.removeEventListener('keydown', handler, true)
+  }, [isOpen])
 
   if (!mounted || !member) return null
 
