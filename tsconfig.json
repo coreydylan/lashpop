@@ -7,7 +7,8 @@
     "strict": true,
     // `target: es5` and `baseUrl` will both stop functioning in TS 7.
     // Silence so `next build` doesn't refuse — leave the migration for later.
-    "ignoreDeprecations": "6.0",
+    // "5.0" works on TS 5.x (Vercel's locked 5.9.2); newer TS may want "6.0".
+    "ignoreDeprecations": "5.0",
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
