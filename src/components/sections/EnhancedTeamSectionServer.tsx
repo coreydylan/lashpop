@@ -36,6 +36,7 @@ export async function EnhancedTeamSection() {
     availability: member.availability || undefined,
     instagram: member.instagram || undefined,
     bookingUrl: member.bookingUrl,
+    usesLashpopBooking: member.usesLashpopBooking,
     favoriteServices: member.favoriteServices as string[] | undefined,
     funFact: member.funFact || undefined,
     // Quick facts from database

@@ -5,7 +5,7 @@ import { pgEnum, pgTable, text, timestamp, uuid, jsonb, boolean, integer } from 
  * These appear in JSON-LD for search engines to demonstrate expertise (E-E-A-T)
  */
 export interface TeamMemberCredential {
-  type: 'certification' | 'license' | 'training' | 'award' | 'education'
+  type: 'certification' | 'license' | 'training' | 'award' | 'education' | 'founder'
   name: string                    // e.g., "Licensed Esthetician", "Certified Lash Artist"
   issuer?: string                 // e.g., "California Board of Barbering and Cosmetology"
   dateIssued?: string            // ISO date string

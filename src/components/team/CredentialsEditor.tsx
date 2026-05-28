@@ -13,6 +13,7 @@ import {
   Trophy,
   BookOpen,
   Shield,
+  Sparkles,
   ExternalLink,
   Calendar,
   type LucideIcon
@@ -21,6 +22,7 @@ import type { TeamMemberCredential } from '@/db/schema/team_members'
 
 // Credential type definitions with icons
 const CREDENTIAL_TYPES = {
+  founder: { label: "Founder", icon: Sparkles, description: "Studio founder or creator" },
   license: { label: "License", icon: FileCheck, description: "State or professional license" },
   certification: { label: "Certification", icon: Award, description: "Professional certification" },
   training: { label: "Training", icon: BookOpen, description: "Specialized training program" },

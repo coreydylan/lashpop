@@ -15,6 +15,7 @@ import {
   GraduationCap,
   Trophy,
   BookOpen,
+  Sparkles,
 } from 'lucide-react'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
@@ -38,6 +39,7 @@ export interface TakeoverTeamMember {
   instagram?: string
   instagramUrl?: string
   bookingUrl: string
+  usesLashpopBooking?: boolean
 }
 
 export interface PortfolioImage {
@@ -66,6 +68,7 @@ function isVagaroPhoto(src: string | undefined | null) {
 }
 
 const CRED_ICON: Record<string, typeof Award> = {
+  founder: Sparkles,
   license: FileCheck,
   certification: Award,
   training: BookOpen,
@@ -105,11 +108,25 @@ export function MemberTakeover({
 }: MemberTakeoverProps) {
   const [mounted, setMounted] = useState(false)
   const [lightboxIdx, setLightboxIdx] = useState<number>(-1)
+  const [chromeOpaque, setChromeOpaque] = useState(true)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => setMounted(true), [])
 
   const isOpen = selectedIndex !== null
   const member = selectedIndex !== null ? members[selectedIndex] ?? null : null
+
+  // Fade the top dots + close pill out once Corey starts scrolling so they
+  // don't overlap content. Threshold matches the mobile carousel.
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    setChromeOpaque(el.scrollTop < 60)
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) setChromeOpaque(true)
+  }, [isOpen, selectedIndex])
 
   // Strip the leading headshot entry — parent prepends it for the carousel,
   // but in the takeover the headshot already lives in the sidebar.
@@ -231,6 +248,8 @@ export function MemberTakeover({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
                 className="h-full overflow-y-auto"
+                ref={scrollRef}
+                onScroll={handleScroll}
               >
                 <div className="mx-auto grid max-w-[1400px] gap-12 px-8 pb-20 pt-12 lg:gap-24 lg:px-20 lg:pt-14 lg:grid-cols-[38%_62%]">
                   {/* Sidebar — sticky portrait + identity + book */}
@@ -266,6 +285,17 @@ export function MemberTakeover({
                         </a>
                       ) : null}
                       <p className="mt-2 text-sm text-charcoal/55">{roleSubtitle(member)}</p>
+
+                      {member.usesLashpopBooking === false && member.bookingUrl ? (
+                        <a
+                          href={member.bookingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-dusty-rose px-6 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-dusty-rose/90"
+                        >
+                          {`Book with ${member.name.split(' ')[0]}`}
+                        </a>
+                      ) : null}
                     </div>
                   </aside>
 
@@ -362,7 +392,7 @@ export function MemberTakeover({
           <motion.div
             key="takeover-indicator"
             initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: lightboxOpen ? 0 : 1, y: 0 }}
+            animate={{ opacity: lightboxOpen || !chromeOpaque ? 0 : 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             className="pointer-events-none fixed inset-x-0 z-[45] flex justify-center"
@@ -389,13 +419,14 @@ export function MemberTakeover({
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={onClose}
             aria-label="Close (ESC)"
-            className="group fixed right-6 z-[45] flex items-center gap-1.5 rounded-full bg-cream/85 px-3 py-2 text-charcoal/55 backdrop-blur-md hover:text-charcoal transition-colors"
-            style={{ top: 'calc(80px + 22px)', pointerEvents: lightboxOpen ? 'none' : 'auto' }}
+            className="fixed right-6 z-[45] flex h-10 w-10 items-center justify-center rounded-full bg-cream/85 text-charcoal/55 backdrop-blur-md hover:text-charcoal transition-opacity"
+            style={{
+              top: 'calc(80px + 22px)',
+              pointerEvents: lightboxOpen ? 'none' : 'auto',
+              opacity: chromeOpaque ? 1 : 0.35,
+            }}
           >
             <X className="h-4 w-4" />
-            <span className="rounded border border-charcoal/20 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-charcoal/50 group-hover:border-charcoal/40 group-hover:text-charcoal/70 transition-colors">
-              ESC
-            </span>
           </motion.button>
 
           {/* Artist nav arrows — outer wrapper is pointer-events-none so the

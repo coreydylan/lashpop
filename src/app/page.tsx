@@ -85,6 +85,7 @@ export default async function HomePage() {
     instagram: member.instagram || undefined,
     instagramUrl: member.instagramUrl || undefined,
     bookingUrl: member.bookingUrl,
+    usesLashpopBooking: member.usesLashpopBooking,
     favoriteServices: member.favoriteServices as string[] | undefined,
     funFact: member.funFact || undefined,
     // Quick facts from database
@@ -106,7 +107,7 @@ export default async function HomePage() {
 
   // Filter service categories to only include the main ones shown on the home page
   // These should match the defaultServiceCategories in ServicesSection.tsx
-  const allowedCategorySlugs = ['lashes', 'brows', 'facials', 'waxing', 'permanent-makeup', 'specialty', 'injectables']
+  const allowedCategorySlugs = ['lashes', 'brows', 'facials', 'waxing', 'permanent-makeup', 'specialty', 'injectables', 'bundles']
   const filteredServiceCategories = serviceCategories.filter(cat => allowedCategorySlugs.includes(cat.slug))
 
   return <>

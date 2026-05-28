@@ -14,6 +14,7 @@ import type { TeamMemberCredential } from '@/db/schema/team_members'
 import { MemberTakeover } from '@/components/team/MemberTakeover'
 
 const CRED_ICON: Record<string, typeof Award> = {
+  founder: Sparkles,
   license: FileCheck,
   certification: Award,
   training: BookOpen,
@@ -254,6 +255,7 @@ interface TeamMember {
   instagram?: string
   instagramUrl?: string
   bookingUrl: string
+  usesLashpopBooking?: boolean
   favoriteServices?: string[]
   funFact?: string
   quickFacts?: QuickFact[]
@@ -321,6 +323,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const [portfolioImages, setPortfolioImages] = useState<PortfolioImage[]>([])
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(false)
+  const [mobileChromeOpaque, setMobileChromeOpaque] = useState(true)
+
+  // Reset chrome fade whenever the active member changes or the modal opens
+  // so the dots are visible again on the new stylist's intro.
+  useEffect(() => {
+    setMobileChromeOpaque(true)
+  }, [selectedMemberIndex, showModal])
   const sectionRef = useRef<HTMLElement>(null)
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null)
   const firstCardRef = useRef<HTMLDivElement>(null)
@@ -801,7 +810,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             alt={member.name}
                             fill
                             className={isPlaceholder ? "object-contain p-4" : "object-cover"}
-                            sizes="155px"
+                            // Each card occupies ~50vw on mobile and ~25vw on
+                            // desktop. The previous 155px static hint was
+                            // under-fetching on 3x displays, causing the
+                            // "blurry on mobile" complaint.
+                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                             unoptimized={isPlaceholder || isVagaroPhoto(cardImage)}
                           />
                         </div>
@@ -933,7 +946,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               alt={member.name}
                               fill
                               className={isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover transition-transform duration-700 group-hover:scale-105"}
-                              sizes="(max-width: 640px) 155px, (max-width: 1024px) 280px, 280px"
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
                               unoptimized={isPlaceholderImage(member.image) || isVagaroPhoto(member.image)}
                             />
                           </div>
@@ -1148,8 +1161,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           <X className="w-5 h-5 text-white" />
                         </motion.button>
 
-                        {/* Pagination dots */}
-                        <div className="flex items-center gap-1.5">
+                        {/* Pagination dots — fade out after 60px scroll so
+                            they stop overlapping content. */}
+                        <div
+                          className="flex items-center gap-1.5 transition-opacity duration-300"
+                          style={{ opacity: mobileChromeOpaque ? 1 : 0 }}
+                        >
                           {sortedTeamMembers.map((_, idx) => (
                             <div
                               key={idx}
@@ -1203,6 +1220,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             // outer wrapper so member-change still works here.
                             onTouchStart={(e) => {
                               if (portfolioImages.length <= 1) return
+                              // Photo zone owns ALL touches when there's a
+                              // carousel — stop the outer member-swipe handler
+                              // from claiming a leaked horizontal at 25px and
+                              // bouncing Corey to the next stylist.
                               e.stopPropagation()
                               const touch = e.touches[0]
                               const target = e.currentTarget as HTMLDivElement
@@ -1212,6 +1233,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             }}
                             onTouchMove={(e) => {
                               if (portfolioImages.length <= 1) return
+                              // Unconditional stopPropagation — even vertical
+                              // drags over the photo shouldn't reach the outer
+                              // wrapper. The content overlay below handles
+                              // vertical scroll on its own.
+                              e.stopPropagation()
                               const target = e.currentTarget as HTMLDivElement
                               const startX = parseFloat(target.dataset.photoStartX || '0')
                               const startY = parseFloat(target.dataset.photoStartY || '0')
@@ -1221,21 +1247,16 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               if (target.dataset.photoGesture === 'undecided' && (deltaX > 12 || deltaY > 12)) {
                                 target.dataset.photoGesture = deltaX > deltaY ? 'horizontal' : 'vertical'
                               }
-                              // Only swallow events once we've claimed horizontal —
-                              // vertical drags should propagate to the content scroll.
-                              if (target.dataset.photoGesture === 'horizontal') {
-                                e.stopPropagation()
-                              }
                             }}
                             onTouchEnd={(e) => {
                               if (portfolioImages.length <= 1) return
+                              e.stopPropagation()
                               const target = e.currentTarget as HTMLDivElement
                               const gesture = target.dataset.photoGesture
                               const startX = parseFloat(target.dataset.photoStartX || '0')
                               const touch = e.changedTouches[0]
                               const deltaX = touch.clientX - startX
                               if (gesture === 'horizontal') {
-                                e.stopPropagation()
                                 if (Math.abs(deltaX) > 50) {
                                   if (deltaX < 0) {
                                     setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
@@ -1245,7 +1266,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 }
                               } else if (gesture === 'undecided') {
                                 // True tap — cycle forward
-                                e.stopPropagation()
                                 setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
                               }
                             }}
@@ -1309,6 +1329,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           if (target.scrollTop < 0) {
                             target.scrollTop = 0
                           }
+                          setMobileChromeOpaque(target.scrollTop < 60)
                         }}
                       >
                         {/* Spacer to position content below the image initially */}
@@ -1464,6 +1485,22 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               <p className="text-sm leading-relaxed" style={{ color: 'rgb(61, 54, 50)' }}>{selectedMember.funFact}</p>
                             </div>
                           )}
+
+                            {/* External "Book with {firstName}" CTA — only
+                                renders when this stylist books outside the
+                                Lashpop Vagaro instance (e.g. Grace). */}
+                            {selectedMember.usesLashpopBooking === false && selectedMember.bookingUrl ? (
+                              <div className="pt-2">
+                                <a
+                                  href={selectedMember.bookingUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block w-full text-center rounded-full bg-dusty-rose px-6 py-3.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-dusty-rose/90"
+                                >
+                                  {`Book with ${selectedMember.name.split(' ')[0]}`}
+                                </a>
+                              </div>
+                            ) : null}
 
                             {/* Bottom spacer for safe area */}
                             <div className="h-8 safe-area-bottom" />
