@@ -171,21 +171,31 @@ export async function getTeamMembersWithServices() {
 
   // Map a Vagaro parentServiceTitle (sub-category) to one or more frontend tag labels.
   // Source of truth for this mapping is the spec Corey set when wiring up Vagaro-as-source-of-truth.
+  // Vagaro parentServiceTitle → canonical tag labels.
+  //
+  // IMPORTANT: tag strings here MUST match the CATEGORY_OPTIONS list in
+  // /admin/website/team/page.tsx so Vagaro-derived chips dedupe correctly
+  // against admin-set manual chips (allCategories merge dedupes by string
+  // equality further down). Mismatches like "Skincare" vs "Skin Care" or
+  // "waxing" vs "Waxing" cause the same artist to display two chips for
+  // the same concept.
+  //
+  // Vagaro also exposes TWO parent titles for the same body of lash work:
+  //   - "Eyelash Extension Services" (Emily et al)
+  //   - "Lash Extensions"            (Paige Gordon, Tori Burnett)
+  // We match the shared substring "lash extension" — safe against
+  // "Lash Lift Services" which doesn't contain that substring and is
+  // handled by the next branch.
   function vagaroParentToTags(parentTitle: string | null | undefined): string[] {
     const p = (parentTitle ?? '').toLowerCase().trim()
     if (!p) return []
-    // Vagaro has BOTH "Eyelash Extension Services" and "Lash Extensions" as
-    // parent titles for lash work — Paige Gordon and Tori Burnett (and any
-    // future artist) end up with the latter, so we match the common substring
-    // "lash extension". This is safe against "Lash Lift Services" because
-    // that string does not contain "lash extension".
-    if (p.includes('lash extension')) return ['Lash Extensions', 'Lashes']
-    if (p.includes('lash lift')) return ['Lash Extensions', 'Lashes']
+    if (p.includes('lash extension')) return ['Lashes']
+    if (p.includes('lash lift')) return ['Lash Lifts', 'Lashes']
     if (p.includes('brow')) return ['Brows']
     if (p.includes('permanent makeup') || p.includes('microblading') || p.includes('nanobrow')) return ['Permanent Makeup']
-    if (p.includes('skin care') || p.includes('skincare') || p.includes('facial')) return ['Skincare']
-    if (p.includes('permanent jewelry') || p.includes('perm jewelry')) return ['Perm Jewelry']
-    if (p.includes('wax')) return ['waxing']
+    if (p.includes('skin care') || p.includes('skincare') || p.includes('facial')) return ['Skin Care']
+    if (p.includes('permanent jewelry') || p.includes('perm jewelry')) return ['Permanent Jewelry']
+    if (p.includes('wax')) return ['Waxing']
     // Bundles, training, misc — skip (no tag)
     return []
   }
