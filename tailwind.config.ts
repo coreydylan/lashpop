@@ -19,6 +19,8 @@ const config: Config = {
         'blush': 'rgb(var(--blush) / <alpha-value>)',             // #e9d1c8 - Light accent
         'rose-mist': 'rgb(var(--rose-mist) / <alpha-value>)',     // #e2c2b6 - Medium accent
         'dusty-rose': 'rgb(var(--dusty-rose) / <alpha-value>)',   // #dbb2a4 - Primary accent
+        'soft-terracotta': 'rgb(var(--soft-terracotta) / <alpha-value>)',   // #d3a392 - Soft Terracotta
+        'warm-terracotta': 'rgb(var(--warm-terracotta) / <alpha-value>)',   // #cc947f - Warm Terracotta
         'terracotta-light': 'rgb(var(--terracotta-light) / <alpha-value>)', // #c46b4e - Warm accent
         'terracotta': 'rgb(var(--terracotta) / <alpha-value>)',   // #b5563d - Primary brand color (matches logo)
         'rust': 'rgb(var(--rust) / <alpha-value>)',               // #ac4d3c - Deep accent / CTA
