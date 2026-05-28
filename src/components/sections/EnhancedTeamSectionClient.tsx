@@ -678,7 +678,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       <section
         ref={sectionRef}
         className="relative py-12 md:py-20 overflow-x-hidden"
-        style={{ backgroundColor: '#e9d1c8' }}
+        style={{ backgroundColor: '#f0e0db' }}
       >
         {/* Section Header */}
         <div className="text-center mb-12 px-4">

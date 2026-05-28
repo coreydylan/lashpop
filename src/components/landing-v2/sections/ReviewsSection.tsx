@@ -212,8 +212,8 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
     <>
       <style jsx>{scrollbarStyles}</style>
       {/*
-        Reviews and the Team section above share the same pink (#e9d1c8)
-        background. Stacking py-20 on both produced 160px of pink between
+        Reviews and the Team section above share the same cream (#f0e0db)
+        background. Stacking py-20 on both produced 160px of cream between
         the last team card and this heading, but only 80px below the cards
         before the ivory transition — visibly asymmetric. Drop our top
         padding entirely so the team section's pb-20 is the only space
