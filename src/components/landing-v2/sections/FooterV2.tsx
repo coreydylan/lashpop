@@ -198,7 +198,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
           {/* Quick Links */}
           <div>
             <h4 className="font-serif text-lg text-terracotta mb-4">Services</h4>
-            <ul className="space-y-3">
+            <ul className="space-y-1">
               {FOOTER_SERVICES.map((service) => (
                 <li key={service.label}>
                   <button
@@ -315,13 +315,13 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
             </p>
 
             <div className="flex items-center gap-6">
-              <Link href="/privacy" className="caption text-charcoal hover:text-terracotta transition-colors">
+              <Link href="/privacy" className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="caption text-charcoal hover:text-terracotta transition-colors">
+              <Link href="/terms" className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
                 Terms of Service
               </Link>
-              <Link href="/?openFaq=cancellation-policy#faq" className="caption text-charcoal hover:text-terracotta transition-colors">
+              <Link href="/?openFaq=cancellation-policy#faq" className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
                 Cancellation Policy
               </Link>
             </div>
