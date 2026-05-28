@@ -68,11 +68,10 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
   phone: '(760) 212-0448',
   phoneE164: '+17602120448',
   email: 'lashpopstudios@gmail.com',
-  // Original footer markup had a literal `<br/>` between the two lines and
-  // used a hyphen, not an en-dash. The footer renders this field with
-  // `whitespace-pre-line`, so the `\n` materializes as a line break and the
-  // two-line presentation is preserved.
-  hoursShort: '8a-7:30p every day\nby appointment only',
+  // Footer renders this with `whitespace-pre-line`, so `\n` becomes a line
+  // break. Format matches MapSection's hours card: "8:00 AM – 7:30 PM" with
+  // an en-dash, then "By Appointment Only" on the next line.
+  hoursShort: '8:00 AM – 7:30 PM every day\nBy Appointment Only',
   vagaroBookingUrl: 'https://www.vagaro.com/lashpop32',
   social: {
     instagram: 'https://instagram.com/lashpopstudios',
