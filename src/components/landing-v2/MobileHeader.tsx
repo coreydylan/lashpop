@@ -272,14 +272,18 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       {/* Mini Header - transparent at top, frosted glass on scroll */}
       {isVisible && (
         <header
-          className="fixed top-0 left-0 right-0 z-50 md:hidden transition-[background-color,backdrop-filter] duration-300"
+          className="fixed top-0 left-0 right-0 z-50 md:hidden transition-[background-color] duration-300"
           style={{
             paddingTop: 'env(safe-area-inset-top, 0px)',
-            background: isScrolled
-              ? 'rgba(250, 246, 242, 0.95)'
-              : 'transparent',
-            backdropFilter: isScrolled ? 'blur(16px)' : 'none',
-            WebkitBackdropFilter: isScrolled ? 'blur(16px)' : 'none',
+            // Solid background on scroll — used to be rgba(0.95) + blur(16px) for
+            // a frosted-glass effect, but backdrop-filter on a full-width fixed
+            // strip is the single biggest momentum-scroll killer on iOS Safari.
+            // Every scroll frame the GPU had to re-sample + re-blur whatever
+            // content was sliding under the header, which made fast swipes
+            // through the homepage hitch and stop mid-flight. Going solid
+            // costs zero compositor work and the visual delta vs. 95%-opaque
+            // ivory + blur is negligible.
+            background: isScrolled ? 'rgb(250, 246, 242)' : 'transparent',
           }}
         >
           <div className="px-5 flex items-center justify-between" style={{ height: '60px' }}>
