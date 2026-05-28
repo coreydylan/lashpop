@@ -174,7 +174,12 @@ export async function getTeamMembersWithServices() {
   function vagaroParentToTags(parentTitle: string | null | undefined): string[] {
     const p = (parentTitle ?? '').toLowerCase().trim()
     if (!p) return []
-    if (p.includes('eyelash extension')) return ['Lash Extensions', 'Lashes']
+    // Vagaro has BOTH "Eyelash Extension Services" and "Lash Extensions" as
+    // parent titles for lash work — Paige Gordon and Tori Burnett (and any
+    // future artist) end up with the latter, so we match the common substring
+    // "lash extension". This is safe against "Lash Lift Services" because
+    // that string does not contain "lash extension".
+    if (p.includes('lash extension')) return ['Lash Extensions', 'Lashes']
     if (p.includes('lash lift')) return ['Lash Extensions', 'Lashes']
     if (p.includes('brow')) return ['Brows']
     if (p.includes('permanent makeup') || p.includes('microblading') || p.includes('nanobrow')) return ['Permanent Makeup']
