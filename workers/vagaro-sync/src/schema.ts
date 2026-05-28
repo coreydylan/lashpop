@@ -12,13 +12,19 @@ export const services = pgTable('services', {
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   subtitle: text('subtitle'),
-  description: text('description').notNull(),
+  // description = admin's local override; nullable.
+  // vagaroDescription = what Vagaro published last; sync writes here.
+  // Read sites: COALESCE(description, vagaroDescription).
+  description: text('description'),
+  vagaroDescription: text('vagaro_description'),
   durationMinutes: integer('duration_minutes').notNull(),
   priceStarting: integer('price_starting').notNull(),
   displayOrder: integer('display_order').default(0).notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   mainCategory: text('main_category').notNull(),
   subCategory: text('sub_category'),
+  categoryId: uuid('category_id'),
+  subcategoryId: uuid('subcategory_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   lastSyncedAt: timestamp('last_synced_at'),

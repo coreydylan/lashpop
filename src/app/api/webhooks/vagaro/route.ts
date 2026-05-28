@@ -10,6 +10,33 @@ import {
 import { autoLinkAppointmentByPhone } from '@/actions/appointments'
 
 /**
+ * Trigger a full service + team_members sync via the canonical CF Worker
+ * (`workers/vagaro-sync`). Falls back to the legacy in-process syncs in
+ * `@/lib/vagaro-sync` when VAGARO_SYNC_URL isn't configured, so this is
+ * safe to deploy before the secret is set.
+ *
+ * Set in Vercel env:
+ *   VAGARO_SYNC_URL    e.g. https://lashpop-vagaro-sync.<acct>.workers.dev/sync
+ *   VAGARO_SYNC_TOKEN  matches the worker's SYNC_TRIGGER_TOKEN secret
+ */
+async function triggerFullSync(reason: string): Promise<void> {
+  const workerUrl = process.env.VAGARO_SYNC_URL
+  if (!workerUrl) {
+    console.log(`  (no VAGARO_SYNC_URL set — running in-process syncs for ${reason})`)
+    await Promise.all([syncAllServices(), syncAllTeamMembers()])
+    return
+  }
+  console.log(`  → calling worker ${workerUrl} (reason: ${reason})`)
+  const token = process.env.VAGARO_SYNC_TOKEN
+  const headers: Record<string, string> = { 'content-type': 'application/json' }
+  if (token) headers.authorization = `Bearer ${token}`
+  const res = await fetch(workerUrl, { method: 'GET', headers })
+  if (!res.ok) {
+    throw new Error(`worker sync ${res.status}: ${await res.text()}`)
+  }
+}
+
+/**
  * Vagaro Webhook Endpoint
  *
  * Receives ALL webhook events from Vagaro and syncs to local database mirror.
@@ -59,10 +86,7 @@ export async function POST(request: NextRequest) {
         // Location changes might affect services/employees
         if (action === 'updated' || action === 'created') {
           console.log('  Triggering full service/employee sync...')
-          await Promise.all([
-            syncAllServices(),
-            syncAllTeamMembers()
-          ])
+          await triggerFullSync(`business_location:${action}`)
         }
         break
 

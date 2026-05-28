@@ -8,7 +8,7 @@
 import { getDb } from '@/db'
 import { services } from '@/db/schema/services'
 import { serviceCategories } from '@/db/schema/service_categories'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 interface Service {
   id: string
@@ -33,7 +33,7 @@ async function getServices(): Promise<Service[]> {
       .select({
         id: services.id,
         name: services.name,
-        description: services.description,
+        description: sql<string | null>`COALESCE(${services.description}, ${services.vagaroDescription})`,
         priceStarting: services.priceStarting,
         durationMinutes: services.durationMinutes,
         categoryName: serviceCategories.name

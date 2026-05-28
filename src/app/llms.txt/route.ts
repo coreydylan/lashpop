@@ -7,7 +7,7 @@ import { serviceSubcategories } from '@/db/schema/service_subcategories'
 import { faqItems } from '@/db/schema/faqs'
 import { businessLocations } from '@/db/schema/business_locations'
 import { teamMembers } from '@/db/schema/team_members'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 /**
  * Generate llms.txt - A file format designed for LLM accessibility
@@ -80,7 +80,7 @@ export async function GET() {
       const serviceList = await db
         .select({
           name: services.name,
-          description: services.description,
+          description: sql<string | null>`COALESCE(${services.description}, ${services.vagaroDescription})`,
           priceStarting: services.priceStarting,
           durationMinutes: services.durationMinutes,
           categoryName: serviceCategories.name,

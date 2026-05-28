@@ -5,6 +5,59 @@ import type { VagaroClient } from './vagaro-client'
 import { fetchPublicStaff, nameKey, originalPhotoUrl, type VagaroPublicProvider } from './public-staff'
 import { fetchPublicServicePhotos, serviceTitleKey } from './public-services'
 
+/**
+ * Map Vagaro's free-text mainCategory string to a `service_categories.slug`.
+ * The Service Browser filters by slug, so an unrecognised Vagaro category
+ * silently disappears from the UI until this map is updated. Keep this
+ * conservative — when in doubt, fall through to null so the row stays
+ * unlinked rather than mapping to the wrong category.
+ */
+const VAGARO_CATEGORY_TO_SLUG: Record<string, string> = {
+  // Lashes
+  'lash services': 'lashes',
+  'eyelash extension services': 'lashes',
+  'lashes': 'lashes',
+  // Brows
+  'brow services': 'brows',
+  'brows': 'brows',
+  // Skincare / facials
+  'facials & skin care': 'facials',
+  'facials and skin care': 'facials',
+  'skin care and facial services': 'facials',
+  'skincare': 'facials',
+  'facials': 'facials',
+  // Waxing
+  'waxing': 'waxing',
+  // Permanent makeup
+  'permanent makeup': 'permanent-makeup',
+  // Permanent jewelry / specialty
+  'permanent jewelry': 'specialty',
+  'specialty': 'specialty',
+  // Injectables / botox
+  'injectables': 'injectables',
+  'botox': 'injectables',
+  // Bundles
+  'bundles': 'bundles',
+  // Nails
+  'nails': 'nails',
+}
+
+let categoryIdBySlugCache: Map<string, string> | null = null
+
+async function resolveCategoryId(db: Db, parentTitle: string | null | undefined): Promise<string | null> {
+  if (!parentTitle) return null
+  const slug = VAGARO_CATEGORY_TO_SLUG[parentTitle.trim().toLowerCase()]
+  if (!slug) return null
+
+  if (!categoryIdBySlugCache) {
+    const rows = await db.execute<{ id: string; slug: string }>(
+      sql`SELECT id, slug FROM service_categories`
+    )
+    categoryIdBySlugCache = new Map(rows.map(r => [r.slug, r.id]))
+  }
+  return categoryIdBySlugCache.get(slug) ?? null
+}
+
 export interface SyncStats {
   synced: number
   failed: number
@@ -25,12 +78,13 @@ export interface PublicStaffStats {
 async function syncService(
   db: Db,
   vagaroService: any,
-  photosByTitle: Map<string, string>
+  photosByTitle: Map<string, string>,
+  photosByServiceId: Map<string, string>
 ): Promise<void> {
   const serviceId = vagaroService.serviceId
   const title = vagaroService.serviceTitle || vagaroService.name
   const parentTitle = vagaroService.parentServiceTitle || vagaroService.category
-  const description = vagaroService.serviceDescription || vagaroService.description || ''
+  const vagaroDescription = vagaroService.serviceDescription || vagaroService.description || ''
 
   const performers = vagaroService.servicePerformedBy || []
   const prices: number[] = performers.map((p: any) => p.price || p.priceWithTax).filter(Boolean)
@@ -47,11 +101,24 @@ async function syncService(
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 
-  // Photo from the public composite endpoint, matched by service title.
-  // When the lookup is empty (fetch failed) we skip the field on update to
-  // preserve whatever URL is already in the DB rather than clobber it with null.
-  const photoUrl = photosByTitle.get(serviceTitleKey(title)) ?? null
-  const photosAvailable = photosByTitle.size > 0
+  // Photo lookup: primary by Vagaro serviceId (stable identifier), fallback to
+  // title (older sync mapped by string match). Empty maps mean the upstream
+  // fetch failed — we skip writing photo fields to preserve existing values.
+  const photoById = photosByServiceId.get(String(serviceId)) ?? null
+  const photoByTitle = photosByTitle.get(serviceTitleKey(title)) ?? null
+  const photoUrl = photoById ?? photoByTitle
+  const photosAvailable = photosByTitle.size > 0 || photosByServiceId.size > 0
+  if (!photoById && photoByTitle) {
+    console.log(`photo match for "${title}" was by title only, not serviceId — verify mapping`)
+  }
+
+  // FK resolution: turn Vagaro's free-text category into a service_categories.id
+  // so the Service Browser actually sees the row. New categories that aren't
+  // mapped fall through to NULL (row still syncs, just no UI surface).
+  const categoryId = await resolveCategoryId(db, parentTitle)
+  if (!categoryId && parentTitle) {
+    console.log(`unmapped Vagaro category "${parentTitle}" — service "${title}" will sync without category FK`)
+  }
 
   const existing = await db.select().from(services).where(eq(services.vagaroServiceId, serviceId)).limit(1)
 
@@ -60,12 +127,14 @@ async function syncService(
       .update(services)
       .set({
         name: title,
-        description,
+        // NEVER write the local `description` column on update — admin owns it.
+        vagaroDescription,
         durationMinutes,
         priceStarting: Math.round(priceStarting * 100),
         vagaroParentServiceId: vagaroService.parentServiceId,
         vagaroData: vagaroService,
         ...(photosAvailable ? { vagaroImageUrl: photoUrl } : {}),
+        ...(categoryId ? { categoryId } : {}),
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -76,10 +145,15 @@ async function syncService(
       vagaroParentServiceId: vagaroService.parentServiceId,
       vagaroData: vagaroService,
       vagaroImageUrl: photoUrl,
+      categoryId,
       name: title,
       slug,
       subtitle: parentTitle,
-      description,
+      // Seed `description` with the Vagaro copy at insert time so freshly-
+      // synced services aren't blank on the public site before any admin
+      // edit. After insert, only `vagaroDescription` ever updates.
+      description: vagaroDescription || null,
+      vagaroDescription,
       durationMinutes,
       priceStarting: Math.round(priceStarting * 100),
       displayOrder: 0,
@@ -131,16 +205,20 @@ export async function syncAllServices(
   }
 
   // Photos come from the public booking-page composite endpoint, not the v2 API.
-  // We fetch once up front and pass the title→URL map into each upsert. A failure
-  // here is logged but non-fatal — services still sync with whatever photo URL
-  // is already stored.
+  // Fetch once up front; pass both title and serviceId maps into each upsert.
+  // A failure here is logged but non-fatal — services still sync with whatever
+  // photo URL is already stored.
   let photosByTitle: Map<string, string>
+  let photosByServiceId: Map<string, string>
   try {
-    photosByTitle = await fetchPublicServicePhotos(numericBusinessId)
-    console.log(`fetched ${photosByTitle.size} service photos from public composite endpoint`)
+    const photos = await fetchPublicServicePhotos(numericBusinessId)
+    photosByTitle = photos.byTitle
+    photosByServiceId = photos.byServiceId
+    console.log(`fetched ${photosByTitle.size} service photos (${photosByServiceId.size} indexed by id)`)
   } catch (err) {
     console.error('public service photos fetch failed — keeping existing vagaroImageUrl values:', err)
     photosByTitle = new Map()
+    photosByServiceId = new Map()
   }
 
   const total = list.length
@@ -150,7 +228,7 @@ export async function syncAllServices(
 
   for (const s of list) {
     try {
-      await syncService(db, s, photosByTitle)
+      await syncService(db, s, photosByTitle, photosByServiceId)
       synced++
     } catch (err) {
       failed++

@@ -20,7 +20,7 @@ export async function getServices() {
       displayTitle: services.name,
       slug: services.slug,
       subtitle: services.subtitle,
-      description: services.description,
+      description: sql<string | null>`COALESCE(${services.description}, ${services.vagaroDescription})`,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
       // Vagaro is source of truth; fall back to local override then nothing
@@ -46,7 +46,7 @@ export async function getServiceBySlug(slug: string) {
       name: services.name,
       slug: services.slug,
       subtitle: services.subtitle,
-      description: services.description,
+      description: sql<string | null>`COALESCE(${services.description}, ${services.vagaroDescription})`,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
       // Vagaro is source of truth; fall back to local override then nothing
@@ -111,7 +111,7 @@ export async function getAllServices() {
       name: services.name,
       slug: services.slug,
       subtitle: services.subtitle,
-      description: services.description,
+      description: sql<string | null>`COALESCE(${services.description}, ${services.vagaroDescription})`,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
       // Resolve image URL with priority: Vagaro (source of truth) -> DAM override -> Subcategory fallback
@@ -162,7 +162,10 @@ export async function getAllServicesAdmin() {
       name: services.name,
       slug: services.slug,
       subtitle: services.subtitle,
+      // Admin view shows both fields so editors can see what Vagaro says vs.
+      // what the local override is set to.
       description: services.description,
+      vagaroDescription: services.vagaroDescription,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
       imageUrl: services.imageUrl,

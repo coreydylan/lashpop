@@ -57,12 +57,14 @@ export async function syncService(vagaroService: any, photosByTitle?: Map<string
     .limit(1)
 
   if (existing) {
-    // Update existing service - preserve local enrichments
+    // Update existing service - preserve local enrichments.
+    // Mirror the worker: never overwrite `description` (admin owns it). Write
+    // Vagaro's copy to `vagaroDescription`; read sites COALESCE the two.
     await db
       .update(services)
       .set({
         name: title,
-        description,
+        vagaroDescription: description,
         durationMinutes,
         priceStarting: Math.round(priceStarting * 100), // Convert to cents
         vagaroParentServiceId: vagaroService.parentServiceId,
@@ -90,7 +92,11 @@ export async function syncService(vagaroService: any, photosByTitle?: Map<string
         name: title,
         slug,
         subtitle: parentTitle,
-        description,
+        // Seed `description` with Vagaro's copy at insert so newly-synced
+        // services aren't blank on the public site. After insert this column
+        // is admin-only — updates write to `vagaroDescription` only.
+        description: description || null,
+        vagaroDescription: description,
         durationMinutes,
         priceStarting: Math.round(priceStarting * 100), // Convert to cents
         displayOrder: 0,

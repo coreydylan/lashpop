@@ -22,7 +22,11 @@ export const services = pgTable("services", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   subtitle: text("subtitle"),
-  description: text("description").notNull(),
+  // description is the admin's optional local override (nullable). Sync writes
+  // Vagaro's description to vagaroDescription only. Read sites use
+  // COALESCE(description, vagaroDescription) so local edits always win.
+  description: text("description"),
+  vagaroDescription: text("vagaro_description"),
   durationMinutes: integer("duration_minutes").notNull(),
   priceStarting: integer("price_starting").notNull(), // Store in cents
   imageUrl: text("image_url"),

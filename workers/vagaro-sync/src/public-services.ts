@@ -50,12 +50,18 @@ export function serviceTitleKey(title: string | undefined | null): string {
   return (title ?? '').trim().toLowerCase()
 }
 
+export interface PublicServicePhotos {
+  byTitle: Map<string, string>
+  byServiceId: Map<string, string>
+}
+
 /**
- * Build a title→photo-URL map from Vagaro's public booking-page composite.
- * Returns an empty map on failure; callers should treat that as "leave existing
- * photo URLs alone" rather than clobbering with nulls.
+ * Build title→photo-URL and serviceId→photo-URL maps from Vagaro's public
+ * booking-page composite. ServiceID is the stable identifier — title can drift
+ * across renames. Returns empty maps on failure; callers should treat that as
+ * "leave existing photo URLs alone" rather than clobbering with nulls.
  */
-export async function fetchPublicServicePhotos(numericBusinessId: string): Promise<Map<string, string>> {
+export async function fetchPublicServicePhotos(numericBusinessId: string): Promise<PublicServicePhotos> {
   const res = await fetch(
     'https://www.vagaro.com/us02/websiteapi/homepage/getshopdetailcompositeservice',
     {
@@ -77,17 +83,21 @@ export async function fetchPublicServicePhotos(numericBusinessId: string): Promi
 
   const json = (await res.json()) as CompositeResponse
   const byTitle = new Map<string, string>()
+  const byServiceId = new Map<string, string>()
 
-  // Services[].ServiceList[] carries ServicePhotoURL pre-built;
-  // ServicesData[] is a flatter list but has the Photo filename without the CDN host.
-  // Walk the structured tree first because it gives us the full URL.
+  // Services[].ServiceList[] carries ServicePhotoURL pre-built.
   for (const category of json.Services ?? []) {
     for (const s of category.ServiceList ?? []) {
-      const key = serviceTitleKey(s.ServiceTitle)
       const full = originalServicePhotoUrl(s.ServicePhotoURL)
-      if (key && full && !byTitle.has(key)) byTitle.set(key, full)
+      if (!full) continue
+      const key = serviceTitleKey(s.ServiceTitle)
+      if (key && !byTitle.has(key)) byTitle.set(key, full)
+      if (s.ServiceID != null) {
+        const idKey = String(s.ServiceID)
+        if (!byServiceId.has(idKey)) byServiceId.set(idKey, full)
+      }
     }
   }
 
-  return byTitle
+  return { byTitle, byServiceId }
 }
