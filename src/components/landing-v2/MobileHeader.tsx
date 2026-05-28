@@ -305,7 +305,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 }}
                 className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-colors"
               >
-                Book
+                Book Now
               </button>
 
               {/* Hamburger Menu */}
