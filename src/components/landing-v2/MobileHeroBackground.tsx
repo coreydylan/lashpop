@@ -53,6 +53,7 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
     let scrollContainer: HTMLElement | null = null
     let rafId: number
     let lastScrollTop = 0
+    let lastVisible = true
     let cancelled = false
 
     const handleScroll = () => {
@@ -66,8 +67,14 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
 
         const viewportHeight = window.innerHeight
 
-        // Hide the fixed background after scrolling past 1.5 viewports
-        setIsVisible(scrollTop < viewportHeight * 1.5)
+        // Hide the fixed background after scrolling past 1.5 viewports.
+        // Gate the setState on the actual boolean transition so we don't
+        // pump React's reconciler every scroll frame.
+        const shouldBeVisible = scrollTop < viewportHeight * 1.5
+        if (shouldBeVisible !== lastVisible) {
+          lastVisible = shouldBeVisible
+          setIsVisible(shouldBeVisible)
+        }
 
         // Zoom through arch over first 60% of viewport scroll
         const zoomProgress = Math.min(scrollTop / (viewportHeight * 0.6), 1)
@@ -106,10 +113,20 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
     }
   }, [])
 
-  if (!isVisible) return null
-
+  // Don't `return null` when hiding — unmounting a fixed-position subtree
+  // mid-scroll caused iOS Safari to pause momentum scrolling exactly as the
+  // founder letter section crossed the 1.5-viewport boundary, which read as
+  // the letter "getting stuck" on fast downward swipes. Keep the element in
+  // the React tree and just flip `display: none` on the outer wrapper — it's
+  // a single DOM mutation on a fixed element, no reflow, no subtree teardown.
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none md:hidden" style={{ background: 'transparent' }}>
+    <div
+      className="fixed inset-0 z-0 pointer-events-none md:hidden"
+      style={{
+        background: 'transparent',
+        display: isVisible ? undefined : 'none',
+      }}
+    >
       {/* Background - solid ivory */}
       <div className="absolute inset-0 bg-ivory z-0" />
 
