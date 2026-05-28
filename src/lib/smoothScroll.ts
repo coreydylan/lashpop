@@ -65,20 +65,58 @@ export const smoothScrollToElement = (
   if (alignment === 'center') {
     const viewportHeight = window.innerHeight;
     const elementHeight = elementRect.height;
-    
+
     // Calculate center position:
     // We want the center of the element to be at the center of the viewport
     // Center of element relative to document = startY + elementRect.top + (elementHeight / 2)
     // Center of viewport relative to document = ScrollPos + (viewportHeight / 2)
     // So: TargetScrollPos = (startY + elementRect.top + elementHeight / 2) - (viewportHeight / 2)
-    
+
     // Simplified: TargetY = startY + elementRect.top - (viewportHeight - elementHeight) / 2
     // We ignore the 'offset' parameter for centering typically, unless we want to center within a subset of the viewport (e.g. minus header)
-    // Let's account for the header offset in the available viewport space if we want to be precise, 
+    // Let's account for the header offset in the available viewport space if we want to be precise,
     // but usually true center is what's desired. Let's stick to true center.
-    
+
     targetY = startY + elementRect.top - (viewportHeight - elementHeight) / 2;
   }
 
   smoothScrollTo(targetY, duration, scroller);
+};
+
+/**
+ * Scrolls a homepage section (#services, #team, #reviews, etc.) into the
+ * spot the in-page nav uses. Mobile and desktop have different headers and
+ * different preferred alignments, so the decision tree below mirrors the
+ * per-section logic in MobileHeader.handleMenuItemClick (mobile) and
+ * Navigation.handleNavClick (desktop). Keeping both branches here means
+ * cross-page deep links (e.g. /work-with-us → /#services) land at the
+ * same spot as clicking the nav from the homepage itself.
+ */
+export const scrollToHomepageSection = (
+  href: string,
+  isMobile: boolean,
+  duration: number = 800,
+) => {
+  if (!href.startsWith('#')) return;
+
+  if (isMobile) {
+    // Mobile header is a 60px strip — most sections just need to clear it.
+    const HEADER = 60;
+    if (href === '#gallery' || href === '#reviews') {
+      smoothScrollToElement(href, HEADER + 20, duration, 'top');
+    } else {
+      smoothScrollToElement(href, HEADER, duration, 'top');
+    }
+    return;
+  }
+
+  // Desktop: gallery + reviews land centered, FAQ needs extra room for
+  // its category selectors, everything else clears the ~80px nav bar.
+  if (href === '#gallery' || href === '#reviews') {
+    smoothScrollToElement(href, 80, duration, 'center');
+  } else if (href === '#faq') {
+    smoothScrollToElement(href, 180, duration, 'top');
+  } else {
+    smoothScrollToElement(href, 80, duration, 'top');
+  }
 };

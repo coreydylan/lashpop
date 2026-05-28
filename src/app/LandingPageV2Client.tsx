@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorContext';
 import { VagaroWidgetProvider } from '@/contexts/VagaroWidgetContext';
 import { DevModeProvider } from '@/contexts/DevModeContext';
+import { scrollToHomepageSection } from '@/lib/smoothScroll';
 import { DevModeOverlay } from '@/components/dev-mode';
 import { DrawerProvider } from '@/components/drawers/DrawerContext';
 import { PanelManagerProvider } from '@/components/panels/PanelContext';
@@ -233,6 +234,43 @@ const mobileScrollStyles = `
   }
 `;
 
+// Reads window.location.hash on mount and scrolls the page to that section.
+// Native browser anchor scrolling targets the window, but on mobile this
+// page renders its content inside `.mobile-scroll-container` (an overflow:auto
+// div), so the window doesn't actually scroll — the inner container does.
+// `scrollToHomepageSection` routes through `getScroller()`, which knows
+// about that container, so deep links from /work-with-us → /#services land
+// at the right spot on both mobile and desktop.
+function SectionHashDeepLink() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+
+    // Read viewport width directly — the parent's isMobile state is set in a
+    // separate post-mount effect, so reading it as a prop would race and use
+    // the initial `false` on mobile devices.
+    const isMobile = window.innerWidth < 768;
+
+    // Below-fold sections (Reviews, Gallery, FAQ, Map) are dynamic imports,
+    // so the target element may not exist in the DOM on mount. Poll up to 3s
+    // for it to appear, then scroll once it does.
+    const startedAt = performance.now();
+    const tryScroll = () => {
+      if (document.querySelector(hash)) {
+        scrollToHomepageSection(hash, isMobile, 600);
+        return;
+      }
+      if (performance.now() - startedAt < 3000) {
+        timer = window.setTimeout(tryScroll, 100);
+      }
+    };
+    let timer = window.setTimeout(tryScroll, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return null;
+}
+
 // Reads ?service=<slug>&subcategory=<slug> from the URL and opens the
 // service browser modal. Lets the footer (and any other link) deep-link
 // into the services menu from another page like /work-with-us.
@@ -317,6 +355,10 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                 {/* Reads ?service= query param to deep-link into the services menu */}
                 <ServiceQueryDeepLink />
+
+                {/* Reads #section hash to deep-link to a section via the
+                    correct scroll container (mobile uses .mobile-scroll-container) */}
+                <SectionHashDeepLink />
 
                 {/* Z-2: Drawer System Layer */}
                 <DrawerSystem services={services} />
