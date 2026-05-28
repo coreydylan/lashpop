@@ -79,12 +79,12 @@ export function ServiceBrowserModal() {
     if (!container) return
 
     const handleTouchMove = (e: TouchEvent) => {
-      // Only prevent default if the touch is not on the iframe
-      // This prevents the background from scrolling while allowing iframe scroll
-      const target = e.target as HTMLElement
-      if (target.tagName !== 'IFRAME') {
-        e.preventDefault()
-      }
+      // Block ALL touchmoves on the booking-view parent so accidental swipes
+      // can't pull-to-refresh and kick the user out of Vagaro mid-checkout.
+      // Cross-origin iframes handle their own scrolling internally — the
+      // event the parent sees has already been dispatched in parallel, so
+      // preventDefault here doesn't block iframe scroll.
+      e.preventDefault()
     }
 
     // Use passive: false to allow preventDefault

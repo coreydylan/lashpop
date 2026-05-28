@@ -100,22 +100,19 @@ export const scrollToHomepageSection = (
   if (!href.startsWith('#')) return;
 
   if (isMobile) {
-    // Mobile header is a 60px strip — most sections just need to clear it.
+    // Mobile header is a 60px strip. Every section just needs to clear it —
+    // earlier extra padding on gallery + reviews was over-shooting their
+    // titles, so they use the bare HEADER offset like the rest.
     const HEADER = 60;
-    if (href === '#gallery' || href === '#reviews') {
-      smoothScrollToElement(href, HEADER + 20, duration, 'top');
-    } else {
-      smoothScrollToElement(href, HEADER, duration, 'top');
-    }
+    smoothScrollToElement(href, HEADER, duration, 'top');
     return;
   }
 
-  // Desktop: gallery + reviews land centered, FAQ needs extra room for
-  // its category selectors, everything else clears the ~80px nav bar.
-  if (href === '#gallery' || href === '#reviews') {
-    smoothScrollToElement(href, 80, duration, 'center');
-  } else if (href === '#faq') {
-    smoothScrollToElement(href, 180, duration, 'top');
+  // Desktop: every section lands at top with 80px clearance for the nav.
+  // FAQ needs slightly more room for its category chips below the heading,
+  // but the chips sit BELOW the h2, not above, so the offset is modest.
+  if (href === '#faq') {
+    smoothScrollToElement(href, 110, duration, 'top');
   } else {
     smoothScrollToElement(href, 80, duration, 'top');
   }

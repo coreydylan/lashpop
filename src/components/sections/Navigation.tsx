@@ -88,12 +88,11 @@ export function Navigation() {
         return
       }
 
-      // On home page, smooth scroll to the section
-      if (item.href === '#gallery' || item.href === '#reviews') {
-        smoothScrollToElement(item.href, 80, 1000, 'center')
-      } else if (item.href === '#faq') {
-        // Special alignment for FAQ to show selectors below header
-        smoothScrollToElement(item.href, 180, 1000, 'top')
+      // On home page, smooth scroll to the section. Keep this aligned with
+      // scrollToHomepageSection in lib/smoothScroll.ts.
+      if (item.href === '#faq') {
+        // FAQ needs a touch more clearance for its category chips below the h2.
+        smoothScrollToElement(item.href, 110, 1000, 'top')
       } else {
         smoothScrollToElement(item.href, 80, 1000, 'top')
       }

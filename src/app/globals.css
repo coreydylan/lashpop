@@ -73,7 +73,6 @@
   }
   
   html {
-    scroll-behavior: smooth;
     font-size: 16px;
     overflow-x: clip;
     width: 100%;

@@ -225,7 +225,7 @@ function Section({
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
   return (
-    <div id={id} className="border border-sage/20 rounded-2xl overflow-hidden bg-white/50 scroll-mt-24">
+    <div id={id} className="border border-sage/20 rounded-2xl overflow-hidden bg-white/50">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-6 py-4 flex items-center justify-between hover:bg-ivory/50 transition-colors"

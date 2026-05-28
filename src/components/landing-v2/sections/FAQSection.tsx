@@ -236,7 +236,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
     <section
       ref={sectionRef}
       id="faq"
-      className="py-12 md:py-20 bg-cream scroll-mt-24"
+      className="py-12 md:py-20 bg-cream"
     >
       <div className="container max-w-4xl">
         {/* Section Header */}

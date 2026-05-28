@@ -183,7 +183,10 @@ const mobileScrollStyles = `
       height: 100vh;
       height: 100dvh; /* Dynamic viewport height for mobile browsers */
       -webkit-overflow-scrolling: touch;
-      overscroll-behavior-y: auto;
+      /* `contain` blocks the overscroll from escaping to <body> so an
+         accidental pull at the top of a service-browser/booking modal
+         doesn't trigger pull-to-refresh and kick the user out mid-checkout. */
+      overscroll-behavior-y: contain;
       background: transparent !important;
     }
 
@@ -244,25 +247,38 @@ const mobileScrollStyles = `
 function SectionHashDeepLink() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
+    // Opt out of native scroll restoration so it doesn't race our smooth
+    // scroll on refresh.
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
     const hash = window.location.hash;
     if (!hash || hash.length < 2) return;
 
-    // Read viewport width directly — the parent's isMobile state is set in a
-    // separate post-mount effect, so reading it as a prop would race and use
-    // the initial `false` on mobile devices.
     const isMobile = window.innerWidth < 768;
+
+    const stripHash = () => {
+      const url = window.location.pathname + window.location.search;
+      window.history.replaceState(null, '', url);
+    };
 
     // Below-fold sections (Reviews, Gallery, FAQ, Map) are dynamic imports,
     // so the target element may not exist in the DOM on mount. Poll up to 3s
-    // for it to appear, then scroll once it does.
+    // for it to appear, then scroll once it does. Strip the hash after the
+    // first scroll so refreshes don't re-fire this animation.
     const startedAt = performance.now();
     const tryScroll = () => {
       if (document.querySelector(hash)) {
         scrollToHomepageSection(hash, isMobile, 600);
+        stripHash();
         return;
       }
       if (performance.now() - startedAt < 3000) {
         timer = window.setTimeout(tryScroll, 100);
+      } else {
+        stripHash();
       }
     };
     let timer = window.setTimeout(tryScroll, 0);

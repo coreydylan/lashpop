@@ -187,20 +187,10 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       return
     }
 
-    // On home page, smooth scroll to the section
-    // Services section needs header offset to show "Choose a Service" heading
-    if (item.href === '#services') {
-      smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
-    } else if (item.href === '#gallery') {
-      // Gallery: scroll to top of section with header offset
-      smoothScrollToElement(item.href, HEADER_HEIGHT + 20, 800, 'top')
-    } else if (item.href === '#reviews') {
-      // Reviews: scroll to show the "What People Are Saying" title
-      smoothScrollToElement(item.href, HEADER_HEIGHT + 20, 800, 'top')
-    } else {
-      // All other sections: offset by header height
-      smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
-    }
+    // On home page, smooth scroll. All sections use the bare header height —
+    // the previous +20 padding on gallery/reviews was over-shooting their
+    // titles. Keep aligned with scrollToHomepageSection in lib/smoothScroll.ts.
+    smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
   }, [isHomePage, router])
 
   // Render the dropdown menu (inline, not portal - portal was breaking on mobile)
