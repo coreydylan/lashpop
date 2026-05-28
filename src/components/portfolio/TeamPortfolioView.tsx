@@ -297,6 +297,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                     fill
                     className="object-cover"
                     priority
+                    sizes="(max-width: 1024px) 100vw, 50vw"
                   />
                 )}
 
@@ -320,6 +321,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                         alt={provider.name}
                         fill
                         className="object-cover"
+                        sizes="64px"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -448,6 +450,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                             alt={photo.caption || `Photo ${idx + 1}`}
                             fill
                             className="object-cover"
+                            sizes="(max-width: 768px) 33vw, 150px"
                           />
                           {isActive && (
                             <motion.div
@@ -535,6 +538,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                       ? 'opacity-100 blur-0'
                       : 'opacity-0 blur-sm'
                   }`}
+                  sizes="48px"
                   onLoad={() => handleImageLoad(`provider-${provider.id}`)}
                 />
               </div>
@@ -652,7 +656,9 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                               ? `${photos[currentPhotoIndex].cropData!.x}% ${photos[currentPhotoIndex].cropData!.y}%`
                               : 'center',
                           }}
-                          quality={90}
+                          sizes="(max-width: 1024px) 100vw, 600px"
+                          quality={85}
+                          priority
                           onLoad={() => handleImageLoad(photos[currentPhotoIndex].id)}
                         />
 
@@ -711,6 +717,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                           className={`object-cover transition-all duration-500 ${
                             loadedImages.has(photo.id) ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'
                           }`}
+                          sizes="120px"
                           onLoad={() => handleImageLoad(photo.id)}
                         />
                         {isActive && (

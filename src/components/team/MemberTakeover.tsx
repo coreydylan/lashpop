@@ -666,7 +666,7 @@ function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
         fill
         priority
         className="rounded-lg object-contain shadow-[0_30px_80px_rgba(0,0,0,0.5)]"
-        sizes="90vw"
+        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 80vw, 1200px"
         unoptimized={isVagaroPhoto(photo.url)}
       />
     </div>

@@ -3,32 +3,16 @@ const nextConfig = {
   reactStrictMode: false,
   outputFileTracingRoot: __dirname,
   images: {
-    formats: ['image/webp', 'image/avif'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    qualities: [75, 90],
+    loader: 'custom',
+    loaderFile: './src/lib/cf-image-loader.ts',
+    // deviceSizes/imageSizes still drive srcset width selection; quality is opaque to Next under custom loader.
+    deviceSizes: [320, 600, 900, 1200, 1800, 2400],
+    imageSizes: [64, 128, 256, 384],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '*.r2.dev',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'dam.lashpopstudios.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'eabdc1907c2f84bfe65a-cfc7a6bba052cea084198d4ff3e0b991.ssl.cf2.rackcdn.com',
-        pathname: '/**',
-      },
-      {
-        // Vagaro hosts staff/service photos across multiple Rackspace CDN subdomains
-        protocol: 'https',
-        hostname: '**.ssl.cf2.rackcdn.com',
-        pathname: '/**',
-      },
+      { protocol: 'https', hostname: 'cdn.lashpopstudios.com', pathname: '/**' },
+      { protocol: 'https', hostname: '*.r2.dev', pathname: '/**' },
+      { protocol: 'https', hostname: 'dam.lashpopstudios.com', pathname: '/**' },
+      { protocol: 'https', hostname: '**.ssl.cf2.rackcdn.com', pathname: '/**' },
     ],
   },
   experimental: {

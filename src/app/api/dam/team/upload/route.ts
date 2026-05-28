@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
-import { uploadFile, generateAssetKey } from "@/lib/dam/r2-client"
+import { uploadBuffer, uploadFile, generateAssetKey } from "@/lib/dam/r2-client"
+import { optimizeImage, isOptimizableImage, getOptimizedFilename } from "@/lib/dam/image-optimizer"
 
 // Allow 5 minute execution for large uploads
 export const maxDuration = 300
@@ -27,25 +28,41 @@ export async function POST(request: NextRequest) {
     const uploadedPhotos: (typeof teamMemberPhotos.$inferSelect)[] = []
     const errors: Array<{ fileName: string; error: string }> = []
 
-    // Process each file
     for (const file of files) {
       try {
-        // Upload to R2
-        const key = generateAssetKey(file.name, teamMemberId)
-        const { url } = await uploadFile({
-          file,
-          key,
-          contentType: file.type
-        })
+        let uploadKey: string
+        let uploadUrl: string
+        let storedFileName = file.name
 
-        // Save to database
+        if (isOptimizableImage(file.type)) {
+          const buffer = Buffer.from(await file.arrayBuffer())
+          const optimized = await optimizeImage(buffer, {
+            maxWidth: 2400,
+            maxHeight: 2400,
+            quality: 85,
+            format: 'webp',
+          })
+          storedFileName = getOptimizedFilename(file.name, optimized.format)
+          uploadKey = generateAssetKey(storedFileName, teamMemberId)
+          const result = await uploadBuffer({
+            buffer: optimized.buffer,
+            key: uploadKey,
+            contentType: optimized.mimeType,
+          })
+          uploadUrl = result.url
+        } else {
+          uploadKey = generateAssetKey(file.name, teamMemberId)
+          const result = await uploadFile({ file, key: uploadKey, contentType: file.type })
+          uploadUrl = result.url
+        }
+
         const [photo] = await db
           .insert(teamMemberPhotos)
           .values({
             teamMemberId,
-            fileName: file.name,
-            filePath: url,
-            isPrimary: false
+            fileName: storedFileName,
+            filePath: uploadUrl,
+            isPrimary: false,
           })
           .returning()
 

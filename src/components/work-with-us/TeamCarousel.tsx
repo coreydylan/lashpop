@@ -121,8 +121,9 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
                   src={selectedImage}
                   alt="Enlarged view"
                   fill
+                  priority
                   className="object-contain rounded-lg"
-                  sizes="100vw"
+                  sizes="(max-width: 768px) 100vw, 896px"
                 />
               </div>
               <button
