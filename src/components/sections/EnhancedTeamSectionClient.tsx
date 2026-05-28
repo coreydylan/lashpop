@@ -1377,8 +1377,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           </div>
 
                           {/* Portfolio Image Thumbnails - below Instagram, above About */}
+                          {/* bg-cream here so the dimmed (opacity-70) non-active thumbs
+                              dim against cream instead of letting the hero photo behind
+                              the modal bleed through them as a faux panorama. */}
                           {portfolioImages.length > 1 && (
-                            <div className="relative px-5 pb-4 pointer-events-auto z-10">
+                            <div className="relative px-5 pb-4 pointer-events-auto z-10 bg-cream">
                               <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-1">
                                 {portfolioImages.map((img, idx) => (
                                   <button
@@ -1387,7 +1390,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                       e.stopPropagation()
                                       setCurrentImageIndex(idx)
                                     }}
-                                    className={`relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all duration-200 ${
+                                    className={`relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-cream transition-all duration-200 ${
                                       idx === currentImageIndex
                                         ? 'ring-2 ring-dusty-rose ring-offset-1 ring-offset-cream scale-105'
                                         : 'opacity-70 hover:opacity-100'

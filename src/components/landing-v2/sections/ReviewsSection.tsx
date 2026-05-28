@@ -219,7 +219,7 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
         padding entirely so the team section's pb-20 is the only space
         above the heading; bottom stays py-20-equivalent so it matches.
       */}
-      <section ref={ref} id="reviews" className="relative pb-12 md:pb-20 overflow-hidden" style={{ backgroundColor: '#e9d1c8' }}>
+      <section ref={ref} id="reviews" className="relative pb-12 md:pb-20 overflow-hidden" style={{ backgroundColor: '#f0e0db' }}>
         <div className="relative">
 
         {/* Section Header */}
