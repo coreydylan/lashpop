@@ -92,7 +92,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             fill
             sizes="100vw"
             className="object-cover"
-            quality={90}
+            quality={75}
           />
           {/* Soft cream fade at image bottom — kills the hard horizontal cut where the desk meets the body bg */}
           <div className="absolute inset-x-0 bottom-0 h-12 pointer-events-none bg-gradient-to-b from-transparent to-[#f0e0db]" />

@@ -76,11 +76,18 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
           setIsVisible(shouldBeVisible)
         }
 
-        // Zoom through arch over first 60% of viewport scroll
+        // Skip the arch transform write once the bg is hidden — it's
+        // pointless work that still walks through the compositor.
+        if (!shouldBeVisible) return
+
+        // Zoom through arch over first 60% of viewport scroll. Cap the
+        // transform write so we stop touching the element once the
+        // animation is at its final scale (1.5) — no need to keep writing
+        // the same value every scroll frame.
         const zoomProgress = Math.min(scrollTop / (viewportHeight * 0.6), 1)
+        if (zoomProgress >= 1 && lastScrollTop > viewportHeight * 0.6) return
         const scale = 1 + (zoomProgress * 0.5)
 
-        // Direct DOM manipulation for GPU-accelerated animation
         if (archRef.current) {
           archRef.current.style.transform = `scale3d(${scale}, ${scale}, 1)`
         }
