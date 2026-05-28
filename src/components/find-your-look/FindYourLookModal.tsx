@@ -954,7 +954,7 @@ function ResultScreen({
             </div>
           ) : services.length === 0 ? (
             <p className="text-charcoal/70 text-sm py-3">
-              Services aren't available right now. Please try again shortly.
+              Services aren&apos;t available right now. Please try again shortly.
             </p>
           ) : (
             <div className="space-y-2">
