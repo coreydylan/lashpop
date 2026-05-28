@@ -183,7 +183,7 @@ const mobileScrollStyles = `
       height: 100vh;
       height: 100dvh; /* Dynamic viewport height for mobile browsers */
       -webkit-overflow-scrolling: touch;
-      /* `contain` blocks the overscroll from escaping to <body> so an
+      /* "contain" blocks the overscroll from escaping to the body so an
          accidental pull at the top of a service-browser/booking modal
          doesn't trigger pull-to-refresh and kick the user out mid-checkout. */
       overscroll-behavior-y: contain;
