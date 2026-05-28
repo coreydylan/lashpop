@@ -13,6 +13,7 @@ const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   'permanent-makeup': 'Permanent Makeup',
   'specialty': 'Permanent Jewelry',
   'injectables': 'Botox',
+  'bundles': 'Bundles',
 }
 
 // Order matching the main services section (excluding lash-lifts which opens lashes with subcategory)
@@ -24,6 +25,7 @@ const CATEGORY_ORDER: string[] = [
   'permanent-makeup',
   'specialty',
   'injectables',
+  'bundles',
 ]
 
 interface CategoryTabsProps {

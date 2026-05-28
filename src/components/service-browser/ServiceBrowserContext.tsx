@@ -129,10 +129,13 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
     setState(initialState)
   }, [])
 
+  // Selecting a service now jumps straight to the Vagaro booking view —
+  // the old DetailView middle step (price/time/description/gallery) is
+  // gone. Card UI is the new source of truth for that information.
   const selectService = useCallback((service: Service) => {
     setState(prev => ({
       ...prev,
-      view: 'detail',
+      view: 'booking',
       selectedService: service,
     }))
   }, [])
@@ -170,9 +173,9 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
     setState(prev => ({ ...prev, view: 'booking' }))
   }, [])
 
-  // Go back from booking view to detail
+  // Go back from booking view to the cards list — DetailView is gone.
   const closeBooking = useCallback(() => {
-    setState(prev => ({ ...prev, view: 'detail' }))
+    setState(prev => ({ ...prev, view: 'browse', selectedService: null }))
   }, [])
 
   // Close the lash quiz prompt without opening the modal
