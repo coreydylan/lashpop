@@ -974,7 +974,7 @@ function ResultScreen({
                       {service.name}
                     </p>
                     <p className="text-charcoal/70 text-xs md:text-sm">
-                      {formatPrice(service.priceStarting)} · {formatDuration(service.durationMinutes)}
+                      Starting at {formatPrice(service.priceStarting)} ({formatDuration(service.durationMinutes)})
                     </p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-dusty-rose shrink-0" />
@@ -983,7 +983,7 @@ function ResultScreen({
             </div>
           )}
           <p className="text-charcoal/60 text-xs mt-2 leading-relaxed">
-            New to lashes? Pick a Full Set. Already have lashes within ~3 weeks? Choose a Fill.
+            New to lashes? Choose a “full set”. Already have lashes that were done 2-3 weeks ago? Choose a “fill”.
           </p>
         </div>
 

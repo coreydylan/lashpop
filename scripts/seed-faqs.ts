@@ -229,8 +229,7 @@ const faqData: Record<string, Array<{ question: string; answer: string; isFeatur
   'Permanent Jewelry': [
     {
       question: "What is permanent jewelry?",
-      answer: `Jewelry without a clasp! Kelly at Junie Jewelry Co. will weld your custom piece directly onto your wrist, ankle, or neck, so you can flaunt your forever jewelry, forever!`,
-      isFeatured: true
+      answer: `Jewelry without a clasp! Kelly at Junie Jewelry Co. will weld your custom piece directly onto your wrist, ankle, or neck, so you can flaunt your forever jewelry, forever!`
     },
     {
       question: "How long does it take?",

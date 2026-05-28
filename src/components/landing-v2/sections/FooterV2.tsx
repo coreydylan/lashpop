@@ -204,7 +204,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
                   <button
                     type="button"
                     onClick={() => handleServiceClick(service)}
-                    className="caption text-charcoal hover:text-terracotta transition-colors text-left bg-transparent border-0 p-0 cursor-pointer"
+                    className="caption text-charcoal hover:text-terracotta transition-colors text-left bg-transparent border-0 p-0 cursor-pointer min-h-0 min-w-0"
                   >
                     {service.label}
                   </button>

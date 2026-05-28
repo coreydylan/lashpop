@@ -304,7 +304,7 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
                   }}
                 />
                 <span className="font-medium text-sm tabular-nums whitespace-nowrap" style={{ color: '#cc947f' }}>
-                  8A–7:30P
+                  8:00 AM – 7:30 PM
                 </span>
               </div>
               <p className="caption text-charcoal text-xs">

@@ -269,8 +269,8 @@ export function useQuizAlgorithm({
 
     const newScores = {
       ...scores,
-      [currentPair.leftStyle]: scores[currentPair.leftStyle] - 1,
-      [currentPair.rightStyle]: scores[currentPair.rightStyle] - 1,
+      [currentPair.leftStyle]: Math.max(0, scores[currentPair.leftStyle] - 1),
+      [currentPair.rightStyle]: Math.max(0, scores[currentPair.rightStyle] - 1),
     }
     setScores(newScores)
 

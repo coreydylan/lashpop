@@ -26,10 +26,10 @@ export interface FounderLetterContent {
  */
 export const DEFAULT_FOUNDER_LETTER: FounderLetterContent = {
   heading: 'Welcome to LashPop Studios',
-  greeting: "I'm so glad you're here. \u{1FAF6}",
+  greeting: "I'm so glad you're here.",
   paragraphs: [
-    'When I launched LashPop back in 2016, I wanted something simple: a place where women could feel genuinely cared for and walk out looking refreshed without the long routine. That idea grew into the beauty collective we have today—artists who specialize in lashes, brows, skincare, botox, waxing, permanent jewelry, and more, all with one goal in mind.',
-    "We're united by the same mission: helping you feel effortlessly beautiful and confident, with a few less things to stress about during your busy week. If we can give you that “just woke up from eight blissful hours” look with almost no effort—even if you're running on five—we'll call that a win.",
+    'When I launched LashPop back in 2016, I wanted something simple: a place where women could feel genuinely cared for and walk out looking refreshed without the long routine. That idea grew into the beauty collective we have today: artists who specialize in lashes, brows, skincare, botox, waxing, permanent jewelry, and more, all with one goal in mind.',
+    "We're united by the same mission: helping you feel effortlessly beautiful and confident, with a few less things to stress about during your busy week. If we can give you that “just woke up from eight blissful hours” look with almost no effort, even if you're running on five, we'll call that a win.",
     "We can't wait to see you soon!",
   ],
   signOff: 'Xo-',

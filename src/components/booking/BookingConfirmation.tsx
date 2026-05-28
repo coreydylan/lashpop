@@ -140,7 +140,7 @@ export function BookingConfirmation({
               onClick={onBookAnother}
               className="flex-1 px-6 py-3 bg-white border border-sage/30 text-dune rounded-full font-medium hover:bg-sage/5 transition-colors"
             >
-              Book another
+              Book another service
             </button>
           )}
         </div>
