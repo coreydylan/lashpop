@@ -15,13 +15,21 @@ import { EmblaCarouselType } from 'embla-carousel'
  * - Only activates when hovering over the container
  */
 export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  // Use a state-backed callback ref so effects re-run when the DOM node attaches.
+  // A plain useRef wouldn't trigger re-renders, so if the consumer mounts the
+  // ref'd element later (e.g. after an async fetch returns null on first render),
+  // the listeners would never get wired up.
+  const [container, setContainer] = useState<HTMLDivElement | null>(null)
+  const wheelContainerRef = useCallback((node: HTMLDivElement | null) => {
+    setContainer(node)
+  }, [])
+
   const [isHovering, setIsHovering] = useState(false)
   const cleanupRef = useRef<(() => void) | null>(null)
 
   // Set up wheel gestures when hovering
   useEffect(() => {
-    if (!emblaApi || !containerRef.current || !isHovering) {
+    if (!emblaApi || !container || !isHovering) {
       // Cleanup if not hovering
       if (cleanupRef.current) {
         cleanupRef.current()
@@ -29,8 +37,6 @@ export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) 
       }
       return
     }
-
-    const container = containerRef.current
 
     let isGestureActive = false
     let startX = 0
@@ -125,7 +131,7 @@ export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) 
         cleanupRef.current = null
       }
     }
-  }, [emblaApi, isHovering])
+  }, [emblaApi, container, isHovering])
 
   // Mouse enter/leave handlers
   const handleMouseEnter = useCallback(() => {
@@ -136,9 +142,9 @@ export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) 
     setIsHovering(false)
   }, [])
 
-  // Set up hover event listeners
+  // Set up hover event listeners — re-runs when container element changes,
+  // so the listeners attach as soon as the ref'd node mounts.
   useEffect(() => {
-    const container = containerRef.current
     if (!container) return
 
     container.addEventListener('mouseenter', handleMouseEnter)
@@ -148,11 +154,11 @@ export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) 
       container.removeEventListener('mouseenter', handleMouseEnter)
       container.removeEventListener('mouseleave', handleMouseLeave)
     }
-  }, [handleMouseEnter, handleMouseLeave])
+  }, [container, handleMouseEnter, handleMouseLeave])
 
   return {
-    /** Attach this ref to the carousel container element */
-    wheelContainerRef: containerRef,
+    /** Attach this callback ref to the carousel container element */
+    wheelContainerRef,
     /** Current hover state */
     isHovering,
   }
