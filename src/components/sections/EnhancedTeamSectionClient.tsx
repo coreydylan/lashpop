@@ -884,7 +884,15 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     : getTeamMemberCategories(member.specialties)
                   const isSelected = selectedMember?.id === member.id
                   const indexInRow = absoluteIndex % columnsPerRow
-                  // Last card alone in the final row of the responsive grid — center via col-start
+                  // A solo card in the final row of the responsive grid used to
+                  // be re-positioned to col-start-2 to "center" it, but the
+                  // resulting layout read as off — the orphan looked stranded
+                  // in column 2 with empty space to her left. The grid already
+                  // starts a new row in column 1 by default, so dropping the
+                  // override lets the orphan land left-aligned (col-start-1)
+                  // matching the rest of the page's reading rhythm.
+                  // (Variable kept for now in case we want a different
+                  // treatment later; nothing reads it.)
                   const isLastOrphan = absoluteIndex === sortedTeamMembers.length - 1 && sortedTeamMembers.length % columnsPerRow === 1
 
                   return (
@@ -898,7 +906,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         delay: indexInRow * 0.12,
                         ease: [0.22, 1, 0.36, 1]
                       }}
-                      className={`relative group cursor-pointer ${isLastOrphan ? 'sm:col-start-2 md:col-start-2 lg:col-start-2' : ''}`}
+                      className="relative group cursor-pointer"
                       onClick={() => handleMemberClick(member, absoluteIndex)}
                       onMouseEnter={() => {
                         setHoveredId(member.id)
