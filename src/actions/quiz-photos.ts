@@ -5,6 +5,8 @@ import { quizPhotos, quizResultSettings, type QuizPhotoCropData } from "@/db/sch
 import { assets } from "@/db/schema/assets"
 import { tags } from "@/db/schema/tags"
 import { assetTags } from "@/db/schema/asset_tags"
+import { services } from "@/db/schema/services"
+import { serviceSubcategories } from "@/db/schema/service_subcategories"
 import { eq, and, asc, isNull } from "drizzle-orm"
 import sharp from "sharp"
 import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
@@ -663,6 +665,86 @@ function emptyResultDisplay(style: LashStyle): QuizResultForDisplay {
     recommendedService: d.recommendedService,
     bookingLabel: d.bookingLabel,
     resultImage: null,
+  }
+}
+
+// Quiz lash style → service_subcategories.slug mapping.
+// Each style maps to a subcategory that holds the bookable Vagaro services
+// (Full Set / Fill / Mini Fill) for that style.
+const LASH_STYLE_TO_SUBCATEGORY_SLUG: Record<LashStyle, string> = {
+  classic: "classic-extensions",
+  hybrid: "hybrid-extensions",
+  wetAngel: "wet-angel-extensions",
+  volume: "volume-extensions",
+}
+
+export interface QuizResultService {
+  id: string
+  name: string
+  slug: string
+  priceStarting: number       // cents
+  durationMinutes: number
+  vagaroServiceCode: string | null
+  vagaroServiceId: string | null
+}
+
+export interface QuizResultServices {
+  subcategorySlug: string
+  subcategoryName: string | null
+  services: QuizResultService[]
+}
+
+// Fetch the Vagaro-synced services for a quiz result, keyed by lash style.
+// Returns the matched subcategory + its services (Full Set / Fill / Mini Fill),
+// sorted by services.displayOrder so the Full Set lands first.
+export async function getQuizResultServices(
+  lashStyle: LashStyle,
+): Promise<QuizResultServices | null> {
+  const subcategorySlug = LASH_STYLE_TO_SUBCATEGORY_SLUG[lashStyle]
+  if (!subcategorySlug) return null
+
+  const db = getDb()
+
+  const rows = await db
+    .select({
+      id: services.id,
+      name: services.name,
+      slug: services.slug,
+      priceStarting: services.priceStarting,
+      durationMinutes: services.durationMinutes,
+      vagaroServiceCode: services.vagaroServiceCode,
+      vagaroServiceId: services.vagaroServiceId,
+      subcategoryName: serviceSubcategories.name,
+    })
+    .from(services)
+    .innerJoin(
+      serviceSubcategories,
+      eq(services.subcategoryId, serviceSubcategories.id),
+    )
+    .where(
+      and(
+        eq(serviceSubcategories.slug, subcategorySlug),
+        eq(services.isActive, true),
+      ),
+    )
+    .orderBy(asc(services.displayOrder))
+
+  if (rows.length === 0) {
+    return { subcategorySlug, subcategoryName: null, services: [] }
+  }
+
+  return {
+    subcategorySlug,
+    subcategoryName: rows[0].subcategoryName,
+    services: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      priceStarting: r.priceStarting,
+      durationMinutes: r.durationMinutes,
+      vagaroServiceCode: r.vagaroServiceCode,
+      vagaroServiceId: r.vagaroServiceId,
+    })),
   }
 }
 

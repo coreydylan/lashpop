@@ -19,19 +19,22 @@ import {
 import {
   getQuizPhotosForQuiz,
   getResultSettingsForQuiz,
+  getQuizResultServices,
   type QuizResultForDisplay,
+  type QuizResultService,
+  type QuizResultServices,
 } from '@/actions/quiz-photos';
 
 const EMPTY_RESULT_SETTINGS: Record<LashStyle, QuizResultForDisplay> | null = null;
 
-// Merge DB-backed result settings with hardcoded fallbacks (text + image).
+// Merge DB-backed result settings with hardcoded fallbacks (marketing copy + image).
+// recommendedService / bookingLabel are no longer rendered — the result screen now
+// pulls the actual bookable services from Vagaro-synced `services` instead.
 // resultImage is guaranteed to be a string because the hardcoded fallback always exists.
 interface ResolvedResultDisplay {
   displayName: string;
   description: string;
   bestFor: string[];
-  recommendedService: string;
-  bookingLabel: string;
   resultImage: string;
 }
 
@@ -47,11 +50,21 @@ function buildResultDisplay(
     displayName: fromDb?.displayName || fallbackDetails.displayName,
     description: fromDb?.description || fallbackDetails.description,
     bestFor: fromDb?.bestFor?.length ? fromDb.bestFor : fallbackDetails.bestFor,
-    recommendedService:
-      fromDb?.recommendedService || fallbackDetails.recommendedService,
-    bookingLabel: fromDb?.bookingLabel || fallbackDetails.bookingLabel,
     resultImage: fromDb?.resultImage || fallbackImage,
   };
+}
+
+function formatPrice(cents: number): string {
+  const dollars = cents / 100;
+  return dollars % 1 === 0 ? `$${dollars}` : `$${dollars.toFixed(2)}`;
+}
+
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (mins === 0) return `${hours} hr`;
+  return `${hours} hr ${mins} min`;
 }
 
 // Animation variants
@@ -94,15 +107,15 @@ export interface FindYourLookContentRef {
 
 // Embedded quiz content component (no modal wrapper) for morphing animation
 interface FindYourLookContentProps {
-  onBook: (lashStyle: string) => void;
+  /** Called when the user clicks a specific Vagaro service on the result screen. */
+  onBookService: (service: QuizResultService, lashStyle: LashStyle) => void;
   onClose: () => void;
   isMobile: boolean;
-  disableAutoBook?: boolean;
   onStepChange?: (step: QuizStep, headerTitle: string) => void;
 }
 
 export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLookContentProps>(
-  function FindYourLookContent({ onBook, onClose, isMobile, disableAutoBook, onStepChange }, ref) {
+  function FindYourLookContent({ onBookService, onClose, isMobile, onStepChange }, ref) {
     const [step, setStep] = useState<QuizStep>(0);
     const [photosByStyle, setPhotosByStyle] = useState<Record<LashStyle, QuizPhoto[]>>({
       classic: [],
@@ -113,6 +126,7 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
     const [resultSettings, setResultSettings] = useState<
       Record<LashStyle, QuizResultForDisplay> | null
     >(EMPTY_RESULT_SETTINGS);
+    const [resultServices, setResultServices] = useState<QuizResultServices | null>(null);
     const [photosLoading, setPhotosLoading] = useState(false);
     const [photosError, setPhotosError] = useState<string | null>(null);
 
@@ -232,9 +246,25 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
       }
     }, [quiz.result, step]);
 
-    const handleBookNow = () => {
+    // Fetch the Vagaro-synced services for the matched lash style once we have a result.
+    useEffect(() => {
+      if (!quiz.result) return;
+      let cancelled = false;
+      getQuizResultServices(quiz.result)
+        .then((data) => {
+          if (!cancelled) setResultServices(data);
+        })
+        .catch((err) => {
+          console.error('Failed to load quiz result services:', err);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [quiz.result]);
+
+    const handleBookService = (service: QuizResultService) => {
       if (quiz.result) {
-        onBook(quiz.result);
+        onBookService(service, quiz.result);
       }
     };
 
@@ -326,7 +356,9 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
                   key="result"
                   result={display}
                   resultImage={display.resultImage}
-                  onBook={handleBookNow}
+                  services={resultServices?.services ?? []}
+                  servicesLoading={resultServices === null}
+                  onBookService={handleBookService}
                   isMobile={isMobile}
                 />
               );
@@ -341,10 +373,10 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
 interface FindYourLookModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onBook?: (lashStyle: string) => void;
+  onBookService?: (service: QuizResultService, lashStyle: LashStyle) => void;
 }
 
-export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModalProps) {
+export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLookModalProps) {
   const [step, setStep] = useState<QuizStep>(0);
   const [photosByStyle, setPhotosByStyle] = useState<Record<LashStyle, QuizPhoto[]>>({
     classic: [],
@@ -355,6 +387,7 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
   const [resultSettings, setResultSettings] = useState<
     Record<LashStyle, QuizResultForDisplay> | null
   >(EMPTY_RESULT_SETTINGS);
+  const [resultServices, setResultServices] = useState<QuizResultServices | null>(null);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [photosError, setPhotosError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -474,19 +507,25 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
     }
   }, [quiz.result, step]);
 
-  // Auto-open services modal when quiz completes with results
+  // Fetch the Vagaro-synced services for the matched lash style once we have a result.
   useEffect(() => {
-    if (step === 4 && quiz.result && onBook) {
-      const timer = setTimeout(() => {
-        onBook(quiz.result!);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [step, quiz.result, onBook]);
+    if (!quiz.result) return;
+    let cancelled = false;
+    getQuizResultServices(quiz.result)
+      .then((data) => {
+        if (!cancelled) setResultServices(data);
+      })
+      .catch((err) => {
+        console.error('Failed to load quiz result services:', err);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [quiz.result]);
 
-  const handleBookNow = () => {
-    if (quiz.result && onBook) {
-      onBook(quiz.result);
+  const handleBookService = (service: QuizResultService) => {
+    if (quiz.result && onBookService) {
+      onBookService(service, quiz.result);
     }
   };
 
@@ -667,7 +706,9 @@ export function FindYourLookModal({ isOpen, onClose, onBook }: FindYourLookModal
                           key="result"
                           result={display}
                           resultImage={display.resultImage}
-                          onBook={handleBookNow}
+                          services={resultServices?.services ?? []}
+                          servicesLoading={resultServices === null}
+                          onBookService={handleBookService}
                           isMobile={isMobile}
                         />
                       );
@@ -838,16 +879,22 @@ function Q2LashLookFeel({ onAnswer }: { onAnswer: (answer: Q2Answer) => void }) 
 
 // Result Screen
 interface ResultScreenProps {
-  result: Pick<
-    QuizResultForDisplay,
-    'displayName' | 'description' | 'bestFor' | 'recommendedService' | 'bookingLabel'
-  >;
+  result: Pick<QuizResultForDisplay, 'displayName' | 'description' | 'bestFor'>;
   resultImage: string;
-  onBook: () => void;
+  services: QuizResultService[];
+  servicesLoading: boolean;
+  onBookService: (service: QuizResultService) => void;
   isMobile?: boolean;
 }
 
-function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenProps) {
+function ResultScreen({
+  result,
+  resultImage,
+  services,
+  servicesLoading,
+  onBookService,
+  isMobile,
+}: ResultScreenProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -864,7 +911,6 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
           <h2 className="text-lg md:text-2xl font-display font-medium text-charcoal">
             {result.displayName}
           </h2>
-          <p className="text-[11px] md:text-xs text-charcoal mt-1">Recommended Service: {result.recommendedService}</p>
         </div>
 
         {/* Result Image */}
@@ -898,6 +944,49 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
           </ul>
         </div>
 
+        {/* Bookable services (live from Vagaro-synced services table) */}
+        <div className="mb-3 md:mb-4 shrink-0">
+          <p className="text-charcoal font-medium text-sm mb-2">Book your appointment:</p>
+          {servicesLoading ? (
+            <div className="flex items-center gap-2 text-charcoal/70 text-sm py-3">
+              <div className="w-4 h-4 border-2 border-dusty-rose border-t-transparent rounded-full animate-spin" />
+              Loading services…
+            </div>
+          ) : services.length === 0 ? (
+            <p className="text-charcoal/70 text-sm py-3">
+              Services aren't available right now. Please try again shortly.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {services.map((service) => (
+                <motion.button
+                  key={service.id}
+                  whileHover={!isMobile ? { scale: 1.01 } : undefined}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => onBookService(service)}
+                  disabled={!service.vagaroServiceCode}
+                  className="w-full text-left px-4 py-3 rounded-xl bg-white/70 hover:bg-white border border-white
+                             transition-colors flex items-center justify-between gap-3
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-charcoal font-medium text-sm md:text-base truncate">
+                      {service.name}
+                    </p>
+                    <p className="text-charcoal/70 text-xs md:text-sm">
+                      {formatPrice(service.priceStarting)} · {formatDuration(service.durationMinutes)}
+                    </p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-dusty-rose shrink-0" />
+                </motion.button>
+              ))}
+            </div>
+          )}
+          <p className="text-charcoal/60 text-xs mt-2 leading-relaxed">
+            New to lashes? Pick a Full Set. Already have lashes within ~3 weeks? Choose a Fill.
+          </p>
+        </div>
+
         {/* Customization Note */}
         <div className="bg-cream/60 rounded-xl p-3 md:p-4 mb-3 md:mb-4 shrink-0">
           <p className="text-charcoal text-xs md:text-sm leading-relaxed">
@@ -907,27 +996,13 @@ function ResultScreen({ result, resultImage, onBook, isMobile }: ResultScreenPro
         </div>
       </div>
 
-      {/* Always-visible Book CTA pinned to the bottom of the result screen */}
-      <div
-        className="shrink-0 px-4 pt-3 pb-4 md:px-0 md:pt-4 md:pb-0 bg-rose-mist/95 backdrop-blur-sm border-t border-white/20 md:bg-transparent md:backdrop-blur-none md:border-t-0"
-        style={isMobile ? { paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' } : undefined}
-      >
-        <motion.button
-          whileHover={!isMobile ? { scale: 1.02 } : undefined}
-          whileTap={{ scale: 0.98 }}
-          onClick={onBook}
-          className="w-full py-3.5 md:py-4 rounded-full bg-dusty-rose hover:bg-dusty-rose/90 text-white font-medium
-                     shadow-lg shadow-dusty-rose/30 active:shadow-md transition-all duration-200"
-        >
-          {result.bookingLabel} →
-        </motion.button>
-
-        {!isMobile && (
-          <p className="text-xs text-charcoal/70 text-center leading-relaxed mt-3">
+      {!isMobile && (
+        <div className="shrink-0 pt-3">
+          <p className="text-xs text-charcoal/70 text-center leading-relaxed">
             Every set is customized to your eye shape and natural lashes. Your artist will fine-tune your look during your appointment so you leave loving your lashes.
           </p>
-        )}
-      </div>
+        </div>
+      )}
     </motion.div>
   );
 }

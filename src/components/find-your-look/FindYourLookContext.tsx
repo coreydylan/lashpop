@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { FindYourLookModal } from './FindYourLookModal';
+import type { QuizResultService } from '@/actions/quiz-photos';
+import type { LashStyle } from './types';
 
 interface FindYourLookContextValue {
   isOpen: boolean;
@@ -21,10 +23,10 @@ export function useFindYourLook() {
 
 interface FindYourLookProviderProps {
   children: ReactNode;
-  onBook?: (lashStyle: string) => void;
+  onBookService?: (service: QuizResultService, lashStyle: LashStyle) => void;
 }
 
-export function FindYourLookProvider({ children, onBook }: FindYourLookProviderProps) {
+export function FindYourLookProvider({ children, onBookService }: FindYourLookProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const openQuiz = useCallback(() => {
@@ -35,21 +37,13 @@ export function FindYourLookProvider({ children, onBook }: FindYourLookProviderP
     setIsOpen(false);
   }, []);
 
-  const handleBook = useCallback((lashStyle: string) => {
-    // Default behavior: could open booking panel or navigate
-    console.log('Book lash style:', lashStyle);
-    if (onBook) {
-      onBook(lashStyle);
-    }
-  }, [onBook]);
-
   return (
     <FindYourLookContext.Provider value={{ isOpen, openQuiz, closeQuiz }}>
       {children}
       <FindYourLookModal
         isOpen={isOpen}
         onClose={closeQuiz}
-        onBook={handleBook}
+        onBookService={onBookService}
       />
     </FindYourLookContext.Provider>
   );

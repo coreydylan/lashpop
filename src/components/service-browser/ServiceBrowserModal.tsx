@@ -111,9 +111,21 @@ export function ServiceBrowserModal() {
     actions.openFindYourLookQuiz()
   }
 
-  // Handle quiz result - triggers morph animation
-  const handleQuizBook = (lashStyle: string) => {
-    actions.handleQuizResult(lashStyle)
+  // Quiz result → user picked a specific Vagaro service. Jump straight to the
+  // booking widget for that service, skipping the Service Browser intermediate step.
+  const handleQuizBookService = (
+    service: { slug: string },
+    _lashStyle: string,
+  ) => {
+    // Map lash style → subcategory slug; mirrors actions.handleQuizResult mapping.
+    const styleToSubcategory: Record<string, string> = {
+      classic: 'classic-extensions',
+      hybrid: 'hybrid-extensions',
+      wetAngel: 'wet-angel-extensions',
+      volume: 'volume-extensions',
+    }
+    const subcategorySlug = styleToSubcategory[_lashStyle] || ''
+    actions.bookServiceFromQuiz(service.slug, subcategorySlug)
   }
 
   // Handle quiz step changes
@@ -387,7 +399,7 @@ export function ServiceBrowserModal() {
                     >
                       <FindYourLookContent
                         ref={quizContentRef}
-                        onBook={handleQuizBook}
+                        onBookService={handleQuizBookService}
                         onClose={actions.closeModal}
                         isMobile={isMobile}
                         onStepChange={handleQuizStepChange}
@@ -461,7 +473,7 @@ export function ServiceBrowserModal() {
       <FindYourLookModal
         isOpen={showFindYourLookQuiz}
         onClose={actions.closeFindYourLookQuiz}
-        onBook={handleQuizBook}
+        onBookService={handleQuizBookService}
       />
     </>
   )

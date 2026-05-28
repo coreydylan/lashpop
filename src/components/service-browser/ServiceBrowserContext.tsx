@@ -64,6 +64,8 @@ interface ServiceBrowserActions {
   openFindYourLookQuiz: () => void
   closeFindYourLookQuiz: () => void
   handleQuizResult: (lashStyle: string) => void
+  /** Jump from the quiz result screen straight to the booking widget for a specific service. */
+  bookServiceFromQuiz: (serviceSlug: string, subcategorySlug: string) => void
   // Morphing animation actions
   completeMorph: () => void
 }
@@ -236,6 +238,27 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
     }))
   }, [])
 
+  // Quiz result → specific Vagaro service: skip the Service Browser intermediate
+  // step and open the Vagaro booking widget directly for the chosen service.
+  const bookServiceFromQuiz = useCallback((serviceSlug: string, subcategorySlug: string) => {
+    const service = services.find(s => s.slug === serviceSlug)
+    if (!service) {
+      console.warn(`[ServiceBrowser] bookServiceFromQuiz: no service found for slug "${serviceSlug}"`)
+      return
+    }
+    setState(prev => ({
+      ...prev,
+      isOpen: true,
+      isMorphingQuiz: false,
+      morphTargetSubcategory: null,
+      categorySlug: 'lashes',
+      categoryName: 'Lashes',
+      activeSubcategory: subcategorySlug,
+      selectedService: service,
+      view: 'booking',
+    }))
+  }, [services])
+
   const actions = useMemo<ServiceBrowserActions>(() => ({
     openModal,
     closeModal,
@@ -250,8 +273,9 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
     openFindYourLookQuiz,
     closeFindYourLookQuiz,
     handleQuizResult,
+    bookServiceFromQuiz,
     completeMorph,
-  }), [openModal, closeModal, selectService, goBack, setActiveSubcategory, setCategory, openBooking, closeBooking, closeLashQuizPrompt, confirmLashQuizSkip, openFindYourLookQuiz, closeFindYourLookQuiz, handleQuizResult, completeMorph])
+  }), [openModal, closeModal, selectService, goBack, setActiveSubcategory, setCategory, openBooking, closeBooking, closeLashQuizPrompt, confirmLashQuizSkip, openFindYourLookQuiz, closeFindYourLookQuiz, handleQuizResult, bookServiceFromQuiz, completeMorph])
 
   const value = useMemo<ServiceBrowserContextValue>(() => ({
     state,
