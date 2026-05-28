@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check, UserPlus, Award, FileCheck, GraduationCap, Trophy, BookOpen } from 'lucide-react'
@@ -324,60 +324,16 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const sectionRef = useRef<HTMLElement>(null)
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null)
   const firstCardRef = useRef<HTMLDivElement>(null)
-  const hasSnappedOnEntryRef = useRef(false)
 
   // Cache for preloaded portfolio photos (keyed by member UUID)
   const preloadedPhotosCache = useRef<Map<string, PortfolioImage[]>>(new Map())
 
-  // Entry snap for mobile - snap when entering section, but allow free scroll within
-  useEffect(() => {
-    // Check mobile directly instead of relying on state
-    const checkIsMobile = window.innerWidth < 768
-    if (!checkIsMobile || !sectionRef.current) return
-
-    const section = sectionRef.current
-    const container = document.querySelector('.mobile-scroll-container') as HTMLElement
-    if (!container) return
-
-    const mobileHeaderHeight = parseInt(
-      getComputedStyle(document.documentElement).getPropertyValue('--mobile-header-height') || '44'
-    )
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          // Snap when entering viewport and haven't snapped yet
-          if (entry.isIntersecting && !hasSnappedOnEntryRef.current) {
-            const rect = section.getBoundingClientRect()
-            // Only snap if section top is near viewport top (scrolling down into section)
-            if (rect.top > -100 && rect.top < 200) {
-              hasSnappedOnEntryRef.current = true
-
-              // Calculate snap position with anchor offset (vh * 0.03)
-              const anchorOffset = window.innerHeight * 0.03
-              const sectionTop = container.scrollTop + rect.top
-              const targetScrollY = sectionTop - anchorOffset
-
-              container.scrollTo({ top: targetScrollY, behavior: 'smooth' })
-            }
-          }
-
-          // Reset flag when section leaves viewport (allows snap on re-entry)
-          if (!entry.isIntersecting) {
-            hasSnappedOnEntryRef.current = false
-          }
-        })
-      },
-      {
-        root: container,
-        threshold: [0, 0.1],
-        rootMargin: `-${mobileHeaderHeight}px 0px 0px 0px`
-      }
-    )
-
-    observer.observe(section)
-    return () => observer.disconnect()
-  }, [])
+  // NOTE: Previously this section had an IntersectionObserver-driven entry
+  // snap (mobile only) that called container.scrollTo({behavior:'smooth'})
+  // the moment the section crossed into the viewport, anchoring it ~3% from
+  // top. On fast downward swipes that hijacked iOS momentum scroll — the
+  // page would visibly decelerate and stop on the team section, exactly
+  // like a brake had been applied. Removed entirely; user owns the scroll.
 
   // Swipe tutorial state
   const {
@@ -719,6 +675,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                   const isFirstSwipeable = hasSwipeableTags && firstSwipeableIndex === -1
                   if (isFirstSwipeable) firstSwipeableIndex = index
 
+                  // Last card alone in a 2-col mobile row — center it instead of stranding left
+                  const isLastOrphan = index === sortedTeamMembers.length - 1 && sortedTeamMembers.length % 2 === 1
+
                   // Vagaro is source of truth for staff photos. member.image is already
                   // resolved Vagaro-first by the server (with local imageUrl as fallback).
                   // Local DAM cropSquareUrl is only used if member.image is empty.
@@ -745,11 +704,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         delay: index * 0.05,
                         ease: [0.23, 1, 0.32, 1]
                       }}
-                      className="cursor-pointer"
+                      className={`cursor-pointer ${isLastOrphan ? 'col-span-2 flex justify-center' : ''}`}
+                      style={isLastOrphan ? { width: '100%' } : undefined}
                     >
                       {/* Arch Card Container */}
                       <div
-                        className="relative bg-ivory rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 active:scale-[0.98] border border-terracotta/10"
+                        className="relative flex flex-col h-full bg-ivory rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 active:scale-[0.98] border border-terracotta/10"
+                        style={isLastOrphan ? { width: 'calc(50% - 0.375rem)' } : undefined}
                         onTouchStart={(e) => {
                         const touch = e.touches[0]
                         const card = e.currentTarget
@@ -849,12 +810,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       {/* Content Below Image */}
                       <div className="px-4 py-3 text-center">
                         {/* Name */}
-                        <h3 className="text-lg font-serif font-light text-gray-900 mb-0.5">
+                        <h3 className="text-lg font-serif font-light text-gray-900 mb-0.5 truncate">
                           {displayName}
                         </h3>
 
-                        {/* Title/Role */}
-                        <p className="text-xs font-sans font-light text-gray-500">
+                        {/* Title/Role — reserve 2 lines so a wrapping role doesn't push siblings out of alignment */}
+                        <p className="text-xs font-sans font-light text-gray-500 line-clamp-2 leading-tight min-h-[2lh]">
                           {member.name.toLowerCase().startsWith('emily')
                             ? 'LashPop Owner'
                             : member.type === 'employee'
@@ -863,31 +824,33 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </p>
                       </div>
 
-                      {/* Bottom IG section - multiple handles share one row to keep card heights even */}
+                      {/* Bottom IG section — single row, multi-handle joined with · so every footer has identical height */}
                       {(() => {
                         const handles = parseInstagramHandles(member.instagram, member.instagramUrl)
                         if (handles.length === 0) return null
                         const isMulti = handles.length > 1
                         return (
-                          <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-row">
-                            {handles.map(({ handle, url }) => (
-                              <a
-                                key={handle}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
-                                onTouchEnd={(e) => {
-                                  e.stopPropagation()
-                                  window.open(url, '_blank')
-                                }}
-                                className="flex-1 min-w-0 py-2 flex items-center justify-center gap-1 active:bg-white/50 transition-colors border-l first:border-l-0 border-warm-sand/40"
-                              >
-                                <Instagram className="w-3 h-3 text-dusty-rose flex-shrink-0" />
-                                <span className={`${isMulti ? 'text-[9px]' : 'text-[10px]'} font-sans font-medium tracking-wide text-dusty-rose truncate`}>
-                                  {handle}
-                                </span>
-                              </a>
+                          <div className="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 px-2 flex items-center justify-center gap-1.5">
+                            {handles.map(({ handle, url }, i) => (
+                              <React.Fragment key={handle}>
+                                {i > 0 && <span className="text-dusty-rose/50 text-[11px] leading-none">·</span>}
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onTouchEnd={(e) => {
+                                    e.stopPropagation()
+                                    window.open(url, '_blank')
+                                  }}
+                                  className="flex items-center gap-1 min-w-0 active:opacity-70 transition-opacity"
+                                >
+                                  <Instagram className="w-3 h-3 text-dusty-rose flex-shrink-0" />
+                                  <span className={`${isMulti ? 'text-[9px]' : 'text-[10px]'} font-sans font-medium tracking-wide text-dusty-rose truncate`}>
+                                    {handle}
+                                  </span>
+                                </a>
+                              </React.Fragment>
                             ))}
                           </div>
                         )
@@ -921,6 +884,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     : getTeamMemberCategories(member.specialties)
                   const isSelected = selectedMember?.id === member.id
                   const indexInRow = absoluteIndex % columnsPerRow
+                  // Last card alone in the final row of the responsive grid — center via col-start
+                  const isLastOrphan = absoluteIndex === sortedTeamMembers.length - 1 && sortedTeamMembers.length % columnsPerRow === 1
 
                   return (
                     <motion.div
@@ -933,7 +898,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         delay: indexInRow * 0.12,
                         ease: [0.22, 1, 0.36, 1]
                       }}
-                      className="relative group cursor-pointer"
+                      className={`relative group cursor-pointer ${isLastOrphan ? 'sm:col-start-2 md:col-start-2 lg:col-start-2' : ''}`}
                       onClick={() => handleMemberClick(member, absoluteIndex)}
                       onMouseEnter={() => {
                         setHoveredId(member.id)
@@ -942,7 +907,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       onMouseLeave={() => setHoveredId(null)}
                     >
                       <motion.div
-                        className={`relative bg-ivory rounded-[20px] overflow-hidden shadow-md transition-all duration-300 border border-terracotta/10 ${
+                        className={`relative flex flex-col h-full bg-ivory rounded-[20px] overflow-hidden shadow-md transition-all duration-300 border border-terracotta/10 ${
                           isSelected ? 'ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream' : ''
                         }`}
                         whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
@@ -967,10 +932,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         </div>
 
                         <div className="px-6 py-5 text-center">
-                          <h3 className="text-2xl font-serif font-light text-gray-900 mb-1">
+                          <h3 className="text-2xl font-serif font-light text-gray-900 mb-1 truncate">
                             {member.name}
                           </h3>
-                          <p className="font-sans font-light text-gray-500">
+                          {/* Reserve 2 lines so wrapping roles can't push siblings out of vertical alignment */}
+                          <p className="font-sans font-light text-gray-500 line-clamp-2 leading-tight min-h-[2lh]">
                             {member.name.toLowerCase().startsWith('emily')
                               ? 'LashPop Owner'
                               : member.type === 'employee'
@@ -984,21 +950,23 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           if (handles.length === 0) return null
                           const isMulti = handles.length > 1
                           return (
-                            <div className="w-full border-t border-warm-sand/40 bg-white/30 flex flex-row">
-                              {handles.map(({ handle, url }) => (
-                                <a
-                                  key={handle}
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="flex-1 min-w-0 py-2.5 flex items-center justify-center gap-1.5 hover:bg-white/50 transition-colors border-l first:border-l-0 border-warm-sand/40"
-                                >
-                                  <Instagram className={`${isMulti ? 'w-3 h-3' : 'w-3.5 h-3.5'} text-dusty-rose flex-shrink-0`} />
-                                  <span className={`${isMulti ? 'text-[10px]' : 'text-xs'} font-sans font-medium tracking-wide text-dusty-rose truncate`}>
-                                    {handle}
-                                  </span>
-                                </a>
+                            <div className="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 px-3 flex items-center justify-center gap-2 hover:bg-white/50 transition-colors">
+                              {handles.map(({ handle, url }, i) => (
+                                <React.Fragment key={handle}>
+                                  {i > 0 && <span className="text-dusty-rose/50 text-sm leading-none">·</span>}
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex items-center gap-1.5 min-w-0 hover:opacity-70 transition-opacity"
+                                  >
+                                    <Instagram className="w-3.5 h-3.5 text-dusty-rose flex-shrink-0" />
+                                    <span className={`${isMulti ? 'text-[10px]' : 'text-xs'} font-sans font-medium tracking-wide text-dusty-rose truncate`}>
+                                      {handle}
+                                    </span>
+                                  </a>
+                                </React.Fragment>
                               ))}
                             </div>
                           )

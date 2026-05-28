@@ -78,12 +78,21 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     const scrollContainer = getScrollContainer()
     if (!scrollContainer) return
 
+    // Guard against firing setState every scroll frame — only update when
+    // the boolean actually transitions. Avoids pushing identical values
+    // through React's reconciler during fast momentum scrolls.
+    let lastScrolled = scrollContainer.scrollTop > 20
+    setIsScrolled(lastScrolled)
+
     const handleScroll = () => {
-      setIsScrolled(scrollContainer.scrollTop > 20)
+      const next = scrollContainer.scrollTop > 20
+      if (next !== lastScrolled) {
+        lastScrolled = next
+        setIsScrolled(next)
+      }
     }
 
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Check initial state
 
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [getScrollContainer, isHomePage])
