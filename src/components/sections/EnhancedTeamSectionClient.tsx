@@ -14,6 +14,8 @@ import type { TeamMemberCredential } from '@/db/schema/team_members'
 import { MemberTakeover } from '@/components/team/MemberTakeover'
 import { useAdminMode } from '@/contexts/AdminModeContext'
 import { EditableToggle, EditableOrder } from '@/components/admin-mode/EditableControls'
+import { Editable } from '@/components/admin-mode/Editable'
+import { DEFAULT_TEAM_INTRO, type TeamIntroContent } from '@/types/team-intro'
 
 /**
  * Inline-admin: persist team visibility + order via the auth-guarded
@@ -385,6 +387,8 @@ interface ServiceCategory {
 interface EnhancedTeamSectionClientProps {
   teamMembers: TeamMember[]
   serviceCategories?: ServiceCategory[]
+  /** Inline-editable team-intro copy. Falls back to DEFAULT_TEAM_INTRO when absent. */
+  content?: TeamIntroContent
 }
 
 // Helper to determine columns per row based on breakpoint
@@ -395,7 +399,7 @@ const getColumnsForWidth = (width: number): number => {
   return 1
 }
 
-export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] }: EnhancedTeamSectionClientProps) {
+export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [], content }: EnhancedTeamSectionClientProps) {
   // Team members are already sorted by displayOrder from the database
   // Order can be managed via admin panel at /admin/website/team
   const sortedTeamMembers = teamMembers
@@ -403,6 +407,51 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   // Inline-admin mode. When OFF, every admin branch below is skipped so the
   // grid renders byte-identical to the public site.
   const { enabled: adminEnabled } = useAdminMode()
+
+  // Team-intro copy source of truth: `website_settings.section = 'team_intro'`.
+  // Inline admin edits PUT the whole intro object; local state keeps the header
+  // reflecting edits immediately (optimistic).
+  const [intro, setIntro] = useState<TeamIntroContent>(content ?? DEFAULT_TEAM_INTRO)
+  const introRef = useRef(intro)
+  introRef.current = intro
+
+  useEffect(() => {
+    if (content) {
+      setIntro(content)
+      introRef.current = content
+    }
+  }, [content])
+
+  // Serialize PUTs so two near-simultaneous field saves can't race.
+  const introWriteChain = useRef<Promise<void>>(Promise.resolve())
+
+  const putIntro = useCallback((update: (current: TeamIntroContent) => TeamIntroContent) => {
+    const run = introWriteChain.current.catch(() => {}).then(async () => {
+      const merged = update(introRef.current)
+      const res = await fetch('/api/admin/website/team-intro', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(merged),
+      })
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null)
+        throw new Error(msg?.error || 'Failed to save team intro')
+      }
+      const data = await res.json()
+      const saved = (data.content ?? merged) as TeamIntroContent
+      setIntro(saved)
+      introRef.current = saved
+    })
+    introWriteChain.current = run.catch(() => {})
+    return run
+  }, [])
+
+  const saveIntroField = useCallback(
+    (field: keyof TeamIntroContent) => async (value: string) => {
+      await putIntro(current => ({ ...current, [field]: value }))
+    },
+    [putIntro]
+  )
 
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [selectedMemberIndex, setSelectedMemberIndex] = useState<number>(0)
@@ -743,16 +792,54 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-6"
             style={{ color: '#cc947f' }}
           >
-            Find Your Stylist
+            <Editable
+              id="team-intro-heading"
+              label="Team — heading"
+              kind="text"
+              as="span"
+              value={intro.heading}
+              onSave={saveIntroField('heading')}
+            />
           </h2>
           <div className="w-24 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
             <p className="text-base md:text-lg leading-relaxed text-pretty" style={{ color: '#cc947f' }}>
-              LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules,&nbsp;and&nbsp;policies.
+              <Editable
+                id="team-intro-description"
+                label="Team — description"
+                kind="multiline"
+                as="span"
+                value={intro.description}
+                onSave={saveIntroField('description')}
+                // Preserve the historical non-breaking spaces ("schedules, and
+                // policies" on one line) for the unedited default copy. Custom
+                // copy wraps naturally.
+                renderDisplay={(v) =>
+                  v === DEFAULT_TEAM_INTRO.description
+                    ? 'LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules, and policies.'
+                    : v
+                }
+              />
             </p>
             <p className="text-xs md:text-sm leading-relaxed uppercase tracking-wider font-medium mt-10" style={{ color: '#cc947f' }}>
-              <span className="font-semibold block md:inline">Click the profiles</span>
-              <span className="block md:inline"> below to find a stylist that fits your vibe.</span>
+              <Editable
+                id="team-intro-emphasis"
+                label="Team — description emphasis"
+                kind="text"
+                as="span"
+                className="font-semibold block md:inline"
+                value={intro.descriptionEmphasis}
+                onSave={saveIntroField('descriptionEmphasis')}
+              />
+              <Editable
+                id="team-intro-rest"
+                label="Team — description (rest)"
+                kind="text"
+                as="span"
+                className="block md:inline"
+                value={intro.descriptionRest}
+                onSave={saveIntroField('descriptionRest')}
+              />
             </p>
           </div>
         </div>
@@ -1169,7 +1256,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
             }}
           >
             <span className="text-sm font-medium tracking-[0.1em] uppercase">
-              Join The Team
+              <Editable
+                id="team-intro-cta"
+                label="Team — Join The Team label"
+                kind="text"
+                as="span"
+                value={intro.ctaLabel}
+                onSave={saveIntroField('ctaLabel')}
+              />
             </span>
           </a>
         </div>

@@ -8,6 +8,8 @@ import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/compone
 import WeatherLocationBadge from './WeatherLocationBadge'
 import { HeroArchSlideshow } from './slideshow'
 import type { SlideshowPreset } from '@/types/hero-slideshow'
+import { DEFAULT_HERO_COPY, type HeroCopyContent } from '@/types/hero-copy'
+import { Editable } from '@/components/admin-mode/Editable'
 
 // New config format from slideshow system
 interface HeroSlideshowConfig {
@@ -27,6 +29,8 @@ interface HeroSectionProps {
     reviewCount: number
   }>
   heroConfig?: HeroSlideshowConfig
+  /** Inline-editable hero copy. Falls back to DEFAULT_HERO_COPY when absent. */
+  content?: HeroCopyContent
 }
 
 function CircleDecoration({ className = "w-full h-full" }: { className?: string }) {
@@ -46,7 +50,52 @@ const defaultFallbackImage = {
   objectFit: 'cover' as const
 }
 
-export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProps) {
+export default function HeroSection({ reviewStats, heroConfig, content }: HeroSectionProps) {
+  // Source of truth lives in `website_settings.section = 'hero_copy'`.
+  // Inline admin edits PUT the whole copy object; local state keeps both the
+  // mobile and desktop layouts reflecting edits immediately (optimistic).
+  const [copy, setCopy] = useState<HeroCopyContent>(content ?? DEFAULT_HERO_COPY)
+  const copyRef = useRef(copy)
+  copyRef.current = copy
+
+  useEffect(() => {
+    if (content) {
+      setCopy(content)
+      copyRef.current = content
+    }
+  }, [content])
+
+  // Serialize PUTs so two near-simultaneous field saves can't race.
+  const writeChain = useRef<Promise<void>>(Promise.resolve())
+
+  const putCopy = useCallback((update: (current: HeroCopyContent) => HeroCopyContent) => {
+    const run = writeChain.current.catch(() => {}).then(async () => {
+      const merged = update(copyRef.current)
+      const res = await fetch('/api/admin/website/hero-copy', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(merged),
+      })
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null)
+        throw new Error(msg?.error || 'Failed to save hero copy')
+      }
+      const data = await res.json()
+      const saved = (data.content ?? merged) as HeroCopyContent
+      setCopy(saved)
+      copyRef.current = saved
+    })
+    writeChain.current = run.catch(() => {})
+    return run
+  }, [])
+
+  const saveField = useCallback(
+    (field: keyof HeroCopyContent) => async (value: string) => {
+      await putCopy(current => ({ ...current, [field]: value }))
+    },
+    [putCopy]
+  )
+
   // Determine what to render: slideshow preset or single image
   const hasSlideshow = heroConfig?.preset && heroConfig.preset.images.length > 0
   const archImage = heroConfig?.fallbackImage || defaultFallbackImage
@@ -106,7 +155,14 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 className="font-serif"
                 style={{ fontSize: '2.25rem', fontWeight: 500, letterSpacing: '0.05em', color: '#cc947f' }}
               >
-                lashes + beauty
+                <Editable
+                  id="hero-heading-m"
+                  label="Hero — heading"
+                  kind="text"
+                  as="span"
+                  value={copy.heading}
+                  onSave={saveField('heading')}
+                />
               </h1>
               <div className="mt-1">
                 <span
@@ -121,7 +177,14 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     borderColor: 'rgba(181, 86, 61, 0.8)',
                   }}
                 >
-                  for the modern woman
+                  <Editable
+                    id="hero-subheading-m"
+                    label="Hero — subheading"
+                    kind="text"
+                    as="span"
+                    value={copy.subheading}
+                    onSave={saveField('subheading')}
+                  />
                 </span>
               </div>
 
@@ -156,7 +219,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
                 <div className="relative py-3.5 px-6 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]" style={{ backgroundColor: 'rgba(204, 148, 127, 0.9)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
-                  <span className="font-sans font-medium text-base text-white">Book Now</span>
+                  <span className="font-sans font-medium text-base text-white">
+                    <Editable id="hero-booknow-m" label="Hero — Book Now label" kind="text" as="span" value={copy.bookNowLabel} onSave={saveField('bookNowLabel')} />
+                  </span>
                 </div>
               </button>
 
@@ -167,7 +232,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]" style={{ borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.35)' }}>
-                  <span className="font-sans font-medium text-base text-dune">Take Our Lash Quiz</span>
+                  <span className="font-sans font-medium text-base text-dune">
+                    <Editable id="hero-quiz-m" label="Hero — Quiz label" kind="text" as="span" value={copy.quizLabel} onSave={saveField('quizLabel')} />
+                  </span>
                 </div>
               </button>
 
@@ -178,7 +245,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] text-center" style={{ borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.35)' }}>
-                  <span className="font-sans font-medium text-base text-dune">Work With Us</span>
+                  <span className="font-sans font-medium text-base text-dune">
+                    <Editable id="hero-workwithus-m" label="Hero — Work With Us label" kind="text" as="span" value={copy.workWithUsLabel} onSave={saveField('workWithUsLabel')} />
+                  </span>
                 </div>
               </a>
 
@@ -205,7 +274,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                           </svg>
                         ))}
                       </div>
-                      <span className="text-xs font-sans font-medium" style={{ color: '#b5563d' }}>Reviews</span>
+                      <span className="text-xs font-sans font-medium" style={{ color: '#b5563d' }}>
+                        <Editable id="hero-reviewschip-m" label="Hero — Reviews chip label" kind="text" as="span" value={copy.reviewsChipLabel} onSave={saveField('reviewsChipLabel')} />
+                      </span>
                     </div>
                   </div>
                 </button>
@@ -302,7 +373,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                             </svg>
                           ))}
                         </div>
-                        <span className="font-sans text-xs font-medium ml-0.5" style={{ color: '#cc947f' }}>Reviews</span>
+                        <span className="font-sans text-xs font-medium ml-0.5" style={{ color: '#cc947f' }}>
+                          <Editable id="hero-reviewschip-d" label="Hero — Reviews chip label" kind="text" as="span" value={copy.reviewsChipLabel} onSave={saveField('reviewsChipLabel')} />
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -316,7 +389,14 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 className="font-serif relative z-10"
                 style={{ fontSize: 'clamp(2.15rem, 5.2vw, 3.9rem)', fontWeight: 500, letterSpacing: '0.05em', color: '#cc947f' }}
               >
-                lashes + beauty
+                <Editable
+                  id="hero-heading-d"
+                  label="Hero — heading"
+                  kind="text"
+                  as="span"
+                  value={copy.heading}
+                  onSave={saveField('heading')}
+                />
               </h1>
               <div className="mt-2">
                 <span
@@ -331,7 +411,14 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     borderColor: 'rgba(181, 86, 61, 0.8)',
                   }}
                 >
-                  for the modern woman
+                  <Editable
+                    id="hero-subheading-d"
+                    label="Hero — subheading"
+                    kind="text"
+                    as="span"
+                    value={copy.subheading}
+                    onSave={saveField('subheading')}
+                  />
                 </span>
               </div>
             </div>
@@ -344,7 +431,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
                 <div className="relative px-8 py-3.5 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] transition-[transform,opacity]" style={{ backgroundColor: '#cc947f', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
-                  <span className="font-sans font-medium text-white">Book Now</span>
+                  <span className="font-sans font-medium text-white">
+                    <Editable id="hero-booknow-d" label="Hero — Book Now label" kind="text" as="span" value={copy.bookNowLabel} onSave={saveField('bookNowLabel')} />
+                  </span>
                 </div>
               </button>
               <button
@@ -353,7 +442,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative px-8 py-3.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-white/60 transition-[background-color,transform,opacity]">
-                  <span className="font-sans font-medium text-dune">Take Our Lash Quiz</span>
+                  <span className="font-sans font-medium text-dune">
+                    <Editable id="hero-quiz-d" label="Hero — Quiz label" kind="text" as="span" value={copy.quizLabel} onSave={saveField('quizLabel')} />
+                  </span>
                 </div>
               </button>
             </div>

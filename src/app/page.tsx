@@ -8,6 +8,10 @@ import { getSlideshowConfigs } from "@/actions/hero-slideshow"
 import { getSEOSettings } from "@/actions/seo"
 import { getStudioSettings } from "@/actions/studio"
 import { getFounderLetter } from "@/actions/founder-letter"
+import { getHeroCopy } from "@/actions/hero-copy"
+import { getTeamIntro } from "@/actions/team-intro"
+import { getFooterContent } from "@/actions/footer-content"
+import { getNavigation } from "@/actions/navigation"
 import { ReviewSchema } from "@/components/seo"
 import LandingPageV2Client from "./LandingPageV2Client"
 
@@ -30,6 +34,10 @@ export default async function HomePage() {
     seoSettings,
     studio,
     founderLetterContent,
+    heroCopyContent,
+    teamIntroContent,
+    footerContent,
+    navigationContent,
   ] = await Promise.all([
     getAllServices(),
     getTeamMembersWithServices(),
@@ -42,6 +50,10 @@ export default async function HomePage() {
     getSEOSettings(),
     getStudioSettings(),
     getFounderLetter(),
+    getHeroCopy(),
+    getTeamIntro(),
+    getFooterContent(),
+    getNavigation(),
   ])
 
   // Format services for the drawer (keep hierarchy structure)
@@ -130,6 +142,10 @@ export default async function HomePage() {
       heroConfig={heroConfig}
       studio={studio}
       founderLetterContent={founderLetterContent}
+      heroCopyContent={heroCopyContent}
+      teamIntroContent={teamIntroContent}
+      footerContent={footerContent}
+      navigationContent={navigationContent}
     />
     {/* Embed the full review corpus on the homepage only — one canonical
         location for the review JSON-LD instead of duplicating it on every page. */}

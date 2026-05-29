@@ -150,6 +150,10 @@ interface FAQData {
 import type { SlideshowPreset, SlideshowImage } from '@/types/hero-slideshow';
 import type { StudioSettings } from '@/types/studio';
 import type { FounderLetterContent } from '@/types/founder-letter';
+import type { HeroCopyContent } from '@/types/hero-copy';
+import type { TeamIntroContent } from '@/types/team-intro';
+import type { FooterContent } from '@/types/footer-content';
+import type { NavigationContent } from '@/types/navigation';
 
 interface HeroSlideshowConfig {
   preset: SlideshowPreset | null;
@@ -174,6 +178,10 @@ interface LandingPageV2ClientProps {
   serviceCategories?: ServiceCategory[];
   faqData?: FAQData;
   founderLetterContent?: FounderLetterContent;
+  heroCopyContent?: HeroCopyContent;
+  teamIntroContent?: TeamIntroContent;
+  footerContent?: FooterContent;
+  navigationContent?: NavigationContent;
   heroConfig?: HeroConfig;
   studio: StudioSettings;
 }
@@ -318,7 +326,7 @@ function ServiceQueryDeepLink() {
   return null;
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig, studio }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroCopyContent, teamIntroContent, footerContent, navigationContent, heroConfig, studio }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -370,7 +378,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
               <div className={isMobile ? 'relative z-10 mobile-content-wrapper' : ''}>
                 {/* Z-3: Fixed Header Layer */}
                 {/* Desktop: Full Navigation | Mobile: MobileHeader with dock behavior */}
-                <Navigation />
+                <Navigation content={navigationContent} />
                 {isMobile && <MobileHeader currentSection={currentSection} />}
 
                 {/* Service Browser Modal - New simplified service exploration */}
@@ -403,7 +411,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     data-section-id="hero"
                     style={isMobile ? { background: 'transparent' } : undefined}
                   >
-                    <HeroSection reviewStats={reviewStats} heroConfig={heroConfig?.desktop} />
+                    <HeroSection reviewStats={reviewStats} heroConfig={heroConfig?.desktop} content={heroCopyContent} />
                   </div>
 
                 {/* Continuous ivory background wrapper for all sections from founder onwards */}
@@ -438,7 +446,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                     {/* Team Section */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="team" id="team">
-                      <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} />
+                      <EnhancedTeamSectionClient teamMembers={teamMembers} serviceCategories={serviceCategories} content={teamIntroContent} />
                     </div>
 
                     {/* Reviews Section */}
@@ -470,7 +478,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                     {/* Footer */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="footer">
-                      <FooterV2 studio={studio} />
+                      <FooterV2 studio={studio} content={footerContent} />
                     </div>
                   </div>
                 </div>

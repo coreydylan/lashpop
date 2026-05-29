@@ -1,31 +1,18 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { subscribeToNewsletter } from '@/app/actions/newsletter'
 import { useServiceBrowserOptional } from '@/components/service-browser'
 import { DEFAULT_STUDIO_SETTINGS, type StudioSettings } from '@/types/studio'
-
-// Footer service links — label + the deeplink params used to open the
-// service browser modal (categorySlug + subcategorySlug). These mirror
-// the special-case logic in ServicesSection.tsx so the footer and the
-// services menu stay in sync.
-type FooterService =
-  | { label: string; slug: string; subcategorySlug?: string; externalUrl?: undefined }
-  | { label: string; externalUrl: string; slug?: undefined; subcategorySlug?: undefined }
-
-const FOOTER_SERVICES: FooterService[] = [
-  { label: 'Lash Extensions', slug: 'lashes' },
-  { label: 'Lash Lifts', slug: 'lashes', subcategorySlug: 'lash-lifts-tints' },
-  { label: 'Brows', slug: 'brows' },
-  { label: 'Skincare', slug: 'facials' },
-  { label: 'Waxing', slug: 'waxing' },
-  { label: 'Permanent Makeup', slug: 'permanent-makeup' },
-  { label: 'Permanent Jewelry', slug: 'specialty' },
-  { label: 'Botox', externalUrl: 'https://www.naturtox.com/' },
-]
+import {
+  DEFAULT_FOOTER_CONTENT,
+  type FooterContent,
+  type FooterServiceItem,
+} from '@/types/footer-content'
+import { Editable } from '@/components/admin-mode/Editable'
 
 interface FooterV2Props {
   /**
@@ -35,9 +22,11 @@ interface FooterV2Props {
    * call sites that haven't been threaded through yet).
    */
   studio?: StudioSettings
+  /** Inline-editable footer copy. Falls back to DEFAULT_FOOTER_CONTENT. */
+  content?: FooterContent
 }
 
-export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
+export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS, content }: FooterV2Props) {
   const ref = useRef(null)
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -47,7 +36,78 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
   const browserContext = useServiceBrowserOptional()
   const directionsUrl = studio.social.google ?? DEFAULT_STUDIO_SETTINGS.social.google!
 
-  const handleServiceClick = useCallback((service: FooterService) => {
+  // Footer copy source of truth: `website_settings.section = 'footer_content'`.
+  // Inline admin edits PUT the whole footer object; local state keeps the footer
+  // reflecting edits immediately (optimistic).
+  const [footer, setFooter] = useState<FooterContent>(content ?? DEFAULT_FOOTER_CONTENT)
+  const footerRef = useRef(footer)
+  footerRef.current = footer
+
+  useEffect(() => {
+    if (content) {
+      setFooter(content)
+      footerRef.current = content
+    }
+  }, [content])
+
+  // Serialize PUTs so two near-simultaneous field saves can't race.
+  const footerWriteChain = useRef<Promise<void>>(Promise.resolve())
+
+  const putFooter = useCallback((update: (current: FooterContent) => FooterContent) => {
+    const run = footerWriteChain.current.catch(() => {}).then(async () => {
+      const merged = update(footerRef.current)
+      const res = await fetch('/api/admin/website/footer-content', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(merged),
+      })
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null)
+        throw new Error(msg?.error || 'Failed to save footer content')
+      }
+      const data = await res.json()
+      const saved = (data.content ?? merged) as FooterContent
+      setFooter(saved)
+      footerRef.current = saved
+    })
+    footerWriteChain.current = run.catch(() => {})
+    return run
+  }, [])
+
+  const saveFooterField = useCallback(
+    (field: keyof FooterContent) => async (value: string) => {
+      await putFooter(current => ({ ...current, [field]: value }))
+    },
+    [putFooter]
+  )
+
+  // Save one service label by index, preserving its deeplink/external target.
+  const saveServiceLabel = useCallback(
+    (index: number) => async (value: string) => {
+      await putFooter(current => {
+        const services = current.services.map((s, i) =>
+          i === index ? ({ ...s, label: value } as FooterServiceItem) : s
+        )
+        return { ...current, services }
+      })
+    },
+    [putFooter]
+  )
+
+  // Save one policy-link label by index, preserving its href.
+  const savePolicyLabel = useCallback(
+    (index: number) => async (value: string) => {
+      await putFooter(current => {
+        const policyLinks = current.policyLinks.map((p, i) =>
+          i === index ? { ...p, label: value } : p
+        )
+        return { ...current, policyLinks }
+      })
+    },
+    [putFooter]
+  )
+
+  const handleServiceClick = useCallback((service: FooterServiceItem) => {
     if (service.externalUrl) {
       window.open(service.externalUrl, '_blank', 'noopener,noreferrer')
       return
@@ -196,17 +256,25 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
           </div>
 
           {/* Quick Links */}
+          {/* TODO(list): services[] is rendered from footer.services and each
+              label is inline-editable, but add/remove/reorder of the list itself
+              is not wired here — the rows carry click handlers + a deeplink/
+              external union and the "Work With Us" CTA shares this <ul>, so an
+              EditableList wrap would fight that markup. Manage list membership
+              via /admin/website (footer-content route) for now. */}
           <div>
-            <h4 className="font-serif text-lg text-terracotta mb-4">Services</h4>
+            <h4 className="font-serif text-lg text-terracotta mb-4">
+              <Editable id="footer-services-heading" label="Footer — Services heading" kind="text" as="span" value={footer.servicesHeading} onSave={saveFooterField('servicesHeading')} />
+            </h4>
             <ul className="space-y-1">
-              {FOOTER_SERVICES.map((service) => (
-                <li key={service.label}>
+              {footer.services.map((service, index) => (
+                <li key={`${service.label}-${index}`}>
                   <button
                     type="button"
                     onClick={() => handleServiceClick(service)}
                     className="caption text-charcoal hover:text-terracotta transition-colors text-left bg-transparent border-0 p-0 cursor-pointer min-h-0 min-w-0"
                   >
-                    {service.label}
+                    <Editable id={`footer-service-${index}`} label={`Footer — service ${index + 1} label`} kind="text" as="span" value={service.label} onSave={saveServiceLabel(index)} />
                   </button>
                 </li>
               ))}
@@ -227,7 +295,9 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
 
           {/* Contact Info */}
           <div>
-            <h4 className="font-serif text-lg text-terracotta mb-4">Visit Us</h4>
+            <h4 className="font-serif text-lg text-terracotta mb-4">
+              <Editable id="footer-visit-heading" label="Footer — Visit heading" kind="text" as="span" value={footer.visitHeading} onSave={saveFooterField('visitHeading')} />
+            </h4>
             <address className="not-italic space-y-4">
               <a
                 href={directionsUrl}
@@ -279,9 +349,11 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
 
           {/* Newsletter */}
           <div>
-            <h4 className="font-serif text-lg text-terracotta mb-4">Stay Connected</h4>
+            <h4 className="font-serif text-lg text-terracotta mb-4">
+              <Editable id="footer-newsletter-heading" label="Footer — Newsletter heading" kind="text" as="span" value={footer.newsletterHeading} onSave={saveFooterField('newsletterHeading')} />
+            </h4>
             <p className="caption text-charcoal mb-4">
-              Subscribe for exclusive offers and beauty tips
+              <Editable id="footer-newsletter-description" label="Footer — Newsletter description" kind="multiline" as="span" value={footer.newsletterDescription} onSave={saveFooterField('newsletterDescription')} />
             </p>
             <form onSubmit={handleSubscribe} className="space-y-3">
               <input
@@ -301,7 +373,12 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
                 }}
                 disabled={status === 'loading' || status === 'success'}
               >
-                {status === 'loading' ? 'Subscribing...' : status === 'success' ? message : status === 'error' ? message : 'Subscribe'}
+                {/* TODO(editable): idle label renders from footer.newsletterButtonLabel
+                    so the data home is live, but it's not wrapped in <Editable> —
+                    this is a submit <button> with dynamic loading/success/error
+                    states, and a nested Editable pencil button would be invalid
+                    markup. Edit this label via /admin/website (footer-content). */}
+                {status === 'loading' ? 'Subscribing...' : status === 'success' ? message : status === 'error' ? message : footer.newsletterButtonLabel}
               </button>
             </form>
           </div>
@@ -311,19 +388,31 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
         <div className="pt-8 border-t border-sage/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="caption text-charcoal">
-              © {currentYear} {studio.name}. All rights reserved.
+              {/* Editable raw template; {year}/{name} tokens interpolate at
+                  display time with the current year + studio name. */}
+              <Editable
+                id="footer-copyright"
+                label="Footer — copyright (use {year} and {name})"
+                kind="text"
+                as="span"
+                value={footer.copyrightTemplate}
+                onSave={saveFooterField('copyrightTemplate')}
+                renderDisplay={(tpl) =>
+                  tpl.replace('{year}', String(currentYear)).replace('{name}', studio.name)
+                }
+              />
             </p>
 
+            {/* TODO(list): policyLinks[] labels are inline-editable below, but
+                add/remove/reorder + href editing aren't wired here (each link is
+                a Next <Link> with a fixed href). Manage the list via
+                /admin/website (footer-content route). */}
             <div className="flex items-center gap-6">
-              <Link href="/privacy" className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
-                Terms of Service
-              </Link>
-              <Link href="/?openFaq=cancellation-policy#faq" className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
-                Cancellation Policy
-              </Link>
+              {footer.policyLinks.map((link, index) => (
+                <Link key={`${link.href}-${index}`} href={link.href} className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
+                  <Editable id={`footer-policy-${index}`} label={`Footer — policy link ${index + 1} label`} kind="text" as="span" value={link.label} onSave={savePolicyLabel(index)} />
+                </Link>
+              ))}
             </div>
           </div>
         </div>

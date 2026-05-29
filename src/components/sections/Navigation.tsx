@@ -1,22 +1,80 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
+import { DEFAULT_NAVIGATION, type NavigationContent } from '@/types/navigation'
+import { Editable } from '@/components/admin-mode/Editable'
 
-const navItems = [
-  { label: 'Services', href: '#services' },
-  { label: 'Team', href: '#team' },
-  { label: 'Reviews', href: '#reviews' },
-  { label: 'Gallery', href: '#gallery' },
-  { label: 'FAQ', href: '#faq' },
-  { label: 'Find Us', href: '#find-us' },
-]
+interface NavigationProps {
+  /** Inline-editable navigation copy. Falls back to DEFAULT_NAVIGATION. */
+  content?: NavigationContent
+}
 
-export function Navigation() {
+export function Navigation({ content }: NavigationProps = {}) {
+  // Navigation copy source of truth: `website_settings.section = 'navigation'`.
+  // Inline admin edits PUT the whole nav object; local state keeps the bar
+  // reflecting edits immediately (optimistic).
+  const [nav, setNav] = useState<NavigationContent>(content ?? DEFAULT_NAVIGATION)
+  const navRef = useRef(nav)
+  navRef.current = nav
+
+  useEffect(() => {
+    if (content) {
+      setNav(content)
+      navRef.current = content
+    }
+  }, [content])
+
+  // Serialize PUTs so two near-simultaneous field saves can't race.
+  const navWriteChain = useRef<Promise<void>>(Promise.resolve())
+
+  const putNav = useCallback((update: (current: NavigationContent) => NavigationContent) => {
+    const run = navWriteChain.current.catch(() => {}).then(async () => {
+      const merged = update(navRef.current)
+      const res = await fetch('/api/admin/website/navigation', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(merged),
+      })
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null)
+        throw new Error(msg?.error || 'Failed to save navigation')
+      }
+      const data = await res.json()
+      const saved = (data.content ?? merged) as NavigationContent
+      setNav(saved)
+      navRef.current = saved
+    })
+    navWriteChain.current = run.catch(() => {})
+    return run
+  }, [])
+
+  const saveNavField = useCallback(
+    (field: keyof NavigationContent) => async (value: string) => {
+      await putNav(current => ({ ...current, [field]: value }))
+    },
+    [putNav]
+  )
+
+  // Save one nav-item label by index, preserving its href.
+  const saveNavItemLabel = useCallback(
+    (index: number) => async (value: string) => {
+      await putNav(current => {
+        const navItems = current.navItems.map((it, i) =>
+          i === index ? { ...it, label: value } : it
+        )
+        return { ...current, navItems }
+      })
+    },
+    [putNav]
+  )
+
+  const navItems = nav.navItems
+
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -101,13 +159,14 @@ export function Navigation() {
   }
 
     const handleBookNow = () => {
+      const target = nav.bookNowTarget || DEFAULT_NAVIGATION.bookNowTarget
       // If not on home page, navigate there with the anchor
       if (!isHomePage) {
-        router.push('/#services')
+        router.push('/' + target)
         return
       }
-      // Scroll to the services section
-      smoothScrollToElement('#services', 80, 1000, 'top')
+      // Scroll to the booking target section
+      smoothScrollToElement(target, 80, 1000, 'top')
     }
   
   // Mobile header shrinks from py-6 (24px each side = 48px padding) to py-2 (8px each side = 16px padding)
@@ -141,7 +200,7 @@ export function Navigation() {
                   <source srcSet="/lashpop-images/branding/logo-terracotta.webp" type="image/webp" />
                   <img
                     src="/lashpop-images/branding/logo-terracotta.png"
-                    alt="LashPop Studios"
+                    alt={nav.logoAlt}
                     width={120}
                     height={42}
                     className={`w-auto transition-all duration-300 ${mobileScrolled ? 'h-5' : 'h-8'}`}
@@ -153,31 +212,35 @@ export function Navigation() {
             {/* Desktop Nav — only at lg+ (1024px). Below that the hamburger
                 takes over so the 6 items + 2 long-labeled CTAs don't wrap
                 into a squished mess in the 768–1023 range. */}
+            {/* TODO(list): navItems[] labels are inline-editable, but
+                add/remove/reorder + href editing aren't wired in the bar (each
+                item carries scroll/anchor click logic). Manage list membership
+                via /admin/website (navigation route). */}
             <div className="hidden lg:flex items-center gap-8">
-              {navItems.map((item) => (
+              {navItems.map((item, index) => (
                 item.href ? (
                   <Link
-                    key={item.label}
+                    key={`${item.label}-${index}`}
                     href={item.href}
                     onClick={(e) => handleNavClick(item, e)}
                     className="caption hover:opacity-80 transition-colors duration-300 leading-none flex items-center h-8"
                     style={{ color: '#b14e33' }}
                   >
-                    {item.label}
+                    <Editable id={`nav-item-d-${index}`} label={`Nav — link ${index + 1} label`} kind="text" as="span" value={item.label} onSave={saveNavItemLabel(index)} />
                   </Link>
                 ) : (
                   <button
-                    key={item.label}
+                    key={`${item.label}-${index}`}
                     onClick={(e) => handleNavClick(item, e)}
                     className="caption hover:opacity-80 transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
                     style={{ color: '#b14e33' }}
                   >
-                    {item.label}
+                    <Editable id={`nav-item-d-${index}`} label={`Nav — link ${index + 1} label`} kind="text" as="span" value={item.label} onSave={saveNavItemLabel(index)} />
                   </button>
                 )
               ))}
               <Link
-                href="/work-with-us"
+                href={nav.workWithUsHref}
                 className="btn ml-4 transition-colors duration-300 hover:opacity-90"
                 style={{
                   backgroundColor: 'transparent',
@@ -185,14 +248,14 @@ export function Navigation() {
                   color: '#b14e33'
                 }}
               >
-                Work With Us
+                <Editable id="nav-workwithus-d" label="Nav — Work With Us label" kind="text" as="span" value={nav.workWithUsLabel} onSave={saveNavField('workWithUsLabel')} />
               </Link>
               <button
                 className="btn text-cream transition-colors duration-300 hover:opacity-90"
                 style={{ backgroundColor: '#b14e33' }}
                 onClick={handleBookNow}
               >
-                Book Now
+                <Editable id="nav-booknow-d" label="Nav — Book Now label" kind="text" as="span" value={nav.bookNowLabel} onSave={saveNavField('bookNowLabel')} />
               </button>
             </div>
             
@@ -240,7 +303,7 @@ export function Navigation() {
             <div className="flex flex-col justify-center items-center h-full space-y-8">
               {navItems.map((item, index) => (
                 <motion.div
-                  key={item.label}
+                  key={`${item.label}-${index}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
@@ -251,14 +314,14 @@ export function Navigation() {
                       onClick={(e) => handleNavClick(item, e)}
                       className="text-2xl font-light text-dune"
                     >
-                      {item.label}
+                      <Editable id={`nav-item-m-${index}`} label={`Nav — link ${index + 1} label`} kind="text" as="span" value={item.label} onSave={saveNavItemLabel(index)} />
                     </Link>
                   ) : (
                     <button
                       onClick={(e) => handleNavClick(item, e)}
                       className="text-2xl font-light text-dune"
                     >
-                      {item.label}
+                      <Editable id={`nav-item-m-${index}`} label={`Nav — link ${index + 1} label`} kind="text" as="span" value={item.label} onSave={saveNavItemLabel(index)} />
                     </button>
                   )}
                 </motion.div>
@@ -269,7 +332,7 @@ export function Navigation() {
                 transition={{ delay: 0.5 }}
               >
                 <Link
-                  href="/work-with-us"
+                  href={nav.workWithUsHref}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="btn mt-8"
                   style={{
@@ -278,7 +341,7 @@ export function Navigation() {
                     color: '#b14e33'
                   }}
                 >
-                  Work With Us
+                  <Editable id="nav-workwithus-m" label="Nav — Work With Us label" kind="text" as="span" value={nav.workWithUsLabel} onSave={saveNavField('workWithUsLabel')} />
                 </Link>
               </motion.div>
               <motion.button
@@ -291,7 +354,7 @@ export function Navigation() {
                   setIsMobileMenuOpen(false);
                 }}
               >
-                Book Now
+                <Editable id="nav-booknow-m" label="Nav — Book Now label" kind="text" as="span" value={nav.bookNowLabel} onSave={saveNavField('bookNowLabel')} />
               </motion.button>
             </div>
           </motion.div>
