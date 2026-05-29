@@ -34,6 +34,8 @@
     "drizzle",
     "scripts",
     "workers",
+    "playwright.config.ts",
+    "tests",
     "src/components/theatre",
     "src/components/scrollytelling",
     "src/lib/scrollytelling",
