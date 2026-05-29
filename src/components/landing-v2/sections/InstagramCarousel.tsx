@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
@@ -36,19 +36,17 @@ interface InstagramCarouselProps {
   posts?: InstagramPost[]
 }
 
+interface GalleryItem {
+  mediaUrl: string
+  permalink: string | null
+  caption: string | null
+}
+
 export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   const ref = useRef(null)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
+  // Index into the (un-duplicated) source list, or null when the lightbox is closed
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
-
-  // Check if mobile
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
 
   // Initialize Embla with AutoScroll (wheel gestures handled by useCarouselWheelScroll)
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -75,13 +73,43 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   const { wheelContainerRef } = useCarouselWheelScroll(emblaApi)
 
   // Use provided posts or fallback to gallery images
-  // We duplicate them once to ensure smooth looping even on wide screens
-  const rawItems = posts.length > 0
-    ? posts.map(p => ({ mediaUrl: p.mediaUrl, permalink: p.permalink }))
-    : galleryImages.map(url => ({ mediaUrl: url, permalink: null }))
+  const rawItems: GalleryItem[] = posts.length > 0
+    ? posts.map(p => ({ mediaUrl: p.mediaUrl, permalink: p.permalink, caption: p.caption }))
+    : galleryImages.map(url => ({ mediaUrl: url, permalink: null, caption: null }))
 
   // Triple the items to ensure absolutely seamless infinite scroll on large screens
   const displayItems = [...rawItems, ...rawItems, ...rawItems]
+
+  const total = rawItems.length
+  const isOpen = lightboxIndex !== null
+  const activeItem = isOpen ? rawItems[lightboxIndex] : null
+
+  const closeLightbox = useCallback(() => setLightboxIndex(null), [])
+  const goPrev = useCallback(
+    () => setLightboxIndex((i) => (i === null ? i : (i - 1 + total) % total)),
+    [total]
+  )
+  const goNext = useCallback(
+    () => setLightboxIndex((i) => (i === null ? i : (i + 1) % total)),
+    [total]
+  )
+
+  // Keyboard navigation + lock body scroll while the lightbox is open
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox()
+      else if (e.key === 'ArrowLeft') goPrev()
+      else if (e.key === 'ArrowRight') goNext()
+    }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isOpen, closeLightbox, goPrev, goNext])
 
   return (
     <>
@@ -109,19 +137,13 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
               {displayItems.map((item, index) => (
                 <div
                   key={`${index}-${item.mediaUrl}`}
-                  className="flex-[0_0_auto] w-80 h-80 min-w-0 cursor-grab active:cursor-grabbing group relative"
-                  onClick={() => {
-                    if (item.permalink) {
-                      window.open(item.permalink, '_blank', 'noopener,noreferrer')
-                    } else {
-                      setSelectedImage(item.mediaUrl)
-                    }
-                  }}
+                  className="flex-[0_0_auto] w-80 h-80 min-w-0 cursor-pointer group relative"
+                  onClick={() => setLightboxIndex(index % total)}
                 >
                   <div className="relative w-full h-full overflow-hidden rounded-2xl transform transition-transform duration-300 group-hover:scale-[1.02]">
                     <Image
                       src={item.mediaUrl}
-                      alt={`Gallery image ${index + 1}`}
+                      alt={`Gallery image ${(index % total) + 1}`}
                       fill
                       sizes="(max-width: 768px) 100vw, 320px"
                       className="object-cover transition-opacity duration-300 ease-out"
@@ -188,46 +210,104 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
         </div>
       </section>
 
-      {/* Modal for enlarged image view */}
+      {/* Lightbox carousel — swipe / arrows / keyboard to browse all images */}
       <AnimatePresence>
-        {selectedImage && (
+        {isOpen && activeItem && (
           <motion.div
-            key="gallery-modal-backdrop"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-            onClick={() => setSelectedImage(null)}
+            key="gallery-lightbox-backdrop"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm"
+            onClick={closeLightbox}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
           >
+            {/* Close button */}
+            <button
+              onClick={closeLightbox}
+              aria-label="Close gallery"
+              className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors min-h-0 min-w-0"
+            >
+              <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Prev */}
+            {total > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goPrev() }}
+                aria-label="Previous image"
+                className="absolute left-3 md:left-6 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 md:p-3 hover:bg-white transition-colors min-h-0 min-w-0"
+              >
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
+            {/* Next */}
+            {total > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goNext() }}
+                aria-label="Next image"
+                className="absolute right-3 md:right-6 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 md:p-3 hover:bg-white transition-colors min-h-0 min-w-0"
+              >
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+
+            {/* Image stage — swipeable */}
             <motion.div
-              key={selectedImage}
-              className="relative max-w-4xl max-h-[90vh] m-4"
+              key={lightboxIndex}
+              className="relative max-w-4xl max-h-[85vh] w-[88vw] md:w-auto m-4"
               onClick={(e) => e.stopPropagation()}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.18}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -80) goNext()
+                else if (info.offset.x > 80) goPrev()
+              }}
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
-              <div className="relative w-full h-full min-h-[50vh] min-w-[50vw]">
+              <div className="relative w-full h-[70vh] md:h-[78vh]">
                 <Image
-                  src={selectedImage}
-                  alt="Enlarged view"
+                  src={activeItem.mediaUrl}
+                  alt={activeItem.caption ?? `Gallery image ${lightboxIndex! + 1}`}
                   fill
                   priority
-                  className="object-contain rounded-lg"
-                  sizes="(max-width: 768px) 100vw, 896px"
+                  draggable={false}
+                  className="object-contain rounded-lg select-none pointer-events-none"
+                  sizes="(max-width: 768px) 88vw, 896px"
                 />
               </div>
-              <button
-                onClick={() => setSelectedImage(null)}
-                aria-label="Close enlarged image"
-                className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
-              >
-                <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+
+              {/* Footer: counter + optional View on Instagram */}
+              <div className="mt-3 flex items-center justify-center gap-4">
+                <span className="text-white/80 text-xs font-sans tracking-wide tabular-nums">
+                  {lightboxIndex! + 1} / {total}
+                </span>
+                {activeItem.permalink && (
+                  <a
+                    href={activeItem.permalink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-white/90 hover:text-white transition-colors min-h-0 min-w-0"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
+                    </svg>
+                    View on Instagram
+                  </a>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
