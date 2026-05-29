@@ -351,11 +351,17 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
 
             {step === 4 && quiz.result && (() => {
               const display = buildResultDisplay(quiz.result, resultSettings);
+              // Prefer the booking-flow image for the matched style's Full Set
+              // service so the result hero matches the service card the user
+              // will see in the booking flow. Falls back to the admin-managed
+              // quiz_result_settings image, then to the hardcoded R2 default.
+              const resolvedImage =
+                resultServices?.bookingImage || display.resultImage;
               return (
                 <ResultScreen
                   key="result"
                   result={display}
-                  resultImage={display.resultImage}
+                  resultImage={resolvedImage}
                   services={resultServices?.services ?? []}
                   servicesLoading={resultServices === null}
                   onBookService={handleBookService}

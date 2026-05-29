@@ -3,7 +3,7 @@ import type { Db } from './db'
 import { services, teamMembers } from './schema'
 import type { VagaroClient } from './vagaro-client'
 import { fetchPublicStaff, nameKey, originalPhotoUrl, type VagaroPublicProvider } from './public-staff'
-import { fetchPublicServicePhotos, serviceTitleKey } from './public-services'
+import { fetchPublicServicesFull, serviceTitleKey, type PublicServiceRecord } from './public-services'
 
 /**
  * Map Vagaro's free-text mainCategory string to a `service_categories.slug`.
@@ -75,26 +75,50 @@ export interface PublicStaffStats {
   errors: string[]
 }
 
+/**
+ * Upsert a single service row.
+ *
+ * Sources:
+ *  - `publicRecord`: REQUIRED. Comes from the public composite endpoint and
+ *    is the canonical source of truth for the service list (the v2 API caps
+ *    at 10 rows so we can't drive the sync off it).
+ *  - `v2Service`: OPTIONAL enrichment from /api/v2/services. Only the first
+ *    ~10 services in each sync run will have this. It's the only source for
+ *    `priceStarting`, `durationMinutes`, and `vagaroDescription`, so when it's
+ *    missing we DO NOT touch those fields on existing rows (preserve whatever
+ *    the previous sync wrote).
+ */
 async function syncService(
   db: Db,
-  vagaroService: any,
+  publicRecord: PublicServiceRecord,
+  v2Service: any | null,
   photosByTitle: Map<string, string>,
-  photosByServiceId: Map<string, string>
+  photosByServiceId: Map<string, string>,
+  photosAvailable: boolean
 ): Promise<void> {
-  const serviceId = vagaroService.serviceId
-  const title = vagaroService.serviceTitle || vagaroService.name
-  const parentTitle = vagaroService.parentServiceTitle || vagaroService.category
-  const vagaroDescription = vagaroService.serviceDescription || vagaroService.description || ''
+  const serviceId = publicRecord.serviceId
+  // Prefer v2's title when available (it's the authenticated, canonical name);
+  // fall back to the public record's title otherwise.
+  const title = (v2Service?.serviceTitle || v2Service?.name || publicRecord.serviceTitle || '').trim()
+  const parentTitle =
+    v2Service?.parentServiceTitle || v2Service?.category || publicRecord.parentServiceTitle || null
+  const parentServiceId = v2Service?.parentServiceId ?? publicRecord.parentServiceId ?? null
 
-  const performers = vagaroService.servicePerformedBy || []
-  const prices: number[] = performers.map((p: any) => p.price || p.priceWithTax).filter(Boolean)
-  const priceStarting = prices.length > 0 ? Math.min(...prices) : 0
-
-  const durations: number[] = performers.map((p: any) => p.durationMinutes).filter(Boolean)
-  const durationMinutes =
-    durations.length > 0
-      ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
-      : 60
+  // Enrichment-only fields. Leave them undefined when v2 didn't return this
+  // service so the update keeps whatever the DB already has.
+  let vagaroDescription: string | undefined
+  let priceStartingCents: number | undefined
+  let durationMinutes: number | undefined
+  if (v2Service) {
+    vagaroDescription = v2Service.serviceDescription || v2Service.description || ''
+    const performers = v2Service.servicePerformedBy || []
+    const prices: number[] = performers.map((p: any) => p.price || p.priceWithTax).filter(Boolean)
+    if (prices.length > 0) priceStartingCents = Math.round(Math.min(...prices) * 100)
+    const durations: number[] = performers.map((p: any) => p.durationMinutes).filter(Boolean)
+    if (durations.length > 0) {
+      durationMinutes = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+    }
+  }
 
   const slug = String(title)
     .toLowerCase()
@@ -102,12 +126,12 @@ async function syncService(
     .replace(/^-+|-+$/g, '')
 
   // Photo lookup: primary by Vagaro serviceId (stable identifier), fallback to
-  // title (older sync mapped by string match). Empty maps mean the upstream
-  // fetch failed — we skip writing photo fields to preserve existing values.
-  const photoById = photosByServiceId.get(String(serviceId)) ?? null
+  // title (older sync mapped by string match). When the public fetch failed
+  // entirely (photosAvailable=false) we skip writing photo fields so we don't
+  // clobber existing values with nulls.
+  const photoById = photosByServiceId.get(serviceId) ?? null
   const photoByTitle = photosByTitle.get(serviceTitleKey(title)) ?? null
   const photoUrl = photoById ?? photoByTitle
-  const photosAvailable = photosByTitle.size > 0 || photosByServiceId.size > 0
   if (!photoById && photoByTitle) {
     console.log(`photo match for "${title}" was by title only, not serviceId — verify mapping`)
   }
@@ -120,19 +144,52 @@ async function syncService(
     console.log(`unmapped Vagaro category "${parentTitle}" — service "${title}" will sync without category FK`)
   }
 
-  const existing = await db.select().from(services).where(eq(services.vagaroServiceId, serviceId)).limit(1)
+  // Persist whatever the richest source for this service is. Prefer v2 (full
+  // detail) when present, otherwise fall back to the public record so we
+  // still capture title/photo/parent IDs in vagaro_data.
+  const vagaroData = v2Service ?? publicRecord.raw
+
+  // ID format mismatch: composite returns a NUMERIC ServiceID, v2 returns a
+  // base64-encoded "kz7n9RCCVUyfkLbj~6DTPw==" string. All DB rows synced
+  // before this rewrite have the v2-format ID stored in `vagaro_service_id`,
+  // so a lookup by composite-format ID would miss every existing service and
+  // INSERT would then fail on the `slug` unique constraint (the 73 failures
+  // observed on the first composite-driven sync). Fall back to slug-based
+  // lookup; when we find a match that way, also migrate the row's
+  // vagaroServiceId to whichever format the v2 enrichment provided (if any)
+  // so future runs keep bridging cleanly.
+  let existing = await db
+    .select()
+    .from(services)
+    .where(eq(services.vagaroServiceId, serviceId))
+    .limit(1)
+  if (existing.length === 0 && slug) {
+    existing = await db.select().from(services).where(eq(services.slug, slug)).limit(1)
+  }
+  const v2ServiceIdString = v2Service?.serviceId ? String(v2Service.serviceId) : null
 
   if (existing.length > 0) {
+    const currentVagaroId = existing[0].vagaroServiceId
+    // Prefer v2's id when we have it (long-lived format used everywhere else
+    // in the codebase). Only overwrite an existing id if it differs from what
+    // we'd write — avoids no-op churn on rows already in the right shape.
+    const preferredVagaroId = v2ServiceIdString ?? serviceId
+    const migrateVagaroId = currentVagaroId !== preferredVagaroId
+      ? { vagaroServiceId: preferredVagaroId }
+      : {}
     await db
       .update(services)
       .set({
         name: title,
+        ...migrateVagaroId,
         // NEVER write the local `description` column on update — admin owns it.
-        vagaroDescription,
-        durationMinutes,
-        priceStarting: Math.round(priceStarting * 100),
-        vagaroParentServiceId: vagaroService.parentServiceId,
-        vagaroData: vagaroService,
+        // vagaroDescription / duration / price only come from v2 — leave them
+        // alone when the v2 response didn't include this service.
+        ...(vagaroDescription !== undefined ? { vagaroDescription } : {}),
+        ...(durationMinutes !== undefined ? { durationMinutes } : {}),
+        ...(priceStartingCents !== undefined ? { priceStarting: priceStartingCents } : {}),
+        vagaroParentServiceId: parentServiceId,
+        vagaroData,
         ...(photosAvailable ? { vagaroImageUrl: photoUrl } : {}),
         ...(categoryId ? { categoryId } : {}),
         lastSyncedAt: new Date(),
@@ -140,10 +197,15 @@ async function syncService(
       })
       .where(eq(services.id, existing[0].id))
   } else {
+    // Insert path. duration_minutes and price_starting are NOT NULL in the
+    // schema so we have to provide *something* when v2 didn't enrich. Use
+    // sane sentinels (60 min / $0) that admins can correct in the UI.
+    const insertDuration = durationMinutes ?? 60
+    const insertPriceCents = priceStartingCents ?? 0
     await db.insert(services).values({
       vagaroServiceId: serviceId,
-      vagaroParentServiceId: vagaroService.parentServiceId,
-      vagaroData: vagaroService,
+      vagaroParentServiceId: parentServiceId,
+      vagaroData,
       vagaroImageUrl: photoUrl,
       categoryId,
       name: title,
@@ -153,9 +215,9 @@ async function syncService(
       // synced services aren't blank on the public site before any admin
       // edit. After insert, only `vagaroDescription` ever updates.
       description: vagaroDescription || null,
-      vagaroDescription,
-      durationMinutes,
-      priceStarting: Math.round(priceStarting * 100),
+      vagaroDescription: vagaroDescription ?? '',
+      durationMinutes: insertDuration,
+      priceStarting: insertPriceCents,
       displayOrder: 0,
       isActive: true,
       mainCategory: parentTitle || 'Other Services',
@@ -199,41 +261,66 @@ export async function syncAllServices(
   client: VagaroClient,
   numericBusinessId: string
 ): Promise<SyncStats> {
-  const list = await client.getServices()
-  if (!Array.isArray(list)) {
-    throw new Error(`Invalid Vagaro getServices() response: ${JSON.stringify(list).slice(0, 200)}`)
-  }
+  // PUBLIC COMPOSITE is the canonical source of the service LIST. Vagaro's
+  // authenticated v2 /api/v2/services endpoint caps at 10 rows regardless of
+  // pageSize/pageNumber (verified by hand), so driving the sync off v2 means
+  // 85+ services never get revisited — that's why brow/nanobrow/microblading
+  // photos went stale for months.
+  const publicPayload = await fetchPublicServicesFull(numericBusinessId)
+  const photosByTitle = publicPayload.photosByTitle
+  const photosByServiceId = publicPayload.photosByServiceId
+  const photosAvailable = photosByTitle.size > 0 || photosByServiceId.size > 0
 
-  // Photos come from the public booking-page composite endpoint, not the v2 API.
-  // Fetch once up front; pass both title and serviceId maps into each upsert.
-  // A failure here is logged but non-fatal — services still sync with whatever
-  // photo URL is already stored.
-  let photosByTitle: Map<string, string>
-  let photosByServiceId: Map<string, string>
+  // Filter out soft-deleted rows — Vagaro's composite returns them with a
+  // flag so we mirror that intent rather than overwriting active=true on
+  // deleted services. We don't toggle existing rows to inactive here
+  // (admins may want to keep them visible during transitions); we just
+  // skip syncing them on this pass.
+  const publicRecords = publicPayload.records.filter(r => !r.isSoftDeleted)
+
+  console.log(
+    `public composite: ${publicPayload.records.length} services` +
+    ` (${publicRecords.length} non-deleted, ${photosByTitle.size} photos by title,` +
+    ` ${photosByServiceId.size} photos by serviceId)`
+  )
+
+  // v2 enrichment: returns ~10 rows with full detail (price, duration,
+  // description, per-staff performer data). Build a lookup by serviceId so
+  // we can attach the rich data to whichever ~10 public records overlap.
+  // A failure here is non-fatal — we still sync the full list, just without
+  // updates to price/duration/description on this pass.
+  const v2ById = new Map<string, any>()
   try {
-    const photos = await fetchPublicServicePhotos(numericBusinessId)
-    photosByTitle = photos.byTitle
-    photosByServiceId = photos.byServiceId
-    console.log(`fetched ${photosByTitle.size} service photos (${photosByServiceId.size} indexed by id)`)
+    const v2List = await client.getServices()
+    if (!Array.isArray(v2List)) {
+      throw new Error(`Invalid Vagaro getServices() response: ${JSON.stringify(v2List).slice(0, 200)}`)
+    }
+    for (const s of v2List) {
+      const id = s?.serviceId ?? s?.id
+      if (id != null) v2ById.set(String(id), s)
+    }
+    console.log(`v2 enrichment: ${v2ById.size} services with full detail`)
   } catch (err) {
-    console.error('public service photos fetch failed — keeping existing vagaroImageUrl values:', err)
-    photosByTitle = new Map()
-    photosByServiceId = new Map()
+    console.error(
+      'v2 getServices() enrichment failed — proceeding with public-only sync',
+      err instanceof Error ? err.message : err
+    )
   }
 
-  const total = list.length
+  const total = publicRecords.length
   let synced = 0
   let failed = 0
   let lastError: unknown = null
 
-  for (const s of list) {
+  for (const rec of publicRecords) {
     try {
-      await syncService(db, s, photosByTitle, photosByServiceId)
+      const v2Match = v2ById.get(rec.serviceId) ?? null
+      await syncService(db, rec, v2Match, photosByTitle, photosByServiceId, photosAvailable)
       synced++
     } catch (err) {
       failed++
       lastError = err
-      console.error(`service sync failed: ${s?.serviceTitle ?? s?.name ?? 'unknown'}`, err)
+      console.error(`service sync failed: ${rec.serviceTitle || rec.serviceId}`, err)
     }
   }
 

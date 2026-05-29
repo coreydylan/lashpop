@@ -7,7 +7,7 @@ import { tags } from "@/db/schema/tags"
 import { assetTags } from "@/db/schema/asset_tags"
 import { services } from "@/db/schema/services"
 import { serviceSubcategories } from "@/db/schema/service_subcategories"
-import { eq, and, asc, isNull } from "drizzle-orm"
+import { eq, and, asc, isNull, sql } from "drizzle-orm"
 import sharp from "sharp"
 import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
 
@@ -692,17 +692,42 @@ export interface QuizResultServices {
   subcategorySlug: string
   subcategoryName: string | null
   services: QuizResultService[]
+  /**
+   * Booking-flow image for the matched lash style. Pulled from the "Full Set"
+   * service in the subcategory (slug: classic / hybrid / angel / volume) using
+   * the same COALESCE(vagaro_image_url, image_url) resolution the booking flow
+   * uses. The quiz result screen renders this so the hero photo matches the
+   * service card shown in the booking flow.
+   *
+   * null if no Full Set is found or it has no image. The result screen falls
+   * back to the admin-managed quiz_result_settings image (and then to the
+   * hardcoded R2 fallback) in that case.
+   */
+  bookingImage: string | null
+}
+
+// Each lash style's "Full Set" service slug. The Full Set is the canonical
+// service used for that style in the booking flow, so its image is what we
+// surface on the quiz result screen.
+const LASH_STYLE_TO_FULL_SET_SLUG: Record<LashStyle, string> = {
+  classic: "classic",
+  hybrid: "hybrid",
+  wetAngel: "angel",
+  volume: "volume",
 }
 
 // Fetch the Vagaro-synced services for a quiz result, keyed by lash style.
 // Returns the matched subcategory + its services (Full Set / Fill / Mini Fill),
-// sorted by services.displayOrder so the Full Set lands first.
+// sorted by services.displayOrder so the Full Set lands first, plus the
+// booking-flow image for the Full Set so the result-screen hero matches what
+// the user sees on the booking page.
 export async function getQuizResultServices(
   lashStyle: LashStyle,
 ): Promise<QuizResultServices | null> {
   const subcategorySlug = LASH_STYLE_TO_SUBCATEGORY_SLUG[lashStyle]
   if (!subcategorySlug) return null
 
+  const fullSetSlug = LASH_STYLE_TO_FULL_SET_SLUG[lashStyle]
   const db = getDb()
 
   const rows = await db
@@ -714,6 +739,9 @@ export async function getQuizResultServices(
       durationMinutes: services.durationMinutes,
       vagaroServiceCode: services.vagaroServiceCode,
       vagaroServiceId: services.vagaroServiceId,
+      // Match the booking-flow resolution: Vagaro is source of truth, fall
+      // back to the local override.
+      bookingImageUrl: sql<string | null>`COALESCE(${services.vagaroImageUrl}, ${services.imageUrl})`,
       subcategoryName: serviceSubcategories.name,
     })
     .from(services)
@@ -730,8 +758,20 @@ export async function getQuizResultServices(
     .orderBy(asc(services.displayOrder))
 
   if (rows.length === 0) {
-    return { subcategorySlug, subcategoryName: null, services: [] }
+    return {
+      subcategorySlug,
+      subcategoryName: null,
+      services: [],
+      bookingImage: null,
+    }
   }
+
+  // Prefer the explicit Full Set slug; fall back to the first row (which is
+  // sorted by displayOrder, so it's the Full Set in practice).
+  const fullSetRow =
+    rows.find((r) => r.slug === fullSetSlug && r.bookingImageUrl) ??
+    rows.find((r) => r.bookingImageUrl) ??
+    null
 
   return {
     subcategorySlug,
@@ -745,6 +785,7 @@ export async function getQuizResultServices(
       vagaroServiceCode: r.vagaroServiceCode,
       vagaroServiceId: r.vagaroServiceId,
     })),
+    bookingImage: fullSetRow?.bookingImageUrl ?? null,
   }
 }
 

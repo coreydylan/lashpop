@@ -56,12 +56,37 @@ export interface PublicServicePhotos {
 }
 
 /**
- * Build title→photo-URL and serviceId→photo-URL maps from Vagaro's public
- * booking-page composite. ServiceID is the stable identifier — title can drift
- * across renames. Returns empty maps on failure; callers should treat that as
- * "leave existing photo URLs alone" rather than clobbering with nulls.
+ * Enriched per-service record from the public composite. `ParentServiceTitle`
+ * is the category title for the group the service was listed under (the
+ * composite groups services by parent category but doesn't repeat it on each
+ * row, so we attach it during traversal).
  */
-export async function fetchPublicServicePhotos(numericBusinessId: string): Promise<PublicServicePhotos> {
+export interface PublicServiceRecord {
+  serviceId: string                  // stringified for consistency with vagaroServiceId column
+  parentServiceId: string | null     // ditto
+  serviceTitle: string
+  parentServiceTitle: string | null
+  photoUrl: string | null            // upgraded to /Original/ variant, or null when no real photo
+  isActive: boolean
+  isSoftDeleted: boolean
+  raw: VagaroPublicService           // keep original for vagaro_data fallback storage
+}
+
+export interface PublicServicesPayload {
+  /** Full list of services from the composite, filtered to active+non-deleted. */
+  records: PublicServiceRecord[]
+  /** Title → photo URL map. Retained for legacy callers and for title-fallback lookups. */
+  photosByTitle: Map<string, string>
+  /** ServiceID (stringified) → photo URL map. */
+  photosByServiceId: Map<string, string>
+}
+
+/**
+ * Internal: fetch + parse the composite once. Walks the category-grouped
+ * structure and emits one record per service plus the matching photo maps.
+ * Photos and records are derived from the same traversal so they stay in sync.
+ */
+async function fetchPublicServices(numericBusinessId: string): Promise<PublicServicesPayload> {
   const res = await fetch(
     'https://www.vagaro.com/us02/websiteapi/homepage/getshopdetailcompositeservice',
     {
@@ -81,23 +106,74 @@ export async function fetchPublicServicePhotos(numericBusinessId: string): Promi
     throw new Error(`Vagaro public services endpoint ${res.status}: ${await res.text()}`)
   }
 
-  const json = (await res.json()) as CompositeResponse
-  const byTitle = new Map<string, string>()
-  const byServiceId = new Map<string, string>()
+  const json = (await res.json()) as CompositeResponse & {
+    Services?: Array<{
+      ServiceList?: VagaroPublicService[]
+      ParentServiceTitle?: string
+      ServiceTitle?: string
+      ParentServiceID?: number
+    }>
+  }
+  const records: PublicServiceRecord[] = []
+  const photosByTitle = new Map<string, string>()
+  const photosByServiceId = new Map<string, string>()
+  const seenServiceIds = new Set<string>()
 
-  // Services[].ServiceList[] carries ServicePhotoURL pre-built.
+  // Services[] is grouped by category. Each group carries a title and a list
+  // of child services. The parent category title isn't always denormalized
+  // onto each service row, so we pull it off the group level here.
   for (const category of json.Services ?? []) {
+    const parentServiceTitle =
+      (category.ParentServiceTitle || category.ServiceTitle || '').trim() || null
     for (const s of category.ServiceList ?? []) {
+      if (s.ServiceID == null) continue
+      const idKey = String(s.ServiceID)
+      if (seenServiceIds.has(idKey)) continue
+      seenServiceIds.add(idKey)
+
       const full = originalServicePhotoUrl(s.ServicePhotoURL)
-      if (!full) continue
-      const key = serviceTitleKey(s.ServiceTitle)
-      if (key && !byTitle.has(key)) byTitle.set(key, full)
-      if (s.ServiceID != null) {
-        const idKey = String(s.ServiceID)
-        if (!byServiceId.has(idKey)) byServiceId.set(idKey, full)
+      const titleKey = serviceTitleKey(s.ServiceTitle)
+      if (full) {
+        if (titleKey && !photosByTitle.has(titleKey)) photosByTitle.set(titleKey, full)
+        if (!photosByServiceId.has(idKey)) photosByServiceId.set(idKey, full)
       }
+
+      records.push({
+        serviceId: idKey,
+        parentServiceId: s.ParentServiceID != null ? String(s.ParentServiceID) : null,
+        serviceTitle: s.ServiceTitle ?? '',
+        parentServiceTitle,
+        photoUrl: full,
+        isActive: s.IsActive !== false,
+        isSoftDeleted: s.IsSoftDeleted === true,
+        raw: s,
+      })
     }
   }
 
-  return { byTitle, byServiceId }
+  return { records, photosByTitle, photosByServiceId }
+}
+
+/**
+ * Build title→photo-URL and serviceId→photo-URL maps from Vagaro's public
+ * booking-page composite. ServiceID is the stable identifier — title can drift
+ * across renames. Returns empty maps on failure; callers should treat that as
+ * "leave existing photo URLs alone" rather than clobbering with nulls.
+ *
+ * Kept as a thin wrapper for callers that only need the photo maps.
+ */
+export async function fetchPublicServicePhotos(numericBusinessId: string): Promise<PublicServicePhotos> {
+  const { photosByTitle, photosByServiceId } = await fetchPublicServices(numericBusinessId)
+  return { byTitle: photosByTitle, byServiceId: photosByServiceId }
+}
+
+/**
+ * Full payload: every service in the composite plus the photo lookups built
+ * from the same traversal. This is the source of truth for the service list
+ * because the authenticated v2 /api/v2/services endpoint caps responses at
+ * 10 rows regardless of page-size params, so most of the studio's 95 services
+ * never get touched by a v2-only sync.
+ */
+export async function fetchPublicServicesFull(numericBusinessId: string): Promise<PublicServicesPayload> {
+  return fetchPublicServices(numericBusinessId)
 }
