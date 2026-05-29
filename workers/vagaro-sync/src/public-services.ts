@@ -46,6 +46,28 @@ export function originalServicePhotoUrl(url: string | undefined | null): string 
   return url.replace(/\/Service\/(155x155|340x340|400x400)\//, '/Service/Original/')
 }
 
+/**
+ * HEAD-check a Vagaro CDN URL. Vagaro's composite endpoint sometimes returns
+ * URLs for service photos that have been deleted from their CDN (the row
+ * still has a Photo field but the file 404s). Without this guard we'd write
+ * the dead URL into vagaro_image_url every sync and the website would render
+ * a broken-image badge. Returns the URL if it serves, otherwise null.
+ *
+ * One HTTP round-trip per photo per sync (~84 services) — adds ~5-8s to the
+ * sync wall-clock but eliminates broken-image badges as a class of bug.
+ */
+export async function probeVagaroPhotoUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url) return null
+  try {
+    const res = await fetch(url, { method: 'HEAD' })
+    if (res.ok) return url
+  } catch {
+    // Network errors treated the same as 404 — better to skip than to write
+    // a URL we couldn't verify.
+  }
+  return null
+}
+
 export function serviceTitleKey(title: string | undefined | null): string {
   return (title ?? '').trim().toLowerCase()
 }
@@ -131,7 +153,12 @@ async function fetchPublicServices(numericBusinessId: string): Promise<PublicSer
       if (seenServiceIds.has(idKey)) continue
       seenServiceIds.add(idKey)
 
-      const full = originalServicePhotoUrl(s.ServicePhotoURL)
+      // HEAD-check the rewritten URL before adding it to the maps. Vagaro
+      // sometimes returns Photo refs whose file has been deleted — without
+      // this gate we'd write the dead URL every sync and the website would
+      // render a broken-image badge.
+      const raw = originalServicePhotoUrl(s.ServicePhotoURL)
+      const full = await probeVagaroPhotoUrl(raw)
       const titleKey = serviceTitleKey(s.ServiceTitle)
       if (full) {
         if (titleKey && !photosByTitle.has(titleKey)) photosByTitle.set(titleKey, full)
