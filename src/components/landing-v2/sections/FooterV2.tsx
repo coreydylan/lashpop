@@ -210,7 +210,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
                   </button>
                 </li>
               ))}
-              <li>
+              <li className="pt-3">
                 <a
                   href="/work-with-us"
                   className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium transition-colors duration-300 text-terracotta hover:bg-terracotta hover:text-cream"
