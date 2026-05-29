@@ -64,7 +64,7 @@ export function EditableText({
   editorNote,
   editorAction,
 }: EditableTextProps) {
-  const { enabled, registerDirty, clearDirty, refresh } = useAdminMode()
+  const { enabled, registerDirty, clearDirty, refresh, pushUndo } = useAdminMode()
   const generatedId = useId()
   const blockId = id ?? generatedId
   const As: ElementType = as ?? 'span'
@@ -93,6 +93,9 @@ export function EditableText({
 
   const draftRef = useRef(draft)
   draftRef.current = draft
+  // Track the last-saved value so the undo entry can re-apply it without stale closures.
+  const savedRef = useRef(saved)
+  savedRef.current = saved
 
   // justSaved checkmark timer — cleared on unmount so we never setState on an
   // unmounted block (e.g. a takeover that closes right after a save).
@@ -104,6 +107,7 @@ export function EditableText({
   const doSave = useCallback(
     async (opts?: { skipRefresh?: boolean }) => {
       const next = draftRef.current
+      const prev = savedRef.current
       setSaving(true)
       setError(null)
       try {
@@ -115,6 +119,18 @@ export function EditableText({
         clearDirty(blockId)
         if (flashTimer.current) clearTimeout(flashTimer.current)
         flashTimer.current = setTimeout(() => setJustSaved(false), 1800)
+        // Record an undo that re-applies the prior value via the same save path.
+        // (The undo's onSave does NOT push a new undo — it bypasses doSave.)
+        if (prev !== next) {
+          pushUndo({
+            id: `${blockId}-${next.length}`,
+            label,
+            run: async () => {
+              await onSave(prev)
+              setSaved(prev)
+            },
+          })
+        }
         // "Save all" passes skipRefresh and issues a single refresh itself.
         if (!opts?.skipRefresh) refresh()
       } catch (e) {
@@ -123,7 +139,7 @@ export function EditableText({
         throw e
       }
     },
-    [onSave, clearDirty, blockId, refresh]
+    [onSave, clearDirty, blockId, refresh, pushUndo, label]
   )
 
   const doDiscard = useCallback(() => {

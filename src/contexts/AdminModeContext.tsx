@@ -84,6 +84,21 @@ interface AdminModeValue {
   /** Turn admin mode on (secret gesture / chrome). Verifies the session and shows
    *  the inline login modal if not signed in. */
   enterAdminMode: () => void
+  /** Label of the most-recent undoable edit (null if none this session). */
+  lastUndoLabel: string | null
+  /** Number of undoable edits on the session stack. */
+  undoCount: number
+  /** Record an undoable edit. `run` re-applies the prior value (does NOT push). */
+  pushUndo: (entry: UndoEntry) => void
+  /** Revert the most recent edit. Session-scoped (cleared on reload). */
+  undoLast: () => Promise<void>
+}
+
+/** A reversible edit. `run` persists the prior value via the field's own save path. */
+export interface UndoEntry {
+  id: string
+  label: string
+  run: () => Promise<void>
 }
 
 const INERT: AdminModeValue = {
@@ -99,6 +114,10 @@ const INERT: AdminModeValue = {
   refresh: () => {},
   exit: () => {},
   enterAdminMode: () => {},
+  lastUndoLabel: null,
+  undoCount: 0,
+  pushUndo: () => {},
+  undoLast: async () => {},
 }
 
 const AdminModeContext = createContext<AdminModeValue | null>(null)
@@ -109,6 +128,9 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AdminModeStatus>('idle')
   const [user, setUser] = useState<AdminUser | null>(null)
   const [showLogin, setShowLogin] = useState(false)
+  // Session undo stack (most recent last). Cleared on reload — matches how CMS
+  // undo works; persistent rollback comes from version history (Phase 1b).
+  const [undoStack, setUndoStack] = useState<UndoEntry[]>([])
 
   // Dirty registry. Ref is the source of truth; a version counter triggers renders.
   const dirtyRef = useRef<Map<string, DirtyBlock>>(new Map())
@@ -191,6 +213,26 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
     router.refresh()
   }, [router])
 
+  const pushUndo = useCallback((entry: UndoEntry) => {
+    setUndoStack(s => [...s, entry].slice(-25))
+  }, [])
+
+  const undoLast = useCallback(async () => {
+    let entry: UndoEntry | undefined
+    setUndoStack(s => {
+      entry = s[s.length - 1]
+      return s.slice(0, -1)
+    })
+    if (entry) {
+      try {
+        await entry.run()
+        router.refresh()
+      } catch {
+        // ignore — the field surfaces its own error
+      }
+    }
+  }, [router])
+
   const saveAll = useCallback(async () => {
     let saved = 0
     let failed = 0
@@ -256,9 +298,13 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
       refresh,
       exit,
       enterAdminMode,
+      lastUndoLabel: undoStack.length ? undoStack[undoStack.length - 1].label : null,
+      undoCount: undoStack.length,
+      pushUndo,
+      undoLast,
     }),
     // dirtyBlocks identity changes on every rerender() bump, which is what we want.
-    [enabled, status, user, dirtyBlocks, registerDirty, clearDirty, saveAll, discardAll, refresh, exit, enterAdminMode]
+    [enabled, status, user, dirtyBlocks, registerDirty, clearDirty, saveAll, discardAll, refresh, exit, enterAdminMode, undoStack, pushUndo, undoLast]
   )
 
   return (

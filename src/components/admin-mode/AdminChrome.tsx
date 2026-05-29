@@ -13,14 +13,14 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Trash2, LogOut, ChevronUp, ChevronDown, Loader2, Pencil } from 'lucide-react'
+import { Save, Trash2, LogOut, ChevronUp, ChevronDown, Loader2, Pencil, RotateCcw } from 'lucide-react'
 import { useAdminMode } from '@/contexts/AdminModeContext'
 
 const ACCENT = '#C9A9A6'
 const INK = '#1C1917'
 
 export function AdminChrome() {
-  const { user, status, dirtyCount, dirtyBlocks, saveAll, discardAll, exit } = useAdminMode()
+  const { user, status, dirtyCount, dirtyBlocks, saveAll, discardAll, exit, undoCount, lastUndoLabel, undoLast } = useAdminMode()
   const [open, setOpen] = useState(true)
   const [savingAll, setSavingAll] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
@@ -90,6 +90,21 @@ export function AdminChrome() {
               )}
               {flash ? <p className="mt-2 text-center text-[11px] text-emerald-600">{flash}</p> : null}
             </div>
+
+            {/* Undo last edit (session) */}
+            {undoCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => undoLast()}
+                className="flex w-full items-center gap-2 border-t border-stone-100 px-3 py-2 text-left text-xs text-stone-600 hover:bg-stone-50"
+                title={lastUndoLabel ? `Undo: ${lastUndoLabel}` : 'Undo last edit'}
+              >
+                <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">
+                  Undo last edit{lastUndoLabel ? ` · ${lastUndoLabel}` : ''}
+                </span>
+              </button>
+            ) : null}
 
             {/* Actions */}
             <div className="flex items-center gap-2 border-t border-stone-100 px-3 py-2.5">
