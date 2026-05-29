@@ -61,13 +61,26 @@ export class VagaroClient {
   }
 
   async getServices(): Promise<any[]> {
+    // Vagaro's /api/v2/services defaults to a page size of 10 with no
+    // nextPage token, so the pagination loop bailed after the first batch
+    // and only ever synced ~10 of the studio's 95 services. That's why
+    // brow / nanobrow / microblading rows stayed at last_synced_at = Nov
+    // 2025 with empty vagaro_image_url — they never got revisited.
+    // Bump pageSize so the request returns everything in one shot. Keep
+    // the pagination loop in place as belt-and-suspenders if Vagaro ever
+    // starts returning nextPage tokens.
+    const PAGE_SIZE = 500
     const all: any[] = []
     const seen = new Set<string>()
     let nextPage: string | null = null
     let pages = 0
     do {
       pages++
-      const body: any = { businessId: this.env.VAGARO_BUSINESS_ID }
+      const body: any = {
+        businessId: this.env.VAGARO_BUSINESS_ID,
+        pageSize: PAGE_SIZE,
+        pageNumber: pages,
+      }
       if (nextPage) body.nextPage = nextPage
       const res = await this.request<any>('POST', '/api/v2/services', body)
       const list: any[] = res.data?.services ?? res.services ?? res.data ?? []
@@ -80,10 +93,11 @@ export class VagaroClient {
           added++
         }
       }
-      if (added === 0 && list.length > 0) break
+      if (added === 0) break
       nextPage = res.data?.nextPage ?? res.nextPage ?? null
+      if (!nextPage && list.length < PAGE_SIZE) break
       if (pages >= 100) break
-    } while (nextPage)
+    } while (nextPage || pages < 5)
     return all
   }
 
