@@ -1183,16 +1183,18 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           {(() => {
                             const handles = parseInstagramHandles(selectedMember.instagram, selectedMember.instagramUrl)
                             if (handles.length === 0) return null
-                            return (
+                            return handles.map((h) => (
                               <a
-                                href={handles[0].url}
+                                key={h.handle}
+                                href={h.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label={`@${h.handle} on Instagram`}
                                 className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md"
                               >
                                 <Instagram className="w-5 h-5 text-white" />
                               </a>
-                            )
+                            ))
                           })()}
                         </div>
                       </div>
@@ -1219,11 +1221,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             // cycles. With <=1 photo, touches fall through to the
                             // outer wrapper so member-change still works here.
                             onTouchStart={(e) => {
-                              if (portfolioImages.length <= 1) return
-                              // Photo zone owns ALL touches when there's a
-                              // carousel — stop the outer member-swipe handler
-                              // from claiming a leaked horizontal at 25px and
-                              // bouncing Corey to the next stylist.
+                              // Photo zone always owns its touches, regardless
+                              // of photo count. Even on single-photo stylists,
+                              // a swipe over the portrait must NOT bubble to
+                              // the outer member-swipe wrapper — that was the
+                              // "swiping kicks to next stylist" complaint.
                               e.stopPropagation()
                               const touch = e.touches[0]
                               const target = e.currentTarget as HTMLDivElement
@@ -1232,12 +1234,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               target.dataset.photoGesture = 'undecided'
                             }}
                             onTouchMove={(e) => {
-                              if (portfolioImages.length <= 1) return
-                              // Unconditional stopPropagation — even vertical
-                              // drags over the photo shouldn't reach the outer
-                              // wrapper. The content overlay below handles
-                              // vertical scroll on its own.
                               e.stopPropagation()
+                              if (portfolioImages.length <= 1) return
                               const target = e.currentTarget as HTMLDivElement
                               const startX = parseFloat(target.dataset.photoStartX || '0')
                               const startY = parseFloat(target.dataset.photoStartY || '0')
@@ -1249,8 +1247,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               }
                             }}
                             onTouchEnd={(e) => {
-                              if (portfolioImages.length <= 1) return
                               e.stopPropagation()
+                              if (portfolioImages.length <= 1) return
                               const target = e.currentTarget as HTMLDivElement
                               const gesture = target.dataset.photoGesture
                               const startX = parseFloat(target.dataset.photoStartX || '0')
@@ -1360,15 +1358,20 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 )
                               }
                               return (
-                                <a
-                                  href={handles[0].url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 mt-1.5 font-sans text-dusty-rose hover:text-dusty-rose/80 transition-colors"
-                                >
-                                  <Instagram className="w-3.5 h-3.5" />
-                                  <span className="text-xs uppercase tracking-wider font-medium">{label}</span>
-                                </a>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+                                  {handles.map((h, idx) => (
+                                    <a
+                                      key={h.handle}
+                                      href={h.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 font-sans text-dusty-rose hover:text-dusty-rose/80 transition-colors"
+                                    >
+                                      <Instagram className="w-3.5 h-3.5" />
+                                      <span className="text-xs uppercase tracking-wider font-medium">{idx === 0 ? label : `@${h.handle}`}</span>
+                                    </a>
+                                  ))}
+                                </div>
                               )
                             })()}
                           </div>

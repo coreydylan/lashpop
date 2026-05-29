@@ -273,16 +273,21 @@ export function MemberTakeover({
                       <h1 className="mt-2.5 font-serif text-5xl font-medium leading-[1.05] text-charcoal">
                         {member.name}
                       </h1>
-                      {firstHandle ? (
-                        <a
-                          href={firstHandle.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-3 inline-flex items-center gap-1.5 text-base font-medium text-dusty-rose hover:text-dusty-rose/80 transition-colors"
-                        >
-                          <Instagram className="h-4 w-4" />
-                          @{firstHandle.handle}
-                        </a>
+                      {handles.length > 0 ? (
+                        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+                          {handles.map((h) => (
+                            <a
+                              key={h.handle}
+                              href={h.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-base font-medium text-dusty-rose hover:text-dusty-rose/80 transition-colors"
+                            >
+                              <Instagram className="h-4 w-4" />
+                              @{h.handle}
+                            </a>
+                          ))}
+                        </div>
                       ) : null}
                       <p className="mt-2 text-sm text-charcoal/55">{roleSubtitle(member)}</p>
 
