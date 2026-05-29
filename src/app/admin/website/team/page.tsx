@@ -64,13 +64,18 @@ interface TeamMember {
   quote: string | null
   instagram: string | null
   bookingUrl: string
-  specialties: string[]
+  usesLashpopBooking: boolean
   isActive: boolean
   displayOrder: string
   vagaroEmployeeId: string | null
+  vagaroPublicProviderId: number | null
   lastSyncedAt: string | null
+  // Dual-mode tag sources. Only one of these is ever non-empty for a given
+  // member — see /api/admin/website/team for the routing rule. The admin
+  // surface still reads both so the locked Vagaro chips can render with a
+  // "synced" label on Vagaro-mode rows.
   vagaroServiceCategories: string[]
-  manualServiceCategories: string[]
+  externalServiceCategories: string[]
   quickFacts?: QuickFact[]
   credentials?: TeamMemberCredential[]
 }
@@ -324,45 +329,45 @@ export default function TeamManagerPage() {
     }
   }
 
-  const updateManualCategories = async (memberId: string, categories: string[]) => {
+  const updateExternalCategories = async (memberId: string, categories: string[]) => {
     try {
       const response = await fetch('/api/admin/website/team', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, manualServiceCategories: categories })
+        body: JSON.stringify({ memberId, externalServiceCategories: categories })
       })
 
       if (response.ok) {
         // Update local state
         setTeamMembers(prev => prev.map(m =>
-          m.id === memberId ? { ...m, manualServiceCategories: categories } : m
+          m.id === memberId ? { ...m, externalServiceCategories: categories } : m
         ))
       } else {
         const data = await response.json()
         alert(`Failed to update: ${data.error}`)
       }
     } catch (error) {
-      console.error('Error updating manual categories:', error)
+      console.error('Error updating external categories:', error)
       alert('Failed to update categories')
     }
   }
 
-  const addManualCategory = (memberId: string, category: string) => {
+  const addExternalCategory = (memberId: string, category: string) => {
     const member = teamMembers.find(m => m.id === memberId)
     if (!member) return
 
-    const currentCategories = member.manualServiceCategories || []
+    const currentCategories = member.externalServiceCategories || []
     if (!currentCategories.includes(category)) {
-      updateManualCategories(memberId, [...currentCategories, category])
+      updateExternalCategories(memberId, [...currentCategories, category])
     }
   }
 
-  const removeManualCategory = (memberId: string, category: string) => {
+  const removeExternalCategory = (memberId: string, category: string) => {
     const member = teamMembers.find(m => m.id === memberId)
     if (!member) return
 
-    const currentCategories = member.manualServiceCategories || []
-    updateManualCategories(memberId, currentCategories.filter(c => c !== category))
+    const currentCategories = member.externalServiceCategories || []
+    updateExternalCategories(memberId, currentCategories.filter(c => c !== category))
   }
 
   const activeCount = teamMembers.filter(m => m.isActive).length
@@ -577,16 +582,50 @@ export default function TeamManagerPage() {
                       className="mt-4 pt-4 border-t border-sage/10"
                     >
                       <div className="grid sm:grid-cols-2 gap-4 text-sm">
+                        {/* Dual-mode banner — explains why fields lock/unlock */}
+                        <div className={`sm:col-span-2 p-3 rounded-2xl border text-xs flex items-center gap-2 ${
+                          member.usesLashpopBooking
+                            ? 'bg-dusty-rose/10 border-dusty-rose/20 text-dusty-rose'
+                            : 'bg-golden/10 border-golden/30 text-dune'
+                        }`}>
+                          <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+                          {member.usesLashpopBooking ? (
+                            <span>
+                              <strong>Vagaro-synced stylist.</strong> Photo, bio, and service tags
+                              are pulled from Vagaro on every sync — edit them in Vagaro, not here.
+                              {member.lastSyncedAt && (
+                                <> Last sync: {new Date(member.lastSyncedAt).toLocaleString()}.</>
+                              )}
+                            </span>
+                          ) : (
+                            <span>
+                              <strong>External-booking stylist.</strong> Vagaro sync is disabled
+                              for this row — all fields (photo, bio, categories) are admin-entered.
+                            </span>
+                          )}
+                        </div>
+
                         {/* Profile Image */}
                         <div className="sm:col-span-2 p-4 bg-golden/5 rounded-2xl border border-golden/10">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium flex items-center gap-2">
                               <Users className="w-3.5 h-3.5" />
                               Profile Image
+                              {member.usesLashpopBooking && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-dusty-rose normal-case tracking-normal font-normal">
+                                  <Lock className="w-2.5 h-2.5" /> synced from Vagaro
+                                </span>
+                              )}
                             </h4>
                             <button
                               onClick={() => openImagePicker(member.id)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-golden/20 text-golden hover:bg-golden/30 rounded-lg transition-colors"
+                              disabled={member.usesLashpopBooking}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                member.usesLashpopBooking
+                                  ? 'bg-sage/10 text-dune/30 cursor-not-allowed'
+                                  : 'bg-golden/20 text-golden hover:bg-golden/30'
+                              }`}
+                              title={member.usesLashpopBooking ? 'Edit the photo in Vagaro — this row is sync-owned.' : undefined}
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Select from DAM
@@ -754,95 +793,78 @@ export default function TeamManagerPage() {
                             <span className="text-xs text-dune/40">(shown on profile card)</span>
                           </div>
 
-                          {/* Vagaro Tags (read-only) */}
-                          {member.vagaroServiceCategories && member.vagaroServiceCategories.length > 0 && (
+                          {member.usesLashpopBooking ? (
+                            // Vagaro-mode: tags are derived from Vagaro service assignments. Read-only.
                             <div className="space-y-1.5">
                               <p className="text-xs text-dune/50 flex items-center gap-1">
                                 <Lock className="w-3 h-3" />
-                                From Vagaro (auto-synced)
+                                Synced from Vagaro (edit in Vagaro to change)
                               </p>
                               <div className="flex flex-wrap gap-2">
-                                {member.vagaroServiceCategories.map((cat, i) => (
-                                  <span
-                                    key={i}
-                                    className="px-3 py-1.5 bg-dusty-rose/20 text-dusty-rose rounded-full text-xs font-medium flex items-center gap-1"
-                                  >
-                                    {cat}
-                                    <Lock className="w-3 h-3 opacity-50" />
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Manual Tags (editable) */}
-                          <div className="space-y-1.5">
-                            <p className="text-xs text-dune/50">Custom tags (editable)</p>
-                            <div className="flex flex-wrap gap-2">
-                              {(member.manualServiceCategories || []).map((cat, i) => (
-                                <span
-                                  key={i}
-                                  className="px-3 py-1.5 bg-ocean-mist/20 text-ocean-mist rounded-full text-xs font-medium flex items-center gap-1 group"
-                                >
-                                  {cat}
-                                  <button
-                                    onClick={() => removeManualCategory(member.id, cat)}
-                                    className="w-4 h-4 rounded-full hover:bg-ocean-mist/30 flex items-center justify-center opacity-60 hover:opacity-100"
-                                  >
-                                    <X className="w-3 h-3" />
-                                  </button>
-                                </span>
-                              ))}
-
-                              {/* Add Tag Dropdown */}
-                              <div className="relative group/dropdown">
-                                <button className="px-3 py-1.5 bg-sage/10 hover:bg-sage/20 text-dune/60 rounded-full text-xs font-medium flex items-center gap-1 transition-colors">
-                                  <Plus className="w-3 h-3" />
-                                  Add Tag
-                                </button>
-                                <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-sage/20 py-2 z-50 hidden group-hover/dropdown:block">
-                                  {CATEGORY_OPTIONS
-                                    .filter(cat =>
-                                      !(member.vagaroServiceCategories || []).includes(cat) &&
-                                      !(member.manualServiceCategories || []).includes(cat)
-                                    )
-                                    .map((cat) => (
-                                      <button
-                                        key={cat}
-                                        onClick={() => addManualCategory(member.id, cat)}
-                                        className="w-full px-4 py-2 text-left text-sm text-dune/70 hover:bg-sage/10 hover:text-dune transition-colors"
-                                      >
-                                        {cat}
-                                      </button>
-                                    ))
-                                  }
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Preview of combined tags */}
-                          {((member.vagaroServiceCategories?.length || 0) + (member.manualServiceCategories?.length || 0)) > 0 && (
-                            <div className="pt-2 border-t border-sage/10">
-                              <p className="text-xs text-dune/40 mb-1.5">Preview (max 4 shown on card):</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {[...(member.vagaroServiceCategories || []), ...(member.manualServiceCategories || [])]
-                                  .slice(0, 4)
-                                  .map((cat, i) => (
+                                {member.vagaroServiceCategories && member.vagaroServiceCategories.length > 0 ? (
+                                  member.vagaroServiceCategories.map((cat, i) => (
                                     <span
                                       key={i}
-                                      className="px-2 py-1 bg-dune/10 text-dune/70 rounded-full text-[10px] font-medium"
+                                      className="px-3 py-1.5 bg-dusty-rose/20 text-dusty-rose rounded-full text-xs font-medium flex items-center gap-1"
                                     >
                                       {cat}
+                                      <Lock className="w-3 h-3 opacity-50" />
                                     </span>
                                   ))
-                                }
-                                {([...(member.vagaroServiceCategories || []), ...(member.manualServiceCategories || [])].length > 4) && (
-                                  <span className="text-[10px] text-dune/40">
-                                    +{[...(member.vagaroServiceCategories || []), ...(member.manualServiceCategories || [])].length - 4} more
+                                ) : (
+                                  <span className="text-xs italic text-dune/40">
+                                    No tags yet — assign this stylist to services in Vagaro and re-sync.
                                   </span>
                                 )}
                               </div>
+                            </div>
+                          ) : (
+                            // External-mode: admin owns the category list.
+                            <div className="space-y-1.5">
+                              <p className="text-xs text-dune/50">Categories (editable — admin-owned)</p>
+                              <div className="flex flex-wrap gap-2">
+                                {(member.externalServiceCategories || []).map((cat, i) => (
+                                  <span
+                                    key={i}
+                                    className="px-3 py-1.5 bg-ocean-mist/20 text-ocean-mist rounded-full text-xs font-medium flex items-center gap-1 group"
+                                  >
+                                    {cat}
+                                    <button
+                                      onClick={() => removeExternalCategory(member.id, cat)}
+                                      className="w-4 h-4 rounded-full hover:bg-ocean-mist/30 flex items-center justify-center opacity-60 hover:opacity-100"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </span>
+                                ))}
+
+                                {/* Add Tag Dropdown */}
+                                <div className="relative group/dropdown">
+                                  <button className="px-3 py-1.5 bg-sage/10 hover:bg-sage/20 text-dune/60 rounded-full text-xs font-medium flex items-center gap-1 transition-colors">
+                                    <Plus className="w-3 h-3" />
+                                    Add Tag
+                                  </button>
+                                  <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-sage/20 py-2 z-50 hidden group-hover/dropdown:block">
+                                    {CATEGORY_OPTIONS
+                                      .filter(cat => !(member.externalServiceCategories || []).includes(cat))
+                                      .map((cat) => (
+                                        <button
+                                          key={cat}
+                                          onClick={() => addExternalCategory(member.id, cat)}
+                                          className="w-full px-4 py-2 text-left text-sm text-dune/70 hover:bg-sage/10 hover:text-dune transition-colors"
+                                        >
+                                          {cat}
+                                        </button>
+                                      ))
+                                    }
+                                  </div>
+                                </div>
+                              </div>
+                              {(member.externalServiceCategories || []).length === 0 && (
+                                <p className="text-xs italic text-dune/40">
+                                  No categories set — chips won&apos;t render on this stylist&apos;s card.
+                                </p>
+                              )}
                             </div>
                           )}
                         </div>
@@ -881,8 +903,13 @@ export default function TeamManagerPage() {
                             <h4 className="text-xs uppercase tracking-wider text-dune/40 font-medium flex items-center gap-2">
                               <FileText className="w-3.5 h-3.5" />
                               Bio
+                              {member.usesLashpopBooking && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-dusty-rose normal-case tracking-normal font-normal">
+                                  <Lock className="w-2.5 h-2.5" /> synced from Vagaro
+                                </span>
+                              )}
                             </h4>
-                            {editingBio !== member.id && (
+                            {editingBio !== member.id && !member.usesLashpopBooking && (
                               <button
                                 onClick={() => {
                                   setEditingBio(member.id)
@@ -924,23 +951,6 @@ export default function TeamManagerPage() {
                             </p>
                           )}
                         </div>
-
-                        {/* Specialties */}
-                        {member.specialties && member.specialties.length > 0 && (
-                          <div className="sm:col-span-2 space-y-2">
-                            <h4 className="text-xs uppercase tracking-wider text-dune/40 font-medium">Specialties</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {member.specialties.map((specialty, i) => (
-                                <span
-                                  key={i}
-                                  className="px-3 py-1 bg-warm-sand/50 text-dune/70 rounded-full text-xs"
-                                >
-                                  {specialty}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
                         {/* Last Synced */}
                         {member.lastSyncedAt && (

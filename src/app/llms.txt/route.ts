@@ -6,7 +6,6 @@ import { serviceCategories } from '@/db/schema/service_categories'
 import { serviceSubcategories } from '@/db/schema/service_subcategories'
 import { faqItems } from '@/db/schema/faqs'
 import { businessLocations } from '@/db/schema/business_locations'
-import { teamMembers } from '@/db/schema/team_members'
 import { eq, sql } from 'drizzle-orm'
 
 /**
@@ -125,30 +124,24 @@ export async function GET() {
       // Services table might not exist
     }
 
-    // Team Members Section
+    // Team Members Section — use the dual-mode resolver from actions/team.ts
+    // so the categories listed here match what the public team section shows.
     try {
-      const team = await db
-        .select({
-          name: teamMembers.name,
-          role: teamMembers.role,
-          specialties: teamMembers.specialties,
-          bio: teamMembers.bio
-        })
-        .from(teamMembers)
-        .where(eq(teamMembers.isActive, true))
-        .limit(20)
+      const { getTeamMembersWithServices } = await import('@/actions/team')
+      const team = await getTeamMembersWithServices()
 
       if (team.length > 0) {
         content += '## Our Team\n\n'
         content += `LashPop Studios has a team of ${team.length} talented beauty professionals.\n\n`
-        for (const member of team) {
+        for (const member of team.slice(0, 20)) {
           content += `### ${member.name}\n`
           content += `**${member.role}**\n`
-          if (member.specialties && Array.isArray(member.specialties) && member.specialties.length > 0) {
-            content += `Specialties: ${member.specialties.join(', ')}\n`
+          if (member.serviceCategories && member.serviceCategories.length > 0) {
+            content += `Specialties: ${member.serviceCategories.join(', ')}\n`
           }
-          if (member.bio) {
-            content += `${member.bio.slice(0, 150)}${member.bio.length > 150 ? '...' : ''}\n`
+          const bioText = member.vagaroBio || member.bio
+          if (bioText) {
+            content += `${bioText.slice(0, 150)}${bioText.length > 150 ? '...' : ''}\n`
           }
           content += '\n'
         }

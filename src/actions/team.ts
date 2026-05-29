@@ -4,6 +4,7 @@ import { getDb } from "@/db"
 import { teamMembers } from "@/db/schema/team_members"
 import { teamQuickFacts } from "@/db/schema/team_quick_facts"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
+import { teamMemberServicesVagaro } from "@/db/schema/team_member_services_vagaro"
 import { services } from "@/db/schema/services"
 import { and, eq, inArray, isNotNull, asc, sql } from "drizzle-orm"
 
@@ -20,53 +21,25 @@ export async function getTeamMembers() {
 }
 
 /**
- * Get services that a team member can perform based on Vagaro data
- * Returns an array of unique main categories (e.g., "Lash Services", "Brow Services")
+ * Get raw Vagaro parent titles for a team member from the canonical mapping
+ * table populated by the worker. Used for diagnostics / scripts; the live
+ * team-section render path uses getTeamMembersWithServices() which has
+ * batched all members in one query.
  */
-export async function getServicesForTeamMember(vagaroEmployeeId: string | null): Promise<string[]> {
-  if (!vagaroEmployeeId) return []
-  
+export async function getServicesForTeamMember(teamMemberId: string | null): Promise<string[]> {
+  if (!teamMemberId) return []
+
   const db = getDb()
-  
-  // Get all services that have Vagaro data
-  const allServices = await db
-    .select()
-    .from(services)
-    .where(
-      and(
-        isNotNull(services.vagaroData),
-        eq(services.isActive, true)
-      )
-    )
-  
-  // Find services where this employee is in the servicePerformedBy array
-  const memberServices: string[] = []
-  
-  for (const service of allServices) {
-    const vagaroData = service.vagaroData as any
-    if (!vagaroData?.servicePerformedBy) continue
-    
-    const performers = vagaroData.servicePerformedBy || []
-    const isPerformer = performers.some((p: any) => {
-      const employeeId = p.serviceProviderId || p.employeeId
-      return employeeId === vagaroEmployeeId
-    })
-    
-    if (isPerformer && service.mainCategory) {
-      memberServices.push(service.mainCategory)
-    }
-  }
-  
-  // Return unique categories, cleaned up
-  const uniqueCategories = Array.from(new Set(memberServices))
-  
-  // Clean up category names and format nicely
-  return uniqueCategories.map(cat => {
-    let cleaned = cat.replace(' Services', '').replace(' Service', '')
-    // "Lash" should be "Lashes"
-    if (cleaned === 'Lash') cleaned = 'Lashes'
-    return cleaned
-  }).slice(0, 4) // Max 4 tags
+
+  const rows = await db
+    .selectDistinct({ parentTitle: teamMemberServicesVagaro.vagaroParentTitle })
+    .from(teamMemberServicesVagaro)
+    .where(eq(teamMemberServicesVagaro.teamMemberId, teamMemberId))
+
+  return rows
+    .map(r => r.parentTitle)
+    .filter((t): t is string => !!t)
+    .slice(0, 4)
 }
 
 /**
@@ -85,30 +58,35 @@ export async function getQuickFactsForMember(memberId: string) {
 }
 
 /**
- * Get team members with their service categories
- * Merges Vagaro-derived categories with manually set categories
+ * Get team members with their service categories.
  *
- * OPTIMIZED: Single query for all services instead of N+1 queries
+ * Tags are routed by the dual-mode flag:
+ *   - usesLashpopBooking=true  → derived from team_member_services_vagaro
+ *     (populated by the vagaro-sync worker, one row per stylist×service)
+ *   - usesLashpopBooking=false → read straight from
+ *     team_members.external_service_categories (admin-entered)
+ *
+ * No merge between the two branches. No fallback. A Vagaro stylist with no
+ * mapped services renders zero tags; an external stylist with no categories
+ * set renders zero tags. The boolean is the authority.
  */
 export async function getTeamMembersWithServices() {
   const db = getDb()
 
   // Run all initial queries in parallel for better performance
-  const [members, allServices] = await Promise.all([
+  const [members, vagaroMappings] = await Promise.all([
     db.select()
       .from(teamMembers)
       .where(eq(teamMembers.isActive, true))
       // displayOrder is TEXT — cast to int so "2" < "10". Vagaro sends EmployeeSortOrder as a number.
       .orderBy(sql`CAST(${teamMembers.displayOrder} AS INTEGER) ASC NULLS LAST`),
-    // Fetch ALL services with Vagaro data once (instead of per-member)
-    db.select()
-      .from(services)
-      .where(
-        and(
-          isNotNull(services.vagaroData),
-          eq(services.isActive, true)
-        )
-      )
+    // One batched query for every (active stylist → vagaroParentTitle) pair,
+    // grouped in memory below. Vagaro stylists only — external rows have no
+    // entries here by construction.
+    db.select({
+      teamMemberId: teamMemberServicesVagaro.teamMemberId,
+      vagaroParentTitle: teamMemberServicesVagaro.vagaroParentTitle,
+    }).from(teamMemberServicesVagaro)
   ])
 
   const memberIds = members.map(m => m.id)
@@ -200,56 +178,34 @@ export async function getTeamMembersWithServices() {
     return []
   }
 
-  // Build a map of vagaroEmployeeId -> ordered list of frontend tag labels.
-  // We accumulate the FIRST time each tag appears (preserves a stable order across renders).
-  const tagsByEmployee = new Map<string, string[]>()
-  for (const service of allServices) {
-    const vagaroData = service.vagaroData as any
-    if (!vagaroData?.servicePerformedBy) continue
-
-    const parentTitle = vagaroData.parentServiceTitle as string | undefined
-    const tags = vagaroParentToTags(parentTitle)
+  // Build a map of teamMemberId → ordered list of frontend tag labels.
+  // Walks the canonical Vagaro mapping table — one row per stylist×service —
+  // and accumulates tags in first-seen order so chip order is stable across
+  // renders. Only stylists with usesLashpopBooking=true have entries here.
+  const tagsByMemberId = new Map<string, string[]>()
+  for (const mapping of vagaroMappings) {
+    const tags = vagaroParentToTags(mapping.vagaroParentTitle)
     if (tags.length === 0) continue
-
-    const performers = vagaroData.servicePerformedBy || []
-    for (const performer of performers) {
-      const employeeId = performer.serviceProviderId || performer.employeeId
-      if (!employeeId) continue
-
-      const list = tagsByEmployee.get(employeeId) ?? []
-      for (const tag of tags) {
-        if (!list.includes(tag)) list.push(tag)
-      }
-      tagsByEmployee.set(employeeId, list)
+    const list = tagsByMemberId.get(mapping.teamMemberId) ?? []
+    for (const tag of tags) {
+      if (!list.includes(tag)) list.push(tag)
     }
+    tagsByMemberId.set(mapping.teamMemberId, list)
   }
 
-  // Process all members (no additional queries - just in-memory operations)
+  // Process all members (no additional queries - just in-memory operations).
+  // Dual-mode routing: the boolean is the authority. No merge, no fallback.
   const membersWithServices = members.map((member) => {
-    // Get Vagaro-derived tags from the pre-built map
-    const vagaroCategories = member.vagaroEmployeeId
-      ? (tagsByEmployee.get(member.vagaroEmployeeId) ?? []).slice(0, 4)
-      : []
-
-    // Get manual categories (for services not in Vagaro like injectables)
-    const manualCategories = (member.manualServiceCategories as string[]) || []
-
-    // Merge and dedupe, keeping order: Vagaro first, then manual
-    const allCategories = [...vagaroCategories]
-    for (const cat of manualCategories) {
-      if (!allCategories.includes(cat)) {
-        allCategories.push(cat)
-      }
-    }
+    const categories = member.usesLashpopBooking
+      ? (tagsByMemberId.get(member.id) ?? []).slice(0, 4)
+      : ((member.externalServiceCategories as string[] | null) ?? []).slice(0, 4)
 
     // Get photo crops for this member
     const photoCrops = photoCropsByMember[member.id] || {}
 
     return {
       ...member,
-      serviceCategories: allCategories.slice(0, 4), // Max 4 tags
-      vagaroServiceCategories: vagaroCategories, // Keep track of which came from Vagaro
-      manualServiceCategories: manualCategories, // Keep track of manual ones
+      serviceCategories: categories,
       quickFacts: quickFactsByMember[member.id] || [], // Add quick facts
       // Photo crop URLs for different formats
       cropSquareUrl: photoCrops.cropSquareUrl || null,
@@ -280,50 +236,29 @@ export async function getTeamMembersByType(type: 'employee' | 'independent') {
 }
 
 /**
- * Get team members who can perform a specific service
- * Looks at Vagaro data to find which employees are assigned to the service
+ * Get team members who can perform a specific service. Reads the canonical
+ * Vagaro mapping table populated by the sync worker; falls back to all active
+ * members when no mappings exist for that service (e.g. an external-booking
+ * service that's not in Vagaro at all).
  */
 export async function getTeamMembersByServiceId(serviceId: string) {
   const db = getDb()
 
-  // First, get the service to access its Vagaro data
-  const [service] = await db
-    .select()
-    .from(services)
-    .where(eq(services.id, serviceId))
-    .limit(1)
+  const memberIds = await db
+    .selectDistinct({ teamMemberId: teamMemberServicesVagaro.teamMemberId })
+    .from(teamMemberServicesVagaro)
+    .where(eq(teamMemberServicesVagaro.serviceId, serviceId))
 
-  if (!service || !service.vagaroData) {
-    // If no Vagaro data, return all active team members as fallback
+  if (memberIds.length === 0) {
     return await getTeamMembers()
   }
 
-  // Extract employee IDs from Vagaro service data
-  const vagaroServiceData = service.vagaroData as any
-  const employeeIds: string[] = []
-
-  // Vagaro stores employees in servicePerformedBy array
-  if (Array.isArray(vagaroServiceData.servicePerformedBy)) {
-    for (const performer of vagaroServiceData.servicePerformedBy) {
-      const employeeId = performer.serviceProviderId || performer.employeeId
-      if (employeeId) {
-        employeeIds.push(employeeId)
-      }
-    }
-  }
-
-  // If no employees found in Vagaro data, return all as fallback
-  if (employeeIds.length === 0) {
-    return await getTeamMembers()
-  }
-
-  // Fetch team members whose Vagaro employee ID is in the list
   const members = await db
     .select()
     .from(teamMembers)
     .where(
       and(
-        inArray(teamMembers.vagaroEmployeeId, employeeIds),
+        inArray(teamMembers.id, memberIds.map(m => m.teamMemberId)),
         eq(teamMembers.isActive, true)
       )
     )

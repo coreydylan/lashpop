@@ -27,8 +27,11 @@ export async function EnhancedTeamSection() {
     businessName: member.businessName || undefined,
     image: resolveStaffImage(member.vagaroPhotoUrl, member.imageUrl),
     phone: member.phone,
-    specialties: member.specialties as string[],
-    // Service categories pulled directly from Vagaro service assignments
+    // specialties is gone from the DB — pass the resolved serviceCategories so
+    // legacy code paths that fall back to `.specialties` still see something
+    // sensible. Same value either way.
+    specialties: member.serviceCategories ?? [],
+    // Service categories routed by dual-mode (see actions/team.ts).
     serviceCategories: member.serviceCategories,
     // Vagaro bio (BusinessSummary) wins; fall back to locally-entered bio
     bio: member.vagaroBio || member.bio || undefined,

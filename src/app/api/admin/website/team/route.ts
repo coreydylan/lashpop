@@ -1,56 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/db'
 import { teamMembers } from '@/db/schema/team_members'
-import { services } from '@/db/schema/services'
-import { eq, asc, isNotNull, and } from 'drizzle-orm'
+import { teamMemberServicesVagaro } from '@/db/schema/team_member_services_vagaro'
+import { eq, asc, inArray } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
-/**
- * Get Vagaro-derived service categories for a team member
- */
-async function getVagaroCategories(vagaroEmployeeId: string | null): Promise<string[]> {
-  if (!vagaroEmployeeId) return []
-
-  const db = getDb()
-
-  const allServices = await db
-    .select()
-    .from(services)
-    .where(
-      and(
-        isNotNull(services.vagaroData),
-        eq(services.isActive, true)
-      )
-    )
-
-  const memberServices: string[] = []
-
-  for (const service of allServices) {
-    const vagaroData = service.vagaroData as any
-    if (!vagaroData?.servicePerformedBy) continue
-
-    const performers = vagaroData.servicePerformedBy || []
-    const isPerformer = performers.some((p: any) => {
-      const employeeId = p.serviceProviderId || p.employeeId
-      return employeeId === vagaroEmployeeId
-    })
-
-    if (isPerformer && service.mainCategory) {
-      memberServices.push(service.mainCategory)
-    }
-  }
-
-  const uniqueCategories = Array.from(new Set(memberServices))
-
-  return uniqueCategories.map(cat => {
-    let cleaned = cat.replace(' Services', '').replace(' Service', '')
-    if (cleaned === 'Lash') cleaned = 'Lashes'
-    return cleaned
-  })
+// Map Vagaro parent-category title → frontend tag labels. Mirrors
+// vagaroParentToTags() in src/actions/team.ts so the admin preview shows the
+// same chip strings the public team section will render.
+function vagaroParentToTags(parentTitle: string | null | undefined): string[] {
+  const p = (parentTitle ?? '').toLowerCase().trim()
+  if (!p) return []
+  if (p.includes('lash extension')) return ['Lashes']
+  if (p.includes('lash lift')) return ['Lash Lifts', 'Lashes']
+  if (p.includes('brow')) return ['Brows']
+  if (p.includes('permanent makeup') || p.includes('microblading') || p.includes('nanobrow')) return ['Permanent Makeup']
+  if (p.includes('skin care') || p.includes('skincare') || p.includes('facial')) return ['Skin Care']
+  if (p.includes('permanent jewelry') || p.includes('perm jewelry')) return ['Permanent Jewelry']
+  if (p.includes('wax')) return ['Waxing']
+  return []
 }
 
-// GET - Fetch all team members (including inactive) with service categories
+// GET - Fetch all team members (including inactive) with derived service categories.
+// Vagaro-mode rows read tags from team_member_services_vagaro; external-mode rows
+// read them from external_service_categories. No merging between the two.
 export async function GET() {
   try {
     const db = getDb()
@@ -60,20 +34,46 @@ export async function GET() {
       .from(teamMembers)
       .orderBy(asc(teamMembers.displayOrder))
 
-    // Fetch service categories for all members
-    const membersWithCategories = await Promise.all(
-      members.map(async (member) => {
-        const vagaroCategories = await getVagaroCategories(member.vagaroEmployeeId)
-        const manualCategories = (member.manualServiceCategories as string[]) || []
+    const memberIds = members.map(m => m.id)
+    const vagaroMappings = memberIds.length > 0
+      ? await db
+          .select({
+            teamMemberId: teamMemberServicesVagaro.teamMemberId,
+            vagaroParentTitle: teamMemberServicesVagaro.vagaroParentTitle,
+          })
+          .from(teamMemberServicesVagaro)
+          .where(inArray(teamMemberServicesVagaro.teamMemberId, memberIds))
+      : []
 
-        return {
-          ...member,
-          specialties: member.specialties || [],
-          vagaroServiceCategories: vagaroCategories,
-          manualServiceCategories: manualCategories,
-        }
-      })
-    )
+    // Group vagaroMappings by member into ordered tag-label lists (dedupe,
+    // first-seen wins).
+    const vagaroTagsByMember = new Map<string, string[]>()
+    for (const mapping of vagaroMappings) {
+      const tags = vagaroParentToTags(mapping.vagaroParentTitle)
+      if (tags.length === 0) continue
+      const list = vagaroTagsByMember.get(mapping.teamMemberId) ?? []
+      for (const tag of tags) {
+        if (!list.includes(tag)) list.push(tag)
+      }
+      vagaroTagsByMember.set(mapping.teamMemberId, list)
+    }
+
+    const membersWithCategories = members.map((member) => {
+      const vagaroCategories = member.usesLashpopBooking
+        ? (vagaroTagsByMember.get(member.id) ?? [])
+        : []
+      const externalCategories = !member.usesLashpopBooking
+        ? ((member.externalServiceCategories as string[] | null) ?? [])
+        : []
+
+      return {
+        ...member,
+        // Camel-case names mirroring the dual-mode split. The admin UI uses
+        // these to decide which chips to show as locked vs. editable.
+        vagaroServiceCategories: vagaroCategories,
+        externalServiceCategories: externalCategories,
+      }
+    })
 
     return NextResponse.json({
       members: membersWithCategories
@@ -124,12 +124,14 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// PATCH - Update a single team member's details (manual categories, bio, funFact, credentials, imageUrl)
+// PATCH - Update a single team member's local-owned fields. Vagaro-mode rows
+// (usesLashpopBooking=true) reject writes to image/bio/categories because the
+// sync owns those fields; only external-mode rows can edit them here.
 export async function PATCH(request: NextRequest) {
   try {
     const db = getDb()
     const body = await request.json()
-    const { memberId, manualServiceCategories, bio, funFact, credentials, imageUrl } = body
+    const { memberId, externalServiceCategories, bio, funFact, credentials, imageUrl } = body
 
     if (!memberId) {
       return NextResponse.json(
@@ -138,19 +140,50 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    // Load the row to enforce the dual-mode write gate before applying changes.
+    const [member] = await db
+      .select({
+        id: teamMembers.id,
+        usesLashpopBooking: teamMembers.usesLashpopBooking,
+      })
+      .from(teamMembers)
+      .where(eq(teamMembers.id, memberId))
+      .limit(1)
+
+    if (!member) {
+      return NextResponse.json(
+        { error: 'Team member not found' },
+        { status: 404 }
+      )
+    }
+
+    const usesLashpop = member.usesLashpopBooking
+    const gatedFields = ['externalServiceCategories', 'bio', 'imageUrl']
+    const attemptedGated = gatedFields.filter(f => body[f] !== undefined)
+    if (usesLashpop && attemptedGated.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Vagaro-synced stylists cannot edit imageUrl, bio, or service categories. ' +
+                 'Switch usesLashpopBooking=false (in DB) to take this stylist off Vagaro sync first.',
+          rejectedFields: attemptedGated,
+        },
+        { status: 409 }
+      )
+    }
+
     // Build update object dynamically based on what was provided
     const updateData: Record<string, any> = {
       updatedAt: new Date()
     }
 
-    if (manualServiceCategories !== undefined) {
-      if (!Array.isArray(manualServiceCategories)) {
+    if (externalServiceCategories !== undefined) {
+      if (!Array.isArray(externalServiceCategories)) {
         return NextResponse.json(
-          { error: 'manualServiceCategories must be an array' },
+          { error: 'externalServiceCategories must be an array' },
           { status: 400 }
         )
       }
-      updateData.manualServiceCategories = manualServiceCategories
+      updateData.externalServiceCategories = externalServiceCategories
     }
 
     if (bio !== undefined) {
@@ -161,7 +194,8 @@ export async function PATCH(request: NextRequest) {
       updateData.funFact = funFact
     }
 
-    // Handle credentials (for SEO structured data)
+    // Handle credentials (for SEO structured data). Allowed for either mode —
+    // credentials are local-only metadata, not synced from Vagaro.
     if (credentials !== undefined) {
       if (!Array.isArray(credentials)) {
         return NextResponse.json(
@@ -197,4 +231,3 @@ export async function PATCH(request: NextRequest) {
     )
   }
 }
-

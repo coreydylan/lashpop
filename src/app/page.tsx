@@ -76,8 +76,12 @@ export default async function HomePage() {
     // Vagaro is source of truth for staff photos; fall back to local imageUrl, then nothing.
     image: member.vagaroPhotoUrl || member.imageUrl,
     phone: member.phone,
-    specialties: member.specialties as string[],
-    serviceCategories: member.serviceCategories, // Service categories from Vagaro
+    // Component types still carry a `specialties` field for legacy mock data
+    // and orchestrator handoff; the live DB column is gone. Pass the same
+    // serviceCategories array so any downstream fallback path sees something
+    // sensible instead of an empty placeholder.
+    specialties: member.serviceCategories ?? [],
+    serviceCategories: member.serviceCategories, // From dual-mode router in actions/team.ts
     // Vagaro bio (BusinessSummary) wins; fall back to locally-entered bio
     bio: member.vagaroBio || member.bio || undefined,
     quote: member.quote || undefined,
