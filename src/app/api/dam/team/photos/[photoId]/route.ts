@@ -4,8 +4,12 @@ import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { eq } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
 import { deleteObject } from "@/lib/dam/r2-client"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 export async function DELETE(request: NextRequest, context: any) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const photoId = await getRouteParam(context, "photoId")
 

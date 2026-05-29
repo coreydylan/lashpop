@@ -3,8 +3,12 @@ import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
 import { assetServices } from "@/db/schema/asset_services"
 import { eq, inArray } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { assetIds, tags } = body

@@ -4,8 +4,12 @@ import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { teamMembers } from "@/db/schema/team_members"
 import { eq } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 export async function POST(request: NextRequest, context: any) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { teamMemberId } = body

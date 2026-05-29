@@ -40,9 +40,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const merged = mergeFounderLetter(body)
-  merged.updatedAt = new Date().toISOString()
-
   const db = getDb()
   const prevRows = await db
     .select()
@@ -50,6 +47,21 @@ export async function PUT(req: NextRequest) {
     .where(eq(websiteSettings.section, FOUNDER_LETTER_SECTION))
     .limit(1)
   const prev = prevRows[0]?.config as Partial<FounderLetterContent> | null
+
+  // Merge the incoming partial over the CURRENT persisted row (normalized over
+  // defaults), not over defaults alone. This makes the PUT genuinely partial-safe:
+  // a stale client that only sends e.g. {heading} can't blank a concurrently-saved
+  // paragraph, since unspecified fields fall back to the live row.
+  const base = mergeFounderLetter(prev)
+  const merged: FounderLetterContent = {
+    ...base,
+    ...body,
+    paragraphs:
+      Array.isArray(body.paragraphs) && body.paragraphs.length > 0
+        ? body.paragraphs
+        : base.paragraphs,
+  }
+  merged.updatedAt = new Date().toISOString()
 
   await db
     .insert(websiteSettings)

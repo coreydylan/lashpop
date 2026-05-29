@@ -5,6 +5,7 @@ import { assetTags } from "@/db/schema/asset_tags"
 import { tags } from "@/db/schema/tags"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { eq, desc } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 export const dynamic = 'force-dynamic'
 
@@ -84,6 +85,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { fileName, filePath, fileType, mimeType, fileSize, teamMemberId } = body

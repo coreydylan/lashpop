@@ -27,7 +27,9 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_NO_SERVER
     ? undefined
     : {
-        command: 'npm run dev',
+        // Bind the port explicitly (not `npm run dev`, which uses detect-port and
+        // can drift to a different port than Playwright waits on).
+        command: `npx next dev -p ${PORT}`,
         url: baseURL,
         reuseExistingServer: true,
         timeout: 120_000,

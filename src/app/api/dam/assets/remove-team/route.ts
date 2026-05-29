@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requireAdminApi } from "@/lib/admin/auth"
 import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
 import { inArray } from "drizzle-orm"
@@ -6,6 +7,9 @@ import { revalidatePath } from "next/cache"
 
 // Remove team member from multiple assets
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { assetIds } = body

@@ -3,9 +3,13 @@ import { getDb } from "@/db"
 import { assetTags } from "@/db/schema/asset_tags"
 import { and, inArray, eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 // Remove a specific tag from multiple assets
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { assetIds, tagId } = body

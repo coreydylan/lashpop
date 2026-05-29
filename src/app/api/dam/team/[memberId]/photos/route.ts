@@ -4,6 +4,7 @@ import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { assets } from "@/db/schema/assets"
 import { and, eq, desc, inArray } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 export async function GET(request: NextRequest, context: any) {
   try {
@@ -74,6 +75,9 @@ export async function GET(request: NextRequest, context: any) {
 // POST - Tag DAM assets to this team member. Same op as the DAM's "assign to team"
 // (assets.team_member_id is the single source of truth for portfolio photos).
 export async function POST(request: NextRequest, context: any) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const memberId = await getRouteParam(context, "memberId")
     if (!memberId) {

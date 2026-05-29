@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { setPhotos } from "@/db/schema/set_photos"
 import { and, eq } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 // Add or update a photo to a set stage
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { setId, assetId, stage } = body

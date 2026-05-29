@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requireAdminApi } from "@/lib/admin/auth"
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { uploadBuffer, uploadFile, generateAssetKey } from "@/lib/dam/r2-client"
@@ -12,6 +13,9 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const formData = await request.formData()
     const files = formData.getAll("files") as File[]

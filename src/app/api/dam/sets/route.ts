@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requireAdminApi } from "@/lib/admin/auth"
 import { getDb } from "@/db"
 import { sets } from "@/db/schema/sets"
 import { setPhotos } from "@/db/schema/set_photos"
@@ -22,6 +23,9 @@ export async function GET() {
 
 // Create a new set
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { teamMemberId, name } = body

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requireAdminApi } from "@/lib/admin/auth"
 import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
 import { uploadFile, uploadBuffer, generateAssetKey } from "@/lib/dam/r2-client"
@@ -27,6 +28,9 @@ type UploadFailure = {
 type UploadResult = UploadSuccess | UploadFailure
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const formData = await request.formData()
     const files = formData.getAll("files") as File[]

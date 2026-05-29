@@ -12,6 +12,7 @@ import { damUserSettings, type DamSettingsData } from '@/db/schema/dam_user_sett
 import { user as userSchema } from '@/db/schema/auth_user'
 import { session as sessionSchema } from '@/db/schema/auth_session'
 import { eq, and, gt } from 'drizzle-orm'
+import { requireAdminApi } from '@/lib/admin/auth'
 
 // Default settings for new users
 const DEFAULT_SETTINGS: DamSettingsData = {
@@ -93,6 +94,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     // Get auth token from cookie
     const cookieStore = await cookies()

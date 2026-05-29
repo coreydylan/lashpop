@@ -4,9 +4,13 @@ import { assetTags } from "@/db/schema/asset_tags"
 import { tags } from "@/db/schema/tags"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { and, inArray, eq, sql } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 // Update tags for multiple assets at once
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { assetIds, tagIds, additive = false } = body // Arrays of asset IDs and tag IDs

@@ -50,6 +50,8 @@ export interface TakeoverTeamMember {
   // Inline-admin override context.
   bioOverride?: boolean
   vagaroBio?: string
+  imageOverride?: boolean
+  vagaroPhotoUrl?: string
   serviceCategories?: string[]
   specialties: string[]
   funFact?: string
@@ -284,6 +286,18 @@ export function MemberTakeover({
                         sizes="(max-width: 1024px) 100vw, 540px"
                         unoptimized={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE) || isVagaroPhoto(member.image)}
                       />
+                      {adminEnabled && member.imageOverride && member.vagaroPhotoUrl ? (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await patchTeamMember(member.uuid, { imageOverride: false })
+                            adminRefresh()
+                          }}
+                          className="absolute bottom-3 left-1/2 min-h-0 -translate-x-1/2 rounded-full bg-cream/90 px-4 py-2 text-xs font-medium text-charcoal shadow-md backdrop-blur hover:bg-cream"
+                        >
+                          Use Vagaro photo
+                        </button>
+                      ) : null}
                     </div>
 
                     <div className="pt-8">
@@ -335,7 +349,13 @@ export function MemberTakeover({
                           value={member.bio ?? ''}
                           placeholder="Add a bio…"
                           onSave={async next => {
-                            await patchTeamMember(member.uuid, { bio: next })
+                            // Clearing the field reverts to the Vagaro bio rather than
+                            // pinning an empty override that would hide the About section.
+                            if (next.trim() === '' && member.vagaroBio) {
+                              await patchTeamMember(member.uuid, { bioOverride: false })
+                            } else {
+                              await patchTeamMember(member.uuid, { bio: next })
+                            }
                           }}
                           editorNote={
                             !member.bioOverride && member.vagaroBio

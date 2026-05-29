@@ -53,8 +53,9 @@ export interface DirtyBlock {
   id: string
   /** Human label shown in the chrome's dirty list (e.g. "Emily — bio"). */
   label: string
-  /** Persist this block. Should resolve on success and throw on failure. */
-  save: () => Promise<void>
+  /** Persist this block. Should resolve on success and throw on failure.
+   *  `skipRefresh` lets "Save all" defer to a single router.refresh(). */
+  save: (opts?: { skipRefresh?: boolean }) => Promise<void>
   /** Revert local state to last-saved. */
   discard: () => void
 }
@@ -100,7 +101,9 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
 
   // Dirty registry. Ref is the source of truth; a version counter triggers renders.
   const dirtyRef = useRef<Map<string, DirtyBlock>>(new Map())
-  const [, bump] = useState(0)
+  // `version` bumps whenever the dirty registry mutates; it keys the memoized
+  // dirtyBlocks snapshot and the context value so they only recompute on change.
+  const [version, bump] = useState(0)
   const rerender = useCallback(() => bump(v => v + 1), [])
 
   // Activation: mirror DesignModeGate's URL-param + localStorage pattern, then
@@ -175,7 +178,7 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
     // Snapshot first — blocks clear themselves from the registry on success.
     for (const block of Array.from(dirtyRef.current.values())) {
       try {
-        await block.save()
+        await block.save({ skipRefresh: true })
         saved++
       } catch {
         failed++
@@ -218,7 +221,7 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('beforeunload', handler)
   }, [enabled])
 
-  const dirtyBlocks = Array.from(dirtyRef.current.values())
+  const dirtyBlocks = useMemo(() => Array.from(dirtyRef.current.values()), [version])
 
   const value = useMemo<AdminModeValue>(
     () => ({

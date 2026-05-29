@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getPresignedUploadUrl, generateAssetKey, getStorageBucketUrl } from "@/lib/dam/r2-client"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { fileName, contentType, teamMemberId } = body

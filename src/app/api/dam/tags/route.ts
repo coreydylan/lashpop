@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requireAdminApi } from "@/lib/admin/auth"
 import { getDb } from "@/db"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { tags } from "@/db/schema/tags"
@@ -81,6 +82,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { categories: updatedCategories } = body

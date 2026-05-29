@@ -148,7 +148,9 @@ export default function TeamManagerPage() {
       const response = await fetch('/api/admin/website/team', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, bio: newBio })
+        // Explicit: editing the bio here pins the local value over the Vagaro-synced
+        // bio. Use the inline editor on the public page to revert to Vagaro.
+        body: JSON.stringify({ memberId, bio: newBio, bioOverride: true })
       })
 
       if (response.ok) {
@@ -169,7 +171,8 @@ export default function TeamManagerPage() {
       const response = await fetch('/api/admin/website/team', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, imageUrl })
+        // Explicit: a locally-set image overrides the Vagaro photo.
+        body: JSON.stringify({ memberId, imageUrl, imageOverride: true })
       })
 
       if (response.ok) {

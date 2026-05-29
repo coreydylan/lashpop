@@ -46,34 +46,31 @@ test.describe('authenticated admin', () => {
     await expect(page.getByText('Admin mode', { exact: true })).toBeVisible({ timeout: 20_000 })
   })
 
-  test('founder letter heading is inline-editable and persists (with revert)', async ({ page }) => {
-    // Read current heading via the admin API so we can restore it afterwards.
-    const before = await page.request.get(`${page.url() || ''}/api/admin/website/founder-letter`).catch(() => null)
-
+  test('founder letter heading is inline-editable and persists (non-destructive)', async ({ page }) => {
     await page.goto('/?admin=1')
     await expect(page.getByText('Admin mode', { exact: true })).toBeVisible({ timeout: 20_000 })
 
     // The founder heading carries an Editable pencil labelled "Edit Founder letter — heading".
     const pencil = page.getByRole('button', { name: /Edit Founder letter — heading/i }).first()
     await expect(pencil).toBeVisible()
+    await pencil.click()
 
-    // Capture original, edit, save, assert, then restore.
-    const original = (await page.locator('h2').filter({ hasText: /.+/ }).first().innerText()).trim()
+    // Scope to the open editor (its wrapper carries data-admin-editing). The
+    // original value comes from the field itself, so no fragile DOM scraping.
+    const field = page.locator('[data-admin-editing] input, [data-admin-editing] textarea').first()
+    await expect(field).toBeVisible()
+    const original = await field.inputValue()
     const marker = `${original} ✦`
 
-    await pencil.click()
-    const field = page.locator('textarea, input[type="text"]').first()
     await field.fill(marker)
     await page.getByRole('button', { name: 'Save', exact: true }).click()
     await expect(page.getByText(marker).first()).toBeVisible({ timeout: 15_000 })
 
     // Restore original so the test is non-destructive.
-    const pencil2 = page.getByRole('button', { name: /Edit Founder letter — heading/i }).first()
-    await pencil2.click()
-    const field2 = page.locator('textarea, input[type="text"]').first()
+    await page.getByRole('button', { name: /Edit Founder letter — heading/i }).first().click()
+    const field2 = page.locator('[data-admin-editing] input, [data-admin-editing] textarea').first()
     await field2.fill(original)
     await page.getByRole('button', { name: 'Save', exact: true }).click()
-
-    void before
+    await expect(page.getByText(original, { exact: true }).first()).toBeVisible({ timeout: 15_000 })
   })
 })

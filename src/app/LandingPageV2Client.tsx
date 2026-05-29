@@ -74,6 +74,11 @@ interface TeamMember {
   specialties: string[];
   serviceCategories?: string[];
   bio?: string;
+  // Inline-admin override context (passed through to the team section/takeover).
+  bioOverride?: boolean;
+  vagaroBio?: string;
+  imageOverride?: boolean;
+  vagaroPhotoUrl?: string;
   quote?: string;
   availability?: string;
   instagram?: string;

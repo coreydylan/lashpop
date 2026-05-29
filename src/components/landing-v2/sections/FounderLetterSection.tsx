@@ -25,22 +25,32 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
     }
   }, [content])
 
-  // PUT the whole letter. The founder-letter route accepts a partial and returns
-  // the normalized object; we always send the full merged letter.
-  const putLetter = useCallback(async (next: FounderLetterContent) => {
-    const res = await fetch('/api/admin/website/founder-letter', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(next),
+  // Serialize PUTs so two near-simultaneous block saves can't race (each save
+  // chains off the previous one and re-reads letterRef, which the prior save
+  // updated). The server also merges over the live row as a second safety net.
+  const writeChain = useRef<Promise<void>>(Promise.resolve())
+
+  const putLetter = useCallback((next: FounderLetterContent) => {
+    const run = writeChain.current.catch(() => {}).then(async () => {
+      const merged = { ...letterRef.current, ...next }
+      const res = await fetch('/api/admin/website/founder-letter', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(merged),
+      })
+      if (!res.ok) {
+        const msg = await res.json().catch(() => null)
+        throw new Error(msg?.error || 'Failed to save founder letter')
+      }
+      const data = await res.json()
+      const saved = (data.content ?? merged) as FounderLetterContent
+      setLetter(saved)
+      letterRef.current = saved
     })
-    if (!res.ok) {
-      const msg = await res.json().catch(() => null)
-      throw new Error(msg?.error || 'Failed to save founder letter')
-    }
-    const data = await res.json()
-    const saved = (data.content ?? next) as FounderLetterContent
-    setLetter(saved)
-    letterRef.current = saved
+    // Keep the chain alive even if this link rejects, but propagate the error
+    // to the caller (EditableText) so it can show it.
+    writeChain.current = run.catch(() => {})
+    return run
   }, [])
 
   // Merge a single scalar field into the current letter, then persist the whole.

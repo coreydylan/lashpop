@@ -68,6 +68,8 @@ export function EditableText({
   const generatedId = useId()
   const blockId = id ?? generatedId
   const As: ElementType = as ?? 'span'
+  const noteId = `${blockId}-note`
+  const errorId = `${blockId}-error`
 
   const [saved, setSaved] = useState(value)
   const [editing, setEditing] = useState(false)
@@ -85,25 +87,37 @@ export function EditableText({
   const draftRef = useRef(draft)
   draftRef.current = draft
 
-  const doSave = useCallback(async () => {
-    const next = draftRef.current
-    setSaving(true)
-    setError(null)
-    try {
-      await onSave(next)
-      setSaved(next)
-      setEditing(false)
-      setSaving(false)
-      setJustSaved(true)
-      clearDirty(blockId)
-      window.setTimeout(() => setJustSaved(false), 1800)
-      refresh()
-    } catch (e) {
-      setSaving(false)
-      setError(e instanceof Error ? e.message : 'Save failed')
-      throw e
-    }
-  }, [onSave, clearDirty, blockId, refresh])
+  // justSaved checkmark timer — cleared on unmount so we never setState on an
+  // unmounted block (e.g. a takeover that closes right after a save).
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => {
+    if (flashTimer.current) clearTimeout(flashTimer.current)
+  }, [])
+
+  const doSave = useCallback(
+    async (opts?: { skipRefresh?: boolean }) => {
+      const next = draftRef.current
+      setSaving(true)
+      setError(null)
+      try {
+        await onSave(next)
+        setSaved(next)
+        setEditing(false)
+        setSaving(false)
+        setJustSaved(true)
+        clearDirty(blockId)
+        if (flashTimer.current) clearTimeout(flashTimer.current)
+        flashTimer.current = setTimeout(() => setJustSaved(false), 1800)
+        // "Save all" passes skipRefresh and issues a single refresh itself.
+        if (!opts?.skipRefresh) refresh()
+      } catch (e) {
+        setSaving(false)
+        setError(e instanceof Error ? e.message : 'Save failed')
+        throw e
+      }
+    },
+    [onSave, clearDirty, blockId, refresh]
+  )
 
   const doDiscard = useCallback(() => {
     setDraft(saved)
@@ -124,7 +138,8 @@ export function EditableText({
       registerDirty({
         id: blockId,
         label,
-        save: () => saveRef.current(),
+        // saveAll batches: skip the per-block refresh, the provider does one.
+        save: () => saveRef.current({ skipRefresh: true }),
         discard: () => discardRef.current(),
       })
     } else {
@@ -134,52 +149,89 @@ export function EditableText({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDirty, blockId, label])
 
+  const onEditorKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      doDiscard()
+    } else if (e.key === 'Enter' && (!multiline || e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      if (draft !== saved) doSave()
+    }
+  }
+
+  const runEditorAction = async () => {
+    if (!editorAction) return
+    setSaving(true)
+    setError(null)
+    try {
+      await editorAction.onClick()
+      setEditing(false)
+      setSaving(false)
+      clearDirty(blockId)
+    } catch (e) {
+      setSaving(false)
+      setError(e instanceof Error ? e.message : `${editorAction.label} failed`)
+    }
+  }
+
   // ---- Public render: zero admin DOM ----
   if (!enabled) {
     return <As className={className}>{renderDisplay ? renderDisplay(saved) : saved}</As>
   }
 
-  // ---- Admin: editor open ----
+  const fieldClass =
+    'w-full rounded border border-stone-300 bg-white px-2 py-1 font-sans text-sm text-stone-900 outline-none focus-visible:ring-2 focus-visible:ring-[#C9A9A6] focus-visible:ring-offset-1'
+  const describedBy = clsx(editorNote && noteId, error && errorId) || undefined
+
+  // ---- Admin: editor open. Wrapper is a <div> (never a span) and forwards
+  // `className` so the block's margins are preserved while editing. ----
   if (editing) {
     return (
-      <span className="relative block" data-admin-editing>
-        <div
-          className="rounded-md bg-white/95 p-2 shadow-lg"
-          style={{ outline: `2px solid ${ACCENT}` }}
-        >
+      <div className={clsx('relative block', className)} data-admin-editing>
+        <div className="rounded-md bg-white/95 p-1.5 shadow-lg" style={{ outline: `2px solid ${ACCENT}` }}>
           {multiline ? (
             <textarea
               autoFocus
+              aria-label={label}
+              aria-describedby={describedBy}
               value={draft}
               placeholder={placeholder}
               onChange={e => setDraft(e.target.value)}
-              rows={Math.max(3, draft.split('\n').length + 1)}
-              className="w-full resize-y rounded border border-stone-300 bg-white p-2 font-sans text-sm text-stone-900 focus:outline-none"
+              onKeyDown={onEditorKeyDown}
+              rows={Math.min(10, Math.max(2, draft.split('\n').length))}
+              className={clsx(fieldClass, 'resize-y')}
             />
           ) : (
             <input
               autoFocus
+              type="text"
+              aria-label={label}
+              aria-describedby={describedBy}
               value={draft}
               placeholder={placeholder}
               onChange={e => setDraft(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') doSave()
-                if (e.key === 'Escape') doDiscard()
-              }}
-              className="w-full rounded border border-stone-300 bg-white p-2 font-sans text-sm text-stone-900 focus:outline-none"
+              onKeyDown={onEditorKeyDown}
+              className={fieldClass}
             />
           )}
 
           {editorNote ? (
-            <div className="mt-1.5 text-[11px] leading-snug text-stone-500">{editorNote}</div>
+            <div id={noteId} className="mt-1.5 text-[11px] leading-snug text-stone-500">
+              {editorNote}
+            </div>
           ) : null}
-          {error ? <div className="mt-1.5 text-[11px] text-red-600">{error}</div> : null}
+          {error ? (
+            <div id={errorId} className="mt-1.5 text-[11px] text-red-600">
+              {error}
+            </div>
+          ) : null}
 
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-1.5 flex items-center gap-2">
             <button
               type="button"
               onClick={() => doSave()}
               disabled={saving || draft === saved}
+              title={draft === saved ? 'No changes to save' : 'Save'}
               className="inline-flex min-h-0 items-center gap-1 rounded px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
               style={{ background: '#1C1917' }}
             >
@@ -198,11 +250,7 @@ export function EditableText({
             {editorAction ? (
               <button
                 type="button"
-                onClick={async () => {
-                  await editorAction.onClick()
-                  setEditing(false)
-                  clearDirty(blockId)
-                }}
+                onClick={runEditorAction}
                 disabled={saving}
                 className="ml-auto inline-flex min-h-0 items-center gap-1 rounded px-2 py-1.5 text-[11px] font-medium text-stone-500 hover:text-stone-800"
               >
@@ -212,31 +260,36 @@ export function EditableText({
             ) : null}
           </div>
         </div>
-      </span>
+      </div>
     )
   }
 
   // ---- Admin: idle (display + affordance) ----
+  const startEditing = () => {
+    setDraft(saved)
+    setEditing(true)
+  }
+
   return (
     <As
       className={clsx(className, 'group/admin relative cursor-text rounded-sm')}
-      style={{ outline: `1px dashed ${ACCENT}66`, outlineOffset: 2 }}
-      onClick={() => {
-        setDraft(saved)
-        setEditing(true)
-      }}
+      style={{ outline: `1px dashed ${ACCENT}`, outlineOffset: 2, background: `${ACCENT}14` }}
+      onClick={startEditing}
       data-admin-editable
     >
-      {renderDisplay ? renderDisplay(saved) : saved || <span className="text-stone-400">{placeholder ?? 'Empty'}</span>}
+      {renderDisplay
+        ? renderDisplay(saved)
+        : saved || <span className="italic text-stone-400">{placeholder ?? 'Empty'}</span>}
       <button
         type="button"
         aria-label={`Edit ${label}`}
         onClick={e => {
           e.stopPropagation()
-          setDraft(saved)
-          setEditing(true)
+          startEditing()
         }}
-        className="absolute -right-1 -top-1 z-10 inline-flex h-6 w-6 min-h-0 min-w-0 items-center justify-center rounded-full text-white shadow opacity-70 transition-opacity group-hover/admin:opacity-100"
+        /* Positioned just inside the top-right corner (not negative offsets) so an
+           overflow-hidden ancestor — e.g. the founder section — can never clip it. */
+        className="absolute right-0.5 top-0.5 z-10 inline-flex h-6 w-6 min-h-0 min-w-0 items-center justify-center rounded-full text-white shadow"
         style={{ background: ACCENT }}
       >
         {justSaved ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3 w-3" />}
