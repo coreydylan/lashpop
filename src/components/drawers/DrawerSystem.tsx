@@ -9,7 +9,7 @@ interface Service {
   name: string;
   slug: string;
   subtitle: string | null;
-  description: string;
+  description: string | null;
   durationMinutes: number;
   priceStarting: number;
   imageUrl: string | null;
