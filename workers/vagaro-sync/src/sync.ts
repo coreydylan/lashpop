@@ -33,6 +33,12 @@ const VAGARO_CATEGORY_TO_SLUG: Record<string, string> = {
   // Permanent jewelry / specialty
   'permanent jewelry': 'specialty',
   'specialty': 'specialty',
+  // Lashpop Pro Training — was falling through to NULL FK because the category
+  // title from the composite ("Lashpop Pro Training") wasn't mapped. Without a
+  // mapping the row stuck on whatever categoryId the previous sync wrote (which
+  // happened to be `specialty` from an earlier mis-classification), so the
+  // training course showed up under Permanent Jewelry on the booking flow.
+  'lashpop pro training': 'lashpop-pro-training',
   // Injectables / botox
   'injectables': 'injectables',
   'botox': 'injectables',
@@ -94,7 +100,10 @@ async function syncService(
   v2Service: any | null,
   photosByTitle: Map<string, string>,
   photosByServiceId: Map<string, string>,
-  photosAvailable: boolean
+  photosAvailable: boolean,
+  // Position in the composite walk — used as `display_order` so the frontend's
+  // sort by displayOrder reflects Vagaro's own ordering on the booking page.
+  positionalOrder: number
 ): Promise<void> {
   const serviceId = publicRecord.serviceId
   // Prefer v2's title when available (it's the authenticated, canonical name);
@@ -158,13 +167,34 @@ async function syncService(
   // lookup; when we find a match that way, also migrate the row's
   // vagaroServiceId to whichever format the v2 enrichment provided (if any)
   // so future runs keep bridging cleanly.
+  //
+  // 3rd fallback: case-insensitive NAME match. Legacy rows sometimes have
+  // hand-edited slugs (e.g. "volume" instead of the auto-generated
+  // "volume-full-set") so the slug fallback misses them and we end up
+  // double-inserting. Matching by name catches those before we INSERT.
+  // All three lookups filter to is_active=true. Inactive rows are tombstones
+  // from the dedupe pass — we don't want syncs to revive them or write updates
+  // into the dead row instead of the live one. If every match is inactive, we
+  // fall through to INSERT, which is the correct behavior (Vagaro has a
+  // service we don't have a live row for).
   let existing = await db
     .select()
     .from(services)
-    .where(eq(services.vagaroServiceId, serviceId))
+    .where(and(eq(services.vagaroServiceId, serviceId), eq(services.isActive, true)))
     .limit(1)
   if (existing.length === 0 && slug) {
-    existing = await db.select().from(services).where(eq(services.slug, slug)).limit(1)
+    existing = await db
+      .select()
+      .from(services)
+      .where(and(eq(services.slug, slug), eq(services.isActive, true)))
+      .limit(1)
+  }
+  if (existing.length === 0 && title) {
+    existing = await db
+      .select()
+      .from(services)
+      .where(and(sql`lower(${services.name}) = lower(${title})`, eq(services.isActive, true)))
+      .limit(1)
   }
   const v2ServiceIdString = v2Service?.serviceId ? String(v2Service.serviceId) : null
 
@@ -192,6 +222,9 @@ async function syncService(
         vagaroData,
         ...(photosAvailable ? { vagaroImageUrl: photoUrl } : {}),
         ...(categoryId ? { categoryId } : {}),
+        // Mirror Vagaro's own order on the booking page so the frontend's
+        // `ORDER BY display_order` shows services in the same order Vagaro does.
+        displayOrder: positionalOrder,
         lastSyncedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -218,7 +251,9 @@ async function syncService(
       vagaroDescription: vagaroDescription ?? '',
       durationMinutes: insertDuration,
       priceStarting: insertPriceCents,
-      displayOrder: 0,
+      // Position in the composite walk — keeps insertion order aligned with
+      // Vagaro's booking-page order on first sync.
+      displayOrder: positionalOrder,
       isActive: true,
       mainCategory: parentTitle || 'Other Services',
       lastSyncedAt: new Date(),
@@ -312,10 +347,16 @@ export async function syncAllServices(
   let failed = 0
   let lastError: unknown = null
 
-  for (const rec of publicRecords) {
+  // positionalOrder mirrors Vagaro's booking-page order — the composite walks
+  // categories in the order they're displayed and services within them in the
+  // order Vagaro arranged them. Writing the loop index into display_order is
+  // the cleanest way to keep the frontend's `ORDER BY display_order` aligned
+  // with what customers see in the Vagaro UI.
+  for (let i = 0; i < publicRecords.length; i++) {
+    const rec = publicRecords[i]
     try {
       const v2Match = v2ById.get(rec.serviceId) ?? null
-      await syncService(db, rec, v2Match, photosByTitle, photosByServiceId, photosAvailable)
+      await syncService(db, rec, v2Match, photosByTitle, photosByServiceId, photosAvailable, i)
       synced++
     } catch (err) {
       failed++
