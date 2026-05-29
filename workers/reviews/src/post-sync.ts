@@ -63,11 +63,34 @@ export async function updateReviewStats(
   sql: Sql,
   fetcherTotals: Partial<Record<'google' | 'vagaro' | 'yelp', number | undefined>>,
 ): Promise<ReviewStatsResult> {
+  // Count per-platform via source_urls instead of the `source` column. Cross-
+  // platform dedup (see workers/reviews/src/db.ts upsertReviews) folds a
+  // matching review into ONE row whose `source` is the oldest platform but
+  // whose `source_urls` carries the URLs for every platform the review
+  // appears on. Counting `source` alone undercounts every platform that lost
+  // duplicates to an older sibling, which read on the homepage as "Yelp
+  // count went down by 13" after the dedup backfill landed.
+  // Average rating still comes from rows where that platform is the primary
+  // `source` — every platform has plenty of solo rows so this stays stable.
   const aggregates = await sql<Array<{ source: string; count: number; avg_rating: string }>>`
-    SELECT source, COUNT(*)::int AS count, AVG(rating)::numeric(3,1)::text AS avg_rating
-    FROM reviews
-    WHERE source IN ('google', 'vagaro', 'yelp')
-    GROUP BY source
+    WITH per_url AS (
+      SELECT su->>'source' AS source
+      FROM reviews r,
+           LATERAL jsonb_array_elements(r.source_urls) AS su
+      WHERE su->>'source' IN ('google', 'vagaro', 'yelp')
+    ),
+    counts AS (
+      SELECT source, COUNT(*)::int AS count FROM per_url GROUP BY source
+    ),
+    ratings AS (
+      SELECT source, AVG(rating)::numeric(3,1)::text AS avg_rating
+      FROM reviews
+      WHERE source IN ('google', 'vagaro', 'yelp')
+      GROUP BY source
+    )
+    SELECT c.source, c.count, r.avg_rating
+    FROM counts c
+    LEFT JOIN ratings r USING (source)
   `
 
   const updated: ReviewStatsRow[] = []
