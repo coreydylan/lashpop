@@ -687,3 +687,13 @@ a,
     font-family: var(--font-swanky), cursive !important;
   }
 }
+
+/* Inline admin — "Show editable spots" toggle (BP-7). When the chrome toggle is
+   on, every idle editable affordance is brightened to the strong accent so a
+   non-technical owner can see everything that can be edited at a glance.
+   Uses !important to override the inline idle outline on [data-admin-editable]. */
+html.admin-highlight [data-admin-editable] {
+  outline: 2px solid #b14e33 !important;
+  outline-offset: 2px !important;
+  background: rgba(177, 78, 51, 0.1) !important;
+}

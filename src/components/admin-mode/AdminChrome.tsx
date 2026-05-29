@@ -13,7 +13,7 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Trash2, LogOut, ChevronUp, ChevronDown, Loader2, Pencil, RotateCcw, History } from 'lucide-react'
+import { Save, Trash2, LogOut, ChevronUp, ChevronDown, Loader2, Pencil, RotateCcw, History, Eye, EyeOff } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useAdminMode } from '@/contexts/AdminModeContext'
 
@@ -34,6 +34,15 @@ export function AdminChrome() {
 
   // Polite, screen-reader-only announcement for save results + dirty count.
   const [announcement, setAnnouncement] = useState('')
+
+  // BP-7: "Show editable spots" brightens every idle affordance at once for
+  // discoverability (toggles a class the global stylesheet keys off of).
+  const [highlight, setHighlight] = useState(false)
+  React.useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.documentElement.classList.toggle('admin-highlight', highlight)
+    return () => document.documentElement.classList.remove('admin-highlight')
+  }, [highlight])
 
   const handleSaveAll = async () => {
     setSavingAll(true)
@@ -100,14 +109,26 @@ export function AdminChrome() {
                   </div>
                 </div>
               </div>
-              <button
-                type="button"
-                aria-label="Collapse"
-                onClick={() => setOpen(false)}
-                className="inline-flex h-7 w-7 min-h-0 min-w-0 items-center justify-center rounded text-white/70 hover:bg-white/10"
-              >
-                <ChevronDown className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-label={highlight ? 'Hide editable spots' : 'Show editable spots'}
+                  aria-pressed={highlight}
+                  title={highlight ? 'Hide editable spots' : 'Show me what I can edit'}
+                  onClick={() => setHighlight(h => !h)}
+                  className="inline-flex h-7 w-7 min-h-0 min-w-0 items-center justify-center rounded text-white/70 hover:bg-white/10"
+                >
+                  {highlight ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  aria-label="Collapse"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex h-7 w-7 min-h-0 min-w-0 items-center justify-center rounded text-white/70 hover:bg-white/10"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Dirty list */}
