@@ -99,6 +99,34 @@ export function BookingView({ service }: BookingViewProps) {
     vagaroDiv.appendChild(script)
     container.appendChild(vagaroDiv)
 
+    // Vagaro's iframe ships with a merchant-admin "Return URL" config that
+    // top-navigates to the old Squarespace lashpop site as soon as a booking
+    // completes — kicking users off our app before they can interact with
+    // the branded confirmation overlay. We can't change the Vagaro setting
+    // from here, but we CAN sandbox the iframe to revoke top-navigation
+    // capability. allow-scripts/forms/same-origin/popups/modals keep the
+    // widget functional; omitting allow-top-navigation* blocks the redirect.
+    const SANDBOX = 'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals'
+    const sandboxIframe = (frame: HTMLIFrameElement) => {
+      if (frame.getAttribute('sandbox')) return
+      frame.setAttribute('sandbox', SANDBOX)
+    }
+    const mo = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of Array.from(m.addedNodes)) {
+          if (!(node instanceof HTMLElement)) continue
+          if (node.tagName === 'IFRAME') {
+            sandboxIframe(node as HTMLIFrameElement)
+          } else {
+            node.querySelectorAll('iframe').forEach((f) => sandboxIframe(f as HTMLIFrameElement))
+          }
+        }
+      }
+    })
+    mo.observe(container, { childList: true, subtree: true })
+    // Catch any iframe that Vagaro injected before the observer was wired.
+    container.querySelectorAll('iframe').forEach((f) => sandboxIframe(f as HTMLIFrameElement))
+
     // Timeout for error state
     const timeout = setTimeout(() => {
       if (!widgetState.isLoaded) {
@@ -108,6 +136,7 @@ export function BookingView({ service }: BookingViewProps) {
 
     return () => {
       clearTimeout(timeout)
+      mo.disconnect()
       if (container.contains(vagaroDiv)) {
         container.removeChild(vagaroDiv)
       }
