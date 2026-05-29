@@ -57,24 +57,16 @@ function sandboxIframe(frame: HTMLIFrameElement): void {
   if (frame.hasAttribute(SANDBOXED_FLAG)) return;
   if (!isVagaroIframe(frame)) return;
 
-  // Mark FIRST so the src-mutation we trigger below doesn't reentrantly
-  // call this handler.
   frame.setAttribute(SANDBOXED_FLAG, '1');
   frame.setAttribute('sandbox', SANDBOX);
 
-  // Force the iframe to (re-)navigate UNDER the sandbox attribute. On
-  // desktop, the iframe's browsing context is created at insertion time
-  // — setting sandbox after the fact doesn't apply to the live document,
-  // so top-navigation from the booking completion still works. Blanking
-  // src and re-assigning it next frame guarantees the document loads
-  // inside the sandbox.
-  const currentSrc = frame.getAttribute('src');
-  if (currentSrc && currentSrc !== 'about:blank') {
-    frame.setAttribute('src', 'about:blank');
-    requestAnimationFrame(() => {
-      frame.setAttribute('src', currentSrc);
-    });
-  }
+  // Earlier we tried an about:blank reload trick here to force the iframe
+  // to navigate INTO the sandbox (late-applied sandbox is a no-op on the
+  // live document). That broke Vagaro's widget init handshake — the
+  // widget got stuck on the loading state because the postMessage ready
+  // sequence didn't survive the forced reload. The fallback below
+  // (beforeunload guard during the confirmation window) covers the
+  // desktop redirect without touching the iframe document.
 }
 
 function scanForIframes(root: ParentNode): void {

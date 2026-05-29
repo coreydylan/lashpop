@@ -86,13 +86,11 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
           </button>
         </div>
 
-        {/* Loading state */}
+        {/* Loading state — spinner alone; redundant copy was stacking on
+            top of Vagaro's own loading UI. */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 min-h-[500px]">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="w-8 h-8 text-dusty-rose animate-spin" />
-              <p className="text-sm text-dune/60">Loading booking calendar...</p>
-            </div>
+            <Loader2 className="w-8 h-8 text-dusty-rose animate-spin" />
           </div>
         )}
 

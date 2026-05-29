@@ -59,6 +59,30 @@ export function BookingView({ service }: BookingViewProps) {
     }
   }, [])
 
+  // Defensive navigation guard while the branded confirmation is showing.
+  // Vagaro's iframe will attempt a top-level redirect to the merchant-admin
+  // "Return URL" (currently the old Squarespace lashpop site) the instant
+  // BookingCompleted fires. We can't sandbox the iframe document after the
+  // fact (the about:blank reload trick we tried broke Vagaro's loader
+  // handshake), so we hook beforeunload at the page level instead. The
+  // browser shows a "Leave site?" dialog that the user has to confirm
+  // before navigation completes — usually they hit Cancel because Vagaro
+  // never told them to leave, then they click Done / Book another. We
+  // remove the listener as soon as the confirmation closes so legitimate
+  // navigation (their own back button, link clicks, etc.) isn't blocked.
+  useEffect(() => {
+    if (!isConfirmed) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      // Spec requires returnValue assignment for the dialog to show on
+      // Chrome / Edge — Firefox/Safari ignore the string but show the
+      // dialog anyway.
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isConfirmed])
+
   // Reset state when service changes
   useEffect(() => {
     setScriptLoaded(false)
@@ -209,11 +233,12 @@ export function BookingView({ service }: BookingViewProps) {
           overscrollBehavior: 'contain'
         }}
       >
-        {/* Loading State */}
+        {/* Loading State — the spinning logo is enough visual feedback;
+            redundant "Loading booking..." copy was reading as an artifact
+            stacked on top of Vagaro's own loading state. */}
         {showLoading && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-ivory z-10">
             <LPLogoLoader size={80} />
-            <p className="mt-4 text-sage text-sm">Loading booking...</p>
           </div>
         )}
 
