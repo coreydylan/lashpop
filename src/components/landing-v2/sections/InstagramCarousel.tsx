@@ -259,10 +259,18 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
               </button>
             )}
 
-            {/* Image stage — swipeable */}
+            {/* Image stage — swipeable.
+                `w-auto` + `w-full` inner was leaving the container with no
+                defined width on desktop, so the Image (fill / object-contain)
+                collapsed to the source's intrinsic size — making the photo
+                look ~200 px tall in the middle of a huge backdrop and look
+                low-res even though we're pulling a full-res Instagram media
+                URL through the CF loader. Lock width to min(1200px, 92vw)
+                so the Image actually has a stage to fill. */}
             <motion.div
               key={lightboxIndex}
-              className="relative max-w-4xl max-h-[85vh] w-[88vw] md:w-auto m-4"
+              className="relative m-4 flex flex-col"
+              style={{ width: 'min(1200px, 92vw)' }}
               onClick={(e) => e.stopPropagation()}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -276,15 +284,19 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
-              <div className="relative w-full h-[70vh] md:h-[78vh]">
+              <div
+                className="relative w-full overflow-hidden rounded-2xl bg-black/40 shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
+                style={{ height: 'min(82vh, calc(min(1200px, 92vw) * 1.25))' }}
+              >
                 <Image
                   src={activeItem.mediaUrl}
                   alt={activeItem.caption ?? `Gallery image ${lightboxIndex! + 1}`}
                   fill
                   priority
+                  quality={90}
                   draggable={false}
-                  className="object-contain rounded-lg select-none pointer-events-none"
-                  sizes="(max-width: 768px) 88vw, 896px"
+                  className="object-contain select-none pointer-events-none"
+                  sizes="(max-width: 768px) 92vw, min(1200px, 92vw)"
                 />
               </div>
 
