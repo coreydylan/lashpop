@@ -120,18 +120,18 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
     }
   }, [])
 
-  // Don't `return null` when hiding — unmounting a fixed-position subtree
-  // mid-scroll caused iOS Safari to pause momentum scrolling exactly as the
-  // founder letter section crossed the 1.5-viewport boundary, which read as
-  // the letter "getting stuck" on fast downward swipes. Keep the element in
-  // the React tree and just flip `display: none` on the outer wrapper — it's
-  // a single DOM mutation on a fixed element, no reflow, no subtree teardown.
+  // Mid-scroll DOM mutations on this fixed subtree caused iOS Safari to
+  // pause momentum scrolling at the 1.5-viewport boundary — that's the
+  // "stuck on the welcome letter" complaint. Previous attempt used
+  // display:none but the property switch still nudged the compositor.
+  // Animate opacity instead: no display change, no visibility flip, just a
+  // composited fade that iOS can keep paint pipelines warm through.
   return (
     <div
-      className="fixed inset-0 z-0 pointer-events-none md:hidden"
+      className="fixed inset-0 z-0 pointer-events-none md:hidden transition-opacity duration-200"
       style={{
         background: 'transparent',
-        display: isVisible ? undefined : 'none',
+        opacity: isVisible ? 1 : 0,
       }}
     >
       {/* Background - solid ivory */}

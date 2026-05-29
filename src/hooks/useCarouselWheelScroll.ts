@@ -6,12 +6,16 @@ import { EmblaCarouselType } from 'embla-carousel'
 /**
  * Hook that enables smooth horizontal carousel scrolling via horizontal scroll gestures ONLY.
  *
- * Uses synthetic mouse events to leverage Embla's native drag physics for smooth
- * momentum-based scrolling when user performs horizontal scroll (trackpad left/right).
+ * Earlier versions dispatched synthetic mouse events (mousedown/move/up) to
+ * piggy-back on Embla's drag physics. That bubbled clicks to child anchor
+ * chips (Google / Yelp / Vagaro source links on review cards), so a small
+ * trackpad horizontal scroll would silently open a new tab. We now drive the
+ * carousel via Embla's public scrollNext/scrollPrev so no synthetic events
+ * fire at all.
  *
  * Behavior:
- * - Horizontal scroll (trackpad left/right) → scrolls carousel
- * - Vertical scroll (scroll wheel up/down) → passes through for normal page scroll
+ * - Horizontal scroll (trackpad left/right) → advances/rewinds carousel
+ * - Vertical scroll (wheel up/down) → passes through for normal page scroll
  * - Only activates when hovering over the container
  */
 export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) {
@@ -30,7 +34,6 @@ export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) 
   // Set up wheel gestures when hovering
   useEffect(() => {
     if (!emblaApi || !container || !isHovering) {
-      // Cleanup if not hovering
       if (cleanupRef.current) {
         cleanupRef.current()
         cleanupRef.current = null
@@ -38,91 +41,48 @@ export function useCarouselWheelScroll(emblaApi: EmblaCarouselType | undefined) 
       return
     }
 
-    let isGestureActive = false
-    let startX = 0
-    let startY = 0
+    // Threshold of accumulated horizontal delta before we advance one slide.
+    // Trackpads emit small frequent deltas (~5-20 px each); 80 keeps it from
+    // firing on a casual two-finger drift while still feeling responsive.
+    const ADVANCE_THRESHOLD = 80
+    // Lock between scrollNext calls so a flurry of wheel events doesn't try
+    // to advance several slides faster than Embla's animation can settle.
+    const LOCK_MS = 180
+
     let accumulatedX = 0
+    let lockedUntil = 0
 
     const handleWheel = (e: WheelEvent) => {
-      // Only handle horizontal scroll intent (left/right trackpad gestures)
       const isHorizontalScroll = Math.abs(e.deltaX) > Math.abs(e.deltaY)
-      if (!isHorizontalScroll) return  // Let vertical scroll pass through
+      if (!isHorizontalScroll) return // let vertical wheel pass through to the page
 
-      // Prevent horizontal page scroll (we'll handle it in carousel)
+      // Prevent native horizontal page scroll on mac trackpads.
       e.preventDefault()
 
-      if (!isGestureActive) {
-        isGestureActive = true
-        startX = e.clientX
-        startY = e.clientY
-        accumulatedX = 0
+      accumulatedX += e.deltaX
+      if (Math.abs(accumulatedX) < ADVANCE_THRESHOLD) return
 
-        // Dispatch mousedown to start Embla drag
-        const mousedown = new MouseEvent('mousedown', {
-          clientX: startX,
-          clientY: startY,
-          button: 0,
-          bubbles: true,
-          cancelable: true,
-        })
-        emblaApi.containerNode().dispatchEvent(mousedown)
+      const now = performance.now()
+      if (now < lockedUntil) {
+        // Drain accumulated delta so a paused-then-resumed gesture doesn't
+        // pop several slides at once when the lock releases.
+        accumulatedX = 0
+        return
       }
 
-      // Accumulate horizontal movement from horizontal scroll input
-      // Negative because deltaX positive = scroll right = content moves left
-      accumulatedX -= e.deltaX * 0.5
-
-      // Dispatch mousemove
-      const mousemove = new MouseEvent('mousemove', {
-        clientX: startX + accumulatedX,
-        clientY: startY,
-        button: 0,
-        bubbles: true,
-        cancelable: true,
-      })
-      emblaApi.containerNode().dispatchEvent(mousemove)
+      if (accumulatedX > 0 && emblaApi.canScrollNext()) {
+        emblaApi.scrollNext()
+      } else if (accumulatedX < 0 && emblaApi.canScrollPrev()) {
+        emblaApi.scrollPrev()
+      }
+      accumulatedX = 0
+      lockedUntil = now + LOCK_MS
     }
 
-    // End gesture after inactivity
-    let endTimeout: ReturnType<typeof setTimeout> | null = null
-
-    const scheduleEnd = () => {
-      if (endTimeout) clearTimeout(endTimeout)
-      endTimeout = setTimeout(() => {
-        if (isGestureActive) {
-          isGestureActive = false
-          const mouseup = new MouseEvent('mouseup', {
-            clientX: startX + accumulatedX,
-            clientY: startY,
-            button: 0,
-            bubbles: true,
-            cancelable: true,
-          })
-          emblaApi.containerNode().dispatchEvent(mouseup)
-        }
-      }, 100)
-    }
-
-    const wrappedWheelHandler = (e: WheelEvent) => {
-      handleWheel(e)
-      scheduleEnd()
-    }
-
-    container.addEventListener('wheel', wrappedWheelHandler, { passive: false })
+    container.addEventListener('wheel', handleWheel, { passive: false })
 
     cleanupRef.current = () => {
-      container.removeEventListener('wheel', wrappedWheelHandler)
-      if (endTimeout) clearTimeout(endTimeout)
-      if (isGestureActive) {
-        const mouseup = new MouseEvent('mouseup', {
-          clientX: startX + accumulatedX,
-          clientY: startY,
-          button: 0,
-          bubbles: true,
-          cancelable: true,
-        })
-        emblaApi.containerNode().dispatchEvent(mouseup)
-      }
+      container.removeEventListener('wheel', handleWheel)
     }
 
     return () => {
