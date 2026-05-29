@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
+import { requireAdminApi } from '@/lib/admin/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +55,9 @@ function coerce(raw: Record<string, unknown>): ReviewSettings {
 }
 
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   const db = getDb()
   const [row] = await db
     .select()
@@ -65,6 +69,9 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   const body = await req.json()
   const settings = coerce(body?.settings ?? {})
 
@@ -93,6 +100,9 @@ export async function PUT(req: NextRequest) {
  *   REVIEWS_WORKER_TRIGGER_SECRET
  */
 export async function POST() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   const workerUrl = process.env.REVIEWS_WORKER_URL
   const triggerSecret = process.env.REVIEWS_WORKER_TRIGGER_SECRET
   if (!workerUrl || !triggerSecret) {

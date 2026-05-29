@@ -38,6 +38,9 @@ export const teamMembers = pgTable("team_members", {
   type: teamMemberType("type").notNull(),
   businessName: text("business_name"),
   bio: text("bio"),
+  // When true, the frontend prefers local `bio` over `vagaroBio` (set by inline admin edit).
+  // The Vagaro sync keeps writing vagaroBio regardless, so "revert to Vagaro" = flip this false.
+  bioOverride: boolean("bio_override").default(false).notNull(),
   quote: text("quote"),
   instagram: text("instagram"),
   // Optional override: if set, the IG link in the profile modal uses this URL
@@ -46,6 +49,8 @@ export const teamMembers = pgTable("team_members", {
   bookingUrl: text("booking_url").notNull(),
   usesLashpopBooking: boolean("uses_lashpop_booking").default(true).notNull(),
   imageUrl: text("image_url").notNull(),
+  // When true, the frontend prefers local `imageUrl` over `vagaroPhotoUrl` (set by inline admin edit).
+  imageOverride: boolean("image_override").default(false).notNull(),
   specialties: jsonb("specialties").notNull().$type<string[]>(),
   favoriteServices: jsonb("favorite_services").$type<string[]>(),
   manualServiceCategories: jsonb("manual_service_categories").$type<string[]>(), // Custom tags for services not in Vagaro (e.g., injectables)
@@ -54,6 +59,9 @@ export const teamMembers = pgTable("team_members", {
   displayOrder: text("display_order").default("0"),
   isActive: boolean("is_active").default(true).notNull(),
   showOnWebsite: boolean("show_on_website").default(true), // Legacy column - preserved for data
+  // Hand-created (off-Vagaro) stylist. The Vagaro sync's deactivate-missing loop must skip these,
+  // otherwise the next sync would deactivate a stylist that was never in Vagaro.
+  isOffVagaro: boolean("is_off_vagaro").default(false).notNull(),
 
   // SEO/Schema.org structured data fields
   // Credentials appear in JSON-LD for search engines but not necessarily displayed publicly

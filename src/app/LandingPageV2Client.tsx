@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { BookingOrchestratorProvider } from '@/contexts/BookingOrchestratorContext';
 import { VagaroWidgetProvider } from '@/contexts/VagaroWidgetContext';
 import { DevModeProvider } from '@/contexts/DevModeContext';
+import { AdminModeProvider } from '@/contexts/AdminModeContext';
 import { scrollToHomepageSection } from '@/lib/smoothScroll';
 import { DevModeOverlay } from '@/components/dev-mode';
 import { DrawerProvider } from '@/components/drawers/DrawerContext';
@@ -334,6 +335,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
   }, []);
 
   return (
+    <AdminModeProvider>
     <DevModeProvider>
     <BookingOrchestratorProvider>
         <ServiceBrowserProvider services={services} categories={serviceCategories}>
@@ -478,6 +480,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
       </ServiceBrowserProvider>
     </BookingOrchestratorProvider>
     </DevModeProvider>
+    </AdminModeProvider>
   );
 }
 

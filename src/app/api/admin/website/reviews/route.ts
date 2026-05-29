@@ -4,11 +4,15 @@ import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { homepageReviews } from '@/db/schema/website_settings'
 import { desc, gte, asc, inArray, eq } from 'drizzle-orm'
+import { requireAdminApi } from '@/lib/admin/auth'
 
 export const dynamic = 'force-dynamic'
 
 // GET - Fetch all reviews and selected IDs
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     // Fetch all reviews ≥3★. Order by quality_score (admin overrides + LLM
@@ -55,6 +59,9 @@ export async function GET() {
 
 // PUT - Update selected reviews and their order
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()

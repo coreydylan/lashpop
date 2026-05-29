@@ -3,11 +3,15 @@ import { getDb } from '@/db'
 import { teamQuickFacts } from '@/db/schema/team_quick_facts'
 import { teamMembers } from '@/db/schema/team_members'
 import { eq, asc, inArray } from 'drizzle-orm'
+import { requireAdminApi } from '@/lib/admin/auth'
 
 export const dynamic = 'force-dynamic'
 
 // GET - Fetch quick facts for a team member (or all if no memberId provided)
 export async function GET(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { searchParams } = new URL(request.url)
@@ -51,6 +55,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create a new quick fact
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -112,6 +119,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update an existing quick fact
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -159,6 +169,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete a quick fact
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { searchParams } = new URL(request.url)
@@ -195,6 +208,9 @@ export async function DELETE(request: NextRequest) {
 
 // PATCH - Reorder quick facts for a team member
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()

@@ -73,13 +73,21 @@ export default async function HomePage() {
     role: member.role,
     type: member.type as 'employee' | 'independent',
     businessName: member.businessName || undefined,
-    // Vagaro is source of truth for staff photos; fall back to local imageUrl, then nothing.
-    image: member.vagaroPhotoUrl || member.imageUrl,
+    // Vagaro is source of truth for staff photos UNLESS an admin set a local
+    // override (imageOverride). The Vagaro sync keeps writing vagaroPhotoUrl, so
+    // "revert to Vagaro" = flip imageOverride false.
+    image: member.imageOverride ? member.imageUrl : (member.vagaroPhotoUrl || member.imageUrl),
     phone: member.phone,
     specialties: member.specialties as string[],
     serviceCategories: member.serviceCategories, // Service categories from Vagaro
-    // Vagaro bio (BusinessSummary) wins; fall back to locally-entered bio
-    bio: member.vagaroBio || member.bio || undefined,
+    // Vagaro bio (BusinessSummary) wins UNLESS an admin set a local override.
+    bio: (member.bioOverride ? member.bio : (member.vagaroBio || member.bio)) || undefined,
+    // Override context for inline admin editing (Vagaro vs local + revert).
+    bioOverride: member.bioOverride,
+    imageOverride: member.imageOverride,
+    vagaroBio: member.vagaroBio || undefined,
+    vagaroPhotoUrl: member.vagaroPhotoUrl || undefined,
+    localBio: member.bio || undefined,
     quote: member.quote || undefined,
     availability: member.availability || undefined,
     instagram: member.instagram || undefined,

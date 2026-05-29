@@ -53,4 +53,4 @@ export const adminAuditLog = pgTable('admin_audit_log', {
 export type AdminAuditLogEntry = typeof adminAuditLog.$inferSelect
 export type NewAdminAuditLogEntry = typeof adminAuditLog.$inferInsert
 
-export type AdminAuditSurface = 'admin' | 'dam' | 'system'
+export type AdminAuditSurface = 'admin' | 'dam' | 'system' | 'inline'

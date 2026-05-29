@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdminApi } from '@/lib/admin/auth'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { eq } from 'drizzle-orm'
@@ -13,6 +14,9 @@ const PRESETS_SECTION = 'hero_slideshow_presets'
 
 // GET - Fetch all slideshow presets
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     let presets: SlideshowPreset[] = []
@@ -44,6 +48,9 @@ export async function GET() {
 
 // POST - Create a new slideshow preset
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -131,6 +138,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update an existing preset
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -200,6 +210,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete a preset
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { searchParams } = new URL(request.url)

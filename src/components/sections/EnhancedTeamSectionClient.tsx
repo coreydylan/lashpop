@@ -250,6 +250,11 @@ interface TeamMember {
   // Service categories pulled directly from Vagaro service assignments
   serviceCategories?: string[]
   bio?: string
+  // Inline-admin override context (see page.tsx precedence + team PATCH).
+  bioOverride?: boolean
+  vagaroBio?: string
+  imageOverride?: boolean
+  vagaroPhotoUrl?: string
   quote?: string
   availability?: string
   instagram?: string

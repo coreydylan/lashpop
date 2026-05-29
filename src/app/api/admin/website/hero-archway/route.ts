@@ -3,6 +3,7 @@ import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { requireAdminApi } from '@/lib/admin/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,6 +44,9 @@ const defaultSettings: HeroArchwayConfig = {
 
 // GET - Fetch hero archway settings
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
 
@@ -79,6 +83,9 @@ export async function GET() {
 
 // PUT - Update hero archway settings
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()

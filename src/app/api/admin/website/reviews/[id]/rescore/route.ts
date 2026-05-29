@@ -9,6 +9,7 @@ import { eq, sql as drizzleSql } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { askMeshClaude } from '@/lib/mesh-claude'
+import { requireAdminApi } from '@/lib/admin/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,9 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await params
   const db = getDb()
 

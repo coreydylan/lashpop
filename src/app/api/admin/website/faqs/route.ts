@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdminApi } from '@/lib/admin/auth'
 import { getDb } from '@/db'
 import { faqCategories, faqItems } from '@/db/schema/faqs'
 import { eq, asc } from 'drizzle-orm'
@@ -7,6 +8,9 @@ export const dynamic = 'force-dynamic'
 
 // GET - Fetch all FAQ categories and items
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
 
@@ -37,6 +41,9 @@ export async function GET() {
 
 // POST - Create a new FAQ category or item
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -104,6 +111,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update FAQ category or item
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -155,6 +165,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete FAQ category or item
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { searchParams } = new URL(request.url)

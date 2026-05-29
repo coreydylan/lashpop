@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requireAdminApi } from '@/lib/admin/auth'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { eq } from 'drizzle-orm'
@@ -12,6 +13,9 @@ const ASSIGNMENTS_SECTION = 'hero_slideshow_assignments'
 
 // GET - Fetch current slideshow assignments
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     let assignments: SlideshowAssignments = { ...DEFAULT_ASSIGNMENTS }
@@ -47,6 +51,9 @@ export async function GET() {
 
 // PUT - Update slideshow assignments
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()

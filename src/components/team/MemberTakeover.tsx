@@ -19,6 +19,22 @@ import {
 } from 'lucide-react'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
+import { useAdminMode } from '@/contexts/AdminModeContext'
+import { Editable } from '@/components/admin-mode/Editable'
+
+/** PATCH a single team member field via the (now auth-guarded) admin endpoint. */
+async function patchTeamMember(uuid: string | undefined, payload: Record<string, unknown>) {
+  if (!uuid) throw new Error('Missing member id')
+  const res = await fetch('/api/admin/website/team', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memberId: uuid, ...payload }),
+  })
+  if (!res.ok) {
+    const m = await res.json().catch(() => null)
+    throw new Error(m?.error || 'Failed to save')
+  }
+}
 
 // Local type mirrors the consumer's TeamMember shape — kept in sync intentionally
 // so this component can be lifted out of EnhancedTeamSectionClient without a refactor.
@@ -31,6 +47,9 @@ export interface TakeoverTeamMember {
   businessName?: string
   image: string
   bio?: string
+  // Inline-admin override context.
+  bioOverride?: boolean
+  vagaroBio?: string
   serviceCategories?: string[]
   specialties: string[]
   funFact?: string
@@ -110,6 +129,7 @@ export function MemberTakeover({
   const [lightboxIdx, setLightboxIdx] = useState<number>(-1)
   const [chromeOpaque, setChromeOpaque] = useState(true)
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const { enabled: adminEnabled, refresh: adminRefresh } = useAdminMode()
 
   useEffect(() => setMounted(true), [])
 
@@ -301,14 +321,39 @@ export function MemberTakeover({
 
                   {/* Main column */}
                   <div className="min-w-0">
-                    {member.bio ? (
+                    {member.bio || adminEnabled ? (
                       <section className="pb-14">
                         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-dusty-rose">
                           About
                         </p>
-                        <p className="max-w-[62ch] text-lg leading-relaxed text-charcoal/85">
-                          {member.bio}
-                        </p>
+                        <Editable
+                          id={`bio-${member.uuid}`}
+                          label={`${member.name.split(' ')[0]} — bio`}
+                          kind="multiline"
+                          as="p"
+                          className="max-w-[62ch] text-lg leading-relaxed text-charcoal/85"
+                          value={member.bio ?? ''}
+                          placeholder="Add a bio…"
+                          onSave={async next => {
+                            await patchTeamMember(member.uuid, { bio: next })
+                          }}
+                          editorNote={
+                            !member.bioOverride && member.vagaroBio
+                              ? 'Vagaro currently provides this bio. Saving will override it on the site.'
+                              : undefined
+                          }
+                          editorAction={
+                            member.bioOverride && member.vagaroBio
+                              ? {
+                                  label: 'Revert to Vagaro',
+                                  onClick: async () => {
+                                    await patchTeamMember(member.uuid, { bioOverride: false })
+                                    adminRefresh()
+                                  },
+                                }
+                              : undefined
+                          }
+                        />
                       </section>
                     ) : null}
 
@@ -361,14 +406,23 @@ export function MemberTakeover({
                         </p>
                         <QuickFactsGrid facts={member.quickFacts} />
                       </section>
-                    ) : member.funFact ? (
+                    ) : member.funFact || adminEnabled ? (
                       <section className="pb-14">
                         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-dusty-rose">
                           Fun Fact
                         </p>
-                        <p className="max-w-[62ch] text-lg leading-relaxed text-charcoal/85">
-                          {member.funFact}
-                        </p>
+                        <Editable
+                          id={`funfact-${member.uuid}`}
+                          label={`${member.name.split(' ')[0]} — fun fact`}
+                          kind="multiline"
+                          as="p"
+                          className="max-w-[62ch] text-lg leading-relaxed text-charcoal/85"
+                          value={member.funFact ?? ''}
+                          placeholder="Add a fun fact…"
+                          onSave={async next => {
+                            await patchTeamMember(member.uuid, { funFact: next })
+                          }}
+                        />
                       </section>
                     ) : null}
 

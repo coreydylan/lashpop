@@ -4,6 +4,7 @@ import { user as userSchema } from "@/db/schema/auth_user"
 import { session as sessionSchema } from "@/db/schema/auth_session"
 import { eq, and, gt, desc } from "drizzle-orm"
 import { cookies } from "next/headers"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 // Helper to check if current user is an admin (has DAM access)
 async function isAdmin(req: NextRequest): Promise<boolean> {
@@ -30,6 +31,9 @@ async function isAdmin(req: NextRequest): Promise<boolean> {
 
 // GET - List all users with their DAM access status
 export async function GET(req: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   // Check if user is admin
   if (!(await isAdmin(req))) {
     return NextResponse.json(
@@ -64,6 +68,9 @@ export async function GET(req: NextRequest) {
 
 // POST - Update DAM access for a user
 export async function POST(req: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   // Check if user is admin
   if (!(await isAdmin(req))) {
     return NextResponse.json(

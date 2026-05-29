@@ -3,6 +3,8 @@ import { getDb } from '@/db'
 import { teamMembers } from '@/db/schema/team_members'
 import { services } from '@/db/schema/services'
 import { eq, asc, isNotNull, and } from 'drizzle-orm'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,6 +54,8 @@ async function getVagaroCategories(vagaroEmployeeId: string | null): Promise<str
 
 // GET - Fetch all team members (including inactive) with service categories
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
   try {
     const db = getDb()
 
@@ -89,6 +93,8 @@ export async function GET() {
 
 // PUT - Update team member visibility and order
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
   try {
     const db = getDb()
     const { updates } = await request.json()
@@ -126,10 +132,21 @@ export async function PUT(request: NextRequest) {
 
 // PATCH - Update a single team member's details (manual categories, bio, funFact, credentials, imageUrl)
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
   try {
     const db = getDb()
     const body = await request.json()
-    const { memberId, manualServiceCategories, bio, funFact, credentials, imageUrl } = body
+    const {
+      memberId,
+      manualServiceCategories,
+      bio,
+      funFact,
+      credentials,
+      imageUrl,
+      bioOverride,
+      imageOverride,
+    } = body
 
     if (!memberId) {
       return NextResponse.json(
@@ -153,8 +170,14 @@ export async function PATCH(request: NextRequest) {
       updateData.manualServiceCategories = manualServiceCategories
     }
 
+    // Editing the local bio implies it should win over the Vagaro-synced bio,
+    // so default bioOverride -> true whenever a bio is provided. The "revert to
+    // Vagaro" action sends { bioOverride: false } without a bio to flip it back.
     if (bio !== undefined) {
       updateData.bio = bio
+      updateData.bioOverride = typeof bioOverride === 'boolean' ? bioOverride : true
+    } else if (typeof bioOverride === 'boolean') {
+      updateData.bioOverride = bioOverride
     }
 
     if (funFact !== undefined) {
@@ -172,7 +195,8 @@ export async function PATCH(request: NextRequest) {
       updateData.credentials = credentials
     }
 
-    // Handle imageUrl (from DAM)
+    // Handle imageUrl (from DAM). Same override semantics as bio: a new local
+    // image wins over the Vagaro photo unless explicitly reverted.
     if (imageUrl !== undefined) {
       if (typeof imageUrl !== 'string') {
         return NextResponse.json(
@@ -181,12 +205,24 @@ export async function PATCH(request: NextRequest) {
         )
       }
       updateData.imageUrl = imageUrl
+      updateData.imageOverride = typeof imageOverride === 'boolean' ? imageOverride : true
+    } else if (typeof imageOverride === 'boolean') {
+      updateData.imageOverride = imageOverride
     }
 
     await db
       .update(teamMembers)
       .set(updateData)
       .where(eq(teamMembers.id, memberId))
+
+    const { updatedAt: _ua, ...changed } = updateData
+    await recordAdminAction({
+      action: 'team.member.update',
+      surface: 'inline',
+      targetType: 'team_member',
+      targetId: String(memberId),
+      diff: { fields: Object.keys(changed) },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

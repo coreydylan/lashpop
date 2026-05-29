@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
+import { requireAdminApi } from '@/lib/admin/auth'
 import { eq } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
@@ -17,6 +18,9 @@ const defaultSettings = {
 
 // GET - Fetch Instagram carousel settings
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
 
@@ -48,6 +52,9 @@ export async function GET() {
 
 // PUT - Update Instagram carousel settings
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { settings } = await request.json()
