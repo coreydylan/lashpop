@@ -31,7 +31,18 @@ import {
   Megaphone
 } from 'lucide-react'
 
-// Price Component
+// Price Component — restored to the original "slot machine" feel:
+//   - spring physics (stiffness 300, damping 25) gives the satisfying
+//     overshoot/settle bounce that defined the effect
+//   - digits enter from above (y: -20) and exit below (y: 20) so it reads
+//     as a reel tumbling downward
+//   - delay: index * 0.03 staggers the digits left→right for the cascade
+//   - per-position composite key (`${index}-${char}`) prevents AnimatePresence
+//     from sharing the same key across repeated digits (the `key={char}` bug
+//     would silently mis-track e.g. "75" ↔ "55")
+// Kept from the in-between revision:
+//   - tabular-nums + explicit per-digit width keep columns aligned
+//   - aria-hidden + sr-only fallback keep the price screen-reader friendly
 function SlotMachinePrice({ value, className }: { value: number; className?: string }) {
   const formatted = String(value)
   const chars = formatted.split('')
@@ -42,33 +53,40 @@ function SlotMachinePrice({ value, className }: { value: number; className?: str
       style={{ color: '#cc947f', fontVariantNumeric: 'tabular-nums' }}
     >
       <span aria-hidden="true" className="inline-flex items-baseline">
-        <span>$</span>
-        {chars.map((char, index) => {
-          const isDigit = /[0-9]/.test(char)
-          if (!isDigit) {
-            return <span key={`s-${index}`}>{char}</span>
-          }
-          return (
-            <span
-              key={`slot-${index}`}
-              className="relative inline-block overflow-hidden"
-              style={{ height: '1em', lineHeight: '1em' }}
-            >
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.span
-                  key={char}
-                  initial={{ y: 14, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -14, opacity: 0 }}
-                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  className="inline-block"
-                >
-                  {char}
-                </motion.span>
-              </AnimatePresence>
-            </span>
-          )
-        })}
+        <span className="mr-0.5">$</span>
+        <span className="inline-flex overflow-hidden">
+          {chars.map((char, index) => {
+            const isDigit = /[0-9]/.test(char)
+            if (!isDigit) {
+              return <span key={`s-${index}`}>{char}</span>
+            }
+            return (
+              <span
+                key={`slot-${index}`}
+                className="relative inline-block"
+                style={{ width: '0.6em' }}
+              >
+                <AnimatePresence mode="popLayout">
+                  <motion.span
+                    key={`${index}-${char}`}
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 20, opacity: 0 }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 300,
+                      damping: 25,
+                      delay: index * 0.03,
+                    }}
+                    className="inline-block"
+                  >
+                    {char}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
+            )
+          })}
+        </span>
       </span>
       <span className="sr-only">${formatted}</span>
       <span className="text-[0.6em] ml-0.5 opacity-70">/day</span>
