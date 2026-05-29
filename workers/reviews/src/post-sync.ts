@@ -72,33 +72,60 @@ export async function updateReviewStats(
   // count went down by 13" after the dedup backfill landed.
   // Average rating still comes from rows where that platform is the primary
   // `source` — every platform has plenty of solo rows so this stays stable.
+  // Cross-platform dedup folds a matching review into ONE row whose `source`
+  // is the oldest platform but whose `source_urls` carries every platform the
+  // review appears on. Use BOTH counts: rows where primary source matches
+  // (covers solo + pre-migration rows) UNION rows where any source_urls entry
+  // matches (covers folded cross-platform dupes). The DISTINCT id then counts
+  // each row once per platform it appears on.
   const aggregates = await sql<Array<{ source: string; count: number; avg_rating: string }>>`
-    WITH per_url AS (
-      SELECT su->>'source' AS source
-      FROM reviews r,
-           LATERAL jsonb_array_elements(r.source_urls) AS su
+    WITH per_platform AS (
+      SELECT id, source AS platform FROM reviews
+      WHERE source IN ('google', 'vagaro', 'yelp')
+      UNION
+      SELECT r.id, su->>'source' AS platform
+      FROM reviews r, LATERAL jsonb_array_elements(r.source_urls) AS su
       WHERE su->>'source' IN ('google', 'vagaro', 'yelp')
     ),
     counts AS (
-      SELECT source, COUNT(*)::int AS count FROM per_url GROUP BY source
+      SELECT platform AS source, COUNT(DISTINCT id)::int AS count
+      FROM per_platform GROUP BY platform
     ),
     ratings AS (
       SELECT source, AVG(rating)::numeric(3,1)::text AS avg_rating
-      FROM reviews
-      WHERE source IN ('google', 'vagaro', 'yelp')
+      FROM reviews WHERE source IN ('google', 'vagaro', 'yelp')
       GROUP BY source
+    ),
+    current_db AS (
+      SELECT source, review_count FROM review_stats
+      WHERE source IN ('google', 'vagaro', 'yelp')
     )
     SELECT c.source, c.count, r.avg_rating
     FROM counts c
     LEFT JOIN ratings r USING (source)
   `
 
+  // Ratchet: review_count can only INCREASE between syncs. Platforms remove
+  // reviews server-side fairly often (Yelp's "not currently recommended"
+  // filter shuffles a few each week), and our cron previously rewrote
+  // review_stats down to whatever the upstream fetcher reported — which is
+  // how Yelp drifted from 201 → 191 even though no reviews were truly
+  // deleted. MAX(upstream, localCount, currentDb) holds the high-water
+  // mark; reviews truly removed by Yelp eventually wash out in the dedup
+  // table itself, not in the counter.
+  const currentRows = await sql<Array<{ source: string; review_count: number }>>`
+    SELECT source, review_count FROM review_stats
+    WHERE source IN ('google', 'vagaro', 'yelp')
+  `
+  const currentBySource = new Map(currentRows.map(r => [r.source, r.review_count]))
+
   const updated: ReviewStatsRow[] = []
   for (const row of aggregates) {
     const source = row.source as 'google' | 'vagaro' | 'yelp'
-    const upstreamTotal = fetcherTotals[source]
+    const upstreamTotal = fetcherTotals[source] ?? 0
     const localCount = row.count
-    const reviewCount = upstreamTotal != null && upstreamTotal > 0 ? upstreamTotal : localCount
+    const currentDb = currentBySource.get(source) ?? 0
+    const reviewCount = Math.max(upstreamTotal, localCount, currentDb)
     const ratingNum = Number(row.avg_rating)
     const rating = Number.isFinite(ratingNum) && ratingNum > 0 ? ratingNum : 5.0
     const ratingStr = rating.toFixed(1)
