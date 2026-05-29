@@ -7,14 +7,26 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
 import { DEFAULT_NAVIGATION, type NavigationContent } from '@/types/navigation'
+import {
+  DEFAULT_SITE_SECTIONS,
+  type SiteSection,
+  type SiteSectionsContent,
+} from '@/types/site-sections'
 import { Editable } from '@/components/admin-mode/Editable'
 
 interface NavigationProps {
-  /** Inline-editable navigation copy. Falls back to DEFAULT_NAVIGATION. */
+  /** Inline-editable navigation copy (logo alt + CTAs). Falls back to DEFAULT_NAVIGATION. */
   content?: NavigationContent
+  /**
+   * Canonical homepage sections — the single source of truth for the nav
+   * links (label + anchor + order + visibility). The nav DERIVES its links
+   * from this; editing a label edits the section's navLabel. Falls back to
+   * DEFAULT_SITE_SECTIONS so render is identical when absent.
+   */
+  sections?: SiteSectionsContent
 }
 
-export function Navigation({ content }: NavigationProps = {}) {
+export function Navigation({ content, sections }: NavigationProps = {}) {
   // Navigation copy source of truth: `website_settings.section = 'navigation'`.
   // Inline admin edits PUT the whole nav object; local state keeps the bar
   // reflecting edits immediately (optimistic).
@@ -63,20 +75,70 @@ export function Navigation({ content }: NavigationProps = {}) {
     [putNav]
   )
 
-  // Save one nav-item label by index, preserving its href.
-  const saveNavItemLabel = useCallback(
-    (index: number) => async (value: string) => {
-      await putNav(current => {
-        const navItems = current.navItems.map((it, i) =>
-          i === index ? { ...it, label: value } : it
-        )
-        return { ...current, navItems }
+  // Canonical homepage sections: source of truth at
+  // `website_settings.section = 'site_sections'`. The nav DERIVES its links
+  // from here. Local state keeps the bar reflecting edits immediately.
+  const [siteSections, setSiteSections] = useState<SiteSectionsContent>(
+    sections ?? DEFAULT_SITE_SECTIONS
+  )
+  const sectionsRef = useRef(siteSections)
+  sectionsRef.current = siteSections
+
+  useEffect(() => {
+    if (sections) {
+      setSiteSections(sections)
+      sectionsRef.current = sections
+    }
+  }, [sections])
+
+  // Serialize PUTs to /api/admin/website/site-sections.
+  const sectionsWriteChain = useRef<Promise<void>>(Promise.resolve())
+
+  const putSections = useCallback(
+    (update: (current: SiteSectionsContent) => SiteSectionsContent) => {
+      const run = sectionsWriteChain.current.catch(() => {}).then(async () => {
+        const merged = update(sectionsRef.current)
+        const res = await fetch('/api/admin/website/site-sections', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...merged, baseUpdatedAt: sectionsRef.current.updatedAt }),
+        })
+        if (!res.ok) {
+          const msg = await res.json().catch(() => null)
+          if (res.status === 409 || msg?.conflict) {
+            throw new Error(msg?.error || 'This changed in another tab — reload and redo.')
+          }
+          throw new Error(msg?.error || 'Failed to save sections')
+        }
+        const data = await res.json()
+        const saved = (data.content ?? merged) as SiteSectionsContent
+        setSiteSections(saved)
+        sectionsRef.current = saved
       })
+      sectionsWriteChain.current = run.catch(() => {})
+      return run
     },
-    [putNav]
+    []
   )
 
-  const navItems = nav.navItems
+  // Editing a nav label edits the canonical SiteSection.navLabel (the single
+  // place this concept is stored), then PUTs the whole site_sections object.
+  const saveSectionNavLabel = useCallback(
+    (sectionId: string) => async (value: string) => {
+      await putSections(current => ({
+        ...current,
+        sections: current.sections.map(s =>
+          s.id === sectionId ? { ...s, navLabel: value } : s
+        ),
+      }))
+    },
+    [putSections]
+  )
+
+  // Derive the nav links: only visible sections, ordered by `order`.
+  const navSections: SiteSection[] = [...siteSections.sections]
+    .filter(s => s.visible)
+    .sort((a, b) => a.order - b.order)
 
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -215,32 +277,21 @@ export function Navigation({ content }: NavigationProps = {}) {
             {/* Desktop Nav — only at lg+ (1024px). Below that the hamburger
                 takes over so the 6 items + 2 long-labeled CTAs don't wrap
                 into a squished mess in the 768–1023 range. */}
-            {/* TODO(list): navItems[] labels are inline-editable, but
-                add/remove/reorder + href editing aren't wired in the bar (each
-                item carries scroll/anchor click logic). Manage list membership
-                via /admin/website (navigation route). */}
+            {/* Links DERIVE from the canonical `site_sections` model: editing a
+                label edits SiteSection.navLabel (the single source of truth),
+                href is the section's anchor and never drifts. Add/remove/reorder
+                + visibility are managed via /admin/website. */}
             <div className="hidden lg:flex items-center gap-8">
-              {navItems.map((item, index) => (
-                item.href ? (
-                  <Link
-                    key={`${item.label}-${index}`}
-                    href={item.href}
-                    onClick={(e) => handleNavClick(item, e)}
-                    className="caption hover:opacity-80 transition-colors duration-300 leading-none flex items-center h-8"
-                    style={{ color: '#b14e33' }}
-                  >
-                    <Editable id={`nav-item-d-${index}`} label={`Nav — link ${index + 1} label`} kind="text" as="span" value={item.label} onSave={saveNavItemLabel(index)} />
-                  </Link>
-                ) : (
-                  <button
-                    key={`${item.label}-${index}`}
-                    onClick={(e) => handleNavClick(item, e)}
-                    className="caption hover:opacity-80 transition-colors duration-300 leading-none flex items-center h-8 uppercase tracking-widest"
-                    style={{ color: '#b14e33' }}
-                  >
-                    <Editable id={`nav-item-d-${index}`} label={`Nav — link ${index + 1} label`} kind="text" as="span" value={item.label} onSave={saveNavItemLabel(index)} />
-                  </button>
-                )
+              {navSections.map((section) => (
+                <Link
+                  key={section.id}
+                  href={section.anchor}
+                  onClick={(e) => handleNavClick({ href: section.anchor }, e)}
+                  className="caption hover:opacity-80 transition-colors duration-300 leading-none flex items-center h-8"
+                  style={{ color: '#b14e33' }}
+                >
+                  <Editable id={`nav-item-d-${section.id}`} label={`Nav — ${section.navLabel} label`} kind="text" as="span" value={section.navLabel} onSave={saveSectionNavLabel(section.id)} />
+                </Link>
               ))}
               <Link
                 href={nav.workWithUsHref}
@@ -304,29 +355,20 @@ export function Navigation({ content }: NavigationProps = {}) {
             className="fixed inset-0 bg-cream z-30 lg:hidden"
           >
             <div className="flex flex-col justify-center items-center h-full space-y-8">
-              {navItems.map((item, index) => (
+              {navSections.map((section, index) => (
                 <motion.div
-                  key={`${item.label}-${index}`}
+                  key={section.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  {item.href ? (
-                    <Link
-                      href={item.href}
-                      onClick={(e) => handleNavClick(item, e)}
-                      className="text-2xl font-light text-dune"
-                    >
-                      <Editable id={`nav-item-m-${index}`} label={`Nav — link ${index + 1} label`} kind="text" as="span" value={item.label} onSave={saveNavItemLabel(index)} />
-                    </Link>
-                  ) : (
-                    <button
-                      onClick={(e) => handleNavClick(item, e)}
-                      className="text-2xl font-light text-dune"
-                    >
-                      <Editable id={`nav-item-m-${index}`} label={`Nav — link ${index + 1} label`} kind="text" as="span" value={item.label} onSave={saveNavItemLabel(index)} />
-                    </button>
-                  )}
+                  <Link
+                    href={section.anchor}
+                    onClick={(e) => handleNavClick({ href: section.anchor }, e)}
+                    className="text-2xl font-light text-dune"
+                  >
+                    <Editable id={`nav-item-m-${section.id}`} label={`Nav — ${section.navLabel} label`} kind="text" as="span" value={section.navLabel} onSave={saveSectionNavLabel(section.id)} />
+                  </Link>
                 </motion.div>
               ))}
               <motion.div

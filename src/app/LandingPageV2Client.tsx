@@ -154,6 +154,7 @@ import type { HeroCopyContent } from '@/types/hero-copy';
 import type { TeamIntroContent } from '@/types/team-intro';
 import type { FooterContent } from '@/types/footer-content';
 import type { NavigationContent } from '@/types/navigation';
+import type { SiteSectionsContent } from '@/types/site-sections';
 
 interface HeroSlideshowConfig {
   preset: SlideshowPreset | null;
@@ -182,6 +183,7 @@ interface LandingPageV2ClientProps {
   teamIntroContent?: TeamIntroContent;
   footerContent?: FooterContent;
   navigationContent?: NavigationContent;
+  siteSections?: SiteSectionsContent;
   heroConfig?: HeroConfig;
   studio: StudioSettings;
 }
@@ -326,7 +328,7 @@ function ServiceQueryDeepLink() {
   return null;
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroCopyContent, teamIntroContent, footerContent, navigationContent, heroConfig, studio }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroCopyContent, teamIntroContent, footerContent, navigationContent, siteSections, heroConfig, studio }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -378,7 +380,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
               <div className={isMobile ? 'relative z-10 mobile-content-wrapper' : ''}>
                 {/* Z-3: Fixed Header Layer */}
                 {/* Desktop: Full Navigation | Mobile: MobileHeader with dock behavior */}
-                <Navigation content={navigationContent} />
+                <Navigation content={navigationContent} sections={siteSections} />
                 {isMobile && <MobileHeader currentSection={currentSection} />}
 
                 {/* Service Browser Modal - New simplified service exploration */}
