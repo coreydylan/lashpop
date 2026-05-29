@@ -37,6 +37,12 @@ const AdminChrome = dynamic(
   { ssr: false }
 )
 
+// Inline login modal — only loaded when someone tries to enter admin mode unauthenticated.
+const AdminLoginModal = dynamic(
+  () => import('@/components/admin-mode/AdminLoginModal').then(m => ({ default: m.AdminLoginModal })),
+  { ssr: false }
+)
+
 export interface AdminUser {
   userId: string
   name: string | null
@@ -75,6 +81,9 @@ interface AdminModeValue {
   /** Re-pull server components so cross-component dependents (e.g. SEO JSON-LD) update. */
   refresh: () => void
   exit: () => void
+  /** Turn admin mode on (secret gesture / chrome). Verifies the session and shows
+   *  the inline login modal if not signed in. */
+  enterAdminMode: () => void
 }
 
 const INERT: AdminModeValue = {
@@ -89,6 +98,7 @@ const INERT: AdminModeValue = {
   discardAll: () => {},
   refresh: () => {},
   exit: () => {},
+  enterAdminMode: () => {},
 }
 
 const AdminModeContext = createContext<AdminModeValue | null>(null)
@@ -98,6 +108,7 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
   const [enabled, setEnabled] = useState(false)
   const [status, setStatus] = useState<AdminModeStatus>('idle')
   const [user, setUser] = useState<AdminUser | null>(null)
+  const [showLogin, setShowLogin] = useState(false)
 
   // Dirty registry. Ref is the source of truth; a version counter triggers renders.
   const dirtyRef = useRef<Map<string, DirtyBlock>>(new Map())
@@ -106,52 +117,60 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
   const [version, bump] = useState(0)
   const rerender = useCallback(() => bump(v => v + 1), [])
 
-  // Activation: mirror DesignModeGate's URL-param + localStorage pattern, then
-  // verify the session. Runs once on mount.
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
-    const p = params.get('admin')
-
-    if (p === '0') {
-      localStorage.removeItem(STORAGE_KEY)
-      return
-    }
-
-    const wanted = p === '1' || localStorage.getItem(STORAGE_KEY) === '1'
-    if (!wanted) return // public visitor — stay fully inert
-
-    if (p === '1') localStorage.setItem(STORAGE_KEY, '1')
-
-    let cancelled = false
-    setStatus('checking')
-    // redirect:'manual' so the middleware's no-cookie redirect to /dam/login
-    // surfaces as a non-ok opaque response rather than fetching login HTML.
-    fetch('/api/admin/me', { redirect: 'manual', cache: 'no-store' })
-      .then(async res => {
-        if (cancelled) return
+  // Verify the admin session. On success → enable. On denial → show the inline
+  // login modal (explicit entry) or silently clear a stale persisted flag.
+  const checkSession = useCallback(
+    async (opts?: { promptIfDenied?: boolean; persistedOnly?: boolean }) => {
+      setStatus('checking')
+      try {
+        // redirect:'manual' so the middleware's no-cookie redirect to /dam/login
+        // surfaces as a non-ok opaque response rather than fetching login HTML.
+        const res = await fetch('/api/admin/me', { redirect: 'manual', cache: 'no-store' })
         if (res.ok) {
           const data = (await res.json()) as AdminUser & { isAdmin: boolean }
           setUser({ userId: data.userId, name: data.name, email: data.email })
           setEnabled(true)
+          setShowLogin(false)
           setStatus('authed')
-        } else {
-          setStatus('denied')
-          // Only bounce to login if they explicitly asked for it this load.
-          if (p === '1') {
-            const next = encodeURIComponent(`${window.location.pathname}?admin=1`)
-            window.location.href = `/dam/login?next=${next}`
-          }
+          return true
         }
-      })
-      .catch(() => {
-        if (!cancelled) setStatus('denied')
-      })
+        setStatus('denied')
+        if (opts?.promptIfDenied) setShowLogin(true)
+        else if (opts?.persistedOnly && typeof window !== 'undefined') localStorage.removeItem(STORAGE_KEY)
+        return false
+      } catch {
+        setStatus('denied')
+        return false
+      }
+    },
+    []
+  )
 
-    return () => {
-      cancelled = true
+  // Public entry point: secret gesture / chrome / ?admin=1. Persists the flag,
+  // verifies, and pops the inline login modal if not signed in (no redirect).
+  const enterAdminMode = useCallback(() => {
+    if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, '1')
+    void checkSession({ promptIfDenied: true })
+  }, [checkSession])
+
+  // On mount: ?admin=0 clears; ?admin=1 enters (+ prompts login); a persisted flag
+  // re-verifies silently (clearing itself if the session is gone).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const p = new URLSearchParams(window.location.search).get('admin')
+    if (p === '0') {
+      localStorage.removeItem(STORAGE_KEY)
+      return
     }
-  }, [])
+    if (p === '1') {
+      localStorage.setItem(STORAGE_KEY, '1')
+      void checkSession({ promptIfDenied: true })
+      return
+    }
+    if (localStorage.getItem(STORAGE_KEY) === '1') {
+      void checkSession({ persistedOnly: true })
+    }
+  }, [checkSession])
 
   const registerDirty = useCallback(
     (block: DirtyBlock) => {
@@ -236,15 +255,22 @@ export function AdminModeProvider({ children }: { children: React.ReactNode }) {
       discardAll,
       refresh,
       exit,
+      enterAdminMode,
     }),
     // dirtyBlocks identity changes on every rerender() bump, which is what we want.
-    [enabled, status, user, dirtyBlocks, registerDirty, clearDirty, saveAll, discardAll, refresh, exit]
+    [enabled, status, user, dirtyBlocks, registerDirty, clearDirty, saveAll, discardAll, refresh, exit, enterAdminMode]
   )
 
   return (
     <AdminModeContext.Provider value={value}>
       {children}
       {enabled && <AdminChrome />}
+      {showLogin && !enabled && (
+        <AdminLoginModal
+          onSuccess={() => void checkSession({ promptIfDenied: false })}
+          onClose={() => setShowLogin(false)}
+        />
+      )}
     </AdminModeContext.Provider>
   )
 }

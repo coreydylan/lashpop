@@ -13,6 +13,7 @@ import {
   type FooterServiceItem,
 } from '@/types/footer-content'
 import { Editable } from '@/components/admin-mode/Editable'
+import { useAdminMode } from '@/contexts/AdminModeContext'
 
 interface FooterV2Props {
   /**
@@ -32,6 +33,24 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS, content }: FooterV2
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
   const currentYear = new Date().getFullYear()
+
+  // Secret admin entry: 5 quick taps on the copyright line opens inline admin
+  // (login modal if not signed in). Mirrors the dev-mode "logo 5×" gesture, works
+  // on touch. No-op once admin mode is already on (so editing the copyright is fine).
+  const { enabled: adminOn, enterAdminMode } = useAdminMode()
+  const tapCount = useRef(0)
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const secretTap = useCallback(() => {
+    if (adminOn) return
+    if (tapTimer.current) clearTimeout(tapTimer.current)
+    tapCount.current += 1
+    if (tapCount.current >= 5) {
+      tapCount.current = 0
+      enterAdminMode()
+      return
+    }
+    tapTimer.current = setTimeout(() => { tapCount.current = 0 }, 2000)
+  }, [adminOn, enterAdminMode])
   const router = useRouter()
   const browserContext = useServiceBrowserOptional()
   const directionsUrl = studio.social.google ?? DEFAULT_STUDIO_SETTINGS.social.google!
@@ -387,9 +406,10 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS, content }: FooterV2
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-sage/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="caption text-charcoal">
+            <p className="caption text-charcoal select-none" onClick={secretTap}>
               {/* Editable raw template; {year}/{name} tokens interpolate at
-                  display time with the current year + studio name. */}
+                  display time with the current year + studio name.
+                  (Tapping this line 5× quickly is the secret admin entry — see secretTap.) */}
               <Editable
                 id="footer-copyright"
                 label="Footer — copyright (use {year} and {name})"
