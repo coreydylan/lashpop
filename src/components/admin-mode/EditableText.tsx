@@ -47,6 +47,10 @@ export interface EditableTextProps {
   editorNote?: React.ReactNode
   /** Optional secondary action in the editor footer (e.g. "Revert to Vagaro"). */
   editorAction?: { label: string; onClick: () => void | Promise<void> }
+  /** Soft cap: shows an "n/max" counter and blocks Save when exceeded. */
+  maxLength?: number
+  /** Custom validator. Return an error message to block Save, or null when valid. */
+  validate?: (value: string) => string | null
 }
 
 const ACCENT = '#C9A9A6'
@@ -63,6 +67,8 @@ export function EditableText({
   renderDisplay,
   editorNote,
   editorAction,
+  maxLength,
+  validate,
 }: EditableTextProps) {
   const { enabled, registerDirty, clearDirty, refresh, pushUndo } = useAdminMode()
   const generatedId = useId()
@@ -179,8 +185,9 @@ export function EditableText({
     } else if (e.key === 'Enter' && (!multiline || e.metaKey || e.ctrlKey)) {
       e.preventDefault()
       // Mirror the Save button's guard so a second keypress can't fire a
-      // concurrent doSave() while the first PATCH is still in flight.
-      if (!saving && draft !== saved) doSave()
+      // concurrent doSave() while the first PATCH is still in flight, and
+      // so invalid drafts can't be committed via the keyboard.
+      if (!saving && draft !== saved && !blockedByValidation) doSave()
     }
   }
 
@@ -199,6 +206,15 @@ export function EditableText({
     }
   }
 
+  // ---- Validation (BP-4): immediate, inline. Over-limit or a non-null
+  // validate() result blocks Save. The counter goes amber when over.
+  const overLimit = maxLength != null && draft.length > maxLength
+  const validateError = validate ? validate(draft) : null
+  const validationMessage = overLimit
+    ? `${draft.length - maxLength} over the ${maxLength}-character limit`
+    : validateError
+  const blockedByValidation = overLimit || validateError != null
+
   // ---- Public render: zero admin DOM ----
   if (!enabled) {
     return <As className={className}>{renderDisplay ? renderDisplay(saved) : saved}</As>
@@ -206,7 +222,9 @@ export function EditableText({
 
   const fieldClass =
     'w-full rounded border border-stone-300 bg-white px-2 py-1 font-sans text-sm text-stone-900 outline-none focus-visible:ring-2 focus-visible:ring-[#C9A9A6] focus-visible:ring-offset-1'
-  const describedBy = clsx(editorNote && noteId, error && errorId) || undefined
+  const showValidation = validationMessage != null
+  const describedBy =
+    clsx(editorNote && noteId, (error || showValidation) && errorId) || undefined
 
   // ---- Admin: editor open. Wrapper is a <div> (never a span) and forwards
   // `className` so the block's margins are preserved while editing. ----
@@ -245,9 +263,9 @@ export function EditableText({
               {editorNote}
             </div>
           ) : null}
-          {error ? (
-            <div id={errorId} className="mt-1.5 text-[11px] text-red-600">
-              {error}
+          {error || showValidation ? (
+            <div id={errorId} aria-live="polite" className="mt-1.5 text-[11px] text-red-600">
+              {error || validationMessage}
             </div>
           ) : null}
 
@@ -255,14 +273,32 @@ export function EditableText({
             <button
               type="button"
               onClick={() => doSave()}
-              disabled={saving || draft === saved}
-              title={draft === saved ? 'No changes to save' : 'Save'}
+              disabled={saving || draft === saved || blockedByValidation}
+              title={
+                blockedByValidation
+                  ? validationMessage ?? 'Fix the highlighted issue to save'
+                  : draft === saved
+                    ? 'No changes to save'
+                    : 'Save'
+              }
               className="inline-flex min-h-0 items-center gap-1 rounded px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
               style={{ background: '#1C1917' }}
             >
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
               Save
             </button>
+            {maxLength != null ? (
+              <span
+                className={clsx(
+                  'text-[11px] tabular-nums',
+                  !editorAction && 'ml-auto',
+                  overLimit ? 'font-medium text-amber-600' : 'text-stone-400'
+                )}
+                aria-live="polite"
+              >
+                {draft.length}/{maxLength}
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={doDiscard}

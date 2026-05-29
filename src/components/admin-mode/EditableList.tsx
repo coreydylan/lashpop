@@ -67,6 +67,12 @@ export interface EditableListProps<T> {
   renderEditor: (ctx: EditableListRenderEditor<T>) => React.ReactNode
   /** Factory for a brand-new blank row when "+ Add" is tapped. */
   makeNew: () => T
+  /**
+   * Per-row validation. Return an error message to block this row's Save
+   * (and Save-all while it's the open row), or null when the row is valid.
+   * Used e.g. to require a credential's Name.
+   */
+  validateRow?: (item: T) => string | null
   /** Drag-reorder. Default true, but auto-off under 3 items. */
   reorderable?: boolean
   /** Singular noun for the empty state + delete confirm ("credential"). */
@@ -110,6 +116,7 @@ export function EditableList<T>(props: EditableListProps<T>) {
     renderRow,
     renderEditor,
     makeNew,
+    validateRow,
     reorderable = true,
     noun = 'item',
     describeForDelete,
@@ -275,6 +282,7 @@ export function EditableList<T>(props: EditableListProps<T>) {
             editing={editingCid === d.cid}
             saving={saving}
             justSaved={justSaved}
+            rowError={validateRow ? validateRow(d.item) : null}
             renderRow={renderRow}
             renderEditor={renderEditor}
             onStartEdit={() => {
@@ -320,6 +328,8 @@ interface RowProps<T> {
   editing: boolean
   saving: boolean
   justSaved: boolean
+  /** Non-null = this row fails validation; its Save is disabled with this message. */
+  rowError: string | null
   renderRow: (item: T) => React.ReactNode
   renderEditor: (ctx: EditableListRenderEditor<T>) => React.ReactNode
   onStartEdit: () => void
@@ -336,6 +346,7 @@ function Row<T>({
   editing,
   saving,
   justSaved,
+  rowError,
   renderRow,
   renderEditor,
   onStartEdit,
@@ -392,6 +403,7 @@ function Row<T>({
               {renderEditor(editorCtx)}
               <EditorFooter
                 saving={saving}
+                rowError={rowError}
                 onCancel={onStopEdit}
                 onSave={onSaveAll}
                 onDelete={onDelete}
@@ -433,6 +445,7 @@ function Row<T>({
           <div className="mt-3 border-t border-stone-100 pt-3">
             <EditorFooter
               saving={saving}
+              rowError={rowError}
               onCancel={onStopEdit}
               onSave={onSaveAll}
               onDelete={onDelete}
@@ -453,6 +466,7 @@ function Row<T>({
 // ---------------------------------------------------------------------------
 function EditorFooter(props: {
   saving: boolean
+  rowError: string | null
   onCancel: () => void
   onSave: () => void
   onDelete: () => void
@@ -461,37 +475,45 @@ function EditorFooter(props: {
   Trash: React.ComponentType<{ className?: string }>
   Spinner: React.ComponentType<{ className?: string }>
 }) {
-  const { saving, onCancel, onSave, onDelete, Saved, Cancel, Trash, Spinner } = props
+  const { saving, rowError, onCancel, onSave, onDelete, Saved, Cancel, Trash, Spinner } = props
   return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={onDelete}
-        disabled={saving}
-        className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-3 text-xs font-medium text-stone-500 hover:text-red-600 disabled:opacity-50"
-      >
-        <Trash className="h-3.5 w-3.5" />
-        Delete
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        disabled={saving}
-        className="ml-auto inline-flex min-h-[44px] items-center gap-1 rounded-lg px-4 text-xs font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-50"
-      >
-        <Cancel className="h-3.5 w-3.5" />
-        Cancel
-      </button>
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={saving}
-        className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-4 text-xs font-semibold text-white disabled:opacity-50"
-        style={{ background: ADMIN.ink }}
-      >
-        {saving ? <Spinner className="h-3.5 w-3.5 animate-spin" /> : <Saved className="h-3.5 w-3.5" />}
-        Save
-      </button>
+    <div className="flex flex-col gap-1.5">
+      {rowError ? (
+        <p aria-live="polite" className="text-[11px] text-red-600">
+          {rowError}
+        </p>
+      ) : null}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onDelete}
+          disabled={saving}
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-3 text-xs font-medium text-stone-500 hover:text-red-600 disabled:opacity-50"
+        >
+          <Trash className="h-3.5 w-3.5" />
+          Delete
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="ml-auto inline-flex min-h-[44px] items-center gap-1 rounded-lg px-4 text-xs font-medium text-stone-600 hover:bg-stone-100 disabled:opacity-50"
+        >
+          <Cancel className="h-3.5 w-3.5" />
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving || rowError != null}
+          title={rowError ?? 'Save'}
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-4 text-xs font-semibold text-white disabled:opacity-50"
+          style={{ background: ADMIN.ink }}
+        >
+          {saving ? <Spinner className="h-3.5 w-3.5 animate-spin" /> : <Saved className="h-3.5 w-3.5" />}
+          Save
+        </button>
+      </div>
     </div>
   )
 }

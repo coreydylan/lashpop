@@ -6,7 +6,7 @@
  * Reuses the existing OTP endpoints; on success the verify route sets the
  * auth_token cookie and we call onSuccess() so the provider re-checks the session.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { toE164 } from '@/lib/phone-utils'
 import { ADMIN, AdminIcons } from './adminTokens'
@@ -19,6 +19,14 @@ export function AdminLoginModal({ onSuccess, onClose }: { onSuccess: () => void;
   const [error, setError] = useState<string | null>(null)
 
   const Spinner = AdminIcons.spinner
+
+  // Focus management: remember who opened the dialog, restore on unmount.
+  // (The autoFocus on the input handles moving focus in.)
+  const dialogRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    return () => opener?.focus?.()
+  }, [])
 
   const sendOtp = async () => {
     setLoading(true)
@@ -58,6 +66,33 @@ export function AdminLoginModal({ onSuccess, onClose }: { onSuccess: () => void;
     }
   }
 
+  // Escape closes; Tab is kept inside the dialog (no keyboard trap escape).
+  const onDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      onClose()
+      return
+    }
+    if (e.key !== 'Tab') return
+    const root = dialogRef.current
+    if (!root) return
+    const focusable = root.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    )
+    const list = Array.from(focusable).filter(el => !el.hasAttribute('disabled'))
+    if (list.length === 0) return
+    const first = list[0]
+    const last = list[list.length - 1]
+    const active = document.activeElement as HTMLElement | null
+    if (e.shiftKey && active === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
+
   if (typeof document === 'undefined') return null
 
   return createPortal(
@@ -66,8 +101,10 @@ export function AdminLoginModal({ onSuccess, onClose }: { onSuccess: () => void;
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
         className="w-[min(92vw,380px)] rounded-2xl bg-white p-6 shadow-2xl"
         onClick={e => e.stopPropagation()}
+        onKeyDown={onDialogKeyDown}
         role="dialog"
         aria-modal="true"
         aria-label="Admin sign in"

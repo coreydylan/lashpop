@@ -562,6 +562,7 @@ export function MemberTakeover({
                             getKey={c => `${c.type}:${c.name}`}
                             noun="credential"
                             mode="card"
+                            validateRow={c => (c.name.trim() ? null : 'Name is required')}
                             onSave={async next => {
                               await patchTeamMember(member.uuid, { credentials: next })
                             }}

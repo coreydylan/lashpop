@@ -5,7 +5,7 @@
  * website_settings changes (which store a full before/after in the audit log)
  * and lets an admin restore any prior version. Opened from AdminChrome.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { RotateCcw, X, Loader2 } from 'lucide-react'
 import { ADMIN } from './adminTokens'
@@ -35,6 +35,43 @@ export function HistoryPanel({ onClose }: { onClose: () => void }) {
   const [entries, setEntries] = useState<HistoryEntry[] | null>(null)
   const [restoring, setRestoring] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Focus management: move focus into the dialog on open, restore it on close.
+  const dialogRef = useRef<HTMLDivElement | null>(null)
+  const closeRef = useRef<HTMLButtonElement | null>(null)
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    closeRef.current?.focus()
+    return () => opener?.focus?.()
+  }, [])
+
+  // Escape closes; Tab is kept inside the dialog.
+  const onDialogKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      onClose()
+      return
+    }
+    if (e.key !== 'Tab') return
+    const root = dialogRef.current
+    if (!root) return
+    const list = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(el => !el.hasAttribute('disabled'))
+    if (list.length === 0) return
+    const first = list[0]
+    const last = list[list.length - 1]
+    const active = document.activeElement as HTMLElement | null
+    if (e.shiftKey && active === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 
   const load = async () => {
     try {
@@ -77,15 +114,17 @@ export function HistoryPanel({ onClose }: { onClose: () => void }) {
   return createPortal(
     <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="flex max-h-[80vh] w-[min(94vw,440px)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
         onClick={e => e.stopPropagation()}
+        onKeyDown={onDialogKeyDown}
         role="dialog"
         aria-modal="true"
         aria-label="Edit history"
       >
         <div className="flex items-center justify-between px-4 py-3" style={{ background: ADMIN.ink }}>
           <h2 className="text-sm font-semibold text-white">Edit history</h2>
-          <button type="button" aria-label="Close" onClick={onClose} className="text-white/70 hover:text-white">
+          <button ref={closeRef} type="button" aria-label="Close" onClick={onClose} className="text-white/70 hover:text-white">
             <X className="h-4 w-4" />
           </button>
         </div>

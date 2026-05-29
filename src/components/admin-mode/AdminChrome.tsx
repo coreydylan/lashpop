@@ -32,16 +32,47 @@ export function AdminChrome() {
   const [flash, setFlash] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
 
+  // Polite, screen-reader-only announcement for save results + dirty count.
+  const [announcement, setAnnouncement] = useState('')
+
   const handleSaveAll = async () => {
     setSavingAll(true)
     const { saved, failed } = await saveAll()
     setSavingAll(false)
-    setFlash(failed ? `Saved ${saved}, ${failed} failed` : `Saved ${saved}`)
+    const flashMsg = failed ? `Saved ${saved}, ${failed} failed` : `Saved ${saved}`
+    setFlash(flashMsg)
+    setAnnouncement(
+      failed
+        ? `Saved ${saved} ${saved === 1 ? 'change' : 'changes'}, ${failed} couldn't save`
+        : `Saved ${saved} ${saved === 1 ? 'change' : 'changes'}`
+    )
     window.setTimeout(() => setFlash(null), 2400)
   }
 
+  // Announce the live unsaved-edit count (debounced via React's render coalescing).
+  const prevDirty = React.useRef(dirtyCount)
+  React.useEffect(() => {
+    if (dirtyCount !== prevDirty.current) {
+      prevDirty.current = dirtyCount
+      setAnnouncement(
+        dirtyCount === 0
+          ? 'All changes saved'
+          : `${dirtyCount} unsaved ${dirtyCount === 1 ? 'edit' : 'edits'}`
+      )
+    }
+  }, [dirtyCount])
+
   return (
     <div className="fixed bottom-4 left-1/2 z-[10000] -translate-x-1/2 sm:left-auto sm:right-4 sm:translate-x-0">
+      {/* Visually-hidden polite live region: announces save results + dirty count. */}
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {announcement}
+      </div>
       <AnimatePresence>
         {open && (
           <motion.div
