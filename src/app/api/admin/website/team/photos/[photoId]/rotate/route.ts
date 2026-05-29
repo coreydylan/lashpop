@@ -3,6 +3,7 @@ import sharp from 'sharp'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { teamMemberPhotos } from '@/db/schema/team_member_photos'
+import { assets } from '@/db/schema/assets'
 import { requireAdminApi } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
 import { getRouteParam } from '@/lib/server/getRouteParam'
@@ -18,11 +19,15 @@ export const runtime = 'nodejs' // sharp needs the Node runtime
 export const dynamic = 'force-dynamic'
 
 /**
- * Rotate a stored portfolio/team photo by 90/180/270° (the sideways-phone-photo
- * case). Reads the original from R2, re-encodes rotated with sharp, writes a NEW
- * R2 key (so the CDN can't serve a stale cache), points the row at it, and nulls
- * the crop variants (their pixel coords are now wrong). Best-effort deletes the
- * old object. Only works for photos we own in R2 — not Vagaro-hosted URLs.
+ * Rotate a stored gallery photo by 90/180/270° (the sideways-phone-photo case).
+ *
+ * Portfolio photos are dual-sourced: some are `team_member_photos` (album, with
+ * crop variants), others are DAM-tagged `assets`. This endpoint handles BOTH —
+ * it looks the id up in each table. It reads the original from R2, re-encodes
+ * rotated with sharp, writes a NEW R2 key (so the CDN can't serve a stale cache),
+ * points the row at it, nulls album crop variants (their coords are now wrong),
+ * refreshes asset width/height, and best-effort deletes the old object.
+ * Only works for photos we own in R2 — not Vagaro-hosted URLs.
  */
 export async function POST(req: NextRequest, ctx: { params: Promise<{ photoId: string }> }) {
   const auth = await requireAdminApi()
@@ -43,48 +48,81 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ photoId: s
   }
 
   const db = getDb()
-  const [photo] = await db
+
+  // Resolve the photo from either source.
+  const [album] = await db
     .select()
     .from(teamMemberPhotos)
     .where(eq(teamMemberPhotos.id, photoId))
     .limit(1)
-  if (!photo) {
-    return NextResponse.json({ error: 'Photo not found' }, { status: 404 })
+  let kind: 'album' | 'asset'
+  let filePath: string
+  let fileName: string
+  let teamMemberId: string | null
+  if (album) {
+    kind = 'album'
+    filePath = album.filePath
+    fileName = album.fileName || 'photo.webp'
+    teamMemberId = album.teamMemberId
+  } else {
+    const [asset] = await db.select().from(assets).where(eq(assets.id, photoId)).limit(1)
+    if (!asset) {
+      return NextResponse.json({ error: 'Photo not found' }, { status: 404 })
+    }
+    kind = 'asset'
+    filePath = asset.filePath
+    fileName = asset.fileName || 'photo.webp'
+    teamMemberId = asset.teamMemberId
   }
 
   const bucketUrl = getStorageBucketUrl()
-  if (!photo.filePath.startsWith(bucketUrl + '/')) {
+  if (!filePath.startsWith(bucketUrl + '/')) {
     return NextResponse.json(
       { error: 'Only uploaded photos can be rotated (this one is hosted elsewhere).' },
       { status: 400 }
     )
   }
-  const oldKey = photo.filePath.slice(bucketUrl.length + 1)
+  const oldKey = filePath.slice(bucketUrl.length + 1)
 
   try {
     const original = await downloadBuffer(oldKey)
-    const rotated = await sharp(original).rotate(degrees).webp({ quality: 90 }).toBuffer()
-    const newKey = generateAssetKey(photo.fileName || 'photo.webp', photo.teamMemberId)
-    const { url } = await uploadBuffer({ key: newKey, buffer: rotated, contentType: 'image/webp' })
+    const { data: rotated, info } = await sharp(original)
+      .rotate(degrees)
+      .webp({ quality: 90 })
+      .toBuffer({ resolveWithObject: true })
 
-    await db
-      .update(teamMemberPhotos)
-      .set({
-        filePath: url,
-        // pre-rotation crop coordinates are now meaningless — clear them.
-        cropFullVertical: null,
-        cropFullHorizontal: null,
-        cropMediumCircle: null,
-        cropCloseUpCircle: null,
-        cropSquare: null,
-        cropFullVerticalUrl: null,
-        cropFullHorizontalUrl: null,
-        cropMediumCircleUrl: null,
-        cropCloseUpCircleUrl: null,
-        cropSquareUrl: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(teamMemberPhotos.id, photoId))
+    const newKey = generateAssetKey(fileName, teamMemberId ?? undefined)
+    const { url } = await uploadBuffer({
+      key: newKey,
+      buffer: Buffer.from(rotated),
+      contentType: 'image/webp',
+    })
+
+    if (kind === 'album') {
+      await db
+        .update(teamMemberPhotos)
+        .set({
+          filePath: url,
+          // pre-rotation crop coordinates are now meaningless — clear them.
+          cropFullVertical: null,
+          cropFullHorizontal: null,
+          cropMediumCircle: null,
+          cropCloseUpCircle: null,
+          cropSquare: null,
+          cropFullVerticalUrl: null,
+          cropFullHorizontalUrl: null,
+          cropMediumCircleUrl: null,
+          cropCloseUpCircleUrl: null,
+          cropSquareUrl: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(teamMemberPhotos.id, photoId))
+    } else {
+      await db
+        .update(assets)
+        .set({ filePath: url, width: info.width, height: info.height })
+        .where(eq(assets.id, photoId))
+    }
 
     // Best-effort: remove the old object so we don't orphan R2 storage.
     try {
@@ -96,12 +134,12 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ photoId: s
     await recordAdminAction({
       action: 'team.photo.rotate',
       surface: 'inline',
-      targetType: 'team_member_photo',
+      targetType: kind === 'album' ? 'team_member_photo' : 'asset',
       targetId: photoId,
-      diff: { degrees },
+      diff: { degrees, source: kind },
     })
 
-    return NextResponse.json({ url, photoId })
+    return NextResponse.json({ url, photoId, width: info.width, height: info.height })
   } catch (err) {
     console.error('[rotate] failed', err)
     return NextResponse.json({ error: 'Failed to rotate photo' }, { status: 500 })

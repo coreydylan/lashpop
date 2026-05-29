@@ -23,6 +23,7 @@ import { useAdminMode } from '@/contexts/AdminModeContext'
 import { Editable } from '@/components/admin-mode/Editable'
 import { EditableList } from '@/components/admin-mode/EditableList'
 import { EditableImage } from '@/components/admin-mode/EditableImage'
+import { StaffGalleryEditor, type PhotoItem } from '@/components/admin-mode/StaffGalleryEditor'
 
 const CRED_TYPES: TeamMemberCredential['type'][] = [
   'certification', 'license', 'training', 'award', 'education', 'founder',
@@ -268,6 +269,48 @@ export function MemberTakeover({
   }, [portfolioImages])
 
   const lightboxOpen = lightboxIdx >= 0 && lightboxIdx < workPhotos.length
+
+  // Admin-mode gallery state. Seeded from the public `workPhotos` so the grid
+  // paints instantly (source defaults to 'album'), then replaced by the real
+  // dual-sourced list from the photos endpoint, which carries the `source` each
+  // per-photo tool branches on. Public (non-admin) render never touches this.
+  const [galleryPhotos, setGalleryPhotos] = useState<PhotoItem[]>([])
+  useEffect(() => {
+    setGalleryPhotos(
+      workPhotos.map(p => ({
+        id: p.id,
+        fileName: '',
+        filePath: p.url,
+        width: p.width ?? null,
+        height: p.height ?? null,
+        caption: p.caption ?? null,
+        isPrimary: false,
+        source: 'album' as const,
+      }))
+    )
+  }, [workPhotos])
+
+  const refreshGallery = useCallback(async () => {
+    if (!member?.uuid) return
+    try {
+      const res = await fetch(`/api/dam/team/${encodeURIComponent(member.uuid)}/photos`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (Array.isArray(data?.photos)) {
+        setGalleryPhotos(data.photos as PhotoItem[])
+      }
+    } catch {
+      // Non-fatal: keep the current grid; the editor surfaces its own errors.
+    }
+    // Also re-pull the admin context so any cross-surface caches refresh.
+    adminRefresh()
+  }, [member?.uuid, adminRefresh])
+
+  // When admin mode is on, pull the accurate dual-sourced list once per member.
+  useEffect(() => {
+    if (adminEnabled && member?.uuid) void refreshGallery()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminEnabled, member?.uuid])
 
   const goPrev = useCallback(() => {
     if (selectedIndex === null) return
@@ -700,12 +743,20 @@ export function MemberTakeover({
                     ) : null}
 
                     <section className="pb-2">
-                      <PortfolioBlock
-                        photos={workPhotos}
-                        loading={isLoadingPortfolio}
-                        firstName={member.name.split(' ')[0]}
-                        onOpenPhoto={idx => setLightboxIdx(idx)}
-                      />
+                      {adminEnabled ? (
+                        <StaffGalleryEditor
+                          teamMemberId={member.uuid!}
+                          photos={galleryPhotos}
+                          onRefresh={refreshGallery}
+                        />
+                      ) : (
+                        <PortfolioBlock
+                          photos={workPhotos}
+                          loading={isLoadingPortfolio}
+                          firstName={member.name.split(' ')[0]}
+                          onOpenPhoto={idx => setLightboxIdx(idx)}
+                        />
+                      )}
                     </section>
                   </div>
                 </div>
