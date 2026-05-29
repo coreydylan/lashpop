@@ -13,8 +13,14 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Trash2, LogOut, ChevronUp, ChevronDown, Loader2, Pencil, RotateCcw } from 'lucide-react'
+import { Save, Trash2, LogOut, ChevronUp, ChevronDown, Loader2, Pencil, RotateCcw, History } from 'lucide-react'
+import dynamic from 'next/dynamic'
 import { useAdminMode } from '@/contexts/AdminModeContext'
+
+const HistoryPanel = dynamic(
+  () => import('./HistoryPanel').then(m => ({ default: m.HistoryPanel })),
+  { ssr: false }
+)
 
 const ACCENT = '#C9A9A6'
 const INK = '#1C1917'
@@ -24,6 +30,7 @@ export function AdminChrome() {
   const [open, setOpen] = useState(true)
   const [savingAll, setSavingAll] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
   const handleSaveAll = async () => {
     setSavingAll(true)
@@ -120,6 +127,15 @@ export function AdminChrome() {
               </button>
               <button
                 type="button"
+                onClick={() => setShowHistory(true)}
+                aria-label="Edit history"
+                title="Edit history & restore"
+                className="inline-flex h-9 w-9 min-h-0 min-w-0 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100"
+              >
+                <History className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
                 onClick={discardAll}
                 disabled={dirtyCount === 0 || savingAll}
                 aria-label="Discard all"
@@ -139,6 +155,8 @@ export function AdminChrome() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
 
       {/* Collapsed pill */}
       {!open && (
