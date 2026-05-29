@@ -1450,7 +1450,17 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               the modal bleed through them as a faux panorama. */}
                           {portfolioImages.length > 1 && (
                             <div className="relative px-5 pb-4 pointer-events-auto z-10 bg-cream">
-                              <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-1">
+                              <div
+                                className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-1 touch-pan-x"
+                                // Any horizontal scroll on this thumbnail strip
+                                // bubbles up to the outer mobile member-swipe
+                                // wrapper. Isolate the touches so a sideways
+                                // drag on the strip cycles thumbs without
+                                // flipping the active stylist.
+                                onTouchStart={(e) => e.stopPropagation()}
+                                onTouchMove={(e) => e.stopPropagation()}
+                                onTouchEnd={(e) => e.stopPropagation()}
+                              >
                                 {portfolioImages.map((img, idx) => (
                                   <button
                                     key={img.id || `thumb-${idx}`}
@@ -1494,7 +1504,15 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           {(selectedMember.serviceCategories?.length || getTeamMemberCategories(selectedMember.specialties).length > 0) && (
                             <div>
                               <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>Services</h3>
-                              <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+                              <div
+                                className="overflow-x-auto scrollbar-hide -mx-1 px-1 touch-pan-x"
+                                // Same isolation as the portfolio thumb strip
+                                // — horizontal scroll on the chip row should
+                                // never bubble out as a member-swipe.
+                                onTouchStart={(e) => e.stopPropagation()}
+                                onTouchMove={(e) => e.stopPropagation()}
+                                onTouchEnd={(e) => e.stopPropagation()}
+                              >
                                 <div className="flex gap-1.5 min-w-max">
                                   {(selectedMember.serviceCategories?.length
                                     ? selectedMember.serviceCategories
