@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DevModeProvider } from '@/contexts/DevModeContext'
@@ -463,28 +463,60 @@ export default function WorkWithUsPage() {
   const boothSectionRef = useRef<HTMLElement | null>(null)
   const trainingSectionRef = useRef<HTMLElement | null>(null)
 
-  useEffect(() => {
-    if (!activeSection) return
+  // When the active section changes we need to scroll to the top of the new
+  // section. The catch: if a previous section is still in the DOM mid-exit
+  // animation, getBoundingClientRect() against the new section returns a Y
+  // offset that includes the old section's full height — and we land at the
+  // wrong spot. The single AnimatePresence below uses mode="wait" so the old
+  // section is gone by the time the new one mounts; we just need to defer
+  // the scroll until after the new node is in the layout. A double-rAF
+  // (paint commit + a settle frame) does the trick for both the first-open
+  // case and the tab-to-tab case.
+  const scrollToActiveSection = useCallback((section: CareerPath) => {
     if (typeof window === 'undefined') return
-    const target =
-      activeSection === 'employee' ? employeeSectionRef.current :
-      activeSection === 'booth' ? boothSectionRef.current :
-      activeSection === 'training' ? trainingSectionRef.current :
+    const getTarget = () =>
+      section === 'employee' ? employeeSectionRef.current :
+      section === 'booth' ? boothSectionRef.current :
+      section === 'training' ? trainingSectionRef.current :
       null
-    if (!target) return
-    // Wait one frame so AnimatePresence has actually mounted the node and
-    // its initial-opacity transition has begun — otherwise scrollIntoView
-    // hits a 0-height container and lands at the top of the document.
-    const handle = window.requestAnimationFrame(() => {
-      const rect = target.getBoundingClientRect()
-      const NAV_OFFSET = 96 // desktop nav + a bit of breathing room
-      window.scrollTo({
-        top: window.scrollY + rect.top - NAV_OFFSET,
-        behavior: 'smooth',
+
+    let raf2 = 0
+    const raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        const target = getTarget()
+        if (!target) return
+        const rect = target.getBoundingClientRect()
+        const NAV_OFFSET = 96 // desktop nav + a bit of breathing room
+        window.scrollTo({
+          top: window.scrollY + rect.top - NAV_OFFSET,
+          behavior: 'smooth',
+        })
       })
     })
-    return () => window.cancelAnimationFrame(handle)
-  }, [activeSection])
+    return () => {
+      window.cancelAnimationFrame(raf1)
+      if (raf2) window.cancelAnimationFrame(raf2)
+    }
+  }, [])
+
+  // Track whether the current activeSection change came from an existing
+  // section (tab-to-tab) or from nothing (first open). In the first-open
+  // case there's no exit to wait for, so we scroll from a layout effect.
+  // In the tab-to-tab case AnimatePresence's onExitComplete fires after the
+  // old section has unmounted — that's when we scroll.
+  const previousSectionRef = useRef<CareerPath | null>(null)
+  useEffect(() => {
+    const previous = previousSectionRef.current
+    previousSectionRef.current = activeSection
+    if (!activeSection) return
+    // If there was no prior section, the new one mounts immediately with no
+    // exit animation blocking us — scroll now. Otherwise the onExitComplete
+    // handler below will scroll after the outgoing section has fully left
+    // the DOM.
+    if (!previous) {
+      return scrollToActiveSection(activeSection)
+    }
+  }, [activeSection, scrollToActiveSection])
 
   const boothPricing = getBoothPricing(boothDays)
 
@@ -806,12 +838,22 @@ export default function WorkWithUsPage() {
         </div>
       </section>
 
-      {/* EXPANDABLE SECTIONS WITH INLINE FORMS - Desktop only */}
-
-      {/* Employee Section */}
-      <AnimatePresence>
+      {/* EXPANDABLE SECTIONS WITH INLINE FORMS - Desktop only.
+          Single AnimatePresence with mode="wait" so the previous section
+          fully exits before the next mounts — otherwise switching tabs
+          while one is open leaves the outgoing section taking layout
+          space while we measure the new section's top, landing the
+          scroll at the bottom of the page. onExitComplete triggers the
+          scroll once the new section is the only one in the DOM. */}
+      <AnimatePresence
+        mode="wait"
+        onExitComplete={() => {
+          if (activeSection) scrollToActiveSection(activeSection)
+        }}
+      >
         {activeSection === 'employee' && (
           <motion.section
+            key="employee-section"
             ref={employeeSectionRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -893,12 +935,11 @@ export default function WorkWithUsPage() {
             </div>
           </motion.section>
         )}
-      </AnimatePresence>
 
-      {/* Booth Rental Section */}
-      <AnimatePresence>
+        {/* Booth Rental Section */}
         {activeSection === 'booth' && (
           <motion.section
+            key="booth-section"
             ref={boothSectionRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -991,19 +1032,17 @@ export default function WorkWithUsPage() {
             </div>
           </motion.section>
         )}
-      </AnimatePresence>
 
-      {/* Training Section - Desktop only, mobile shows inline in card */}
-      <AnimatePresence>
+        {/* Training Section - Desktop only, mobile shows inline in card */}
         {activeSection === 'training' && (
-          <div className="hidden md:block">
           <motion.section
+            key="training-section"
             ref={trainingSectionRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="bg-white border-t border-sage/10"
+            className="hidden md:block bg-white border-t border-sage/10"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
@@ -1069,7 +1108,6 @@ export default function WorkWithUsPage() {
               </div>
             </div>
           </motion.section>
-          </div>
         )}
       </AnimatePresence>
 

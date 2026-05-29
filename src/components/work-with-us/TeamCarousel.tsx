@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { AnimatePresence, motion } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { getEnabledCarouselPhotos } from '@/actions/work-with-us-carousel'
 
@@ -15,7 +15,8 @@ interface TeamCarouselProps {
 
 export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
   const ref = useRef(null)
-  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  // Index into the (un-duplicated) source list, or null when the lightbox is closed
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [photos, setPhotos] = useState<{ filePath: string }[]>(initialPhotos || [])
   const [loading, setLoading] = useState(!initialPhotos)
 
@@ -61,6 +62,90 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
 
   // Triple the items for seamless infinite scroll
   const displayItems = [...photos, ...photos, ...photos]
+  const total = photos.length
+  const isOpen = lightboxIndex !== null
+  const activePhoto = isOpen ? photos[lightboxIndex] : null
+
+  // URL builder shared between the lightbox <img> and the post-load preloader
+  // so prefetched bytes hit the same cache key the lightbox eventually
+  // requests. R2 sources go through cdn.lashpopstudios.com so CF Images
+  // serves an auto-rotated, format=auto, 1600 px variant.
+  const lightboxSrc = useCallback((src: string) => {
+    const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
+    if (r2) {
+      return `https://cdn.lashpopstudios.com/cdn-cgi/image/width=1600,quality=90,format=auto,fit=scale-down/${r2[1]}`
+    }
+    return src
+  }, [])
+
+  // Warm the lightbox-sized variant of every team photo into the browser
+  // cache after the rest of the page has finished loading, so the first tap
+  // on a card opens instantly instead of waiting for a cold CF Image fetch.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (photos.length === 0) return
+
+    let cancelled = false
+    let i = 0
+
+    type IdleCb = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void
+    const idle: (cb: IdleCb, opts?: { timeout: number }) => number =
+      (window as { requestIdleCallback?: typeof idle }).requestIdleCallback ??
+      ((cb) => window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 16))
+
+    const tick = () => {
+      if (cancelled || i >= photos.length) return
+      const url = lightboxSrc(photos[i].filePath)
+      const img = new globalThis.Image()
+      img.decoding = 'async'
+      img.referrerPolicy = 'no-referrer'
+      img.src = url
+      i++
+      idle(tick, { timeout: 800 })
+    }
+
+    const start = () => {
+      if (!cancelled) idle(tick, { timeout: 1200 })
+    }
+
+    if (document.readyState === 'complete') {
+      start()
+    } else {
+      window.addEventListener('load', start, { once: true })
+    }
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('load', start)
+    }
+  }, [photos, lightboxSrc])
+
+  const closeLightbox = useCallback(() => setLightboxIndex(null), [])
+  const goPrev = useCallback(
+    () => setLightboxIndex((i) => (i === null ? i : (i - 1 + total) % total)),
+    [total]
+  )
+  const goNext = useCallback(
+    () => setLightboxIndex((i) => (i === null ? i : (i + 1) % total)),
+    [total]
+  )
+
+  // Keyboard navigation + lock body scroll while the lightbox is open
+  useEffect(() => {
+    if (!isOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeLightbox()
+      else if (e.key === 'ArrowLeft') goPrev()
+      else if (e.key === 'ArrowRight') goNext()
+    }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [isOpen, closeLightbox, goPrev, goNext])
 
   if (loading || photos.length === 0) {
     return null
@@ -79,12 +164,12 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
                 <div
                   key={`${index}-${item.filePath}`}
                   className="flex-[0_0_auto] w-56 h-56 md:w-64 md:h-64 min-w-0 cursor-grab active:cursor-grabbing group relative"
-                  onClick={() => setSelectedImage(item.filePath)}
+                  onClick={() => setLightboxIndex(index % total)}
                 >
                   <div className="relative w-full h-full overflow-hidden rounded-2xl transform transition-transform duration-300 group-hover:scale-[1.02]">
                     <Image
                       src={item.filePath}
-                      alt={`Team photo ${index + 1}`}
+                      alt={`Team photo ${(index % total) + 1}`}
                       fill
                       sizes="(max-width: 768px) 224px, 256px"
                       className="object-cover"
@@ -124,56 +209,99 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
         </div>
       </div>
 
-      {/* Modal for enlarged image view */}
+      {/* Lightbox carousel — swipe / arrows / keyboard to browse all images.
+          Matches the home-page Instagram gallery lightbox (minus the
+          "View on Instagram" link, since these aren't IG posts). */}
       <AnimatePresence>
-        {selectedImage && (
+        {isOpen && activePhoto && (
           <motion.div
+            key="team-lightbox-backdrop"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm"
+            onClick={closeLightbox}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-            onClick={() => setSelectedImage(null)}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
           >
+            {/* Close button */}
+            <button
+              onClick={closeLightbox}
+              aria-label="Close gallery"
+              className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors min-h-0 min-w-0"
+            >
+              <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Prev */}
+            {total > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goPrev() }}
+                aria-label="Previous image"
+                className="absolute left-3 md:left-6 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 md:p-3 hover:bg-white transition-colors min-h-0 min-w-0"
+              >
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            )}
+
+            {/* Next */}
+            {total > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goNext() }}
+                aria-label="Next image"
+                className="absolute right-3 md:right-6 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 md:p-3 hover:bg-white transition-colors min-h-0 min-w-0"
+              >
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+
+            {/* Image stage — swipeable. Plain <img> with max-w / max-h so
+                the wrapper shrinks to the photo's natural aspect ratio — no
+                dark gutters around portrait crops, the rounded card hugs
+                the image. We route R2 URLs through cdn.lashpopstudios.com
+                /cdn-cgi/image manually since Next.js Image fill requires a
+                pre-sized parent (which would re-introduce the letterbox). */}
             <motion.div
+              key={lightboxIndex}
+              className="relative m-4 flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.18}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -80) goNext()
+                else if (info.offset.x > 80) goPrev()
+              }}
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
-              className="relative max-w-4xl max-h-[90vh] m-4"
-              onClick={(e) => e.stopPropagation()}
             >
-              <div className="relative w-full h-full min-h-[50vh] min-w-[50vw] overflow-hidden rounded-lg">
-                {/* Blurred backdrop using the already-warm thumb URL — fills
-                    the void during the cold CF Image fetch of the full-res
-                    version. Picks up the next pixels gracefully when the
-                    primary image swaps in over the top. */}
-                <Image
-                  src={selectedImage}
-                  alt=""
-                  fill
-                  aria-hidden
-                  className="object-cover scale-110 blur-2xl opacity-60"
-                  sizes="(max-width: 768px) 256px, 320px"
-                  draggable={false}
-                />
-                <Image
-                  src={selectedImage}
-                  alt="Enlarged view"
-                  fill
-                  priority
-                  quality={80}
-                  className="object-contain"
-                  sizes="(max-width: 768px) 100vw, 896px"
-                />
+              <img
+                src={lightboxSrc(activePhoto.filePath)}
+                alt={`Team photo ${lightboxIndex! + 1}`}
+                draggable={false}
+                className="block rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] select-none pointer-events-none"
+                style={{
+                  maxWidth: 'min(1200px, 92vw)',
+                  maxHeight: '82vh',
+                  width: 'auto',
+                  height: 'auto',
+                }}
+              />
+
+              {/* Footer: counter only — Work With Us photos aren't IG posts
+                  so there's no permalink to surface. */}
+              <div className="mt-3 flex items-center justify-center">
+                <span className="text-white/80 text-xs font-sans tracking-wide tabular-nums">
+                  {lightboxIndex! + 1} / {total}
+                </span>
               </div>
-              <button
-                onClick={() => setSelectedImage(null)}
-                aria-label="Close"
-                className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors"
-              >
-                <X className="w-6 h-6 text-charcoal" />
-              </button>
             </motion.div>
           </motion.div>
         )}
