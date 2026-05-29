@@ -686,47 +686,52 @@ function PortfolioBlock({
 function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
   const [loaded, setLoaded] = useState(false)
 
-  // Earlier version computed `aspectRatio` from photo.width/height. Most DAM
-  // assets store width/height as null, so the fallback `ar = 1` was producing
-  // a square container with no determined dimension — the inner `<Image fill>`
-  // then sized itself off the (zero-width) parent and rendered invisibly.
-  // Switch to an intrinsic Image with explicit width/height and an
-  // object-contain max box so any aspect ratio fits without collapsing.
+  // DAM assets store width/height as null, so we can't drive the layout from
+  // intrinsic dimensions. Use a plain <img> with max-w / max-h — the browser
+  // sizes the element to the source's natural aspect ratio, so there's no
+  // dark frame around portrait/square photos. CF Image transformations still
+  // happen at the URL level via cdn.lashpopstudios.com (loader replicates
+  // src/lib/cf-image-loader.ts for R2 URLs); Vagaro photos pass through.
+  const src = (() => {
+    const m = photo.url.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
+    if (m) {
+      return `https://cdn.lashpopstudios.com/cdn-cgi/image/width=1600,quality=85,format=auto,fit=scale-down/${m[1]}`
+    }
+    return photo.url
+  })()
+
   return (
-    <div
-      className="relative flex max-h-full max-w-full items-center justify-center overflow-hidden rounded-lg shadow-[0_30px_80px_rgba(0,0,0,0.5)]"
-      style={{
-        width: 'min(1200px, 92vw)',
-        height: 'calc(100vh - 80px - 200px)',
-      }}
-    >
-      {/* Skeleton shimmer + soft glow while the full-res fetch is in flight.
-          Fades out once the Image fires onLoadingComplete. */}
-      <div
-        aria-hidden
-        className={`absolute inset-0 transition-opacity duration-300 ${
-          loaded ? 'opacity-0' : 'opacity-100'
-        }`}
-        style={{
-          background:
-            'linear-gradient(110deg, rgba(255,255,255,0.06) 8%, rgba(255,255,255,0.14) 18%, rgba(255,255,255,0.06) 33%)',
-          backgroundSize: '200% 100%',
-          animation: 'lightbox-shimmer 1.6s linear infinite',
-        }}
-      />
-      <Image
-        src={photo.url}
+    <div className="relative">
+      <img
+        src={src}
         alt=""
-        fill
-        priority
-        quality={85}
-        onLoadingComplete={() => setLoaded(true)}
-        className={`object-contain transition-opacity duration-200 ${
+        onLoad={() => setLoaded(true)}
+        className={`block rounded-lg shadow-[0_30px_80px_rgba(0,0,0,0.5)] transition-opacity duration-200 ${
           loaded ? 'opacity-100' : 'opacity-0'
         }`}
-        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 80vw, 1200px"
-        unoptimized={isVagaroPhoto(photo.url)}
+        style={{
+          maxWidth: 'min(1200px, 92vw)',
+          maxHeight: 'calc(100vh - 80px - 200px)',
+          width: 'auto',
+          height: 'auto',
+        }}
       />
+      {!loaded ? (
+        <div
+          aria-hidden
+          className="absolute inset-0 rounded-lg"
+          style={{
+            background: 'rgba(255,255,255,0.05)',
+            backdropFilter: 'blur(2px)',
+            animation: 'lightbox-shimmer 1.6s linear infinite',
+            backgroundImage:
+              'linear-gradient(110deg, rgba(255,255,255,0.04) 8%, rgba(255,255,255,0.12) 18%, rgba(255,255,255,0.04) 33%)',
+            backgroundSize: '200% 100%',
+            minWidth: '300px',
+            minHeight: '300px',
+          }}
+        />
+      ) : null}
       <style jsx>{`
         @keyframes lightbox-shimmer {
           0% { background-position: 200% 0; }
