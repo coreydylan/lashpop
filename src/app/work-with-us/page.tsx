@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DevModeProvider } from '@/contexts/DevModeContext'
@@ -454,6 +454,38 @@ export default function WorkWithUsPage() {
   const [isSubmitted, setIsSubmitted] = useState<CareerPath | null>(null)
   const [boothDays, setBoothDays] = useState(3)
 
+  // Refs on the desktop expandable sections so we can scroll their top into
+  // view when the user clicks a path card. Without this the page either
+  // doesn't scroll at all (leaving the section below the fold on small
+  // screens) or browsers focus-scroll an inner form input — that's what
+  // landed Corey at the bottom of the Booth section instead of the top.
+  const employeeSectionRef = useRef<HTMLElement | null>(null)
+  const boothSectionRef = useRef<HTMLElement | null>(null)
+  const trainingSectionRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!activeSection) return
+    if (typeof window === 'undefined') return
+    const target =
+      activeSection === 'employee' ? employeeSectionRef.current :
+      activeSection === 'booth' ? boothSectionRef.current :
+      activeSection === 'training' ? trainingSectionRef.current :
+      null
+    if (!target) return
+    // Wait one frame so AnimatePresence has actually mounted the node and
+    // its initial-opacity transition has begun — otherwise scrollIntoView
+    // hits a 0-height container and lands at the top of the document.
+    const handle = window.requestAnimationFrame(() => {
+      const rect = target.getBoundingClientRect()
+      const NAV_OFFSET = 96 // desktop nav + a bit of breathing room
+      window.scrollTo({
+        top: window.scrollY + rect.top - NAV_OFFSET,
+        behavior: 'smooth',
+      })
+    })
+    return () => window.cancelAnimationFrame(handle)
+  }, [activeSection])
+
   const boothPricing = getBoothPricing(boothDays)
 
   const handleFormSubmit = async (data: PathFormData, path: CareerPath, boothDaysValue?: number) => {
@@ -780,6 +812,7 @@ export default function WorkWithUsPage() {
       <AnimatePresence>
         {activeSection === 'employee' && (
           <motion.section
+            ref={employeeSectionRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -866,6 +899,7 @@ export default function WorkWithUsPage() {
       <AnimatePresence>
         {activeSection === 'booth' && (
           <motion.section
+            ref={boothSectionRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -964,6 +998,7 @@ export default function WorkWithUsPage() {
         {activeSection === 'training' && (
           <div className="hidden md:block">
           <motion.section
+            ref={trainingSectionRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
