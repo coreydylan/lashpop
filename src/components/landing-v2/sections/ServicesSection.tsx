@@ -256,8 +256,7 @@ function MobileSwipeableServiceCards({
                 alt={currentCategory.title}
                 fill
                 className="object-contain"
-                loading="eager"
-                priority
+                sizes="80px"
               />
             </div>
 

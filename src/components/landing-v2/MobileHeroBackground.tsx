@@ -157,18 +157,24 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
             /* Slideshow Mode - render the carousel */
             <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
           ) : (
-            /* Single Image Mode - original behavior */
-            <Image
-              src={archImage.url}
-              alt="LashPop Studio Interior"
-              fill
-              className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
-              style={{ objectPosition: `${archImage.position.x}% ${archImage.position.y}%` }}
-              priority
-              fetchPriority="high"
-              quality={90}
-              sizes="100vw"
-            />
+            <>
+              {/* Pre-paint fill: same dusty-rose tone as desktop so the arched
+                  frame doesn't show stark ivory while the hero JPG is
+                  decoding. Disappears under the Image once it paints. */}
+              <div aria-hidden className="absolute inset-0 bg-dusty-rose/40" />
+              <Image
+                src={archImage.url}
+                alt="LashPop Studio Interior"
+                fill
+                className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+                style={{ objectPosition: `${archImage.position.x}% ${archImage.position.y}%` }}
+                priority
+                fetchPriority="high"
+                decoding="async"
+                quality={90}
+                sizes="100vw"
+              />
+            </>
           )}
         </div>
       </div>

@@ -235,6 +235,15 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
         ) : (
           /* Single Image Mode - full bleed */
           <div className="absolute inset-0 overflow-hidden">
+            {/* Pre-paint fill: tinted to the hero photo's dominant tone so the
+                frosted-glass review chip and "Take Our Lash Quiz" pill don't
+                flash on stark ivory between FCP and the photo's actual paint.
+                Painted slightly inside the photo container so it disappears
+                under the Image once it lands. */}
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-dusty-rose/40"
+            />
             <Image
               ref={imageRef}
               src={archImage.url}
@@ -242,6 +251,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               fill
               className="object-cover"
               priority
+              decoding="async"
               quality={90}
               sizes="100vw"
               style={{

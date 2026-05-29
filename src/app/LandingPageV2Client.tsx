@@ -18,11 +18,15 @@ import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLe
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
 import dynamic from 'next/dynamic';
 
-// Lazy-load below-fold sections to reduce initial JS bundle
-const InstagramCarousel = dynamic(() => import('@/components/landing-v2/sections/InstagramCarousel').then(m => ({ default: m.InstagramCarousel })), { ssr: false });
-const ReviewsSection = dynamic(() => import('@/components/landing-v2/sections/ReviewsSection').then(m => ({ default: m.ReviewsSection })), { ssr: false });
-const FAQSection = dynamic(() => import('@/components/landing-v2/sections/FAQSection').then(m => ({ default: m.FAQSection })), { ssr: false });
-const MapSection = dynamic(() => import('@/components/landing-v2/sections/MapSection').then(m => ({ default: m.MapSection })), { ssr: false });
+// Lazy-load below-fold sections to reduce initial JS bundle.
+// SSR-enabled so hash deep-links (e.g. /#reviews) land at the right place
+// on first paint instead of racing the dynamic-import resolve — the
+// SectionHashDeepLink polling loop further down was a workaround for the
+// previous ssr:false setup.
+const InstagramCarousel = dynamic(() => import('@/components/landing-v2/sections/InstagramCarousel').then(m => ({ default: m.InstagramCarousel })));
+const ReviewsSection = dynamic(() => import('@/components/landing-v2/sections/ReviewsSection').then(m => ({ default: m.ReviewsSection })));
+const FAQSection = dynamic(() => import('@/components/landing-v2/sections/FAQSection').then(m => ({ default: m.FAQSection })));
+const MapSection = dynamic(() => import('@/components/landing-v2/sections/MapSection').then(m => ({ default: m.MapSection })));
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';

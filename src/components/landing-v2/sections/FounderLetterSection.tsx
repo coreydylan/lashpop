@@ -26,7 +26,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             alt="Emily in studio archway"
             fill
             className="object-cover object-right"
-            priority
+            sizes="100vw"
           />
 
           {/* Content overlay */}

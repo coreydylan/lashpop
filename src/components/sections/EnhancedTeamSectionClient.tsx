@@ -809,7 +809,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             src={cardImage}
                             alt={member.name}
                             fill
-                            className={isPlaceholder ? "object-contain p-4" : "object-cover"}
+                            // Fade in on load instead of snapping in — Vagaro
+                            // photos are unoptimized hotlinks with no blur
+                            // placeholder, so without the fade the gray
+                            // skeleton flips to a full-color photo abruptly.
+                            className={`${isPlaceholder ? "object-contain p-4" : "object-cover"} transition-opacity duration-300 opacity-0`}
+                            onLoad={(e) => (e.currentTarget.style.opacity = '1')}
                             // Each card occupies ~50vw on mobile and ~25vw on
                             // desktop. The previous 155px static hint was
                             // under-fetching on 3x displays, causing the
@@ -945,7 +950,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               src={member.image}
                               alt={member.name}
                               fill
-                              className={isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover transition-transform duration-700 group-hover:scale-105"}
+                              // Fade in on load instead of snapping — see
+                              // mobile-card variant above for rationale.
+                              className={`${isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover transition-transform duration-700 group-hover:scale-105"} transition-opacity duration-300 opacity-0`}
+                              onLoad={(e) => (e.currentTarget.style.opacity = '1')}
                               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
                               unoptimized={isPlaceholderImage(member.image) || isVagaroPhoto(member.image)}
                             />

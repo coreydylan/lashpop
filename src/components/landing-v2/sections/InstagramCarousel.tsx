@@ -199,7 +199,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
                   className="flex-[0_0_auto] w-80 h-80 min-w-0 cursor-pointer group relative"
                   onClick={() => setLightboxIndex(index % total)}
                 >
-                  <div className="relative w-full h-full overflow-hidden rounded-2xl transform transition-transform duration-300 group-hover:scale-[1.02]">
+                  <div className="relative w-full h-full overflow-hidden rounded-2xl bg-cream transform transition-transform duration-300 group-hover:scale-[1.02]">
                     <Image
                       src={item.mediaUrl}
                       alt={`Gallery image ${(index % total) + 1}`}
