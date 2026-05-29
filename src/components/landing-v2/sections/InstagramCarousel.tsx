@@ -259,18 +259,15 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
               </button>
             )}
 
-            {/* Image stage — swipeable.
-                `w-auto` + `w-full` inner was leaving the container with no
-                defined width on desktop, so the Image (fill / object-contain)
-                collapsed to the source's intrinsic size — making the photo
-                look ~200 px tall in the middle of a huge backdrop and look
-                low-res even though we're pulling a full-res Instagram media
-                URL through the CF loader. Lock width to min(1200px, 92vw)
-                so the Image actually has a stage to fill. */}
+            {/* Image stage — swipeable. Plain <img> with max-w / max-h so
+                the wrapper shrinks to the photo's natural aspect ratio — no
+                dark gutters around portrait crops, the rounded card hugs
+                the image. We route R2 URLs through cdn.lashpopstudios.com
+                /cdn-cgi/image manually since Next.js Image fill requires a
+                pre-sized parent (which would re-introduce the letterbox). */}
             <motion.div
               key={lightboxIndex}
-              className="relative m-4 flex flex-col"
-              style={{ width: 'min(1200px, 92vw)' }}
+              className="relative m-4 flex flex-col items-center"
               onClick={(e) => e.stopPropagation()}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -284,21 +281,25 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
-              <div
-                className="relative w-full overflow-hidden rounded-2xl bg-black/40 shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
-                style={{ height: 'min(82vh, calc(min(1200px, 92vw) * 1.25))' }}
-              >
-                <Image
-                  src={activeItem.mediaUrl}
-                  alt={activeItem.caption ?? `Gallery image ${lightboxIndex! + 1}`}
-                  fill
-                  priority
-                  quality={90}
-                  draggable={false}
-                  className="object-contain select-none pointer-events-none"
-                  sizes="(max-width: 768px) 92vw, min(1200px, 92vw)"
-                />
-              </div>
+              <img
+                src={(() => {
+                  const src = activeItem.mediaUrl
+                  const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
+                  if (r2) {
+                    return `https://cdn.lashpopstudios.com/cdn-cgi/image/width=1600,quality=90,format=auto,fit=scale-down/${r2[1]}`
+                  }
+                  return src
+                })()}
+                alt={activeItem.caption ?? `Gallery image ${lightboxIndex! + 1}`}
+                draggable={false}
+                className="block rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] select-none pointer-events-none"
+                style={{
+                  maxWidth: 'min(1200px, 92vw)',
+                  maxHeight: '82vh',
+                  width: 'auto',
+                  height: 'auto',
+                }}
+              />
 
               {/* Footer: counter + optional View on Instagram */}
               <div className="mt-3 flex items-center justify-center gap-4">
