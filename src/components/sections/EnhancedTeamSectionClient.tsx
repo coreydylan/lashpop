@@ -813,7 +813,18 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             // photos are unoptimized hotlinks with no blur
                             // placeholder, so without the fade the gray
                             // skeleton flips to a full-color photo abruptly.
-                            className={`${isPlaceholder ? "object-contain p-4" : "object-cover"} transition-opacity duration-300 opacity-0`}
+                            //
+                            // object-top: Vagaro source photos vary in
+                            // framing — some are wide (Ava/Rachel/Evie), some
+                            // are tight crops where the subject's face sits in
+                            // the upper third (Emily, Bethany, Kelly, etc).
+                            // With default object-position 50% 50%, the arched
+                            // slot lands on the chest/torso band of tight
+                            // crops and the face is gone, reading as "blurry
+                            // and zoomed in". Anchoring to top preserves the
+                            // face across all framing styles (matches the
+                            // takeover hero, which already does this).
+                            className={`${isPlaceholder ? "object-contain p-4" : "object-cover object-top"} transition-opacity duration-300 opacity-0`}
                             onLoad={(e) => (e.currentTarget.style.opacity = '1')}
                             // Each card occupies ~50vw on mobile and ~25vw on
                             // desktop. The previous 155px static hint was
@@ -952,7 +963,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               fill
                               // Fade in on load instead of snapping — see
                               // mobile-card variant above for rationale.
-                              className={`${isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover transition-transform duration-700 group-hover:scale-105"} transition-opacity duration-300 opacity-0`}
+                              // object-top — same reason as mobile: Vagaro
+                              // source photos vary in framing tightness and
+                              // a centered crop drops the face out of the
+                              // arched slot on tightly-framed portraits.
+                              className={`${isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover object-top transition-transform duration-700 group-hover:scale-105"} transition-opacity duration-300 opacity-0`}
                               onLoad={(e) => (e.currentTarget.style.opacity = '1')}
                               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
                               unoptimized={isPlaceholderImage(member.image) || isVagaroPhoto(member.image)}
@@ -1224,57 +1239,17 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         >
                           <div
                             className="relative h-[70vh] overflow-hidden"
-                            // The photo zone owns horizontal gestures when there are
-                            // multiple album photos — swipe cycles photos, tap also
-                            // cycles. With <=1 photo, touches fall through to the
-                            // outer wrapper so member-change still works here.
-                            onTouchStart={(e) => {
-                              // Photo zone always owns its touches, regardless
-                              // of photo count. Even on single-photo stylists,
-                              // a swipe over the portrait must NOT bubble to
-                              // the outer member-swipe wrapper — that was the
-                              // "swiping kicks to next stylist" complaint.
-                              e.stopPropagation()
-                              const touch = e.touches[0]
-                              const target = e.currentTarget as HTMLDivElement
-                              target.dataset.photoStartX = touch.clientX.toString()
-                              target.dataset.photoStartY = touch.clientY.toString()
-                              target.dataset.photoGesture = 'undecided'
-                            }}
-                            onTouchMove={(e) => {
-                              e.stopPropagation()
-                              if (portfolioImages.length <= 1) return
-                              const target = e.currentTarget as HTMLDivElement
-                              const startX = parseFloat(target.dataset.photoStartX || '0')
-                              const startY = parseFloat(target.dataset.photoStartY || '0')
-                              const touch = e.touches[0]
-                              const deltaX = Math.abs(touch.clientX - startX)
-                              const deltaY = Math.abs(touch.clientY - startY)
-                              if (target.dataset.photoGesture === 'undecided' && (deltaX > 12 || deltaY > 12)) {
-                                target.dataset.photoGesture = deltaX > deltaY ? 'horizontal' : 'vertical'
-                              }
-                            }}
-                            onTouchEnd={(e) => {
-                              e.stopPropagation()
-                              if (portfolioImages.length <= 1) return
-                              const target = e.currentTarget as HTMLDivElement
-                              const gesture = target.dataset.photoGesture
-                              const startX = parseFloat(target.dataset.photoStartX || '0')
-                              const touch = e.changedTouches[0]
-                              const deltaX = touch.clientX - startX
-                              if (gesture === 'horizontal') {
-                                if (Math.abs(deltaX) > 50) {
-                                  if (deltaX < 0) {
-                                    setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
-                                  } else {
-                                    setCurrentImageIndex(prev => (prev - 1 + portfolioImages.length) % portfolioImages.length)
-                                  }
-                                }
-                              } else if (gesture === 'undecided') {
-                                // True tap — cycle forward
-                                setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
-                              }
-                            }}
+                            // NOTE: Touch handlers for the photo carousel
+                            // (swipe to cycle photos, tap to advance) used to
+                            // live on this element. They were unreachable —
+                            // the scrollable content overlay (z-10) covers
+                            // the entire takeover including the visible photo
+                            // area, so hit-testing routed every touch to the
+                            // content layer (z-10) instead of the photo zone
+                            // (z-[1]). The handlers have been moved to the
+                            // 65vh spacer inside the content overlay (below),
+                            // where they actually receive the user's touches.
+                            // See the spacer for the live handlers.
                           >
                             {/* Photo carousel - swipe or tap to cycle album photos */}
                             <AnimatePresence mode="wait">
@@ -1338,8 +1313,93 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           setMobileChromeOpaque(target.scrollTop < 60)
                         }}
                       >
-                        {/* Spacer to position content below the image initially */}
-                        <div className="h-[65vh] pointer-events-none" />
+                        {/* Spacer to position content below the image initially.
+                            ALSO owns the photo-carousel touch handlers — this
+                            spacer sits ABOVE the visible photo (the content
+                            overlay covers the whole takeover at z-10, so this
+                            spacer is the real hit-target for any touch that
+                            visually lands on the photo). The handlers used to
+                            live on the photo zone itself, but the photo zone
+                            is at z-[1] under this overlay and never receives
+                            touches. That's why horizontal swipes on the
+                            portrait kept bubbling up to the outer wrapper and
+                            advancing the stylist instead of cycling photos.
+
+                            Horizontal-swipe behavior:
+                            - Cycles portfolio photos when there are >1.
+                            - Always stopPropagation on touchstart so the
+                              outer member-swipe wrapper never sees a "start"
+                              in this band — even on single-photo stylists,
+                              a horizontal swipe over the portrait must NOT
+                              switch stylist.
+                            Vertical-swipe behavior:
+                            - Touches still bubble for vertical motion (we
+                              only stopPropagation on touchstart/end, and the
+                              browser handles native scroll independently of
+                              React event propagation), so dragging up to
+                              read the bio still scrolls normally. */}
+                        <div
+                          className="h-[65vh]"
+                          onTouchStart={(e) => {
+                            // Always stop the start from reaching the outer
+                            // member-swipe wrapper. Without a recorded start,
+                            // the outer wrapper's touchend has no anchor for
+                            // its threshold check and the member doesn't
+                            // switch — even if subsequent moves leak through.
+                            e.stopPropagation()
+                            const touch = e.touches[0]
+                            const target = e.currentTarget as HTMLDivElement
+                            target.dataset.photoStartX = touch.clientX.toString()
+                            target.dataset.photoStartY = touch.clientY.toString()
+                            target.dataset.photoGesture = 'undecided'
+                          }}
+                          onTouchMove={(e) => {
+                            // Stop ALL moves from bubbling. Native scroll is
+                            // a browser behavior tied to the event itself,
+                            // not React's synthetic-event tree, so blocking
+                            // React propagation does not block vertical
+                            // scroll. We block propagation so the outer
+                            // member-swipe wrapper — which fell back to
+                            // startX=0 when its own touchstart never fired —
+                            // can't misread a vertical drag as a giant
+                            // horizontal swipe and switch stylists.
+                            e.stopPropagation()
+                            const target = e.currentTarget as HTMLDivElement
+                            const startX = parseFloat(target.dataset.photoStartX || '0')
+                            const startY = parseFloat(target.dataset.photoStartY || '0')
+                            const touch = e.touches[0]
+                            const deltaX = Math.abs(touch.clientX - startX)
+                            const deltaY = Math.abs(touch.clientY - startY)
+                            if (target.dataset.photoGesture === 'undecided' && (deltaX > 12 || deltaY > 12)) {
+                              target.dataset.photoGesture = deltaX > deltaY ? 'horizontal' : 'vertical'
+                            }
+                          }}
+                          onTouchEnd={(e) => {
+                            // Always stop the end too — paired with
+                            // touchstart/move stopPropagation, this guarantees
+                            // the outer member-swipe wrapper never gets a
+                            // complete touch sequence from a gesture that
+                            // started over the photo zone.
+                            e.stopPropagation()
+                            const target = e.currentTarget as HTMLDivElement
+                            const gesture = target.dataset.photoGesture
+                            const startX = parseFloat(target.dataset.photoStartX || '0')
+                            const touch = e.changedTouches[0]
+                            const deltaX = touch.clientX - startX
+                            if (gesture === 'horizontal') {
+                              if (portfolioImages.length > 1 && Math.abs(deltaX) > 50) {
+                                if (deltaX < 0) {
+                                  setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
+                                } else {
+                                  setCurrentImageIndex(prev => (prev - 1 + portfolioImages.length) % portfolioImages.length)
+                                }
+                              }
+                            } else if (gesture === 'undecided' && portfolioImages.length > 1) {
+                              // True tap — cycle forward
+                              setCurrentImageIndex(prev => (prev + 1) % portfolioImages.length)
+                            }
+                          }}
+                        />
 
                         {/* All content wrapped together */}
                         <div className="relative">
