@@ -8,6 +8,7 @@ import { useVagaroWidget } from '@/contexts/VagaroWidgetContext';
 import { subscribeToVagaroEvent } from '@/lib/vagaro-events';
 import type { BookingCompletedData } from '@/lib/vagaro-events';
 import { getVagaroWidgetUrl } from '@/lib/vagaro-widget';
+import { installVagaroIframeSandbox } from '@/lib/vagaro-sandbox';
 import { BookingConfirmation } from './BookingConfirmation';
 
 export interface BookingModalProps {
@@ -153,37 +154,19 @@ export function BookingModal({
       setHasError(true);
     };
 
+    // Install Vagaro iframe sandbox BEFORE attaching the loader script
+    // so the observer catches the iframe at insertion time and forces it
+    // to navigate inside the sandbox. See src/lib/vagaro-sandbox.ts for
+    // the full reasoning; in short, late-applied sandbox attributes are a
+    // no-op on already-created browsing contexts (desktop Chrome) and
+    // Vagaro's post-checkout redirect slipped through.
+    const uninstallSandbox = installVagaroIframeSandbox(container);
+
     // IMPORTANT: Same order as VagaroWidgetPanel
     // 1. Append script to vagaroDiv
     // 2. Then append vagaroDiv to container
     vagaroDiv.appendChild(script);
     container.appendChild(vagaroDiv);
-
-    // Sandbox the Vagaro iframe so its merchant-admin "Return URL" (currently
-    // the old Squarespace lashpop site) can't top-navigate the parent window
-    // after BookingCompleted — that was kicking mobile users off entirely
-    // before they could click Done / Book Another Service. Mirrors the
-    // BookingView treatment. allow-popups stays so card-on-file / external
-    // links open in a new tab instead.
-    const SANDBOX = 'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals';
-    const sandboxIframe = (frame: HTMLIFrameElement) => {
-      if (frame.getAttribute('sandbox')) return;
-      frame.setAttribute('sandbox', SANDBOX);
-    };
-    const mo = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        for (const node of Array.from(m.addedNodes)) {
-          if (!(node instanceof HTMLElement)) continue;
-          if (node.tagName === 'IFRAME') {
-            sandboxIframe(node as HTMLIFrameElement);
-          } else {
-            node.querySelectorAll('iframe').forEach((f) => sandboxIframe(f as HTMLIFrameElement));
-          }
-        }
-      }
-    });
-    mo.observe(container, { childList: true, subtree: true });
-    container.querySelectorAll('iframe').forEach((f) => sandboxIframe(f as HTMLIFrameElement));
 
     // Timeout for error state
     const timeout = setTimeout(() => {
@@ -194,7 +177,7 @@ export function BookingModal({
 
     return () => {
       clearTimeout(timeout);
-      mo.disconnect();
+      uninstallSandbox();
       if (container.contains(vagaroDiv)) {
         container.removeChild(vagaroDiv);
       }
