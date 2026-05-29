@@ -80,6 +80,65 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
   // Triple the items to ensure absolutely seamless infinite scroll on large screens
   const displayItems = [...rawItems, ...rawItems, ...rawItems]
 
+  // URL builder shared between the lightbox <img> and the post-load preloader
+  // so prefetched bytes hit the same cache key the lightbox eventually
+  // requests. R2 sources go through cdn.lashpopstudios.com so CF Images
+  // serves an auto-rotated, format=auto, 1600 px variant.
+  const lightboxSrc = useCallback((src: string) => {
+    const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
+    if (r2) {
+      return `https://cdn.lashpopstudios.com/cdn-cgi/image/width=1600,quality=90,format=auto,fit=scale-down/${r2[1]}`
+    }
+    return src
+  }, [])
+
+  // Warm the lightbox-sized variant of every gallery photo into the browser
+  // cache after the rest of the page has finished loading, so the first tap
+  // on a card opens instantly instead of waiting for a cold CF Image fetch.
+  // Waits on the window `load` event (so we don't fight first-paint or any
+  // priority hero/team images) and then drips one fetch per idle slot.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (rawItems.length === 0) return
+
+    let cancelled = false
+    let i = 0
+
+    type IdleCb = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void
+    const idle: (cb: IdleCb, opts?: { timeout: number }) => number =
+      (window as { requestIdleCallback?: typeof idle }).requestIdleCallback ??
+      ((cb) => window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 16))
+
+    const tick = () => {
+      if (cancelled || i >= rawItems.length) return
+      const url = lightboxSrc(rawItems[i].mediaUrl)
+      // new Image() triggers a real GET that lands in the browser cache.
+      // We don't keep the reference — once the response is cached, the
+      // lightbox <img> with the same src hits the cache instantly.
+      const img = new globalThis.Image()
+      img.decoding = 'async'
+      img.referrerPolicy = 'no-referrer'
+      img.src = url
+      i++
+      idle(tick, { timeout: 800 })
+    }
+
+    const start = () => {
+      if (!cancelled) idle(tick, { timeout: 1200 })
+    }
+
+    if (document.readyState === 'complete') {
+      start()
+    } else {
+      window.addEventListener('load', start, { once: true })
+    }
+
+    return () => {
+      cancelled = true
+      window.removeEventListener('load', start)
+    }
+  }, [rawItems, lightboxSrc])
+
   const total = rawItems.length
   const isOpen = lightboxIndex !== null
   const activeItem = isOpen ? rawItems[lightboxIndex] : null
@@ -282,14 +341,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
               <img
-                src={(() => {
-                  const src = activeItem.mediaUrl
-                  const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
-                  if (r2) {
-                    return `https://cdn.lashpopstudios.com/cdn-cgi/image/width=1600,quality=90,format=auto,fit=scale-down/${r2[1]}`
-                  }
-                  return src
-                })()}
+                src={lightboxSrc(activeItem.mediaUrl)}
                 alt={activeItem.caption ?? `Gallery image ${lightboxIndex! + 1}`}
                 draggable={false}
                 className="block rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] select-none pointer-events-none"
