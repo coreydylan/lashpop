@@ -7,8 +7,14 @@ function isPlaceholderOrMissing(url: string | null | undefined): boolean {
   return !url || url.includes("placeholder") || url === ""
 }
 
-// Vagaro is source of truth for photos; fall back to local override, then placeholder.
-function resolveStaffImage(vagaroPhotoUrl: string | null | undefined, imageUrl: string | null | undefined): string {
+// Vagaro is source of truth for photos UNLESS an admin set a local override
+// (imageOverride). Mirrors the precedence in src/app/page.tsx.
+function resolveStaffImage(
+  vagaroPhotoUrl: string | null | undefined,
+  imageUrl: string | null | undefined,
+  imageOverride?: boolean
+): string {
+  if (imageOverride && imageUrl && !isPlaceholderOrMissing(imageUrl)) return imageUrl
   if (vagaroPhotoUrl && !isPlaceholderOrMissing(vagaroPhotoUrl)) return vagaroPhotoUrl
   if (imageUrl && !isPlaceholderOrMissing(imageUrl)) return imageUrl
   return PLACEHOLDER_IMAGE
@@ -25,13 +31,18 @@ export async function EnhancedTeamSection() {
     role: member.role,
     type: member.type as 'employee' | 'independent',
     businessName: member.businessName || undefined,
-    image: resolveStaffImage(member.vagaroPhotoUrl, member.imageUrl),
+    image: resolveStaffImage(member.vagaroPhotoUrl, member.imageUrl, member.imageOverride),
     phone: member.phone,
     specialties: member.specialties as string[],
     // Service categories pulled directly from Vagaro service assignments
     serviceCategories: member.serviceCategories,
-    // Vagaro bio (BusinessSummary) wins; fall back to locally-entered bio
-    bio: member.vagaroBio || member.bio || undefined,
+    // Vagaro bio (BusinessSummary) wins UNLESS an admin set a local override.
+    bio: (member.bioOverride ? member.bio : (member.vagaroBio || member.bio)) || undefined,
+    // Inline-admin override context (so the takeover's revert affordances render).
+    bioOverride: member.bioOverride,
+    imageOverride: member.imageOverride,
+    vagaroBio: member.vagaroBio || undefined,
+    vagaroPhotoUrl: member.vagaroPhotoUrl || undefined,
     quote: member.quote || undefined,
     availability: member.availability || undefined,
     instagram: member.instagram || undefined,

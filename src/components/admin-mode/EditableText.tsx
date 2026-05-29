@@ -78,10 +78,17 @@ export function EditableText({
   const [justSaved, setJustSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Keep `saved` in sync with server-provided `value` when we're not mid-edit
-  // (e.g. after a router.refresh() pulls fresh data).
+  // Keep `saved` in sync with the server-provided `value`, but only react to a
+  // genuine prop CHANGE — not to the editing->false transition. Otherwise, right
+  // after an optimistic save (saved=next, editing=false) the effect would re-run
+  // while `value` still holds the OLD server value (router.refresh pending) and
+  // clobber the just-saved text with a stale flash.
+  const prevValueProp = useRef(value)
   useEffect(() => {
-    if (!editing) setSaved(value)
+    if (value !== prevValueProp.current) {
+      prevValueProp.current = value
+      if (!editing) setSaved(value)
+    }
   }, [value, editing])
 
   const draftRef = useRef(draft)
@@ -155,7 +162,9 @@ export function EditableText({
       doDiscard()
     } else if (e.key === 'Enter' && (!multiline || e.metaKey || e.ctrlKey)) {
       e.preventDefault()
-      if (draft !== saved) doSave()
+      // Mirror the Save button's guard so a second keypress can't fire a
+      // concurrent doSave() while the first PATCH is still in flight.
+      if (!saving && draft !== saved) doSave()
     }
   }
 

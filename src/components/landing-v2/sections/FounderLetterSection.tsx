@@ -30,9 +30,12 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   // updated). The server also merges over the live row as a second safety net.
   const writeChain = useRef<Promise<void>>(Promise.resolve())
 
-  const putLetter = useCallback((next: FounderLetterContent) => {
+  const putLetter = useCallback((update: (current: FounderLetterContent) => FounderLetterContent) => {
     const run = writeChain.current.catch(() => {}).then(async () => {
-      const merged = { ...letterRef.current, ...next }
+      // Compute the mutation INSIDE the chained link, against the result of the
+      // prior save (letterRef is updated below). This is what makes concurrent
+      // paragraph edits safe — an eagerly-built array would carry stale siblings.
+      const merged = update(letterRef.current)
       const res = await fetch('/api/admin/website/founder-letter', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -56,7 +59,7 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   // Merge a single scalar field into the current letter, then persist the whole.
   const saveField = useCallback(
     (field: 'heading' | 'greeting') => async (value: string) => {
-      await putLetter({ ...letterRef.current, [field]: value })
+      await putLetter(current => ({ ...current, [field]: value }))
     },
     [putLetter]
   )
@@ -64,9 +67,11 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
   // Merge one paragraph by index, then persist the whole letter.
   const saveParagraph = useCallback(
     (index: number) => async (value: string) => {
-      const paragraphs = [...letterRef.current.paragraphs]
-      paragraphs[index] = value
-      await putLetter({ ...letterRef.current, paragraphs })
+      await putLetter(current => {
+        const paragraphs = [...current.paragraphs]
+        paragraphs[index] = value
+        return { ...current, paragraphs }
+      })
     },
     [putLetter]
   )
