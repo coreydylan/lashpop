@@ -12,6 +12,27 @@ import { useInView } from 'framer-motion'
 import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
 import { MemberTakeover } from '@/components/team/MemberTakeover'
+import { useAdminMode } from '@/contexts/AdminModeContext'
+import { EditableToggle, EditableOrder } from '@/components/admin-mode/EditableControls'
+
+/**
+ * Inline-admin: persist team visibility + order via the auth-guarded
+ * PUT /api/admin/website/team. `updates[].id` is the member UUID.
+ * Used by the eye toggle (single member) and EditableOrder (whole list).
+ */
+async function putTeamUpdates(
+  updates: Array<{ id: string; isActive: boolean; displayOrder: number }>
+) {
+  const res = await fetch('/api/admin/website/team', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ updates }),
+  })
+  if (!res.ok) {
+    const m = await res.json().catch(() => null)
+    throw new Error(m?.error || 'Failed to save')
+  }
+}
 
 const CRED_ICON: Record<string, typeof Award> = {
   founder: Sparkles,
@@ -48,6 +69,65 @@ function MemberCredentialsList({ credentials }: { credentials?: TeamMemberCreden
         })}
       </ul>
     </div>
+  )
+}
+
+/**
+ * Inline-admin overlay for a single team card. Renders the EYE "show on site"
+ * toggle (top-LEFT) plus a dim scrim + "Hidden from your site" ribbon when the
+ * member is hidden. Persists via PUT /api/admin/website/team. Renders nothing
+ * structural for the public site — the caller only mounts it under adminEnabled.
+ *
+ * Local `hidden` state drives the dim/ribbon optimistically; the eye toggle owns
+ * the network call and the dirty registry. The card's own onClick is stopped so
+ * toggling visibility never opens the member takeover.
+ */
+function TeamCardAdminOverlay({
+  member,
+  displayOrder,
+  // When the card lives inside EditableOrder, its ⠿ grip occupies the top-LEFT
+  // corner. Drop the eye toggle just below it so both stay tappable.
+  belowGrip = false,
+}: {
+  member: TeamMember
+  displayOrder: number
+  belowGrip?: boolean
+}) {
+  const [hidden, setHidden] = useState(member.isActive === false)
+  if (!member.uuid) return null
+  return (
+    <>
+      {hidden && (
+        <>
+          {/* ~35% dim scrim (admin-only) */}
+          <div className="pointer-events-none absolute inset-0 z-30 rounded-[20px] bg-cream/35" />
+          {/* Small "Hidden from your site" ribbon */}
+          <div className="pointer-events-none absolute right-2 top-2 z-40 rounded-full bg-charcoal/85 px-2.5 py-1 text-[10px] font-medium text-white shadow">
+            Hidden from your site
+          </div>
+        </>
+      )}
+      {/* Eye toggle, top-LEFT (structure corner). Stop the card click so a
+          visibility tap doesn't open the takeover. */}
+      <div
+        className={`absolute left-2 z-40 ${belowGrip ? 'top-12' : 'top-2'}`}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchEnd={(e) => e.stopPropagation()}
+      >
+        <EditableToggle
+          id={`team-visible-${member.uuid}`}
+          label={`${member.name.split(' ')[0]} — show on site`}
+          visible={!hidden}
+          onChange={async (visible) => {
+            await putTeamUpdates([
+              { id: member.uuid!, isActive: visible, displayOrder },
+            ])
+            setHidden(!visible)
+          }}
+        />
+      </div>
+    </>
   )
 }
 
@@ -265,6 +345,9 @@ interface TeamMember {
   funFact?: string
   quickFacts?: QuickFact[]
   credentials?: TeamMemberCredential[]
+  // Inline-admin: visibility on the public site. Public server query only
+  // returns active members, so this is treated as true when absent.
+  isActive?: boolean
   // Photo crop URLs for different formats
   cropSquareUrl?: string
   cropCloseUpCircleUrl?: string
@@ -316,6 +399,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   // Team members are already sorted by displayOrder from the database
   // Order can be managed via admin panel at /admin/website/team
   const sortedTeamMembers = teamMembers
+
+  // Inline-admin mode. When OFF, every admin branch below is skipped so the
+  // grid renders byte-identical to the public site.
+  const { enabled: adminEnabled } = useAdminMode()
 
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [selectedMemberIndex, setSelectedMemberIndex] = useState<number>(0)
@@ -879,6 +966,17 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         <div className="absolute inset-0 pointer-events-none rounded-[20px] ring-[3px] ring-inset ring-dusty-rose" />
                       )}
 
+                      {/* Inline-admin: visibility eye + dim/ribbon (mobile).
+                          TODO(reorder): the mobile 2-col grid uses bespoke
+                          touch handlers (tag-scroll vs. page-scroll vs. tap) on
+                          each card; wrapping it in EditableOrder/Reorder would
+                          fight those gestures, so drag-reorder is intentionally
+                          desktop-only for now. Visibility (lower risk) is wired
+                          on both. */}
+                      {adminEnabled && (
+                        <TeamCardAdminOverlay member={member} displayOrder={index} />
+                      )}
+
                       {/* Swipe Tutorial Hint */}
                       <AnimatePresence>
                         {showTutorialOnThisCard && <SwipeHint />}
@@ -895,8 +993,35 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           <div className="container px-4">
             {/* Desktop Grid — full-page takeover opens on click */}
             <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {sortedTeamMembers.map((member, absoluteIndex) => {
+              {/* Admin OFF → EditableOrder is a pure pass-through: it renders a
+                  plain <div className={...}> with items in DOM order, so this is
+                  byte-identical to the previous bare grid. Admin ON → drag/⠿
+                  reorder, persisting the whole list via PUT /api/admin/website/team. */}
+              <EditableOrder<TeamMember>
+                id="team-grid-order"
+                label="Team — order"
+                layout="grid"
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                items={sortedTeamMembers}
+                getKey={(m) => m.uuid ?? String(m.id)}
+                itemNoun={(m) => m.name.split(' ')[0]}
+                onReorder={async (orderedIds) => {
+                  // orderedIds are the getKey values (uuid). Persist new order +
+                  // current visibility for the whole list.
+                  const byKey = new Map(
+                    sortedTeamMembers.map((m) => [m.uuid ?? String(m.id), m])
+                  )
+                  await putTeamUpdates(
+                    orderedIds.flatMap((key, index) => {
+                      const m = byKey.get(key)
+                      if (!m?.uuid) return []
+                      return [
+                        { id: m.uuid, isActive: m.isActive !== false, displayOrder: index },
+                      ]
+                    })
+                  )
+                }}
+                renderItem={(member, absoluteIndex) => {
                   const memberCategories = member.serviceCategories?.length
                     ? member.serviceCategories
                     : getTeamMemberCategories(member.specialties)
@@ -1013,12 +1138,22 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         {isHighlighted(member.id) && !isSelected && (
                           <div className="absolute inset-0 ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream rounded-[20px] pointer-events-none" />
                         )}
+
+                        {/* Inline-admin: visibility eye + dim/ribbon. Rendered
+                            ONLY in admin mode (the card lives inside EditableOrder
+                            there, so its ⠿ grip owns the top-LEFT corner). */}
+                        {adminEnabled && (
+                          <TeamCardAdminOverlay
+                            member={member}
+                            displayOrder={absoluteIndex}
+                            belowGrip
+                          />
+                        )}
                       </motion.div>
                     </motion.div>
                   )
-                })}
-
-              </div>
+                }}
+              />
             </div>
           </div>
         )}

@@ -22,10 +22,32 @@ import type { TeamMemberCredential } from '@/db/schema/team_members'
 import { useAdminMode } from '@/contexts/AdminModeContext'
 import { Editable } from '@/components/admin-mode/Editable'
 import { EditableList } from '@/components/admin-mode/EditableList'
+import { EditableImage } from '@/components/admin-mode/EditableImage'
 
 const CRED_TYPES: TeamMemberCredential['type'][] = [
   'certification', 'license', 'training', 'award', 'education', 'founder',
 ]
+
+// Quick-fact types + their default labels, mirrored from QuickFactCard's
+// DEFAULT_LABELS so the editor's type chips read the same as the public render.
+const QUICK_FACT_LABELS: Record<string, string> = {
+  coffee: 'Go-To Coffee',
+  drink: 'Favorite Drink',
+  tv_show: 'Favorite TV Show',
+  movie: 'Favorite Movie',
+  hobby: 'Hobby',
+  hidden_talent: 'Hidden Talent',
+  fun_fact: 'Fun Fact',
+  pet: 'Pet',
+  music: 'Favorite Music',
+  food: 'Favorite Food',
+  book: 'Favorite Book',
+  travel: 'Dream Destination',
+  sport: 'Sport',
+  zodiac: 'Zodiac Sign',
+  custom: 'Quick Fact',
+}
+const QUICK_FACT_TYPES: string[] = Object.keys(QUICK_FACT_LABELS)
 
 /** PATCH a single team member field via the (now auth-guarded) admin endpoint. */
 async function patchTeamMember(uuid: string | undefined, payload: Record<string, unknown>) {
@@ -38,6 +60,90 @@ async function patchTeamMember(uuid: string | undefined, payload: Record<string,
   if (!res.ok) {
     const m = await res.json().catch(() => null)
     throw new Error(m?.error || 'Failed to save')
+  }
+}
+
+/** A quick fact as edited inline. `id` is absent for freshly-added rows. */
+interface EditableQuickFact {
+  id?: string
+  factType: string
+  value: string
+  customLabel?: string | null
+}
+
+/**
+ * Persist a whole quick-facts list for one member by diffing `next` against the
+ * server's current `prev`.
+ *
+ * The /quick-facts endpoint is per-row (POST create / PUT update / DELETE) plus
+ * a PATCH reorder — there is no single whole-list replace. EditableList hands us
+ * the full ordered list on save, so we translate that into the minimal set of
+ * row calls: delete rows that vanished, create rows without an id, update
+ * changed rows, then PATCH the final id order so displayOrder matches the UI.
+ */
+async function saveQuickFacts(
+  uuid: string | undefined,
+  prev: QuickFact[],
+  next: EditableQuickFact[]
+) {
+  if (!uuid) throw new Error('Missing member id')
+
+  const post = async (path: string, method: string, body: unknown) => {
+    const res = await fetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) {
+      const m = await res.json().catch(() => null)
+      throw new Error(m?.error || 'Failed to save quick facts')
+    }
+    return res.json().catch(() => null)
+  }
+
+  const base = '/api/admin/website/team/quick-facts'
+
+  // 1) Delete rows that are no longer present.
+  const keptIds = new Set(next.map(f => f.id).filter(Boolean) as string[])
+  for (const old of prev) {
+    if (!keptIds.has(old.id)) {
+      await post(`${base}?id=${encodeURIComponent(old.id)}`, 'DELETE', {})
+    }
+  }
+
+  // 2) Create new rows / update changed ones, tracking the resolved id order.
+  const prevById = new Map(prev.map(f => [f.id, f]))
+  const orderedIds: string[] = []
+  for (const fact of next) {
+    const factType = fact.factType || 'custom'
+    const value = fact.value ?? ''
+    const customLabel = fact.customLabel ?? null
+    if (!fact.id) {
+      const created = await post(base, 'POST', {
+        teamMemberId: uuid,
+        factType,
+        value,
+        customLabel,
+      })
+      const newId = created?.fact?.id
+      if (newId) orderedIds.push(newId)
+    } else {
+      const before = prevById.get(fact.id)
+      const changed =
+        !before ||
+        before.factType !== factType ||
+        before.value !== value ||
+        (before.customLabel ?? null) !== customLabel
+      if (changed) {
+        await post(base, 'PUT', { id: fact.id, factType, value, customLabel })
+      }
+      orderedIds.push(fact.id)
+    }
+  }
+
+  // 3) Persist the final order so displayOrder reflects the on-screen sequence.
+  if (orderedIds.length > 0) {
+    await post(base, 'PATCH', { teamMemberId: uuid, factIds: orderedIds })
   }
 }
 
@@ -282,27 +388,45 @@ export function MemberTakeover({
                   {/* Sidebar — sticky portrait + identity + book */}
                   <aside className="lg:sticky lg:top-14 lg:self-start">
                     <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-warm-sand/30 shadow-[0_20px_40px_rgba(45,40,35,0.12)]">
-                      <Image
-                        src={member.image || PLACEHOLDER_IMAGE}
-                        alt={member.name}
-                        fill
-                        priority
-                        className={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE) ? 'object-contain p-8' : 'object-cover object-top'}
-                        sizes="(max-width: 1024px) 100vw, 540px"
-                        unoptimized={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE) || isVagaroPhoto(member.image)}
-                      />
-                      {adminEnabled && member.imageOverride && member.vagaroPhotoUrl ? (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await patchTeamMember(member.uuid, { imageOverride: false })
+                      {adminEnabled ? (
+                        <EditableImage
+                          id={`portrait-${member.uuid}`}
+                          label={`${member.name.split(' ')[0]} — portrait`}
+                          src={member.image || PLACEHOLDER_IMAGE}
+                          alt={member.name}
+                          className="!block h-full w-full"
+                          unoptimized={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE) || isVagaroPhoto(member.image)}
+                          damFilterTags={['team']}
+                          vagaro={
+                            member.vagaroPhotoUrl
+                              ? {
+                                  isOverridden: !!member.imageOverride,
+                                  onUseVagaro: async () => {
+                                    await patchTeamMember(member.uuid, { imageOverride: false })
+                                    adminRefresh()
+                                  },
+                                }
+                              : undefined
+                          }
+                          onReplace={async asset => {
+                            await patchTeamMember(member.uuid, {
+                              imageUrl: asset.filePath,
+                              imageOverride: true,
+                            })
                             adminRefresh()
                           }}
-                          className="absolute bottom-3 left-1/2 min-h-0 -translate-x-1/2 rounded-full bg-cream/90 px-4 py-2 text-xs font-medium text-charcoal shadow-md backdrop-blur hover:bg-cream"
-                        >
-                          Use Vagaro photo
-                        </button>
-                      ) : null}
+                        />
+                      ) : (
+                        <Image
+                          src={member.image || PLACEHOLDER_IMAGE}
+                          alt={member.name}
+                          fill
+                          priority
+                          className={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE) ? 'object-contain p-8' : 'object-cover object-top'}
+                          sizes="(max-width: 1024px) 100vw, 540px"
+                          unoptimized={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE) || isVagaroPhoto(member.image)}
+                        />
+                      )}
                     </div>
 
                     <div className="pt-8">
@@ -480,14 +604,82 @@ export function MemberTakeover({
                       </section>
                     ) : null}
 
-                    {member.quickFacts && member.quickFacts.length > 0 ? (
+                    {adminEnabled ? (
+                      <section className="pb-14">
+                        <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-dusty-rose">
+                          Get to know {member.name.split(' ')[0]}
+                        </p>
+                        <EditableList<EditableQuickFact>
+                          id={`quickfacts-${member.uuid}`}
+                          label={`${member.name.split(' ')[0]} — quick facts`}
+                          items={(member.quickFacts ?? []).map(f => ({
+                            id: f.id,
+                            factType: f.factType,
+                            value: f.value,
+                            customLabel: f.customLabel ?? null,
+                          }))}
+                          getKey={f => f.id ?? `new:${f.factType}:${f.value}`}
+                          noun="quick fact"
+                          mode="card"
+                          onSave={async next => {
+                            await saveQuickFacts(member.uuid, member.quickFacts ?? [], next)
+                          }}
+                          makeNew={() => ({ factType: 'custom', value: '', customLabel: null })}
+                          describeForDelete={f =>
+                            f.value ? `"${f.value}"` : 'this quick fact'
+                          }
+                          renderRow={fact => (
+                            <span className="flex items-baseline gap-2 text-charcoal">
+                              <span className="text-xs font-medium uppercase tracking-wider text-dusty-rose">
+                                {fact.customLabel || QUICK_FACT_LABELS[fact.factType] || 'Quick fact'}
+                              </span>
+                              <span className="text-base">{fact.value || 'Untitled fact'}</span>
+                            </span>
+                          )}
+                          renderEditor={({ draft, set }) => (
+                            <div className="space-y-2">
+                              <div className="flex flex-wrap gap-1.5">
+                                {QUICK_FACT_TYPES.map(t => (
+                                  <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => set({ factType: t })}
+                                    className={`min-h-0 rounded-full px-2.5 py-1 text-xs ${
+                                      draft.factType === t
+                                        ? 'bg-dusty-rose text-white'
+                                        : 'bg-stone-100 text-stone-600'
+                                    }`}
+                                  >
+                                    {QUICK_FACT_LABELS[t] ?? t}
+                                  </button>
+                                ))}
+                              </div>
+                              <input
+                                value={draft.customLabel ?? ''}
+                                onChange={e => set({ customLabel: e.target.value || null })}
+                                placeholder={`Label (optional, defaults to "${
+                                  QUICK_FACT_LABELS[draft.factType] ?? 'Quick fact'
+                                }")`}
+                                className="w-full rounded border border-stone-300 p-2 text-sm text-stone-900"
+                              />
+                              <input
+                                value={draft.value}
+                                onChange={e => set({ value: e.target.value })}
+                                placeholder="Value (e.g. Oat-milk latte)"
+                                className="w-full rounded border border-stone-300 p-2 text-sm text-stone-900"
+                              />
+                            </div>
+                          )}
+                        />
+                      </section>
+                    ) : member.quickFacts && member.quickFacts.length > 0 ? (
                       <section className="pb-14">
                         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-dusty-rose">
                           Get to know {member.name.split(' ')[0]}
                         </p>
                         <QuickFactsGrid facts={member.quickFacts} />
                       </section>
-                    ) : member.funFact || adminEnabled ? (
+                    ) : member.funFact ? (
                       <section className="pb-14">
                         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-dusty-rose">
                           Fun Fact
