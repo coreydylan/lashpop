@@ -110,9 +110,14 @@ export async function updateReviewStats(
   // filter shuffles a few each week), and our cron previously rewrote
   // review_stats down to whatever the upstream fetcher reported — which is
   // how Yelp drifted from 201 → 191 even though no reviews were truly
-  // deleted. MAX(upstream, localCount, currentDb) holds the high-water
-  // mark; reviews truly removed by Yelp eventually wash out in the dedup
-  // table itself, not in the counter.
+  // deleted. MAX(upstream, currentDb) holds the high-water mark.
+  //
+  // We deliberately DON'T include localCount in the ratchet. Local row
+  // counts include URLs folded into source_urls during cross-platform
+  // dedup, which can inflate a platform's count by a few rows whenever
+  // a fingerprint match wasn't a perfect dupe. Better to trust the
+  // platform's own number (when reachable) or the last known good DB
+  // value than a heuristic union count.
   const currentRows = await sql<Array<{ source: string; review_count: number }>>`
     SELECT source, review_count FROM review_stats
     WHERE source IN ('google', 'vagaro', 'yelp')
@@ -123,9 +128,8 @@ export async function updateReviewStats(
   for (const row of aggregates) {
     const source = row.source as 'google' | 'vagaro' | 'yelp'
     const upstreamTotal = fetcherTotals[source] ?? 0
-    const localCount = row.count
     const currentDb = currentBySource.get(source) ?? 0
-    const reviewCount = Math.max(upstreamTotal, localCount, currentDb)
+    const reviewCount = Math.max(upstreamTotal, currentDb)
     const ratingNum = Number(row.avg_rating)
     const rating = Number.isFinite(ratingNum) && ratingNum > 0 ? ratingNum : 5.0
     const ratingStr = rating.toFixed(1)
