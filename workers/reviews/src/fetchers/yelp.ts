@@ -242,3 +242,111 @@ export async function fetchYelpReviews(env: Env): Promise<FetcherResult> {
 
   return { source: 'yelp', reviews, totalAvailable: totalCount, errors }
 }
+
+/**
+ * Diagnostic: call Yelp's GetBusinessReviewFeed with each known confidence
+ * level (plus the field omitted entirely) and return the totalCount each
+ * variant reports. Used to identify which value matches the "recommended
+ * reviews" count Yelp shows on the business page. HIGH_CONFIDENCE has been
+ * the default but appears to under-report. Pick the variant whose totalCount
+ * matches the visible Yelp page total.
+ */
+export async function runYelpConfidenceTest(env: Env): Promise<{
+  business: string | null
+  resolveDiag?: { status: number; bodySnippet: string; bizUrl: string; cloakBase: string }
+  variants: Array<{ minConfidenceLevel: string | null; ok: boolean; totalCount: number | null; firstError?: string }>
+}> {
+  // Inline resolveEncBizId so we can dump diagnostics if it fails.
+  const bizUrl = env.YELP_BUSINESS_URL ?? 'https://www.yelp.com/biz/lashpop-studios-oceanside'
+  const cloakBase = env.CLOAK_BASE ?? 'https://cloak-mesh.experialstudio.com'
+  let encBizId: string | null = null
+  let resolveDiag: { status: number; bodySnippet: string; bizUrl: string; cloakBase: string } | undefined
+  try {
+    const res = await cloakFetch({ env, url: bizUrl })
+    const body = await res.text()
+    const m = body.match(/<meta[^>]+name=["']yelp-biz-id["'][^>]+content=["']([^"']+)["']/i)
+    encBizId = m?.[1] ?? null
+    if (!encBizId) {
+      resolveDiag = {
+        status: res.status,
+        bodySnippet: body.slice(0, 600),
+        bizUrl,
+        cloakBase,
+      }
+    }
+  } catch (err) {
+    return {
+      business: null,
+      resolveDiag: { status: -1, bodySnippet: err instanceof Error ? err.message : String(err), bizUrl, cloakBase },
+      variants: [],
+    }
+  }
+
+  if (!encBizId) {
+    return {
+      business: null,
+      resolveDiag,
+      variants: [],
+    }
+  }
+
+  const variants: Array<string | null> = [
+    'HIGH_CONFIDENCE',
+    'MEDIUM_CONFIDENCE',
+    'LOW_CONFIDENCE',
+    'NONE',
+    null, // field omitted entirely
+  ]
+
+  const results: Array<{ minConfidenceLevel: string | null; ok: boolean; totalCount: number | null; firstError?: string }> = []
+
+  for (const level of variants) {
+    const vars: Record<string, unknown> = {
+      encBizId,
+      reviewsPerPage: 1, // we only care about the totalCount in the response
+      selectedReviewEncId: '',
+      hasSelectedReview: false,
+      sortBy: 'DATE_DESC',
+      ratings: [5, 4, 3, 2, 1],
+      queryText: '',
+      isSearching: false,
+      after: null,
+      isTranslating: false,
+      translateLanguageCode: 'en',
+      reactionsSourceFlow: 'businessPageReviewSection',
+      eliteAllStarSourceFlow: 'biz_page_review_feed',
+      fetchMediaReviewContent: false,
+      highlightType: '',
+      highlightIdentifier: '',
+      isHighlighting: false,
+      shouldFetchAddress: true,
+    }
+    if (level !== null) {
+      vars.minConfidenceLevel = level
+    }
+
+    try {
+      const r = await gqlCall(env, 'GetBusinessReviewFeed', vars)
+      const feed = r.data?.business?.reviews as YelpReviewFeed | undefined
+      const totalCount = typeof feed?.totalCount === 'number' ? feed.totalCount : null
+      results.push({
+        minConfidenceLevel: level,
+        ok: r.ok && totalCount !== null,
+        totalCount,
+        firstError: r.ok ? undefined : JSON.stringify(r.raw).slice(0, 200),
+      })
+    } catch (err) {
+      results.push({
+        minConfidenceLevel: level,
+        ok: false,
+        totalCount: null,
+        firstError: err instanceof Error ? err.message : String(err),
+      })
+    }
+
+    // Pacing between calls
+    await new Promise((resolve) => setTimeout(resolve, 400))
+  }
+
+  return { business: encBizId, variants: results }
+}

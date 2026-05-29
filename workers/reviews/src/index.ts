@@ -43,7 +43,7 @@ export default {
     const url = new URL(req.url)
 
     if (url.pathname === '/' || url.pathname === '') {
-      return new Response('lashpop-reviews — GET /run | /run?editor=1 | /state | /schedule', {
+      return new Response('lashpop-reviews — GET /run | /run?editor=1 | /state | /schedule | /yelp-confidence-test', {
         headers: { 'content-type': 'text/plain' },
       })
     }
@@ -54,6 +54,18 @@ export default {
       if (auth !== `Bearer ${env.MANUAL_TRIGGER_SECRET}`) {
         return new Response('Unauthorized', { status: 401 })
       }
+    }
+
+    // One-shot diagnostic: call Yelp's GraphQL with each confidence level so we
+    // can identify which value returns the totalCount that matches Yelp's public
+    // page. Used to be hardcoded to HIGH_CONFIDENCE, which appears to under-
+    // report compared to "recommended reviews" shown on the business page.
+    if (url.pathname === '/yelp-confidence-test') {
+      const { runYelpConfidenceTest } = await import('./fetchers/yelp')
+      const result = await runYelpConfidenceTest(env)
+      return new Response(JSON.stringify(result, null, 2), {
+        headers: { 'content-type': 'application/json' },
+      })
     }
 
     const stub = getStub(env)
