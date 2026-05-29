@@ -480,22 +480,34 @@ export default function WorkWithUsPage() {
       section === 'training' ? trainingSectionRef.current :
       null
 
-    let raf2 = 0
-    const raf1 = window.requestAnimationFrame(() => {
-      raf2 = window.requestAnimationFrame(() => {
-        const target = getTarget()
-        if (!target) return
-        const rect = target.getBoundingClientRect()
-        const NAV_OFFSET = 96 // desktop nav + a bit of breathing room
-        window.scrollTo({
-          top: window.scrollY + rect.top - NAV_OFFSET,
-          behavior: 'smooth',
-        })
-      })
-    })
+    // Earlier passes used getBoundingClientRect + window.scrollTo with a
+    // double-rAF wait. That STILL landed at the wrong spot when switching
+    // tabs because the old section's layout removal and the new section's
+    // layout commit didn't always land within the rAF window — we ended up
+    // measuring a transient Y. scrollIntoView lets the browser handle the
+    // timing natively against the post-layout DOM, and `scroll-margin-top`
+    // on the target controls the nav-clearance offset deterministically.
+    // We retry a couple times across frames because the new section may
+    // not be mounted yet at the moment AnimatePresence's onExitComplete
+    // fires.
+    let attempts = 0
+    let timer = 0
+    const tryScroll = () => {
+      const target = getTarget()
+      attempts++
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        return
+      }
+      if (attempts < 6) {
+        // ~16ms per frame × 6 = ~100ms total budget for AnimatePresence
+        // to mount the incoming section after onExitComplete.
+        timer = window.requestAnimationFrame(tryScroll)
+      }
+    }
+    timer = window.requestAnimationFrame(tryScroll)
     return () => {
-      window.cancelAnimationFrame(raf1)
-      if (raf2) window.cancelAnimationFrame(raf2)
+      if (timer) window.cancelAnimationFrame(timer)
     }
   }, [])
 
@@ -859,7 +871,7 @@ export default function WorkWithUsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="hidden md:block bg-white border-t border-sage/10"
+            className="hidden md:block bg-white border-t border-sage/10 scroll-mt-24"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
@@ -945,7 +957,7 @@ export default function WorkWithUsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="hidden md:block bg-white border-t border-sage/10"
+            className="hidden md:block bg-white border-t border-sage/10 scroll-mt-24"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
@@ -1042,7 +1054,7 @@ export default function WorkWithUsPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="hidden md:block bg-white border-t border-sage/10"
+            className="hidden md:block bg-white border-t border-sage/10 scroll-mt-24"
           >
             <div className="container max-w-6xl px-5 md:px-8 py-10 md:py-14">
               <div className="grid lg:grid-cols-2 gap-10 md:gap-14">
