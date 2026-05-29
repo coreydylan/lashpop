@@ -79,8 +79,14 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
   }, [])
 
   // Warm the lightbox-sized variant of every team photo into the browser
-  // cache after the rest of the page has finished loading, so the first tap
-  // on a card opens instantly instead of waiting for a cold CF Image fetch.
+  // cache as soon as photos arrive — without this the first tap waits on a
+  // cold CF Image fetch (~250-600 ms). We kick off via requestIdleCallback
+  // so the prefetch never competes with hydration or layout. No
+  // window.load gate here because the Work With Us page is a route
+  // navigation: photos come from a client fetch that resolves AFTER
+  // first paint, so by definition the network is in its post-load
+  // quiet phase. Waiting for window.load on top of that just adds lag
+  // before the first idle tick.
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (photos.length === 0) return
@@ -93,30 +99,31 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
       (window as { requestIdleCallback?: typeof idle }).requestIdleCallback ??
       ((cb) => window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 16))
 
-    const tick = () => {
-      if (cancelled || i >= photos.length) return
-      const url = lightboxSrc(photos[i].filePath)
+    const prefetch = (idx: number) => {
+      if (cancelled || idx >= photos.length) return
+      const url = lightboxSrc(photos[idx].filePath)
       const img = new globalThis.Image()
       img.decoding = 'async'
       img.referrerPolicy = 'no-referrer'
       img.src = url
-      i++
+    }
+
+    // First three photos are most likely to be clicked first — warm them
+    // synchronously (no idle wait) so an immediate tap is instant.
+    prefetch(i++)
+    prefetch(i++)
+    prefetch(i++)
+
+    const tick = () => {
+      if (cancelled || i >= photos.length) return
+      prefetch(i++)
       idle(tick, { timeout: 800 })
     }
 
-    const start = () => {
-      if (!cancelled) idle(tick, { timeout: 1200 })
-    }
-
-    if (document.readyState === 'complete') {
-      start()
-    } else {
-      window.addEventListener('load', start, { once: true })
-    }
+    idle(tick, { timeout: 1200 })
 
     return () => {
       cancelled = true
-      window.removeEventListener('load', start)
     }
   }, [photos, lightboxSrc])
 

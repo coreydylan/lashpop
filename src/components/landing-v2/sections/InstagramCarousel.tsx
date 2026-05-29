@@ -109,9 +109,9 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
       (window as { requestIdleCallback?: typeof idle }).requestIdleCallback ??
       ((cb) => window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 16))
 
-    const tick = () => {
-      if (cancelled || i >= rawItems.length) return
-      const url = lightboxSrc(rawItems[i].mediaUrl)
+    const prefetch = (idx: number) => {
+      if (cancelled || idx >= rawItems.length) return
+      const url = lightboxSrc(rawItems[idx].mediaUrl)
       // new Image() triggers a real GET that lands in the browser cache.
       // We don't keep the reference — once the response is cached, the
       // lightbox <img> with the same src hits the cache instantly.
@@ -119,12 +119,23 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
       img.decoding = 'async'
       img.referrerPolicy = 'no-referrer'
       img.src = url
-      i++
+    }
+
+    const tick = () => {
+      if (cancelled || i >= rawItems.length) return
+      prefetch(i++)
       idle(tick, { timeout: 800 })
     }
 
+    // First three images warm synchronously (no idle wait) so an immediate
+    // tap on the visible cards is instant. The remaining ~20 drip into
+    // cache during idle slots.
     const start = () => {
-      if (!cancelled) idle(tick, { timeout: 1200 })
+      if (cancelled) return
+      prefetch(i++)
+      prefetch(i++)
+      prefetch(i++)
+      idle(tick, { timeout: 1200 })
     }
 
     if (document.readyState === 'complete') {
