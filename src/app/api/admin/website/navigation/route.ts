@@ -5,6 +5,7 @@ import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { requireAdminApi } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { isStaleWrite, staleConflictResponse } from '@/lib/admin/concurrency'
 import {
   DEFAULT_NAVIGATION,
   NAVIGATION_SECTION,
@@ -48,6 +49,13 @@ export async function PUT(req: NextRequest) {
     .limit(1)
   const prev = prevRows[0]?.config as Partial<NavigationContent> | null
 
+  const { baseUpdatedAt, ...rest } = body as Partial<NavigationContent> & {
+    baseUpdatedAt?: unknown
+  }
+  if (isStaleWrite((prev as { updatedAt?: string } | null)?.updatedAt, baseUpdatedAt)) {
+    return staleConflictResponse(mergeNavigation(prev))
+  }
+
   // Merge the incoming partial over the CURRENT persisted row (normalized over
   // defaults), not over defaults alone. This makes the PUT genuinely partial-safe:
   // a stale client that only sends e.g. {logoAlt} can't blank a concurrently-saved
@@ -55,10 +63,10 @@ export async function PUT(req: NextRequest) {
   const base = mergeNavigation(prev)
   const merged: NavigationContent = {
     ...base,
-    ...body,
+    ...rest,
     navItems:
-      Array.isArray(body.navItems) && body.navItems.length > 0
-        ? body.navItems
+      Array.isArray(rest.navItems) && rest.navItems.length > 0
+        ? rest.navItems
         : base.navItems,
   }
   merged.updatedAt = new Date().toISOString()

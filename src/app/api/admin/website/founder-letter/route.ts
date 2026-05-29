@@ -5,6 +5,7 @@ import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { requireAdminApi } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { isStaleWrite, staleConflictResponse } from '@/lib/admin/concurrency'
 import {
   DEFAULT_FOUNDER_LETTER,
   FOUNDER_LETTER_SECTION,
@@ -48,6 +49,13 @@ export async function PUT(req: NextRequest) {
     .limit(1)
   const prev = prevRows[0]?.config as Partial<FounderLetterContent> | null
 
+  const { baseUpdatedAt, ...rest } = body as Partial<FounderLetterContent> & {
+    baseUpdatedAt?: unknown
+  }
+  if (isStaleWrite((prev as { updatedAt?: string } | null)?.updatedAt, baseUpdatedAt)) {
+    return staleConflictResponse(mergeFounderLetter(prev))
+  }
+
   // Merge the incoming partial over the CURRENT persisted row (normalized over
   // defaults), not over defaults alone. This makes the PUT genuinely partial-safe:
   // a stale client that only sends e.g. {heading} can't blank a concurrently-saved
@@ -55,10 +63,10 @@ export async function PUT(req: NextRequest) {
   const base = mergeFounderLetter(prev)
   const merged: FounderLetterContent = {
     ...base,
-    ...body,
+    ...rest,
     paragraphs:
-      Array.isArray(body.paragraphs) && body.paragraphs.length > 0
-        ? body.paragraphs
+      Array.isArray(rest.paragraphs) && rest.paragraphs.length > 0
+        ? rest.paragraphs
         : base.paragraphs,
   }
   merged.updatedAt = new Date().toISOString()

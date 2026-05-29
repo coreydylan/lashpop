@@ -78,10 +78,13 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS, content }: FooterV2
       const res = await fetch('/api/admin/website/footer-content', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(merged),
+        body: JSON.stringify({ ...merged, baseUpdatedAt: footerRef.current.updatedAt }),
       })
       if (!res.ok) {
         const msg = await res.json().catch(() => null)
+        if (res.status === 409 || msg?.conflict) {
+          throw new Error(msg?.error || 'This changed in another tab — reload and redo.')
+        }
         throw new Error(msg?.error || 'Failed to save footer content')
       }
       const data = await res.json()

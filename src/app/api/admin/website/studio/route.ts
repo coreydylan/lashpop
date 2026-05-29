@@ -5,6 +5,7 @@ import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { requireAdminApi } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { isStaleWrite, staleConflictResponse } from '@/lib/admin/concurrency'
 import {
   DEFAULT_STUDIO_SETTINGS,
   STUDIO_SETTINGS_SECTION,
@@ -41,9 +42,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const merged = mergeStudioSettings(body)
-  merged.updatedAt = new Date().toISOString()
-
   const db = getDb()
 
   // Read previous state for the audit diff before we overwrite.
@@ -53,6 +51,16 @@ export async function PUT(req: NextRequest) {
     .where(eq(websiteSettings.section, STUDIO_SETTINGS_SECTION))
     .limit(1)
   const prev = prevRows[0]?.config as Partial<StudioSettings> | null
+
+  const { baseUpdatedAt, ...rest } = body as Partial<StudioSettings> & {
+    baseUpdatedAt?: unknown
+  }
+  if (isStaleWrite((prev as { updatedAt?: string } | null)?.updatedAt, baseUpdatedAt)) {
+    return staleConflictResponse(mergeStudioSettings(prev))
+  }
+
+  const merged = mergeStudioSettings(rest)
+  merged.updatedAt = new Date().toISOString()
 
   // Upsert into website_settings.
   await db

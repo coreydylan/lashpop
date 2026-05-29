@@ -5,6 +5,7 @@ import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { requireAdminApi } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { isStaleWrite, staleConflictResponse } from '@/lib/admin/concurrency'
 import {
   DEFAULT_FOOTER_CONTENT,
   FOOTER_CONTENT_SECTION,
@@ -48,6 +49,13 @@ export async function PUT(req: NextRequest) {
     .limit(1)
   const prev = prevRows[0]?.config as Partial<FooterContent> | null
 
+  const { baseUpdatedAt, ...rest } = body as Partial<FooterContent> & {
+    baseUpdatedAt?: unknown
+  }
+  if (isStaleWrite((prev as { updatedAt?: string } | null)?.updatedAt, baseUpdatedAt)) {
+    return staleConflictResponse(mergeFooterContent(prev))
+  }
+
   // Merge the incoming partial over the CURRENT persisted row (normalized over
   // defaults), not over defaults alone. This makes the PUT genuinely partial-safe:
   // a stale client that only sends e.g. {servicesHeading} can't blank a
@@ -56,14 +64,14 @@ export async function PUT(req: NextRequest) {
   const base = mergeFooterContent(prev)
   const merged: FooterContent = {
     ...base,
-    ...body,
+    ...rest,
     services:
-      Array.isArray(body.services) && body.services.length > 0
-        ? body.services
+      Array.isArray(rest.services) && rest.services.length > 0
+        ? rest.services
         : base.services,
     policyLinks:
-      Array.isArray(body.policyLinks) && body.policyLinks.length > 0
-        ? body.policyLinks
+      Array.isArray(rest.policyLinks) && rest.policyLinks.length > 0
+        ? rest.policyLinks
         : base.policyLinks,
   }
   merged.updatedAt = new Date().toISOString()
