@@ -159,6 +159,32 @@ export function BookingModal({
     vagaroDiv.appendChild(script);
     container.appendChild(vagaroDiv);
 
+    // Sandbox the Vagaro iframe so its merchant-admin "Return URL" (currently
+    // the old Squarespace lashpop site) can't top-navigate the parent window
+    // after BookingCompleted — that was kicking mobile users off entirely
+    // before they could click Done / Book Another Service. Mirrors the
+    // BookingView treatment. allow-popups stays so card-on-file / external
+    // links open in a new tab instead.
+    const SANDBOX = 'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals';
+    const sandboxIframe = (frame: HTMLIFrameElement) => {
+      if (frame.getAttribute('sandbox')) return;
+      frame.setAttribute('sandbox', SANDBOX);
+    };
+    const mo = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of Array.from(m.addedNodes)) {
+          if (!(node instanceof HTMLElement)) continue;
+          if (node.tagName === 'IFRAME') {
+            sandboxIframe(node as HTMLIFrameElement);
+          } else {
+            node.querySelectorAll('iframe').forEach((f) => sandboxIframe(f as HTMLIFrameElement));
+          }
+        }
+      }
+    });
+    mo.observe(container, { childList: true, subtree: true });
+    container.querySelectorAll('iframe').forEach((f) => sandboxIframe(f as HTMLIFrameElement));
+
     // Timeout for error state
     const timeout = setTimeout(() => {
       if (!widgetState.isLoaded) {
@@ -168,6 +194,7 @@ export function BookingModal({
 
     return () => {
       clearTimeout(timeout);
+      mo.disconnect();
       if (container.contains(vagaroDiv)) {
         container.removeChild(vagaroDiv);
       }
