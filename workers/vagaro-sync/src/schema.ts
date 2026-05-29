@@ -1,4 +1,4 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
 
 export const teamMemberType = pgEnum('team_member_type', ['employee', 'independent'])
 
@@ -48,10 +48,23 @@ export const teamMembers = pgTable('team_members', {
   bookingUrl: text('booking_url').notNull(),
   usesLashpopBooking: boolean('uses_lashpop_booking').default(true).notNull(),
   imageUrl: text('image_url').notNull(),
-  specialties: jsonb('specialties').notNull().$type<string[]>(),
+  externalServiceCategories: jsonb('external_service_categories').$type<string[]>(),
   displayOrder: text('display_order').default('0'),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   lastSyncedAt: timestamp('last_synced_at'),
 })
+
+// Canonical Vagaro stylist→service mapping. Truncate-and-replace per stylist
+// each sync. Only stylists with uses_lashpop_booking=true populate this table.
+export const teamMemberServicesVagaro = pgTable('team_member_services_vagaro', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  teamMemberId: uuid('team_member_id').notNull(),
+  serviceId: uuid('service_id').notNull(),
+  vagaroParentTitle: text('vagaro_parent_title'),
+  syncedAt: timestamp('synced_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  uniqMemberService: unique('team_member_services_vagaro_member_service_unique')
+    .on(t.teamMemberId, t.serviceId),
+}))

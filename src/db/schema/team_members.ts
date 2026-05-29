@@ -46,9 +46,11 @@ export const teamMembers = pgTable("team_members", {
   bookingUrl: text("booking_url").notNull(),
   usesLashpopBooking: boolean("uses_lashpop_booking").default(true).notNull(),
   imageUrl: text("image_url").notNull(),
-  specialties: jsonb("specialties").notNull().$type<string[]>(),
   favoriteServices: jsonb("favorite_services").$type<string[]>(),
-  manualServiceCategories: jsonb("manual_service_categories").$type<string[]>(), // Custom tags for services not in Vagaro (e.g., injectables)
+  // Service category tags for stylists with usesLashpopBooking=false (i.e. who
+  // don't sync from Vagaro). For Vagaro-synced stylists these are derived from
+  // team_member_services_vagaro and this column is ignored.
+  externalServiceCategories: jsonb("external_service_categories").$type<string[]>(),
   funFact: text("fun_fact"),
   availability: text("availability"),
   displayOrder: text("display_order").default("0"),
