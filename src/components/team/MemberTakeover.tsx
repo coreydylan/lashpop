@@ -21,6 +21,11 @@ import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
 import { useAdminMode } from '@/contexts/AdminModeContext'
 import { Editable } from '@/components/admin-mode/Editable'
+import { EditableList } from '@/components/admin-mode/EditableList'
+
+const CRED_TYPES: TeamMemberCredential['type'][] = [
+  'certification', 'license', 'training', 'award', 'education', 'founder',
+]
 
 /** PATCH a single team member field via the (now auth-guarded) admin endpoint. */
 async function patchTeamMember(uuid: string | undefined, payload: Record<string, unknown>) {
@@ -377,27 +382,83 @@ export function MemberTakeover({
                       </section>
                     ) : null}
 
-                    {credentials.length > 0 ? (
+                    {credentials.length > 0 || adminEnabled ? (
                       <section className="pb-14">
                         <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-dusty-rose">
                           Credentials
                         </p>
-                        <ul className="space-y-3">
-                          {credentials.map((cred, idx) => {
-                            const Icon = CRED_ICON[cred.type] || Award
-                            return (
-                              <li key={idx} className="flex items-start gap-3 text-charcoal">
-                                <Icon className="mt-1 h-4 w-4 flex-shrink-0 text-dusty-rose" />
-                                <span className="text-base">
-                                  <span className="font-medium">{cred.name}</span>
-                                  {cred.issuer ? (
-                                    <span className="opacity-50"> · {cred.issuer}</span>
-                                  ) : null}
+                        {adminEnabled ? (
+                          <EditableList<TeamMemberCredential>
+                            id={`credentials-${member.uuid}`}
+                            label={`${member.name.split(' ')[0]} — credentials`}
+                            items={credentials}
+                            getKey={c => `${c.type}:${c.name}`}
+                            noun="credential"
+                            mode="card"
+                            onSave={async next => {
+                              await patchTeamMember(member.uuid, { credentials: next })
+                            }}
+                            makeNew={() => ({ type: 'certification', name: '' })}
+                            describeForDelete={c => (c.name ? `"${c.name}"` : 'this credential')}
+                            renderRow={cred => {
+                              const Icon = CRED_ICON[cred.type] || Award
+                              return (
+                                <span className="flex items-start gap-3 text-charcoal">
+                                  <Icon className="mt-1 h-4 w-4 flex-shrink-0 text-dusty-rose" />
+                                  <span className="text-base">
+                                    <span className="font-medium">{cred.name || 'Untitled credential'}</span>
+                                    {cred.issuer ? <span className="opacity-50"> · {cred.issuer}</span> : null}
+                                  </span>
                                 </span>
-                              </li>
-                            )
-                          })}
-                        </ul>
+                              )
+                            }}
+                            renderEditor={({ draft, set }) => (
+                              <div className="space-y-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {CRED_TYPES.map(t => (
+                                    <button
+                                      key={t}
+                                      type="button"
+                                      onClick={() => set({ type: t })}
+                                      className={`min-h-0 rounded-full px-2.5 py-1 text-xs capitalize ${
+                                        draft.type === t ? 'bg-dusty-rose text-white' : 'bg-stone-100 text-stone-600'
+                                      }`}
+                                    >
+                                      {t}
+                                    </button>
+                                  ))}
+                                </div>
+                                <input
+                                  value={draft.name}
+                                  onChange={e => set({ name: e.target.value })}
+                                  placeholder="Name (e.g. Licensed Esthetician)"
+                                  className="w-full rounded border border-stone-300 p-2 text-sm text-stone-900"
+                                />
+                                <input
+                                  value={draft.issuer ?? ''}
+                                  onChange={e => set({ issuer: e.target.value })}
+                                  placeholder="Issued by (optional)"
+                                  className="w-full rounded border border-stone-300 p-2 text-sm text-stone-900"
+                                />
+                              </div>
+                            )}
+                          />
+                        ) : (
+                          <ul className="space-y-3">
+                            {credentials.map((cred, idx) => {
+                              const Icon = CRED_ICON[cred.type] || Award
+                              return (
+                                <li key={idx} className="flex items-start gap-3 text-charcoal">
+                                  <Icon className="mt-1 h-4 w-4 flex-shrink-0 text-dusty-rose" />
+                                  <span className="text-base">
+                                    <span className="font-medium">{cred.name}</span>
+                                    {cred.issuer ? <span className="opacity-50"> · {cred.issuer}</span> : null}
+                                  </span>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
                       </section>
                     ) : null}
 
