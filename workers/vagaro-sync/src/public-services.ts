@@ -131,6 +131,13 @@ async function fetchPublicServices(numericBusinessId: string): Promise<PublicSer
   const json = (await res.json()) as CompositeResponse & {
     Services?: Array<{
       ServiceList?: VagaroPublicService[]
+      // ServiceCategoryTitle is the field Vagaro actually populates on the
+      // group level (verified against the live endpoint Apr 2026). The older
+      // ParentServiceTitle / ServiceTitle fields exist on the schema but come
+      // back null on this endpoint — relying on them is why mainCategory used
+      // to fall through to "Other Services" for most rows.
+      ServiceCategoryTitle?: string
+      ServiceCategoryID?: number
       ParentServiceTitle?: string
       ServiceTitle?: string
       ParentServiceID?: number
@@ -146,7 +153,7 @@ async function fetchPublicServices(numericBusinessId: string): Promise<PublicSer
   // onto each service row, so we pull it off the group level here.
   for (const category of json.Services ?? []) {
     const parentServiceTitle =
-      (category.ParentServiceTitle || category.ServiceTitle || '').trim() || null
+      (category.ServiceCategoryTitle || category.ParentServiceTitle || category.ServiceTitle || '').trim() || null
     for (const s of category.ServiceList ?? []) {
       if (s.ServiceID == null) continue
       const idKey = String(s.ServiceID)
@@ -203,4 +210,79 @@ export async function fetchPublicServicePhotos(numericBusinessId: string): Promi
  */
 export async function fetchPublicServicesFull(numericBusinessId: string): Promise<PublicServicesPayload> {
   return fetchPublicServices(numericBusinessId)
+}
+
+/**
+ * Per-stylist composite call. Same endpoint as the unfiltered fetch, but with
+ * ServiceProviderId set so Vagaro returns ONLY that stylist's services. This
+ * is the source of truth for the team-member→service mapping we use to drive
+ * the per-stylist tag chips on the team section: it returns data for ALL
+ * services every sync (vs. the authenticated v2 endpoint which caps at 10
+ * services per response and so missed performer info for 80+ services).
+ *
+ * One call per active Vagaro stylist per sync (~17 calls total).
+ *
+ * Returns a slimmer record than the full composite: we only need IDs + the
+ * category title for the read path. No photo probing — photos are owned by
+ * the unfiltered composite.
+ */
+export interface PerStylistServiceRecord {
+  serviceId: string                 // stringified ServiceID
+  serviceTitle: string
+  vagaroCategoryTitle: string | null  // ServiceCategoryTitle from the per-stylist composite group
+}
+
+export async function fetchPublicServicesForProvider(
+  numericBusinessId: string,
+  serviceProviderId: number | string
+): Promise<PerStylistServiceRecord[]> {
+  const res = await fetch(
+    'https://www.vagaro.com/us02/websiteapi/homepage/getshopdetailcompositeservice',
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json; charset=UTF-8',
+        accept: 'application/json, text/javascript, */*; q=0.01',
+        'x-requested-with': 'XMLHttpRequest',
+        grouptoken: 'US02',
+        brandedapp: 'false',
+        referer: `https://www.vagaro.com/`,
+      },
+      body: JSON.stringify({
+        ...COMPOSITE_BODY,
+        businessID: numericBusinessId,
+        ServiceProviderId: String(serviceProviderId),
+      }),
+    }
+  )
+  if (!res.ok) {
+    throw new Error(
+      `Vagaro per-stylist composite ${res.status} for provider ${serviceProviderId}: ${await res.text()}`
+    )
+  }
+
+  const json = (await res.json()) as {
+    Services?: Array<{
+      ServiceCategoryTitle?: string
+      ServiceList?: Array<{ ServiceID?: number; ServiceTitle?: string }>
+    }>
+  }
+
+  const out: PerStylistServiceRecord[] = []
+  const seen = new Set<string>()
+  for (const category of json.Services ?? []) {
+    const catTitle = (category.ServiceCategoryTitle || '').trim() || null
+    for (const s of category.ServiceList ?? []) {
+      if (s.ServiceID == null) continue
+      const key = String(s.ServiceID)
+      if (seen.has(key)) continue
+      seen.add(key)
+      out.push({
+        serviceId: key,
+        serviceTitle: (s.ServiceTitle ?? '').trim(),
+        vagaroCategoryTitle: catTitle,
+      })
+    }
+  }
+  return out
 }

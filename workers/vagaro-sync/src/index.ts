@@ -4,7 +4,9 @@ import {
   syncAllServices,
   syncAllTeamMembers,
   syncPublicStaff,
+  syncStylistServices,
   type PublicStaffStats,
+  type StylistServicesStats,
   type SyncStats,
 } from './sync'
 import { VagaroClient, type VagaroEnv } from './vagaro-client'
@@ -18,6 +20,7 @@ interface Result {
   services: { success: boolean; stats?: SyncStats; error?: string }
   publicStaff: { success: boolean; stats?: PublicStaffStats; error?: string }
   teamMembers: { success: boolean; stats?: SyncStats; error?: string }
+  stylistServices: { success: boolean; stats?: StylistServicesStats; error?: string }
 }
 
 async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
@@ -28,6 +31,7 @@ async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
     services: { success: false },
     publicStaff: { success: false },
     teamMembers: { success: false },
+    stylistServices: { success: false },
   }
 
   try {
@@ -63,9 +67,26 @@ async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
     console.error('team members sync threw:', err)
   }
 
+  // Per-stylist service mapping (drives the tag chips on the Find Your Stylist
+  // section). MUST run after syncPublicStaff (so providerIDs are present) and
+  // after syncAllServices (so services rows exist to FK to). Per-stylist
+  // failures are tolerated inside syncStylistServices itself — a thrown error
+  // here means the whole call broke before per-stylist iteration started.
+  try {
+    result.stylistServices.stats = await syncStylistServices(db, env.VAGARO_PUBLIC_BUSINESS_ID)
+    result.stylistServices.success = true
+  } catch (err) {
+    result.stylistServices.error = err instanceof Error ? err.message : String(err)
+    console.error('stylist services sync threw:', err)
+  }
+
   await closeDb(client)
 
-  const allOk = result.services.success && result.publicStaff.success && result.teamMembers.success
+  const allOk =
+    result.services.success &&
+    result.publicStaff.success &&
+    result.teamMembers.success &&
+    result.stylistServices.success
   return { result, allOk }
 }
 

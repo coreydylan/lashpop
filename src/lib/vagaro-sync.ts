@@ -232,7 +232,6 @@ export async function syncTeamMember(vagaroEmployee: any) {
         bookingUrl: `https://www.vagaro.com/lashpop32`,
         usesLashpopBooking: true,
         imageUrl: '/placeholder-team.svg', // Branded "photo coming soon" placeholder
-        specialties: [],
         displayOrder: '0',
         isActive: true,
         lastSyncedAt: new Date()

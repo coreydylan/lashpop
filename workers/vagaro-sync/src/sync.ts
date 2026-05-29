@@ -1,9 +1,14 @@
-import { and, eq, isNotNull, ne, sql } from 'drizzle-orm'
+import { and, eq, isNotNull, sql } from 'drizzle-orm'
 import type { Db } from './db'
-import { services, teamMembers } from './schema'
+import { services, teamMembers, teamMemberServicesVagaro } from './schema'
 import type { VagaroClient } from './vagaro-client'
-import { fetchPublicStaff, nameKey, originalPhotoUrl, type VagaroPublicProvider } from './public-staff'
-import { fetchPublicServicesFull, serviceTitleKey, type PublicServiceRecord } from './public-services'
+import { fetchPublicStaff, nameKey, originalPhotoUrl } from './public-staff'
+import {
+  fetchPublicServicesForProvider,
+  fetchPublicServicesFull,
+  serviceTitleKey,
+  type PublicServiceRecord,
+} from './public-services'
 
 /**
  * Map Vagaro's free-text mainCategory string to a `service_categories.slug`.
@@ -153,10 +158,15 @@ async function syncService(
     console.log(`unmapped Vagaro category "${parentTitle}" — service "${title}" will sync without category FK`)
   }
 
-  // Persist whatever the richest source for this service is. Prefer v2 (full
-  // detail) when present, otherwise fall back to the public record so we
-  // still capture title/photo/parent IDs in vagaro_data.
-  const vagaroData = v2Service ?? publicRecord.raw
+  // Only persist `vagaro_data` when v2 returned the service. The previous
+  // fallback to `publicRecord.raw` was actively harmful: the composite record
+  // doesn't include `servicePerformedBy`, so writing it overwrote any v2-era
+  // performer info with a record that has no performer info — which is how
+  // we lost stylist→service tag wiring for the 80+ services v2 didn't enrich
+  // on a given sync. Performer mapping is now sourced from the per-stylist
+  // composite call (see syncStylistServices), so `vagaro_data` no longer
+  // needs to carry it for non-v2 services.
+  const vagaroDataPatch = v2Service ? { vagaroData: v2Service } : {}
 
   // ID format mismatch: composite returns a NUMERIC ServiceID, v2 returns a
   // base64-encoded "kz7n9RCCVUyfkLbj~6DTPw==" string. All DB rows synced
@@ -219,7 +229,7 @@ async function syncService(
         ...(durationMinutes !== undefined ? { durationMinutes } : {}),
         ...(priceStartingCents !== undefined ? { priceStarting: priceStartingCents } : {}),
         vagaroParentServiceId: parentServiceId,
-        vagaroData,
+        ...vagaroDataPatch,
         ...(photosAvailable ? { vagaroImageUrl: photoUrl } : {}),
         ...(categoryId ? { categoryId } : {}),
         // Mirror Vagaro's own order on the booking page so the frontend's
@@ -238,7 +248,7 @@ async function syncService(
     await db.insert(services).values({
       vagaroServiceId: serviceId,
       vagaroParentServiceId: parentServiceId,
-      vagaroData,
+      ...vagaroDataPatch,
       vagaroImageUrl: photoUrl,
       categoryId,
       name: title,
@@ -419,6 +429,7 @@ export async function syncPublicStaff(
       name: teamMembers.name,
       isActive: teamMembers.isActive,
       vagaroPublicProviderId: teamMembers.vagaroPublicProviderId,
+      usesLashpopBooking: teamMembers.usesLashpopBooking,
     })
     .from(teamMembers)
 
@@ -449,6 +460,20 @@ export async function syncPublicStaff(
       const sortOrder = p.EmployeeSortOrder != null ? String(p.EmployeeSortOrder) : '0'
 
       if (matchByName) {
+        // CRITICAL: dual-mode gate. usesLashpopBooking=false means the stylist
+        // is external-booking — they belong to their own business, Vagaro
+        // doesn't represent their actual data, and admin entry is the sole
+        // source of truth for every field. Skip ALL writes for these rows
+        // (photo, bio, contact, order, active flag — all of it). We still
+        // mark them as "matched" so the deactivation phase below doesn't
+        // tombstone them just because Vagaro's staff endpoint happens to
+        // list them.
+        if (matchByName.usesLashpopBooking === false) {
+          matchedExistingIds.add(matchByName.id)
+          stats.matched++
+          continue
+        }
+
         matchedExistingIds.add(matchByName.id)
         // Normalize empty bio strings to null so the frontend's vagaroBio || bio
         // fallback works cleanly (empty string is technically falsy but ugly to store).
@@ -480,6 +505,8 @@ export async function syncPublicStaff(
         // "photo coming soon" placeholder. The frontend's vagaroPhotoUrl ||
         // imageUrl fallback then shows the placeholder until a real photo
         // appears in Vagaro.
+        // Auto-created rows are always usesLashpopBooking=true — they came
+        // from the Vagaro staff endpoint, so by definition they're on Vagaro.
         const PLACEHOLDER = '/placeholder-team.svg'
         await db.insert(teamMembers).values({
           vagaroPublicProviderId: p.ServiceProviderID,
@@ -493,7 +520,6 @@ export async function syncPublicStaff(
           bookingUrl: 'https://www.vagaro.com/lashpop32',
           usesLashpopBooking: true,
           imageUrl: photoUrl ?? PLACEHOLDER, // notNull — seed local with vagaro photo or branded placeholder
-          specialties: [],
           displayOrder: sortOrder,
           isActive: true,
           lastSyncedAt: new Date(),
@@ -513,6 +539,10 @@ export async function syncPublicStaff(
     for (const row of existing) {
       if (matchedExistingIds.has(row.id)) continue
       if (!row.isActive) continue
+      // Dual-mode gate (belt-and-suspenders): external-booking stylists must
+      // never be tombstoned by the Vagaro sync even if Vagaro doesn't list
+      // them at all. Admin owns their isActive flag.
+      if (row.usesLashpopBooking === false) continue
       try {
         await db
           .update(teamMembers)
@@ -530,6 +560,10 @@ export async function syncPublicStaff(
 }
 
 export async function syncAllTeamMembers(db: Db, client: VagaroClient): Promise<SyncStats> {
+  // Dual-mode gate: external-booking rows should never be touched by Vagaro
+  // sync. In practice they don't carry a vagaroEmployeeId, so the IS NOT NULL
+  // filter already excludes them — the explicit equality below keeps the
+  // intent obvious and survives future schema drift.
   const rows = await db
     .select({
       id: teamMembers.id,
@@ -537,7 +571,7 @@ export async function syncAllTeamMembers(db: Db, client: VagaroClient): Promise<
       vagaroEmployeeId: teamMembers.vagaroEmployeeId,
     })
     .from(teamMembers)
-    .where(isNotNull(teamMembers.vagaroEmployeeId))
+    .where(and(isNotNull(teamMembers.vagaroEmployeeId), eq(teamMembers.usesLashpopBooking, true)))
 
   const total = rows.length
   let synced = 0
@@ -567,4 +601,126 @@ export async function syncAllTeamMembers(db: Db, client: VagaroClient): Promise<
   }
 
   return { synced, failed, total }
+}
+
+export interface StylistServicesStats {
+  stylists: number
+  succeeded: number
+  failed: number
+  mappingsWritten: number
+  unmatchedVagaroServiceIds: string[]
+  errors: string[]
+}
+
+/**
+ * Walk every active Vagaro-mode stylist and populate `team_member_services_vagaro`
+ * with the services that stylist performs, sourced from the per-stylist
+ * composite endpoint (one HTTP call per stylist). Truncate-and-replace per
+ * stylist so stale mappings can never linger past a single sync cycle.
+ *
+ * Only stylists with usesLashpopBooking=true AND vagaroPublicProviderId set
+ * are walked. External-booking stylists are deliberately excluded — their
+ * service tags come from team_members.external_service_categories.
+ *
+ * Must run AFTER syncAllServices (so services rows exist to FK to) and
+ * AFTER syncPublicStaff (so providerIDs are present on the team_members rows).
+ */
+export async function syncStylistServices(
+  db: Db,
+  numericBusinessId: string
+): Promise<StylistServicesStats> {
+  const stats: StylistServicesStats = {
+    stylists: 0,
+    succeeded: 0,
+    failed: 0,
+    mappingsWritten: 0,
+    unmatchedVagaroServiceIds: [],
+    errors: [],
+  }
+
+  const stylists = await db
+    .select({
+      id: teamMembers.id,
+      name: teamMembers.name,
+      providerId: teamMembers.vagaroPublicProviderId,
+    })
+    .from(teamMembers)
+    .where(
+      and(
+        eq(teamMembers.isActive, true),
+        eq(teamMembers.usesLashpopBooking, true),
+        isNotNull(teamMembers.vagaroPublicProviderId)
+      )
+    )
+
+  stats.stylists = stylists.length
+  if (stylists.length === 0) return stats
+
+  // Build a single map of Vagaro numeric ServiceID → local services.id so
+  // each per-stylist composite walk turns into in-memory lookups instead of
+  // 13+ DB round trips per stylist.
+  const serviceRows = await db
+    .select({
+      id: services.id,
+      vagaroServiceId: services.vagaroServiceId,
+    })
+    .from(services)
+    .where(eq(services.isActive, true))
+  const serviceIdByVagaroId = new Map<string, string>()
+  for (const row of serviceRows) {
+    if (row.vagaroServiceId) serviceIdByVagaroId.set(row.vagaroServiceId, row.id)
+  }
+
+  const unmatchedAcrossRun = new Set<string>()
+
+  for (const stylist of stylists) {
+    try {
+      const records = await fetchPublicServicesForProvider(numericBusinessId, stylist.providerId!)
+
+      // Truncate-then-insert per stylist inside a transaction so the table never
+      // has a partial view during the swap. If the insert phase throws after the
+      // delete commits, the cron retry covers it on the next pass.
+      const inserts: Array<{
+        teamMemberId: string
+        serviceId: string
+        vagaroParentTitle: string | null
+      }> = []
+      for (const rec of records) {
+        const localServiceId = serviceIdByVagaroId.get(rec.serviceId)
+        if (!localServiceId) {
+          unmatchedAcrossRun.add(rec.serviceId)
+          continue
+        }
+        inserts.push({
+          teamMemberId: stylist.id,
+          serviceId: localServiceId,
+          vagaroParentTitle: rec.vagaroCategoryTitle,
+        })
+      }
+
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(teamMemberServicesVagaro)
+          .where(eq(teamMemberServicesVagaro.teamMemberId, stylist.id))
+        if (inserts.length > 0) {
+          await tx.insert(teamMemberServicesVagaro).values(inserts)
+        }
+      })
+
+      stats.succeeded++
+      stats.mappingsWritten += inserts.length
+      console.log(
+        `stylist services: ${stylist.name} (#${stylist.providerId}) → ${inserts.length} services` +
+        (records.length !== inserts.length ? ` (${records.length - inserts.length} unmatched)` : '')
+      )
+    } catch (err) {
+      stats.failed++
+      const msg = err instanceof Error ? err.message : String(err)
+      stats.errors.push(`${stylist.name}: ${msg}`)
+      console.error(`stylist services sync failed for ${stylist.name}:`, err)
+    }
+  }
+
+  stats.unmatchedVagaroServiceIds = Array.from(unmatchedAcrossRun)
+  return stats
 }
