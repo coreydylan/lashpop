@@ -83,6 +83,52 @@ function scanForIframes(root: ParentNode): void {
 export function installVagaroIframeSandbox(container: HTMLElement): () => void {
   if (typeof window === 'undefined') return () => {};
 
+  // ── Deterministic block: sandbox iframes at CREATION time ──
+  // The MutationObserver below sees iframes only AFTER they're inserted, by
+  // which point a fast desktop browser has already created the browsing
+  // context unsandboxed — setting `sandbox` then does nothing, so Vagaro's
+  // post-booking top-navigation to the old Squarespace site slips through
+  // (subtlety #1 in this file's header). The reliable fix is to set `sandbox`
+  // the instant the iframe element is constructed, BEFORE Vagaro assigns its
+  // src: the browsing context is then created sandboxed and the redirect is
+  // silently blocked (no `allow-top-navigation*`), with no reload to break the
+  // widget's postMessage handshake (the about:blank trick we tried did break
+  // it). The patch is scoped to this widget's lifetime and self-restores.
+  const originalCreateElement = document.createElement.bind(document);
+  const patchedCreateElement = function (
+    this: Document,
+    tagName: string,
+    options?: ElementCreationOptions
+  ): HTMLElement {
+    const el = originalCreateElement(tagName as 'iframe', options);
+    if (typeof tagName === 'string' && tagName.toLowerCase() === 'iframe') {
+      const frame = el as HTMLIFrameElement;
+      // Pre-sandbox optimistically. Vagaro creates its iframe inside the
+      // `.vagaro` container, sets src to a vagaro.com URL, and runs the booking
+      // flow under `allow-scripts/same-origin/forms/popups/modals` just fine —
+      // only top-navigation is revoked.
+      frame.setAttribute('sandbox', SANDBOX);
+      frame.setAttribute(SANDBOXED_FLAG, '1');
+      // Protect unrelated iframes (chat/analytics widgets that might be created
+      // while the booking modal is open): on the next microtask, if this frame
+      // turned out NOT to be Vagaro's, strip the sandbox we pre-applied. Doing
+      // it before the context is navigated is effective; if it already
+      // navigated this is a harmless no-op. Genuine Vagaro frames are kept
+      // sandboxed, and the MutationObserver below re-applies as a backstop.
+      queueMicrotask(() => {
+        if (!isVagaroIframe(frame)) {
+          frame.removeAttribute('sandbox');
+          frame.removeAttribute(SANDBOXED_FLAG);
+        }
+      });
+    }
+    return el;
+  };
+  // We only special-case the string-tag iframe path and defer everything else
+  // to the native impl; the cast bridges our narrower signature to the wider
+  // overloaded one.
+  document.createElement = patchedCreateElement as typeof document.createElement;
+
   const observer = new MutationObserver((mutations) => {
     for (const m of mutations) {
       if (m.type === 'childList') {
@@ -122,5 +168,12 @@ export function installVagaroIframeSandbox(container: HTMLElement): () => void {
   // Catch iframes that already exist anywhere in the document.
   scanForIframes(document);
 
-  return () => observer.disconnect();
+  return () => {
+    observer.disconnect();
+    // Restore the native createElement only if nothing else re-patched it in
+    // the meantime (avoid clobbering an unrelated wrapper).
+    if (document.createElement === patchedCreateElement) {
+      document.createElement = originalCreateElement;
+    }
+  };
 }

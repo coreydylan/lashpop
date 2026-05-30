@@ -45,7 +45,7 @@ export function BookingConfirmation({
   const headline = isConfirmed ? 'You’re booked' : 'Appointment requested';
   const subhead = isConfirmed
     ? 'See you soon — we can’t wait.'
-    : 'We’ve received your request. Our team will confirm shortly.';
+    : 'Your appointment is awaiting approval from our team. You’ll receive a confirmation text and email once your appointment has been approved.';
 
   return (
     <motion.div

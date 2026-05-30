@@ -73,6 +73,8 @@ export interface SyncStats {
   synced: number
   failed: number
   total: number
+  /** Services deactivated this run because Vagaro no longer offers them. */
+  deactivated?: number
 }
 
 export interface PublicStaffStats {
@@ -109,7 +111,7 @@ async function syncService(
   // Position in the composite walk — used as `display_order` so the frontend's
   // sort by displayOrder reflects Vagaro's own ordering on the booking page.
   positionalOrder: number
-): Promise<void> {
+): Promise<string | null> {
   const serviceId = publicRecord.serviceId
   // Prefer v2's title when available (it's the authenticated, canonical name);
   // fall back to the public record's title otherwise.
@@ -239,13 +241,14 @@ async function syncService(
         updatedAt: new Date(),
       })
       .where(eq(services.id, existing[0].id))
+    return existing[0].id
   } else {
     // Insert path. duration_minutes and price_starting are NOT NULL in the
     // schema so we have to provide *something* when v2 didn't enrich. Use
     // sane sentinels (60 min / $0) that admins can correct in the UI.
     const insertDuration = durationMinutes ?? 60
     const insertPriceCents = priceStartingCents ?? 0
-    await db.insert(services).values({
+    const inserted = await db.insert(services).values({
       vagaroServiceId: serviceId,
       vagaroParentServiceId: parentServiceId,
       ...vagaroDataPatch,
@@ -267,7 +270,8 @@ async function syncService(
       isActive: true,
       mainCategory: parentTitle || 'Other Services',
       lastSyncedAt: new Date(),
-    })
+    }).returning({ id: services.id })
+    return inserted[0]?.id ?? null
   }
 }
 
@@ -356,6 +360,9 @@ export async function syncAllServices(
   let synced = 0
   let failed = 0
   let lastError: unknown = null
+  // Local service IDs touched (inserted or updated) this run. Used by the
+  // reconciliation pass below to deactivate rows Vagaro no longer offers.
+  const touchedServiceIds = new Set<string>()
 
   // positionalOrder mirrors Vagaro's booking-page order — the composite walks
   // categories in the order they're displayed and services within them in the
@@ -366,7 +373,8 @@ export async function syncAllServices(
     const rec = publicRecords[i]
     try {
       const v2Match = v2ById.get(rec.serviceId) ?? null
-      await syncService(db, rec, v2Match, photosByTitle, photosByServiceId, photosAvailable, i)
+      const touchedId = await syncService(db, rec, v2Match, photosByTitle, photosByServiceId, photosAvailable, i)
+      if (touchedId) touchedServiceIds.add(touchedId)
       synced++
     } catch (err) {
       failed++
@@ -383,7 +391,63 @@ export async function syncAllServices(
     )
   }
 
-  return { synced, failed, total }
+  // ── Reconciliation: deactivate services Vagaro no longer offers ──
+  // Without this, services removed/renamed in Vagaro lingered as active rows
+  // forever (the website showed 26 "facials" when Vagaro only had 16 — the 10
+  // generic facials replaced by the Hydrafacial line were never tombstoned).
+  // We deactivate any ACTIVE, Vagaro-sourced service (vagaro_service_id set)
+  // that this run's composite didn't touch. Heavily guarded so a transient
+  // Vagaro error can't wipe the catalog:
+  //   • only when the composite returned a healthy list (MIN_HEALTHY_TOTAL)
+  //   • only when zero services failed to sync (a failed row is in Vagaro but
+  //     absent from touchedServiceIds — we must not mistake it for "removed")
+  //   • capped per run, both absolute and proportional, else we treat the
+  //     mismatch as an anomaly and skip (mirrors the staff-sync safety cap)
+  // Manually-created services (vagaro_service_id IS NULL, e.g. "Botox
+  // Treatment") are never eligible — admin owns those.
+  const MIN_HEALTHY_TOTAL = 50
+  const MAX_DEACTIVATE_PER_RUN = 25
+  const MAX_DEACTIVATE_FRACTION = 0.3
+  let deactivated = 0
+  if (total >= MIN_HEALTHY_TOTAL && failed === 0) {
+    const activeVagaroRows = await db
+      .select({ id: services.id, name: services.name })
+      .from(services)
+      .where(and(eq(services.isActive, true), isNotNull(services.vagaroServiceId)))
+    const stale = activeVagaroRows.filter(r => !touchedServiceIds.has(r.id))
+    const cap = Math.min(
+      MAX_DEACTIVATE_PER_RUN,
+      Math.floor(activeVagaroRows.length * MAX_DEACTIVATE_FRACTION)
+    )
+    if (stale.length === 0) {
+      // nothing to do
+    } else if (stale.length > cap) {
+      console.warn(
+        `reconciliation: ${stale.length} active Vagaro services were absent from this run's ` +
+        `composite (cap ${cap}) — treating as an anomaly and skipping deactivation. ` +
+        `Names: ${stale.map(s => s.name).join(', ')}`
+      )
+    } else {
+      for (const row of stale) {
+        await db
+          .update(services)
+          .set({ isActive: false, updatedAt: new Date() })
+          .where(eq(services.id, row.id))
+        deactivated++
+      }
+      console.log(
+        `reconciliation: deactivated ${deactivated} service(s) absent from Vagaro — ` +
+        stale.map(s => s.name).join(', ')
+      )
+    }
+  } else if (total > 0) {
+    console.log(
+      `reconciliation skipped (total=${total} < ${MIN_HEALTHY_TOTAL} or failed=${failed} > 0) — ` +
+      `not safe to deactivate this run`
+    )
+  }
+
+  return { synced, failed, total, deactivated }
 }
 
 /**
