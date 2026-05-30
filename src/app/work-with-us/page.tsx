@@ -502,19 +502,22 @@ export default function WorkWithUsPage() {
   // the scroll until after the new node is in the layout. A double-rAF
   // (paint commit + a settle frame) does the trick for both the first-open
   // case and the tab-to-tab case.
+  // Desktop (md+) shows the expanded section below the card grid; mobile
+  // expands inline within the card. Target whichever is actually visible —
+  // the other one is display:none and has no usable layout box.
+  const getSectionTarget = useCallback((section: CareerPath) => {
+    if (typeof window === 'undefined') return null
+    const isDesktop = window.matchMedia('(min-width: 768px)').matches
+    if (!isDesktop) return cardRefs.current[section]
+    return section === 'employee' ? employeeSectionRef.current :
+      section === 'booth' ? boothSectionRef.current :
+      section === 'training' ? trainingSectionRef.current :
+      null
+  }, [])
+
   const scrollToActiveSection = useCallback((section: CareerPath) => {
     if (typeof window === 'undefined') return
-    // Desktop (md+) shows the expanded section below the card grid; mobile
-    // expands inline within the card. Target whichever is actually visible —
-    // the other one is display:none and has no usable layout box.
-    const getTarget = () => {
-      const isDesktop = window.matchMedia('(min-width: 768px)').matches
-      if (!isDesktop) return cardRefs.current[section]
-      return section === 'employee' ? employeeSectionRef.current :
-        section === 'booth' ? boothSectionRef.current :
-        section === 'training' ? trainingSectionRef.current :
-        null
-    }
+    const getTarget = () => getSectionTarget(section)
 
     // Earlier passes used getBoundingClientRect + window.scrollTo with a
     // double-rAF wait. That STILL landed at the wrong spot when switching
@@ -545,7 +548,7 @@ export default function WorkWithUsPage() {
     return () => {
       if (timer) window.cancelAnimationFrame(timer)
     }
-  }, [])
+  }, [getSectionTarget])
 
   // Track whether the current activeSection change came from an existing
   // section (tab-to-tab) or from nothing (first open). In the first-open
@@ -558,13 +561,26 @@ export default function WorkWithUsPage() {
     previousSectionRef.current = activeSection
     if (!activeSection) return
     // If there was no prior section, the new one mounts immediately with no
-    // exit animation blocking us — scroll now. Otherwise the onExitComplete
-    // handler below will scroll after the outgoing section has fully left
-    // the DOM.
+    // exit animation blocking us — scroll now.
     if (!previous) {
       return scrollToActiveSection(activeSection)
     }
-  }, [activeSection, scrollToActiveSection])
+    // Tab-to-tab. The outgoing section (still mounted mid-exit under
+    // mode="wait") can be taller than the page below your current scroll
+    // position. When it unmounts, the document shrinks and the browser
+    // CLAMPS your scroll to the new, shorter bottom — that's the visible
+    // "shoot to the bottom." The subsequent smooth scrollIntoView then
+    // animates all the way from that clamped bottom back up to the new
+    // section, which reads as a jarring bottom→top sweep.
+    //
+    // Pre-empt the clamp: instantly pin the viewport to the OUTGOING
+    // section's top while it's still in the DOM. Your scroll Y is now small,
+    // so when the tall section unmounts there's nothing above the new bottom
+    // to clamp away, and onExitComplete's smooth scroll to the incoming
+    // section (which occupies the same spot) is a tiny in-place adjustment.
+    const outgoing = getSectionTarget(previous)
+    outgoing?.scrollIntoView({ behavior: 'auto', block: 'start' })
+  }, [activeSection, scrollToActiveSection, getSectionTarget])
 
   const boothPricing = getBoothPricing(boothDays)
 
