@@ -2,14 +2,17 @@
  * Vagaro Iframe Sandbox
  *
  * Vagaro's embedded widget ships with a merchant-admin "Return URL" config
- * that top-navigates to the old Squarespace lashpop site as soon as a
- * booking completes — kicking users off our app before they can interact
- * with the branded confirmation overlay.
+ * that sends users to the old Squarespace lashpop site as soon as a booking
+ * completes — kicking them off our app before they can interact with the
+ * branded confirmation overlay. It manifests two ways depending on Vagaro's
+ * build: a top-navigation OR a popup (window.open / target=_blank) to
+ * lashpopstudios.com.
  *
- * We can't change the Vagaro setting, but we CAN sandbox the iframe to
- * revoke top-navigation capability. `allow-scripts/forms/same-origin/popups/
- * modals` keep the widget functional; omitting `allow-top-navigation*`
- * blocks the redirect.
+ * We can't change the Vagaro setting, but we CAN sandbox the iframe to revoke
+ * both capabilities. `allow-scripts/forms/same-origin/modals` keep the widget
+ * functional (card capture, forms, the BookingCompleted postMessage all work);
+ * omitting `allow-top-navigation*` blocks the redirect, and omitting
+ * `allow-popups*` blocks the popup variant.
  *
  * Subtleties this util handles that a simple `setAttribute('sandbox', ...)`
  * misses — and which were causing desktop (but not mobile) to redirect:
@@ -37,8 +40,16 @@
  * Returns a cleanup function that disconnects the observer.
  */
 
+// NOTE: popups are deliberately NOT allowed. Vagaro's end-of-booking "Return
+// URL" no longer top-navigates — it opens a popup (window.open / target=_blank)
+// to the old lashpopstudios.com Squarespace site. Granting `allow-popups`
+// (and `allow-popups-to-escape-sandbox`) let that popup through the very
+// sandbox meant to stop the redirect. With popups revoked the iframe's
+// window.open returns null, the unwanted window never opens, and the booking
+// flow is unaffected: card capture/forms run fine and the BookingCompleted
+// postMessage that drives our branded confirmation overlay still fires.
 const SANDBOX =
-  'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals';
+  'allow-scripts allow-forms allow-same-origin allow-modals';
 
 const SANDBOXED_FLAG = 'data-lp-sandboxed';
 
@@ -105,8 +116,8 @@ export function installVagaroIframeSandbox(container: HTMLElement): () => void {
       const frame = el as HTMLIFrameElement;
       // Pre-sandbox optimistically. Vagaro creates its iframe inside the
       // `.vagaro` container, sets src to a vagaro.com URL, and runs the booking
-      // flow under `allow-scripts/same-origin/forms/popups/modals` just fine —
-      // only top-navigation is revoked.
+      // flow under `allow-scripts/same-origin/forms/modals` just fine —
+      // top-navigation and popups are revoked.
       frame.setAttribute('sandbox', SANDBOX);
       frame.setAttribute(SANDBOXED_FLAG, '1');
       // Protect unrelated iframes (chat/analytics widgets that might be created
