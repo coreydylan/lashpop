@@ -581,34 +581,39 @@ export default function WorkWithUsPage() {
     const previous = previousSectionRef.current
     previousSectionRef.current = activeSection
     if (!activeSection) return
-    // If there was no prior section, the new one mounts immediately with no
-    // exit animation blocking us — scroll now.
+    // First open only. There's no prior section, so the new one mounts with
+    // no collapse-above to fight — scroll straight to it. Tab-to-tab scrolls
+    // are handled by the onExitComplete callbacks (after the outgoing card
+    // has unmounted), and the anti-bounce "pin to the outgoing header" is
+    // done synchronously in the card's onClick (handleCardClick) so it lands
+    // before the unmount, not after.
     if (!previous) {
-      return scrollToActiveSection(activeSection)
+      scrollToActiveSection(activeSection)
     }
-    // Tab-to-tab. The outgoing section (still mounted mid-exit under
-    // mode="wait") can be taller than the page below your current scroll
-    // position. When it unmounts, the document shrinks and the browser
-    // CLAMPS your scroll to the new, shorter bottom — that's the visible
-    // "shoot to the bottom." The subsequent smooth scrollIntoView then
-    // animates all the way from that clamped bottom back up to the new
-    // section, which reads as a jarring bottom→top sweep.
-    //
-    // Pre-empt the clamp: instantly pin the viewport to the OUTGOING
-    // section's top while it's still in the DOM. Your scroll Y is now small,
-    // so when the tall section unmounts there's nothing above the new bottom
-    // to clamp away, and onExitComplete's smooth scroll to the incoming
-    // section (which occupies the same spot) is a tiny in-place adjustment.
-    //
-    // Desktop only. On mobile the outgoing card's content is removed
-    // instantly (see the inline AnimatePresence exit below), so there is no
-    // tall transient to clamp against — and pinning to the outgoing card
-    // here would just add a redundant upward snap before the real scroll.
-    if (window.matchMedia('(min-width: 768px)').matches) {
-      const outgoing = getSectionTarget(previous)
-      outgoing?.scrollIntoView({ behavior: 'auto', block: 'start' })
+  }, [activeSection, scrollToActiveSection])
+
+  // Toggle a card open/closed. The important part is the anti-bounce pin:
+  // when switching directly from one open card to another, we synchronously
+  // scroll the OUTGOING card's header to the top of the viewport BEFORE
+  // flipping state. That puts the outgoing content entirely BELOW the fold,
+  // so when it unmounts the removal happens below the viewport.
+  //
+  // Why: on iOS Safari, removing content that sits ABOVE the viewport is not
+  // compensated by scroll anchoring — the page contents jump upward and the
+  // viewport is left showing whatever is now far down the page (the "bounce
+  // to the bottom"), until our scroll-to-the-new-card pulls it back. It only
+  // happens when collapsing a card that's above the one you're opening, which
+  // is exactly "going down the list." Pinning the outgoing header to the top
+  // first keeps the removal below the fold, so there's nothing above the
+  // viewport to shift. Must be synchronous (here, not in an effect) so it
+  // lands before the unmount.
+  const handleCardClick = useCallback((id: CareerPath) => {
+    const next = activeSection === id ? null : id
+    if (next && activeSection && activeSection !== id) {
+      getSectionTarget(activeSection)?.scrollIntoView({ behavior: 'auto', block: 'start' })
     }
-  }, [activeSection, scrollToActiveSection, getSectionTarget])
+    setActiveSection(next)
+  }, [activeSection, getSectionTarget])
 
   const boothPricing = getBoothPricing(boothDays)
 
@@ -709,7 +714,7 @@ export default function WorkWithUsPage() {
                 className="flex flex-col scroll-mt-20"
               >
                 <button
-                  onClick={() => setActiveSection(activeSection === card.id ? null : card.id)}
+                  onClick={() => handleCardClick(card.id)}
                   aria-expanded={activeSection === card.id}
                   aria-label={`${card.title} - ${activeSection === card.id ? 'collapse' : 'expand'}`}
                   className={`w-full text-left group relative overflow-hidden transition-shadow duration-300 ${
