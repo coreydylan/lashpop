@@ -110,7 +110,11 @@ async function syncService(
   photosAvailable: boolean,
   // Position in the composite walk — used as `display_order` so the frontend's
   // sort by displayOrder reflects Vagaro's own ordering on the booking page.
-  positionalOrder: number
+  positionalOrder: number,
+  // Every Vagaro serviceId present in THIS sync run. Used to stop the slug/name
+  // fallback below from merging two genuinely-distinct services that happen to
+  // share a title (see the guard comment in the lookup block).
+  runServiceIds: Set<string>
 ): Promise<string | null> {
   const serviceId = publicRecord.serviceId
   // Prefer v2's title when available (it's the authenticated, canonical name);
@@ -194,6 +198,7 @@ async function syncService(
     .from(services)
     .where(and(eq(services.vagaroServiceId, serviceId), eq(services.isActive, true)))
     .limit(1)
+  const matchedByExactId = existing.length > 0
   if (existing.length === 0 && slug) {
     existing = await db
       .select()
@@ -208,6 +213,26 @@ async function syncService(
       .where(and(sql`lower(${services.name}) = lower(${title})`, eq(services.isActive, true)))
       .limit(1)
   }
+
+  // Guard against MERGING two distinct, both-live Vagaro services that share a
+  // title. The slug/name fallbacks above are meant to bridge id-format
+  // migrations (composite numeric id vs v2 base64 id — the same logical service
+  // under a different id representation, where the old id is NOT in this run)
+  // and legacy hand-edited slugs. But e.g. "Brow Shaping (Wax + Tweeze + Trim)"
+  // exists as TWO separate Vagaro services — one under Brows, one under Waxing —
+  // with identical titles → identical slugs. Without this guard the second one
+  // matches the first by slug/name and UPDATEs it instead of inserting, so the
+  // service only ever appears in one category (and the single row flip-flops
+  // categories every sync depending on composite order). If a fallback matched
+  // a row whose vagaro_service_id is a DIFFERENT id that is itself live in this
+  // run, it belongs to another service — discard the match and INSERT instead.
+  if (!matchedByExactId && existing.length > 0) {
+    const candidateVagaroId = existing[0].vagaroServiceId
+    if (candidateVagaroId && candidateVagaroId !== serviceId && runServiceIds.has(candidateVagaroId)) {
+      existing = []
+    }
+  }
+
   const v2ServiceIdString = v2Service?.serviceId ? String(v2Service.serviceId) : null
 
   if (existing.length > 0) {
@@ -248,6 +273,22 @@ async function syncService(
     // sane sentinels (60 min / $0) that admins can correct in the UI.
     const insertDuration = durationMinutes ?? 60
     const insertPriceCents = priceStartingCents ?? 0
+
+    // `slug` has a UNIQUE constraint. Two distinct services that share a title
+    // (the identical-title case guarded above) generate the same base slug, so
+    // the second INSERT would throw on the constraint. When the base slug is
+    // already owned by another row, suffix with the Vagaro serviceId so both
+    // can coexist. Deterministic (id, not a counter) so re-syncs never churn it.
+    let insertSlug = slug
+    if (slug) {
+      const slugOwner = await db
+        .select({ id: services.id })
+        .from(services)
+        .where(eq(services.slug, slug))
+        .limit(1)
+      if (slugOwner.length > 0) insertSlug = `${slug}-${serviceId}`
+    }
+
     const inserted = await db.insert(services).values({
       vagaroServiceId: serviceId,
       vagaroParentServiceId: parentServiceId,
@@ -255,7 +296,7 @@ async function syncService(
       vagaroImageUrl: photoUrl,
       categoryId,
       name: title,
-      slug,
+      slug: insertSlug,
       subtitle: parentTitle,
       // Seed `description` with the Vagaro copy at insert time so freshly-
       // synced services aren't blank on the public site before any admin
@@ -364,6 +405,11 @@ export async function syncAllServices(
   // reconciliation pass below to deactivate rows Vagaro no longer offers.
   const touchedServiceIds = new Set<string>()
 
+  // Every Vagaro serviceId in this run — lets syncService tell "same service,
+  // different id format" (safe to merge) apart from "different service, same
+  // title" (must NOT merge — see the guard inside syncService).
+  const runServiceIds = new Set(publicRecords.map(r => r.serviceId))
+
   // positionalOrder mirrors Vagaro's booking-page order — the composite walks
   // categories in the order they're displayed and services within them in the
   // order Vagaro arranged them. Writing the loop index into display_order is
@@ -373,7 +419,7 @@ export async function syncAllServices(
     const rec = publicRecords[i]
     try {
       const v2Match = v2ById.get(rec.serviceId) ?? null
-      const touchedId = await syncService(db, rec, v2Match, photosByTitle, photosByServiceId, photosAvailable, i)
+      const touchedId = await syncService(db, rec, v2Match, photosByTitle, photosByServiceId, photosAvailable, i, runServiceIds)
       if (touchedId) touchedServiceIds.add(touchedId)
       synced++
     } catch (err) {
