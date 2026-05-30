@@ -481,6 +481,18 @@ export default function WorkWithUsPage() {
   const boothSectionRef = useRef<HTMLElement | null>(null)
   const trainingSectionRef = useRef<HTMLElement | null>(null)
 
+  // On mobile the expanded content lives INLINE inside the card (the
+  // `md:hidden` block below), not in the desktop-only sections above —
+  // those are `hidden md:block`, i.e. display:none on mobile. Scrolling to a
+  // display:none section dragged the viewport to a phantom zero-box node low
+  // in the document (the "weird spot towards the bottom" bug). So on mobile we
+  // scroll to the card itself.
+  const cardRefs = useRef<Record<CareerPath, HTMLDivElement | null>>({
+    employee: null,
+    booth: null,
+    training: null,
+  })
+
   // When the active section changes we need to scroll to the top of the new
   // section. The catch: if a previous section is still in the DOM mid-exit
   // animation, getBoundingClientRect() against the new section returns a Y
@@ -492,11 +504,17 @@ export default function WorkWithUsPage() {
   // case and the tab-to-tab case.
   const scrollToActiveSection = useCallback((section: CareerPath) => {
     if (typeof window === 'undefined') return
-    const getTarget = () =>
-      section === 'employee' ? employeeSectionRef.current :
-      section === 'booth' ? boothSectionRef.current :
-      section === 'training' ? trainingSectionRef.current :
-      null
+    // Desktop (md+) shows the expanded section below the card grid; mobile
+    // expands inline within the card. Target whichever is actually visible —
+    // the other one is display:none and has no usable layout box.
+    const getTarget = () => {
+      const isDesktop = window.matchMedia('(min-width: 768px)').matches
+      if (!isDesktop) return cardRefs.current[section]
+      return section === 'employee' ? employeeSectionRef.current :
+        section === 'booth' ? boothSectionRef.current :
+        section === 'training' ? trainingSectionRef.current :
+        null
+    }
 
     // Earlier passes used getBoundingClientRect + window.scrollTo with a
     // double-rAF wait. That STILL landed at the wrong spot when switching
@@ -639,10 +657,11 @@ export default function WorkWithUsPage() {
             {pathCards.map((card, index) => (
               <motion.div
                 key={card.id}
+                ref={(el) => { cardRefs.current[card.id] = el }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: smoothEase, delay: 0.1 + index * 0.1 }}
-                className="flex flex-col"
+                className="flex flex-col scroll-mt-20"
               >
                 <button
                   onClick={() => setActiveSection(activeSection === card.id ? null : card.id)}
