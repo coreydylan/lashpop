@@ -1264,15 +1264,46 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 {(() => {
                                   const drawerSrc = portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image
                                   const isPlaceholder = isPlaceholderImage(drawerSrc)
+                                  // The headshot (index 0) is framed to fill the
+                                  // hero — keep object-cover/object-top. Work
+                                  // photos (index > 0) are tight close-ups of
+                                  // lash/brow work and get butchered by cover
+                                  // crop in a 70vh portrait frame, so we show
+                                  // them WHOLE via object-contain and fill the
+                                  // letterbox with a blurred copy of the same
+                                  // image (ambient backdrop). One extra render
+                                  // per swap, same URL → browser cache hits.
+                                  const isHeadshot = currentImageIndex === 0
+                                  const useContain = !isPlaceholder && !isHeadshot
+                                  const isVagaro = isVagaroPhoto(drawerSrc)
                                   return (
-                                    <Image
-                                      src={drawerSrc}
-                                      alt={selectedMember.name}
-                                      fill
-                                      className={isPlaceholder ? "object-contain p-8" : "object-cover object-top"}
-                                      priority
-                                      unoptimized={isPlaceholder || isVagaroPhoto(drawerSrc)}
-                                    />
+                                    <>
+                                      {useContain && (
+                                        <Image
+                                          src={drawerSrc}
+                                          alt=""
+                                          aria-hidden
+                                          fill
+                                          priority
+                                          unoptimized={isVagaro}
+                                          className="object-cover scale-110 blur-2xl opacity-60"
+                                        />
+                                      )}
+                                      <Image
+                                        src={drawerSrc}
+                                        alt={selectedMember.name}
+                                        fill
+                                        className={
+                                          isPlaceholder
+                                            ? "object-contain p-8"
+                                            : useContain
+                                              ? "object-contain"
+                                              : "object-cover object-top"
+                                        }
+                                        priority
+                                        unoptimized={isPlaceholder || isVagaro}
+                                      />
+                                    </>
                                   )
                                 })()}
                               </motion.div>
