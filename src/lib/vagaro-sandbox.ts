@@ -9,10 +9,17 @@
  * lashpopstudios.com.
  *
  * We can't change the Vagaro setting, but we CAN sandbox the iframe to revoke
- * both capabilities. `allow-scripts/forms/same-origin/modals` keep the widget
- * functional (card capture, forms, the BookingCompleted postMessage all work);
- * omitting `allow-top-navigation*` blocks the redirect, and omitting
- * `allow-popups*` blocks the popup variant.
+ * TOP-NAVIGATION (omitting `allow-top-navigation*`), which blocks the
+ * top-navigation variant of the redirect.
+ *
+ * Popups are deliberately KEPT enabled (`allow-popups` +
+ * `allow-popups-to-escape-sandbox`): the widget opens real popups mid-flow —
+ * "Log in with Google" OAuth, card capture — and revoking popups breaks those.
+ * Sandbox flags can't distinguish a good popup (Google) from the bad one (the
+ * end-of-booking redirect), so the popup variant of the redirect is handled at
+ * a different layer: BookingModal tears the Vagaro iframe out of the DOM the
+ * instant the `BookingCompleted` postMessage arrives, so Vagaro's redirect code
+ * has no live document left to open the popup from. See BookingModal.tsx.
  *
  * Subtleties this util handles that a simple `setAttribute('sandbox', ...)`
  * misses — and which were causing desktop (but not mobile) to redirect:
@@ -40,16 +47,12 @@
  * Returns a cleanup function that disconnects the observer.
  */
 
-// NOTE: popups are deliberately NOT allowed. Vagaro's end-of-booking "Return
-// URL" no longer top-navigates — it opens a popup (window.open / target=_blank)
-// to the old lashpopstudios.com Squarespace site. Granting `allow-popups`
-// (and `allow-popups-to-escape-sandbox`) let that popup through the very
-// sandbox meant to stop the redirect. With popups revoked the iframe's
-// window.open returns null, the unwanted window never opens, and the booking
-// flow is unaffected: card capture/forms run fine and the BookingCompleted
-// postMessage that drives our branded confirmation overlay still fires.
+// Popups ARE allowed — the widget needs them for "Log in with Google" OAuth
+// and card capture. The unwanted post-booking redirect popup is suppressed by
+// tearing down the iframe on BookingCompleted (see this file's header and
+// BookingModal.tsx), not by revoking popup permission.
 const SANDBOX =
-  'allow-scripts allow-forms allow-same-origin allow-modals';
+  'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals';
 
 const SANDBOXED_FLAG = 'data-lp-sandboxed';
 
@@ -116,8 +119,8 @@ export function installVagaroIframeSandbox(container: HTMLElement): () => void {
       const frame = el as HTMLIFrameElement;
       // Pre-sandbox optimistically. Vagaro creates its iframe inside the
       // `.vagaro` container, sets src to a vagaro.com URL, and runs the booking
-      // flow under `allow-scripts/same-origin/forms/modals` just fine —
-      // top-navigation and popups are revoked.
+      // flow under `allow-scripts/same-origin/forms/popups/modals` just fine —
+      // only top-navigation is revoked.
       frame.setAttribute('sandbox', SANDBOX);
       frame.setAttribute(SANDBOXED_FLAG, '1');
       // Protect unrelated iframes (chat/analytics widgets that might be created

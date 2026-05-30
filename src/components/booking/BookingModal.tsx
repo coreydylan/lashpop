@@ -86,6 +86,23 @@ export function BookingModal({
       setCardOnFile(Boolean(data?.cardOnFile));
       setIsConfirmed(true);
       onBookingCompleted?.();
+
+      // Suppress Vagaro's post-booking "Return URL" redirect. On some builds it
+      // fires as a popup to the old lashpopstudios.com Squarespace site right
+      // after completion. We can't block it via the iframe sandbox without also
+      // killing the mid-flow popups the widget legitimately needs ("Log in with
+      // Google", card capture). Instead, the moment the booking completes we rip
+      // the Vagaro iframe out of the DOM so its redirect code has no live
+      // document left to run window.open from. Our BookingConfirmation overlay
+      // covers the now-empty container, so this is invisible to the user, and
+      // the booking itself is already finalized server-side (that's why this
+      // event fired — Vagaro sends the confirmation email regardless).
+      // Leave scriptLoadedRef true so the loader effect's guard never
+      // re-injects the widget after we've torn it down.
+      const container = widgetContainerRef.current;
+      if (container) {
+        container.replaceChildren();
+      }
     });
 
     return () => {
