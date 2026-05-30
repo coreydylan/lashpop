@@ -1434,13 +1434,18 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                         {/* All content wrapped together */}
                         <div className="relative">
-                          {/* Gradient - absolutely positioned, extends from top down past the card */}
-                          <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-t from-cream from-50% via-cream/90 via-75% to-transparent pointer-events-none z-0" />
+                          {/* Fade the hero photo into the cream content. Sits ABOVE the
+                              name block (negative top) so the block's own cream backing
+                              can begin exactly at the name — see the note on the block. */}
+                          <div className="absolute inset-x-0 -top-20 h-20 bg-gradient-to-t from-cream to-transparent pointer-events-none z-0" />
 
-                          {/* Spacer - none needed now */}
-
-                          {/* Name and biz - no card, just floating on gradient */}
-                          <div className="relative px-5 pb-4 pointer-events-auto z-10">
+                          {/* Name and biz — solid cream backing. This used to float
+                              transparently on the gradient, but a stylist with a SECOND
+                              Instagram handle wraps the subtitle to two lines on narrower
+                              phones, growing this block past the fixed-height gradient and
+                              letting the hero photo bleed through behind the text. Backing
+                              it with cream masks the photo at any block height or width. */}
+                          <div className="relative px-5 pb-4 pointer-events-auto z-10 bg-cream">
                             <h1 className="font-serif text-3xl leading-tight" style={{ color: 'rgb(61, 54, 50)' }}>
                               <span className="font-bold">{selectedMember.name.split(' ')[0]}</span>{selectedMember.name.includes(' ') ? ` ${selectedMember.name.split(' ').slice(1).join(' ')}` : ''}
                             </h1>
