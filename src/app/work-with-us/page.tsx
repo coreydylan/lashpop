@@ -9,6 +9,7 @@ import { MobileHeader } from '@/components/landing-v2/MobileHeader'
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2'
 import { submitWorkWithUsForm, type CareerPath } from '@/actions/work-with-us'
 import { TeamCarousel } from '@/components/work-with-us/TeamCarousel'
+import { ScrollDebugOverlay } from '@/components/work-with-us/ScrollDebugOverlay'
 import {
   CheckCircle2,
   Sparkles,
@@ -667,6 +668,7 @@ export default function WorkWithUsPage() {
     <DevModeProvider>
     <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
     <div className="min-h-screen bg-ivory">
+      <ScrollDebugOverlay />
       {/* Shared Navigation Components */}
       <Navigation />
       <MobileHeader />
