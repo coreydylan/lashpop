@@ -598,8 +598,15 @@ export default function WorkWithUsPage() {
     // so when the tall section unmounts there's nothing above the new bottom
     // to clamp away, and onExitComplete's smooth scroll to the incoming
     // section (which occupies the same spot) is a tiny in-place adjustment.
-    const outgoing = getSectionTarget(previous)
-    outgoing?.scrollIntoView({ behavior: 'auto', block: 'start' })
+    //
+    // Desktop only. On mobile the outgoing card's content is removed
+    // instantly (see the inline AnimatePresence exit below), so there is no
+    // tall transient to clamp against — and pinning to the outgoing card
+    // here would just add a redundant upward snap before the real scroll.
+    if (window.matchMedia('(min-width: 768px)').matches) {
+      const outgoing = getSectionTarget(previous)
+      outgoing?.scrollIntoView({ behavior: 'auto', block: 'start' })
+    }
   }, [activeSection, scrollToActiveSection, getSectionTarget])
 
   const boothPricing = getBoothPricing(boothDays)
@@ -772,7 +779,16 @@ export default function WorkWithUsPage() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      // Exit is INSTANT (duration 0), not a 0.25s fade. The
+                      // content animates opacity only while holding its full
+                      // height, so a fading-out card keeps the document tall
+                      // until it finally unmounts — that ballooned transient
+                      // is exactly what the scroll-to-new-card landed in on
+                      // iOS, bouncing the viewport down to the team grid.
+                      // Removing the outgoing card instantly means the layout
+                      // is final the moment you tap, so the scroll lands the
+                      // new card's header at the top against a stable page.
+                      exit={{ opacity: 0, transition: { duration: 0 } }}
                       transition={{ duration: 0.25, ease: 'easeOut' }}
                       className="md:hidden bg-white rounded-b-2xl shadow-lg"
                     >
