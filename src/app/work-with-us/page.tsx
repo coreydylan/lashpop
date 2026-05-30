@@ -519,28 +519,48 @@ export default function WorkWithUsPage() {
     if (typeof window === 'undefined') return
     const getTarget = () => getSectionTarget(section)
 
-    // Earlier passes used getBoundingClientRect + window.scrollTo with a
-    // double-rAF wait. That STILL landed at the wrong spot when switching
-    // tabs because the old section's layout removal and the new section's
-    // layout commit didn't always land within the rAF window — we ended up
-    // measuring a transient Y. scrollIntoView lets the browser handle the
-    // timing natively against the post-layout DOM, and `scroll-margin-top`
-    // on the target controls the nav-clearance offset deterministically.
-    // We retry a couple times across frames because the new section may
-    // not be mounted yet at the moment AnimatePresence's onExitComplete
-    // fires.
+    // scrollIntoView lets the browser handle the scroll natively against the
+    // post-layout DOM, and `scroll-margin-top` on the target controls the
+    // nav-clearance offset deterministically.
+    //
+    // The subtle bug this guards against (mobile, iOS Safari especially):
+    // calling scrollIntoView as soon as the target *exists* is not enough.
+    // On mobile both inline accordions are briefly open mid-cross-fade, so
+    // the document balloons (~8.6k px) and the incoming card sits far down
+    // the page while the outgoing card's content is still collapsing above
+    // it. scrollIntoView captures the target's CURRENT position, so firing
+    // it mid-animation scrolls to a transient spot near the bottom (the team
+    // grid) — then the layout settles and the card slides up, stranding the
+    // viewport. Chromium happened to fire after settle; iOS fires during.
+    //
+    // So we don't scroll until the layout has actually settled: wait for the
+    // target to exist AND the document height to hold steady across a couple
+    // of frames (the accordion height animation has finished). Then the card
+    // is at its final position and scrollIntoView lands true. Budget caps the
+    // wait so we always scroll eventually even if height never fully stills.
     let attempts = 0
     let timer = 0
+    let lastHeight = -1
+    let stableFrames = 0
     const tryScroll = () => {
-      const target = getTarget()
       attempts++
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const target = getTarget()
+      const height = document.documentElement.scrollHeight
+      if (height === lastHeight) {
+        stableFrames++
+      } else {
+        lastHeight = height
+        stableFrames = 0
+      }
+      // Scroll once the target is mounted and the layout has held still for
+      // two frames — or once we've burned the ~40-frame (~650ms) budget,
+      // which comfortably covers the accordion animation.
+      const settled = target && stableFrames >= 2
+      if (settled || (target && attempts >= 40)) {
+        target!.scrollIntoView({ behavior: 'smooth', block: 'start' })
         return
       }
-      if (attempts < 6) {
-        // ~16ms per frame × 6 = ~100ms total budget for AnimatePresence
-        // to mount the incoming section after onExitComplete.
+      if (attempts < 40) {
         timer = window.requestAnimationFrame(tryScroll)
       }
     }
@@ -734,7 +754,20 @@ export default function WorkWithUsPage() {
                 </button>
 
                 {/* Mobile Inline Content + Form - shows within card on mobile only */}
-                <AnimatePresence>
+                <AnimatePresence
+                  onExitComplete={() => {
+                    // Fires when THIS card's outgoing content has fully faded
+                    // out and unmounted — i.e. the exact moment the document
+                    // height settles to its final value (the inline content
+                    // animates opacity only, so it holds full height for the
+                    // whole 0.25s exit, then drops on unmount). Scrolling here
+                    // — rather than off the desktop section's onExitComplete,
+                    // whose timing skews ahead of this on iOS — guarantees the
+                    // incoming card is at its final position before we move.
+                    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches) return
+                    if (activeSection) scrollToActiveSection(activeSection)
+                  }}
+                >
                   {activeSection === card.id && (
                     <motion.div
                       initial={{ opacity: 0 }}
@@ -913,6 +946,11 @@ export default function WorkWithUsPage() {
       <AnimatePresence
         mode="wait"
         onExitComplete={() => {
+          // Desktop only. On mobile these sections are display:none and the
+          // inline accordion below drives the scroll instead — letting this
+          // fire on mobile scrolled to a transient mid-animation position
+          // (the iOS bottom-bounce). Gate it to the md+ layout.
+          if (typeof window !== 'undefined' && !window.matchMedia('(min-width: 768px)').matches) return
           if (activeSection) scrollToActiveSection(activeSection)
         }}
       >
