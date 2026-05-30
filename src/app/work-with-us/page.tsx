@@ -610,7 +610,17 @@ export default function WorkWithUsPage() {
   const handleCardClick = useCallback((id: CareerPath) => {
     const next = activeSection === id ? null : id
     if (next && activeSection && activeSection !== id) {
-      getSectionTarget(activeSection)?.scrollIntoView({ behavior: 'auto', block: 'start' })
+      const outgoing = getSectionTarget(activeSection)
+      const incoming = getSectionTarget(id)
+      // Pin only when the outgoing card is ABOVE the incoming one (going down
+      // the list). That's the only case iOS mishandles: collapsing content
+      // above the viewport isn't anchored, so the page drops. Collapsing a
+      // card BELOW the viewport (going up) is already fine and needs no pin —
+      // adding one there would just insert a pointless reposition.
+      if (outgoing && incoming &&
+          outgoing.getBoundingClientRect().top < incoming.getBoundingClientRect().top) {
+        outgoing.scrollIntoView({ behavior: 'auto', block: 'start' })
+      }
     }
     setActiveSection(next)
   }, [activeSection, getSectionTarget])
