@@ -103,3 +103,10 @@ scripts/instagram-import/manifest.json
 scripts/instagram-import/session.json
 scripts/instagram-import/last-run.log
 scripts/instagram-import/launchd-*.log
+
+# Local debug screenshots + scratch (do not commit)
+/*.png
+/*.jpg
+/*.jpeg
+/tmp/
+/.claude/
