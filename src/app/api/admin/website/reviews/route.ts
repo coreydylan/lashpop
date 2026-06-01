@@ -20,29 +20,45 @@ export async function GET() {
       .where(gte(reviews.rating, 3))
       .orderBy(desc(reviews.qualityScore), desc(reviews.reviewDate))
 
-    // Fetch admin-pinned reviews from homepage_reviews (we ignore the
-    // auto-promoted rows here so the admin UI shows their own curation only).
+    // Admin-pinned reviews are the curator's own selection.
     const selectedReviewsData = await db
       .select()
       .from(homepageReviews)
       .where(eq(homepageReviews.isPinned, true))
       .orderBy(asc(homepageReviews.displayOrder))
 
+    // Auto-promoted rows (is_pinned=false) are added to the live homepage by
+    // the Worker cron to fill remaining capacity. The curator doesn't manage
+    // these, but they ARE live — surface them so the admin can see the full
+    // picture of what's showing on the site.
+    const autoPromotedData = await db
+      .select({ reviewId: homepageReviews.reviewId, displayOrder: homepageReviews.displayOrder })
+      .from(homepageReviews)
+      .where(eq(homepageReviews.isPinned, false))
+      .orderBy(asc(homepageReviews.displayOrder))
+
     // Create a map of selected review IDs to their display order
     const selectedMap = new Map(
       selectedReviewsData.map(r => [r.reviewId, r.displayOrder])
+    )
+    const autoPromotedMap = new Map(
+      autoPromotedData.map(r => [r.reviewId, r.displayOrder])
     )
 
     // Map reviews with selection status and display order
     const reviewsWithOrder = allReviews.map(review => ({
       ...review,
       isSelected: selectedMap.has(review.id),
-      displayOrder: selectedMap.get(review.id) ?? 999
+      displayOrder: selectedMap.get(review.id) ?? 999,
+      // Live on the homepage right now via cron auto-promotion (not pinned).
+      isLiveAuto: autoPromotedMap.has(review.id),
+      autoDisplayOrder: autoPromotedMap.get(review.id) ?? null,
     }))
 
     return NextResponse.json({
       reviews: reviewsWithOrder,
-      selectedIds: selectedReviewsData.map(r => r.reviewId)
+      selectedIds: selectedReviewsData.map(r => r.reviewId),
+      autoPromotedIds: autoPromotedData.map(r => r.reviewId),
     })
   } catch (error) {
     console.error('Error fetching reviews:', error)

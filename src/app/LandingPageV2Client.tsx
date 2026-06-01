@@ -98,6 +98,7 @@ interface Review {
   rating: number;
   reviewDate: Date | null;
   source: string;
+  stylistName?: string | null;
 }
 
 interface ReviewStat {

@@ -36,6 +36,8 @@ interface Review {
   reviewDate: string | null
   isSelected: boolean
   displayOrder: number
+  // Live on the homepage right now via cron auto-promotion (not admin-pinned).
+  isLiveAuto?: boolean
   // Editor pass + admin override fields
   qualityScore?: number | null
   editorNotes?: string | null
@@ -233,6 +235,15 @@ export default function ReviewsManagerPage() {
             <span className={`px-2 py-0.5 text-xs rounded-full border ${getSourceColor(review.source)}`}>
               {review.source}
             </span>
+            {/* Live-now badge for cron auto-promoted reviews the curator didn't pin */}
+            {review.isLiveAuto && !review.isSelected && (
+              <span
+                className="px-2 py-0.5 text-xs rounded-full border bg-ocean-mist/15 text-ocean-mist border-ocean-mist/30"
+                title="Currently showing on the homepage (auto-selected by the system to fill capacity). Pin it to lock it in place."
+              >
+                Live now
+              </span>
+            )}
             {renderStars(review.rating)}
             {/* Quality score chip */}
             {typeof review.qualityScore === 'number' && (

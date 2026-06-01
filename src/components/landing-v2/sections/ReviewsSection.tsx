@@ -57,6 +57,7 @@ interface Review {
   rating: number
   reviewDate: Date | null
   source: string
+  stylistName?: string | null
 }
 
 interface ReviewStat {
@@ -344,6 +345,11 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
                             <h3 className="font-display font-semibold text-charcoal text-base mb-1 truncate">
                               {review.reviewerName}
                             </h3>
+                            {review.stylistName && (
+                              <p className="text-xs text-soft-terracotta font-sans truncate">
+                                with {review.stylistName}
+                              </p>
+                            )}
                             {review.reviewDate && (
                               <p className="text-xs text-dune/50 font-sans">
                                 {new Date(review.reviewDate).toLocaleDateString('en-US', {

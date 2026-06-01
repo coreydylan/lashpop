@@ -3,8 +3,32 @@
 import { getDb } from "@/db"
 import { reviews } from "@/db/schema/reviews"
 import { reviewStats } from "@/db/schema/review_stats"
+import { teamMembers } from "@/db/schema/team_members"
 import { homepageReviews } from "@/db/schema/website_settings"
 import { and, desc, eq, gte, inArray, asc } from "drizzle-orm"
+
+type ReviewRow = typeof reviews.$inferSelect
+
+/**
+ * Attach the assigned stylist's display name (via team_member_id) to each
+ * review so the homepage carousel can show "with {stylist}". Returns the same
+ * rows with a `stylistName` field (null when unassigned or inactive).
+ */
+async function attachStylistNames<T extends { teamMemberId: string | null }>(
+  db: ReturnType<typeof getDb>,
+  rows: T[]
+): Promise<(T & { stylistName: string | null })[]> {
+  const ids = Array.from(new Set(rows.map(r => r.teamMemberId).filter((id): id is string => !!id)))
+  if (ids.length === 0) return rows.map(r => ({ ...r, stylistName: null }))
+
+  const members = await db
+    .select({ id: teamMembers.id, name: teamMembers.name })
+    .from(teamMembers)
+    .where(inArray(teamMembers.id, ids))
+  const nameById = new Map(members.map(m => [m.id, m.name]))
+
+  return rows.map(r => ({ ...r, stylistName: r.teamMemberId ? nameById.get(r.teamMemberId) ?? null : null }))
+}
 
 export async function getReviews(limit = 20) {
   try {
@@ -52,7 +76,7 @@ export async function getHomepageReviews(fallbackLimit = 10) {
         return orderA - orderB
       })
 
-      return selectedReviews
+      return attachStylistNames(db, selectedReviews)
     }
 
     // Fallback to high-rated reviews
@@ -74,7 +98,7 @@ export async function getHighRatedReviews(limit = 10) {
       .orderBy(desc(reviews.reviewDate))
       .limit(limit)
 
-    return topReviews
+    return attachStylistNames(db, topReviews)
   } catch (error) {
     console.error("Error fetching top reviews:", error)
     return []
