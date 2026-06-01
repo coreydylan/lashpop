@@ -1,11 +1,12 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { desc, eq, isNull, sql, and, or } from 'drizzle-orm'
-import { Activity, Star, Inbox, Building2, FileText, ArrowRight, Sparkles, AlertTriangle } from 'lucide-react'
+import { Activity, Star, Inbox, Building2, FileText, ArrowRight, Sparkles, AlertTriangle, Mail } from 'lucide-react'
 import { getDb } from '@/db'
 import { adminAuditLog } from '@/db/schema/admin_audit_log'
 import { reviews } from '@/db/schema/reviews'
 import { homepageReviews, websiteSettings } from '@/db/schema/website_settings'
+import { newsletterSubscriptions } from '@/db/schema/newsletter_subscriptions'
 import { user as userSchema } from '@/db/schema/auth_user'
 import { STUDIO_SETTINGS_SECTION } from '@/types/studio'
 import { FOUNDER_LETTER_SECTION } from '@/types/founder-letter'
@@ -61,7 +62,27 @@ async function loadDashboardData() {
       }>
     })
 
-  const [recentActions, pendingScore, pinnedCount, studioConfigured, founderConfigured] = await Promise.all([
+  // Newsletter reads are wrapped so the page still renders if the table
+  // is missing or read perms change.
+  const newsletterCountPromise = db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(newsletterSubscriptions)
+    .catch((err) => {
+      console.warn('[overview] newsletter count read failed', err.message)
+      return [{ count: 0 }]
+    })
+
+  const recentSubscribersPromise = db
+    .select({ email: newsletterSubscriptions.email, subscribedAt: newsletterSubscriptions.subscribedAt })
+    .from(newsletterSubscriptions)
+    .orderBy(desc(newsletterSubscriptions.subscribedAt))
+    .limit(5)
+    .catch((err) => {
+      console.warn('[overview] recent subscribers read failed', err.message)
+      return [] as Array<{ email: string; subscribedAt: Date | null }>
+    })
+
+  const [recentActions, pendingScore, pinnedCount, studioConfigured, founderConfigured, newsletterCount, recentSubscribers] = await Promise.all([
     recentActionsPromise,
 
     // Reviews that haven't been scored AND aren't already hidden
@@ -89,6 +110,9 @@ async function loadDashboardData() {
       .from(websiteSettings)
       .where(eq(websiteSettings.section, FOUNDER_LETTER_SECTION))
       .limit(1),
+
+    newsletterCountPromise,
+    recentSubscribersPromise,
   ])
 
   return {
@@ -97,6 +121,8 @@ async function loadDashboardData() {
     pinnedReviewCount: pinnedCount[0]?.count ?? 0,
     studioConfigured: studioConfigured.length > 0,
     founderConfigured: founderConfigured.length > 0,
+    newsletterCount: newsletterCount[0]?.count ?? 0,
+    recentSubscribers: recentSubscribers as Array<{ email: string; subscribedAt: Date | null }>,
   }
 }
 
@@ -142,7 +168,14 @@ export default async function OverviewPage() {
       )}
 
       {/* Stat cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={Mail}
+          label="Newsletter subscribers"
+          value={data.newsletterCount}
+          href="#newsletter"
+          tone="calm"
+        />
         <StatCard
           icon={Star}
           label="Reviews needing a score"
@@ -176,6 +209,37 @@ export default async function OverviewPage() {
           <QuickLink href="/admin/website/hero" icon={Sparkles} title="Hero slideshow" description="Above-the-fold arch images" />
           <QuickLink href="/admin/website/team" icon={Inbox} title="Team" description="Members, visibility, photos" />
         </div>
+      </section>
+
+      {/* Newsletter signups */}
+      <section id="newsletter">
+        <h2 className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-3">
+          Newsletter signups
+        </h2>
+        {data.recentSubscribers.length === 0 ? (
+          <div className="bg-white/60 border border-sage/15 rounded-2xl p-8 text-center">
+            <Mail className="w-8 h-8 text-dune/30 mx-auto mb-2" />
+            <p className="text-sm text-dune/60">
+              No signups yet. Emails from the footer&apos;s &ldquo;Stay Connected&rdquo; form will land here.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white/60 border border-sage/15 rounded-2xl divide-y divide-sage/10 overflow-hidden">
+            {data.recentSubscribers.map(sub => (
+              <div key={sub.email} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
+                <span className="text-dune truncate">{sub.email}</span>
+                <time className="text-xs text-dune/50 flex-shrink-0">
+                  {sub.subscribedAt ? formatRelative(new Date(sub.subscribedAt)) : ''}
+                </time>
+              </div>
+            ))}
+            {data.newsletterCount > data.recentSubscribers.length && (
+              <div className="px-5 py-3 text-xs text-dune/50">
+                + {data.newsletterCount - data.recentSubscribers.length} more — {data.newsletterCount} total
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* Recent activity */}

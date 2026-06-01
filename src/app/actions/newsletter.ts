@@ -1,7 +1,8 @@
 'use server'
 
-import { sql } from 'drizzle-orm'
+import { desc } from 'drizzle-orm'
 import { getDb } from '@/db'
+import { newsletterSubscriptions } from '@/db/schema/newsletter_subscriptions'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -22,10 +23,9 @@ export async function subscribeToNewsletter(email: string) {
 
   try {
     const db = getDb()
-    await db.execute(sql`
-      INSERT INTO newsletter_subscriptions (email, source)
-      VALUES (${trimmed}, 'footer_form')
-    `)
+    await db
+      .insert(newsletterSubscriptions)
+      .values({ email: trimmed, source: 'footer_form' })
     return { success: true, message: 'Thank you — see you in your inbox!' }
   } catch (err: unknown) {
     // Unique violation = already on the list, treat as a win.
@@ -44,10 +44,12 @@ export async function subscribeToNewsletter(email: string) {
  */
 export async function listNewsletterSubscribers() {
   const db = getDb()
-  const rows = await db.execute<{ email: string; subscribed_at: Date; source: string | null }>(sql`
-    SELECT email, subscribed_at, source
-    FROM newsletter_subscriptions
-    ORDER BY subscribed_at DESC
-  `)
-  return rows
+  return db
+    .select({
+      email: newsletterSubscriptions.email,
+      subscribedAt: newsletterSubscriptions.subscribedAt,
+      source: newsletterSubscriptions.source,
+    })
+    .from(newsletterSubscriptions)
+    .orderBy(desc(newsletterSubscriptions.subscribedAt))
 }
