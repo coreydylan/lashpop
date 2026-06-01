@@ -193,7 +193,7 @@ export const ADMIN_GROUPS: AdminGroup[] = [
       {
         id: 'dam-library',
         label: 'Library',
-        href: '/dam',
+        href: '/admin/assets',
         icon: FolderOpen,
         description: 'All photos & videos',
         status: 'live',
@@ -201,7 +201,7 @@ export const ADMIN_GROUPS: AdminGroup[] = [
       {
         id: 'dam-team',
         label: 'Team Photos',
-        href: '/dam/team',
+        href: '/admin/assets/team',
         icon: Users,
         description: 'Member photos & crops',
         status: 'live',

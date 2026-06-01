@@ -21,17 +21,22 @@ export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
   // (where we have a Node runtime + DB access). Middleware only enforces the
   // cheap "must have an auth_token cookie" gate at the edge — anything more
   // requires Drizzle which can't run here.
-  const isDAMRoute = pathname.startsWith("/dam") || pathname.startsWith("/api/dam")
+  // The DAM UI now lives under /admin/assets; /api/dam endpoints are unchanged.
+  const isDAMRoute =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/api/dam") ||
+    pathname.startsWith("/api/admin") ||
+    pathname.startsWith("/api/auth")
   const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/api/admin")
 
   // Edge-level cookie presence check for /admin. The layout still validates
   // the session against the DB; this just prevents the page bundle from being
   // shipped to unauthenticated visitors.
-  if (isAdminRoute && pathname !== "/admin/no-access") {
+  if (isAdminRoute && pathname !== "/admin/no-access" && !pathname.startsWith("/admin/login")) {
     const hasAuthCookie = req.cookies.get("auth_token")?.value
     if (!hasAuthCookie) {
       const url = req.nextUrl.clone()
-      url.pathname = "/dam/login"
+      url.pathname = "/admin/login"
       url.searchParams.set("next", pathname)
       return NextResponse.redirect(url)
     }
@@ -39,17 +44,17 @@ export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
 
   // If this is a DAM-only deployment, handle routing
   if (isDamOnlyDeployment) {
-    // Redirect root to /dam
+    // Redirect root to the asset manager
     if (pathname === "/") {
       const url = req.nextUrl.clone()
-      url.pathname = "/dam"
+      url.pathname = "/admin/assets"
       return NextResponse.redirect(url)
     }
 
     // Block non-DAM routes (except Next.js internals)
     if (!isDAMRoute && !pathname.startsWith("/_next") && !pathname.startsWith("/api/_")) {
       const url = req.nextUrl.clone()
-      url.pathname = "/dam"
+      url.pathname = "/admin/assets"
       return NextResponse.redirect(url)
     }
   }

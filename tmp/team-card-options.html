@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Detail — Full-Screen Overlay Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          'cream': '#f5ebd6',
+          'ivory': '#faf6ed',
+          'terracotta': '#cc947f',
+          'terracotta-deep': '#ac4d3c',
+          'dusty-rose': '#c87b6e',
+          'warm-sand': '#d9c5a5',
+          'sage': '#a3b5a0',
+          'dune': '#3d3632',
+          'charcoal': '#2d2823',
+          'bg-peach': '#e9d1c8',
+        },
+        fontFamily: {
+          'serif': ['"Cormorant Garamond"', 'Georgia', 'serif'],
+          'sans': ['Inter', 'system-ui', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f0e6d6; color: #3d3632; }
+  .font-serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { scrollbar-width: none; }
+
+  .annotation {
+    background: rgba(204, 148, 127, 0.1);
+    border-left: 3px solid #cc947f;
+    padding: 16px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .annotation h3 { font-weight: 600; color: #ac4d3c; margin-bottom: 6px; font-size: 13px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .annotation p { color: #3d3632; opacity: 0.85; margin-bottom: 8px; }
+  .annotation .pros { color: #5c7a4f; }
+  .annotation .cons { color: #b76b5a; }
+  .annotation code { background: rgba(0,0,0,0.06); padding: 2px 5px; border-radius: 3px; font-size: 12px; }
+
+  .label-chip {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #ac4d3c;
+    color: white;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Browser/viewport simulation */
+  .viewport-sim {
+    background: linear-gradient(135deg, rgba(45,40,35,0.85) 0%, rgba(60,50,45,0.85) 100%);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+  }
+  .viewport-sim::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect width='400' height='400' fill='%23e9d1c8' opacity='0.15'/%3E%3C/svg%3E");
+    border-radius: 16px;
+    opacity: 0.4;
+  }
+  .viewport-label {
+    color: rgba(255,255,255,0.6);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    text-align: center;
+    position: relative;
+  }
+  .modal-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+    position: relative;
+  }
+  .icon-ig { width: 16px; height: 16px; display: inline-block; vertical-align: middle; }
+  .icon-close { width: 20px; height: 20px; }
+  .fold-line {
+    position: absolute;
+    left: 0; right: 0;
+    border-top: 2px dashed rgba(172, 77, 60, 0.4);
+    pointer-events: none;
+    z-index: 5;
+  }
+  .fold-line::after {
+    content: 'Fold (viewport bottom on 1440×900)';
+    position: absolute;
+    right: 12px;
+    top: -10px;
+    background: #ac4d3c;
+    color: white;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  /* Quick fact card */
+  .qf-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(245,235,214,0.5) 100%);
+    border: 1px solid rgba(217, 197, 165, 0.4);
+    border-radius: 16px;
+    padding: 16px;
+  }
+</style>
+</head>
+<body class="py-16">
+
+<!-- HEADER -->
+<header class="max-w-6xl mx-auto px-6 mb-12">
+  <p class="text-xs tracking-[0.2em] uppercase text-dusty-rose font-semibold mb-4">Pivot — Full-Screen Overlay</p>
+  <h1 class="font-serif text-5xl mb-4 text-charcoal">Stop fighting the grid</h1>
+  <p class="text-lg text-dune/70 max-w-2xl mb-6">You're right — inline expansion forces the photo to stretch to match content height, which is why portraits end up ~900px tall fighting against portfolio photos that aren't. The fix is to stop expanding within the grid and open a real full-screen overlay where we control the proportions.</p>
+  <div class="annotation max-w-3xl">
+    <h3>What changes</h3>
+    <p><strong>Today:</strong> Click card → inline expansion drops in below the row → height is driven by content → portrait + portfolio fight over a single column that's the wrong shape for both.</p>
+    <p><strong>Proposed:</strong> Click card → modal overlay opens at ~95vw × 90vh → portrait gets a fixed-aspect panel, portfolio gets its own scroll region, content gets the breathing room it needs. The desktop modal already exists for mobile — we just use it everywhere.</p>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<!-- VARIANT 1: STICKY PORTRAIT SPLIT                              -->
+<!-- ============================================================ -->
+<section class="max-w-7xl mx-auto px-6 mb-24">
+  <div class="flex items-baseline justify-between mb-2">
+    <span class="label-chip">Variant 1</span>
+    <span class="text-xs tracking-widest uppercase text-dune/40">Sticky Portrait · Scrolling Content</span>
+  </div>
+  <h2 class="font-serif text-3xl mb-3 text-charcoal">Sticky portrait, scrolling content + portfolio</h2>
+  <p class="text-dune/70 mb-8 max-w-3xl">Profile portrait pins to the left at its natural 3:4 aspect — never stretches, never crops weird. Right side scrolls independently through bio, credentials, quick facts, and the portfolio masonry. Identity always visible; content has room to breathe.</p>
+
+  <div class="grid grid-cols-12 gap-8">
+    <div class="col-span-9">
+      <div class="viewport-sim">
+        <div class="viewport-label">Modal · 95vw × 90vh · click-outside-to-close · ESC to close</div>
+        <div class="modal-card" style="height: 720px;">
+          <!-- Close button -->
+          <button class="absolute top-5 right-5 z-30 w-11 h-11 rounded-full bg-cream/90 hover:bg-cream backdrop-blur flex items-center justify-center shadow-lg">
+            <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+
+          <div class="grid grid-cols-12 h-full">
+            <!-- STICKY LEFT — Portrait + Identity -->
+            <div class="col-span-5 relative bg-gradient-to-br from-warm-sand/30 to-cream flex flex-col">
+              <!-- Portrait fills top portion at its natural aspect -->
+              <div class="relative flex-1 overflow-hidden">
+                <img src="https://i.pravatar.cc/800?img=49" class="absolute inset-0 w-full h-full object-cover">
+                <!-- Gradient overlay at bottom for text legibility (optional, for the floating identity card if used) -->
+              </div>
+
+              <!-- Identity block — fixed at bottom of left panel -->
+              <div class="p-8 bg-white">
+                <p class="text-xs tracking-[0.2em] uppercase text-dusty-rose font-semibold mb-2">Master Lash Artist</p>
+                <h2 class="font-serif text-4xl text-charcoal leading-[1.05] mb-3">Ashley Petersen</h2>
+                <a class="inline-flex items-center gap-1.5 text-sm text-dusty-rose font-medium mb-4">
+                  <svg class="icon-ig" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                  @ashley.lashes
+                </a>
+                <button class="w-full px-6 py-3 rounded-full bg-dusty-rose text-white text-sm font-medium hover:bg-dusty-rose/90">Book with Ashley</button>
+              </div>
+            </div>
+
+            <!-- SCROLLABLE RIGHT — Content + Portfolio -->
+            <div class="col-span-7 relative overflow-y-auto bg-white">
+              <div class="p-10 space-y-8">
+                <!-- About -->
+                <div>
+                  <h3 class="font-serif text-2xl mb-3 text-charcoal">About</h3>
+                  <p class="text-dune/80 leading-relaxed">With over 8 years of experience, Ashley specializes in creating dramatic volume sets that last. Her work has been featured in regional bridal magazines, and she's known for matching lash styles to each client's eye shape and lifestyle. Currently booking 3 weeks out.</p>
+                </div>
+
+                <!-- Credentials band -->
+                <div class="rounded-2xl bg-cream/60 p-5 flex gap-6 flex-wrap">
+                  <div>
+                    <p class="text-[10px] tracking-[0.2em] uppercase text-dune/40 font-semibold mb-1">Certified</p>
+                    <p class="text-sm font-medium text-charcoal">Russian Volume <span class="opacity-50">· NovaLash</span></p>
+                  </div>
+                  <div class="border-l border-warm-sand/40 pl-6">
+                    <p class="text-[10px] tracking-[0.2em] uppercase text-dune/40 font-semibold mb-1">Specialty</p>
+                    <p class="text-sm font-medium text-charcoal">Lash Lift Expert</p>
+                  </div>
+                  <div class="border-l border-warm-sand/40 pl-6">
+                    <p class="text-[10px] tracking-[0.2em] uppercase text-dune/40 font-semibold mb-1">Experience</p>
+                    <p class="text-sm font-medium text-charcoal">8+ years</p>
+                  </div>
+                </div>
+
+                <!-- Services -->
+                <div>
+                  <h3 class="font-serif text-2xl mb-3 text-charcoal">Services</h3>
+                  <div class="flex flex-wrap gap-2">
+                    <span class="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full text-charcoal">Lashes</span>
+                    <span class="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full text-charcoal">Volume Extensions</span>
+                    <span class="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full text-charcoal">Mega Volume</span>
+                    <span class="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full text-charcoal">Hybrid Sets</span>
+                  </div>
+                </div>
+
+                <!-- Quick Facts -->
+                <div>
+                  <h3 class="font-serif text-2xl mb-3 text-charcoal">Get to know Ashley</h3>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="qf-card">
+                      <p class="text-[10px] tracking-wider uppercase text-dusty-rose font-semibold mb-1">Coffee order</p>
+                      <p class="font-serif text-lg text-charcoal">Iced oat milk latte</p>
+                    </div>
+                    <div class="qf-card">
+                      <p class="text-[10px] tracking-wider uppercase text-dusty-rose font-semibold mb-1">Free time</p>
+                      <p class="font-serif text-lg text-charcoal">Hiking with Bowie</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- FOLD MARKER -->
+                <div class="relative my-6">
+                  <div class="fold-line"></div>
+                </div>
+
+                <!-- Portfolio Section — appears as you scroll -->
+                <div>
+                  <div class="flex items-baseline justify-between mb-5">
+                    <h3 class="font-serif text-2xl text-charcoal">Selected Work</h3>
+                    <span class="text-xs text-dune/40 tracking-wider uppercase">12 photos</span>
+                  </div>
+                  <div style="column-count: 2; column-gap: 12px;">
+                    <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash1/600/600" class="w-full block"></div>
+                    <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash2/600/800" class="w-full block"></div>
+                    <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash3/800/600" class="w-full block"></div>
+                    <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash4/600/900" class="w-full block"></div>
+                    <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash5/600/700" class="w-full block"></div>
+                    <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash6/600/600" class="w-full block"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-span-3">
+      <div class="annotation">
+        <h3>Why this works</h3>
+        <p class="pros">→ Portrait NEVER stretches — it fills a fixed-shape panel</p>
+        <p class="pros">→ Right side scrolls independently — content + portfolio get unlimited room</p>
+        <p class="pros">→ Identity (name, IG, book CTA) always visible while user reads/browses</p>
+        <p class="pros">→ Book button is always one click away — high conversion design</p>
+        <p class="pros">→ Reuses the existing mobile modal infrastructure (same overlay, different breakpoint)</p>
+        <h3 class="mt-4">Tradeoffs</h3>
+        <p class="cons">→ Portrait + booking sidebar takes 40% of viewport real estate forever</p>
+        <p class="cons">→ Less "magazine" feel — more "professional services profile"</p>
+        <h3 class="mt-4">Mobile</h3>
+        <p>Left panel becomes the hero (top 65vh), content + portfolio scroll below. Same as current mobile modal — no changes needed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- VARIANT 2: EDITORIAL SPREAD                                   -->
+<!-- ============================================================ -->
+<section class="max-w-7xl mx-auto px-6 mb-24">
+  <div class="flex items-baseline justify-between mb-2">
+    <span class="label-chip">Variant 2</span>
+    <span class="text-xs tracking-widest uppercase text-dune/40">Editorial Spread · Long-scroll</span>
+  </div>
+  <h2 class="font-serif text-3xl mb-3 text-charcoal">Magazine cover, then the article, then the portfolio</h2>
+  <p class="text-dune/70 mb-8 max-w-3xl">Full-bleed overlay that reads like a magazine profile. First viewport = "cover" (portrait + name + intro). Scroll = the article (bio, credentials, services, quick facts). Scroll more = the portfolio masonry takes over full-width. Booking CTA floats persistent bottom-right.</p>
+
+  <!-- Frame 1: Cover -->
+  <div class="grid grid-cols-12 gap-8 mb-6">
+    <div class="col-span-9">
+      <div class="viewport-sim">
+        <div class="viewport-label">Modal · 95vw × 90vh · scroll position: top (cover)</div>
+        <div class="modal-card" style="height: 720px;">
+          <!-- Close + persistent booking CTA -->
+          <button class="absolute top-5 right-5 z-30 w-11 h-11 rounded-full bg-cream/90 hover:bg-cream backdrop-blur flex items-center justify-center shadow-lg">
+            <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <button class="absolute bottom-6 right-6 z-30 px-6 py-3.5 rounded-full bg-dusty-rose text-white text-sm font-medium hover:bg-dusty-rose/90 shadow-xl shadow-dusty-rose/40 flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Book with Ashley
+          </button>
+
+          <!-- COVER LAYOUT -->
+          <div class="grid grid-cols-12 h-full">
+            <!-- Left: Big portrait -->
+            <div class="col-span-6 relative">
+              <img src="https://i.pravatar.cc/1000?img=49" class="absolute inset-0 w-full h-full object-cover">
+            </div>
+
+            <!-- Right: Editorial type -->
+            <div class="col-span-6 flex flex-col justify-center px-16">
+              <p class="text-xs tracking-[0.25em] uppercase text-dusty-rose font-semibold mb-6">Master Lash Artist · Vol. 03</p>
+              <h2 class="font-serif text-7xl text-charcoal leading-[0.95] mb-8">Ashley<br>Petersen</h2>
+              <a class="inline-flex items-center gap-2 text-base text-dusty-rose font-medium mb-8">
+                <svg class="icon-ig" style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                @ashley.lashes
+              </a>
+              <p class="text-dune/75 leading-relaxed text-xl font-light" style="max-width: 38ch;">"My goal is to make every client feel like the most beautiful version of themselves walking out the door."</p>
+              <div class="mt-12 flex items-center gap-4 text-xs text-dune/50 tracking-widest uppercase">
+                <span>Scroll for portfolio</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-span-3">
+      <div class="annotation">
+        <h3>Frame 1 — Cover</h3>
+        <p>What loads when modal opens. Big portrait, headline name, pull-quote intro, IG. Looks like the cover of a magazine spread.</p>
+        <p>The book button floats persistent bottom-right through all scroll positions.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 2: Article body -->
+  <div class="grid grid-cols-12 gap-8 mb-6">
+    <div class="col-span-9">
+      <div class="viewport-sim">
+        <div class="viewport-label">Modal · scroll position: middle (article)</div>
+        <div class="modal-card" style="height: 720px;">
+          <button class="absolute top-5 right-5 z-30 w-11 h-11 rounded-full bg-cream/90 hover:bg-cream backdrop-blur flex items-center justify-center shadow-lg">
+            <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <button class="absolute bottom-6 right-6 z-30 px-6 py-3.5 rounded-full bg-dusty-rose text-white text-sm font-medium shadow-xl shadow-dusty-rose/40 flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Book with Ashley
+          </button>
+
+          <!-- ARTICLE LAYOUT — narrower content column, generous margins -->
+          <div class="px-32 py-16 max-w-4xl mx-auto h-full overflow-y-auto">
+            <p class="text-[10px] tracking-[0.25em] uppercase text-dusty-rose font-semibold mb-3">The Story</p>
+            <h3 class="font-serif text-4xl text-charcoal mb-8 leading-tight">Eight years and counting</h3>
+
+            <p class="text-dune/85 text-lg leading-relaxed mb-6">With over 8 years of experience, Ashley specializes in creating dramatic volume sets that last. Her work has been featured in regional bridal magazines, and she's known for matching lash styles to each client's eye shape and lifestyle.</p>
+
+            <p class="text-dune/85 text-lg leading-relaxed mb-10">"My goal is to make every client feel like the most beautiful version of themselves walking out the door. Lashes aren't just about looking dramatic — they're about how they make you carry yourself when you catch your reflection."</p>
+
+            <!-- Credentials as elegant inline list -->
+            <div class="border-t border-warm-sand/40 pt-8 mb-8">
+              <p class="text-[10px] tracking-[0.25em] uppercase text-dusty-rose font-semibold mb-5">Credentials</p>
+              <div class="grid grid-cols-3 gap-6 text-sm">
+                <div>
+                  <p class="font-serif text-2xl text-charcoal mb-1">Russian Volume</p>
+                  <p class="text-dune/50">NovaLash Academy</p>
+                </div>
+                <div>
+                  <p class="font-serif text-2xl text-charcoal mb-1">Lash Lift Expert</p>
+                  <p class="text-dune/50">Lash Affair</p>
+                </div>
+                <div>
+                  <p class="font-serif text-2xl text-charcoal mb-1">8 years</p>
+                  <p class="text-dune/50">Experience</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Services -->
+            <div class="border-t border-warm-sand/40 pt-8 mb-10">
+              <p class="text-[10px] tracking-[0.25em] uppercase text-dusty-rose font-semibold mb-4">Services</p>
+              <div class="flex flex-wrap gap-2">
+                <span class="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full text-charcoal">Lashes</span>
+                <span class="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full text-charcoal">Volume Extensions</span>
+                <span class="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full text-charcoal">Mega Volume</span>
+                <span class="px-4 py-2 text-sm font-medium bg-sage/10 rounded-full text-charcoal">Hybrid Sets</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-span-3">
+      <div class="annotation">
+        <h3>Frame 2 — Article body</h3>
+        <p>As user scrolls, the cover slides up and the article body comes into view. Narrow content column (max ~700px text width) for comfortable reading. Credentials and services feel intentional, not crowded.</p>
+        <p>Big serif headers anchor each section.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Frame 3: Portfolio takeover -->
+  <div class="grid grid-cols-12 gap-8 mb-6">
+    <div class="col-span-9">
+      <div class="viewport-sim">
+        <div class="viewport-label">Modal · scroll position: bottom (portfolio)</div>
+        <div class="modal-card bg-cream/40" style="height: 720px;">
+          <button class="absolute top-5 right-5 z-30 w-11 h-11 rounded-full bg-cream/90 hover:bg-cream backdrop-blur flex items-center justify-center shadow-lg">
+            <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <button class="absolute bottom-6 right-6 z-30 px-6 py-3.5 rounded-full bg-dusty-rose text-white text-sm font-medium shadow-xl shadow-dusty-rose/40 flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Book with Ashley
+          </button>
+
+          <!-- FULL-WIDTH PORTFOLIO TAKEOVER -->
+          <div class="p-12 h-full overflow-y-auto">
+            <div class="flex items-baseline justify-between mb-8">
+              <div>
+                <p class="text-[10px] tracking-[0.25em] uppercase text-dusty-rose font-semibold mb-2">Portfolio</p>
+                <h3 class="font-serif text-4xl text-charcoal">Selected Work</h3>
+              </div>
+              <span class="text-xs text-dune/40 tracking-widest uppercase">12 photos · tap to enlarge</span>
+            </div>
+
+            <div style="column-count: 4; column-gap: 12px;">
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash1/600/600" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash2/600/800" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash3/800/600" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash4/600/900" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash5/600/700" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash6/600/600" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash7/700/500" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash8/600/800" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash9/600/600" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash10/600/750" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash11/600/500" class="w-full block"></div>
+              <div class="mb-3 break-inside-avoid rounded-xl overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash12/600/700" class="w-full block"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-span-3">
+      <div class="annotation">
+        <h3>Frame 3 — Portfolio takeover</h3>
+        <p>Portfolio gets the full viewport width. 4-column masonry on desktop (more density than Variant 1's 2-col since it isn't sharing the width).</p>
+        <p>Each photo at native aspect — no cropping decisions ever.</p>
+        <p>Bg shifts to warm cream to signal "you've entered the gallery."</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-12 gap-8">
+    <div class="col-span-9">
+      <div class="annotation max-w-none">
+        <h3>Variant 2 — Why it's special</h3>
+        <p class="pros">→ Feels premium / curated — like a Vogue artist profile</p>
+        <p class="pros">→ Portfolio gets the entire viewport width when it matters</p>
+        <p class="pros">→ Persistent floating CTA = booking never more than one click away</p>
+        <p class="pros">→ Reads top-to-bottom — easy to scan or deep-dive</p>
+        <p class="pros">→ Big portrait communicates trust + signals quality</p>
+        <h3 class="mt-3">Tradeoffs</h3>
+        <p class="cons">→ Long-scroll = more interaction work; less info above the fold</p>
+        <p class="cons">→ Each artist needs strong bio copy + a quote (or template fallback) — sparse copy = empty cover</p>
+        <p class="cons">→ Heavier build than Variant 1 (multiple scroll regions, persistent CTA, fancier transitions)</p>
+        <h3 class="mt-3">Mobile</h3>
+        <p>Mobile collapses the cover spread to stacked (portrait above, name below). The rest scrolls naturally. Portfolio masonry drops from 4-col to 2-col.</p>
+      </div>
+    </div>
+    <div class="col-span-3"></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- VARIANT 3: PORTRAIT-LEFT, SCROLLING EVERYTHING ELSE           -->
+<!-- ============================================================ -->
+<section class="max-w-7xl mx-auto px-6 mb-24">
+  <div class="flex items-baseline justify-between mb-2">
+    <span class="label-chip">Variant 3</span>
+    <span class="text-xs tracking-widest uppercase text-dune/40">Compact · Hybrid</span>
+  </div>
+  <h2 class="font-serif text-3xl mb-3 text-charcoal">Compact: portrait + booking sidebar, portfolio-focused body</h2>
+  <p class="text-dune/70 mb-8 max-w-3xl">A leaner full-screen overlay. Left sidebar is tighter than V1 (~30%) — just enough for portrait, name, IG, and Book button. Right side leads with the portfolio masonry, with bio/credentials below. Use this when you want photography to dominate the experience.</p>
+
+  <div class="grid grid-cols-12 gap-8">
+    <div class="col-span-9">
+      <div class="viewport-sim">
+        <div class="viewport-label">Modal · 95vw × 90vh · scroll position: top</div>
+        <div class="modal-card" style="height: 720px;">
+          <button class="absolute top-5 right-5 z-30 w-11 h-11 rounded-full bg-cream/90 hover:bg-cream backdrop-blur flex items-center justify-center shadow-lg">
+            <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+
+          <div class="grid grid-cols-10 h-full">
+            <!-- Narrow sticky sidebar -->
+            <div class="col-span-3 relative bg-cream/40 flex flex-col">
+              <div class="relative aspect-[3/4] overflow-hidden">
+                <img src="https://i.pravatar.cc/600?img=49" class="absolute inset-0 w-full h-full object-cover">
+              </div>
+              <div class="p-7 flex-1 flex flex-col">
+                <p class="text-[10px] tracking-[0.2em] uppercase text-dusty-rose font-semibold mb-2">Master Lash Artist</p>
+                <h2 class="font-serif text-3xl text-charcoal leading-tight mb-3">Ashley Petersen</h2>
+                <a class="inline-flex items-center gap-1.5 text-sm text-dusty-rose font-medium mb-5">
+                  <svg class="icon-ig" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                  @ashley.lashes
+                </a>
+
+                <!-- Compact credentials -->
+                <div class="space-y-2 mb-5 text-xs text-dune/70">
+                  <div class="flex items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c87b6e" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    <span>Russian Volume Certified</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c87b6e" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                    <span>8+ years experience</span>
+                  </div>
+                </div>
+
+                <button class="mt-auto w-full px-5 py-3 rounded-full bg-dusty-rose text-white text-sm font-medium hover:bg-dusty-rose/90">Book with Ashley</button>
+              </div>
+            </div>
+
+            <!-- Wide portfolio-led body -->
+            <div class="col-span-7 relative overflow-y-auto">
+              <!-- Bio strip at top -->
+              <div class="px-10 py-8 border-b border-warm-sand/30">
+                <p class="text-dune/85 leading-relaxed text-base" style="max-width: 65ch;">With over 8 years of experience, Ashley specializes in creating dramatic volume sets that last. Her work has been featured in regional bridal magazines.</p>
+                <div class="mt-4 flex gap-2 flex-wrap">
+                  <span class="px-3 py-1.5 text-xs font-medium bg-sage/10 rounded-full text-charcoal">Lashes</span>
+                  <span class="px-3 py-1.5 text-xs font-medium bg-sage/10 rounded-full text-charcoal">Volume</span>
+                  <span class="px-3 py-1.5 text-xs font-medium bg-sage/10 rounded-full text-charcoal">Mega Volume</span>
+                  <span class="px-3 py-1.5 text-xs font-medium bg-sage/10 rounded-full text-charcoal">Hybrid Sets</span>
+                </div>
+              </div>
+
+              <!-- Portfolio gets the lead -->
+              <div class="px-10 py-8">
+                <div class="flex items-baseline justify-between mb-5">
+                  <h3 class="font-serif text-2xl text-charcoal">Selected Work</h3>
+                  <span class="text-xs text-dune/40 tracking-widest uppercase">12 photos</span>
+                </div>
+                <div style="column-count: 3; column-gap: 10px;">
+                  <div class="mb-3 break-inside-avoid rounded-lg overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash1/600/600" class="w-full block"></div>
+                  <div class="mb-3 break-inside-avoid rounded-lg overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash2/600/800" class="w-full block"></div>
+                  <div class="mb-3 break-inside-avoid rounded-lg overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash3/800/600" class="w-full block"></div>
+                  <div class="mb-3 break-inside-avoid rounded-lg overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash4/600/900" class="w-full block"></div>
+                  <div class="mb-3 break-inside-avoid rounded-lg overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash5/600/700" class="w-full block"></div>
+                  <div class="mb-3 break-inside-avoid rounded-lg overflow-hidden bg-warm-sand/20"><img src="https://picsum.photos/seed/ash6/600/600" class="w-full block"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-span-3">
+      <div class="annotation">
+        <h3>Why this works</h3>
+        <p class="pros">→ Portfolio is the lead — appears immediately, no scroll required</p>
+        <p class="pros">→ Sidebar is compact (30%) — leaves 70% for the work</p>
+        <p class="pros">→ 3-column masonry fits comfortably in the wider body</p>
+        <p class="pros">→ Book CTA still always visible (sidebar is sticky)</p>
+        <h3 class="mt-4">Tradeoffs</h3>
+        <p class="cons">→ Cramped sidebar — less room for bio in the identity column</p>
+        <p class="cons">→ Bio gets a small strip vs hero treatment</p>
+        <p class="cons">→ Less editorial / magazine feel than V2</p>
+        <h3 class="mt-4">Mobile</h3>
+        <p>Sidebar collapses to a smaller portrait header (~50vh). Body scrolls normally below.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- COMPARISON                                                    -->
+<!-- ============================================================ -->
+<section class="max-w-7xl mx-auto px-6 mb-16">
+  <h2 class="font-serif text-3xl mb-6 text-charcoal">Quick comparison</h2>
+  <div class="bg-white rounded-2xl shadow-md overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-cream/60 text-left">
+        <tr>
+          <th class="px-6 py-4 font-semibold text-charcoal">Dimension</th>
+          <th class="px-6 py-4 font-semibold text-charcoal">V1 · Sticky Split</th>
+          <th class="px-6 py-4 font-semibold text-charcoal">V2 · Editorial Spread</th>
+          <th class="px-6 py-4 font-semibold text-charcoal">V3 · Compact Hybrid</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-warm-sand/20">
+        <tr><td class="px-6 py-4 font-medium">Layout vibe</td><td class="px-6 py-4">Professional services profile</td><td class="px-6 py-4">Magazine spread</td><td class="px-6 py-4">Portfolio-first showcase</td></tr>
+        <tr><td class="px-6 py-4 font-medium">Portrait size</td><td class="px-6 py-4">~40% of viewport, sticky</td><td class="px-6 py-4">~50% of cover, full-bleed</td><td class="px-6 py-4">~30% sidebar, sticky</td></tr>
+        <tr><td class="px-6 py-4 font-medium">Portfolio width</td><td class="px-6 py-4">~60% (2-col masonry)</td><td class="px-6 py-4">100% (4-col masonry)</td><td class="px-6 py-4">~70% (3-col masonry)</td></tr>
+        <tr><td class="px-6 py-4 font-medium">Above-the-fold</td><td class="px-6 py-4">Portrait + name + bio start</td><td class="px-6 py-4">Cover-style (portrait + name)</td><td class="px-6 py-4">Portrait + bio + first photos</td></tr>
+        <tr><td class="px-6 py-4 font-medium">Book button</td><td class="px-6 py-4 text-emerald-700">Always visible (sidebar)</td><td class="px-6 py-4 text-emerald-700">Always visible (floating)</td><td class="px-6 py-4 text-emerald-700">Always visible (sidebar)</td></tr>
+        <tr><td class="px-6 py-4 font-medium">Build effort</td><td class="px-6 py-4">Low — mirrors mobile modal</td><td class="px-6 py-4">High — multi-frame scroll</td><td class="px-6 py-4">Medium</td></tr>
+        <tr><td class="px-6 py-4 font-medium">Cropping risk</td><td class="px-6 py-4 text-emerald-700">None</td><td class="px-6 py-4 text-emerald-700">None</td><td class="px-6 py-4 text-emerald-700">None</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- RECOMMENDATION                                                -->
+<!-- ============================================================ -->
+<section class="max-w-7xl mx-auto px-6 mb-16">
+  <div class="bg-charcoal text-cream rounded-3xl p-10">
+    <p class="text-xs tracking-[0.2em] uppercase text-dusty-rose font-semibold mb-3">My recommendation</p>
+    <h2 class="font-serif text-3xl mb-5">Variant 1 — Sticky Split</h2>
+    <p class="text-cream/80 leading-relaxed mb-4">It's the lowest-effort change that completely solves the cropping problem. The portrait gets a fixed-shape panel (never stretches), the portfolio gets its own scroll region (any photo count fits), and identity + book button stay glued to the left so users never lose the artist they're browsing.</p>
+    <p class="text-cream/80 leading-relaxed mb-4">Critically, your mobile modal is already doing roughly this — portrait hero at top, scrollable content below. Switching desktop to full-screen overlay means <strong>one component handles both breakpoints</strong>, instead of the current "desktop inline expansion + mobile modal" split. Big maintenance win.</p>
+    <p class="text-cream/80 leading-relaxed">Variant 2 (Editorial Spread) is the long-term aspirational version — save it for when you build a dedicated <code class="bg-cream/10 px-1.5 py-0.5 rounded">/team/[slug]</code> page that has its own URL and can be shared.</p>
+  </div>
+</section>
+
+</body>
+</html>

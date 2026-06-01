@@ -94,6 +94,28 @@ const nextConfig = {
         destination: '/',
         permanent: true,
       },
+      // DAM was consolidated into the admin panel. Keep old /dam URLs working.
+      // Order matters: specific routes before the catch-all.
+      {
+        source: '/dam/login',
+        destination: '/admin/login',
+        permanent: false,
+      },
+      {
+        source: '/dam/team',
+        destination: '/admin/assets/team',
+        permanent: false,
+      },
+      {
+        source: '/dam',
+        destination: '/admin/assets',
+        permanent: false,
+      },
+      {
+        source: '/dam/:path*',
+        destination: '/admin/assets/:path*',
+        permanent: false,
+      },
     ]
   },
 }

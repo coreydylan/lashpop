@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team Cards — Normalized Spacing Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ivory: '#faf4ee',
+            cream: '#f3e7da',
+            terracotta: { DEFAULT: '#cc947f', dark: '#ac4d3c', light: '#d3a392' },
+            'warm-sand': '#d4b896',
+            'dusty-rose': '#c97a6e',
+            charcoal: '#3a2a23',
+          },
+          fontFamily: {
+            serif: ['Georgia', 'ui-serif', 'serif'],
+            display: ['Georgia', 'ui-serif', 'serif'],
+            sans: ['system-ui', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { background: #e9d1c8; font-family: system-ui, sans-serif; }
+    .photo-bg { background-color: #f3e7da; background-size: cover; background-position: center top; }
+    .label-tag {
+      position: absolute; top: -8px; right: -8px;
+      background: #ac4d3c; color: white; font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px; z-index: 10;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .annotation {
+      font-size: 11px; color: #ac4d3c; font-style: italic;
+      text-align: center; margin-top: 8px; line-height: 1.3;
+    }
+    .frame {
+      background: #e9d1c8; border-radius: 12px; padding: 32px 24px;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+    }
+    .ruler { color: #888; font-size: 11px; }
+    .baseline-marker {
+      position: absolute; left: 0; right: 0; height: 1px;
+      background: rgba(204, 77, 60, 0.25); pointer-events: none;
+    }
+  </style>
+</head>
+<body class="p-6 md:p-10">
+  <div class="max-w-[1500px] mx-auto">
+
+    <!-- Header -->
+    <div class="mb-10">
+      <h1 class="text-3xl font-bold text-charcoal mb-2">Team Cards — Normalized Spacing</h1>
+      <p class="text-gray-700 max-w-3xl">
+        All five fixes applied: <code class="text-sm bg-white/60 px-1.5 rounded">flex flex-col</code> shell ·
+        IG bar pinned with <code class="text-sm bg-white/60 px-1.5 rounded">mt-auto</code> ·
+        role reserved to <code class="text-sm bg-white/60 px-1.5 rounded">line-clamp-2 min-h-[2lh]</code> ·
+        fixed-height chip band ·
+        multi-handle IG joined with <code class="text-sm bg-white/60 px-1.5 rounded">·</code> ·
+        orphan card centered.
+      </p>
+    </div>
+
+    <!-- ============ DESKTOP ============ -->
+    <div class="frame mb-12">
+      <div class="flex items-baseline justify-between mb-6">
+        <h2 class="text-xl font-semibold text-charcoal">Desktop · 1440 viewport · <code class="text-base">lg:grid-cols-4</code></h2>
+        <span class="ruler">17 cards · 4 rows of 4 + 1 centered orphan</span>
+      </div>
+
+      <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+          <!-- Card template for desktop:
+               flex flex-col → vertical layout
+               fixed h-7 chip band (28px) → always reserved, even when empty
+               px-4 pt-4 → arch image padding (instead of pt-8 which was uneven)
+               px-6 py-5 → text content padding
+               role: line-clamp-2 min-h-[3rem] → always reserves 2 lines (48px)
+               mt-auto on footer → IG bar always glued to bottom
+               h-11 footer → fixed height regardless of handle count
+          -->
+
+          <!-- 1. Emily R. — owner, single chip, 1 IG -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1">
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Extensions</span>
+            </div>
+            <div class="px-4 pt-2">
+              <div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/emily-rogers.jpeg')"></div>
+            </div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Emily Rogers</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">LashPop Owner</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center">
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">lashpopstudios</span>
+            </div>
+          </div>
+
+          <!-- 2. Rachel E. — standard -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1">
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Extensions</span>
+            </div>
+            <div class="px-4 pt-2">
+              <div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/rachel-edwards.jpeg')"></div>
+            </div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Rachel Edwards</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">LashPop Team Artist</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center">
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">indigomoon.beauty</span>
+            </div>
+          </div>
+
+          <!-- 3. Paige G. — NO CHIPS (fix: band still rendered, just empty) -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+            <span class="label-tag">FIX · no chips</span>
+            <div class="px-3 pt-3 h-7"></div>
+            <div class="px-4 pt-2">
+              <div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/paige.jpeg')"></div>
+            </div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Paige Gordon</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">LashPop Team Artist</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center">
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">pacificoutwestpaige</span>
+            </div>
+          </div>
+
+          <!-- 4. Tori B. — NO CHIPS (matches Paige's height) -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7"></div>
+            <div class="px-4 pt-2">
+              <div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-color: #d4b896"></div>
+            </div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Tori Burnett</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">LashPop Team Artist</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center">
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">toriburnettbeauty</span>
+            </div>
+          </div>
+
+          <!-- 5. Kelly K. — 2 IG HANDLES (fix: · separator, same row height) -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+            <span class="label-tag">FIX · 2 IG handles</span>
+            <div class="px-3 pt-3 h-7 flex items-center gap-1 overflow-hidden">
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Perm Jewelry</span>
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Ext.</span>
+            </div>
+            <div class="px-4 pt-2">
+              <div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/kelly-katona.jpeg')"></div>
+            </div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Kelly Katona</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Lashes by Kelly Katona</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center gap-2">
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">lashesbykellykatona</span>
+              <span class="text-dusty-rose/60">·</span>
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">pamperedwithpurpose</span>
+            </div>
+          </div>
+
+          <!-- 6. Renee B. — 4 chips, scrollable -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1 overflow-hidden">
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Brows</span>
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Ext.</span>
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap opacity-60">+2</span>
+            </div>
+            <div class="px-4 pt-2">
+              <div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/renee-belton.jpg')"></div>
+            </div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Renee Belton</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Brows by Cat Black</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center">
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">browsbycatblack</span>
+            </div>
+          </div>
+
+          <!-- 7. Adrianna P. — short role (1 line) — BUT reserved 2-line block keeps card aligned -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+            <span class="label-tag">FIX · short role</span>
+            <div class="px-3 pt-3 h-7 flex items-center gap-1">
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Ext.</span>
+            </div>
+            <div class="px-4 pt-2">
+              <div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/adrianna-arnaud.jpeg')"></div>
+            </div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Adrianna Payne</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Lashed by Adrianna</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center">
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">lashedbyadrianna</span>
+            </div>
+          </div>
+
+          <!-- 8. Ashley P. — LONG ROLE (2 lines, was the trigger for the bug) -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+            <span class="label-tag">FIX · 2-line role</span>
+            <div class="px-3 pt-3 h-7 flex items-center gap-1 overflow-hidden">
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Brows</span>
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Waxing</span>
+            </div>
+            <div class="px-4 pt-2">
+              <div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/ashley-petersen.jpeg')"></div>
+            </div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Ashley Petersen</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Integrated Body and Beauty</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center">
+              <span class="text-xs font-medium tracking-wide text-dusty-rose">integratedbodybeauty</span>
+            </div>
+          </div>
+
+          <!-- 9-16: standard cards -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1"><span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/ava-mata.jpeg')"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Ava Zeutenhorst</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Looks and Lashes</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">_looksandlashes_</span></div>
+          </div>
+
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1 overflow-hidden">
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Ext.</span>
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Brows</span>
+            </div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/evie-ells.jpeg')"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Evie Ells</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Evie Ells Aesthetics</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">lashpopstudios</span></div>
+          </div>
+
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1"><span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/savannah-scherer.jpeg')"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Savannah Scherer</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">San Diego Lash</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">sandiegolash</span></div>
+          </div>
+
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1"><span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/haley-walker.jpg')"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Haley Walker</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Lashes by Haley</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">haley.the.esti</span></div>
+          </div>
+
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1"><span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/bethany-peterson.jpeg')"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Bethany Peterson</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Salty Lash</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">saltylash</span></div>
+          </div>
+
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1 overflow-hidden">
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Ext.</span>
+              <span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full whitespace-nowrap">Brows</span>
+            </div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/kelly-richter.jpeg')"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Kelly Richter</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Kismet</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">kismet.studio</span></div>
+          </div>
+
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1"><span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-color:#c4a59a"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Nancy Nicole</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">Volt Lash</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">voltlash</span></div>
+          </div>
+
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+            <div class="px-3 pt-3 h-7 flex items-center gap-1"><span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full">Injectables</span></div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/grace-ramos.jpg')"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Grace Ramos</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">NaturTox</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">naturtox</span></div>
+          </div>
+
+          <!-- 17. Elena C. — ORPHAN (fix: col-start-2 centers it across remaining cols) -->
+          <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative lg:col-start-2">
+            <span class="label-tag">FIX · orphan centered</span>
+            <div class="px-3 pt-3 h-7 flex items-center gap-1"><span class="px-2 py-0.5 text-[11px] bg-cream text-charcoal rounded-full">Skincare</span></div>
+            <div class="px-4 pt-2"><div class="h-72 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/elena-castellanos.jpeg')"></div></div>
+            <div class="px-6 pt-5 pb-4 text-center">
+              <h3 class="text-2xl font-serif font-light text-gray-900 mb-1 truncate">Elena Castellanos</h3>
+              <p class="font-sans font-light text-gray-500 text-sm line-clamp-2" style="min-height: 2.5rem;">NUSKIN fibroblast</p>
+            </div>
+            <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 flex items-center justify-center"><span class="text-xs font-medium tracking-wide text-dusty-rose">nuskin_fibroblast</span></div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="mt-6 grid grid-cols-2 gap-4 max-w-3xl mx-auto text-xs text-gray-700">
+        <div class="bg-white/50 rounded-lg p-3">
+          <strong class="text-charcoal">Before</strong><br>
+          • Adrianna's IG bar floats 17px above bottom in long-role row<br>
+          • Paige/Tori top has empty 25px gap when chips missing<br>
+          • Kelly K.'s 2 IG handles use divider-flanked flex cells<br>
+          • Elena left-aligned alone in last row
+        </div>
+        <div class="bg-white/50 rounded-lg p-3 border border-terracotta/40">
+          <strong class="text-charcoal">After</strong><br>
+          • <code>mt-auto</code> pins IG bar to card bottom always<br>
+          • Chip band reserved at fixed <code>h-7</code> whether empty or full<br>
+          • Multi-handle joined inline with <code>·</code>, same row height<br>
+          • <code>lg:col-start-2</code> centers orphan in row 5
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MOBILE ============ -->
+    <div class="frame">
+      <div class="flex items-baseline justify-between mb-6">
+        <h2 class="text-xl font-semibold text-charcoal">Mobile · 390 viewport · <code class="text-base">grid-cols-2</code></h2>
+        <span class="ruler">17 cards · 8 rows of 2 + 1 centered orphan</span>
+      </div>
+
+      <div class="mx-auto" style="width: 390px; padding: 0 16px; background: rgba(255,255,255,0.2); border-radius: 8px;">
+        <div class="py-3">
+          <div class="grid grid-cols-2 gap-3">
+
+            <!-- Mobile card template:
+                 same flex flex-col + mt-auto pattern, smaller sizes
+                 h-6 chip band, h-48 photo, h-10 IG bar, role line-clamp-2 min-h-[2rem]
+            -->
+
+            <!-- Emily R. -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1 overflow-hidden">
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Ext.</span>
+              </div>
+              <div class="px-3 pt-1">
+                <div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/emily-rogers.jpeg')"></div>
+              </div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Emily R.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">LashPop Owner</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center">
+                <span class="text-[10px] font-medium tracking-wide text-dusty-rose">lashpopstudios</span>
+              </div>
+            </div>
+
+            <!-- Rachel E. -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1 overflow-hidden">
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash Ext.</span>
+              </div>
+              <div class="px-3 pt-1">
+                <div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/rachel-edwards.jpeg')"></div>
+              </div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Rachel E.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">LashPop Team Artist</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">indigomoon.beauty</span></div>
+            </div>
+
+            <!-- Paige G. — empty chip band -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+              <span class="label-tag" style="font-size:9px; padding:1px 5px;">no chips</span>
+              <div class="px-2 pt-2 h-6"></div>
+              <div class="px-3 pt-1">
+                <div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/paige.jpeg')"></div>
+              </div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Paige G.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">LashPop Team Artist</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">pacificoutwestpaige</span></div>
+            </div>
+
+            <!-- Tori B. — empty chip band -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6"></div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-color:#d4b896"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Tori B.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">LashPop Team Artist</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">toriburnettbeauty</span></div>
+            </div>
+
+            <!-- Kelly K. — 2 IG handles inline · -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+              <span class="label-tag" style="font-size:9px; padding:1px 5px;">2 IG · inline</span>
+              <div class="px-2 pt-2 h-6 flex items-center gap-1 overflow-hidden">
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Perm Jew.</span>
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash</span>
+              </div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/kelly-katona.jpeg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Kelly K.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Lashes by Kelly Katona</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center gap-1 px-2">
+                <span class="text-[9px] font-medium tracking-tight text-dusty-rose truncate">lashesbykellykatona</span>
+                <span class="text-dusty-rose/60 text-[10px]">·</span>
+                <span class="text-[9px] font-medium tracking-tight text-dusty-rose truncate">pamperedwithpurpose</span>
+              </div>
+            </div>
+
+            <!-- Renee B. -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1 overflow-hidden">
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Brows</span>
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash</span>
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap opacity-60">+2</span>
+              </div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/renee-belton.jpg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Renee B.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Brows by Cat Black</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">browsbycatblack</span></div>
+            </div>
+
+            <!-- Adrianna P. — short role (1 line) -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+              <span class="label-tag" style="font-size:9px; padding:1px 5px;">short role</span>
+              <div class="px-2 pt-2 h-6 flex items-center gap-1"><span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/adrianna-arnaud.jpeg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Adrianna P.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Lashed by Adrianna</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">lashedbyadrianna</span></div>
+            </div>
+
+            <!-- Ashley P. — LONG ROLE (the bug trigger) -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10 relative">
+              <span class="label-tag" style="font-size:9px; padding:1px 5px;">2-line role</span>
+              <div class="px-2 pt-2 h-6 flex items-center gap-1 overflow-hidden">
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Brows</span>
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Wax</span>
+              </div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/ashley-petersen.jpeg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Ashley P.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Integrated Body and Beauty</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">integratedbodybeauty</span></div>
+            </div>
+
+            <!-- 9-16 quick fill -->
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1"><span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/ava-mata.jpeg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Ava Z.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Looks and Lashes</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">_looksandlashes_</span></div>
+            </div>
+
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1 overflow-hidden">
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash</span>
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Brows</span>
+              </div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/evie-ells.jpeg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Evie E.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Evie Ells Aesthetics</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">lashpopstudios</span></div>
+            </div>
+
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1"><span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/savannah-scherer.jpeg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Savannah S.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">San Diego Lash</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">sandiegolash</span></div>
+            </div>
+
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1"><span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/haley-walker.jpg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Haley W.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Lashes by Haley</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">haley.the.esti</span></div>
+            </div>
+
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1"><span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/bethany-peterson.jpeg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Bethany P.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Salty Lash</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">saltylash</span></div>
+            </div>
+
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1 overflow-hidden">
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Lash</span>
+                <span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full whitespace-nowrap">Brows</span>
+              </div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/kelly-richter.jpeg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Kelly R.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Kismet</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">kismet.studio</span></div>
+            </div>
+
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1"><span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full">Lash Ext.</span></div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-color:#c4a59a"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Nancy N.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">Volt Lash</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">voltlash</span></div>
+            </div>
+
+            <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10">
+              <div class="px-2 pt-2 h-6 flex items-center gap-1"><span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full">Injectables</span></div>
+              <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/grace-ramos.jpg')"></div></div>
+              <div class="px-3 pt-3 pb-2 text-center">
+                <h3 class="text-base font-serif font-light text-gray-900 truncate">Grace R.</h3>
+                <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">NaturTox</p>
+              </div>
+              <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">naturtox</span></div>
+            </div>
+
+            <!-- Orphan Elena — centered via col-start-1 col-end-3 + flex justify-center, or grid spanning full and centered -->
+            <div class="col-span-2 flex justify-center relative">
+              <span class="label-tag" style="font-size:9px; padding:1px 5px;">orphan centered</span>
+              <div class="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10" style="width: calc(50% - 0.375rem);">
+                <div class="px-2 pt-2 h-6 flex items-center gap-1"><span class="px-1.5 py-0 text-[9px] bg-cream text-charcoal rounded-full">Skincare</span></div>
+                <div class="px-3 pt-1"><div class="h-48 overflow-hidden rounded-t-full rounded-b-lg photo-bg" style="background-image:url('/Users/coreydylan/Developer/lashpop/public/lashpop-images/team/elena-castellanos.jpeg')"></div></div>
+                <div class="px-3 pt-3 pb-2 text-center">
+                  <h3 class="text-base font-serif font-light text-gray-900 truncate">Elena C.</h3>
+                  <p class="font-sans font-light text-gray-500 text-[11px] line-clamp-2 leading-tight" style="min-height: 1.8rem;">NUSKIN fibroblast</p>
+                </div>
+                <div class="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 flex items-center justify-center"><span class="text-[10px] font-medium tracking-wide text-dusty-rose">nuskin_fibroblast</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Implementation note -->
+    <div class="mt-10 bg-white/60 rounded-lg p-5 text-sm text-gray-800 max-w-4xl mx-auto">
+      <strong class="text-charcoal">Implementation summary (one file change):</strong>
+      <code class="block mt-2 text-xs bg-charcoal/5 p-3 rounded whitespace-pre overflow-x-auto">// EnhancedTeamSectionClient.tsx — card shell
+&lt;div className="flex flex-col bg-ivory rounded-[20px] overflow-hidden shadow-md border border-terracotta/10"&gt;
+  &lt;div className="px-3 pt-3 h-7 flex items-center gap-1 overflow-hidden"&gt;
+    {memberCategories.map(c =&gt; &lt;Chip&gt;{c}&lt;/Chip&gt;)}  {/* renders nothing if empty, band reserves height */}
+  &lt;/div&gt;
+  &lt;div className="px-4 pt-2"&gt; &lt;ArchImage /&gt; &lt;/div&gt;
+  &lt;div className="px-6 pt-5 pb-4 text-center"&gt;
+    &lt;h3 className="... truncate"&gt;{name}&lt;/h3&gt;
+    &lt;p className="... line-clamp-2 min-h-[2.5rem]"&gt;{role}&lt;/p&gt;   {/* reserves 2 lines always */}
+  &lt;/div&gt;
+  &lt;div className="mt-auto w-full border-t bg-white/30 h-11 flex items-center justify-center gap-2"&gt;
+    {handles.map((h, i) =&gt; (
+      &lt;Fragment key={h.handle}&gt;
+        {i &gt; 0 &amp;&amp; &lt;span className="text-dusty-rose/60"&gt;·&lt;/span&gt;}
+        &lt;a&gt;{h.handle}&lt;/a&gt;
+      &lt;/Fragment&gt;
+    ))}
+  &lt;/div&gt;
+&lt;/div&gt;
+
+// And on the orphan card (if (sortedTeamMembers.length % 4 === 1) for desktop, % 2 === 1 for mobile):
+className={`... ${isLastOrphan ? 'lg:col-start-2' : ''}`}</code>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -23,14 +23,15 @@ export default async function AdminRootLayout({ children }: { children: ReactNod
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') ?? ''
 
-  // /admin/no-access renders without the shell — let it through.
-  if (pathname.startsWith('/admin/no-access')) {
+  // /admin/no-access and /admin/login render without the shell or auth gate —
+  // let them through (the login page must be reachable while signed out).
+  if (pathname.startsWith('/admin/no-access') || pathname.startsWith('/admin/login')) {
     return <>{children}</>
   }
 
   const session = await getAdminSession()
   if (!session) {
-    redirect('/dam/login')
+    redirect('/admin/login')
   }
   if (!session.isAdmin) {
     redirect('/admin/no-access')

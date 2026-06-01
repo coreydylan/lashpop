@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Team Card IG Section — Options</title>
+<style>
+  /* Fonts — approximate Tailwind / project setup */
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #e9d1c8;
+    --ivory: #fdfaf5;
+    --cream: #f5ecdf;
+    --terracotta: #cc947f;
+    --dusty-rose: #c19084;
+    --warm-sand: #d9c4b0;
+    --charcoal: #3d3632;
+    --gray-900: #1f2937;
+    --gray-500: #6b7280;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 48px 24px 96px;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--charcoal);
+  }
+
+  .page-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--terracotta);
+    text-align: center;
+    margin: 0 0 8px;
+  }
+  .page-sub {
+    text-align: center;
+    font-size: 14px;
+    color: var(--terracotta);
+    opacity: 0.8;
+    margin: 0 0 48px;
+  }
+
+  .option-block {
+    max-width: 1280px;
+    margin: 0 auto 64px;
+  }
+  .option-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 0 0 8px;
+  }
+  .option-badge {
+    background: var(--charcoal);
+    color: var(--ivory);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .option-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--charcoal);
+    margin: 0;
+  }
+  .option-desc {
+    font-size: 13px;
+    color: var(--charcoal);
+    opacity: 0.7;
+    max-width: 720px;
+    margin: 0 0 24px;
+    line-height: 1.5;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+
+  /* ─────────── Card ─────────── */
+  .card {
+    position: relative;
+    background: var(--ivory);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    border: 1px solid rgba(204, 148, 127, 0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Service tag chips */
+  .chips {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    right: 16px;
+    z-index: 20;
+    display: flex;
+    gap: 6px;
+    overflow: hidden;
+  }
+  .chip {
+    font-size: 11px;
+    font-weight: 300;
+    padding: 4px 12px;
+    background: var(--cream);
+    color: var(--charcoal);
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* Arch image */
+  .arch-wrap {
+    padding: 32px 16px 0;
+  }
+  .arch {
+    position: relative;
+    height: 288px;
+    overflow: hidden;
+    border-top-left-radius: 9999px;
+    border-top-right-radius: 9999px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    background: #f1e8da;
+  }
+  .arch img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Content */
+  .content {
+    padding: 20px 24px;
+    text-align: center;
+  }
+  .name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--gray-900);
+    margin: 0 0 4px;
+  }
+  .role {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--gray-500);
+    margin: 0;
+  }
+
+  /* IG section (base) */
+  .ig {
+    width: 100%;
+    border-top: 1px solid rgba(217, 196, 176, 0.4);
+    background: rgba(255, 255, 255, 0.3);
+    display: flex;
+    flex-direction: column;
+  }
+  .ig-row {
+    width: 100%;
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+    color: var(--dusty-rose);
+    transition: background 0.15s;
+  }
+  .ig-row + .ig-row {
+    border-top: 1px solid rgba(217, 196, 176, 0.3);
+  }
+  .ig-row svg {
+    width: 14px;
+    height: 14px;
+    stroke: var(--dusty-rose);
+  }
+  .ig-handle {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+
+  /* ─────────── Option A: Side-by-side ─────────── */
+  .ig-a-double {
+    flex-direction: row;
+    padding: 10px 0;
+  }
+  .ig-a-double .ig-pair {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--dusty-rose);
+    text-decoration: none;
+  }
+  .ig-a-double .ig-pair + .ig-pair {
+    border-left: 1px solid rgba(217, 196, 176, 0.4);
+  }
+  .ig-a-double .ig-pair svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+  .ig-a-double .ig-handle-small {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  /* ─────────── Option B: Reserved tall IG ─────────── */
+  .ig-tall {
+    min-height: 82px; /* matches a double-row card */
+    justify-content: center;
+  }
+  .ig-tall .ig-row {
+    padding: 14px 0;
+  }
+
+  /* ─────────── Option C: Primary only + indicator ─────────── */
+  .ig-c {
+    position: relative;
+  }
+  .ig-c .ig-row {
+    padding: 10px 0;
+  }
+  .ig-c .more-badge {
+    margin-left: 6px;
+    background: rgba(193, 144, 132, 0.15);
+    color: var(--dusty-rose);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 999px;
+    line-height: 1.4;
+  }
+
+  /* Modal preview for Option C */
+  .modal-preview {
+    margin: 32px auto 0;
+    max-width: 720px;
+    background: #fff;
+    border-radius: 24px;
+    padding: 24px 28px;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  .modal-preview .label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray-500);
+    margin-bottom: 12px;
+  }
+  .modal-preview .modal-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    color: var(--charcoal);
+    margin: 0 0 8px;
+  }
+  .modal-handles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .modal-handles a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(193, 144, 132, 0.1);
+    color: var(--dusty-rose);
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .modal-handles svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Annotations under each option */
+  .annot {
+    margin-top: 14px;
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--charcoal);
+    opacity: 0.7;
+  }
+  .annot span::before {
+    content: "•";
+    margin-right: 8px;
+    opacity: 0.6;
+  }
+
+  /* Placeholder portraits using gradients */
+  .ph {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .ph-1 { background: linear-gradient(160deg, #d4b89a 0%, #8a6a4a 50%, #c9a07c 100%); }
+  .ph-2 { background: linear-gradient(160deg, #c9b39b 0%, #4a3a2c 50%, #8a6a52 100%); }
+  .ph-3 { background: linear-gradient(160deg, #e0c4a4 0%, #7a4a3a 50%, #d4a888 100%); }
+  .ph-4 { background: linear-gradient(160deg, #c9b89c 0%, #6a4a3a 50%, #b89878 100%); }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Team Card — IG Section Options</h1>
+<p class="page-sub">Kelly has two Instagram handles; the other artists have one. Three ways to fix the height mismatch.</p>
+
+<!-- ─────────── OPTION A ─────────── -->
+<section class="option-block">
+  <div class="option-header">
+    <span class="option-badge">Option A</span>
+    <h2 class="option-title">Side-by-side handles (smaller text on Kelly)</h2>
+  </div>
+  <p class="option-desc">
+    Both handles share one row. Kelly's row uses slightly smaller text (10.5px vs 12px) and a vertical divider.
+    All four cards stay the same height. Tradeoff: Kelly's handles read a touch smaller than the others.
+  </p>
+
+  <div class="grid">
+    <!-- Kelly (two handles, side-by-side) -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+        <span class="chip">Perm Jew…</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-1"></div></div></div>
+      <div class="content">
+        <h3 class="name">Kelly Katona</h3>
+        <p class="role">Lashes by Kelly Katona</p>
+      </div>
+      <div class="ig ig-a-double">
+        <a class="ig-pair" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle-small">lashesbykellykatona</span>
+        </a>
+        <a class="ig-pair" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle-small">juniejewelryco</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Renee -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Brows</span>
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-2"></div></div></div>
+      <div class="content">
+        <h3 class="name">Renee Belton</h3>
+        <p class="role">Brows by Cat Black</p>
+      </div>
+      <div class="ig">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">browsbycatblack</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Adrianna -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-3"></div></div></div>
+      <div class="content">
+        <h3 class="name">Adrianna Payne</h3>
+        <p class="role">Lashed by Adrianna</p>
+      </div>
+      <div class="ig">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">lashedbyadrianna</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Ashley -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+        <span class="chip">Brows</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-4"></div></div></div>
+      <div class="content">
+        <h3 class="name">Ashley Petersen</h3>
+        <p class="role">Integrated Body and Beauty</p>
+      </div>
+      <div class="ig">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">integratedbodybeauty</span>
+        </a>
+      </div>
+    </article>
+  </div>
+  <div class="annot">
+    <span>All cards equal height ✓</span>
+    <span>Both handles clickable ✓</span>
+    <span>Kelly's handles slightly smaller</span>
+  </div>
+</section>
+
+
+<!-- ─────────── OPTION B ─────────── -->
+<section class="option-block">
+  <div class="option-header">
+    <span class="option-badge">Option B</span>
+    <h2 class="option-title">Reserve tall IG section, center handle on single-handle cards</h2>
+  </div>
+  <p class="option-desc">
+    Every card gets the same tall IG section (matches the double-row height). Cards with one handle center it vertically.
+    Kelly's stacked handles stay full-size. Tradeoff: ~30px of empty space on three of four cards in the average row.
+  </p>
+
+  <div class="grid">
+    <!-- Kelly -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+        <span class="chip">Perm Jew…</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-1"></div></div></div>
+      <div class="content">
+        <h3 class="name">Kelly Katona</h3>
+        <p class="role">Lashes by Kelly Katona</p>
+      </div>
+      <div class="ig">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">lashesbykellykatona</span>
+        </a>
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">juniejewelryco</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Renee -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Brows</span>
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-2"></div></div></div>
+      <div class="content">
+        <h3 class="name">Renee Belton</h3>
+        <p class="role">Brows by Cat Black</p>
+      </div>
+      <div class="ig ig-tall">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">browsbycatblack</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Adrianna -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-3"></div></div></div>
+      <div class="content">
+        <h3 class="name">Adrianna Payne</h3>
+        <p class="role">Lashed by Adrianna</p>
+      </div>
+      <div class="ig ig-tall">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">lashedbyadrianna</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Ashley -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+        <span class="chip">Brows</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-4"></div></div></div>
+      <div class="content">
+        <h3 class="name">Ashley Petersen</h3>
+        <p class="role">Integrated Body and Beauty</p>
+      </div>
+      <div class="ig ig-tall">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">integratedbodybeauty</span>
+        </a>
+      </div>
+    </article>
+  </div>
+  <div class="annot">
+    <span>All cards equal height ✓</span>
+    <span>Handle text stays full size ✓</span>
+    <span>Single-handle cards have empty space below</span>
+  </div>
+</section>
+
+
+<!-- ─────────── OPTION C ─────────── -->
+<section class="option-block">
+  <div class="option-header">
+    <span class="option-badge">Option C</span>
+    <h2 class="option-title">Primary handle on the card, secondary on the expanded profile</h2>
+  </div>
+  <p class="option-desc">
+    Card shows only the primary IG handle plus a small "+1" pill indicating more inside. The expanded profile
+    lists all handles as clickable chips. Cleanest grid; tradeoff is one extra click to reach Kelly's second handle.
+  </p>
+
+  <div class="grid">
+    <!-- Kelly -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+        <span class="chip">Perm Jew…</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-1"></div></div></div>
+      <div class="content">
+        <h3 class="name">Kelly Katona</h3>
+        <p class="role">Lashes by Kelly Katona</p>
+      </div>
+      <div class="ig ig-c">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">lashesbykellykatona</span>
+          <span class="more-badge">+1</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Renee -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Brows</span>
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-2"></div></div></div>
+      <div class="content">
+        <h3 class="name">Renee Belton</h3>
+        <p class="role">Brows by Cat Black</p>
+      </div>
+      <div class="ig">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">browsbycatblack</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Adrianna -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-3"></div></div></div>
+      <div class="content">
+        <h3 class="name">Adrianna Payne</h3>
+        <p class="role">Lashed by Adrianna</p>
+      </div>
+      <div class="ig">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">lashedbyadrianna</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Ashley -->
+    <article class="card">
+      <div class="chips">
+        <span class="chip">Lash Extensions</span>
+        <span class="chip">Lashes</span>
+        <span class="chip">Brows</span>
+      </div>
+      <div class="arch-wrap"><div class="arch"><div class="ph ph-4"></div></div></div>
+      <div class="content">
+        <h3 class="name">Ashley Petersen</h3>
+        <p class="role">Integrated Body and Beauty</p>
+      </div>
+      <div class="ig">
+        <a class="ig-row" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span class="ig-handle">integratedbodybeauty</span>
+        </a>
+      </div>
+    </article>
+  </div>
+
+  <!-- Modal preview for Kelly -->
+  <div class="modal-preview">
+    <div>
+      <div class="label">Expanded profile — Kelly</div>
+      <h3 class="modal-name">Kelly Katona</h3>
+      <div class="modal-handles">
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          lashesbykellykatona
+        </a>
+        <a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          juniejewelryco
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="annot">
+    <span>All cards equal height ✓</span>
+    <span>Cleanest grid ✓</span>
+    <span>Secondary handle requires opening the profile</span>
+  </div>
+</section>
+
+</body>
+</html>

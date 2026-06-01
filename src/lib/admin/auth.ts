@@ -17,7 +17,7 @@ export interface AdminSession {
   expiresAt: Date
 }
 
-const LOGIN_REDIRECT = '/dam/login'
+const LOGIN_REDIRECT = '/admin/login'
 
 async function readSession(): Promise<AdminSession | null> {
   const cookieStore = await cookies()

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       )
 
     // Revalidate the DAM page cache
-    revalidatePath('/dam')
+    revalidatePath('/admin/assets')
 
     return NextResponse.json({ success: true }, {
       headers: {

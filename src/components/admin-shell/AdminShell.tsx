@@ -34,6 +34,13 @@ export function AdminShell({ children, user, contentMode = 'constrained' }: Admi
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const currentSection = findSectionByPath(pathname)
 
+  // The Asset Manager (/admin/assets) needs the full content width for its
+  // grid + sticky omnibar, so force fullbleed there regardless of the prop.
+  const effectiveContentMode =
+    contentMode === 'fullbleed' || pathname?.startsWith('/admin/assets')
+      ? 'fullbleed'
+      : contentMode
+
   // Close mobile menu on navigation
   useEffect(() => {
     setIsMobileMenuOpen(false)
@@ -110,7 +117,7 @@ export function AdminShell({ children, user, contentMode = 'constrained' }: Admi
 
       {/* Main */}
       <main className="lg:pl-72 pt-14 lg:pt-0 min-h-screen">
-        {contentMode === 'fullbleed' ? (
+        {effectiveContentMode === 'fullbleed' ? (
           children
         ) : (
           <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-10 max-w-6xl mx-auto">{children}</div>
