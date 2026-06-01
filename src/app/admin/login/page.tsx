@@ -6,7 +6,7 @@ import { Phone, Image as ImageIcon } from "lucide-react"
 import { motion } from "framer-motion"
 import { toE164 } from "@/lib/phone-utils"
 
-export default function DAMLogin() {
+export default function AdminLogin() {
   const [phoneNumber, setPhoneNumber] = useState("")
   const [otp, setOtp] = useState("")
   const [step, setStep] = useState<"phone" | "otp">("phone")
@@ -63,7 +63,7 @@ export default function DAMLogin() {
       const data = await response.json()
 
       if (response.ok) {
-        // Redirect to DAM
+        // Redirect into the admin panel
         router.push("/admin")
         router.refresh()
       } else {
@@ -134,7 +134,7 @@ export default function DAMLogin() {
             <ImageIcon className="h-10 w-10 text-terracotta" strokeWidth={1.5} />
           </div>
           <h2 className="h2 text-dune">
-            Digital Asset Manager
+            Studio Admin
           </h2>
           <p className="mt-3 caption text-golden">
             LashPop Studios
