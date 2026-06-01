@@ -97,6 +97,14 @@ export const ADMIN_GROUPS: AdminGroup[] = [
         status: 'live',
       },
       {
+        id: 'homepage-services',
+        label: 'Homepage Cards',
+        href: '/admin/website/homepage-services',
+        icon: Sparkles,
+        description: '"Choose a Service" cards',
+        status: 'live',
+      },
+      {
         id: 'team',
         label: 'Team',
         href: '/admin/website/team',
