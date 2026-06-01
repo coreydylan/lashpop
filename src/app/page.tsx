@@ -8,6 +8,7 @@ import { getSlideshowConfigs } from "@/actions/hero-slideshow"
 import { getSEOSettings } from "@/actions/seo"
 import { getStudioSettings } from "@/actions/studio"
 import { getFounderLetter } from "@/actions/founder-letter"
+import { getHomepageServices } from "@/actions/homepage-services"
 import { ReviewSchema } from "@/components/seo"
 import LandingPageV2Client from "./LandingPageV2Client"
 
@@ -30,6 +31,7 @@ export default async function HomePage() {
     seoSettings,
     studio,
     founderLetterContent,
+    homepageServices,
   ] = await Promise.all([
     getAllServices(),
     getTeamMembersWithServices(),
@@ -42,7 +44,21 @@ export default async function HomePage() {
     getSEOSettings(),
     getStudioSettings(),
     getFounderLetter(),
+    getHomepageServices(),
   ])
+
+  // Homepage "Choose a Service" marketing cards (editable in admin). Only the
+  // enabled cards render; shape matches ServicesSection's ServiceCategory.
+  const homepageServiceCards = homepageServices.cards
+    .filter((card) => card.enabled)
+    .map((card) => ({
+      id: card.id,
+      slug: card.slug,
+      title: card.title,
+      tagline: card.tagline,
+      description: card.description,
+      icon: card.icon,
+    }))
 
   // Format services for the drawer (keep hierarchy structure)
   const formattedServices = services.map(service => ({
@@ -122,6 +138,7 @@ export default async function HomePage() {
       reviewStats={reviewStats}
       instagramPosts={instagramPosts}
       serviceCategories={filteredServiceCategories}
+      homepageServices={homepageServiceCards}
       faqData={faqData}
       heroConfig={heroConfig}
       studio={studio}

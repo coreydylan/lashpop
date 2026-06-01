@@ -13,7 +13,7 @@ import { Navigation } from '@/components/sections/Navigation';
 import { MobileHeader } from '@/components/landing-v2/MobileHeader';
 import { MobileHeroBackground } from '@/components/landing-v2/MobileHeroBackground';
 import HeroSection from '@/components/landing-v2/HeroSection';
-import { ServicesSection } from '@/components/landing-v2/sections/ServicesSection';
+import { ServicesSection, type ServiceCategory as HomepageServiceCard } from '@/components/landing-v2/sections/ServicesSection';
 import { FounderLetterSection } from '@/components/landing-v2/sections/FounderLetterSection';
 import { EnhancedTeamSectionClient } from '@/components/sections/EnhancedTeamSectionClient';
 import dynamic from 'next/dynamic';
@@ -170,6 +170,8 @@ interface LandingPageV2ClientProps {
   reviewStats?: ReviewStat[];
   instagramPosts?: any[]; // Using any[] for now to avoid circular type dependency, or define strict type
   serviceCategories?: ServiceCategory[];
+  // Curated homepage "Choose a Service" marketing cards (editable in admin).
+  homepageServices?: HomepageServiceCard[];
   faqData?: FAQData;
   founderLetterContent?: FounderLetterContent;
   heroConfig?: HeroConfig;
@@ -316,7 +318,7 @@ function ServiceQueryDeepLink() {
   return null;
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], faqData, founderLetterContent, heroConfig, studio }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], homepageServices, faqData, founderLetterContent, heroConfig, studio }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -425,12 +427,11 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                         descriptions (e.g. "Hair removal services") that
                         overrode the brand copy via the per-field fallback.
                         Until /admin/website/services has explicit brand copy
-                        seeded into the DB, the homepage uses the hardcoded
-                        fallback as the source of truth. See tmp/admin-audit.md
-                        Part 1 §services — this is the known dead-write the
-                        audit flagged.
+                        Cards come from website_settings(homepage_services),
+                        editable at /admin/website/services (Homepage Cards),
+                        with a per-field fallback to the curated defaults.
                       */}
-                      <ServicesSection isMobile={isMobile} />
+                      <ServicesSection isMobile={isMobile} categories={homepageServices} />
                     </div>
 
                     {/* Team Section */}

@@ -32,6 +32,14 @@ const sections = [
     stats: 'Database + DAM'
   },
   {
+    id: 'homepage-services',
+    label: 'Homepage Service Cards',
+    icon: Sparkles,
+    description: 'Edit the "Choose a Service" cards on the homepage — copy, icons, and order',
+    color: 'dusty-rose',
+    stats: 'Homepage'
+  },
+  {
     id: 'quiz',
     label: 'Find Your Look Quiz',
     icon: Search,
