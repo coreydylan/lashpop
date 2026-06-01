@@ -40,6 +40,7 @@ import { faqCategories, faqItems } from "./schema/faqs"
 import { quizPhotos, quizLashStyle, quizResultSettings } from "./schema/quiz_photos"
 import { workWithUsCarouselPhotos } from "./schema/work_with_us_carousel"
 import { newsletterSubscriptions } from "./schema/newsletter_subscriptions"
+import { workWithUsSubmissions } from "./schema/work_with_us_submissions"
 
 // Scrollytelling CMS schemas
 import {
@@ -116,6 +117,7 @@ const dbSchema = {
   quizResultSettings,
   workWithUsCarouselPhotos,
   newsletterSubscriptions,
+  workWithUsSubmissions,
 
   // Scrollytelling CMS tables
   compositions,
@@ -230,6 +232,7 @@ export {
   quizResultSettings,
   workWithUsCarouselPhotos,
   newsletterSubscriptions,
+  workWithUsSubmissions,
   // Scrollytelling CMS
   compositions,
   layers,

@@ -1,5 +1,9 @@
 "use server";
 
+import { desc } from "drizzle-orm";
+import { getDb } from "@/db";
+import { workWithUsSubmissions } from "@/db/schema/work_with_us_submissions";
+
 // Types matching the form data
 export type CareerPath = "employee" | "booth" | "training";
 
@@ -161,6 +165,27 @@ export async function submitWorkWithUsForm(
   data: WorkWithUsFormData,
   path: CareerPath
 ): Promise<SubmitResult> {
+  // Persist to the DB first so the submission survives even if email fails.
+  // Wrapped so a DB hiccup never blocks the applicant's submission.
+  try {
+    const db = getDb();
+    await db.insert(workWithUsSubmissions).values({
+      path,
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      experience: data.experience || null,
+      specialty: data.specialty && data.specialty.length > 0 ? data.specialty : null,
+      message: data.message || null,
+      instagram: data.instagram || null,
+      currentBusiness: data.currentBusiness || null,
+      desiredStartDate: data.desiredStartDate || null,
+      boothDays: typeof data.boothDays === "number" ? data.boothDays : null,
+    });
+  } catch (dbError) {
+    console.error("Failed to persist work-with-us submission:", dbError);
+  }
+
   try {
     const subject = `[LashPop] New ${formatPathTitle(path)} - ${data.name}`;
     const textBody = buildEmailBody(data, path);
@@ -195,4 +220,16 @@ export async function submitWorkWithUsForm(
       error: error instanceof Error ? error.message : "Failed to send email",
     };
   }
+}
+
+/**
+ * Read all careers-form submissions, newest first. Admin-only (called from the
+ * /admin/inbox/work-with-us page, which is gated by requireAdmin).
+ */
+export async function listWorkWithUsSubmissions() {
+  const db = getDb();
+  return db
+    .select()
+    .from(workWithUsSubmissions)
+    .orderBy(desc(workWithUsSubmissions.createdAt));
 }
