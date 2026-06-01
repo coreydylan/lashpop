@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
@@ -34,6 +34,10 @@ interface InstagramPost {
 
 interface InstagramCarouselProps {
   posts?: InstagramPost[]
+  // Admin (instagram_carousel) settings. autoScroll toggles the marquee;
+  // scrollSpeed is the admin's 10–40 value, mapped to an Embla speed.
+  autoScroll?: boolean
+  scrollSpeed?: number
 }
 
 interface GalleryItem {
@@ -42,11 +46,27 @@ interface GalleryItem {
   caption: string | null
 }
 
-export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
+export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed = 20 }: InstagramCarouselProps) {
   const ref = useRef(null)
   // Index into the (un-duplicated) source list, or null when the lightbox is closed
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+
+  // Map the admin's 10–40 scroll-speed value to an Embla auto-scroll speed
+  // (~1.0–4.0 px/frame). Disable the plugin entirely when auto-scroll is off.
+  const plugins = useMemo(() => {
+    if (!autoScroll) return []
+    const emblaSpeed = Math.max(0.5, Math.min(4, scrollSpeed * 0.1))
+    return [
+      AutoScroll({
+        playOnInit: true,
+        speed: emblaSpeed,
+        stopOnInteraction: false,
+        stopOnMouseEnter: true,
+        rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement,
+      }),
+    ]
+  }, [autoScroll, scrollSpeed])
 
   // Initialize Embla with AutoScroll (wheel gestures handled by useCarouselWheelScroll)
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -58,15 +78,7 @@ export function InstagramCarousel({ posts = [] }: InstagramCarouselProps) {
       skipSnaps: true,
       inViewThreshold: 0.7 // Better intersection handling
     },
-    [
-      AutoScroll({
-        playOnInit: true,
-        speed: 1.5,
-        stopOnInteraction: false,
-        stopOnMouseEnter: true,
-        rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement
-      })
-    ]
+    plugins
   )
 
   // Hover-based wheel scroll - only captures wheel events when hovering

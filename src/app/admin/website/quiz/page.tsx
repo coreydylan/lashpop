@@ -937,34 +937,6 @@ export default function QuizAdminPage() {
                             </button>
                           </div>
                         </div>
-
-                        {/* Recommended Service & Booking Label */}
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-2 block">
-                              Recommended Service
-                            </label>
-                            <input
-                              type="text"
-                              value={settings.recommendedService}
-                              onChange={(e) => handleUpdateResultText(style.id, 'recommendedService', e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl border border-sage/20 focus:border-dusty-rose/50 focus:ring-2 focus:ring-dusty-rose/20 outline-none text-sm"
-                              placeholder="e.g., Classic Lashes"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-2 block">
-                              Booking Button Label
-                            </label>
-                            <input
-                              type="text"
-                              value={settings.bookingLabel}
-                              onChange={(e) => handleUpdateResultText(style.id, 'bookingLabel', e.target.value)}
-                              className="w-full px-3 py-2 rounded-xl border border-sage/20 focus:border-dusty-rose/50 focus:ring-2 focus:ring-dusty-rose/20 outline-none text-sm"
-                              placeholder="e.g., Book Classic Full Set"
-                            />
-                          </div>
-                        </div>
                       </div>
                     </motion.div>
                   )}

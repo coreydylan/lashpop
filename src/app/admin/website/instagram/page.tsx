@@ -198,7 +198,7 @@ export default function InstagramCarouselEditor() {
                     onChange={(e) => updateSetting('scrollSpeed', parseInt(e.target.value))}
                     className="flex-1 accent-terracotta"
                   />
-                  <span className="text-sm text-dune w-12 text-right">{settings.scrollSpeed}s</span>
+                  <span className="text-sm text-dune w-12 text-right">{settings.scrollSpeed}</span>
                 </div>
               </div>
 
@@ -216,22 +216,6 @@ export default function InstagramCarouselEditor() {
                   >
                     <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
                       settings.autoScroll ? 'left-6' : 'left-1'
-                    }`} />
-                  </div>
-                </label>
-
-                <label className="flex items-center justify-between cursor-pointer group">
-                  <span className="text-sm text-dune/70 group-hover:text-dune transition-colors">
-                    Show captions
-                  </span>
-                  <div 
-                    onClick={() => updateSetting('showCaptions', !settings.showCaptions)}
-                    className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
-                      settings.showCaptions ? 'bg-terracotta' : 'bg-sage/30'
-                    }`}
-                  >
-                    <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                      settings.showCaptions ? 'left-6' : 'left-1'
                     }`} />
                   </div>
                 </label>

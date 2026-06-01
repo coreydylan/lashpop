@@ -1,7 +1,7 @@
 import { getAllServices } from "@/actions/services"
 import { getTeamMembersWithServices } from "@/actions/team"
 import { getHomepageReviews, getReviewStats } from "@/actions/reviews"
-import { getInstagramPosts } from "@/actions/instagram"
+import { getInstagramPosts, getInstagramSettings } from "@/actions/instagram"
 import { getServiceCategories } from "@/actions/categories"
 import { getFAQsGroupedByCategory } from "@/actions/faqs"
 import { getSlideshowConfigs } from "@/actions/hero-slideshow"
@@ -32,12 +32,13 @@ export default async function HomePage() {
     studio,
     founderLetterContent,
     homepageServices,
+    instagramSettings,
   ] = await Promise.all([
     getAllServices(),
     getTeamMembersWithServices(),
     getHomepageReviews(15),
     getReviewStats(),
-    getInstagramPosts(20),
+    getInstagramPosts(),
     getServiceCategories(),
     getFAQsGroupedByCategory(),
     getSlideshowConfigs(),
@@ -45,6 +46,7 @@ export default async function HomePage() {
     getStudioSettings(),
     getFounderLetter(),
     getHomepageServices(),
+    getInstagramSettings(),
   ])
 
   // Homepage "Choose a Service" marketing cards (editable in admin). Only the
@@ -137,6 +139,7 @@ export default async function HomePage() {
       reviews={reviews}
       reviewStats={reviewStats}
       instagramPosts={instagramPosts}
+      instagramSettings={instagramSettings}
       serviceCategories={filteredServiceCategories}
       homepageServices={homepageServiceCards}
       faqData={faqData}

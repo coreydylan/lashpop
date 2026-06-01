@@ -166,7 +166,7 @@ export function FounderLetterEditor({ initialContent }: FounderLetterEditorProps
             label="Signature"
             value={content.signature}
             onChange={v => setContent({ ...content, signature: v })}
-            help='Name printed below the sign-off'
+            help='Screen-reader / SEO text only — the visible signature is a handwritten graphic'
           />
         </div>
       </section>

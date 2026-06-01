@@ -249,7 +249,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               src={archImage.url}
               alt="LashPop Studio Interior"
               fill
-              className="object-cover"
+              className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
               priority
               decoding="async"
               quality={90}

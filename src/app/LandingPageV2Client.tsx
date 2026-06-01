@@ -170,6 +170,7 @@ interface LandingPageV2ClientProps {
   reviews: Review[];
   reviewStats?: ReviewStat[];
   instagramPosts?: any[]; // Using any[] for now to avoid circular type dependency, or define strict type
+  instagramSettings?: { autoScroll?: boolean; scrollSpeed?: number };
   serviceCategories?: ServiceCategory[];
   // Curated homepage "Choose a Service" marketing cards (editable in admin).
   homepageServices?: HomepageServiceCard[];
@@ -319,7 +320,7 @@ function ServiceQueryDeepLink() {
   return null;
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], serviceCategories = [], homepageServices, faqData, founderLetterContent, heroConfig, studio }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], instagramSettings, serviceCategories = [], homepageServices, faqData, founderLetterContent, heroConfig, studio }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -450,7 +451,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                     {/* Instagram Carousel */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
-                      <InstagramCarousel posts={instagramPosts} />
+                      <InstagramCarousel posts={instagramPosts} autoScroll={instagramSettings?.autoScroll} scrollSpeed={instagramSettings?.scrollSpeed} />
                     </div>
 
                     {/* FAQ Section */}
