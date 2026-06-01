@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X, Sparkles, ChevronRight } from 'lucide-react'
-import { ADMIN_GROUPS, findSectionByPath, type SectionStatus } from './sections'
+import { ADMIN_GROUPS, findSectionByPath } from './sections'
 
 interface AdminShellProps {
   children: React.ReactNode
@@ -23,11 +23,6 @@ interface AdminShellProps {
   contentMode?: 'constrained' | 'fullbleed'
 }
 
-const STATUS_BADGE: Record<SectionStatus, { label: string; className: string } | null> = {
-  live: null,
-  new: { label: 'New', className: 'bg-terracotta/10 text-terracotta border-terracotta/20' },
-  'coming-soon': { label: 'Soon', className: 'bg-sage/10 text-sage border-sage/20' },
-}
 
 export function AdminShell({ children, user, contentMode = 'constrained' }: AdminShellProps) {
   const pathname = usePathname()
@@ -140,7 +135,6 @@ function Nav({ pathname }: { pathname: string | null }) {
           <ul className="space-y-0.5">
             {group.sections.map(section => {
               const isActive = pathname === section.href || (pathname?.startsWith(section.href + '/') ?? false)
-              const badge = STATUS_BADGE[section.status]
               const Icon = section.icon
               const isComingSoon = section.status === 'coming-soon'
 
@@ -170,13 +164,6 @@ function Nav({ pathname }: { pathname: string | null }) {
                       }`}
                     >
                       <span className="truncate">{section.label}</span>
-                      {badge && (
-                        <span
-                          className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-full border font-semibold ${badge.className}`}
-                        >
-                          {badge.label}
-                        </span>
-                      )}
                     </div>
                     <div className={`text-[11px] truncate ${isComingSoon ? 'text-dune/30' : 'text-dune/50'}`}>
                       {section.description}
