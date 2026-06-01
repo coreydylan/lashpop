@@ -111,6 +111,8 @@ export default function TeamManagerPage() {
   const [albumPickerMemberId, setAlbumPickerMemberId] = useState<string | null>(null)
   const [albumPhotos, setAlbumPhotos] = useState<Record<string, AlbumPhoto[]>>({})
   const [loadingAlbum, setLoadingAlbum] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
   useEffect(() => {
     fetchTeamMembers()
@@ -329,6 +331,30 @@ export default function TeamManagerPage() {
     }
   }
 
+  // Trigger an on-demand Vagaro sync (photos, bios, services). Use after
+  // updating a stylist in Vagaro so the change appears immediately instead of
+  // waiting for the scheduled cron.
+  const handleSyncFromVagaro = async () => {
+    setSyncing(true)
+    setSyncMessage(null)
+    try {
+      const response = await fetch('/api/admin/website/team/sync', { method: 'POST' })
+      const data = await response.json().catch(() => ({}))
+      if (response.ok) {
+        setSyncMessage('Synced from Vagaro')
+        await fetchTeamMembers()
+      } else {
+        setSyncMessage(`Sync failed: ${data.error || response.statusText}`)
+      }
+    } catch (error) {
+      console.error('Error syncing from Vagaro:', error)
+      setSyncMessage('Sync failed — could not reach the sync worker')
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setSyncMessage(null), 5000)
+    }
+  }
+
   const updateExternalCategories = async (memberId: string, categories: string[]) => {
     try {
       const response = await fetch('/api/admin/website/team', {
@@ -400,7 +426,21 @@ export default function TeamManagerPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center flex-wrap">
+            {syncMessage && (
+              <span className={`text-sm ${syncMessage.startsWith('Sync failed') ? 'text-red-600' : 'text-ocean-mist'}`}>
+                {syncMessage}
+              </span>
+            )}
+            <button
+              onClick={handleSyncFromVagaro}
+              className="btn btn-secondary"
+              disabled={syncing}
+              title="Pull the latest photos, bios, and services from Vagaro now"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing…' : 'Sync from Vagaro'}
+            </button>
             <button
               onClick={fetchTeamMembers}
               className="btn btn-secondary"
