@@ -143,11 +143,26 @@ export const DEFAULT_PAGE_SEO: PageSEO = {
   noFollow: false
 }
 
+// Brand-default social-share image. Resolved against `metadataBase` (siteUrl)
+// in generateMetadata, so it produces an absolute og:image/twitter:image even
+// before anyone configures one in the admin. Admins can override per-page or
+// site-wide in /admin/website/seo.
+const DEFAULT_SHARE_IMAGE: SEOImage = {
+  id: 'default-share-image',
+  assetId: '',
+  url: '/lashpop-images/studio/studio-photos-by-salome.jpg',
+  fileName: 'studio-photos-by-salome.jpg',
+  alt: 'LashPop Studios — lashes + beauty in Oceanside, CA',
+  position: { x: 50, y: 50 },
+}
+
 export const DEFAULT_SITE_SEO: SiteSEO = {
   businessName: 'LashPop Studios',
   businessDescription: 'Experience luxury lash services in Oceanside, CA. From classic to mega volume, discover your perfect lash look with our expert artists.',
   businessType: 'BeautySalon',
   socialProfiles: {},
+  defaultOgImage: DEFAULT_SHARE_IMAGE,
+  defaultTwitterImage: DEFAULT_SHARE_IMAGE,
   siteUrl: 'https://lashpopstudios.com',
   siteName: 'LashPop Studios',
   credentials: []

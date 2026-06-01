@@ -7,7 +7,6 @@ import {
   Search,
   Globe,
   Home,
-  Sparkles,
   Briefcase,
   Save,
   RefreshCw,
@@ -291,17 +290,6 @@ export default function SEOSettingsEditor() {
             Homepage
           </button>
           <button
-            onClick={() => setActiveTab('services')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              activeTab === 'services'
-                ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
-                : 'text-dune/60 hover:text-dune hover:bg-cream/50'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            Services
-          </button>
-          <button
             onClick={() => setActiveTab('workWithUs')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
               activeTab === 'workWithUs'
@@ -334,17 +322,6 @@ export default function SEOSettingsEditor() {
             label="Homepage"
             seo={settings.pages.homepage}
             updatePage={(updates) => updatePage('homepage', updates)}
-            openImagePicker={openImagePicker}
-            removeImage={removeImage}
-          />
-        )}
-        {activeTab === 'services' && (
-          <PageSEOTab
-            key="services"
-            page="services"
-            label="Services"
-            seo={settings.pages.services}
-            updatePage={(updates) => updatePage('services', updates)}
             openImagePicker={openImagePicker}
             removeImage={removeImage}
           />
