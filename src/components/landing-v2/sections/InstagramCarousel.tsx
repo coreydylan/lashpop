@@ -94,12 +94,12 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
 
   // URL builder shared between the lightbox <img> and the post-load preloader
   // so prefetched bytes hit the same cache key the lightbox eventually
-  // requests. R2 sources go through cdn.lashpopstudios.com so CF Images
-  // serves an auto-rotated, format=auto, 1600 px variant.
+  // requests. R2 sources go through the lashpop-img worker so the lightbox
+  // gets a width-capped webp variant.
   const lightboxSrc = useCallback((src: string) => {
     const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
     if (r2) {
-      return `https://cdn.lashpopstudios.com/cdn-cgi/image/width=1600,quality=90,format=auto,fit=scale-down/${r2[1]}`
+      return `https://lashpop-img.onwander.workers.dev/${r2[1]}?w=1600&q=90`
     }
     return src
   }, [])
@@ -344,7 +344,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
             {/* Image stage — swipeable. Plain <img> with max-w / max-h so
                 the wrapper shrinks to the photo's natural aspect ratio — no
                 dark gutters around portrait crops, the rounded card hugs
-                the image. We route R2 URLs through cdn.lashpopstudios.com
+                the image. We route R2 URLs through the lashpop-img worker
                 /cdn-cgi/image manually since Next.js Image fill requires a
                 pre-sized parent (which would re-introduce the letterbox). */}
             <motion.div

@@ -694,13 +694,13 @@ function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
   // DAM assets store width/height as null, so we can't drive the layout from
   // intrinsic dimensions. Use a plain <img> with max-w / max-h — the browser
   // sizes the element to the source's natural aspect ratio, so there's no
-  // dark frame around portrait/square photos. CF Image transformations still
-  // happen at the URL level via cdn.lashpopstudios.com (loader replicates
+  // dark frame around portrait/square photos. Resizing happens at the URL
+  // level via the lashpop-img worker (loader replicates
   // src/lib/cf-image-loader.ts for R2 URLs); Vagaro photos pass through.
   const src = (() => {
     const m = photo.url.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
     if (m) {
-      return `https://cdn.lashpopstudios.com/cdn-cgi/image/width=1600,quality=85,format=auto,fit=scale-down/${m[1]}`
+      return `https://lashpop-img.onwander.workers.dev/${m[1]}?w=1600&q=85`
     }
     return photo.url
   })()
