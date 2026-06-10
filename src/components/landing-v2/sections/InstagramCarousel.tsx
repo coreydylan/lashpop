@@ -99,7 +99,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
   const lightboxSrc = useCallback((src: string) => {
     const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
     if (r2) {
-      return `https://lashpop-img.onwander.workers.dev/${r2[1]}?w=1600&q=90`
+      return `https://lashpop-img.experial.workers.dev/${r2[1]}?w=1600&q=90`
     }
     return src
   }, [])

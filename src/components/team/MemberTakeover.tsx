@@ -700,7 +700,7 @@ function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
   const src = (() => {
     const m = photo.url.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
     if (m) {
-      return `https://lashpop-img.onwander.workers.dev/${m[1]}?w=1600&q=85`
+      return `https://lashpop-img.experial.workers.dev/${m[1]}?w=1600&q=85`
     }
     return photo.url
   })()

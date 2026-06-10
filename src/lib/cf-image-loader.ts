@@ -3,7 +3,7 @@ const CDN_BASE = "https://cdn.lashpopstudios.com"
 // reads from the lashpop-dam R2 bucket, returns width-scaled webp. Lives on
 // workers.dev because the lashpopstudios.com zone hasn't moved accounts yet —
 // swap to cdn.lashpopstudios.com once the NS flip lands.
-const IMG_WORKER_BASE = "https://lashpop-img.onwander.workers.dev"
+const IMG_WORKER_BASE = "https://lashpop-img.experial.workers.dev"
 
 type Props = { src: string; width: number; quality?: number }
 
