@@ -1,5 +1,6 @@
 s3-recovery
 tmp
 .playwright-mcp
-*.png
+/before-*.png
+/*.png
 scripts/instagram-import/images
