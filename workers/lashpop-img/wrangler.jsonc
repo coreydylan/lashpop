@@ -1,7 +1,7 @@
 {
   "name": "lashpop-img",
   "main": "src/index.js",
-  "compatibility_date": "2025-05-01",
+  "compatibility_date": "2026-06-01",
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-dam" }],
   "images": { "binding": "IMAGES" }
 }
