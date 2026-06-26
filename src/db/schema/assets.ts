@@ -36,6 +36,12 @@ export const assets = pgTable("assets", {
   source: text("source"), // e.g. "instagram"
   sourceMetadata: jsonb("source_metadata"), // Store full payload (permalink, likes, etc)
 
+  // Recovery tracking (R2 outage). recovery_status: null = fine, "missing" = object
+  // 404s but recoverable, "lost" = no surviving copy. Drives the public
+  // "Photo coming soon" placeholder; recovery_note is admin-only (never rendered publicly).
+  recoveryStatus: text("recovery_status"),
+  recoveryNote: text("recovery_note"),
+
   // Timestamps
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()

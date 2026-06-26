@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef, type ComponentProps } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
+import { MissingPhotoCard } from '@/components/ui/MissingPhotoCard'
 
 // Local type mirrors the consumer's TeamMember shape — kept in sync intentionally
 // so this component can be lifted out of EnhancedTeamSectionClient without a refactor.
@@ -48,6 +49,10 @@ export interface PortfolioImage {
   width?: number
   height?: number
   caption?: string
+  // Recovery state (R2 outage). When set, the slot renders a branded
+  // "Photo coming soon" placeholder instead of attempting the 404'd image.
+  recoveryStatus?: string | null
+  recoveryNote?: string | null
 }
 
 interface MemberTakeoverProps {
@@ -65,6 +70,32 @@ function isPlaceholderImage(src: string) {
 }
 function isVagaroPhoto(src: string | undefined | null) {
   return !!src && src.includes('ssl.cf2.rackcdn.com')
+}
+function isMissing(p: PortfolioImage) {
+  return p.recoveryStatus === 'missing' || p.recoveryStatus === 'lost'
+}
+
+/**
+ * Portfolio image with a graceful fade-in. The tile sits on a warm-sand wash so
+ * there's never a hard empty box; the image fades up over it once decoded, so
+ * nothing pops in. Resizing/format negotiation happens on the edge via the
+ * next/image custom loader (cf-image-loader → lashpop-img worker, AVIF/WebP).
+ */
+function FadeInImage(props: ComponentProps<typeof Image>) {
+  const [loaded, setLoaded] = useState(false)
+  return (
+    <Image
+      {...props}
+      alt={props.alt ?? ''}
+      onLoad={(e) => {
+        setLoaded(true)
+        props.onLoad?.(e)
+      }}
+      className={`${props.className ?? ''} transition-opacity duration-500 ease-out ${
+        loaded ? 'opacity-100' : 'opacity-0'
+      }`}
+    />
+  )
 }
 
 const CRED_ICON: Record<string, typeof Award> = {
@@ -621,6 +652,17 @@ function PortfolioBlock({
         <div className="flex gap-4" style={{ height: 380 }}>
           {photos.map((p, idx) => {
             const ar = p.width && p.height ? `${p.width}/${p.height}` : '1/1'
+            if (isMissing(p)) {
+              return (
+                <div
+                  key={p.id || idx}
+                  className="relative overflow-hidden rounded-2xl"
+                  style={{ aspectRatio: ar, height: '100%' }}
+                >
+                  <MissingPhotoCard lost={p.recoveryStatus === 'lost'} />
+                </div>
+              )
+            }
             return (
               <button
                 key={p.id || idx}
@@ -629,7 +671,7 @@ function PortfolioBlock({
                 className="group relative overflow-hidden rounded-2xl bg-warm-sand/20 cursor-zoom-in transition-transform hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
                 style={{ aspectRatio: ar, height: '100%' }}
               >
-                <Image
+                <FadeInImage
                   src={p.url}
                   alt={`Portfolio ${idx + 1}`}
                   fill
@@ -661,28 +703,41 @@ function PortfolioBlock({
         </span>
       </div>
       <div style={{ columnCount: cols, columnGap: 14 }}>
-        {photos.map((p, idx) => (
-          <button
-            key={p.id || idx}
-            type="button"
-            onClick={() => onOpenPhoto(idx)}
-            className="group relative mb-3.5 block w-full overflow-hidden rounded-xl bg-warm-sand/20 cursor-zoom-in transition-transform hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
-            style={{ breakInside: 'avoid' }}
-          >
-            <Image
-              src={p.url}
-              alt={`Portfolio ${idx + 1}`}
-              width={p.width || 600}
-              height={p.height || 600}
-              className="block w-full h-auto"
-              sizes={cols === 3 ? '(max-width: 1024px) 50vw, 25vw' : '(max-width: 1024px) 50vw, 30vw'}
-              unoptimized={isVagaroPhoto(p.url)}
-            />
-            <span className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-md transition-opacity group-hover:opacity-100">
-              <ZoomIn className="h-3.5 w-3.5 text-charcoal" />
-            </span>
-          </button>
-        ))}
+        {photos.map((p, idx) => {
+          if (isMissing(p)) {
+            return (
+              <div
+                key={p.id || idx}
+                className="mb-3.5 block w-full overflow-hidden rounded-xl"
+                style={{ breakInside: 'avoid', aspectRatio: p.width && p.height ? `${p.width}/${p.height}` : '4/5' }}
+              >
+                <MissingPhotoCard rounded="rounded-xl" lost={p.recoveryStatus === 'lost'} />
+              </div>
+            )
+          }
+          return (
+            <button
+              key={p.id || idx}
+              type="button"
+              onClick={() => onOpenPhoto(idx)}
+              className="group relative mb-3.5 block w-full overflow-hidden rounded-xl bg-warm-sand/20 cursor-zoom-in transition-transform hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
+              style={{ breakInside: 'avoid' }}
+            >
+              <FadeInImage
+                src={p.url}
+                alt={`Portfolio ${idx + 1}`}
+                width={p.width || 600}
+                height={p.height || 600}
+                className="block w-full h-auto"
+                sizes={cols === 3 ? '(max-width: 1024px) 50vw, 25vw' : '(max-width: 1024px) 50vw, 30vw'}
+                unoptimized={isVagaroPhoto(p.url)}
+              />
+              <span className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                <ZoomIn className="h-3.5 w-3.5 text-charcoal" />
+              </span>
+            </button>
+          )
+        })}
       </div>
     </>
   )
@@ -690,6 +745,14 @@ function PortfolioBlock({
 
 function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
   const [loaded, setLoaded] = useState(false)
+
+  if (isMissing(photo)) {
+    return (
+      <div className="h-[60vh] w-[min(520px,86vw)] overflow-hidden rounded-lg shadow-[0_30px_80px_rgba(0,0,0,0.5)]">
+        <MissingPhotoCard rounded="rounded-lg" lost={photo.recoveryStatus === 'lost'} />
+      </div>
+    )
+  }
 
   // DAM assets store width/height as null, so we can't drive the layout from
   // intrinsic dimensions. Use a plain <img> with max-w / max-h — the browser

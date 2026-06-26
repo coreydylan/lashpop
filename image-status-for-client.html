@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LashPop — Photo Library Status</title>
+<style>
+  :root{
+    --cream:#f7f3ee; --warm:#efe6db; --charcoal:#2d2823; --rose:#cc947f;
+    --rose-deep:#a07260; --sage:#7c8b76; --line:#e4dad0;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--cream); color:var(--charcoal);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:56px 28px 80px}
+  .eyebrow{font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--rose-deep); font-weight:600; margin:0 0 10px}
+  h1{font-family:Georgia,"Times New Roman",serif; font-weight:500; font-size:40px; line-height:1.1; margin:0 0 14px}
+  .lede{font-size:18px; color:#5a534a; max-width:60ch; margin:0 0 36px}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:0 0 44px}
+  .stat{background:#fff; border:1px solid var(--line); border-radius:16px; padding:22px 18px; text-align:center}
+  .stat .n{font-family:Georgia,serif; font-size:38px; line-height:1; color:var(--charcoal)}
+  .stat .n.good{color:var(--sage)}
+  .stat .n.rose{color:var(--rose-deep)}
+  .stat .l{font-size:12.5px; letter-spacing:.04em; color:#6c6459; margin-top:8px}
+  h2{font-family:Georgia,serif; font-weight:500; font-size:24px; margin:40px 0 6px}
+  .sub{font-size:14.5px; color:#6c6459; margin:0 0 18px}
+  .row{display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:13px 0; border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .who{font-weight:600; font-size:16px}
+  .what{font-size:14px; color:#6c6459}
+  .count{flex:0 0 auto; font-family:Georgia,serif; font-size:18px; color:var(--rose-deep); min-width:120px; text-align:right}
+  .count small{display:block; font-family:inherit; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:#9a9085; font-weight:600}
+  .card{background:#fff; border:1px solid var(--line); border-radius:16px; padding:8px 22px; margin-top:6px}
+  .note{background:var(--warm); border-radius:14px; padding:20px 22px; font-size:15px; color:#5a534a; margin-top:14px}
+  .pill{display:inline-block; background:#fff; border:1px solid var(--line); border-radius:999px; padding:3px 11px; font-size:12px; color:var(--rose-deep); font-weight:600; margin-right:6px}
+  .how li{margin:7px 0}
+  footer{margin-top:48px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:#9a9085}
+  @media(max-width:560px){ h1{font-size:32px} .stats{grid-template-columns:1fr} .count{min-width:96px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Photo Library · Status Update</p>
+  <h1>Your photo library is back up — here's what's left.</h1>
+  <p class="lede">After our image host was taken offline, we rebuilt the LashPop photo library from the ground up. The vast majority is fully recovered and live on the site. A handful of photos only ever lived on the team's phones — those are the ones we'd love your help re-sending.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="n good">350+</div><div class="l">Photos recovered &amp; live</div></div>
+    <div class="stat"><div class="n rose">~30</div><div class="l">We'd like re-sent</div></div>
+    <div class="stat"><div class="n">2</div><div class="l">Need a brand-new photo</div></div>
+  </div>
+
+  <h2>Photos we need, by artist</h2>
+  <p class="sub">These slots show a tasteful "Photo coming soon" placeholder on the site until they're back. Best to send a few recent shots of the same service — exact originals aren't needed.</p>
+
+  <div class="card">
+    <div class="row"><div><div class="who">Paige Gordon</div><div class="what">Her full set — recent lash work</div></div><div class="count">5 photos<small>whole portfolio</small></div></div>
+    <div class="row"><div><div class="who">Adrianna Payne</div><div class="what">Lash lifts &amp; hybrid sets</div></div><div class="count">5 photos</div></div>
+    <div class="row"><div><div class="who">Haley Walker</div><div class="what">Brow lamination &amp; hybrid</div></div><div class="count">3 photos</div></div>
+    <div class="row"><div><div class="who">Bethany Peterson</div><div class="what">Recent sets</div></div><div class="count">2 photos</div></div>
+    <div class="row"><div><div class="who">Kelly Richter</div><div class="what">A candid &amp; a hybrid set</div></div><div class="count">2 photos</div></div>
+    <div class="row"><div><div class="who">Rachel Edwards</div><div class="what">Recent work</div></div><div class="count">2 photos</div></div>
+    <div class="row"><div><div class="who">Kelly Katona</div><div class="what">A classic set</div></div><div class="count">1 photo</div></div>
+    <div class="row"><div><div class="who">Ashley Petersen</div><div class="what">Original is gone — a fresh photo works great</div></div><div class="count">1 photo<small>new needed</small></div></div>
+  </div>
+
+  <h2>Studio &amp; homepage shots</h2>
+  <p class="sub">Brand and candid photos that run on the homepage and the "Work With Us" page.</p>
+  <div class="note">
+    <span class="pill">~13 photos</span>
+    Storefront, studio interior, reception, and a few candids. Any recent studio/brand photos you have on hand are perfect — or we can grab fresh ones next time we're in.
+  </div>
+
+  <h2>How to send them</h2>
+  <ul class="how">
+    <li>Group them loosely by artist (or just send a big batch — we'll sort it).</li>
+    <li>Straight from an iPhone is fine — no editing or resizing needed.</li>
+    <li>Drop them in a shared album / folder, or text them over, whatever's easiest.</li>
+  </ul>
+
+  <footer>
+    LashPop Studios · Photo library status · Everything not listed here is recovered and live.
+  </footer>
+
+</div>
+</body>
+</html>

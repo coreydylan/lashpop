@@ -32,6 +32,8 @@ export async function GET(request: NextRequest, context: any) {
           height: assets.height,
           caption: assets.caption,
           uploadedAt: assets.uploadedAt,
+          recoveryStatus: assets.recoveryStatus,
+          recoveryNote: assets.recoveryNote,
         })
         .from(assets)
         .where(and(eq(assets.teamMemberId, memberId), eq(assets.fileType, "image")))
@@ -57,6 +59,8 @@ export async function GET(request: NextRequest, context: any) {
         isPrimary: false,
         uploadedAt: a.uploadedAt,
         source: "dam" as const,
+        recoveryStatus: a.recoveryStatus,
+        recoveryNote: a.recoveryNote,
       }))
 
     const photos = [...portfolioAlbum, ...taggedShaped]
