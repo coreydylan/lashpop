@@ -37,27 +37,19 @@ export function BrowseView() {
     return Array.from(subcatMap.values()).sort((a, b) => a.displayOrder - b.displayOrder)
   }, [categoryServices])
 
-  // Filter by active subcategory and sort by subcategory order, then service order
+  // Filter by active subcategory, then sort strictly by service display order.
+  // `display_order` is a faithful mirror of Vagaro's own booking-page order
+  // (written by the vagaro-sync worker), so sorting by it alone makes the
+  // selector match Vagaro line-for-line — which is the intended behavior.
+  // The subcategory sub-tabs above remain as optional filters; they no longer
+  // re-cluster the default ("All") list, which is what used to make the order
+  // diverge from Vagaro (Vagaro's list is flat and interleaves subcategories).
   const filteredServices = useMemo(() => {
-    let filtered = activeSubcategory
+    const filtered = activeSubcategory
       ? categoryServices.filter(s => s.subcategorySlug === activeSubcategory)
       : categoryServices
 
-    // Sort by: 1) subcategory display order, 2) service display order
-    // Services without a subcategory go to the end
-    return [...filtered].sort((a, b) => {
-      const aSubcatOrder = a.subcategoryDisplayOrder ?? 999
-      const bSubcatOrder = b.subcategoryDisplayOrder ?? 999
-
-      if (aSubcatOrder !== bSubcatOrder) {
-        return aSubcatOrder - bSubcatOrder
-      }
-
-      // Within same subcategory, sort by service display order
-      const aOrder = a.displayOrder ?? 999
-      const bOrder = b.displayOrder ?? 999
-      return aOrder - bOrder
-    })
+    return [...filtered].sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999))
   }, [categoryServices, activeSubcategory])
 
   return (
