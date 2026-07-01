@@ -3,7 +3,7 @@
 import { getDb } from '@/db'
 import { workWithUsCarouselPhotos } from '@/db/schema/work_with_us_carousel'
 import { assets } from '@/db/schema/assets'
-import { eq, asc } from 'drizzle-orm'
+import { eq, asc, and, isNull } from 'drizzle-orm'
 
 const db = getDb()
 
@@ -36,20 +36,38 @@ export async function getAllCarouselPhotos(): Promise<CarouselPhotoWithAsset[]> 
   return results.filter(r => r.filePath !== null) as CarouselPhotoWithAsset[]
 }
 
+export type CarouselDisplayPhoto = {
+  filePath: string
+  width: number | null
+  height: number | null
+  blurDataUrl: string | null
+}
+
 /**
- * Get enabled carousel photos for display
+ * Get enabled carousel photos for display. Excludes any asset flagged in
+ * recovery (missing/lost/superseded/removed) so broken slots never render —
+ * a healthy asset has recovery_status = null. Returns dims + LQIP blur so the
+ * carousel can reserve space and blur-up like the rest of the site.
  */
-export async function getEnabledCarouselPhotos(): Promise<{ filePath: string }[]> {
+export async function getEnabledCarouselPhotos(): Promise<CarouselDisplayPhoto[]> {
   const results = await db
     .select({
       filePath: assets.filePath,
+      width: assets.width,
+      height: assets.height,
+      blurDataUrl: assets.blurDataUrl,
     })
     .from(workWithUsCarouselPhotos)
     .leftJoin(assets, eq(workWithUsCarouselPhotos.assetId, assets.id))
-    .where(eq(workWithUsCarouselPhotos.isEnabled, true))
+    .where(
+      and(
+        eq(workWithUsCarouselPhotos.isEnabled, true),
+        isNull(assets.recoveryStatus),
+      ),
+    )
     .orderBy(asc(workWithUsCarouselPhotos.sortOrder))
 
-  return results.filter(r => r.filePath !== null) as { filePath: string }[]
+  return results.filter(r => r.filePath !== null) as CarouselDisplayPhoto[]
 }
 
 /**

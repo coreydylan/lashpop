@@ -7,17 +7,17 @@ import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
-import { getEnabledCarouselPhotos } from '@/actions/work-with-us-carousel'
+import { getEnabledCarouselPhotos, type CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
 
 interface TeamCarouselProps {
-  photos?: { filePath: string }[]
+  photos?: CarouselDisplayPhoto[]
 }
 
 export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
   const ref = useRef(null)
   // Index into the (un-duplicated) source list, or null when the lightbox is closed
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-  const [photos, setPhotos] = useState<{ filePath: string }[]>(initialPhotos || [])
+  const [photos, setPhotos] = useState<CarouselDisplayPhoto[]>(initialPhotos || [])
   const [loading, setLoading] = useState(!initialPhotos)
 
   // Fetch photos on mount if not provided via props
@@ -173,7 +173,7 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
                   className="flex-[0_0_auto] w-56 h-56 md:w-64 md:h-64 min-w-0 cursor-grab active:cursor-grabbing group relative"
                   onClick={() => setLightboxIndex(index % total)}
                 >
-                  <div className="relative w-full h-full overflow-hidden rounded-2xl transform transition-transform duration-300 group-hover:scale-[1.02]">
+                  <div className="relative w-full h-full overflow-hidden rounded-2xl bg-warm-sand/20 transform transition-transform duration-300 group-hover:scale-[1.02]">
                     <Image
                       src={item.filePath}
                       alt={`Team photo ${(index % total) + 1}`}
@@ -181,6 +181,8 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
                       sizes="(max-width: 768px) 224px, 256px"
                       className="object-cover"
                       draggable={false}
+                      placeholder={item.blurDataUrl ? 'blur' : 'empty'}
+                      blurDataURL={item.blurDataUrl ?? undefined}
                     />
 
                     {/* Clean hover - no dark overlay or icon */}
