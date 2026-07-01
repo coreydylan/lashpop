@@ -12,7 +12,6 @@ import { useInView } from 'framer-motion'
 import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
 import { MemberTakeover } from '@/components/team/MemberTakeover'
-import { MissingPhotoCard } from '@/components/ui/MissingPhotoCard'
 
 const CRED_ICON: Record<string, typeof Award> = {
   founder: Sparkles,
@@ -284,8 +283,7 @@ interface PortfolioImage {
   width?: number
   height?: number
   caption?: string
-  recoveryStatus?: string | null
-  recoveryNote?: string | null
+  blurDataUrl?: string | null
 }
 
 interface ServiceCategory {
@@ -473,8 +471,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
             width: photo.width,
             height: photo.height,
             caption: photo.caption,
-            recoveryStatus: photo.recoveryStatus,
-            recoveryNote: photo.recoveryNote,
+            blurDataUrl: photo.blurDataUrl,
           }))
           const images = [headshot, ...workImages]
           setPortfolioImages(images)
@@ -571,15 +568,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           width: photo.width,
           height: photo.height,
           caption: photo.caption,
-          recoveryStatus: photo.recoveryStatus,
-          recoveryNote: photo.recoveryNote,
+          blurDataUrl: photo.blurDataUrl,
         }))
         const images = [headshot, ...workImages]
         preloadedPhotosCache.current.set(memberUuid, images)
 
         // Also preload the work image files (headshot is typically already shown elsewhere).
-        // Skip recovery placeholders — their objects 404, so preloading wastes a request.
-        workImages.filter(img => !img.recoveryStatus).forEach(img => {
+        workImages.forEach(img => {
           const link = document.createElement('link')
           link.rel = 'preload'
           link.as = 'image'
@@ -1271,9 +1266,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               >
                                 {(() => {
                                   const curPhoto = portfolioImages.length > 0 ? portfolioImages[currentImageIndex] : null
-                                  if (curPhoto?.recoveryStatus) {
-                                    return <MissingPhotoCard rounded="rounded-none" lost={curPhoto.recoveryStatus === 'lost'} />
-                                  }
                                   const drawerSrc = portfolioImages.length > 0 ? portfolioImages[currentImageIndex]?.url : selectedMember.image
                                   const isPlaceholder = isPlaceholderImage(drawerSrc)
                                   // The headshot (index 0) is framed to fill the
@@ -1313,6 +1305,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                               : "object-cover object-top"
                                         }
                                         priority
+                                        placeholder={curPhoto?.blurDataUrl ? 'blur' : 'empty'}
+                                        blurDataURL={curPhoto?.blurDataUrl ?? undefined}
                                         unoptimized={isPlaceholder || isVagaro}
                                       />
                                     </>

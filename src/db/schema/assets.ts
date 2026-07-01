@@ -17,6 +17,8 @@ export const assets = pgTable("assets", {
   fileSize: integer("file_size").notNull(), // in bytes
   width: integer("width"),
   height: integer("height"),
+  // Tiny base64 LQIP for next/image placeholder="blur" (smooth blur-up on load).
+  blurDataUrl: text("blur_data_url"),
 
   // Relationships
   teamMemberId: uuid("team_member_id")

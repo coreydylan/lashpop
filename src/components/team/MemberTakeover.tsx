@@ -19,7 +19,6 @@ import {
 } from 'lucide-react'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
-import { MissingPhotoCard } from '@/components/ui/MissingPhotoCard'
 
 // Local type mirrors the consumer's TeamMember shape — kept in sync intentionally
 // so this component can be lifted out of EnhancedTeamSectionClient without a refactor.
@@ -49,10 +48,8 @@ export interface PortfolioImage {
   width?: number
   height?: number
   caption?: string
-  // Recovery state (R2 outage). When set, the slot renders a branded
-  // "Photo coming soon" placeholder instead of attempting the 404'd image.
-  recoveryStatus?: string | null
-  recoveryNote?: string | null
+  // Tiny base64 LQIP; drives next/image placeholder="blur" for a soft blur-up.
+  blurDataUrl?: string | null
 }
 
 interface MemberTakeoverProps {
@@ -71,29 +68,25 @@ function isPlaceholderImage(src: string) {
 function isVagaroPhoto(src: string | undefined | null) {
   return !!src && src.includes('ssl.cf2.rackcdn.com')
 }
-function isMissing(p: PortfolioImage) {
-  return p.recoveryStatus === 'missing' || p.recoveryStatus === 'lost'
-}
 
 /**
- * Portfolio image with a graceful fade-in. The tile sits on a warm-sand wash so
- * there's never a hard empty box; the image fades up over it once decoded, so
- * nothing pops in. Resizing/format negotiation happens on the edge via the
+ * Portfolio image with a soft blur-up. A tiny base64 LQIP (blurDataUrl) shows
+ * immediately as a blurred preview, so there's never an empty box or a hard
+ * pop-in — the sharp image cross-fades over the blur once decoded. The tile's
+ * exact aspect ratio is reserved from stored width/height, so nothing reflows
+ * while images load. Resizing/format negotiation happens on the edge via the
  * next/image custom loader (cf-image-loader → lashpop-img worker, AVIF/WebP).
  */
-function FadeInImage(props: ComponentProps<typeof Image>) {
-  const [loaded, setLoaded] = useState(false)
+function FadeInImage({
+  blurDataUrl,
+  ...props
+}: ComponentProps<typeof Image> & { blurDataUrl?: string | null }) {
   return (
     <Image
       {...props}
       alt={props.alt ?? ''}
-      onLoad={(e) => {
-        setLoaded(true)
-        props.onLoad?.(e)
-      }}
-      className={`${props.className ?? ''} transition-opacity duration-500 ease-out ${
-        loaded ? 'opacity-100' : 'opacity-0'
-      }`}
+      placeholder={blurDataUrl ? 'blur' : 'empty'}
+      blurDataURL={blurDataUrl ?? undefined}
     />
   )
 }
@@ -603,6 +596,15 @@ function PortfolioBlock({
   firstName: string
   onOpenPhoto: (idx: number) => void
 }) {
+  // Flip to true one frame after the photos mount, so the tiles animate in from
+  // their initial hidden state rather than appearing already-settled.
+  const [revealed, setRevealed] = useState(false)
+  useEffect(() => {
+    if (loading || photos.length === 0) return
+    const id = requestAnimationFrame(() => setRevealed(true))
+    return () => cancelAnimationFrame(id)
+  }, [loading, photos.length])
+
   if (loading) {
     return (
       <>
@@ -617,6 +619,14 @@ function PortfolioBlock({
   }
 
   const count = photos.length
+
+  // Choreographed entrance: tiles cascade in (fade + gentle rise) once the
+  // grid mounts, each image sharpening from its blur as it decodes — instead
+  // of images popping in randomly. Reveal is a one-shot on mount.
+  const revealBase =
+    'transition-[opacity,transform] duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none motion-reduce:transform-none'
+  const revealDelay = (idx: number) => Math.min(idx * 55, 440)
+
   if (count === 0) {
     return (
       <>
@@ -652,37 +662,32 @@ function PortfolioBlock({
         <div className="flex gap-4" style={{ height: 380 }}>
           {photos.map((p, idx) => {
             const ar = p.width && p.height ? `${p.width}/${p.height}` : '1/1'
-            if (isMissing(p)) {
-              return (
-                <div
-                  key={p.id || idx}
-                  className="relative overflow-hidden rounded-2xl"
-                  style={{ aspectRatio: ar, height: '100%' }}
-                >
-                  <MissingPhotoCard lost={p.recoveryStatus === 'lost'} />
-                </div>
-              )
-            }
             return (
-              <button
+              <div
                 key={p.id || idx}
-                type="button"
-                onClick={() => onOpenPhoto(idx)}
-                className="group relative overflow-hidden rounded-2xl bg-warm-sand/20 cursor-zoom-in transition-transform hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
-                style={{ aspectRatio: ar, height: '100%' }}
+                className={`${revealBase} ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+                style={{ aspectRatio: ar, height: '100%', transitionDelay: revealed ? `${revealDelay(idx)}ms` : '0ms' }}
               >
-                <FadeInImage
-                  src={p.url}
-                  alt={`Portfolio ${idx + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 33vw"
-                  unoptimized={isVagaroPhoto(p.url)}
-                />
-                <span className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-md transition-opacity group-hover:opacity-100">
-                  <ZoomIn className="h-3.5 w-3.5 text-charcoal" />
-                </span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenPhoto(idx)}
+                  className="group relative h-full w-full overflow-hidden rounded-2xl bg-warm-sand/20 cursor-zoom-in transition-transform duration-300 ease-out hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
+                >
+                  <FadeInImage
+                    src={p.url}
+                    alt={`Portfolio ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 33vw"
+                    priority={idx < 2}
+                    blurDataUrl={p.blurDataUrl}
+                    unoptimized={isVagaroPhoto(p.url)}
+                  />
+                  <span className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+                    <ZoomIn className="h-3.5 w-3.5 text-charcoal" />
+                  </span>
+                </button>
+              </div>
             )
           })}
         </div>
@@ -703,25 +708,16 @@ function PortfolioBlock({
         </span>
       </div>
       <div style={{ columnCount: cols, columnGap: 14 }}>
-        {photos.map((p, idx) => {
-          if (isMissing(p)) {
-            return (
-              <div
-                key={p.id || idx}
-                className="mb-3.5 block w-full overflow-hidden rounded-xl"
-                style={{ breakInside: 'avoid', aspectRatio: p.width && p.height ? `${p.width}/${p.height}` : '4/5' }}
-              >
-                <MissingPhotoCard rounded="rounded-xl" lost={p.recoveryStatus === 'lost'} />
-              </div>
-            )
-          }
-          return (
+        {photos.map((p, idx) => (
+          <div
+            key={p.id || idx}
+            className={`mb-3.5 ${revealBase} ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+            style={{ breakInside: 'avoid', transitionDelay: revealed ? `${revealDelay(idx)}ms` : '0ms' }}
+          >
             <button
-              key={p.id || idx}
               type="button"
               onClick={() => onOpenPhoto(idx)}
-              className="group relative mb-3.5 block w-full overflow-hidden rounded-xl bg-warm-sand/20 cursor-zoom-in transition-transform hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
-              style={{ breakInside: 'avoid' }}
+              className="group relative block w-full overflow-hidden rounded-xl bg-warm-sand/20 cursor-zoom-in transition-transform duration-300 ease-out hover:scale-[1.02] hover:shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
             >
               <FadeInImage
                 src={p.url}
@@ -730,14 +726,16 @@ function PortfolioBlock({
                 height={p.height || 600}
                 className="block w-full h-auto"
                 sizes={cols === 3 ? '(max-width: 1024px) 50vw, 25vw' : '(max-width: 1024px) 50vw, 30vw'}
+                priority={idx < 2}
+                blurDataUrl={p.blurDataUrl}
                 unoptimized={isVagaroPhoto(p.url)}
               />
               <span className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                 <ZoomIn className="h-3.5 w-3.5 text-charcoal" />
               </span>
             </button>
-          )
-        })}
+          </div>
+        ))}
       </div>
     </>
   )
@@ -746,16 +744,7 @@ function PortfolioBlock({
 function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
   const [loaded, setLoaded] = useState(false)
 
-  if (isMissing(photo)) {
-    return (
-      <div className="h-[60vh] w-[min(520px,86vw)] overflow-hidden rounded-lg shadow-[0_30px_80px_rgba(0,0,0,0.5)]">
-        <MissingPhotoCard rounded="rounded-lg" lost={photo.recoveryStatus === 'lost'} />
-      </div>
-    )
-  }
-
-  // DAM assets store width/height as null, so we can't drive the layout from
-  // intrinsic dimensions. Use a plain <img> with max-w / max-h — the browser
+  // Use a plain <img> with max-w / max-h — the browser
   // sizes the element to the source's natural aspect ratio, so there's no
   // dark frame around portrait/square photos. Resizing happens at the URL
   // level via the lashpop-img worker (loader replicates

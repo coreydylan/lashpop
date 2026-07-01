@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { assets } from "@/db/schema/assets"
-import { and, eq, desc, inArray } from "drizzle-orm"
+import { and, eq, desc, inArray, isNull } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
 
 export async function GET(request: NextRequest, context: any) {
@@ -30,13 +30,21 @@ export async function GET(request: NextRequest, context: any) {
           filePath: assets.filePath,
           width: assets.width,
           height: assets.height,
+          blurDataUrl: assets.blurDataUrl,
           caption: assets.caption,
           uploadedAt: assets.uploadedAt,
-          recoveryStatus: assets.recoveryStatus,
-          recoveryNote: assets.recoveryNote,
         })
         .from(assets)
-        .where(and(eq(assets.teamMemberId, memberId), eq(assets.fileType, "image")))
+        // isNull(recoveryStatus) drops every flagged asset (missing / lost /
+        // superseded / removed) so broken slots never render — no placeholder,
+        // no 404. A healthy portfolio photo always has recovery_status = null.
+        .where(
+          and(
+            eq(assets.teamMemberId, memberId),
+            eq(assets.fileType, "image"),
+            isNull(assets.recoveryStatus),
+          ),
+        )
         .orderBy(desc(assets.uploadedAt)),
     ])
 
@@ -55,12 +63,11 @@ export async function GET(request: NextRequest, context: any) {
         filePath: a.filePath,
         width: a.width,
         height: a.height,
+        blurDataUrl: a.blurDataUrl,
         caption: a.caption,
         isPrimary: false,
         uploadedAt: a.uploadedAt,
         source: "dam" as const,
-        recoveryStatus: a.recoveryStatus,
-        recoveryNote: a.recoveryNote,
       }))
 
     const photos = [...portfolioAlbum, ...taggedShaped]
