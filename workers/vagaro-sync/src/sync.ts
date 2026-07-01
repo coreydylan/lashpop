@@ -21,6 +21,8 @@ const VAGARO_CATEGORY_TO_SLUG: Record<string, string> = {
   // Lashes
   'lash services': 'lashes',
   'eyelash extension services': 'lashes',
+  'lash extensions': 'lashes',
+  'lash lifts': 'lashes',
   'lashes': 'lashes',
   // Brows
   'brow services': 'brows',
@@ -29,11 +31,17 @@ const VAGARO_CATEGORY_TO_SLUG: Record<string, string> = {
   'facials & skin care': 'facials',
   'facials and skin care': 'facials',
   'skin care and facial services': 'facials',
+  'skincare & facials': 'facials',
+  'skincare and facials': 'facials',
   'skincare': 'facials',
   'facials': 'facials',
   // Waxing
   'waxing': 'waxing',
-  // Permanent makeup
+  // Permanent makeup. The studio renames this category in Vagaro with a
+  // parenthetical list of its services (e.g. "Permanent Makeup (Microblading/
+  // Nanobrows/Freckles/Lip Blushing)"). The parenthetical-stripping fallback in
+  // resolveCategoryId() handles those renames, but keep the bare title mapped
+  // too so an exact match short-circuits.
   'permanent makeup': 'permanent-makeup',
   // Permanent jewelry / specialty
   'permanent jewelry': 'specialty',
@@ -57,7 +65,16 @@ let categoryIdBySlugCache: Map<string, string> | null = null
 
 async function resolveCategoryId(db: Db, parentTitle: string | null | undefined): Promise<string | null> {
   if (!parentTitle) return null
-  const slug = VAGARO_CATEGORY_TO_SLUG[parentTitle.trim().toLowerCase()]
+  const normalized = parentTitle.trim().toLowerCase()
+  // Try the exact title first, then fall back to the title with any trailing
+  // parenthetical stripped — Vagaro category titles drift as the studio appends
+  // "(Microblading/Nanobrows/...)" etc. Without this, a renamed category
+  // resolves to NULL and the sync silently leaves services on their stale
+  // categoryId (this is how the original Microblading/Nanobrows got stuck under
+  // Brows after they were moved to Permanent Makeup in Vagaro).
+  const slug =
+    VAGARO_CATEGORY_TO_SLUG[normalized] ??
+    VAGARO_CATEGORY_TO_SLUG[normalized.replace(/\s*\(.*\)\s*$/, '').trim()]
   if (!slug) return null
 
   if (!categoryIdBySlugCache) {
