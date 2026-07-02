@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-04-01",
   "compatibility_flags": ["nodejs_compat"],
-  "account_id": "8276973f31803dc6a1597c1396d64c4c",
+  "account_id": "4f7293208a9aa982963007fffd966b56",
   "triggers": {
     // Every 15 min — keeps Vagaro photos/bios/services near-fresh automatically.
     // For instant updates, the admin team page has a "Sync from Vagaro" button
