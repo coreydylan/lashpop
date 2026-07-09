@@ -1069,13 +1069,20 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         {/* Team Group Photo - Full Width, taller crop */}
         <div className="mt-12 md:mt-20">
           <div className="relative w-full overflow-hidden aspect-[767/409] max-h-[820px]">
+            {/* -full: the photographer's 5280px original, recovered from git
+                history (03fc67d) — a Feb 2026 "compress large images" commit had
+                crushed it to 1534px, which read blurry on a full-bleed retina
+                slot. The edge pipeline resizes on demand now, so the source
+                stays full-res. New filename busts year-long immutable caches. */}
             <Image
-              src="/lashpop-images/team/team-group-photo.jpg"
+              src="/lashpop-images/team/team-group-photo-full.jpg"
               alt="The LashPop Studios team"
               fill
               priority={false}
               sizes="100vw"
               className="object-cover object-center"
+              placeholder="blur"
+              blurDataURL={getPublicImageBlur('/lashpop-images/team/team-group-photo-full.jpg')}
             />
           </div>
         </div>
