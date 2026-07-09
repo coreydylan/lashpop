@@ -6,7 +6,7 @@ const nextConfig = {
     loader: 'custom',
     loaderFile: './src/lib/cf-image-loader.ts',
     // deviceSizes/imageSizes still drive srcset width selection; quality is opaque to Next under custom loader.
-    deviceSizes: [320, 600, 900, 1200, 1800, 2400],
+    deviceSizes: [320, 600, 900, 1200, 1800, 2400, 3200, 3840],
     imageSizes: [64, 128, 256, 384],
     remotePatterns: [
       { protocol: 'https', hostname: 'cdn.lashpopstudios.com', pathname: '/**' },

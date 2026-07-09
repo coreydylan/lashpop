@@ -12,7 +12,12 @@ const IMG_WORKER_BASE = "https://lashpop-img.experial.workers.dev"
 type Props = { src: string; width: number; quality?: number }
 
 export default function cfImageLoader({ src, width, quality }: Props): string {
-  const q = quality ?? 82
+  // Quality scales inversely with width. Small variants render near 1:1 on
+  // screen where compression artifacts on faces are obvious — keep them at 90.
+  // Huge variants only exist for 2x-retina displays, where the downscale to
+  // device pixels masks artifacts — spend the byte budget on resolution
+  // (full 3840 width) instead of quality there.
+  const q = quality ?? (width >= 3200 ? 78 : width >= 1800 ? 85 : 90)
 
   // Vector/animated formats gain nothing from the resizer.
   if (/\.(svg|gif)(\?|$)/i.test(src)) return src

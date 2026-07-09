@@ -977,7 +977,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               // arched slot on tightly-framed portraits.
                               className={`${isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover object-top transition-transform duration-700 group-hover:scale-105"} transition-opacity duration-300 opacity-0`}
                               onLoad={(e) => (e.currentTarget.style.opacity = '1')}
-                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 320px"
                               unoptimized={isPlaceholderImage(member.image)}
                             />
                           </div>

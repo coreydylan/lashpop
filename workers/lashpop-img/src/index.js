@@ -25,8 +25,12 @@
 // the same filename, bump a `v` query param at the call site (the loader
 // passes unknown params through to the cache key).
 
-const MAX_WIDTH = 2400 // cap so a bare (no-width) request still optimizes huge originals
-const DEFAULT_QUALITY = 82
+// 3840 covers a 2x-retina ~1920-CSS-px hero without browser upscale — a 2400
+// cap forced 1.5-1.7x upscaling on large Mac displays, which read as blurry.
+const MAX_WIDTH = 3840 // cap so a bare (no-width) request still optimizes huge originals
+// 90, not 82: faces dominate this site and AVIF/WebP at 82 visibly smooths
+// skin texture vs the originals. Bytes are still 10-20x under the raw files.
+const DEFAULT_QUALITY = 90
 const SITE_ORIGIN = 'https://lashpop.vercel.app'
 // Only proxy site paths under this prefix — everything image-like in /public
 // lives here, and it keeps the worker from becoming an open proxy to the app.
