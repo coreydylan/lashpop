@@ -99,31 +99,34 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
       (window as { requestIdleCallback?: typeof idle }).requestIdleCallback ??
       ((cb) => window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 16))
 
-    const prefetch = (idx: number) => {
+    // STRICTLY serialized, low-priority prefetch. The previous version fired
+    // 3 requests immediately + one per idle tick at default priority — on a
+    // cold edge cache each lightbox variant is a ~1s worker transform, so
+    // ~20 of them saturated the connection pool and the VISIBLE carousel
+    // thumbnails queued behind them (the "15s blur-in" complaint). Now each
+    // prefetch waits for the previous to finish, carries fetchPriority=low,
+    // and doesn't start until the visible images have had 3s of runway.
+    const prefetch = (idx: number, done: () => void) => {
       if (cancelled || idx >= photos.length) return
       const url = lightboxSrc(photos[idx].filePath)
       const img = new globalThis.Image()
       img.decoding = 'async'
       img.referrerPolicy = 'no-referrer'
+      ;(img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
+      img.onload = img.onerror = () => done()
       img.src = url
     }
 
-    // First three photos are most likely to be clicked first — warm them
-    // synchronously (no idle wait) so an immediate tap is instant.
-    prefetch(i++)
-    prefetch(i++)
-    prefetch(i++)
-
     const tick = () => {
       if (cancelled || i >= photos.length) return
-      prefetch(i++)
-      idle(tick, { timeout: 800 })
+      prefetch(i++, () => idle(tick, { timeout: 2000 }))
     }
 
-    idle(tick, { timeout: 1200 })
+    const startTimer = window.setTimeout(() => idle(tick, { timeout: 2000 }), 3000)
 
     return () => {
       cancelled = true
+      window.clearTimeout(startTimer)
     }
   }, [photos, lightboxSrc])
 

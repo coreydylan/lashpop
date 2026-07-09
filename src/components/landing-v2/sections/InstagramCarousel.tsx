@@ -121,7 +121,12 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
       (window as { requestIdleCallback?: typeof idle }).requestIdleCallback ??
       ((cb) => window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 16))
 
-    const prefetch = (idx: number) => {
+    // STRICTLY serialized, low-priority prefetch: on a cold edge cache each
+    // lightbox variant is a ~1s worker transform, so parallel prefetches
+    // saturate the connection pool and visible images queue behind them.
+    // One request at a time, fetchPriority=low, next starts only after the
+    // previous finishes.
+    const prefetch = (idx: number, done: () => void) => {
       if (cancelled || idx >= rawItems.length) return
       const url = lightboxSrc(rawItems[idx].mediaUrl)
       // new Image() triggers a real GET that lands in the browser cache.
@@ -130,24 +135,20 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
       const img = new globalThis.Image()
       img.decoding = 'async'
       img.referrerPolicy = 'no-referrer'
+      ;(img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
+      img.onload = img.onerror = () => done()
       img.src = url
     }
 
     const tick = () => {
       if (cancelled || i >= rawItems.length) return
-      prefetch(i++)
-      idle(tick, { timeout: 800 })
+      prefetch(i++, () => idle(tick, { timeout: 2000 }))
     }
 
-    // First three images warm synchronously (no idle wait) so an immediate
-    // tap on the visible cards is instant. The remaining ~20 drip into
-    // cache during idle slots.
     const start = () => {
       if (cancelled) return
-      prefetch(i++)
-      prefetch(i++)
-      prefetch(i++)
-      idle(tick, { timeout: 1200 })
+      // 3s runway so visible images (which may also be cold) finish first.
+      window.setTimeout(() => idle(tick, { timeout: 2000 }), 3000)
     }
 
     if (document.readyState === 'complete') {
