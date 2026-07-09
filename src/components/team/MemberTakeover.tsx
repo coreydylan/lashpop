@@ -286,7 +286,7 @@ export function MemberTakeover({
                         priority
                         className={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE) ? 'object-contain p-8' : 'object-cover object-top'}
                         sizes="(max-width: 1024px) 100vw, 540px"
-                        unoptimized={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE) || isVagaroPhoto(member.image)}
+                        unoptimized={isPlaceholderImage(member.image || PLACEHOLDER_IMAGE)}
                       />
                     </div>
 
@@ -681,7 +681,6 @@ function PortfolioBlock({
                     sizes="(max-width: 1024px) 100vw, 33vw"
                     priority={idx < 2}
                     blurDataUrl={p.blurDataUrl}
-                    unoptimized={isVagaroPhoto(p.url)}
                   />
                   <span className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                     <ZoomIn className="h-3.5 w-3.5 text-charcoal" />
@@ -728,7 +727,6 @@ function PortfolioBlock({
                 sizes={cols === 3 ? '(max-width: 1024px) 50vw, 25vw' : '(max-width: 1024px) 50vw, 30vw'}
                 priority={idx < 2}
                 blurDataUrl={p.blurDataUrl}
-                unoptimized={isVagaroPhoto(p.url)}
               />
               <span className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 opacity-0 shadow-md transition-opacity group-hover:opacity-100">
                 <ZoomIn className="h-3.5 w-3.5 text-charcoal" />

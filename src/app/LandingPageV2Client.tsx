@@ -348,7 +348,10 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
         <VagaroWidgetProvider>
         <DrawerProvider>
           <PanelManagerProvider>
-            <div className={`min-h-screen relative theme-v2 ${isMobile ? '' : 'bg-ivory'}`}>
+            {/* bg gated by CSS (md:) not JS isMobile: pre-hydration mobile must NOT
+                paint ivory over the fixed arch background — that was part of the
+                hero flash on phones. */}
+            <div className="min-h-screen relative theme-v2 md:bg-ivory">
               {/* Inject mobile scroll styles */}
               <style dangerouslySetInnerHTML={{ __html: mobileScrollStyles }} />
 

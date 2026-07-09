@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import Image from 'next/image'
 import { HeroArchSlideshow } from './slideshow'
+import { getPublicImageBlur } from '@/lib/image-blur'
 import type { SlideshowPreset } from '@/types/hero-slideshow'
 
 // New config format from slideshow system
@@ -173,6 +174,9 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
                 decoding="async"
                 quality={90}
                 sizes="100vw"
+                {...(getPublicImageBlur(archImage.url)
+                  ? { placeholder: 'blur' as const, blurDataURL: getPublicImageBlur(archImage.url) }
+                  : {})}
               />
             </>
           )}

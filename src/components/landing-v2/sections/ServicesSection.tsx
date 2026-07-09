@@ -111,7 +111,6 @@ function ServiceCard({
             alt={category.title}
             fill
             className="object-contain"
-            loading="eager"
           />
         </div>
       </div>

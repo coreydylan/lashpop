@@ -3,6 +3,7 @@
 import type React from 'react'
 import Image from 'next/image'
 import { DEFAULT_FOUNDER_LETTER, type FounderLetterContent } from '@/types/founder-letter'
+import { getPublicImageBlur } from '@/lib/image-blur'
 
 interface FounderLetterSectionProps {
   content?: FounderLetterContent
@@ -27,6 +28,8 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
             fill
             className="object-cover object-right"
             sizes="100vw"
+            placeholder="blur"
+            blurDataURL={getPublicImageBlur('/lashpop-images/founder-letter-bg.jpg')}
           />
 
           {/* Content overlay */}

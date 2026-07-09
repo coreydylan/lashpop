@@ -3,7 +3,9 @@
 // Cloudflare Images binding. Lives on the experialstudio account (no zone
 // needed) since the old account's cdn.lashpopstudios.com transform is offline.
 //
-//   GET /<key>?w=<width>&q=<quality>&dpr=<1|2>&f=<auto|avif|webp|jpeg>
+//   GET /<key>?w=<width>&q=<quality>&dpr=<1|2>&f=<auto|avif|webp|jpeg>   R2 object
+//   GET /site/<path>?w=&q=                                              site /public asset (proxied from SITE_ORIGIN)
+//   GET /ext?url=<https://...rackcdn.com/...>&w=&q=                     allow-listed external origin (Vagaro CDN)
 //
 // Quality features:
 //  - Per-request format negotiation from the Accept header: AVIF > WebP > JPEG.
@@ -17,9 +19,21 @@
 //  - fit=scale-down so we never upscale past the original.
 //  - Cache key is format-aware and responses carry `Vary: Accept`, so an AVIF
 //    payload is never served to a WebP-only client (or vice versa).
+//
+// Cache-busting note: transformed variants are edge-cached immutable for a
+// year, keyed by URL+params. If a /public image ever changes content under
+// the same filename, bump a `v` query param at the call site (the loader
+// passes unknown params through to the cache key).
 
 const MAX_WIDTH = 2400 // cap so a bare (no-width) request still optimizes huge originals
 const DEFAULT_QUALITY = 82
+const SITE_ORIGIN = 'https://lashpop.vercel.app'
+// Only proxy site paths under this prefix — everything image-like in /public
+// lives here, and it keeps the worker from becoming an open proxy to the app.
+const SITE_PATH_PREFIX = 'lashpop-images/'
+// External hosts we'll fetch and optimize. Vagaro serves staff photos as
+// multi-MB "/Original/" JPEGs from Rackspace CDN.
+const EXT_HOST_RE = /\.rackcdn\.com$/i
 
 const OUTPUT = {
   avif: 'image/avif',
@@ -33,6 +47,41 @@ function negotiateFormat(request, override) {
   if (/image\/avif/.test(accept)) return 'avif'
   if (/image\/webp/.test(accept)) return 'webp'
   return 'jpeg'
+}
+
+// Resolve the source bytes for a request. Returns { body: ArrayBuffer,
+// contentType } or an error Response. Buffering (vs streaming) lets the
+// transform-failure fallback reuse the same bytes without a second fetch.
+async function getSource(url, key, env) {
+  if (key === 'ext') {
+    const target = url.searchParams.get('url') || ''
+    let ext
+    try {
+      ext = new URL(target)
+    } catch {
+      return new Response('Bad url param', { status: 400 })
+    }
+    if (ext.protocol !== 'https:' || !EXT_HOST_RE.test(ext.hostname)) {
+      return new Response('Host not allowed', { status: 403 })
+    }
+    const resp = await fetch(ext.toString(), { cf: { cacheTtl: 86400, cacheEverything: true } })
+    if (!resp.ok) return new Response('Upstream fetch failed', { status: 502 })
+    return { body: await resp.arrayBuffer(), contentType: resp.headers.get('content-type') || 'image/jpeg' }
+  }
+
+  if (key.startsWith('site/')) {
+    const path = key.slice('site/'.length)
+    if (!path.startsWith(SITE_PATH_PREFIX)) {
+      return new Response('Path not allowed', { status: 403 })
+    }
+    const resp = await fetch(`${SITE_ORIGIN}/${path}`, { cf: { cacheTtl: 86400, cacheEverything: true } })
+    if (!resp.ok) return new Response('Not found', { status: resp.status === 404 ? 404 : 502 })
+    return { body: await resp.arrayBuffer(), contentType: resp.headers.get('content-type') || 'image/jpeg' }
+  }
+
+  const obj = await env.BUCKET.get(key)
+  if (!obj) return new Response('Not found', { status: 404 })
+  return { body: await obj.arrayBuffer(), contentType: obj.httpMetadata?.contentType || 'image/jpeg' }
 }
 
 export default {
@@ -67,27 +116,32 @@ export default {
     const hit = await cache.match(cacheKey)
     if (hit) return hit
 
-    const obj = await env.BUCKET.get(key)
-    if (!obj) return new Response('Not found', { status: 404 })
-    const srcCT = obj.httpMetadata?.contentType || 'image/jpeg'
+    const src = await getSource(url, key, env)
+    if (src instanceof Response) return src
+
+    // SVGs can't go through the Images binding — serve as-is.
+    const isSvg = /image\/svg/.test(src.contentType) || /\.svg(\?|$)/i.test(key)
 
     // Effective render width accounting for retina. scale-down still prevents
     // upscaling past the source, so dpr only ever helps when the source is big.
     const renderWidth = width ? width * dpr : MAX_WIDTH * dpr
 
     let resp
-    try {
-      const transform = { fit: 'scale-down', width: renderWidth }
-      // Light sharpening helps perceived crispness after downscaling photos.
-      if (width) transform.sharpen = 1
-      const out = await env.IMAGES.input(obj.body)
-        .transform(transform)
-        .output({ format: OUTPUT[format], quality })
-      resp = out.response()
-    } catch (e) {
-      // Transform failed (unsupported/corrupt input) -> serve original bytes.
-      const fb = await env.BUCKET.get(key)
-      resp = new Response(fb.body, { headers: { 'content-type': srcCT } })
+    if (isSvg) {
+      resp = new Response(src.body, { headers: { 'content-type': 'image/svg+xml' } })
+    } else {
+      try {
+        const transform = { fit: 'scale-down', width: renderWidth }
+        // Light sharpening helps perceived crispness after downscaling photos.
+        if (width) transform.sharpen = 1
+        const out = await env.IMAGES.input(src.body)
+          .transform(transform)
+          .output({ format: OUTPUT[format], quality })
+        resp = out.response()
+      } catch (e) {
+        // Transform failed (unsupported/corrupt input) -> serve original bytes.
+        resp = new Response(src.body, { headers: { 'content-type': src.contentType } })
+      }
     }
 
     const headers = new Headers(resp.headers)

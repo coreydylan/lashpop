@@ -6,19 +6,23 @@ import { useRef, useState, useEffect } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { MobileSwipeableWelcomeCards } from '../MobileSwipeableWelcomeCards'
+import { getPublicImageBlur } from '@/lib/image-blur'
+
+const FRONTDESK_SRC = '/lashpop-images/frontdeskeditwgradientedit2.webp'
 
 // Dynamically import ParallaxImage to avoid SSR issues with Three.js
 const ParallaxImage = dynamic(() => import('@/components/three/ParallaxImage'), {
   ssr: false,
   loading: () => (
     <Image
-      src="/lashpop-images/frontdeskeditwgradientedit2.webp"
+      src={FRONTDESK_SRC}
       alt="LashPop Studio Desk"
-      quality={100}
       fill
       sizes="100vw"
       className="object-cover object-[35%_center] md:object-center"
-      priority
+      loading="eager"
+      placeholder="blur"
+      blurDataURL={getPublicImageBlur(FRONTDESK_SRC)}
     />
   ),
 })
@@ -66,13 +70,14 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
           {/* Background Image - Restored for seamless scroll from Hero */}
           <div className="absolute inset-0 z-0">
             <Image
-              src="/lashpop-images/frontdeskeditwgradientedit2.webp"
+              src={FRONTDESK_SRC}
               alt="LashPop Studio Desk"
-              quality={100}
               fill
               sizes="100vw"
               className="object-cover object-[45%_center]"
-              priority
+              loading="eager"
+              placeholder="blur"
+              blurDataURL={getPublicImageBlur(FRONTDESK_SRC)}
             />
           </div>
           

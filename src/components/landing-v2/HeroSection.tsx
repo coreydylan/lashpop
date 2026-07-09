@@ -1,11 +1,12 @@
 'use client'
 
-import { useRef, useEffect, useState, useCallback } from 'react'
+import { useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { useServiceBrowser } from '@/components/service-browser'
 import { smoothScrollToElement } from '@/lib/smoothScroll'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import WeatherLocationBadge from './WeatherLocationBadge'
+import { getPublicImageBlur } from '@/lib/image-blur'
 import { HeroArchSlideshow } from './slideshow'
 import type { SlideshowPreset } from '@/types/hero-slideshow'
 
@@ -62,8 +63,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   const handleFindYourLook = () => {
     actions.openFindYourLookQuiz();
   }
-  const [isMobile, setIsMobile] = useState(false)
-  
+
   // Calculate total reviews
   const totalReviews = reviewStats?.reduce((sum, stat) => sum + stat.reviewCount, 0) || 0
 
@@ -72,22 +72,14 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
     smoothScrollToElement('#services', 60, 800, 'top')
   }, [])
 
-  // Check if mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
   // ============================================
   // MOBILE LAYOUT - Content only (background handled by MobileHeroBackground)
+  // CSS-gated (md:hidden) rather than JS isMobile so the server renders the
+  // correct layout for every viewport — the old post-hydration swap painted
+  // the desktop hero on phones first, a visible flash on every load.
   // ============================================
-  if (isMobile) {
-    return (
-      <section ref={containerRef} className="relative min-h-[100dvh]" style={{ background: 'transparent' }}>
+  const mobileLayout = (
+      <section className="relative min-h-[100dvh] md:hidden" style={{ background: 'transparent' }}>
         {/* Background shows through from MobileHeroBackground */}
         <div className="relative">
           {/* ABOVE THE FOLD - exactly 100dvh, gradient fades to ivory at bottom */}
@@ -215,14 +207,13 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
           </div>
         </div>
       </section>
-    )
-  }
+  )
 
   // ============================================
   // DESKTOP LAYOUT - Full viewport photo with overlaid content
   // ============================================
-  return (
-    <section ref={containerRef} className="relative h-screen w-screen overflow-hidden">
+  const desktopLayout = (
+    <section ref={containerRef} className="relative h-screen w-screen overflow-hidden hidden md:block">
       {/* Full viewport background image */}
       <div
         ref={imageContainerRef}
@@ -254,6 +245,9 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               decoding="async"
               quality={90}
               sizes="100vw"
+              {...(getPublicImageBlur(archImage.url)
+                ? { placeholder: 'blur' as const, blurDataURL: getPublicImageBlur(archImage.url) }
+                : {})}
               style={{
                 objectPosition: `${archImage.position.x}% ${archImage.position.y}%`
               }}
@@ -372,5 +366,12 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
       </div>
 
     </section>
+  )
+
+  return (
+    <>
+      {mobileLayout}
+      {desktopLayout}
+    </>
   )
 }

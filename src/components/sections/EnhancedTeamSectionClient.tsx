@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
+import cfImageLoader from '@/lib/cf-image-loader'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check, UserPlus, Award, FileCheck, GraduationCap, Trophy, BookOpen } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
@@ -271,8 +272,9 @@ const PLACEHOLDER_IMAGE = "/placeholder-team.svg"
 function isPlaceholderImage(src: string) {
   return src.endsWith('.svg') || src.includes('placeholder')
 }
-// Vagaro CDN photos are served via Rackspace. We hotlink direct — no Vercel image
-// optimization — so Vagaro stays source of truth without a transformation layer.
+// Vagaro CDN photos are served via Rackspace as multi-MB "/Original/" JPEGs.
+// They now route through the lashpop-img worker (cf-image-loader handles
+// *.rackcdn.com), so they get resized + AVIF like everything else.
 function isVagaroPhoto(src: string | undefined | null) {
   return !!src && src.includes('ssl.cf2.rackcdn.com')
 }
@@ -573,12 +575,15 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         const images = [headshot, ...workImages]
         preloadedPhotosCache.current.set(memberUuid, images)
 
-        // Also preload the work image files (headshot is typically already shown elsewhere).
+        // Also preload the work image files (headshot is typically already
+        // shown elsewhere). Preload the worker-optimized variant, not the raw
+        // original — raw DAM/Vagaro URLs are multi-MB and aren't even the URL
+        // the drawer's <Image> will request.
         workImages.forEach(img => {
           const link = document.createElement('link')
           link.rel = 'preload'
           link.as = 'image'
-          link.href = img.url
+          link.href = cfImageLoader({ src: img.url, width: 1200 })
           document.head.appendChild(link)
         })
       })
@@ -834,7 +839,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             // under-fetching on 3x displays, causing the
                             // "blurry on mobile" complaint.
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                            unoptimized={isPlaceholder || isVagaroPhoto(cardImage)}
+                            unoptimized={isPlaceholder}
                           />
                         </div>
                       </div>
@@ -973,7 +978,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               className={`${isPlaceholderImage(member.image) ? "object-contain p-6" : "object-cover object-top transition-transform duration-700 group-hover:scale-105"} transition-opacity duration-300 opacity-0`}
                               onLoad={(e) => (e.currentTarget.style.opacity = '1')}
                               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
-                              unoptimized={isPlaceholderImage(member.image) || isVagaroPhoto(member.image)}
+                              unoptimized={isPlaceholderImage(member.image)}
                             />
                           </div>
                         </div>
@@ -1279,7 +1284,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                   // per swap, same URL → browser cache hits.
                                   const isHeadshot = currentImageIndex === 0
                                   const useContain = !isPlaceholder && !isHeadshot
-                                  const isVagaro = isVagaroPhoto(drawerSrc)
                                   return (
                                     <>
                                       {useContain && (
@@ -1289,7 +1293,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                           aria-hidden
                                           fill
                                           priority
-                                          unoptimized={isVagaro}
                                           className="object-cover scale-110 blur-2xl opacity-60"
                                         />
                                       )}
@@ -1307,7 +1310,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                         priority
                                         placeholder={curPhoto?.blurDataUrl ? 'blur' : 'empty'}
                                         blurDataURL={curPhoto?.blurDataUrl ?? undefined}
-                                        unoptimized={isPlaceholder || isVagaro}
+                                        unoptimized={isPlaceholder}
                                       />
                                     </>
                                   )

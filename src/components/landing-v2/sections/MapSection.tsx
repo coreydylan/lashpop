@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { DEFAULT_STUDIO_SETTINGS, type StudioSettings } from '@/types/studio'
+import { getPublicImageBlur } from '@/lib/image-blur'
 
 interface MapSectionProps {
   studio?: StudioSettings
@@ -199,10 +201,14 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
       <div className="flex flex-col md:flex-row md:h-[600px]">
         {/* Storefront Photo - Shows first on mobile, right side on desktop */}
         <div className="relative w-full h-[50dvh] md:h-full md:w-1/2 md:order-2">
-          <img
+          <Image
             src="/lashpop-images/storefront.jpeg"
             alt={`${studio.name} storefront`}
-            className="w-full h-full object-cover"
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover"
+            placeholder="blur"
+            blurDataURL={getPublicImageBlur('/lashpop-images/storefront.jpeg')}
           />
         </div>
 

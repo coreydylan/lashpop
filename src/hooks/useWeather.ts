@@ -95,6 +95,48 @@ function mapWeatherCode(code: number, isNight: boolean): { condition: WeatherCon
   }
 }
 
+// Module-level cache so multiple badge instances (the mobile and desktop hero
+// layouts are both mounted, CSS-gated) share one fetch per refresh window
+// instead of each polling Open-Meteo independently.
+const WEATHER_TTL = 10 * 60 * 1000
+let cachedWeather: { data: WeatherData; at: number } | null = null
+let inflightWeather: Promise<WeatherData> | null = null
+
+async function loadWeather(): Promise<WeatherData> {
+  if (cachedWeather && Date.now() - cachedWeather.at < WEATHER_TTL) {
+    return cachedWeather.data
+  }
+  if (!inflightWeather) {
+    inflightWeather = (async () => {
+      // Open-Meteo API - free, no API key required
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${OCEANSIDE_LAT}&longitude=${OCEANSIDE_LON}&current=temperature_2m,is_day,weather_code&temperature_unit=fahrenheit&timezone=America/Los_Angeles`
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch weather data')
+      }
+
+      const data = await response.json()
+
+      const isNight = data.current.is_day === 0
+      const { condition, description } = mapWeatherCode(data.current.weather_code, isNight)
+
+      const weather: WeatherData = {
+        temperature: Math.round(data.current.temperature_2m),
+        condition,
+        description,
+        isNight
+      }
+      cachedWeather = { data: weather, at: Date.now() }
+      return weather
+    })().finally(() => {
+      inflightWeather = null
+    })
+  }
+  return inflightWeather
+}
+
 export function useWeather(): UseWeatherResult {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -105,28 +147,9 @@ export function useWeather(): UseWeatherResult {
 
     async function fetchWeather() {
       try {
-        // Open-Meteo API - free, no API key required
-        const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${OCEANSIDE_LAT}&longitude=${OCEANSIDE_LON}&current=temperature_2m,is_day,weather_code&temperature_unit=fahrenheit&timezone=America/Los_Angeles`
-        )
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch weather data')
-        }
-
-        const data = await response.json()
-
+        const data = await loadWeather()
         if (!isMounted) return
-
-        const isNight = data.current.is_day === 0
-        const { condition, description } = mapWeatherCode(data.current.weather_code, isNight)
-
-        setWeather({
-          temperature: Math.round(data.current.temperature_2m),
-          condition,
-          description,
-          isNight
-        })
+        setWeather(data)
         setIsLoading(false)
       } catch (err) {
         if (!isMounted) return
