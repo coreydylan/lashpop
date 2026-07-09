@@ -111,6 +111,12 @@ export default {
     if (isNaN(dpr) || dpr < 1) dpr = 1
     if (dpr > 2) dpr = 2
 
+    // Optional sharpen override (s=0..5). Default 1 on downscales — the CF
+    // resize kernel is slightly soft; docs recommend 1 for downscaled photos.
+    let sharpen = parseFloat(url.searchParams.get('s') ?? '')
+    if (isNaN(sharpen) || sharpen < 0) sharpen = width ? 1 : 0
+    if (sharpen > 5) sharpen = 5
+
     // Format-aware cache key (URL has no format, negotiation is by Accept).
     const cacheUrl = new URL(request.url)
     cacheUrl.searchParams.set('fmt', format)
@@ -137,7 +143,7 @@ export default {
       try {
         const transform = { fit: 'scale-down', width: renderWidth }
         // Light sharpening helps perceived crispness after downscaling photos.
-        if (width) transform.sharpen = 1
+        if (sharpen) transform.sharpen = sharpen
         const out = await env.IMAGES.input(src.body)
           .transform(transform)
           .output({ format: OUTPUT[format], quality })
