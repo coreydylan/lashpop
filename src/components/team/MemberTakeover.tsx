@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
+import cfImageLoader from '@/lib/cf-image-loader'
 
 // Local type mirrors the consumer's TeamMember shape — kept in sync intentionally
 // so this component can be lifted out of EnhancedTeamSectionClient without a refactor.
@@ -742,51 +743,61 @@ function PortfolioBlock({
 function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
   const [loaded, setLoaded] = useState(false)
 
-  // Use a plain <img> with max-w / max-h — the browser
-  // sizes the element to the source's natural aspect ratio, so there's no
-  // dark frame around portrait/square photos. Resizing happens at the URL
-  // level via the lashpop-img worker (loader replicates
-  // src/lib/cf-image-loader.ts for R2 URLs); Vagaro photos pass through.
-  const src = (() => {
-    const m = photo.url.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
-    if (m) {
-      return `https://lashpop-img.experial.workers.dev/${m[1]}?w=1600&q=85`
-    }
-    return photo.url
-  })()
+  // Route every source class (R2, Vagaro rackcdn, /public) through the
+  // lashpop-img worker instead of only R2 — a raw Vagaro original is
+  // multi-MB and made the loading state linger.
+  const src = cfImageLoader({ src: photo.url, width: 1600, quality: 85 })
+
+  // Reserve the photo's final box BEFORE it loads. A plain auto-sized <img>
+  // is 0x0 until bytes arrive, which left the loading placeholder floating
+  // as an unanchored 300px square, then the photo popped the layout when it
+  // landed. With stored dims we can compute the exact width the browser
+  // will settle on (bounded by max-width and max-height, ratio preserved)
+  // and show the blur-up inside that box — one stable frame, no jump.
+  const hasDims = !!(photo.width && photo.height)
+  const ratio = hasDims ? photo.width! / photo.height! : 1
+  const frameStyle: React.CSSProperties = hasDims
+    ? {
+        aspectRatio: `${photo.width} / ${photo.height}`,
+        width: `min(1200px, 92vw, calc((100vh - 80px - 200px) * ${ratio}))`,
+      }
+    : { width: 'min(600px, 92vw)', aspectRatio: '1 / 1' }
 
   return (
-    <div className="relative">
+    <div className="relative overflow-hidden rounded-lg shadow-[0_30px_80px_rgba(0,0,0,0.5)]" style={frameStyle}>
+      {/* Blur-up underlay: the DAM's tiny LQIP stretched to the final box.
+          Falls back to a soft shimmer only when no blur data exists. */}
+      {!loaded && (
+        photo.blurDataUrl ? (
+          <img
+            src={photo.blurDataUrl}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ filter: 'blur(24px)', transform: 'scale(1.1)' }}
+          />
+        ) : (
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              animation: 'lightbox-shimmer 1.6s linear infinite',
+              backgroundImage:
+                'linear-gradient(110deg, rgba(255,255,255,0.04) 8%, rgba(255,255,255,0.12) 18%, rgba(255,255,255,0.04) 33%)',
+              backgroundSize: '200% 100%',
+            }}
+          />
+        )
+      )}
       <img
         src={src}
         alt=""
         onLoad={() => setLoaded(true)}
-        className={`block rounded-lg shadow-[0_30px_80px_rgba(0,0,0,0.5)] transition-opacity duration-200 ${
+        className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-200 ${
           loaded ? 'opacity-100' : 'opacity-0'
         }`}
-        style={{
-          maxWidth: 'min(1200px, 92vw)',
-          maxHeight: 'calc(100vh - 80px - 200px)',
-          width: 'auto',
-          height: 'auto',
-        }}
       />
-      {!loaded ? (
-        <div
-          aria-hidden
-          className="absolute inset-0 rounded-lg"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(2px)',
-            animation: 'lightbox-shimmer 1.6s linear infinite',
-            backgroundImage:
-              'linear-gradient(110deg, rgba(255,255,255,0.04) 8%, rgba(255,255,255,0.12) 18%, rgba(255,255,255,0.04) 33%)',
-            backgroundSize: '200% 100%',
-            minWidth: '300px',
-            minHeight: '300px',
-          }}
-        />
-      ) : null}
       <style jsx>{`
         @keyframes lightbox-shimmer {
           0% { background-position: 200% 0; }
