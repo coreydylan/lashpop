@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import cfImageLoader from '@/lib/cf-image-loader'
+import { getPublicImageBlur } from '@/lib/image-blur'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check, UserPlus, Award, FileCheck, GraduationCap, Trophy, BookOpen } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
@@ -1068,13 +1069,18 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         {/* Team Group Photo - Full Width, taller crop */}
         <div className="mt-12 md:mt-20">
           <div className="relative w-full overflow-hidden aspect-[767/409] max-h-[820px]">
+            {/* -2x: Real-ESRGAN upscale of the 1534px original to 4000px —
+                the source export was too small for a full-bleed retina slot.
+                Swap for the photographer's original if Emily can find it. */}
             <Image
-              src="/lashpop-images/team/team-group-photo.jpg"
+              src="/lashpop-images/team/team-group-photo-2x.jpg"
               alt="The LashPop Studios team"
               fill
               priority={false}
               sizes="100vw"
               className="object-cover object-center"
+              placeholder="blur"
+              blurDataURL={getPublicImageBlur('/lashpop-images/team/team-group-photo-2x.jpg')}
             />
           </div>
         </div>
