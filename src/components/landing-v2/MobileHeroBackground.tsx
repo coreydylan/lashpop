@@ -172,7 +172,6 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
                 priority
                 fetchPriority="high"
                 decoding="async"
-                quality={90}
                 sizes="100vw"
                 {...(getPublicImageBlur(archImage.url)
                   ? { placeholder: 'blur' as const, blurDataURL: getPublicImageBlur(archImage.url) }

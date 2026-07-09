@@ -7,6 +7,7 @@ export const YelpLogo = () => (
       src="/lashpop-images/168812.png"
       alt="Yelp Logo"
       fill
+      sizes="32px"
       className="object-contain object-center"
     />
   </div>
@@ -29,6 +30,7 @@ export const VagaroLogo = () => (
       src="/lashpop-images/Vagaro_Logo.png"
       alt="Vagaro Logo"
       fill
+      sizes="32px"
       className="object-contain object-center"
     />
   </div>

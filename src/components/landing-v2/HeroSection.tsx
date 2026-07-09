@@ -243,7 +243,6 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
               priority
               decoding="async"
-              quality={90}
               sizes="100vw"
               {...(getPublicImageBlur(archImage.url)
                 ? { placeholder: 'blur' as const, blurDataURL: getPublicImageBlur(archImage.url) }
