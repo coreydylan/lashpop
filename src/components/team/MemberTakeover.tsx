@@ -208,6 +208,24 @@ export function MemberTakeover({
     handlersRef.current = { onClose, goPrev, goNext, goLightboxPrev, goLightboxNext, lightboxOpen }
   })
 
+  // Any interaction with the site header (the strip above the takeover)
+  // closes the takeover. Best practice for a full-page overlay under a live
+  // header: nav clicks should act on the page, not silently no-op behind the
+  // overlay. Capture-phase pointerdown runs before the nav's own click
+  // handler; we don't preventDefault, so once the close releases the body
+  // scroll lock the nav's smooth-scroll/navigation proceeds normally.
+  useEffect(() => {
+    if (!isOpen) return
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.clientY <= 80) {
+        setLightboxIdx(-1)
+        handlersRef.current.onClose()
+      }
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [isOpen])
+
   useEffect(() => {
     if (!isOpen) return
     const handler = (e: KeyboardEvent) => {
@@ -255,15 +273,20 @@ export function MemberTakeover({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Surface — sits below the site header (z-50), above page content */}
+          {/* Surface — sits below the site header (Navigation, z-40), above
+              page content. Every takeover layer stays under z-40 so the header
+              is always visible and interactive above the profile. */}
           <motion.div
             key="takeover-surface"
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-x-0 bottom-0 z-40 bg-cream overflow-hidden"
+            className="fixed inset-x-0 bottom-0 z-[32] bg-cream overflow-hidden"
             style={{ top: '80px' }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${member.name} — profile`}
           >
             <AnimatePresence mode="wait">
               <motion.div
@@ -425,7 +448,7 @@ export function MemberTakeover({
             animate={{ opacity: lightboxOpen || !chromeOpaque ? 0 : 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            className="pointer-events-none fixed inset-x-0 z-[45] flex justify-center"
+            className="pointer-events-none fixed inset-x-0 z-[34] flex justify-center"
             style={{ top: 'calc(80px + 22px)' }}
           >
             <div className="flex items-center gap-2">
@@ -449,7 +472,7 @@ export function MemberTakeover({
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
             onClick={onClose}
             aria-label="Close (ESC)"
-            className="fixed right-6 z-[45] flex h-10 w-10 items-center justify-center rounded-full bg-cream/85 text-charcoal/55 backdrop-blur-md hover:text-charcoal transition-opacity"
+            className="fixed right-6 z-[34] flex h-10 w-10 items-center justify-center rounded-full bg-cream/85 text-charcoal/55 backdrop-blur-md hover:text-charcoal transition-opacity"
             style={{
               top: 'calc(80px + 22px)',
               pointerEvents: lightboxOpen ? 'none' : 'auto',
@@ -469,7 +492,7 @@ export function MemberTakeover({
             animate={{ opacity: lightboxOpen ? 0 : 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            className="group pointer-events-none fixed left-6 z-[45] flex h-11 w-11 items-center justify-center"
+            className="group pointer-events-none fixed left-6 z-[34] flex h-11 w-11 items-center justify-center"
             style={{ top: '50%', transform: 'translateY(-50%)' }}
           >
             <button
@@ -491,7 +514,7 @@ export function MemberTakeover({
             animate={{ opacity: lightboxOpen ? 0 : 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25, delay: lightboxOpen ? 0 : 0.15 }}
-            className="group pointer-events-none fixed right-6 z-[45] flex h-11 w-11 items-center justify-center"
+            className="group pointer-events-none fixed right-6 z-[34] flex h-11 w-11 items-center justify-center"
             style={{ top: '50%', transform: 'translateY(-50%)' }}
           >
             <button
@@ -517,7 +540,7 @@ export function MemberTakeover({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="fixed inset-x-0 bottom-0 z-[48] flex items-center justify-center p-20"
+                className="fixed inset-x-0 bottom-0 z-[36] flex items-center justify-center p-20"
                 style={{ top: '80px' }}
               >
                 {/* Backdrop */}
@@ -547,7 +570,7 @@ export function MemberTakeover({
                   type="button"
                   onClick={() => setLightboxIdx(-1)}
                   aria-label="Close photo"
-                  className="fixed right-6 z-[49] flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur hover:bg-white/25 transition-colors"
+                  className="fixed right-6 z-[38] flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur hover:bg-white/25 transition-colors"
                   style={{ top: 'calc(80px + 20px)' }}
                 >
                   <X className="h-5 w-5" />
@@ -559,7 +582,7 @@ export function MemberTakeover({
                       type="button"
                       onClick={goLightboxPrev}
                       aria-label="Previous photo"
-                      className="fixed left-6 z-[49] flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur transition-all hover:scale-110 hover:bg-white/25"
+                      className="fixed left-6 z-[38] flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur transition-all hover:scale-110 hover:bg-white/25"
                       style={{ top: 'calc(50% + 40px)', transform: 'translateY(-50%)' }}
                     >
                       <ChevronLeft className="h-6 w-6" />
@@ -568,7 +591,7 @@ export function MemberTakeover({
                       type="button"
                       onClick={goLightboxNext}
                       aria-label="Next photo"
-                      className="fixed right-6 z-[49] flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur transition-all hover:scale-110 hover:bg-white/25"
+                      className="fixed right-6 z-[38] flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/15 text-white backdrop-blur transition-all hover:scale-110 hover:bg-white/25"
                       style={{ top: 'calc(50% + 40px)', transform: 'translateY(-50%)' }}
                     >
                       <ChevronRight className="h-6 w-6" />
