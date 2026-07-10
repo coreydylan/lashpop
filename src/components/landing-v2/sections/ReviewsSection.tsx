@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
 import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
+import { useEdgeHoverScroll } from '@/hooks/useEdgeHoverScroll'
 import { ChevronUp } from 'lucide-react'
 import { YelpLogo, GoogleLogo, VagaroLogo, YelpLogoCompact, GoogleLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import { SectionRule } from '../SectionRule'
@@ -94,6 +95,8 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
 
   // Hover-based wheel scroll - only captures wheel events when hovering
   const { wheelContainerRef } = useCarouselWheelScroll(emblaApi)
+  // Desktop: hovering the left/right edge of the strip crawls it that way.
+  const { edgeScrollRef } = useEdgeHoverScroll(emblaApi)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
   const [isMobileExpanded, setIsMobileExpanded] = useState(false)
@@ -298,7 +301,7 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
 
         {/* Full-width Reviews Container with Beautiful Frosted Glass */}
         <div
-          ref={wheelContainerRef}
+          ref={(node) => { wheelContainerRef(node); edgeScrollRef(node) }}
           className="relative"
         >
           {/* Instagram-style Snap Carousel */}

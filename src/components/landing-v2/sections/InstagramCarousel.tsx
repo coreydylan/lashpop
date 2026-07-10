@@ -6,6 +6,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
+import { useEdgeHoverScroll } from '@/hooks/useEdgeHoverScroll'
 import { SectionRule } from '../SectionRule'
 
 // Stub data using gallery images for now
@@ -83,6 +84,8 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
 
   // Hover-based wheel scroll - only captures wheel events when hovering
   const { wheelContainerRef } = useCarouselWheelScroll(emblaApi)
+  // Desktop: hovering the left/right edge of the strip crawls it that way.
+  const { edgeScrollRef } = useEdgeHoverScroll(emblaApi)
 
   // Use provided posts or fallback to gallery images
   const rawItems: GalleryItem[] = posts.length > 0
@@ -210,7 +213,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
 
         {/* Carousel Container */}
         <div
-          ref={wheelContainerRef}
+          ref={(node) => { wheelContainerRef(node); edgeScrollRef(node) }}
           className="relative w-full"
         >
           {/* Embla Viewport */}
