@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import cfImageLoader from '@/lib/cf-image-loader'
+import { FadeInImage } from '@/components/team/FadeInImage'
 import { getPublicImageBlur } from '@/lib/image-blur'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check, UserPlus, Award, FileCheck, GraduationCap, Trophy, BookOpen } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
@@ -1304,7 +1305,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                           className="object-cover scale-110 blur-2xl opacity-60"
                                         />
                                       )}
-                                      <Image
+                                      <FadeInImage
                                         src={drawerSrc}
                                         alt={selectedMember.name}
                                         fill
@@ -1316,8 +1317,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                               : "object-cover object-top"
                                         }
                                         priority
-                                        placeholder={curPhoto?.blurDataUrl ? 'blur' : 'empty'}
-                                        blurDataURL={curPhoto?.blurDataUrl ?? undefined}
+                                        blurDataUrl={curPhoto?.blurDataUrl}
                                         unoptimized={isPlaceholder}
                                       />
                                     </>

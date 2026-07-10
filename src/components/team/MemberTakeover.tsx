@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo, useRef, type ComponentProps } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
@@ -20,6 +20,7 @@ import {
 import { QuickFactsGrid, type QuickFact } from '@/components/team/QuickFactCard'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
 import cfImageLoader from '@/lib/cf-image-loader'
+import { FadeInImage } from '@/components/team/FadeInImage'
 
 // Local type mirrors the consumer's TeamMember shape — kept in sync intentionally
 // so this component can be lifted out of EnhancedTeamSectionClient without a refactor.
@@ -68,28 +69,6 @@ function isPlaceholderImage(src: string) {
 }
 function isVagaroPhoto(src: string | undefined | null) {
   return !!src && src.includes('ssl.cf2.rackcdn.com')
-}
-
-/**
- * Portfolio image with a soft blur-up. A tiny base64 LQIP (blurDataUrl) shows
- * immediately as a blurred preview, so there's never an empty box or a hard
- * pop-in — the sharp image cross-fades over the blur once decoded. The tile's
- * exact aspect ratio is reserved from stored width/height, so nothing reflows
- * while images load. Resizing/format negotiation happens on the edge via the
- * next/image custom loader (cf-image-loader → lashpop-img worker, AVIF/WebP).
- */
-function FadeInImage({
-  blurDataUrl,
-  ...props
-}: ComponentProps<typeof Image> & { blurDataUrl?: string | null }) {
-  return (
-    <Image
-      {...props}
-      alt={props.alt ?? ''}
-      placeholder={blurDataUrl ? 'blur' : 'empty'}
-      blurDataURL={blurDataUrl ?? undefined}
-    />
-  )
 }
 
 const CRED_ICON: Record<string, typeof Award> = {
