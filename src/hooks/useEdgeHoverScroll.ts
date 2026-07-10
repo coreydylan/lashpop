@@ -52,7 +52,7 @@ export function useEdgeHoverScroll(
         engine.target.set(engine.location.get())
         engine.scrollLooper.loop(Math.sign(delta) as -1 | 1)
         engine.slideLooper.loop()
-        engine.translate.to(engine.location)
+        engine.translate.to(engine.location.get())
       } catch {
         // Fallback: discrete stepping if internals changed shape.
         if (now - lastStep > 700) {
