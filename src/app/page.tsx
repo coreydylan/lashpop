@@ -147,8 +147,7 @@ export default async function HomePage() {
       studio={studio}
       founderLetterContent={founderLetterContent}
     />
-    {/* Embed the full review corpus on the homepage only — one canonical
-        location for the review JSON-LD instead of duplicating it on every page. */}
-    <ReviewSchema siteSettings={seoSettings.site} maxReviews={1000} />
+    {/* Keep review JSON-LD aligned with the reviews visitors can actually see. */}
+    <ReviewSchema siteSettings={seoSettings.site} reviews={reviews} maxReviews={15} />
   </>
 }

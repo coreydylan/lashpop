@@ -1,13 +1,12 @@
 'use client'
 
 import { useRef, useCallback } from 'react'
-import Image from 'next/image'
 import { useServiceBrowser } from '@/components/service-browser'
 import { smoothScrollToElement } from '@/lib/smoothScroll'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import WeatherLocationBadge from './WeatherLocationBadge'
-import { getPublicImageBlur } from '@/lib/image-blur'
 import { HeroArchSlideshow } from './slideshow'
+import { GracefulHeroImage } from './GracefulHeroImage'
 import type { SlideshowPreset } from '@/types/hero-slideshow'
 
 // New config format from slideshow system
@@ -52,7 +51,6 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
   const hasSlideshow = heroConfig?.preset && heroConfig.preset.images.length > 0
   const archImage = heroConfig?.fallbackImage || defaultFallbackImage
   const containerRef = useRef<HTMLDivElement>(null)
-  const imageRef = useRef<HTMLImageElement>(null)
   const imageContainerRef = useRef<HTMLDivElement>(null)
 
   // Mobile - no longer need internal scroll state
@@ -226,30 +224,14 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
         ) : (
           /* Single Image Mode - full bleed */
           <div className="absolute inset-0 overflow-hidden">
-            {/* Pre-paint fill: tinted to the hero photo's dominant tone so the
-                frosted-glass review chip and "Take Our Lash Quiz" pill don't
-                flash on stark ivory between FCP and the photo's actual paint.
-                Painted slightly inside the photo container so it disappears
-                under the Image once it lands. */}
-            <div
-              aria-hidden
-              className="absolute inset-0 bg-dusty-rose/40"
-            />
-            <Image
-              ref={imageRef}
+            <GracefulHeroImage
               src={archImage.url}
               alt="LashPop Studio Interior"
-              fill
-              className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
+              objectFit={archImage.objectFit}
+              objectPosition={`${archImage.position.x}% ${archImage.position.y}%`}
               priority
-              decoding="async"
+              fetchPriority="high"
               sizes="100vw"
-              {...(getPublicImageBlur(archImage.url)
-                ? { placeholder: 'blur' as const, blurDataURL: getPublicImageBlur(archImage.url) }
-                : {})}
-              style={{
-                objectPosition: `${archImage.position.x}% ${archImage.position.y}%`
-              }}
             />
           </div>
         )}

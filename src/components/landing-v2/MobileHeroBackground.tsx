@@ -1,9 +1,8 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
-import Image from 'next/image'
 import { HeroArchSlideshow } from './slideshow'
-import { getPublicImageBlur } from '@/lib/image-blur'
+import { GracefulHeroImage } from './GracefulHeroImage'
 import type { SlideshowPreset } from '@/types/hero-slideshow'
 
 // New config format from slideshow system
@@ -159,23 +158,14 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
             <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
           ) : (
             <>
-              {/* Pre-paint fill: same dusty-rose tone as desktop so the arched
-                  frame doesn't show stark ivory while the hero JPG is
-                  decoding. Disappears under the Image once it paints. */}
-              <div aria-hidden className="absolute inset-0 bg-dusty-rose/40" />
-              <Image
+              <GracefulHeroImage
                 src={archImage.url}
                 alt="LashPop Studio Interior"
-                fill
-                className={archImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
-                style={{ objectPosition: `${archImage.position.x}% ${archImage.position.y}%` }}
+                objectFit={archImage.objectFit}
+                objectPosition={`${archImage.position.x}% ${archImage.position.y}%`}
                 priority
                 fetchPriority="high"
-                decoding="async"
                 sizes="100vw"
-                {...(getPublicImageBlur(archImage.url)
-                  ? { placeholder: 'blur' as const, blurDataURL: getPublicImageBlur(archImage.url) }
-                  : {})}
               />
             </>
           )}

@@ -13,6 +13,32 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes hero-loading-sheen {
+  0% {
+    transform: translate3d(-120%, 0, 0) skewX(-10deg);
+  }
+  100% {
+    transform: translate3d(320%, 0, 0) skewX(-10deg);
+  }
+}
+
+.hero-loading-sheen {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 250, 246, 0.22),
+    transparent
+  );
+  animation: hero-loading-sheen 2.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-loading-sheen {
+    animation: none;
+  }
+}
+
 @layer base {
   :root {
     /* Typography - Two-font system

@@ -1,8 +1,8 @@
 'use client'
 
 import { useRef, useEffect, useCallback } from 'react'
-import Image from 'next/image'
 import { gsap, initGSAP } from '@/lib/gsap'
+import { GracefulHeroImage } from '../GracefulHeroImage'
 import { useSlideshowController } from './useSlideshowController'
 import { useSlideshowNavigation } from './useSlideshowNavigation'
 import { SlideshowIndicators } from './SlideshowIndicators'
@@ -290,12 +290,11 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
         className={`relative w-full h-full overflow-hidden ${className}`}
         style={containerStyle}
       >
-        <Image
+        <GracefulHeroImage
           src={currentImage.url}
           alt="Hero image"
-          fill
-          className={currentImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
-          style={{ objectPosition: `${currentImage.position.x}% ${currentImage.position.y}%` }}
+          objectFit={currentImage.objectFit}
+          objectPosition={`${currentImage.position.x}% ${currentImage.position.y}%`}
           priority
           fetchPriority="high"
           quality={75}
@@ -320,12 +319,12 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
         style={{ zIndex: 1 }}
       >
         {previousImage && (
-          <Image
+          <GracefulHeroImage
+            key={previousImage.id}
             src={previousImage.url}
             alt="Previous image"
-            fill
-            className={previousImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
-            style={{ objectPosition: `${previousImage.position.x}% ${previousImage.position.y}%` }}
+            objectFit={previousImage.objectFit}
+            objectPosition={`${previousImage.position.x}% ${previousImage.position.y}%`}
             quality={75}
             sizes="80vw"
           />
@@ -339,12 +338,12 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
         style={{ zIndex: 2 }}
       >
         {currentImage && (
-          <Image
+          <GracefulHeroImage
+            key={currentImage.id}
             src={currentImage.url}
             alt="Current image"
-            fill
-            className={currentImage.objectFit === 'contain' ? 'object-contain' : 'object-cover'}
-            style={{ objectPosition: `${currentImage.position.x}% ${currentImage.position.y}%` }}
+            objectFit={currentImage.objectFit}
+            objectPosition={`${currentImage.position.x}% ${currentImage.position.y}%`}
             priority
             fetchPriority="high"
             quality={75}
