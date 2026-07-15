@@ -646,7 +646,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       }
     })
 
-    return Array.from(categories).slice(0, 4) // Max 4 category chips
+    return Array.from(categories)
   }
 
   return (
@@ -800,7 +800,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             className="overflow-x-auto scrollbar-hide"
                           >
                             <div className="flex gap-1 min-w-max">
-                              {memberCategories.slice(0, 4).map((category, idx) => (
+                              {memberCategories.map((category, idx) => (
                                 <span
                                   key={`${member.id}-cat-${idx}`}
                                   className="px-2 py-0.5 text-xs font-sans font-normal bg-cream text-charcoal rounded-full whitespace-nowrap"

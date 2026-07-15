@@ -6,6 +6,23 @@ import { eq, asc, inArray } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
+const SERVICE_TAG_ORDER = [
+  'Fine Line Tattoos',
+  'Lashes',
+  'Lash Lifts',
+  'Brows',
+  'Skin Care',
+  'Waxing',
+  'Permanent Makeup',
+  'Permanent Jewelry',
+  'Injectables',
+] as const
+
+function sortServiceTags(tags: string[]): string[] {
+  const rank = new Map<string, number>(SERVICE_TAG_ORDER.map((tag, index) => [tag, index]))
+  return [...tags].sort((a, b) => (rank.get(a) ?? 999) - (rank.get(b) ?? 999) || a.localeCompare(b))
+}
+
 // Map Vagaro parent-category title → frontend tag labels. Mirrors
 // vagaroParentToTags() in src/actions/team.ts so the admin preview shows the
 // same chip strings the public team section will render.
@@ -61,10 +78,10 @@ export async function GET() {
 
     const membersWithCategories = members.map((member) => {
       const vagaroCategories = member.usesLashpopBooking
-        ? (vagaroTagsByMember.get(member.id) ?? [])
+        ? sortServiceTags(vagaroTagsByMember.get(member.id) ?? [])
         : []
       const externalCategories = !member.usesLashpopBooking
-        ? ((member.externalServiceCategories as string[] | null) ?? [])
+        ? sortServiceTags((member.externalServiceCategories as string[] | null) ?? [])
         : []
 
       return {

@@ -8,6 +8,26 @@ import { teamMemberServicesVagaro } from "@/db/schema/team_member_services_vagar
 import { services } from "@/db/schema/services"
 import { and, eq, inArray, isNotNull, asc, sql } from "drizzle-orm"
 
+// Keep specialty chips stable across syncs. Fine Line Tattoos leads for the
+// artists who offer it so the new, uncommon service is visible without a
+// horizontal swipe; the remaining categories follow the public-site order.
+const SERVICE_TAG_ORDER = [
+  'Fine Line Tattoos',
+  'Lashes',
+  'Lash Lifts',
+  'Brows',
+  'Skin Care',
+  'Waxing',
+  'Permanent Makeup',
+  'Permanent Jewelry',
+  'Injectables',
+] as const
+
+function sortServiceTags(tags: string[]): string[] {
+  const rank = new Map<string, number>(SERVICE_TAG_ORDER.map((tag, index) => [tag, index]))
+  return [...tags].sort((a, b) => (rank.get(a) ?? 999) - (rank.get(b) ?? 999) || a.localeCompare(b))
+}
+
 export async function getTeamMembers() {
   const db = getDb()
 
@@ -39,7 +59,6 @@ export async function getServicesForTeamMember(teamMemberId: string | null): Pro
   return rows
     .map(r => r.parentTitle)
     .filter((t): t is string => !!t)
-    .slice(0, 4)
 }
 
 /**
@@ -181,8 +200,8 @@ export async function getTeamMembersWithServices() {
 
   // Build a map of teamMemberId → ordered list of frontend tag labels.
   // Walks the canonical Vagaro mapping table — one row per stylist×service —
-  // and accumulates tags in first-seen order so chip order is stable across
-  // renders. Only stylists with usesLashpopBooking=true have entries here.
+  // and deduplicates them before the canonical display sort below. Only
+  // stylists with usesLashpopBooking=true have entries here.
   const tagsByMemberId = new Map<string, string[]>()
   for (const mapping of vagaroMappings) {
     const tags = vagaroParentToTags(mapping.vagaroParentTitle)
@@ -198,8 +217,8 @@ export async function getTeamMembersWithServices() {
   // Dual-mode routing: the boolean is the authority. No merge, no fallback.
   const membersWithServices = members.map((member) => {
     const categories = member.usesLashpopBooking
-      ? (tagsByMemberId.get(member.id) ?? []).slice(0, 4)
-      : ((member.externalServiceCategories as string[] | null) ?? []).slice(0, 4)
+      ? sortServiceTags(tagsByMemberId.get(member.id) ?? [])
+      : sortServiceTags((member.externalServiceCategories as string[] | null) ?? [])
 
     // Get photo crops for this member
     const photoCrops = photoCropsByMember[member.id] || {}
