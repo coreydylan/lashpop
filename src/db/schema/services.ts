@@ -1,10 +1,10 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "../sqlite-core"
 import { serviceCategories } from "./service_categories"
 import { serviceSubcategories } from "./service_subcategories"
 import { assets } from "./assets"
 
 export const services = pgTable("services", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Vagaro Integration - Source of truth for core service data
   vagaroServiceId: text("vagaro_service_id").unique(), // Links to Vagaro service

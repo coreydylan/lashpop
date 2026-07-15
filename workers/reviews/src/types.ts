@@ -39,7 +39,7 @@ export interface FetcherResult {
 }
 
 export interface Env {
-  DATABASE_URL: string
+  DB: D1Database
 
   VAGARO_CLIENT_ID: string
   VAGARO_CLIENT_SECRET: string

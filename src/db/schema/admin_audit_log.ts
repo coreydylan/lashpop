@@ -11,7 +11,7 @@
  * up in the activity log UI and any future filter/search.
  */
 
-import { pgTable, text, jsonb, timestamp, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, jsonb, timestamp, index } from '../sqlite-core'
 import { user } from './auth_user'
 
 export const adminAuditLog = pgTable('admin_audit_log', {

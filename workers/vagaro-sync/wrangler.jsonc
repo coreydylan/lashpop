@@ -11,6 +11,13 @@
     // that hits the /sync endpoint on demand.
     "crons": ["*/15 * * * *"]
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lashpop-production",
+      "database_id": "5ff90fd7-2a8d-4c0e-baaa-341f33f8aa87"
+    }
+  ],
   "observability": {
     "enabled": true
   }
@@ -20,5 +27,4 @@
   //   VAGARO_CLIENT_SECRET
   //   VAGARO_API_BASE_URL
   //   VAGARO_BUSINESS_ID
-  //   DATABASE_URL
 }

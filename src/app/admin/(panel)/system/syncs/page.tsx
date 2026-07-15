@@ -20,15 +20,15 @@ export default async function SyncsPage() {
   const db = getDb()
   const [team] = await db
     .select({
-      total: sql<number>`count(*)::int`,
-      active: sql<number>`count(*) filter (where ${teamMembers.isActive})::int`,
+      total: sql<number>`count(*)`,
+      active: sql<number>`sum(case when ${teamMembers.isActive} = 1 then 1 else 0 end)`,
       lastSync: sql<Date | null>`max(${teamMembers.lastSyncedAt})`,
     })
     .from(teamMembers)
   const [svc] = await db
     .select({
-      total: sql<number>`count(*)::int`,
-      active: sql<number>`count(*) filter (where ${services.isActive})::int`,
+      total: sql<number>`count(*)`,
+      active: sql<number>`sum(case when ${services.isActive} = 1 then 1 else 0 end)`,
       lastSync: sql<Date | null>`max(${services.lastSyncedAt})`,
     })
     .from(services)

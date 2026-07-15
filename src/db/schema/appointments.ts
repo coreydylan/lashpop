@@ -1,7 +1,7 @@
-import { pgTable, text, timestamp, uuid, numeric, boolean } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, numeric, boolean } from "../sqlite-core"
 
 export const appointments = pgTable("appointments", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // LashPop user linking (NEW - for auth system)
   userId: text("user_id"), // LashPop user who owns this appointment

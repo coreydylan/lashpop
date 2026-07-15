@@ -1,0 +1,3 @@
+# Used only by `wrangler types` so the generated Env includes the secret name.
+# Copy to .dev.vars and replace the value for local development.
+DB_PROXY_TOKEN=development-placeholder-not-a-secret

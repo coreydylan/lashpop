@@ -5,7 +5,7 @@
  * with commenting and status tracking for the LP team.
  */
 
-import { pgTable, text, timestamp, uuid, boolean } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, boolean } from "../sqlite-core"
 import { relations } from "drizzle-orm"
 
 // User roles for the punchlist
@@ -33,7 +33,7 @@ export type PunchlistAction = (typeof PUNCHLIST_ACTIONS)[number]
  * Separate from main auth - specific users with punchlist access
  */
 export const punchlistUsers = pgTable("punchlist_users", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   phoneNumber: text("phone_number").unique().notNull(),
   name: text("name").notNull(),
   role: text("role").notNull().default("team"), // owner | client | team
@@ -47,7 +47,7 @@ export const punchlistUsers = pgTable("punchlist_users", {
  * Individual tasks/items to track
  */
 export const punchlistItems = pgTable("punchlist_items", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   title: text("title").notNull(),
   description: text("description"), // Optional longer description
   status: text("status").notNull().default("open"), // open | in_progress | needs_review | complete | closed
@@ -72,7 +72,7 @@ export const punchlistItems = pgTable("punchlist_items", {
  * Discussion thread per item
  */
 export const punchlistComments = pgTable("punchlist_comments", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   itemId: uuid("item_id").references(() => punchlistItems.id, { onDelete: "cascade" }).notNull(),
   userId: uuid("user_id").references(() => punchlistUsers.id).notNull(),
   content: text("content").notNull(),
@@ -84,7 +84,7 @@ export const punchlistComments = pgTable("punchlist_comments", {
  * Audit trail of all changes
  */
 export const punchlistActivity = pgTable("punchlist_activity", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   itemId: uuid("item_id").references(() => punchlistItems.id, { onDelete: "cascade" }).notNull(),
   userId: uuid("user_id").references(() => punchlistUsers.id).notNull(),
   action: text("action").notNull(), // created | status_changed | assigned | commented | closed | reopened
@@ -98,7 +98,7 @@ export const punchlistActivity = pgTable("punchlist_activity", {
  * Simple session management for phone auth
  */
 export const punchlistSessions = pgTable("punchlist_sessions", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   userId: uuid("user_id").references(() => punchlistUsers.id, { onDelete: "cascade" }).notNull(),
   token: text("token").unique().notNull(),
   expiresAt: timestamp("expires_at").notNull(),

@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer } from "../sqlite-core"
 import { teamMembers } from "./team_members"
 
 /**
@@ -90,7 +90,7 @@ export type QuickFactType = keyof typeof QUICK_FACT_TYPES
  * Stores individual quick facts for team members (coffee order, TV show, etc.)
  */
 export const teamQuickFacts = pgTable("team_quick_facts", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   teamMemberId: uuid("team_member_id")
     .notNull()
     .references(() => teamMembers.id, { onDelete: "cascade" }),

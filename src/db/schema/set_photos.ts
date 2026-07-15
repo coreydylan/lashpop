@@ -1,9 +1,9 @@
-import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, uuid, text, timestamp } from "../sqlite-core"
 import { sets } from "./sets"
 import { assets } from "./assets"
 
 export const setPhotos = pgTable("set_photos", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   setId: uuid("set_id")
     .notNull()
     .references(() => sets.id, { onDelete: "cascade" }),

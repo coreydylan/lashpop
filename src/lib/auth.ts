@@ -15,7 +15,7 @@ let _auth: ReturnType<typeof betterAuth> | null = null
 function createAuth() {
   return betterAuth({
     database: drizzleAdapter(getDb(), {
-      provider: 'pg',
+      provider: 'sqlite',
       schema: {
         user: 'user',
         session: 'session',

@@ -1,13 +1,16 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 
-export const teamMemberType = pgEnum('team_member_type', ['employee', 'independent'])
+const uuid = (name: string) => text(name)
+const timestamp = (name: string) => integer(name, { mode: 'timestamp_ms' })
+const boolean = (name: string) => integer(name, { mode: 'boolean' })
+const json = <T>(name: string) => text(name, { mode: 'json' }).$type<T>()
 
 // Minimal mirror of src/db/schema/services.ts — only the fields this worker writes.
-export const services = pgTable('services', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const services = sqliteTable('services', {
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   vagaroServiceId: text('vagaro_service_id').unique(),
   vagaroParentServiceId: text('vagaro_parent_service_id'),
-  vagaroData: jsonb('vagaro_data').$type<unknown>(),
+  vagaroData: json<unknown>('vagaro_data'),
   vagaroImageUrl: text('vagaro_image_url'),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
@@ -31,10 +34,10 @@ export const services = pgTable('services', {
 })
 
 // Minimal mirror of src/db/schema/team_members.ts — only the fields this worker writes.
-export const teamMembers = pgTable('team_members', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const teamMembers = sqliteTable('team_members', {
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   vagaroEmployeeId: text('vagaro_employee_id').unique(),
-  vagaroData: jsonb('vagaro_data').$type<unknown>(),
+  vagaroData: json<unknown>('vagaro_data'),
   // Public Vagaro staff page fields
   vagaroPublicProviderId: integer('vagaro_public_provider_id').unique(),
   vagaroPhotoUrl: text('vagaro_photo_url'),
@@ -44,11 +47,11 @@ export const teamMembers = pgTable('team_members', {
   phone: text('phone').notNull(),
   email: text('email'),
   role: text('role').notNull(),
-  type: teamMemberType('type').notNull(),
+  type: text('type', { enum: ['employee', 'independent'] }).notNull(),
   bookingUrl: text('booking_url').notNull(),
   usesLashpopBooking: boolean('uses_lashpop_booking').default(true).notNull(),
   imageUrl: text('image_url').notNull(),
-  externalServiceCategories: jsonb('external_service_categories').$type<string[]>(),
+  externalServiceCategories: json<string[]>('external_service_categories'),
   displayOrder: text('display_order').default('0'),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -58,12 +61,12 @@ export const teamMembers = pgTable('team_members', {
 
 // Canonical Vagaro stylist→service mapping. Truncate-and-replace per stylist
 // each sync. Only stylists with uses_lashpop_booking=true populate this table.
-export const teamMemberServicesVagaro = pgTable('team_member_services_vagaro', {
-  id: uuid('id').defaultRandom().primaryKey(),
+export const teamMemberServicesVagaro = sqliteTable('team_member_services_vagaro', {
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   teamMemberId: uuid('team_member_id').notNull(),
   serviceId: uuid('service_id').notNull(),
   vagaroParentTitle: text('vagaro_parent_title'),
-  syncedAt: timestamp('synced_at', { withTimezone: true }).defaultNow().notNull(),
+  syncedAt: timestamp('synced_at').defaultNow().notNull(),
 }, (t) => ({
   uniqMemberService: unique('team_member_services_vagaro_member_service_unique')
     .on(t.teamMemberId, t.serviceId),

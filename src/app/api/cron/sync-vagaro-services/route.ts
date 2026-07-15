@@ -49,7 +49,7 @@ async function warmupDb(maxAttempts = 3): Promise<{ ok: true } | { ok: false; er
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       const db = getDb()
-      await db.execute(sql`SELECT 1`)
+      await db.run(sql`SELECT 1`)
       if (attempt > 1) console.log(`  ✓ DB warm-up succeeded on attempt ${attempt}`)
       return { ok: true }
     } catch (err) {

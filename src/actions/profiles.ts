@@ -12,7 +12,7 @@ import { vagaroSyncMappings } from '@/db/schema/vagaro_sync_mappings'
 import { user as userSchema } from '@/db/schema/auth_user'
 import { vagaroCustomers } from '@/db/schema/vagaro_customers'
 import { appointments } from '@/db/schema/appointments'
-import { eq, sql, and } from 'drizzle-orm'
+import { eq, or } from 'drizzle-orm'
 
 /**
  * Create a profile for a new user
@@ -145,7 +145,14 @@ export async function matchAndLinkVagaroCustomer(userId: string) {
   }
 
   // Search for Vagaro customer with matching phone
-  const matchingCustomers = await db.select().from(vagaroCustomers).where(sql`phones @> ${JSON.stringify([user.phoneNumber])}`)
+  const matchingCustomers = await db
+    .select()
+    .from(vagaroCustomers)
+    .where(or(
+      eq(vagaroCustomers.mobilePhone, user.phoneNumber),
+      eq(vagaroCustomers.dayPhone, user.phoneNumber),
+      eq(vagaroCustomers.nightPhone, user.phoneNumber),
+    ))
 
   if (matchingCustomers.length === 0) {
     console.log('No matching Vagaro customer found for phone:', user.phoneNumber)

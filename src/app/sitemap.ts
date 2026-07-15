@@ -5,6 +5,8 @@ import { services } from '@/db/schema/services'
 import { serviceCategories } from '@/db/schema/service_categories'
 import { eq } from 'drizzle-orm'
 
+export const dynamic = 'force-dynamic'
+
 /**
  * Generate dynamic sitemap.xml
  *

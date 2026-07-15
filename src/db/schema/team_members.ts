@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, jsonb, boolean, integer } from "drizzle-orm/pg-core"
+import { pgEnum, pgTable, text, timestamp, uuid, jsonb, boolean, integer } from "../sqlite-core"
 
 /**
  * Credential/Certification for structured data (Schema.org)
@@ -17,7 +17,7 @@ export interface TeamMemberCredential {
 export const teamMemberType = pgEnum("team_member_type", ["employee", "independent"])
 
 export const teamMembers = pgTable("team_members", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Vagaro Integration - Source of truth for employee data
   vagaroEmployeeId: text("vagaro_employee_id").unique(), // Base64 ID from v2 API
@@ -27,6 +27,9 @@ export const teamMembers = pgTable("team_members", {
   vagaroPublicProviderId: integer("vagaro_public_provider_id").unique(), // Numeric ID from public composite-staff endpoint
   vagaroPhotoUrl: text("vagaro_photo_url"), // Original-resolution photo URL from Vagaro CDN
   vagaroBio: text("vagaro_bio"), // BusinessSummary from Vagaro public profile
+  bioOverride: boolean("bio_override").default(false).notNull(),
+  imageOverride: boolean("image_override").default(false).notNull(),
+  isOffVagaro: boolean("is_off_vagaro").default(false).notNull(),
 
   // Core fields (synced from Vagaro or entered locally)
   name: text("name").notNull(),
@@ -71,7 +74,7 @@ export const teamMembers = pgTable("team_members", {
  * Team Member Services - Junction table linking team members to services they perform
  */
 export const teamMemberServices = pgTable("team_member_services", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   teamMemberId: uuid("team_member_id")
     .notNull()
     .references(() => teamMembers.id, { onDelete: "cascade" }),

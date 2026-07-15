@@ -1,0 +1,4 @@
+.dev.vars
+.wrangler
+worker-startup.cpuprofile
+worker-configuration.d.ts

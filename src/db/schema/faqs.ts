@@ -1,11 +1,11 @@
-import { pgTable, text, timestamp, uuid, integer, boolean } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, boolean } from "../sqlite-core"
 
 /**
  * FAQ Categories Table
  * Groups FAQs into logical categories (e.g., "Lash Extensions", "Policies")
  */
 export const faqCategories = pgTable("faq_categories", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   
   // Category information
   name: text("name").notNull().unique(),
@@ -26,7 +26,7 @@ export const faqCategories = pgTable("faq_categories", {
  * Individual FAQ questions and answers
  */
 export const faqItems = pgTable("faq_items", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   
   // Category reference
   categoryId: uuid("category_id")

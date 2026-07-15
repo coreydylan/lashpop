@@ -1,11 +1,11 @@
-import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, uuid, timestamp } from "../sqlite-core"
 import { assets } from "./assets"
 import { services } from "./services"
 
 // Junction table for many-to-many relationship between assets and services
 // One asset can showcase multiple service types
 export const assetServices = pgTable("asset_services", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   assetId: uuid("asset_id")
     .notNull()

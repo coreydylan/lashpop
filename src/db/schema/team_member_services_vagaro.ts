@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, unique, index } from "drizzle-orm/pg-core"
+import { pgTable, uuid, text, timestamp, unique, index } from "../sqlite-core"
 import { teamMembers } from "./team_members"
 import { services } from "./services"
 
@@ -15,7 +15,7 @@ import { services } from "./services"
  * their tags come from team_members.external_service_categories instead.
  */
 export const teamMemberServicesVagaro = pgTable("team_member_services_vagaro", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   teamMemberId: uuid("team_member_id")
     .notNull()
     .references(() => teamMembers.id, { onDelete: "cascade" }),

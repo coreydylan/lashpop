@@ -1,7 +1,7 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "../sqlite-core"
 
 export const tagCategories = pgTable("tag_categories", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Category information
   name: text("name").notNull().unique(), // Internal identifier (e.g., "lash_type")

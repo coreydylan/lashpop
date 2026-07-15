@@ -1,11 +1,11 @@
-import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, uuid, timestamp } from "../sqlite-core"
 import { assets } from "./assets"
 import { tags } from "./tags"
 
 // Junction table for many-to-many relationship between assets and tags
 // One asset can have multiple tags, one tag can be applied to multiple assets
 export const assetTags = pgTable("asset_tags", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   assetId: uuid("asset_id")
     .notNull()

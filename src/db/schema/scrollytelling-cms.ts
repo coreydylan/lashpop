@@ -1,4 +1,4 @@
-import { pgTable, varchar, integer, timestamp, text, boolean, jsonb, real, uuid, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, varchar, integer, timestamp, text, boolean, jsonb, real, uuid, pgEnum } from '../sqlite-core';
 import { relations } from 'drizzle-orm';
 
 // ============================================
@@ -68,7 +68,7 @@ export const easingEnum = pgEnum('easing', [
 
 // Compositions table - Top level container (was "projects")
 export const compositions = pgTable('scrollytelling_compositions', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
   duration: real('duration').default(1000), // Authoring units (0-1000)
@@ -87,7 +87,7 @@ export const compositions = pgTable('scrollytelling_compositions', {
 
 // Layers table - Visual and control layers
 export const layers = pgTable('scrollytelling_layers', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   composition_id: uuid('composition_id').references(() => compositions.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   type: layerTypeEnum('type').notNull(),
@@ -102,7 +102,7 @@ export const layers = pgTable('scrollytelling_layers', {
 
 // Tracks table - Timeline tracks per layer
 export const tracks = pgTable('scrollytelling_tracks', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   composition_id: uuid('composition_id').references(() => compositions.id, { onDelete: 'cascade' }).notNull(),
   layer_id: uuid('layer_id').references(() => layers.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 255 }),
@@ -115,7 +115,7 @@ export const tracks = pgTable('scrollytelling_tracks', {
 
 // Clips table - Bounded ranges on timeline with properties
 export const clips = pgTable('scrollytelling_clips', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   track_id: uuid('track_id').references(() => tracks.id, { onDelete: 'cascade' }).notNull(),
   composition_id: uuid('composition_id').references(() => compositions.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 255 }),
@@ -130,7 +130,7 @@ export const clips = pgTable('scrollytelling_clips', {
 
 // Cues table - Control points on timeline (was "keystones")
 export const cues = pgTable('scrollytelling_cues', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   composition_id: uuid('composition_id').references(() => compositions.id, { onDelete: 'cascade' }).notNull(),
   name: varchar('name', { length: 255 }),
   position: real('position').notNull(), // Timeline position (0-1000)
@@ -142,7 +142,7 @@ export const cues = pgTable('scrollytelling_cues', {
 
 // CueActions table - Actions triggered by cues
 export const cueActions = pgTable('scrollytelling_cue_actions', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   cue_id: uuid('cue_id').references(() => cues.id, { onDelete: 'cascade' }).notNull(),
   target_layer_id: uuid('target_layer_id').references(() => layers.id),
   target_selector: varchar('target_selector', { length: 255 }), // CSS selector or ID
@@ -154,7 +154,7 @@ export const cueActions = pgTable('scrollytelling_cue_actions', {
 
 // Triggers table - Maps runtime input to timeline progress
 export const triggers = pgTable('scrollytelling_triggers', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   composition_id: uuid('composition_id').references(() => compositions.id, { onDelete: 'cascade' }).notNull(),
   type: triggerTypeEnum('type').notNull(),
   selector: varchar('selector', { length: 255 }), // DOM selector if applicable
@@ -171,7 +171,7 @@ export const triggers = pgTable('scrollytelling_triggers', {
 
 // Blocks table - Content units
 export const blocks = pgTable('scrollytelling_blocks', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   composition_id: uuid('composition_id').references(() => compositions.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
   type: blockTypeEnum('type').notNull(),
@@ -189,7 +189,7 @@ export const blocks = pgTable('scrollytelling_blocks', {
 
 // DrawerConfigs table - Drawer-specific properties
 export const drawerConfigs = pgTable('scrollytelling_drawer_configs', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   layer_id: uuid('layer_id').references(() => layers.id, { onDelete: 'cascade' }).unique().notNull(),
   dock_position: dockPositionEnum('dock_position').notNull(),
   dock_height_px: integer('dock_height_px').default(60),
@@ -208,7 +208,7 @@ export const drawerConfigs = pgTable('scrollytelling_drawer_configs', {
 
 // HeaderConfigs table - Header-specific properties
 export const headerConfigs = pgTable('scrollytelling_header_configs', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   layer_id: uuid('layer_id').references(() => layers.id, { onDelete: 'cascade' }).unique().notNull(),
   height_px: integer('height_px').default(60),
   is_sticky: boolean('is_sticky').default(true),
@@ -221,7 +221,7 @@ export const headerConfigs = pgTable('scrollytelling_header_configs', {
 
 // SurfaceSlides table - Content for surface layer
 export const surfaceSlides = pgTable('scrollytelling_surface_slides', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   layer_id: uuid('layer_id').references(() => layers.id, { onDelete: 'cascade' }).notNull(),
   order_index: integer('order_index').notNull(),
   content_block_id: uuid('content_block_id').references(() => blocks.id),
@@ -237,7 +237,7 @@ export const surfaceSlides = pgTable('scrollytelling_surface_slides', {
 
 // DrawerStates table - Track drawer state transitions
 export const drawerStates = pgTable('scrollytelling_drawer_states', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   drawer_config_id: uuid('drawer_config_id').references(() => drawerConfigs.id, { onDelete: 'cascade' }).notNull(),
   clip_id: uuid('clip_id').references(() => clips.id, { onDelete: 'cascade' }),
   state: drawerStateEnum('state').notNull(),
@@ -248,7 +248,7 @@ export const drawerStates = pgTable('scrollytelling_drawer_states', {
 
 // CollisionRules table - Handle layer conflicts
 export const collisionRules = pgTable('scrollytelling_collision_rules', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   composition_id: uuid('composition_id').references(() => compositions.id, { onDelete: 'cascade' }).notNull(),
   layer_a_id: uuid('layer_a_id').references(() => layers.id).notNull(),
   layer_b_id: uuid('layer_b_id').references(() => layers.id).notNull(),
@@ -264,7 +264,7 @@ export const collisionRules = pgTable('scrollytelling_collision_rules', {
 
 // PlaybackEvents table - Track user interactions
 export const playbackEvents = pgTable('scrollytelling_playback_events', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   composition_id: uuid('composition_id').references(() => compositions.id, { onDelete: 'cascade' }).notNull(),
   session_id: varchar('session_id', { length: 255 }).notNull(),
   event_type: varchar('event_type', { length: 50 }).notNull(),

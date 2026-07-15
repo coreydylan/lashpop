@@ -4,3 +4,9 @@ tmp
 /before-*.png
 /*.png
 scripts/instagram-import/images
+.env*
+.wrangler
+_emily_batch_20260630
+emily-616
+workers/*/node_modules
+workers/*/.wrangler

@@ -1,11 +1,15 @@
-import { pgTable, text, timestamp, uuid, integer, boolean, index, jsonb, smallint } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, boolean, index, jsonb, smallint } from "../sqlite-core"
 
 import { teamMembers } from "./team_members"
 
 export const reviews = pgTable("reviews", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   source: text("source").default("vagaro").notNull(),
   sourceUrl: text("source_url").notNull(),
+  sourceUrls: jsonb("source_urls")
+    .$type<Array<{ source: string; url: string }>>()
+    .default([])
+    .notNull(),
   reviewerName: text("reviewer_name").notNull(),
   subject: text("subject"),
   /**

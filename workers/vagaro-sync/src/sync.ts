@@ -78,7 +78,7 @@ async function resolveCategoryId(db: Db, parentTitle: string | null | undefined)
   if (!slug) return null
 
   if (!categoryIdBySlugCache) {
-    const rows = await db.execute<{ id: string; slug: string }>(
+    const rows = await db.all<{ id: string; slug: string }>(
       sql`SELECT id, slug FROM service_categories`
     )
     categoryIdBySlugCache = new Map(rows.map(r => [r.slug, r.id]))
@@ -698,7 +698,11 @@ export async function syncAllTeamMembers(db: Db, client: VagaroClient): Promise<
       vagaroEmployeeId: teamMembers.vagaroEmployeeId,
     })
     .from(teamMembers)
-    .where(and(isNotNull(teamMembers.vagaroEmployeeId), eq(teamMembers.usesLashpopBooking, true)))
+    .where(and(
+      isNotNull(teamMembers.vagaroEmployeeId),
+      eq(teamMembers.usesLashpopBooking, true),
+      eq(teamMembers.isActive, true),
+    ))
 
   const total = rows.length
   let synced = 0
@@ -825,14 +829,26 @@ export async function syncStylistServices(
         })
       }
 
-      await db.transaction(async (tx) => {
-        await tx
-          .delete(teamMemberServicesVagaro)
-          .where(eq(teamMemberServicesVagaro.teamMemberId, stylist.id))
-        if (inserts.length > 0) {
-          await tx.insert(teamMemberServicesVagaro).values(inserts)
-        }
-      })
+      const removeExisting = db
+        .delete(teamMemberServicesVagaro)
+        .where(eq(teamMemberServicesVagaro.teamMemberId, stylist.id))
+      if (inserts.length > 0) {
+        // D1 has a lower bind-variable ceiling than Postgres. Each row uses
+        // four parameters (generated id + three fields), so keep every insert
+        // safely below the limit and execute all chunks atomically with the
+        // delete in one D1 batch.
+        const insertChunks = Array.from(
+          { length: Math.ceil(inserts.length / 10) },
+          (_, index) => inserts.slice(index * 10, index * 10 + 10),
+        )
+        const operations = [
+          removeExisting,
+          ...insertChunks.map(chunk => db.insert(teamMemberServicesVagaro).values(chunk)),
+        ] as [any, ...any[]]
+        await db.batch(operations)
+      } else {
+        await removeExisting
+      }
 
       stats.succeeded++
       stats.mappingsWritten += inserts.length

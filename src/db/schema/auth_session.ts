@@ -4,7 +4,7 @@
  * Manages user sessions
  */
 
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp } from '../sqlite-core'
 import { user } from './auth_user'
 
 export const session = pgTable('session', {

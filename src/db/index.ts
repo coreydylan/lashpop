@@ -1,6 +1,9 @@
 import { config } from "dotenv"
-import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js"
-import postgres from "postgres"
+import {
+  drizzle as drizzleSqlite,
+  type AsyncBatchRemoteCallback,
+  type AsyncRemoteCallback,
+} from "drizzle-orm/sqlite-proxy"
 
 // Auth schemas (BetterAuth)
 import { user } from "./schema/auth_user"
@@ -71,7 +74,8 @@ import { transactions } from "./schema/transactions"
 config({ path: ".env.local" })
 config({ path: ".env" })
 
-const databaseUrl = process.env.DATABASE_URL
+const databaseUrl = process.env.CLOUDFLARE_DB_URL
+const databaseToken = process.env.CLOUDFLARE_DB_TOKEN
 
 const dbSchema = {
   // Auth tables
@@ -143,50 +147,76 @@ const dbSchema = {
   transactions
 }
 
-let dbInstance: ReturnType<typeof drizzlePostgres> | null = null
-let clientInstance: ReturnType<typeof postgres> | null = null
+interface WorkerQueryResponse {
+  rows: unknown[]
+}
+
+interface WorkerBatchResponse {
+  results: WorkerQueryResponse[]
+}
+
+async function postToDatabase<T>(path: string, body: unknown): Promise<T> {
+  if (!databaseUrl) {
+    throw new Error("CLOUDFLARE_DB_URL is not set")
+  }
+  if (!databaseToken) {
+    throw new Error("CLOUDFLARE_DB_TOKEN is not set")
+  }
+
+  const response = await fetch(`${databaseUrl.replace(/\/$/, "")}${path}`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${databaseToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new Error(`Cloudflare database request failed (${response.status}): ${detail}`)
+  }
+
+  return response.json() as Promise<T>
+}
+
+const remoteQuery: AsyncRemoteCallback = async (sql, params, method) => {
+  return postToDatabase<WorkerQueryResponse>("/query", { sql, params, method })
+}
+
+const remoteBatch: AsyncBatchRemoteCallback = async (batch) => {
+  const response = await postToDatabase<WorkerBatchResponse>("/batch", { batch })
+  return response.results
+}
+
+function createDatabase() {
+  return drizzleSqlite(remoteQuery, remoteBatch, { schema: dbSchema })
+}
+
+let dbInstance: ReturnType<typeof createDatabase> | null = null
 
 export function getDb() {
   if (!databaseUrl) {
-    throw new Error("DATABASE_URL is not set")
+    throw new Error("CLOUDFLARE_DB_URL is not set")
   }
-  if (!dbInstance || !clientInstance) {
-    // Trim any whitespace/newlines from the URL
-    let connectionUrl = databaseUrl.trim()
-
-    // Add pgbouncer parameter for Supabase pooler if not present
-    if (connectionUrl.includes('pooler.supabase.com') && !connectionUrl.includes('pgbouncer=true')) {
-      connectionUrl = connectionUrl + (connectionUrl.includes('?') ? '&' : '?') + 'pgbouncer=true'
-    }
-
-    // Configure postgres-js with connection pooling optimized for Supabase
-    const isServerless = process.env.VERCEL || process.env.NEXT_RUNTIME === 'edge'
-    clientInstance = postgres(connectionUrl, {
-      prepare: false,
-      max: isServerless ? 1 : 5, // More connections for local dev
-      idle_timeout: 20,
-      max_lifetime: 60 * 5,
-      connect_timeout: isServerless ? 30 : 15, // Longer timeout for serverless cold starts
-      connection: {
-        application_name: 'lashpop_app',
-      },
-    })
-    dbInstance = drizzlePostgres(clientInstance, { schema: dbSchema })
+  if (!databaseToken) {
+    throw new Error("CLOUDFLARE_DB_TOKEN is not set")
+  }
+  if (!dbInstance) {
+    dbInstance = createDatabase()
   }
   return dbInstance
 }
 
 // Export cleanup function for graceful shutdown
 export async function closeDb() {
-  if (clientInstance) {
-    await clientInstance.end()
-    clientInstance = null
-    dbInstance = null
-  }
+  dbInstance = null
 }
 
 // NOTE: Do not export an eagerly-initialized `db` instance here.
-// Use getDb() for lazy initialization to avoid build errors when DATABASE_URL isn't set.
+// Use getDb() for lazy initialization to avoid build errors when the Worker
+// endpoint is not configured.
 
 // Re-export schema tables for convenience
 export {

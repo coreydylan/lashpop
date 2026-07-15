@@ -1,4 +1,4 @@
-import { pgTable, smallint, text, timestamp, uuid, unique } from "drizzle-orm/pg-core"
+import { pgTable, smallint, text, timestamp, uuid, unique } from "../sqlite-core"
 
 import { reviews } from "./reviews"
 import { teamMembers } from "./team_members"
@@ -11,7 +11,7 @@ import { teamMembers } from "./team_members"
 export const teamMemberHighlights = pgTable(
   "team_member_highlights",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
     teamMemberId: uuid("team_member_id").notNull().references(() => teamMembers.id, { onDelete: "cascade" }),
     reviewId: uuid("review_id").notNull().references(() => reviews.id, { onDelete: "cascade" }),
     rank: smallint("rank").notNull(),

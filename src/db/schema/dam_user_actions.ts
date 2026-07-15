@@ -5,7 +5,7 @@
  * for analytics, auditing, and behavior analysis
  */
 
-import { pgTable, text, jsonb, timestamp, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, jsonb, timestamp, index } from '../sqlite-core'
 import { user } from './auth_user'
 
 export const damUserActions = pgTable('dam_user_actions', {

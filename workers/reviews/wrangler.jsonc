@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-04-01",
   "compatibility_flags": ["nodejs_compat"],
-  "account_id": "8276973f31803dc6a1597c1396d64c4c",
+  "account_id": "4f7293208a9aa982963007fffd966b56",
 
   // Every 6 hours (0:00, 6:00, 12:00, 18:00 UTC)
   "triggers": {
@@ -44,10 +44,19 @@
     "bindings": [
       {
         "class_name": "ReviewEditor",
-        "name": "REVIEW_EDITOR"
+        "name": "REVIEW_EDITOR",
+        "script_name": "lashpop-reviews"
       }
     ]
   },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lashpop-production",
+      "database_id": "5ff90fd7-2a8d-4c0e-baaa-341f33f8aa87"
+    }
+  ],
 
   "migrations": [
     {
@@ -57,7 +66,6 @@
   ]
 
   // Secrets (set via `wrangler secret put`):
-  //   DATABASE_URL                 — Supabase Postgres connection string
   //   VAGARO_CLIENT_ID             — OAuth client id
   //   VAGARO_CLIENT_SECRET         — OAuth client secret
   //   VAGARO_BUSINESS_ID           — encrypted business id (e.g. gPkAwudgKVSOL3jl3AV9aw==)

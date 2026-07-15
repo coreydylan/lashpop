@@ -1,11 +1,11 @@
-import { pgTable, text, timestamp, uuid, integer, boolean } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, boolean } from "../sqlite-core"
 
 /**
  * Work With Us Carousel Photos Table
  * Stores photos selected for the carousel on the Work With Us page
  */
 export const workWithUsCarouselPhotos = pgTable("work_with_us_carousel_photos", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Reference to DAM asset
   assetId: uuid("asset_id").notNull(),

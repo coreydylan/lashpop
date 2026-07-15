@@ -7,7 +7,7 @@ import { serviceSubcategories } from "@/db/schema/service_subcategories"
 import { assetServices } from "@/db/schema/asset_services"
 import { assets } from "@/db/schema/assets"
 import { and, eq, asc, inArray, sql } from "drizzle-orm"
-import { alias } from "drizzle-orm/pg-core"
+import { alias } from "drizzle-orm/sqlite-core"
 
 export async function getServices() {
   const db = getDb()

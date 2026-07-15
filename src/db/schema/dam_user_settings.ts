@@ -5,7 +5,7 @@
  * including view modes, filters, grouping, and card display settings
  */
 
-import { pgTable, text, jsonb, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, text, jsonb, timestamp } from '../sqlite-core'
 import { user } from './auth_user'
 
 export const damUserSettings = pgTable('dam_user_settings', {

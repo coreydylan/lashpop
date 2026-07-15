@@ -1,11 +1,11 @@
-import { pgTable, text, timestamp, uuid, integer, jsonb, boolean } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, jsonb, boolean } from "../sqlite-core"
 
 /**
  * Website Settings Table
  * Stores configuration for various sections of the landing page
  */
 export const websiteSettings = pgTable("website_settings", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   
   // Section identifier (e.g., 'hero', 'reviews', 'instagram')
   section: text("section").notNull().unique(),
@@ -23,7 +23,7 @@ export const websiteSettings = pgTable("website_settings", {
  * Stores which reviews are selected for the homepage and their display order
  */
 export const homepageReviews = pgTable("homepage_reviews", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   
   // Reference to the review
   reviewId: uuid("review_id").notNull(),

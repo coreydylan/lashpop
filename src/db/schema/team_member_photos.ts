@@ -1,8 +1,8 @@
-import { pgTable, text, timestamp, uuid, boolean, jsonb } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, boolean, jsonb } from "../sqlite-core"
 import { teamMembers } from "./team_members"
 
 export const teamMemberPhotos = pgTable("team_member_photos", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   teamMemberId: uuid("team_member_id")
     .notNull()

@@ -74,12 +74,18 @@ async function scoreNewReviews(sql: Sql, env: MeshBridgeBindings, errors: string
     WHERE quality_score IS NULL
       AND show_on_website = true
       AND length(review_text) >= 20
-      AND NOT (admin_locked_fields ? 'quality_score')
+      AND NOT EXISTS (
+        SELECT 1 FROM json_each(COALESCE(admin_locked_fields, '[]'))
+        WHERE value = 'quality_score'
+      )
       AND lower(trim(reviewer_name)) NOT IN (
         'verified', 'venue', 'anonymous', 'guest', 'customer', 'client', 'user', 'ok'
       )
       AND length(trim(reviewer_name)) >= 2
-      AND reviewer_name !~* '(cancel|appt|appointment|booking)'
+      AND lower(reviewer_name) NOT LIKE '%cancel%'
+      AND lower(reviewer_name) NOT LIKE '%appt%'
+      AND lower(reviewer_name) NOT LIKE '%appointment%'
+      AND lower(reviewer_name) NOT LIKE '%booking%'
     ORDER BY review_date DESC NULLS LAST
     LIMIT 200
   `
@@ -111,10 +117,13 @@ source: ${r.source} | rating: ${r.rating} | stylist: ${r.subject ?? 'unknown'}
       const result = await sql`
         UPDATE reviews
         SET quality_score = ${clamped},
-            quality_scored_at = NOW(),
+            quality_scored_at = ${Date.now()},
             editor_notes = ${entry.notes ?? null}
         WHERE id = ${r.id}
-          AND NOT (admin_locked_fields ? 'quality_score')
+          AND NOT EXISTS (
+            SELECT 1 FROM json_each(COALESCE(admin_locked_fields, '[]'))
+            WHERE value = 'quality_score'
+          )
         RETURNING id
       `
       if (result.length) scored++
@@ -142,7 +151,10 @@ async function recheckStaleStaff(sql: Sql, env: MeshBridgeBindings, errors: stri
       AND hidden_reason IS NULL
       AND team_member_id IS NULL
       AND length(review_text) >= 40
-      AND NOT (admin_locked_fields ? 'show_on_website')
+      AND NOT EXISTS (
+        SELECT 1 FROM json_each(COALESCE(admin_locked_fields, '[]'))
+        WHERE value = 'show_on_website'
+      )
     ORDER BY review_date DESC NULLS LAST
     LIMIT 80
   `
@@ -170,9 +182,12 @@ async function recheckStaleStaff(sql: Sql, env: MeshBridgeBindings, errors: stri
         UPDATE reviews
         SET show_on_website = false,
             hidden_reason = 'stale_team_member',
-            updated_at = NOW()
-        WHERE id = ANY(${toHide}::uuid[])
-          AND NOT (admin_locked_fields ? 'show_on_website')
+            updated_at = ${Date.now()}
+        WHERE id IN (${sql.list(toHide)})
+          AND NOT EXISTS (
+            SELECT 1 FROM json_each(COALESCE(admin_locked_fields, '[]'))
+            WHERE value = 'show_on_website'
+          )
         RETURNING id
       `
       hidden += result.length
@@ -202,7 +217,10 @@ async function rebuildHighlights(sql: Sql, env: MeshBridgeBindings, errors: stri
           'verified', 'venue', 'anonymous', 'guest', 'customer', 'client', 'user', 'ok'
         )
         AND length(trim(reviewer_name)) >= 2
-        AND reviewer_name !~* '(cancel|appt|appointment|booking)'
+        AND lower(reviewer_name) NOT LIKE '%cancel%'
+        AND lower(reviewer_name) NOT LIKE '%appt%'
+        AND lower(reviewer_name) NOT LIKE '%appointment%'
+        AND lower(reviewer_name) NOT LIKE '%booking%'
       ORDER BY review_date DESC NULLS LAST
       LIMIT 25
     `
@@ -268,8 +286,8 @@ async function rebuildHighlights(sql: Sql, env: MeshBridgeBindings, errors: stri
       }
       try {
         await sql`
-          INSERT INTO team_member_highlights (team_member_id, review_id, rank, editor_notes)
-          VALUES (${m.id}, ${p.reviewId}, ${p.rank}, ${p.notes})
+          INSERT INTO team_member_highlights (id, team_member_id, review_id, rank, editor_notes)
+          VALUES (${crypto.randomUUID()}, ${m.id}, ${p.reviewId}, ${p.rank}, ${p.notes})
           ON CONFLICT DO NOTHING
         `
         inserted++

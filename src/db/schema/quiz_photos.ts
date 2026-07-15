@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "drizzle-orm/pg-core"
+import { pgEnum, pgTable, text, timestamp, uuid, integer, boolean, jsonb } from "../sqlite-core"
 import { assets } from "./assets"
 
 // Lash styles for the quiz (excluding lashLift which was removed)
@@ -12,7 +12,7 @@ export interface QuizPhotoCropData {
 }
 
 export const quizPhotos = pgTable("quiz_photos", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Reference to DAM asset
   assetId: uuid("asset_id")
@@ -44,7 +44,7 @@ export type SelectQuizPhoto = typeof quizPhotos.$inferSelect
 
 // Result page settings for each lash style
 export const quizResultSettings = pgTable("quiz_result_settings", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Lash style this setting is for (unique per style)
   lashStyle: quizLashStyle("lash_style").notNull().unique(),

@@ -1,0 +1,13 @@
+{
+  "name": "@lashpop/db-worker",
+  "private": true,
+  "scripts": {
+    "check": "tsc --noEmit && wrangler deploy --dry-run && wrangler check startup",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types --env-file .dev.vars.example --strict-vars false"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "wrangler": "^4.111.0"
+  }
+}

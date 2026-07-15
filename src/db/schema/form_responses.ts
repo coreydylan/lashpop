@@ -1,7 +1,7 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid } from "../sqlite-core"
 
 export const formResponses = pgTable("form_responses", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Vagaro Integration
   vagaroResponseId: text("vagaro_response_id").unique().notNull(),

@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid, integer, jsonb } from "drizzle-orm/pg-core"
+import { pgEnum, pgTable, text, timestamp, uuid, integer, jsonb } from "../sqlite-core"
 import { teamMembers } from "./team_members"
 
 export const assetType = pgEnum("asset_type", ["image", "video"])
@@ -7,7 +7,7 @@ export const lashLength = pgEnum("lash_length", ["S", "M", "L"])
 export const lashCurl = pgEnum("lash_curl", ["1", "2", "3", "4"])
 
 export const assets = pgTable("assets", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // File information
   fileName: text("file_name").notNull(),

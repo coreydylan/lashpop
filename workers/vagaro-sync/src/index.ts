@@ -1,5 +1,4 @@
-import { sql } from 'drizzle-orm'
-import { closeDb, openDb } from './db'
+import { openDb } from './db'
 import {
   syncAllServices,
   syncAllTeamMembers,
@@ -12,7 +11,7 @@ import {
 import { VagaroClient, type VagaroEnv } from './vagaro-client'
 
 interface Env extends VagaroEnv {
-  DATABASE_URL: string
+  DB: D1Database
   VAGARO_PUBLIC_BUSINESS_ID: string // numeric business ID for the public staff endpoint
 }
 
@@ -24,7 +23,7 @@ interface Result {
 }
 
 async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
-  const { db, client } = openDb(env.DATABASE_URL)
+  const db = openDb(env.DB)
   const vagaro = new VagaroClient(env)
 
   const result: Result = {
@@ -35,9 +34,8 @@ async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
   }
 
   try {
-    await db.execute(sql`SELECT 1`)
+    await env.DB.prepare('SELECT 1').first()
   } catch (err) {
-    await closeDb(client)
     throw new Error(`DB warmup failed: ${err instanceof Error ? err.message : String(err)}`)
   }
 
@@ -79,8 +77,6 @@ async function runSync(env: Env): Promise<{ result: Result; allOk: boolean }> {
     result.stylistServices.error = err instanceof Error ? err.message : String(err)
     console.error('stylist services sync threw:', err)
   }
-
-  await closeDb(client)
 
   const allOk =
     result.services.success &&

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { requireAdminApi } from '@/lib/admin/auth'
@@ -60,7 +60,7 @@ export async function PUT(req: NextRequest) {
       target: websiteSettings.section,
       set: {
         config: merged as unknown as Record<string, unknown>,
-        updatedAt: sql`now()`,
+        updatedAt: new Date(),
       },
     })
 

@@ -129,7 +129,7 @@ export class ReviewEditor {
       }),
     )
 
-    const sql = openDb(this.env.DATABASE_URL)
+    const sql = openDb(this.env.DB)
     await sql.unsafe('SET statement_timeout = 0')
 
     try {

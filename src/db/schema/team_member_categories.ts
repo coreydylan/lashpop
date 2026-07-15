@@ -1,4 +1,4 @@
-import { pgTable, uuid, primaryKey } from "drizzle-orm/pg-core"
+import { pgTable, uuid, primaryKey } from "../sqlite-core"
 import { teamMembers } from "./team_members"
 import { serviceCategories } from "./service_categories"
 

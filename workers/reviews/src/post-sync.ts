@@ -83,16 +83,16 @@ export async function updateReviewStats(
       SELECT id, source AS platform FROM reviews
       WHERE source IN ('google', 'vagaro', 'yelp')
       UNION
-      SELECT r.id, su->>'source' AS platform
-      FROM reviews r, LATERAL jsonb_array_elements(r.source_urls) AS su
-      WHERE su->>'source' IN ('google', 'vagaro', 'yelp')
+      SELECT r.id, json_extract(su.value, '$.source') AS platform
+      FROM reviews r, json_each(COALESCE(r.source_urls, '[]')) AS su
+      WHERE json_extract(su.value, '$.source') IN ('google', 'vagaro', 'yelp')
     ),
     counts AS (
-      SELECT platform AS source, COUNT(DISTINCT id)::int AS count
+      SELECT platform AS source, COUNT(DISTINCT id) AS count
       FROM per_platform GROUP BY platform
     ),
     ratings AS (
-      SELECT source, AVG(rating)::numeric(3,1)::text AS avg_rating
+      SELECT source, printf('%.1f', AVG(rating)) AS avg_rating
       FROM reviews WHERE source IN ('google', 'vagaro', 'yelp')
       GROUP BY source
     ),
@@ -135,12 +135,12 @@ export async function updateReviewStats(
     const ratingStr = rating.toFixed(1)
 
     await sql`
-      INSERT INTO review_stats (source, rating, review_count, updated_at)
-      VALUES (${source}, ${ratingStr}::numeric, ${reviewCount}, NOW())
+      INSERT INTO review_stats (id, source, rating, review_count, updated_at)
+      VALUES (${crypto.randomUUID()}, ${source}, ${rating}, ${reviewCount}, ${Date.now()})
       ON CONFLICT (source) DO UPDATE
-      SET rating = EXCLUDED.rating,
-          review_count = EXCLUDED.review_count,
-          updated_at = NOW()
+      SET rating = excluded.rating,
+          review_count = excluded.review_count,
+          updated_at = excluded.updated_at
     `
     updated.push({ source, rating, reviewCount })
   }
@@ -164,10 +164,13 @@ export async function applyStaleTeamMemberFilter(sql: Sql): Promise<StaleStats> 
       UPDATE reviews
       SET show_on_website = false,
           hidden_reason = ${STALE},
-          updated_at = NOW()
-      WHERE team_member_id = ANY(${inactiveIds}::uuid[])
+          updated_at = ${Date.now()}
+      WHERE team_member_id IN (${sql.list(inactiveIds)})
         AND hidden_reason IS NULL
-        AND NOT (admin_locked_fields ? 'show_on_website')
+        AND NOT EXISTS (
+          SELECT 1 FROM json_each(COALESCE(admin_locked_fields, '[]'))
+          WHERE value = 'show_on_website'
+        )
       RETURNING id
     `
     hidden = result.length
@@ -178,13 +181,16 @@ export async function applyStaleTeamMemberFilter(sql: Sql): Promise<StaleStats> 
     UPDATE reviews
     SET show_on_website = true,
         hidden_reason = NULL,
-        updated_at = NOW()
+        updated_at = ${Date.now()}
     WHERE hidden_reason = ${STALE}
       AND team_member_id IS NOT NULL
-      AND NOT (admin_locked_fields ? 'show_on_website')
+      AND NOT EXISTS (
+        SELECT 1 FROM json_each(COALESCE(admin_locked_fields, '[]'))
+        WHERE value = 'show_on_website'
+      )
       AND (
-        ${inactiveIds.length === 0}::boolean
-        OR team_member_id <> ALL(${inactiveIds}::uuid[])
+        ${inactiveIds.length === 0}
+        OR team_member_id NOT IN (${sql.list(inactiveIds)})
       )
     RETURNING id
   `
@@ -243,6 +249,7 @@ export async function autoPromoteToHomepage(
   const minLen = settings.auto_promote_min_text_length
   const months = settings.auto_promote_recency_months
   const minScore = settings.auto_promote_min_quality_score
+  const oldestReviewDate = Date.now() - months * 30 * 24 * 60 * 60 * 1000
   // Days of age → 1 point of quality erosion. Sort by an "effective score"
   // = quality_score - days_old / decay. Unscored reviews are treated as 5
   // (mid) so they aren't excluded, but won't outrank a high-quality fresh one.
@@ -259,25 +266,28 @@ export async function autoPromoteToHomepage(
       AND homepage_dismissed = false
       AND length(review_text) >= ${minLen}
       AND review_date IS NOT NULL
-      AND review_date >= NOW() - (${months}::int * INTERVAL '1 month')
+      AND review_date >= ${oldestReviewDate}
       AND (quality_score IS NULL OR quality_score >= ${minScore})
       AND lower(trim(reviewer_name)) NOT IN (
         'verified', 'venue', 'anonymous', 'guest', 'customer', 'client', 'user', 'ok'
       )
       AND length(trim(reviewer_name)) >= 2
-      AND reviewer_name !~* '(cancel|appt|appointment|booking)'
+      AND lower(reviewer_name) NOT LIKE '%cancel%'
+      AND lower(reviewer_name) NOT LIKE '%appt%'
+      AND lower(reviewer_name) NOT LIKE '%appointment%'
+      AND lower(reviewer_name) NOT LIKE '%booking%'
       AND (
-        ${pinnedIds.length === 0}::boolean
-        OR id <> ALL(${pinnedIds}::uuid[])
+        ${pinnedIds.length === 0}
+        OR id NOT IN (${sql.list(pinnedIds)})
       )
       AND (
-        ${inactiveIds.length === 0}::boolean
+        ${inactiveIds.length === 0}
         OR team_member_id IS NULL
-        OR team_member_id <> ALL(${inactiveIds}::uuid[])
+        OR team_member_id NOT IN (${sql.list(inactiveIds)})
       )
     ORDER BY (
       COALESCE(quality_score, 5)
-      - EXTRACT(EPOCH FROM (NOW() - review_date)) / 86400 / ${decay}
+      - (${Date.now()} - review_date) / 86400000.0 / ${decay}
     ) DESC NULLS LAST,
     review_date DESC NULLS LAST
     LIMIT 80
@@ -311,8 +321,8 @@ export async function autoPromoteToHomepage(
 
   for (let i = 0; i < picked.length; i++) {
     await sql`
-      INSERT INTO homepage_reviews (review_id, display_order, is_pinned)
-      VALUES (${picked[i].id}, ${maxPinnedOrder + i + 1}, ${false})
+      INSERT INTO homepage_reviews (id, review_id, display_order, is_pinned)
+      VALUES (${crypto.randomUUID()}, ${picked[i].id}, ${maxPinnedOrder + i + 1}, ${false})
     `
   }
 

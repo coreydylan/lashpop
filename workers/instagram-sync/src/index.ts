@@ -1,13 +1,13 @@
-import { closeDb, openDb, type Sql } from './db'
-import { downloadImage, fetchRecentPosts, type IgPost } from './ig'
+import { downloadImage, fetchRecentPosts } from './ig'
 
 interface Env {
   BUCKET: R2Bucket
-  DATABASE_URL: string
+  DB: D1Database
   IG_SESSION_ID: string
   IG_DS_USER_ID: string
   IG_CSRF_TOKEN: string
   NEXT_PUBLIC_R2_BUCKET_URL: string
+  MANUAL_TRIGGER_SECRET?: string
 }
 
 interface RunResult {
@@ -48,33 +48,30 @@ async function run(env: Env, limit = 24): Promise<RunResult> {
     return result
   }
 
-  const sql = openDb(env.DATABASE_URL)
-  await sql.unsafe('SET statement_timeout = 0')
-
-  try {
+  {
     // Look up the ig_carousel tag once
-    const carouselTagRows = await sql<Array<{ id: string }>>`
-      SELECT id FROM tags WHERE name = 'ig_carousel' LIMIT 1
-    `
-    const carouselTag = carouselTagRows[0]
+    const carouselTag = await env.DB
+      .prepare("SELECT id FROM tags WHERE name = 'ig_carousel' LIMIT 1")
+      .first<{ id: string }>()
 
-    const collectionTagRows = await sql<Array<{ id: string }>>`
-      SELECT t.id FROM tags t
-      JOIN tag_categories tc ON tc.id = t.category_id
-      WHERE t.name = 'instagram' AND tc.name = 'collections'
-      LIMIT 1
-    `
-    const collectionTag = collectionTagRows[0]
+    const collectionTag = await env.DB
+      .prepare(`SELECT t.id FROM tags t
+        JOIN tag_categories tc ON tc.id = t.category_id
+        WHERE t.name = 'instagram' AND tc.name = 'collections'
+        LIMIT 1`)
+      .first<{ id: string }>()
 
     // Remove old recoveredFromCache rows once (idempotent re-runs find none)
-    const oldRows = await sql<Array<{ id: string }>>`
-      SELECT id FROM assets
-      WHERE source = 'instagram' AND source_metadata::text LIKE '%recoveredFromCache%'
-    `
+    const { results: oldRows } = await env.DB
+      .prepare("SELECT id FROM assets WHERE source = 'instagram' AND source_metadata LIKE '%recoveredFromCache%'")
+      .all<{ id: string }>()
     if (oldRows.length > 0) {
       const oldIds = oldRows.map(r => r.id)
-      await sql`DELETE FROM asset_tags WHERE asset_id IN ${sql(oldIds)}`
-      await sql`DELETE FROM assets WHERE id IN ${sql(oldIds)}`
+      const placeholders = oldIds.map(() => '?').join(', ')
+      await env.DB.batch([
+        env.DB.prepare(`DELETE FROM asset_tags WHERE asset_id IN (${placeholders})`).bind(...oldIds),
+        env.DB.prepare(`DELETE FROM assets WHERE id IN (${placeholders})`).bind(...oldIds),
+      ])
       result.oldRemoved = oldRows.length
       console.log(`  removed ${oldRows.length} old cached rows`)
     }
@@ -96,59 +93,67 @@ async function run(env: Env, limit = 24): Promise<RunResult> {
           const r2Url = `${env.NEXT_PUBLIC_R2_BUCKET_URL.replace(/\/$/, '')}/${key}`
           const externalId = `${post.shortcode}_${img.index}`
 
-          const inserted = await sql<Array<{ id: string }>>`
+          const assetId = crypto.randomUUID()
+          const inserted = await env.DB.prepare(`
             INSERT INTO assets (
+              id,
               file_name, file_path, file_type, mime_type, file_size,
               external_id, source, source_metadata, caption, alt_text,
               width, height, uploaded_at, updated_at
             ) VALUES (
-              ${`${post.shortcode}_${img.index}.jpg`},
-              ${r2Url},
-              ${'image'},
-              ${'image/jpeg'},
-              ${buf.byteLength},
-              ${externalId},
-              ${'instagram'},
-              ${sql.json({
-                permalink: post.permalink,
-                post_type: post.postType,
-                date_utc: post.takenAt,
-                image_index: img.index,
-                imported_at: new Date().toISOString(),
-              })},
-              ${post.caption || null},
-              ${img.alt || null},
-              ${img.width},
-              ${img.height},
-              NOW(),
-              NOW()
+              ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             ON CONFLICT (external_id) DO NOTHING
             RETURNING id
-          `
+          `).bind(
+            assetId,
+            `${post.shortcode}_${img.index}.jpg`,
+            r2Url,
+            'image',
+            'image/jpeg',
+            buf.byteLength,
+            externalId,
+            'instagram',
+            JSON.stringify({
+              permalink: post.permalink,
+              post_type: post.postType,
+              date_utc: post.takenAt,
+              image_index: img.index,
+              imported_at: new Date().toISOString(),
+            }),
+            post.caption || null,
+            img.alt || null,
+            img.width,
+            img.height,
+            Date.now(),
+            Date.now(),
+          ).first<{ id: string }>()
 
-          if (inserted.length > 0) {
+          if (inserted) {
             result.rowsInserted++
-            const assetId = inserted[0].id
             if (carouselTag) {
-              await sql`
-                INSERT INTO asset_tags (asset_id, tag_id)
-                VALUES (${assetId}, ${carouselTag.id})
-                ON CONFLICT DO NOTHING
-              `
+              await env.DB.prepare(`
+                INSERT INTO asset_tags (id, asset_id, tag_id)
+                SELECT ?, ?, ?
+                WHERE NOT EXISTS (
+                  SELECT 1 FROM asset_tags WHERE asset_id = ? AND tag_id = ?
+                )
+              `).bind(crypto.randomUUID(), assetId, carouselTag.id, assetId, carouselTag.id).run()
             }
             if (collectionTag) {
-              await sql`
-                INSERT INTO asset_tags (asset_id, tag_id)
-                VALUES (${assetId}, ${collectionTag.id})
-                ON CONFLICT DO NOTHING
-              `
+              await env.DB.prepare(`
+                INSERT INTO asset_tags (id, asset_id, tag_id)
+                SELECT ?, ?, ?
+                WHERE NOT EXISTS (
+                  SELECT 1 FROM asset_tags WHERE asset_id = ? AND tag_id = ?
+                )
+              `).bind(crypto.randomUUID(), assetId, collectionTag.id, assetId, collectionTag.id).run()
             }
           }
 
           console.log(
             `  [${post.shortcode}#${img.index}] ${img.width}x${img.height} ` +
-              `${(buf.byteLength / 1024).toFixed(0)}KB ${inserted.length ? 'NEW' : 'exists'}`,
+              `${(buf.byteLength / 1024).toFixed(0)}KB ${inserted ? 'NEW' : 'exists'}`,
           )
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
@@ -157,8 +162,6 @@ async function run(env: Env, limit = 24): Promise<RunResult> {
         }
       }
     }
-  } finally {
-    await closeDb(sql)
   }
 
   return result
@@ -179,9 +182,32 @@ export default {
   },
 
   async fetch(req: Request, env: Env): Promise<Response> {
-    // Allow manual invocation: GET /?limit=24
     const url = new URL(req.url)
-    const limit = Number(url.searchParams.get('limit') ?? 24)
+
+    if (url.pathname === '/health') {
+      return Response.json({
+        status: 'ok',
+        instagramSessionConfigured: Boolean(
+          env.IG_SESSION_ID && env.IG_DS_USER_ID && env.IG_CSRF_TOKEN,
+        ),
+      })
+    }
+
+    if (url.pathname !== '/run') {
+      return new Response('Not found', { status: 404 })
+    }
+
+    if (!env.MANUAL_TRIGGER_SECRET) {
+      return new Response('Manual trigger not configured', { status: 503 })
+    }
+    if (req.headers.get('authorization') !== `Bearer ${env.MANUAL_TRIGGER_SECRET}`) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+
+    const requestedLimit = Number(url.searchParams.get('limit') ?? 24)
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(24, Math.max(1, Math.trunc(requestedLimit)))
+      : 24
     try {
       const result = await run(env, limit)
       return new Response(JSON.stringify(result, null, 2), {

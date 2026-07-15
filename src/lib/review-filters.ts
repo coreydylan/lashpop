@@ -148,7 +148,11 @@ export async function applyStaleTeamMemberFilter(): Promise<StaleFilterStats> {
       .set({ showOnWebsite: true, hiddenReason: null, updatedAt: new Date() })
       .where(and(
         inArray(reviews.id, Array.from(toRestore)),
-        sql`NOT (admin_locked_fields ? 'show_on_website')`,
+        sql`NOT EXISTS (
+          SELECT 1
+          FROM json_each(COALESCE(${reviews.adminLockedFields}, '[]'))
+          WHERE value = 'show_on_website'
+        )`,
       ))
   }
   if (toHide.size) {
@@ -161,7 +165,11 @@ export async function applyStaleTeamMemberFilter(): Promise<StaleFilterStats> {
       })
       .where(and(
         inArray(reviews.id, Array.from(toHide)),
-        sql`NOT (admin_locked_fields ? 'show_on_website')`,
+        sql`NOT EXISTS (
+          SELECT 1
+          FROM json_each(COALESCE(${reviews.adminLockedFields}, '[]'))
+          WHERE value = 'show_on_website'
+        )`,
       ))
   }
 

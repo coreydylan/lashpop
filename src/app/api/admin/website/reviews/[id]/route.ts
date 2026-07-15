@@ -11,10 +11,11 @@
  *   takes over again on the next pass.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
 import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
+import { requireAdminApi } from '@/lib/admin/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,6 +39,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await params
   const body = (await req.json()) as PatchBody
 
@@ -76,21 +80,19 @@ export async function PATCH(
 
   const db = getDb()
 
-  // Update locks: union with any existing locks, then subtract unlocked.
+  // Update locks in application code so the query works identically on D1.
   if (lockColumns.size > 0 || (body.unlock && body.unlock.length > 0)) {
     const unlockArr = (body.unlock ?? []).filter(c => LOCKABLE_COLUMNS.has(c))
     const addArr = Array.from(lockColumns).filter(c => LOCKABLE_COLUMNS.has(c))
-    setClauses.adminLockedFields = sql`
-      (
-        SELECT COALESCE(jsonb_agg(DISTINCT c), '[]'::jsonb)
-        FROM unnest(
-          ARRAY(
-            SELECT jsonb_array_elements_text(${reviews.adminLockedFields}::jsonb)
-          ) || ${addArr}::text[]
-        ) c
-        WHERE NOT (c = ANY(${unlockArr}::text[]))
-      )
-    `
+    const [existing] = await db
+      .select({ adminLockedFields: reviews.adminLockedFields })
+      .from(reviews)
+      .where(eq(reviews.id, id))
+      .limit(1)
+    const merged = new Set(existing?.adminLockedFields ?? [])
+    for (const column of addArr) merged.add(column)
+    for (const column of unlockArr) merged.delete(column)
+    setClauses.adminLockedFields = Array.from(merged)
   }
 
   const result = await db

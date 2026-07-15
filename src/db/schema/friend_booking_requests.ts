@@ -4,14 +4,14 @@
  * Manages appointment bookings made on behalf of friends with consent flow
  */
 
-import { pgTable, uuid, text, timestamp, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, boolean } from '../sqlite-core'
 import { user } from './auth_user'
 import { services } from './services'
 import { teamMembers } from './team_members'
 import { appointments } from './appointments'
 
 export const friendBookingRequests = pgTable('friend_booking_requests', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: uuid('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
 
   // Requester (who's making the booking)
   requesterUserId: text('requester_user_id')

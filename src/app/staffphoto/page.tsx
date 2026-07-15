@@ -105,7 +105,7 @@ export default function StaffPhotoToolPage() {
       fd.append('file', file)
       fd.append('preset', preset)
       const res = await fetch(
-        'https://lashpop-staffphoto-optimize.9f745064e644311ed09914b9a12e9c7380ce62b7.workers.dev/optimize',
+        'https://lashpop-staffphoto-optimize.experial.workers.dev/optimize',
         { method: 'POST', body: fd },
       )
       if (!res.ok) {

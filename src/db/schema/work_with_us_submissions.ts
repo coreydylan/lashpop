@@ -1,4 +1,4 @@
-import { pgTable, text, integer, jsonb, timestamp, uuid, index } from "drizzle-orm/pg-core"
+import { pgTable, text, integer, jsonb, timestamp, uuid, index } from "../sqlite-core"
 
 /**
  * Work With Us Submissions
@@ -8,7 +8,7 @@ import { pgTable, text, integer, jsonb, timestamp, uuid, index } from "drizzle-o
  * gets lost in an inbox.
  */
 export const workWithUsSubmissions = pgTable("work_with_us_submissions", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // 'employee' | 'booth' | 'training'
   path: text("path").notNull(),

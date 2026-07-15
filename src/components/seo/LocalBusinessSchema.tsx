@@ -85,8 +85,8 @@ async function getReviewStats(): Promise<ReviewStats> {
     const db = getDb()
     const stats = await db
       .select({
-        count: sql<number>`count(*)::int`,
-        averageRating: sql<number>`round(avg(${reviews.rating})::numeric, 1)::float`
+        count: sql<number>`count(*)`,
+        averageRating: sql<number>`round(avg(${reviews.rating}), 1)`
       })
       .from(reviews)
       .where(

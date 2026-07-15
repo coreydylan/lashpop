@@ -4,7 +4,7 @@
  * Stores OTP codes for phone/email verification
  */
 
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp } from '../sqlite-core'
 
 export const verification = pgTable('verification', {
   id: text('id').primaryKey(),

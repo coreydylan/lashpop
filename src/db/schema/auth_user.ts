@@ -4,7 +4,7 @@
  * Core authentication table managed by BetterAuth
  */
 
-import { pgTable, text, boolean, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, text, boolean, timestamp } from '../sqlite-core'
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),

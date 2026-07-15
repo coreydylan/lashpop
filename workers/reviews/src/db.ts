@@ -1,22 +1,80 @@
-import postgres from 'postgres'
-
 import type { NormalizedReview } from './types'
 
-export type Sql = postgres.Sql
+type JsonBinding = { kind: 'json'; value: unknown }
+type ListBinding = { kind: 'list'; values: unknown[] }
 
-export function openDb(databaseUrl: string): Sql {
-  return postgres(databaseUrl.trim(), {
-    prepare: false,
-    max: 1,
-    idle_timeout: 5,
-    max_lifetime: 60,
-    connect_timeout: 30,
-    connection: { application_name: 'lashpop_reviews_worker' },
-  })
+export interface Sql {
+  <T extends object[] = Array<Record<string, unknown>>>(
+    strings: TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<T>
+  json(value: unknown): JsonBinding
+  list(values: unknown[]): ListBinding
+  unsafe(statement: string): Promise<void>
+  end(): Promise<void>
+}
+
+const JSON_COLUMNS = new Set(['source_urls', 'config', 'admin_locked_fields'])
+
+function toD1Value(value: unknown): string | number | null {
+  if (value === null || value === undefined) return null
+  if (value instanceof Date) return value.getTime()
+  if (typeof value === 'boolean') return value ? 1 : 0
+  if (typeof value === 'string' || typeof value === 'number') return value
+  throw new TypeError(`Unsupported D1 binding type: ${typeof value}`)
+}
+
+function decodeRow(row: Record<string, unknown>): Record<string, unknown> {
+  for (const column of JSON_COLUMNS) {
+    const value = row[column]
+    if (typeof value === 'string') {
+      try { row[column] = JSON.parse(value) } catch { /* retain malformed source data */ }
+    }
+  }
+  return row
+}
+
+export function openDb(database: D1Database): Sql {
+  const query = async <T extends object[]>(
+    strings: TemplateStringsArray,
+    ...values: unknown[]
+  ): Promise<T> => {
+    let statement = strings[0]
+    const params: Array<string | number | null> = []
+
+    for (let index = 0; index < values.length; index++) {
+      const value = values[index]
+      if (value && typeof value === 'object' && (value as JsonBinding).kind === 'json') {
+        statement += '?'
+        params.push(JSON.stringify((value as JsonBinding).value))
+      } else if (value && typeof value === 'object' && (value as ListBinding).kind === 'list') {
+        const list = (value as ListBinding).values
+        statement += list.length ? list.map(() => '?').join(', ') : 'NULL'
+        params.push(...list.map(toD1Value))
+      } else {
+        statement += '?'
+        params.push(toD1Value(value))
+      }
+      statement += strings[index + 1]
+    }
+
+    const result = await database.prepare(statement).bind(...params).all<Record<string, unknown>>()
+    return result.results.map(decodeRow) as T
+  }
+
+  const sql = query as Sql
+  sql.json = (value) => ({ kind: 'json', value })
+  sql.list = (values) => ({ kind: 'list', values })
+  sql.unsafe = async (statement) => {
+    if (/^SET\s+/i.test(statement.trim())) return
+    await database.prepare(statement).run()
+  }
+  sql.end = async () => undefined
+  return sql
 }
 
 export async function closeDb(sql: Sql): Promise<void> {
-  await sql.end({ timeout: 5 })
+  await sql.end()
 }
 
 /**
@@ -139,17 +197,14 @@ export async function upsertReviews(sql: Sql, batch: NormalizedReview[]): Promis
   // batch. Scoped to the fingerprints we care about — fast even for big tables.
   // We need review_text + reviewer_name back too so the in-memory verifier
   // can confirm the 200-char + name-prefix gates before folding.
-  const batchFingerprints = Array.from(new Set(batch.map(r => fingerprint(r.reviewText))))
   const existing = await sql<Array<{
     id: string
-    fp: string
     review_text: string
     reviewer_name: string | null
     source_urls: Array<{ source: string; url: string }>
   }>>`
-    SELECT id, reviews_fingerprint(review_text) AS fp, review_text, reviewer_name, source_urls
+    SELECT id, review_text, reviewer_name, source_urls
     FROM reviews
-    WHERE reviews_fingerprint(review_text) = ANY(${batchFingerprints})
   `
   // A single fingerprint can map to MULTIPLE distinct stored rows (different
   // reviewers with same opener). Keep them all and let the verifier pick.
@@ -160,14 +215,15 @@ export async function upsertReviews(sql: Sql, batch: NormalizedReview[]): Promis
     sourceUrls: Array<{ source: string; url: string }>
   }>>()
   for (const row of existing) {
-    const list = byFp.get(row.fp) ?? []
+    const fp = fingerprint(row.review_text)
+    const list = byFp.get(fp) ?? []
     list.push({
       id: row.id,
       textKey: textKey(row.review_text),
       namePrefix: namePrefix(row.reviewer_name),
       sourceUrls: row.source_urls ?? [],
     })
-    byFp.set(row.fp, list)
+    byFp.set(fp, list)
   }
 
   let insertedReviews = 0
@@ -188,10 +244,11 @@ export async function upsertReviews(sql: Sql, batch: NormalizedReview[]): Promis
       )
       if (!already && r.sourceUrl) {
         const entry = { source: r.source, url: r.sourceUrl }
+        const sourceUrls = [...match.sourceUrls, entry]
         await sql`
           UPDATE reviews
-          SET source_urls = source_urls || ${sql.json([entry])}::jsonb,
-              updated_at = now()
+          SET source_urls = ${sql.json(sourceUrls)},
+              updated_at = ${Date.now()}
           WHERE id = ${match.id}
         `
         match.sourceUrls.push(entry)
@@ -209,15 +266,15 @@ export async function upsertReviews(sql: Sql, batch: NormalizedReview[]): Promis
     const reviewDate = r.reviewDate ? new Date(r.reviewDate) : null
     const responseDate = r.responseDate ? new Date(r.responseDate) : null
     const sourceUrlSeed = r.sourceUrl
-      ? sql.json([{ source: r.source, url: r.sourceUrl }])
-      : sql.json([])
+      ? [{ source: r.source, url: r.sourceUrl }]
+      : []
 
     await sql`
       INSERT INTO reviews (
-        source, source_url, source_urls, reviewer_name, subject, team_member_id, review_text,
+        id, source, source_url, source_urls, reviewer_name, subject, team_member_id, review_text,
         rating, review_date, response_text, response_date, raw_payload
       ) VALUES (
-        ${r.source}, ${r.sourceUrl}, ${sourceUrlSeed}::jsonb, ${r.reviewerName}, ${r.subject}, ${r.teamMemberId ?? null}, ${r.reviewText},
+        ${crypto.randomUUID()}, ${r.source}, ${r.sourceUrl}, ${sql.json(sourceUrlSeed)}, ${r.reviewerName}, ${r.subject}, ${r.teamMemberId ?? null}, ${r.reviewText},
         ${r.rating}, ${reviewDate}, ${r.responseText}, ${responseDate}, ${null}
       )
     `
@@ -225,25 +282,25 @@ export async function upsertReviews(sql: Sql, batch: NormalizedReview[]): Promis
 
     // Mirror the saveTestimonials behavior: insert into testimonials too (auto-approved),
     // also deduped by clientName+reviewText.
-    const dupTestimonial = await sql<Array<{ exists: boolean }>>`
+    const dupTestimonial = await sql<Array<{ found: boolean }>>`
       SELECT EXISTS(
         SELECT 1 FROM testimonials
         WHERE lower(client_name) = ${r.reviewerName.toLowerCase()}
           AND lower(review_text) = ${buildTestimonialText(r).toLowerCase()}
-      ) AS exists
+      ) AS found
     `
-    if (!dupTestimonial[0]?.exists) {
+    if (!dupTestimonial[0]?.found) {
       const [{ max_display_order }] = await sql<Array<{ max_display_order: number }>>`
         SELECT COALESCE(MAX(display_order), 0) AS max_display_order FROM testimonials
       `
       await sql`
         INSERT INTO testimonials (
-          client_name, review_text, service_id, rating, client_image,
+          id, client_name, review_text, service_id, rating, client_image,
           is_featured, is_approved, display_order, created_at, updated_at
         ) VALUES (
-          ${r.reviewerName}, ${buildTestimonialText(r)}, ${null}, ${r.rating}, ${null},
+          ${crypto.randomUUID()}, ${r.reviewerName}, ${buildTestimonialText(r)}, ${null}, ${r.rating}, ${null},
           ${false}, ${true}, ${(max_display_order ?? 0) + 1},
-          ${reviewDate ?? new Date()}, NOW()
+          ${reviewDate ?? new Date()}, ${Date.now()}
         )
       `
       insertedTestimonials++

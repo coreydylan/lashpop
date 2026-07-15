@@ -1,9 +1,9 @@
-import { pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { pgEnum, pgTable, text, timestamp, uuid } from "../sqlite-core"
 
 export const membership = pgEnum("membership", ["free", "pro"])
 
 export const customers = pgTable("customers", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   userId: text("user_id").unique().notNull(),
   membership: membership("membership").default("free").notNull(),
   stripeCustomerId: text("stripe_customer_id").unique(),

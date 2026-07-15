@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid } from "../sqlite-core"
 
 /**
  * Newsletter Subscriptions Table
@@ -11,7 +11,7 @@ import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
  * subscribeToNewsletter action treats as "already subscribed".
  */
 export const newsletterSubscriptions = pgTable("newsletter_subscriptions", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Subscriber email (lowercased + trimmed before insert)
   email: text("email").notNull().unique(),

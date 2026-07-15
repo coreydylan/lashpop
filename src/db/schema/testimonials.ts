@@ -1,8 +1,8 @@
-import { pgTable, text, timestamp, uuid, integer, boolean } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, boolean } from "../sqlite-core"
 import { services } from "./services"
 
 export const testimonials = pgTable("testimonials", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
   clientName: text("client_name").notNull(),
   serviceId: uuid("service_id").references(() => services.id, { onDelete: "set null" }),
   rating: integer("rating").notNull(), // 1-5

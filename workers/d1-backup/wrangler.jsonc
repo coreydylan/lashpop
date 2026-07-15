@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lashpop-d1-backup",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-15",
+  "account_id": "4f7293208a9aa982963007fffd966b56",
+
+  // Daily at 09:00 UTC (2:00 AM Pacific during daylight saving time).
+  "triggers": {
+    "crons": ["0 9 * * *"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lashpop-production",
+      "database_id": "5ff90fd7-2a8d-4c0e-baaa-341f33f8aa87"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "BACKUPS",
+      "bucket_name": "lashpop-dam"
+    }
+  ],
+
+  "vars": {
+    "BACKUP_PREFIX": "backups/lashpop-d1",
+    "RETENTION_DAYS": "35"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  "limits": {
+    "cpu_ms": 30000
+  }
+
+  // Secret (set via `wrangler secret put MANUAL_TRIGGER_SECRET`):
+  //   MANUAL_TRIGGER_SECRET — bearer token for POST /run
+}

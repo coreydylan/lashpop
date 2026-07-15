@@ -4,12 +4,12 @@
  * Links LashPop users to Vagaro customers for bidirectional sync
  */
 
-import { pgTable, uuid, text, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, jsonb } from '../sqlite-core'
 import { user } from './auth_user'
 import { profiles } from './profiles'
 
 export const vagaroSyncMappings = pgTable('vagaro_sync_mappings', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: uuid('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
 
   // LashPop side
   userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
@@ -17,7 +17,7 @@ export const vagaroSyncMappings = pgTable('vagaro_sync_mappings', {
 
   // Vagaro side
   vagaroCustomerId: text('vagaro_customer_id').unique().notNull(),
-  vagaroBusinessIds: text('vagaro_business_ids').array().default([]),
+  vagaroBusinessIds: jsonb('vagaro_business_ids').$type<string[]>().default([]),
 
   // Sync metadata
   syncStatus: text('sync_status').default('active'), // active, pending, failed

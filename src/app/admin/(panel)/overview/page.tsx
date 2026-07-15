@@ -65,7 +65,7 @@ async function loadDashboardData() {
   // Newsletter reads are wrapped so the page still renders if the table
   // is missing or read perms change.
   const newsletterCountPromise = db
-    .select({ count: sql<number>`count(*)::int` })
+    .select({ count: sql<number>`count(*)` })
     .from(newsletterSubscriptions)
     .catch((err) => {
       console.warn('[overview] newsletter count read failed', err.message)
@@ -87,13 +87,13 @@ async function loadDashboardData() {
 
     // Reviews that haven't been scored AND aren't already hidden
     db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(reviews)
       .where(and(isNull(reviews.qualityScore), eq(reviews.showOnWebsite, true))),
 
     // Pinned reviews currently rendering
     db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)` })
       .from(homepageReviews)
       .where(eq(homepageReviews.isPinned, true)),
 

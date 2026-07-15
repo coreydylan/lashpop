@@ -1,9 +1,9 @@
-import { pgTable, text, timestamp, uuid, integer, boolean } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uuid, integer, boolean } from "../sqlite-core"
 import { serviceCategories } from "./service_categories"
 import { assets } from "./assets"
 
 export const serviceSubcategories = pgTable("service_subcategories", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id").$defaultFn(() => crypto.randomUUID()).primaryKey(),
 
   // Parent category
   categoryId: uuid("category_id")
