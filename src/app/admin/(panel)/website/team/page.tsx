@@ -89,6 +89,7 @@ const CATEGORY_OPTIONS = [
   'Skin Care',
   'Permanent Makeup',
   'Permanent Jewelry',
+  'Fine Line Tattoos',
   'Injectables',
   'Wellness',
   'Plasma',
@@ -1038,4 +1039,3 @@ export default function TeamManagerPage() {
     </div>
   )
 }
-

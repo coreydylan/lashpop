@@ -129,7 +129,7 @@ export default async function HomePage() {
 
   // Filter service categories to only include the main ones shown on the home page
   // These should match the defaultServiceCategories in ServicesSection.tsx
-  const allowedCategorySlugs = ['lashes', 'brows', 'facials', 'waxing', 'permanent-makeup', 'specialty', 'injectables', 'bundles']
+  const allowedCategorySlugs = ['lashes', 'brows', 'facials', 'waxing', 'permanent-makeup', 'specialty', 'fine-line-tattoos', 'injectables', 'bundles']
   const filteredServiceCategories = serviceCategories.filter(cat => allowedCategorySlugs.includes(cat.slug))
 
   return <>

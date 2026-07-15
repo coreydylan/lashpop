@@ -77,6 +77,14 @@ export const defaultServiceCategories: ServiceCategory[] = [
     icon: '/lashpop-images/services/thin/permanent-jewelry-icon.svg',
   },
   {
+    id: 'fine-line-tattoos',
+    slug: 'fine-line-tattoos',
+    title: 'FINE LINE TATTOOS',
+    tagline: 'Tiny, personal + yours.',
+    description: 'Delicate, custom tattoos designed around your story and style. From tiny symbols and meaningful words to soft florals and one-of-a-kind linework, each piece is thoughtfully created to feel uniquely yours.',
+    icon: '/lashpop-images/services/fine-line-tattoos.jpg',
+  },
+  {
     id: 'injectables',
     slug: 'injectables',
     title: 'BOTOX',
@@ -102,7 +110,9 @@ function ServiceCard({
       {/* Icon */}
       <div className="flex justify-center mb-4">
         <div className={`relative ${
-          category.slug === 'lashes' || category.slug === 'lash-lifts' || category.slug === 'brows'
+          category.slug === 'fine-line-tattoos'
+            ? 'w-20 h-16 rounded-xl overflow-hidden'
+            : category.slug === 'lashes' || category.slug === 'lash-lifts' || category.slug === 'brows'
             ? 'w-20 h-10'
             : 'w-24 h-12'
         }`}>
@@ -246,7 +256,9 @@ function MobileSwipeableServiceCards({
           <div className="flex flex-col items-center text-center px-6 py-6 flex-1">
             {/* Icon */}
             <div className={`relative mb-4 ${
-              currentCategory.slug === 'lashes' || currentCategory.slug === 'lash-lifts' || currentCategory.slug === 'brows'
+              currentCategory.slug === 'fine-line-tattoos'
+                ? 'w-20 h-16 rounded-xl overflow-hidden'
+                : currentCategory.slug === 'lashes' || currentCategory.slug === 'lash-lifts' || currentCategory.slug === 'brows'
                 ? 'w-16 h-8'
                 : 'w-20 h-10'
             }`}>
@@ -459,28 +471,19 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
           <SectionRule />
         </div>
 
-        {/* Services Grid - 4 on top, 4 on bottom */}
-        <div className="space-y-8">
-          {/* Top row - 4 items */}
-          <div className="grid grid-cols-4 gap-6 items-start">
-            {serviceCategories.slice(0, 4).map((category, index) => (
-              <ServiceCard
-                key={category.id || `cat-${index}`}
-                category={category}
-                onClick={() => handleCategoryClick(category.slug)}
-              />
-            ))}
-          </div>
-          {/* Bottom row - 4 items */}
-          <div className="grid grid-cols-4 gap-6 items-start">
-            {serviceCategories.slice(4).map((category, index) => (
-              <ServiceCard
-                key={category.id || `cat-bottom-${index}`}
-                category={category}
-                onClick={() => handleCategoryClick(category.slug)}
-              />
-            ))}
-          </div>
+        {/* Nine services form a balanced 3×3; the legacy eight-card set stays 4×2. */}
+        <div className={`grid items-start ${
+          serviceCategories.length === 9
+            ? 'grid-cols-3 gap-x-8 gap-y-10'
+            : 'grid-cols-4 gap-6'
+        }`}>
+          {serviceCategories.map((category, index) => (
+            <ServiceCard
+              key={category.id || `cat-${index}`}
+              category={category}
+              onClick={() => handleCategoryClick(category.slug)}
+            />
+          ))}
         </div>
 
         {/* Book Now Button - Below services */}

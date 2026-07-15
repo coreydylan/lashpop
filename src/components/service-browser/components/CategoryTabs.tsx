@@ -12,6 +12,7 @@ const CATEGORY_DISPLAY_NAMES: Record<string, string> = {
   'waxing': 'Waxing',
   'permanent-makeup': 'Permanent Makeup',
   'specialty': 'Permanent Jewelry',
+  'fine-line-tattoos': 'Fine Line Tattoos',
   'injectables': 'Botox',
   'bundles': 'Bundles',
 }
@@ -24,6 +25,7 @@ const CATEGORY_ORDER: string[] = [
   'waxing',
   'permanent-makeup',
   'specialty',
+  'fine-line-tattoos',
   'injectables',
   'bundles',
 ]

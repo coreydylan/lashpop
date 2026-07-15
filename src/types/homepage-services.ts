@@ -103,6 +103,16 @@ export const DEFAULT_HOMEPAGE_SERVICES: HomepageServicesContent = {
       enabled: true,
     },
     {
+      id: 'fine-line-tattoos',
+      slug: 'fine-line-tattoos',
+      title: 'FINE LINE TATTOOS',
+      tagline: 'Tiny, personal + yours.',
+      description:
+        'Delicate, custom tattoos designed around your story and style. From tiny symbols and meaningful words to soft florals and one-of-a-kind linework, each piece is thoughtfully created to feel uniquely yours.',
+      icon: '/lashpop-images/services/fine-line-tattoos.jpg',
+      enabled: true,
+    },
+    {
       id: 'injectables',
       slug: 'injectables',
       title: 'BOTOX',

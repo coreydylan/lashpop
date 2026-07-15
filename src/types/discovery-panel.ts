@@ -79,7 +79,8 @@ export const SERVICE_PRIORITIES: Record<string, number> = {
   'permanent-makeup': 4,
   'facials': 5,
   'permanent-jewelry': 6,
-  'botox': 7,
+  'fine-line-tattoos': 7,
+  'botox': 8,
 };
 
 export const LASH_LOOKS: Record<LashLook, { name: string; description: string; imageUrl?: string }> = {

@@ -46,6 +46,8 @@ const VAGARO_CATEGORY_TO_SLUG: Record<string, string> = {
   // Permanent jewelry / specialty
   'permanent jewelry': 'specialty',
   'specialty': 'specialty',
+  // Fine line tattooing is its own Vagaro category and booking surface.
+  'fine line tattoos': 'fine-line-tattoos',
   // Lashpop Pro Training — was falling through to NULL FK because the category
   // title from the composite ("Lashpop Pro Training") wasn't mapped. Without a
   // mapping the row stuck on whatever categoryId the previous sync wrote (which
@@ -273,6 +275,9 @@ async function syncService(
         ...(durationMinutes !== undefined ? { durationMinutes } : {}),
         ...(priceStartingCents !== undefined ? { priceStarting: priceStartingCents } : {}),
         vagaroParentServiceId: parentServiceId,
+        // Keep the human-readable category aligned when a service moves between
+        // Vagaro categories; previously only the FK changed on existing rows.
+        mainCategory: parentTitle || 'Other Services',
         ...vagaroDataPatch,
         ...(photosAvailable ? { vagaroImageUrl: photoUrl } : {}),
         ...(categoryId ? { categoryId } : {}),

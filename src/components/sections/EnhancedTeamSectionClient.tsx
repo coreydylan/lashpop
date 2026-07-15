@@ -630,7 +630,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       'iv': 'Wellness',
       'permanent makeup': 'Permanent Makeup',
       'lip blush': 'Permanent Makeup',
-      'jewelry': 'Permanent Jewelry'
+      'jewelry': 'Permanent Jewelry',
+      'fine line tattoo': 'Fine Line Tattoos'
     }
 
     const categories = new Set<string>()

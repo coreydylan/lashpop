@@ -16,6 +16,7 @@ const categoryIconMap: Record<string, string> = {
   'permanent-makeup': '/lashpop-images/services/thin/permanent-makeup-icon.svg',
   'specialty': '/lashpop-images/services/thin/permanent-jewelry-icon.svg',
   'permanent-jewelry': '/lashpop-images/services/thin/permanent-jewelry-icon.svg',
+  'fine-line-tattoos': '/lashpop-images/services/fine-line-tattoos.jpg',
   'injectables': '/lashpop-images/services/thin/injectables-icon.svg',
   'nails': '/lashpop-images/services/thin/nails-icon.svg',
 }

@@ -173,6 +173,7 @@ export async function getTeamMembersWithServices() {
     if (p.includes('permanent makeup') || p.includes('microblading') || p.includes('nanobrow')) return ['Permanent Makeup']
     if (p.includes('skin care') || p.includes('skincare') || p.includes('facial')) return ['Skin Care']
     if (p.includes('permanent jewelry') || p.includes('perm jewelry')) return ['Permanent Jewelry']
+    if (p.includes('fine line tattoo')) return ['Fine Line Tattoos']
     if (p.includes('wax')) return ['Waxing']
     // Bundles, training, misc — skip (no tag)
     return []
