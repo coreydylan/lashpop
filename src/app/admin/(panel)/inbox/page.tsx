@@ -43,6 +43,7 @@ export default async function InboxOverviewPage() {
   }, {})
 
   const latestSubscriber = subscribers[0]
+  const activeSubscriberCount = subscribers.filter((subscriber) => subscriber.status === 'active').length
   const latestSubmission = submissions[0]
   const recentSubmissions = submissions.slice(0, 4)
 
@@ -58,7 +59,7 @@ export default async function InboxOverviewPage() {
             </p>
           </div>
           <div className="rounded-lg border border-black/10 bg-[#f8f4ee] px-3 py-2 text-xs leading-5 text-black/55">
-            Stored records only · read and triage status is not tracked yet
+            Subscriber consent status and application records are tracked separately
           </div>
         </div>
       </header>
@@ -85,13 +86,13 @@ export default async function InboxOverviewPage() {
           href="/admin/inbox/newsletter"
           icon={Mail}
           eyebrow="Newsletter"
-          title={`${subscribers.length} ${subscribers.length === 1 ? 'subscriber' : 'subscribers'}`}
+          title={`${activeSubscriberCount} active ${activeSubscriberCount === 1 ? 'subscriber' : 'subscribers'}`}
           detail={latestSubscriber ? `Latest signup: ${formatDate(latestSubscriber.subscribedAt)}` : 'No newsletter signups have been recorded.'}
-          linkLabel="View subscriber list"
+          linkLabel="Manage subscriber directory"
         >
           <div className="flex items-center gap-2 text-xs text-black/55">
             <Users className="size-4 text-[#a14f35]" aria-hidden="true" />
-            Contact details stay inside the protected subscriber list.
+            {subscribers.length} total consent {subscribers.length === 1 ? 'record' : 'records'} retained.
           </div>
         </InboxSummaryCard>
       </section>

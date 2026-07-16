@@ -52,7 +52,7 @@ export function SubscriberExportActions({ subscribers }: SubscriberExportActions
       await copyText(subscribers.map((subscriber) => subscriber.email).join('\n'))
       setStatus({
         kind: 'success',
-        message: `${subscribers.length} opted-in ${subscribers.length === 1 ? 'address' : 'addresses'} copied.`,
+        message: `${subscribers.length} active ${subscribers.length === 1 ? 'address' : 'addresses'} copied.`,
       })
     } catch (error) {
       setStatus({
@@ -81,7 +81,7 @@ export function SubscriberExportActions({ subscribers }: SubscriberExportActions
       window.setTimeout(() => URL.revokeObjectURL(url), 0)
       setStatus({
         kind: 'success',
-        message: `${subscribers.length} opted-in ${subscribers.length === 1 ? 'subscriber' : 'subscribers'} exported.`,
+        message: `${subscribers.length} active ${subscribers.length === 1 ? 'subscriber' : 'subscribers'} exported.`,
       })
     } catch {
       setStatus({ kind: 'error', message: 'Could not export the subscriber list.' })
@@ -97,7 +97,7 @@ export function SubscriberExportActions({ subscribers }: SubscriberExportActions
           className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold text-[#292a27] hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] focus-visible:ring-offset-2"
         >
           <ClipboardCopy className="size-4" aria-hidden="true" />
-          Copy emails
+          Copy active
         </button>
         <button
           type="button"
@@ -105,7 +105,7 @@ export function SubscriberExportActions({ subscribers }: SubscriberExportActions
           className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] focus-visible:ring-offset-2"
         >
           <Download className="size-4" aria-hidden="true" />
-          Export CSV
+          Export active CSV
         </button>
       </div>
       <p className="min-h-5 text-xs text-black/55" role="status" aria-live="polite">

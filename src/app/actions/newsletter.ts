@@ -1,19 +1,16 @@
 'use server'
 
-import { desc } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { newsletterSubscriptions } from '@/db/schema/newsletter_subscriptions'
+import { requireAdmin } from '@/lib/admin/auth'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /**
- * Previously used @supabase/supabase-js with NEXT_PUBLIC_SUPABASE_URL /
- * NEXT_PUBLIC_SUPABASE_ANON_KEY env vars that aren't set in Vercel — the
- * resulting createClient(undefined!, undefined!) returned a client whose
- * fetch hung forever. That's what was leaving the footer spinner stuck on
- * "Subscribing..." with no error visible. The rest of the app already
- * connects via DATABASE_URL + Drizzle, so route this through the same
- * pool. Admin reads stay locked down (no SELECT policy exposed here).
+ * Public signup writes through the Cloudflare D1 data path. An address that
+ * previously opted out can explicitly opt in again from the footer; repeat
+ * submissions from an active address remain idempotent.
  */
 export async function subscribeToNewsletter(email: string) {
   const trimmed = email.trim().toLowerCase()
@@ -23,14 +20,45 @@ export async function subscribeToNewsletter(email: string) {
 
   try {
     const db = getDb()
-    await db
-      .insert(newsletterSubscriptions)
-      .values({ email: trimmed, source: 'footer_form' })
+    const [existing] = await db
+      .select({ id: newsletterSubscriptions.id, status: newsletterSubscriptions.status })
+      .from(newsletterSubscriptions)
+      .where(eq(newsletterSubscriptions.email, trimmed))
+      .limit(1)
+
+    if (existing) {
+      if (existing.status !== 'active') {
+        const now = new Date()
+        await db
+          .update(newsletterSubscriptions)
+          .set({
+            status: 'active',
+            source: 'footer_form',
+            subscribedAt: now,
+            unsubscribedAt: null,
+            updatedAt: now,
+          })
+          .where(eq(newsletterSubscriptions.id, existing.id))
+        return { success: true, message: 'Welcome back — you’re on the list!' }
+      }
+
+      return { success: true, message: 'Thank you — you’re already on the list!' }
+    }
+
+    const now = new Date()
+    await db.insert(newsletterSubscriptions).values({
+      email: trimmed,
+      source: 'footer_form',
+      status: 'active',
+      subscribedAt: now,
+      updatedAt: now,
+    })
     return { success: true, message: 'Thank you — see you in your inbox!' }
   } catch (err: unknown) {
-    // Unique violation = already on the list, treat as a win.
-    const code = (err as { code?: string }).code
-    if (code === '23505') {
+    // A concurrent repeat signup can still race the read. Treat every known
+    // uniqueness variant as the same idempotent success.
+    const detail = err instanceof Error ? err.message : String(err)
+    if (/unique|constraint|already exists/i.test(detail)) {
       return { success: true, message: 'Thank you — you’re already on the list!' }
     }
     console.error('Newsletter subscription error:', err)
@@ -39,16 +67,22 @@ export async function subscribeToNewsletter(email: string) {
 }
 
 /**
- * Read all subscribers (admin only — called from the admin overview /
- * dashboard pages). Returns email + signup timestamp + source.
+ * Read the complete consent ledger. This is an exported server action, so it
+ * enforces admin access itself instead of relying only on the calling page.
  */
 export async function listNewsletterSubscribers() {
+  await requireAdmin()
   const db = getDb()
   return db
     .select({
+      id: newsletterSubscriptions.id,
       email: newsletterSubscriptions.email,
       subscribedAt: newsletterSubscriptions.subscribedAt,
       source: newsletterSubscriptions.source,
+      status: newsletterSubscriptions.status,
+      notes: newsletterSubscriptions.notes,
+      unsubscribedAt: newsletterSubscriptions.unsubscribedAt,
+      updatedAt: newsletterSubscriptions.updatedAt,
     })
     .from(newsletterSubscriptions)
     .orderBy(desc(newsletterSubscriptions.subscribedAt))

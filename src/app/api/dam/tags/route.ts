@@ -61,6 +61,9 @@ function isUpdatedCategory(value: unknown): value is UpdatedCategoryInput {
 }
 
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
 
@@ -111,7 +114,7 @@ export async function GET() {
 
     return NextResponse.json({ categories: categoriesWithTags }, {
       headers: {
-        'Cache-Control': 's-maxage=30, stale-while-revalidate=60'
+        'Cache-Control': 'private, no-store'
       }
     })
   } catch (error) {

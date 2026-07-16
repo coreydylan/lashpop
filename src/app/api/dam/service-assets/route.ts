@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { assetServices } from "@/db/schema/asset_services"
 import { eq } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 /**
  * Get asset IDs that are tagged for a specific service
  * This powers the "For This Service" view in the hero image picker
  */
 export async function GET(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const { searchParams } = new URL(request.url)
     const serviceId = searchParams.get('serviceId')
@@ -36,8 +40,7 @@ export async function GET(request: NextRequest) {
       count: assetIds.length
     }, {
       headers: {
-        // Short cache for immediate updates when tagging
-        'Cache-Control': 's-maxage=2, stale-while-revalidate=5'
+        'Cache-Control': 'private, no-store'
       }
     })
   } catch (error) {

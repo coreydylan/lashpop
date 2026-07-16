@@ -2,30 +2,36 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-// Force dynamic rendering so middleware runs on every request
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
-import { useState, useEffect, useCallback } from "react"
-import { motion } from "framer-motion"
-import { Upload as UploadIcon, Camera, ArrowLeft, CheckCircle2, LogOut, Trash2 } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Crop,
+  ImagePlus,
+  LoaderCircle,
+  Trash2,
+  Upload,
+  Users,
+} from "lucide-react"
 import { PhotoCropEditor } from "@/components/dam/PhotoCropEditor"
 import { saveTeamPhotoCrops } from "@/actions/team-photos"
+
+interface CropData {
+  x: number
+  y: number
+  scale: number
+}
 
 interface TeamMember {
   id: string
   name: string
   imageUrl: string
-  cropSquare?: {
-    x: number
-    y: number
-    scale: number
-  } | null
-  cropCloseUpCircle?: {
-    x: number
-    y: number
-    scale: number
-  } | null
+  cropSquare?: CropData | null
+  cropCloseUpCircle?: CropData | null
   cropSquareUrl?: string | null
   cropCloseUpCircleUrl?: string | null
 }
@@ -35,42 +41,59 @@ interface TeamMemberPhoto {
   fileName: string
   filePath: string
   isPrimary: boolean
-  cropCloseUpCircle?: {
-    x: number
-    y: number
-    scale: number
-  } | null
-  cropSquare?: {
-    x: number
-    y: number
-    scale: number
-  } | null
+  cropCloseUpCircle?: CropData | null
+  cropSquare?: CropData | null
 }
 
-export default function TeamManagementPage() {
+type CropSet = {
+  fullVertical: CropData
+  fullHorizontal: CropData
+  mediumCircle: CropData
+  closeUpCircle: CropData
+  square: CropData
+}
+
+export default function TeamPhotographyPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [memberPhotos, setMemberPhotos] = useState<TeamMemberPhoto[]>([])
   const [editingPhoto, setEditingPhoto] = useState<TeamMemberPhoto | null>(null)
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true)
+  const [isLoadingPhotos, setIsLoadingPhotos] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const fetchTeamMembers = useCallback(async () => {
+    setIsLoadingMembers(true)
+    setErrorMessage(null)
     try {
       const response = await fetch("/api/dam/team-members")
+      if (!response.ok) throw new Error("Team members could not be loaded.")
       const data = await response.json()
       setTeamMembers(data.teamMembers || [])
     } catch (error) {
       console.error("Failed to fetch team members:", error)
+      setErrorMessage("Team photography could not be loaded. Try again in a moment.")
+    } finally {
+      setIsLoadingMembers(false)
     }
   }, [])
 
   const fetchMemberPhotos = useCallback(async (memberId: string) => {
+    setIsLoadingPhotos(true)
+    setErrorMessage(null)
     try {
       const response = await fetch(`/api/dam/team/${memberId}/photos`)
+      if (!response.ok) throw new Error("Team photos could not be loaded.")
       const data = await response.json()
       setMemberPhotos(data.photos || [])
     } catch (error) {
       console.error("Failed to fetch photos:", error)
+      setErrorMessage("This team member’s photos could not be loaded. Try again in a moment.")
+    } finally {
+      setIsLoadingPhotos(false)
     }
   }, [])
 
@@ -79,381 +102,381 @@ export default function TeamManagementPage() {
   }, [fetchTeamMembers])
 
   useEffect(() => {
-    if (selectedMember) {
-      void fetchMemberPhotos(selectedMember.id)
-    }
+    if (selectedMember) void fetchMemberPhotos(selectedMember.id)
   }, [fetchMemberPhotos, selectedMember])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!selectedMember || !event.target.files || event.target.files.length === 0) return
+    if (!selectedMember || !event.target.files?.length) return
 
     const files = Array.from(event.target.files)
     setIsUploading(true)
+    setErrorMessage(null)
+    setNotice(null)
 
     try {
-      const allUploadedPhotos: TeamMemberPhoto[] = []
-      const allErrors: Array<{ fileName: string; error: string }> = []
+      const uploadedPhotos: TeamMemberPhoto[] = []
+      const failedFiles: string[] = []
 
-      // Upload files directly to R2 (no size limits!)
       for (const file of files) {
         try {
-          // Step 1: Get presigned URL
           const presignedResponse = await fetch("/api/dam/presigned-url", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               fileName: file.name,
               contentType: file.type,
-              teamMemberId: selectedMember.id
-            })
+              teamMemberId: selectedMember.id,
+            }),
           })
 
-          if (!presignedResponse.ok) {
-            throw new Error("Failed to get upload URL")
-          }
+          if (!presignedResponse.ok) throw new Error("Failed to prepare upload.")
+          const { presignedUrl, url } = await presignedResponse.json()
 
-          const { presignedUrl, key, url } = await presignedResponse.json()
-
-          // Step 2: Upload directly to R2
           const uploadResponse = await fetch(presignedUrl, {
             method: "PUT",
             body: file,
-            headers: {
-              "Content-Type": file.type
-            }
+            headers: { "Content-Type": file.type },
           })
+          if (!uploadResponse.ok) throw new Error("File upload failed.")
 
-          if (!uploadResponse.ok) {
-            throw new Error("Failed to upload file")
-          }
-
-          // Step 3: Save metadata to database
           const metadataResponse = await fetch("/api/dam/team-members/photos", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               teamMemberId: selectedMember.id,
               fileName: file.name,
-              filePath: url
-            })
+              filePath: url,
+            }),
           })
-
-          if (!metadataResponse.ok) {
-            throw new Error("Failed to save photo metadata")
-          }
+          if (!metadataResponse.ok) throw new Error("Photo metadata could not be saved.")
 
           const { photo } = await metadataResponse.json()
-          allUploadedPhotos.push(photo)
-        } catch (fileError) {
-          console.error(`Upload failed for ${file.name}:`, fileError)
-          allErrors.push({
-            fileName: file.name,
-            error: fileError instanceof Error ? fileError.message : 'Upload failed'
-          })
+          uploadedPhotos.push(photo)
+        } catch (error) {
+          console.error(`Upload failed for ${file.name}:`, error)
+          failedFiles.push(file.name)
         }
       }
 
-      // Update UI with all uploaded photos
-      if (allUploadedPhotos.length > 0) {
-        setMemberPhotos((prev) => [...prev, ...allUploadedPhotos])
-        // Open the first uploaded photo for cropping
-        setEditingPhoto(allUploadedPhotos[0])
+      if (uploadedPhotos.length > 0) {
+        setMemberPhotos((current) => [...current, ...uploadedPhotos])
+        setEditingPhoto(uploadedPhotos[0])
+        setNotice(`${uploadedPhotos.length} ${uploadedPhotos.length === 1 ? "photo is" : "photos are"} ready for crop setup.`)
       }
 
-      // Show summary
-      if (allUploadedPhotos.length > 0 && allErrors.length > 0) {
-        alert(`${allUploadedPhotos.length} photo(s) uploaded successfully. ${allErrors.length} failed.`)
-      } else if (allUploadedPhotos.length > 0) {
-        console.log(`Successfully uploaded ${allUploadedPhotos.length} photo(s)`)
-      } else {
-        alert("All uploads failed. Please try again.")
+      if (failedFiles.length > 0) {
+        setErrorMessage(`${failedFiles.length} ${failedFiles.length === 1 ? "file" : "files"} could not be uploaded: ${failedFiles.join(", ")}`)
       }
-    } catch (error) {
-      console.error("Upload failed:", error)
-      alert("Upload failed. Please try again.")
     } finally {
       setIsUploading(false)
-      // Reset the input so the same files can be uploaded again if needed
-      event.target.value = ''
+      event.target.value = ""
     }
   }
 
-  const handleSaveCrops = async (crops: any) => {
-    if (!editingPhoto) return
-
+  const handleSaveCrops = async (crops: CropSet) => {
+    if (!editingPhoto || !selectedMember) return
+    setIsSaving(true)
+    setErrorMessage(null)
     try {
-      await saveTeamPhotoCrops({
-        photoId: editingPhoto.id,
-        crops
-      })
-
+      await saveTeamPhotoCrops({ photoId: editingPhoto.id, crops })
       setEditingPhoto(null)
-      void fetchMemberPhotos(selectedMember!.id)
+      await Promise.all([fetchMemberPhotos(selectedMember.id), fetchTeamMembers()])
+      setNotice("Crops saved and ready for the website.")
     } catch (error) {
       console.error("Failed to save crops:", error)
-      alert('Failed to save crop settings. Please try again.')
+      setErrorMessage("Crop settings could not be saved. Your original photo is unchanged.")
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const handleSetPrimary = async (photoId: string) => {
     if (!selectedMember) return
-
+    setErrorMessage(null)
     try {
       const response = await fetch(`/api/dam/team/photos/${photoId}/set-primary`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamMemberId: selectedMember.id })
+        body: JSON.stringify({ teamMemberId: selectedMember.id }),
       })
-
-      if (response.ok) {
-        void fetchMemberPhotos(selectedMember.id)
-        void fetchTeamMembers() // Refresh to update primary photo
-      }
+      if (!response.ok) throw new Error("Primary photo could not be changed.")
+      await Promise.all([fetchMemberPhotos(selectedMember.id), fetchTeamMembers()])
+      setNotice("Primary profile photo updated.")
     } catch (error) {
       console.error("Failed to set primary:", error)
+      setErrorMessage("The primary photo could not be changed. Try again.")
     }
   }
 
-  const handleDeletePhoto = async (photoId: string, isPrimary: boolean) => {
+  const handleDeletePhoto = async (photo: TeamMemberPhoto) => {
     if (!selectedMember) return
-
-    if (isPrimary) {
-      alert("Cannot delete the primary photo. Set a different photo as primary first.")
+    if (photo.isPrimary) {
+      setErrorMessage("Choose a different primary photo before deleting this one.")
       return
     }
+    if (!window.confirm(`Delete “${photo.fileName}”? This cannot be undone.`)) return
 
-    const confirmed = window.confirm("Are you sure you want to delete this photo? This cannot be undone.")
-    if (!confirmed) return
-
+    setErrorMessage(null)
     try {
-      const response = await fetch(`/api/dam/team/photos/${photoId}`, {
-        method: "DELETE"
-      })
-
-      if (response.ok) {
-        void fetchMemberPhotos(selectedMember.id)
-      } else {
-        const data = await response.json()
-        alert(data.error || "Failed to delete photo")
+      const response = await fetch(`/api/dam/team/photos/${photo.id}`, { method: "DELETE" })
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.error || "Photo could not be deleted.")
       }
+      await fetchMemberPhotos(selectedMember.id)
+      setNotice("Photo deleted.")
     } catch (error) {
       console.error("Failed to delete photo:", error)
-      alert("Failed to delete photo. Please try again.")
+      setErrorMessage(error instanceof Error ? error.message : "The photo could not be deleted.")
     }
+  }
+
+  const clearMember = () => {
+    setSelectedMember(null)
+    setMemberPhotos([])
+    setEditingPhoto(null)
+    setErrorMessage(null)
+    setNotice(null)
   }
 
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Header */}
-      <header className="glass border-b border-sage/20 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/admin/assets"
-                className="w-10 h-10 rounded-full hover:bg-warm-sand/30 flex items-center justify-center transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-sage" />
-              </Link>
-              <div>
-                <h1 className="h2 text-dune">Team Management</h1>
-                <p className="caption text-sage mt-2">
-                  Manage team member photos and headshots
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={async () => {
-                await fetch("/api/dam/auth/logout", { method: "POST" })
-                window.location.href = "/admin/login"
-              }}
-              className="w-10 h-10 rounded-full hover:bg-warm-sand/30 flex items-center justify-center transition-colors"
-              title="Logout"
+    <div className="min-h-screen bg-[#f5f0e9] px-4 py-7 text-[#292a27] sm:px-6 lg:px-8 lg:py-9">
+      <div className="mx-auto max-w-7xl">
+        <header className="grid gap-6 border-b border-black/10 pb-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
+            <Link
+              href="/admin/assets"
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg text-xs font-semibold text-black/50 hover:text-[#9f4c33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
             >
-              <LogOut className="w-5 h-5 text-sage" />
-            </button>
+              <ArrowLeft className="size-4" aria-hidden="true" />
+              Asset library
+            </Link>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Team photography</p>
+            <h1 className="mt-2 max-w-3xl font-serif text-3xl leading-tight sm:text-4xl">One approved portrait system for every stylist.</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-black/55">Keep source photos, primary selections, and website-ready crops together so profiles stay consistent across every surface.</p>
           </div>
+          <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">Crop coverage</p>
+            <p className="mt-1 font-serif text-2xl">{teamMembers.filter(hasRequiredCrops).length} / {teamMembers.length}</p>
+            <p className="mt-1 text-xs text-black/45">team profiles ready</p>
+          </div>
+        </header>
+
+        <div className="mt-6" aria-live="polite">
+          {errorMessage && (
+            <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-900/15 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span className="leading-5">{errorMessage}</span>
+            </div>
+          )}
+          {notice && (
+            <div className="mb-4 flex items-start gap-3 rounded-lg border border-emerald-900/15 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span className="leading-5">{notice}</span>
+            </div>
+          )}
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {!selectedMember ? (
-          /* Team Member Selection */
-          <div className="space-y-6">
-            <h2 className="h3 text-dune">Select Team Member</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {teamMembers.map((member) => {
-                const hasCrops = !!(member.cropSquare && member.cropCloseUpCircle)
-                return (
-                  <button
-                    key={member.id}
-                    onClick={() => setSelectedMember(member)}
-                    className="group relative"
-                  >
-                    <div className="aspect-square arch-full overflow-hidden bg-warm-sand/40 mb-3 hover:ring-2 hover:ring-dusty-rose transition-all">
-                      <img
-                        src={member.cropSquareUrl || member.imageUrl}
-                        alt={member.name}
-                        className="w-full h-full object-cover block"
-                        style={
-                          member.cropSquareUrl
-                            ? undefined
-                            : member.cropSquare
-                            ? {
-                                objectPosition: `${member.cropSquare.x}% ${member.cropSquare.y}%`,
-                                transform: `scale(${member.cropSquare.scale})`
-                              }
-                            : {
-                                objectPosition: 'center 34%',
-                                transform: 'scale(1.0)'
-                              }
-                        }
-                      />
-                    </div>
-                    {hasCrops && (
-                      <div className="absolute top-2 right-2 w-6 h-6 bg-sage rounded-full flex items-center justify-center shadow-md" title="Crops configured">
-                        <CheckCircle2 className="w-4 h-4 text-cream" />
-                      </div>
-                    )}
-                    {!hasCrops && (
-                      <div className="absolute top-2 right-2 w-6 h-6 bg-warm-sand rounded-full flex items-center justify-center shadow-sm border border-sage/20" title="No crops set">
-                        <Camera className="w-3 h-3 text-sage/60" />
-                      </div>
-                    )}
-                    <p className="body text-dune font-medium text-center">
-                      {member.name}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
+        {isLoadingMembers ? (
+          <LoadingState label="Loading team photography…" />
+        ) : errorMessage && teamMembers.length === 0 ? (
+          <div className="rounded-xl border border-black/10 bg-white px-6 py-14 text-center">
+            <button type="button" onClick={() => void fetchTeamMembers()} className="inline-flex min-h-11 items-center rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black">Try again</button>
           </div>
+        ) : !selectedMember ? (
+          <TeamRoster teamMembers={teamMembers} onSelect={setSelectedMember} />
         ) : editingPhoto ? (
-          /* Crop Editor */
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+          <section className="mt-2" aria-labelledby="crop-editor-heading">
+            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="h3 text-dune">{selectedMember.name}</h2>
-                <p className="caption text-sage mt-1">Edit crop settings</p>
-              </div>
-              <button
-                onClick={() => setEditingPhoto(null)}
-                className="btn btn-secondary"
-              >
-                Cancel
-              </button>
-            </div>
-
-            <PhotoCropEditor
-              imageUrl={editingPhoto.filePath}
-              onSave={handleSaveCrops}
-            />
-          </div>
-        ) : (
-          /* Photo Management */
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <button
-                  onClick={() => setSelectedMember(null)}
-                  className="text-sage hover:text-dune transition-colors flex items-center gap-2 mb-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="caption">Back to team</span>
+                <button type="button" onClick={() => setEditingPhoto(null)} className="inline-flex min-h-11 items-center gap-2 rounded-lg text-xs font-semibold text-black/50 hover:text-[#9f4c33]">
+                  <ArrowLeft className="size-4" aria-hidden="true" />
+                  {selectedMember.name}’s photos
                 </button>
-                <h2 className="h3 text-dune">{selectedMember.name}</h2>
-                <p className="caption text-sage mt-1">
-                  {memberPhotos.length} photo{memberPhotos.length !== 1 ? "s" : ""}
-                </p>
+                <h2 id="crop-editor-heading" className="mt-2 font-serif text-3xl">Prepare website crops</h2>
+                <p className="mt-1 text-sm text-black/50">Set each composition once; the generated versions can be reused across the site.</p>
               </div>
-
-              <label className="btn btn-primary cursor-pointer">
-                <UploadIcon className="w-5 h-5" />
-                <span>Upload Photos</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={isUploading}
-                />
-              </label>
+              {isSaving && <span className="inline-flex items-center gap-2 text-xs font-semibold text-black/45"><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving crops…</span>}
             </div>
-
-            {memberPhotos.length === 0 ? (
-              <div className="text-center py-16 bg-warm-sand/20 arch-full">
-                <div className="w-20 h-20 bg-sage/10 arch-full flex items-center justify-center mx-auto mb-4">
-                  <Camera className="w-10 h-10 text-sage" />
-                </div>
-                <h3 className="h3 text-dune mb-2">No photos yet</h3>
-                <p className="body text-sage">Upload the first photo for this team member</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {memberPhotos.map((photo) => {
-                  const hasCrops = !!(photo.cropSquare && photo.cropCloseUpCircle)
-                  return (
-                    <div
-                      key={photo.id}
-                      className="relative group"
-                    >
-                      <div className="aspect-square arch-full overflow-hidden bg-warm-sand/40 mb-2">
-                        <img
-                          src={photo.filePath}
-                          alt={photo.fileName}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-
-                      {/* Delete button - top left */}
-                      <button
-                        onClick={() => handleDeletePhoto(photo.id, photo.isPrimary)}
-                        className="absolute top-2 left-2 w-8 h-8 bg-red-500/80 hover:bg-red-600 rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                        title={photo.isPrimary ? "Cannot delete primary photo" : "Delete photo"}
-                      >
-                        <Trash2 className="w-4 h-4 text-white" />
-                      </button>
-
-                      {/* Status badges - top right */}
-                      <div className="absolute top-2 right-2 flex gap-1.5">
-                        {photo.isPrimary && (
-                          <div className="px-2 py-1 bg-dusty-rose rounded-full">
-                            <span className="text-xs text-cream font-medium">Primary</span>
-                          </div>
-                        )}
-                        {hasCrops && (
-                          <div className="w-6 h-6 bg-sage rounded-full flex items-center justify-center shadow-md" title="Crops configured">
-                            <CheckCircle2 className="w-4 h-4 text-cream" />
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setEditingPhoto(photo)}
-                          className="flex-1 btn btn-secondary py-2 text-sm"
-                          title="Edit crop settings"
-                        >
-                          {hasCrops ? 'Edit Crops' : 'Set Crops'}
-                        </button>
-                        {!photo.isPrimary && (
-                          <button
-                            onClick={() => handleSetPrimary(photo.id)}
-                            className="flex-1 btn bg-sage/10 text-sage hover:bg-sage hover:text-cream py-2 text-sm transition-all"
-                          >
-                            Set Primary
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+            <div className="overflow-hidden rounded-xl border border-black/10 bg-white p-4 sm:p-6">
+              <PhotoCropEditor imageUrl={editingPhoto.filePath} onSave={handleSaveCrops} />
+            </div>
+          </section>
+        ) : (
+          <MemberPhotoLibrary
+            member={selectedMember}
+            photos={memberPhotos}
+            isLoading={isLoadingPhotos}
+            isUploading={isUploading}
+            onBack={clearMember}
+            onUpload={handleFileUpload}
+            onEdit={setEditingPhoto}
+            onSetPrimary={(photoId) => void handleSetPrimary(photoId)}
+            onDelete={(photo) => void handleDeletePhoto(photo)}
+          />
         )}
-      </main>
+      </div>
     </div>
   )
+}
+
+function TeamRoster({ teamMembers, onSelect }: { teamMembers: TeamMember[]; onSelect: (member: TeamMember) => void }) {
+  if (teamMembers.length === 0) {
+    return (
+      <section className="mt-2 rounded-xl border border-dashed border-black/20 bg-white px-6 py-16 text-center">
+        <Users className="mx-auto size-7 text-[#9f4c33]" aria-hidden="true" />
+        <h2 className="mt-4 font-serif text-2xl">No team profiles are available yet.</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Team members sync into this workspace before photography can be assigned.</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="mt-2" aria-labelledby="team-roster-heading">
+      <div className="mb-4 flex items-end justify-between gap-4">
+        <div>
+          <h2 id="team-roster-heading" className="font-serif text-2xl">Choose a team member</h2>
+          <p className="mt-1 text-xs text-black/45">Profiles needing crop setup are listed first.</p>
+        </div>
+        <p className="text-xs font-semibold text-black/40">{teamMembers.length} profiles</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {[...teamMembers].sort((a, b) => Number(hasRequiredCrops(a)) - Number(hasRequiredCrops(b)) || a.name.localeCompare(b.name)).map((member) => {
+          const ready = hasRequiredCrops(member)
+          return (
+            <button
+              key={member.id}
+              type="button"
+              onClick={() => onSelect(member)}
+              className="group grid min-h-32 grid-cols-[5.5rem_1fr] overflow-hidden rounded-xl border border-black/10 bg-white text-left hover:border-[#c96f50]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+              aria-label={`Manage photography for ${member.name}${ready ? ", crops ready" : ", crops needed"}`}
+            >
+              <span className="relative h-full min-h-32 overflow-hidden bg-[#eadfd5]">
+                <img src={member.cropSquareUrl || member.imageUrl} alt="" width={320} height={320} loading="lazy" className="absolute inset-0 size-full object-cover" style={member.cropSquareUrl ? undefined : cropStyle(member.cropSquare)} />
+              </span>
+              <span className="flex min-w-0 flex-col justify-between p-4">
+                <span className="font-serif text-xl leading-tight">{member.name}</span>
+                <span className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold ${ready ? "border-emerald-800/15 bg-emerald-50 text-emerald-800" : "border-amber-800/15 bg-amber-50 text-amber-900"}`}>
+                  {ready ? <CheckCircle2 className="size-3" aria-hidden="true" /> : <Crop className="size-3" aria-hidden="true" />}
+                  {ready ? "Crops ready" : "Needs crops"}
+                </span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function MemberPhotoLibrary({
+  member,
+  photos,
+  isLoading,
+  isUploading,
+  onBack,
+  onUpload,
+  onEdit,
+  onSetPrimary,
+  onDelete,
+}: {
+  member: TeamMember
+  photos: TeamMemberPhoto[]
+  isLoading: boolean
+  isUploading: boolean
+  onBack: () => void
+  onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onEdit: (photo: TeamMemberPhoto) => void
+  onSetPrimary: (photoId: string) => void
+  onDelete: (photo: TeamMemberPhoto) => void
+}) {
+  return (
+    <section className="mt-2" aria-labelledby="member-photos-heading">
+      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <button type="button" onClick={onBack} className="inline-flex min-h-11 items-center gap-2 rounded-lg text-xs font-semibold text-black/50 hover:text-[#9f4c33]">
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            All team members
+          </button>
+          <h2 id="member-photos-heading" className="mt-2 font-serif text-3xl">{member.name}</h2>
+          <p className="mt-1 text-sm text-black/50">{photos.length} {photos.length === 1 ? "source photo" : "source photos"} · choose one primary and prepare its crops.</p>
+        </div>
+        <label className={`inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-within:ring-2 focus-within:ring-[#c96f50] ${isUploading ? "pointer-events-none opacity-60" : ""}`}>
+          {isUploading ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Upload className="size-4" aria-hidden="true" />}
+          {isUploading ? "Uploading…" : "Upload photos"}
+          <input name="team-photos" type="file" accept="image/*" multiple onChange={onUpload} className="sr-only" disabled={isUploading} />
+        </label>
+      </div>
+
+      {isLoading ? (
+        <LoadingState label={`Loading ${member.name}’s photos…`} />
+      ) : photos.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-black/20 bg-white px-6 py-16 text-center">
+          <ImagePlus className="mx-auto size-7 text-[#9f4c33]" aria-hidden="true" />
+          <h3 className="mt-4 font-serif text-2xl">Add the first approved portrait.</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Use a high-resolution original. You’ll create reusable square, horizontal, vertical, and circular crops next.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {photos.map((photo) => {
+            const hasCrops = Boolean(photo.cropSquare && photo.cropCloseUpCircle)
+            return (
+              <article key={photo.id} className="group overflow-hidden rounded-xl border border-black/10 bg-white">
+                <div className="relative aspect-square overflow-hidden bg-[#eadfd5]">
+                  <img src={photo.filePath} alt={photo.fileName} width={640} height={640} loading="lazy" className="size-full object-cover" />
+                  <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onDelete(photo)}
+                      disabled={photo.isPrimary}
+                      className="flex size-11 items-center justify-center rounded-lg border border-white/30 bg-black/65 text-white shadow-sm hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+                      aria-label={photo.isPrimary ? `Cannot delete primary photo ${photo.fileName}` : `Delete ${photo.fileName}`}
+                    >
+                      <Trash2 className="size-4" aria-hidden="true" />
+                    </button>
+                    <span className="flex flex-wrap justify-end gap-1.5">
+                      {photo.isPrimary && <span className="rounded-full bg-[#292a27] px-2.5 py-1 text-[10px] font-semibold text-white">Primary</span>}
+                      {hasCrops && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800"><CheckCircle2 className="size-3" aria-hidden="true" /> Cropped</span>}
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <p className="truncate text-xs font-semibold text-black/65" title={photo.fileName}>{photo.fileName}</p>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => onEdit(photo)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-black/15 text-xs font-semibold hover:border-[#c96f50]/50 hover:text-[#9f4c33]">
+                      <Crop className="size-3.5" aria-hidden="true" />
+                      {hasCrops ? "Edit crops" : "Set crops"}
+                    </button>
+                    <button type="button" onClick={() => onSetPrimary(photo.id)} disabled={photo.isPrimary} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#f4dfd5] px-2 text-xs font-semibold text-[#87442f] hover:bg-[#ecd0c3] disabled:cursor-default disabled:bg-black/[0.04] disabled:text-black/35">
+                      {photo.isPrimary ? "In use" : "Make primary"}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function LoadingState({ label }: { label: string }) {
+  return (
+    <div className="flex min-h-64 items-center justify-center rounded-xl border border-black/10 bg-white" aria-busy="true">
+      <span className="inline-flex items-center gap-2 text-sm text-black/45"><LoaderCircle className="size-4 animate-spin" aria-hidden="true" />{label}</span>
+    </div>
+  )
+}
+
+function hasRequiredCrops(member: TeamMember): boolean {
+  return Boolean(member.cropSquare && member.cropCloseUpCircle)
+}
+
+function cropStyle(crop?: CropData | null): React.CSSProperties {
+  if (!crop) return { objectPosition: "center 34%" }
+  return {
+    objectPosition: `${crop.x}% ${crop.y}%`,
+    transform: `scale(${crop.scale})`,
+  }
 }

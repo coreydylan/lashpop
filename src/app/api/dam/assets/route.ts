@@ -32,6 +32,9 @@ function safeStoragePath(value: string): string {
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const { searchParams } = new URL(request.url)
     const teamMemberId = searchParams.get("teamMemberId")
@@ -94,7 +97,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ assets: filteredAssets }, {
       headers: {
-        'Cache-Control': 's-maxage=30, stale-while-revalidate=60'
+        'Cache-Control': 'private, no-store'
       }
     })
   } catch (error) {

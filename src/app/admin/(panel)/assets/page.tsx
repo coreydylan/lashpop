@@ -13,8 +13,7 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
 }
 import type { ReactNode } from "react"
 import clsx from "clsx"
-import { Upload as UploadIcon, Users, X, Sparkles, LogOut } from "lucide-react"
-import Link from "next/link"
+import { AlertCircle, RefreshCw, Upload as UploadIcon } from "lucide-react"
 import { AssetGrid } from "@/components/dam/AssetGrid"
 import { AssetGridSkeleton } from "@/components/dam/AssetGridSkeleton"
 import { FilterSelector } from "@/components/dam/FilterSelector"
@@ -26,8 +25,8 @@ import { OmniChip } from "@/components/dam/OmniChip"
 import { CollectionSelector } from "@/components/dam/CollectionSelector"
 import { TutorialWalkthrough } from "@/components/dam/TutorialWalkthrough"
 import { ThumbPanel } from "@/components/dam/ThumbPanel"
-import { InlineChipBar, ChipBarToggleButton } from "@/components/dam/InlineChipBar"
 import { ViewportSensor } from "@/components/dam/ViewportSensor"
+import { MediaWorkspaceHeader } from "@/components/admin-media/MediaWorkspaceHeader"
 import { useDamSettings } from "@/hooks/useDamSettings"
 import { useDamActions } from "@/hooks/useDamActions"
 import { useDamInitialData } from "@/hooks/useDamData"
@@ -128,6 +127,7 @@ export default function DAMPage() {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
   const [escConfirmationActive, setEscConfirmationActive] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
 
 
   // Get from settings hook instead of useState
@@ -409,10 +409,30 @@ export default function DAMPage() {
     return filtered
   }, [])
 
-  // Memoize filtered assets to prevent unnecessary re-renders
+  // Memoize filtered and searched assets to prevent unnecessary re-renders.
+  // Search intentionally spans the language admins remember: file names,
+  // tag/category labels, and the assigned team member.
   const assets = useMemo(() => {
-    return applyFilters(collectionFilteredAssets, activeFilters)
-  }, [collectionFilteredAssets, activeFilters, applyFilters])
+    const filtered = applyFilters(collectionFilteredAssets, activeFilters)
+    const query = searchQuery.trim().toLocaleLowerCase()
+    if (!query) return filtered
+
+    return filtered.filter((asset) => {
+      const teamMemberName = teamMembers.find((member) => member.id === asset.teamMemberId)?.name ?? ""
+      const searchText = [
+        asset.fileName,
+        teamMemberName,
+        ...(asset.tags ?? []).flatMap((tag) => [tag.displayName, tag.name, tag.category.displayName, tag.category.name]),
+      ].join(" ").toLocaleLowerCase()
+
+      return searchText.includes(query)
+    })
+  }, [collectionFilteredAssets, activeFilters, applyFilters, searchQuery, teamMembers])
+
+  const untaggedAssetCount = useMemo(
+    () => allAssets.filter((asset) => !asset.teamMemberId && (!asset.tags || asset.tags.length === 0)).length,
+    [allAssets]
+  )
 
   // Keep ref updated for stable callback access
   useEffect(() => {
@@ -1777,17 +1797,6 @@ export default function DAMPage() {
       }
     })
 
-    items.push({
-      id: "settings-logout",
-      group: "Settings",
-      label: "Logout",
-      description: "Sign out of your account",
-      onSelect: async () => {
-        await fetch("/api/dam/auth/logout", { method: "POST" })
-        window.location.href = "/admin/login"
-      }
-    })
-
     // ========================================
     // HELP CATEGORY
     // ========================================
@@ -2075,63 +2084,29 @@ export default function DAMPage() {
         setActiveLightboxIndex(index)
       }}
     >
-      <div className="min-h-screen bg-cream no-horizontal-scroll">
-        {/* Header - not sticky */}
-        <header className="bg-cream select-none">
-          <div className="max-w-7xl mx-auto px-3 py-4 lg:px-6 lg:py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-shrink-0">
-                <img
-                  src="/lashpop-images/branding/logo-terracotta.png"
-                  alt="LashPop Studios"
-                  className="h-8 lg:h-10 w-auto mb-1 lg:mb-2"
-                />
-                <h1 className="hidden sm:block text-[10px] lg:text-xs font-semibold text-dune uppercase tracking-wider">
-                  Digital Asset Management
-                </h1>
-              </div>
+      <div className="min-h-screen bg-[#f5f0e9] text-[#292a27] no-horizontal-scroll">
+        <MediaWorkspaceHeader
+          totalCount={allAssets.length}
+          visibleCount={assets.length}
+          selectedCount={selectedAssets.length}
+          untaggedCount={untaggedAssetCount}
+          searchQuery={searchQuery}
+          isUploadOpen={isUploadOpen}
+          onSearchQueryChange={setSearchQuery}
+          onToggleUpload={() => setIsUploadOpen((open) => !open)}
+          onOpenCommandPalette={() => openCommandPalette("")}
+          onManageTags={() => setIsTagEditorOpen(true)}
+          onManageCollections={() => setIsCollectionManagerOpen(true)}
+        />
 
-              <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-3">
-                <button
-                  onClick={() => setIsUploadOpen(!isUploadOpen)}
-                  className={`btn ${isUploadOpen ? 'btn-primary' : 'btn-secondary'} px-2.5 py-2 sm:px-3 sm:py-2`}
-                >
-                  <UploadIcon className="w-5 h-5 lg:w-5 lg:h-5" />
-                  <span className="hidden md:inline">Upload</span>
-                </button>
-                <Link
-                  href="/admin/assets/team"
-                  className="btn btn-secondary px-2.5 py-2 sm:px-3 sm:py-2"
-                >
-                  <Users className="w-5 h-5 lg:w-5 lg:h-5" />
-                  <span className="hidden md:inline">Team</span>
-                </Link>
-                <button
-                  onClick={async () => {
-                    await fetch("/api/dam/auth/logout", { method: "POST" })
-                    window.location.href = "/admin/login"
-                  }}
-                  className="btn btn-secondary px-2.5 py-2 sm:px-3 sm:py-2"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5 lg:w-5 lg:h-5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Sticky Omni Control Bar */}
-        <div className="sticky top-0 z-30 bg-cream backdrop-blur-sm select-none lg:bg-cream/95">
-          <div className="max-w-7xl mx-auto px-3 pt-2 lg:px-6 lg:pt-4">
-            {/* Desktop: Collection Selector Row with Command Palette */}
+        <div className="sticky top-16 z-30 border-b border-black/10 bg-[#f5f0e9]/95 px-4 py-3 backdrop-blur sm:px-6 lg:top-0 lg:px-8">
+          <div className="mx-auto max-w-7xl space-y-3">
             <div className={clsx(
-              "hidden lg:flex mb-4 items-center gap-4",
+              "hidden items-center gap-4 lg:flex",
               collections.length > 0 ? "justify-between" : "justify-end"
             )}>
-              {/* Collection Selector on the left */}
               {collections.length > 0 && (
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <CollectionSelector
                     collections={collections}
                     activeCollectionId={activeCollectionId}
@@ -2141,8 +2116,7 @@ export default function DAMPage() {
                 </div>
               )}
 
-              {/* Command Palette Button on the right */}
-              <div data-tutorial="command-button" className="flex-shrink-0">
+              <div data-tutorial="command-button" className="shrink-0">
                 <OmniChip
                   variant="command-launcher"
                   isSelected={selectedAssets.length > 0}
@@ -2152,90 +2126,134 @@ export default function DAMPage() {
               </div>
             </div>
 
-            {/* Omni Bar */}
-            <div className="lg:pb-0">
-              <OmniBar
-                mode="page"
-                groupByButton={selectedAssets.length === 0 ? (
-                  <GroupBySelector
-                    categories={tagCategories}
-                    hasTeamMembers={teamMembers.length > 0}
-                    selectedCategories={groupByTags}
-                    onCategoryToggle={handleGroupBy}
-                    isLightbox={false}
-                    maxSelections={2}
-                  />
-                ) : undefined}
-                filterButton={selectedAssets.length === 0 ? (
-                  <FilterSelector
-                    categories={tagCategories}
-                    teamMembers={teamMembers}
-                    selectedTagIds={activeFilters.filter(f => f.categoryName !== 'team').map(f => f.optionId)}
-                    selectedTeamMemberIds={activeFilters.filter(f => f.categoryName === 'team').map(f => f.optionId)}
-                    assets={filterableAssets}
-                    onTagToggle={handleTagFilterToggle}
-                    onTeamMemberToggle={handleTeamFilterToggle}
-                    isLightbox={false}
-                  />
-                ) : undefined}
-                groupByContent={renderGroupByChips()}
-                chipsContent={renderChips()}
-                selectedCount={selectedAssets.length}
-                assetsCount={assets.length}
-                totalAssetsCount={allAssets.length}
-                canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
-                onClearSelection={clearSelection}
-                onApplyTags={handleApplyTags}
-                gridViewMode={gridViewMode}
-                onToggleGridView={toggleGridView}
-                onOpenCardSettings={openCardSettings}
-                escConfirmationActive={escConfirmationActive}
-                onEscClick={handleEscPress}
-                collectionSelector={collections.length > 0 ? (
-                  <CollectionSelector
-                    collections={collections}
-                    activeCollectionId={activeCollectionId}
-                    onSelectCollection={setActiveCollectionId}
-                    onCreateCollection={() => setIsCollectionManagerOpen(true)}
-                  />
-                ) : undefined}
-                onOpenCommandPalette={() => openCommandPalette("")}
-                activeCollectionName={activeCollection?.displayName}
-                activeCollectionColor={activeCollection?.color}
-              />
-            </div>
+            <OmniBar
+              mode="page"
+              groupByButton={selectedAssets.length === 0 ? (
+                <GroupBySelector
+                  categories={tagCategories}
+                  hasTeamMembers={teamMembers.length > 0}
+                  selectedCategories={groupByTags}
+                  onCategoryToggle={handleGroupBy}
+                  isLightbox={false}
+                  maxSelections={2}
+                />
+              ) : undefined}
+              filterButton={selectedAssets.length === 0 ? (
+                <FilterSelector
+                  categories={tagCategories}
+                  teamMembers={teamMembers}
+                  selectedTagIds={activeFilters.filter(f => f.categoryName !== 'team').map(f => f.optionId)}
+                  selectedTeamMemberIds={activeFilters.filter(f => f.categoryName === 'team').map(f => f.optionId)}
+                  assets={filterableAssets}
+                  onTagToggle={handleTagFilterToggle}
+                  onTeamMemberToggle={handleTeamFilterToggle}
+                  isLightbox={false}
+                />
+              ) : undefined}
+              groupByContent={renderGroupByChips()}
+              chipsContent={renderChips()}
+              selectedCount={selectedAssets.length}
+              assetsCount={assets.length}
+              totalAssetsCount={allAssets.length}
+              canApplyTags={selectedAssets.length === 0 ? omniTags.length > 0 : false}
+              onClearSelection={clearSelection}
+              onApplyTags={handleApplyTags}
+              gridViewMode={gridViewMode}
+              onToggleGridView={toggleGridView}
+              onOpenCardSettings={openCardSettings}
+              escConfirmationActive={escConfirmationActive}
+              onEscClick={handleEscPress}
+              collectionSelector={collections.length > 0 ? (
+                <CollectionSelector
+                  collections={collections}
+                  activeCollectionId={activeCollectionId}
+                  onSelectCollection={setActiveCollectionId}
+                  onCreateCollection={() => setIsCollectionManagerOpen(true)}
+                />
+              ) : undefined}
+              onOpenCommandPalette={() => openCommandPalette("")}
+              activeCollectionName={activeCollection?.displayName}
+              activeCollectionColor={activeCollection?.color}
+            />
           </div>
         </div>
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-6 pt-4 pb-8">
-          {/* Collapsible Upload Section */}
+        <main className="mx-auto max-w-7xl px-4 pb-10 pt-5 sm:px-6 lg:px-8">
           {isUploadOpen && (
-            <div className="mb-6 select-none">
-              <Suspense fallback={<div className="py-8 text-center text-sage">Loading uploader...</div>}>
-                <FileUploader
-                  onUploadComplete={handleUploadComplete}
-                  onUploadingIdsChange={handleUploadingIdsChange}
-                />
-              </Suspense>
-            </div>
+            <section className="mb-6 overflow-hidden rounded-xl border border-[#c96f50]/25 bg-white" aria-labelledby="media-upload-heading">
+              <div className="border-b border-black/10 bg-[#f4dfd5] px-5 py-4">
+                <h2 id="media-upload-heading" className="font-serif text-xl">Add media to the library</h2>
+                <p className="mt-1 text-xs leading-5 text-black/50">Files stay selected after upload so you can organize them before moving on.</p>
+              </div>
+              <div className="p-4 sm:p-5">
+                <Suspense fallback={<div className="py-10 text-center text-sm text-black/45">Preparing uploader…</div>}>
+                  <FileUploader
+                    onUploadComplete={handleUploadComplete}
+                    onUploadingIdsChange={handleUploadingIdsChange}
+                  />
+                </Suspense>
+              </div>
+            </section>
           )}
 
-          {/* Gallery */}
-          {isLoading ? (
-            <AssetGridSkeleton gridViewMode={gridViewMode} />
-          ) : assets.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 bg-warm-sand/50 arch-full flex items-center justify-center mx-auto mb-6">
-                <UploadIcon className="w-10 h-10 text-sage" />
-              </div>
-              <h3 className="h3 text-dune mb-3">
-                No assets yet
-              </h3>
-              <p className="body text-sage">
-                Click the Upload button to add your first photos
-              </p>
+          <div className="sr-only" aria-live="polite">
+            {selectedAssets.length > 0
+              ? `${selectedAssets.length} ${selectedAssets.length === 1 ? 'asset' : 'assets'} selected.`
+              : `${assets.length} ${assets.length === 1 ? 'asset' : 'assets'} in the current view.`}
+          </div>
+
+          {dataError ? (
+            <section className="rounded-xl border border-red-900/15 bg-white px-6 py-12 text-center" role="alert">
+              <span className="mx-auto flex size-12 items-center justify-center rounded-lg bg-red-50 text-red-700">
+                <AlertCircle className="size-5" aria-hidden="true" />
+              </span>
+              <h2 className="mt-4 font-serif text-2xl">The media library could not be loaded.</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Your files are still safe. Try the request again before uploading or reorganizing anything.</p>
+              <button
+                type="button"
+                onClick={() => void fetchAssets()}
+                className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+              >
+                <RefreshCw className="size-4" aria-hidden="true" />
+                Try again
+              </button>
+            </section>
+          ) : isLoading || isLoadingSettings ? (
+            <div aria-label="Loading media library" aria-busy="true">
+              <AssetGridSkeleton gridViewMode={gridViewMode} />
             </div>
+          ) : allAssets.length === 0 ? (
+            <section className="rounded-xl border border-dashed border-black/20 bg-white px-6 py-16 text-center">
+              <span className="mx-auto flex size-14 items-center justify-center rounded-lg bg-[#f4dfd5] text-[#9f4c33]">
+                <UploadIcon className="size-6" aria-hidden="true" />
+              </span>
+              <h2 className="mt-5 font-serif text-2xl">Build the shared media library.</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Upload the first set of approved photos, then add service, location, and team tags so other editors can find them.</p>
+              <button
+                type="button"
+                onClick={() => setIsUploadOpen(true)}
+                className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+              >
+                <UploadIcon className="size-4" aria-hidden="true" />
+                Upload the first files
+              </button>
+            </section>
+          ) : assets.length === 0 ? (
+            <section className="rounded-xl border border-black/10 bg-white px-6 py-14 text-center">
+              <h2 className="font-serif text-2xl">No media matches this view.</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Clear the search, collection, and filters to return to the full library.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("")
+                  handleClearFilters()
+                  setActiveCollectionId(undefined)
+                }}
+                className="mt-5 inline-flex min-h-11 items-center rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+              >
+                Clear this view
+              </button>
+            </section>
           ) : (
             <AssetGrid
               assets={assets}
@@ -2249,7 +2267,7 @@ export default function DAMPage() {
               pendingTagRemoval={pendingTagRemoval}
               dissipatingTags={dissipatingTags}
               appearingTags={appearingTags}
-              mobileChipBar={undefined} // Commented out InlineChipBar - filters now in OmniBar mobile layout
+              mobileChipBar={undefined}
               chipBarInsertIndex={chipBarInsertIndex}
             />
           )}

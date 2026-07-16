@@ -7,6 +7,7 @@ import { tagCategories } from "@/db/schema/tag_categories"
 import { teamMembers } from "@/db/schema/team_members"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { eq, desc, and } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
 
 /**
  * Combined initial data endpoint for DAM
@@ -14,6 +15,9 @@ import { eq, desc, and } from "drizzle-orm"
  * Improves initial page load performance by reducing round trips
  */
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
 
@@ -117,8 +121,9 @@ export async function GET() {
       teamMembers: allTeamMembers
     }, {
       headers: {
-        // Reduce cache time to 5 seconds for more immediate updates
-        'Cache-Control': 's-maxage=5, stale-while-revalidate=10'
+        // This response includes internal filenames, tags, and collections.
+        // Never place an authenticated response in a shared edge cache.
+        'Cache-Control': 'private, no-store'
       }
     })
   } catch (error) {

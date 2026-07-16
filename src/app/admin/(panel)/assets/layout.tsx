@@ -4,11 +4,9 @@ import { DAMProviders } from '@/components/dam/DAMProviders'
 export const dynamic = 'force-dynamic'
 
 /**
- * Asset Manager (formerly the standalone /dam) now lives under /admin/assets.
- * Auth + AdminShell are provided by the parent /admin layout; this layer just
- * adds the DAM-specific providers (React Query + tutorial context). The
- * AdminShell switches to fullbleed for /admin/assets so the grid + omnibar use
- * the full width.
+ * The native Media workspace inherits authentication and navigation from the
+ * AdminShell. This layer only supplies the library-specific query and guidance
+ * providers used by the asset grid, uploader, and organization tools.
  */
 export default function AssetsLayout({ children }: { children: ReactNode }) {
   return <DAMProviders>{children}</DAMProviders>
