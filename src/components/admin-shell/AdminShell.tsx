@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { ExternalLink, Menu, X } from 'lucide-react'
 import { ADMIN_AREAS, findAreaByPath, findSectionByPath, type ContentOwner } from './sections'
 import { AdminWorkspaceProvider, useAdminWorkspace } from './AdminWorkspaceContext'
@@ -216,8 +216,8 @@ function GuardedLink({
   children: React.ReactNode
   'aria-current'?: 'page'
 }) {
-  const router = useRouter()
-  const { confirmNavigation } = useAdminWorkspace()
+  const pathname = usePathname()
+  const { confirmNavigation, dirtyCount } = useAdminWorkspace()
 
   return (
     <Link
@@ -226,10 +226,26 @@ function GuardedLink({
       className={className}
       {...props}
       onClick={(event) => {
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+        if (
+          event.defaultPrevented
+          || event.button !== 0
+          || event.metaKey
+          || event.ctrlKey
+          || event.shiftKey
+          || event.altKey
+        ) return
+
+        // Leave ordinary links native. Intercepting every click and replaying
+        // it through router.push made server redirects (especially an expired
+        // admin session redirecting to login) look like a frozen navigation.
+        if (dirtyCount === 0 || pathname === href) return
+
         event.preventDefault()
         void confirmNavigation().then((confirmed) => {
-          if (confirmed) router.push(href)
+          // A confirmed discard is intentionally followed by a document
+          // navigation. It gives auth redirects a clean boundary and ensures
+          // no stale page state survives the abandoned draft.
+          if (confirmed) window.location.assign(href)
         })
       }}
     >

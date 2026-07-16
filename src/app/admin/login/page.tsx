@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, FormEvent } from "react"
-import { useRouter } from "next/navigation"
 import { Phone, Image as ImageIcon } from "lucide-react"
 import { motion } from "framer-motion"
 import { toE164 } from "@/lib/phone-utils"
@@ -12,7 +11,6 @@ export default function AdminLogin() {
   const [step, setStep] = useState<"phone" | "otp">("phone")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleSendOTP = async (e: FormEvent) => {
     e.preventDefault()
@@ -63,9 +61,18 @@ export default function AdminLogin() {
       const data = await response.json()
 
       if (response.ok) {
-        // Redirect into the admin panel
-        router.push("/admin")
-        router.refresh()
+        const requestedPath = new URLSearchParams(window.location.search).get("next")
+        const destination =
+          requestedPath?.startsWith("/admin")
+          && !requestedPath.startsWith("//")
+          && !requestedPath.startsWith("/admin/login")
+            ? requestedPath
+            : "/admin"
+
+        // Cross a document boundary after the auth cookie is written. This
+        // avoids reusing a stale unauthenticated RSC tree and returns the admin
+        // to the panel they originally tried to open.
+        window.location.assign(destination)
       } else {
         setError(data.error || "Invalid verification code")
       }
