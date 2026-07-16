@@ -3,10 +3,13 @@
 import { getDb } from "@/db"
 import { services } from "@/db/schema/services"
 import { serviceCategories } from "@/db/schema/service_categories"
+import { vagaroServiceCategories } from "@/db/schema/vagaro_service_categories"
+import { vagaroCategoryMappings } from "@/db/schema/vagaro_category_mappings"
+import { vagaroSyncRuns } from "@/db/schema/vagaro_sync_runs"
 import { serviceSubcategories } from "@/db/schema/service_subcategories"
 import { assetServices } from "@/db/schema/asset_services"
 import { assets } from "@/db/schema/assets"
-import { and, eq, asc, inArray, sql } from "drizzle-orm"
+import { and, eq, asc, desc, inArray, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/sqlite-core"
 
 export async function getServices() {
@@ -248,17 +251,23 @@ export async function getServiceCategoriesWithSubcategories() {
   const categories = await db
     .select({
       id: serviceCategories.id,
-      name: serviceCategories.name,
+      name: sql<string>`COALESCE(${serviceCategories.displayName}, ${serviceCategories.name})`,
+      sourceName: serviceCategories.name,
+      displayName: serviceCategories.displayName,
       slug: serviceCategories.slug,
       description: serviceCategories.description,
       tagline: serviceCategories.tagline,
       icon: serviceCategories.icon,
       displayOrder: serviceCategories.displayOrder,
       isActive: serviceCategories.isActive,
+      sourceType: serviceCategories.sourceType,
+      showInBooking: serviceCategories.showInBooking,
+      syncStatus: serviceCategories.syncStatus,
+      lastSyncedAt: serviceCategories.lastSyncedAt,
       keyImageAssetId: serviceCategories.keyImageAssetId,
     })
     .from(serviceCategories)
-    .where(eq(serviceCategories.isActive, true))
+    .where(and(eq(serviceCategories.isActive, true), eq(serviceCategories.showInBooking, true)))
     .orderBy(asc(serviceCategories.displayOrder))
 
   const subcategories = await db
@@ -446,6 +455,7 @@ export async function updateServiceCategoryContent(
     description?: string | null
     tagline?: string | null
     icon?: string | null
+    displayName?: string | null
   }
 ) {
   const db = getDb()
@@ -468,19 +478,95 @@ export async function getAllServiceCategoriesAdmin() {
   const categories = await db
     .select({
       id: serviceCategories.id,
-      name: serviceCategories.name,
+      name: sql<string>`COALESCE(${serviceCategories.displayName}, ${serviceCategories.name})`,
+      sourceName: serviceCategories.name,
+      displayName: serviceCategories.displayName,
       slug: serviceCategories.slug,
       description: serviceCategories.description,
       tagline: serviceCategories.tagline,
       icon: serviceCategories.icon,
       displayOrder: serviceCategories.displayOrder,
       isActive: serviceCategories.isActive,
+      sourceType: serviceCategories.sourceType,
+      showInBooking: serviceCategories.showInBooking,
+      syncStatus: serviceCategories.syncStatus,
+      lastSyncedAt: serviceCategories.lastSyncedAt,
       keyImageAssetId: serviceCategories.keyImageAssetId,
     })
     .from(serviceCategories)
     .orderBy(asc(serviceCategories.displayOrder))
 
   return categories
+}
+
+export async function getVagaroTaxonomyAdmin() {
+  const db = getDb()
+
+  const [rawCategories, websiteCategories] = await Promise.all([
+    db
+      .select({
+        id: vagaroServiceCategories.id,
+        vagaroCategoryId: vagaroServiceCategories.vagaroCategoryId,
+        title: vagaroServiceCategories.title,
+        sourceOrder: vagaroServiceCategories.displayOrder,
+        serviceCount: vagaroServiceCategories.serviceCount,
+        isActive: vagaroServiceCategories.isActive,
+        teamLabel: vagaroServiceCategories.teamLabel,
+        teamDisplayOrder: vagaroServiceCategories.teamDisplayOrder,
+        showOnTeam: vagaroServiceCategories.showOnTeam,
+        lastSeenAt: vagaroServiceCategories.lastSeenAt,
+        mappedCategoryId: serviceCategories.id,
+        mappedCategoryName: sql<string | null>`COALESCE(${serviceCategories.displayName}, ${serviceCategories.name})`,
+        mappedCategorySlug: serviceCategories.slug,
+        mappedCategoryOrder: serviceCategories.displayOrder,
+        mappingType: vagaroCategoryMappings.mappingType,
+      })
+      .from(vagaroServiceCategories)
+      .leftJoin(
+        vagaroCategoryMappings,
+        eq(vagaroCategoryMappings.vagaroCategoryId, vagaroServiceCategories.id),
+      )
+      .leftJoin(
+        serviceCategories,
+        eq(vagaroCategoryMappings.serviceCategoryId, serviceCategories.id),
+      )
+      .orderBy(asc(vagaroServiceCategories.displayOrder)),
+    getAllServiceCategoriesAdmin(),
+  ])
+
+  const mappedWebsiteIds = new Set(
+    rawCategories.map(category => category.mappedCategoryId).filter(Boolean),
+  )
+  return {
+    rawCategories,
+    websiteCategories,
+    localCategories: websiteCategories.filter(category => !mappedWebsiteIds.has(category.id)),
+  }
+}
+
+export async function updateVagaroCategoryPresentation(
+  categoryId: string,
+  data: {
+    teamLabel?: string | null
+    teamDisplayOrder?: number | null
+    showOnTeam?: boolean
+  },
+) {
+  const db = getDb()
+  await db
+    .update(vagaroServiceCategories)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(vagaroServiceCategories.id, categoryId))
+  return { success: true }
+}
+
+export async function getVagaroSyncRunsAdmin(limit = 10) {
+  const db = getDb()
+  return db
+    .select()
+    .from(vagaroSyncRuns)
+    .orderBy(desc(vagaroSyncRuns.startedAt))
+    .limit(Math.max(1, Math.min(limit, 50)))
 }
 
 // Get service categories for the landing page (public, with taglines and descriptions)
@@ -490,7 +576,7 @@ export async function getServiceCategoriesForLanding() {
   const categories = await db
     .select({
       id: serviceCategories.id,
-      name: serviceCategories.name,
+      name: sql<string>`COALESCE(${serviceCategories.displayName}, ${serviceCategories.name})`,
       slug: serviceCategories.slug,
       description: serviceCategories.description,
       tagline: serviceCategories.tagline,
@@ -498,7 +584,7 @@ export async function getServiceCategoriesForLanding() {
       displayOrder: serviceCategories.displayOrder,
     })
     .from(serviceCategories)
-    .where(eq(serviceCategories.isActive, true))
+    .where(and(eq(serviceCategories.isActive, true), eq(serviceCategories.showInBooking, true)))
     .orderBy(asc(serviceCategories.displayOrder))
 
   return categories

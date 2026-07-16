@@ -5,6 +5,61 @@ const timestamp = (name: string) => integer(name, { mode: 'timestamp_ms' })
 const boolean = (name: string) => integer(name, { mode: 'boolean' })
 const json = <T>(name: string) => text(name, { mode: 'json' }).$type<T>()
 
+export const serviceCategories = sqliteTable('service_categories', {
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
+  name: text('name').notNull().unique(),
+  displayName: text('display_name'),
+  slug: text('slug').notNull().unique(),
+  description: text('description'),
+  tagline: text('tagline'),
+  icon: text('icon'),
+  displayOrder: integer('display_order').default(0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  sourceType: text('source_type').default('manual').notNull(),
+  showInBooking: boolean('show_in_booking').default(true).notNull(),
+  syncStatus: text('sync_status').default('manual').notNull(),
+  lastSyncedAt: timestamp('last_synced_at'),
+  keyImageAssetId: uuid('key_image_asset_id'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const vagaroServiceCategories = sqliteTable('vagaro_service_categories', {
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
+  vagaroCategoryId: text('vagaro_category_id').notNull().unique(),
+  title: text('title').notNull(),
+  displayOrder: integer('display_order').default(0).notNull(),
+  serviceCount: integer('service_count').default(0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  teamLabel: text('team_label'),
+  teamDisplayOrder: integer('team_display_order'),
+  showOnTeam: boolean('show_on_team').default(true).notNull(),
+  lastSeenAt: timestamp('last_seen_at').notNull(),
+  lastSyncedAt: timestamp('last_synced_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const vagaroCategoryMappings = sqliteTable('vagaro_category_mappings', {
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
+  vagaroCategoryId: uuid('vagaro_category_id').notNull().unique(),
+  serviceCategoryId: uuid('service_category_id').notNull(),
+  mappingType: text('mapping_type').default('automatic').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export const vagaroSyncRuns = sqliteTable('vagaro_sync_runs', {
+  id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
+  trigger: text('trigger').notNull(),
+  status: text('status').default('running').notNull(),
+  result: json<Record<string, unknown>>('result'),
+  error: text('error'),
+  startedAt: timestamp('started_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 // Minimal mirror of src/db/schema/services.ts — only the fields this worker writes.
 export const services = sqliteTable('services', {
   id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
@@ -66,6 +121,7 @@ export const teamMemberServicesVagaro = sqliteTable('team_member_services_vagaro
   teamMemberId: uuid('team_member_id').notNull(),
   serviceId: uuid('service_id').notNull(),
   vagaroParentTitle: text('vagaro_parent_title'),
+  vagaroCategoryId: text('vagaro_category_id'),
   syncedAt: timestamp('synced_at').defaultNow().notNull(),
 }, (t) => ({
   uniqMemberService: unique('team_member_services_vagaro_member_service_unique')

@@ -16,7 +16,14 @@ export interface VagaroPublicService {
 }
 
 interface CompositeResponse {
-  Services?: Array<{ ServiceList?: VagaroPublicService[] }>
+  Services?: Array<{
+    ServiceList?: VagaroPublicService[]
+    ServiceCategoryTitle?: string
+    ServiceCategoryID?: number
+    ParentServiceTitle?: string
+    ServiceTitle?: string
+    ParentServiceID?: number
+  }>
   ServicesData?: VagaroPublicService[]
 }
 
@@ -88,13 +95,23 @@ export interface PublicServiceRecord {
   parentServiceId: string | null     // ditto
   serviceTitle: string
   parentServiceTitle: string | null
+  parentCategoryId: string | null
   photoUrl: string | null            // upgraded to /Original/ variant, or null when no real photo
   isActive: boolean
   isSoftDeleted: boolean
   raw: VagaroPublicService           // keep original for vagaro_data fallback storage
 }
 
+export interface PublicCategoryRecord {
+  categoryId: string
+  title: string
+  displayOrder: number
+  serviceCount: number
+}
+
 export interface PublicServicesPayload {
+  /** Vagaro categories in the exact order shown on its booking page. */
+  categories: PublicCategoryRecord[]
   /** Full list of services from the composite, filtered to active+non-deleted. */
   records: PublicServiceRecord[]
   /** Title → photo URL map. Retained for legacy callers and for title-fallback lookups. */
@@ -128,22 +145,9 @@ async function fetchPublicServices(numericBusinessId: string): Promise<PublicSer
     throw new Error(`Vagaro public services endpoint ${res.status}: ${await res.text()}`)
   }
 
-  const json = (await res.json()) as CompositeResponse & {
-    Services?: Array<{
-      ServiceList?: VagaroPublicService[]
-      // ServiceCategoryTitle is the field Vagaro actually populates on the
-      // group level (verified against the live endpoint Apr 2026). The older
-      // ParentServiceTitle / ServiceTitle fields exist on the schema but come
-      // back null on this endpoint — relying on them is why mainCategory used
-      // to fall through to "Other Services" for most rows.
-      ServiceCategoryTitle?: string
-      ServiceCategoryID?: number
-      ParentServiceTitle?: string
-      ServiceTitle?: string
-      ParentServiceID?: number
-    }>
-  }
+  const json = (await res.json()) as CompositeResponse
   const records: PublicServiceRecord[] = []
+  const categories: PublicCategoryRecord[] = []
   const photosByTitle = new Map<string, string>()
   const photosByServiceId = new Map<string, string>()
   const seenServiceIds = new Set<string>()
@@ -151,9 +155,20 @@ async function fetchPublicServices(numericBusinessId: string): Promise<PublicSer
   // Services[] is grouped by category. Each group carries a title and a list
   // of child services. The parent category title isn't always denormalized
   // onto each service row, so we pull it off the group level here.
-  for (const category of json.Services ?? []) {
+  for (const [categoryIndex, category] of (json.Services ?? []).entries()) {
     const parentServiceTitle =
       (category.ServiceCategoryTitle || category.ParentServiceTitle || category.ServiceTitle || '').trim() || null
+    const parentCategoryId = category.ServiceCategoryID != null ? String(category.ServiceCategoryID) : null
+    if (parentCategoryId && parentServiceTitle) {
+      categories.push({
+        categoryId: parentCategoryId,
+        title: parentServiceTitle,
+        displayOrder: categoryIndex + 1,
+        serviceCount: (category.ServiceList ?? []).filter(service =>
+          service.IsActive !== false && service.IsSoftDeleted !== true
+        ).length,
+      })
+    }
     for (const s of category.ServiceList ?? []) {
       if (s.ServiceID == null) continue
       const idKey = String(s.ServiceID)
@@ -177,6 +192,7 @@ async function fetchPublicServices(numericBusinessId: string): Promise<PublicSer
         parentServiceId: s.ParentServiceID != null ? String(s.ParentServiceID) : null,
         serviceTitle: s.ServiceTitle ?? '',
         parentServiceTitle,
+        parentCategoryId,
         photoUrl: full,
         isActive: s.IsActive !== false,
         isSoftDeleted: s.IsSoftDeleted === true,
@@ -185,7 +201,7 @@ async function fetchPublicServices(numericBusinessId: string): Promise<PublicSer
     }
   }
 
-  return { records, photosByTitle, photosByServiceId }
+  return { categories, records, photosByTitle, photosByServiceId }
 }
 
 /**
@@ -230,6 +246,7 @@ export interface PerStylistServiceRecord {
   serviceId: string                 // stringified ServiceID
   serviceTitle: string
   vagaroCategoryTitle: string | null  // ServiceCategoryTitle from the per-stylist composite group
+  vagaroCategoryId: string | null
 }
 
 export async function fetchPublicServicesForProvider(
@@ -264,6 +281,7 @@ export async function fetchPublicServicesForProvider(
   const json = (await res.json()) as {
     Services?: Array<{
       ServiceCategoryTitle?: string
+      ServiceCategoryID?: number
       ServiceList?: Array<{ ServiceID?: number; ServiceTitle?: string }>
     }>
   }
@@ -272,6 +290,7 @@ export async function fetchPublicServicesForProvider(
   const seen = new Set<string>()
   for (const category of json.Services ?? []) {
     const catTitle = (category.ServiceCategoryTitle || '').trim() || null
+    const catId = category.ServiceCategoryID != null ? String(category.ServiceCategoryID) : null
     for (const s of category.ServiceList ?? []) {
       if (s.ServiceID == null) continue
       const key = String(s.ServiceID)
@@ -281,6 +300,7 @@ export async function fetchPublicServicesForProvider(
         serviceId: key,
         serviceTitle: (s.ServiceTitle ?? '').trim(),
         vagaroCategoryTitle: catTitle,
+        vagaroCategoryId: catId,
       })
     }
   }

@@ -35,6 +35,7 @@ import {
 import clsx from 'clsx'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
 import { ServiceHeroImagePicker } from '@/components/admin/ServiceHeroImagePicker'
+import { VagaroTaxonomyOverview } from '@/components/admin/VagaroTaxonomyOverview'
 import {
   getAllServicesAdmin,
   getServiceCategoriesWithSubcategories,
@@ -46,7 +47,8 @@ import {
   resetServiceToVagaroImage,
   updateSubcategoryDisplayOrders,
   updateServiceSubcategory,
-  getAllSubcategories
+  getAllSubcategories,
+  getVagaroTaxonomyAdmin,
 } from '@/actions/services'
 
 // Types
@@ -95,12 +97,18 @@ interface Subcategory {
 interface Category {
   id: string
   name: string
+  sourceName: string
+  displayName: string | null
   slug: string
   description: string | null
   tagline: string | null
   icon: string | null
   displayOrder: number
   isActive: boolean
+  sourceType: string
+  showInBooking: boolean
+  syncStatus: string
+  lastSyncedAt: Date | null
   keyImageAssetId: string | null
   subcategories: Subcategory[]
 }
@@ -111,6 +119,7 @@ export default function ServicesAdminPage() {
   // Data state
   const [services, setServices] = useState<Service[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [taxonomy, setTaxonomy] = useState<Awaited<ReturnType<typeof getVagaroTaxonomyAdmin>> | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null) // ID of item being saved
 
@@ -148,6 +157,7 @@ export default function ServicesAdminPage() {
     isOpen: boolean
     categoryId: string
     categoryName: string
+    displayName: string
     description: string
     tagline: string
     icon: string
@@ -189,14 +199,16 @@ export default function ServicesAdminPage() {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [servicesData, categoriesData, subcategoriesData] = await Promise.all([
+      const [servicesData, categoriesData, subcategoriesData, taxonomyData] = await Promise.all([
         getAllServicesAdmin(),
         getServiceCategoriesWithSubcategories(),
-        getAllSubcategories()
+        getAllSubcategories(),
+        getVagaroTaxonomyAdmin(),
       ])
       setServices(servicesData)
       setCategories(categoriesData)
       setAllSubcategories(subcategoriesData)
+      setTaxonomy(taxonomyData)
       setSubcategoriesFetched(true)
 
       // Expand all categories by default
@@ -863,6 +875,13 @@ export default function ServicesAdminPage() {
         </div>
       </motion.div>
 
+      {taxonomy && (
+        <VagaroTaxonomyOverview
+          rawCategories={taxonomy.rawCategories}
+          localCategories={taxonomy.localCategories}
+        />
+      )}
+
       {/* Controls Bar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -1060,6 +1079,7 @@ export default function ServicesAdminPage() {
                           isOpen: true,
                           categoryId: category.id,
                           categoryName: category.name,
+                          displayName: category.displayName || category.name,
                           description: category.description || '',
                           tagline: category.tagline || '',
                           icon: category.icon || ''
@@ -1437,6 +1457,26 @@ export default function ServicesAdminPage() {
 
               {/* Content */}
               <div className="p-6 space-y-6">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-dune mb-2">
+                    <Type className="w-4 h-4 text-dusty-rose" />
+                    Customer-facing label
+                  </label>
+                  <input
+                    type="text"
+                    value={categoryContentEditor.displayName}
+                    onChange={(e) => setCategoryContentEditor({
+                      ...categoryContentEditor,
+                      displayName: e.target.value,
+                    })}
+                    placeholder={categoryContentEditor.categoryName}
+                    className="w-full px-4 py-3 rounded-xl bg-cream/50 border border-sage/20 text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
+                  />
+                  <p className="mt-1 text-xs text-dune/50">
+                    LashPop owns this label. Vagaro can rename its source category without overwriting it.
+                  </p>
+                </div>
+
                 {/* Tagline */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-dune mb-2">
@@ -1530,6 +1570,7 @@ export default function ServicesAdminPage() {
                     setSaving(categoryContentEditor.categoryId)
                     try {
                       await updateServiceCategoryContent(categoryContentEditor.categoryId, {
+                        displayName: categoryContentEditor.displayName.trim() || null,
                         description: categoryContentEditor.description || null,
                         tagline: categoryContentEditor.tagline || null,
                         icon: categoryContentEditor.icon || null
@@ -1539,6 +1580,8 @@ export default function ServicesAdminPage() {
                         c.id === categoryContentEditor.categoryId
                           ? {
                               ...c,
+                              name: categoryContentEditor.displayName.trim() || c.sourceName,
+                              displayName: categoryContentEditor.displayName.trim() || null,
                               description: categoryContentEditor.description || null,
                               tagline: categoryContentEditor.tagline || null,
                               icon: categoryContentEditor.icon || null

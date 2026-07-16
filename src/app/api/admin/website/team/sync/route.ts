@@ -6,8 +6,8 @@ export const maxDuration = 120
 export const dynamic = 'force-dynamic'
 
 // POST - Admin-triggered, on-demand Vagaro sync. Calls the lashpop-vagaro-sync
-// Cloudflare worker's /sync endpoint (the same one the 3x/day cron hits), so a
-// photo/bio/service change made in Vagaro shows up on the site immediately
+// Cloudflare worker's /sync endpoint (the same one the 15-minute cron hits), so
+// taxonomy/service/staff changes made in Vagaro show up on the site immediately
 // instead of waiting for the next scheduled run.
 export async function POST() {
   const auth = await requireAdminApi()
@@ -32,7 +32,7 @@ export async function POST() {
     const res = await fetch(url.toString(), {
       method: 'GET',
       headers: token ? { authorization: `Bearer ${token}` } : {},
-      // The full sync (services + staff + photos + mappings) can take ~30s.
+      // The full sync (taxonomy + services + staff + photos + mappings) can take ~30s.
       signal: AbortSignal.timeout(110_000),
     })
 

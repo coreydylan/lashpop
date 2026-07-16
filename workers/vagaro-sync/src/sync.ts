@@ -1,91 +1,256 @@
-import { and, eq, isNotNull, sql } from 'drizzle-orm'
+import { and, asc, eq, isNotNull, sql } from 'drizzle-orm'
 import type { Db } from './db'
-import { services, teamMembers, teamMemberServicesVagaro } from './schema'
+import {
+  serviceCategories,
+  services,
+  teamMembers,
+  teamMemberServicesVagaro,
+  vagaroCategoryMappings,
+  vagaroServiceCategories,
+} from './schema'
 import type { VagaroClient } from './vagaro-client'
+import { computeEffectiveCategoryOrder } from './category-order'
 import { fetchPublicStaff, nameKey, originalPhotoUrl } from './public-staff'
 import {
   fetchPublicServicesForProvider,
   fetchPublicServicesFull,
   serviceTitleKey,
+  type PublicServicesPayload,
   type PublicServiceRecord,
 } from './public-services'
 
-/**
- * Map Vagaro's free-text mainCategory string to a `service_categories.slug`.
- * The Service Browser filters by slug, so an unrecognised Vagaro category
- * silently disappears from the UI until this map is updated. Keep this
- * conservative — when in doubt, fall through to null so the row stays
- * unlinked rather than mapping to the wrong category.
- */
-const VAGARO_CATEGORY_TO_SLUG: Record<string, string> = {
-  // Lashes
-  'lash services': 'lashes',
-  'eyelash extension services': 'lashes',
-  'lash extensions': 'lashes',
-  'lash lifts': 'lashes',
-  'lashes': 'lashes',
-  // Brows
-  'brow services': 'brows',
-  'brows': 'brows',
-  // Skincare / facials
-  'facials & skin care': 'facials',
-  'facials and skin care': 'facials',
-  'skin care and facial services': 'facials',
-  'skincare & facials': 'facials',
-  'skincare and facials': 'facials',
-  'skincare': 'facials',
-  'facials': 'facials',
-  // Waxing
-  'waxing': 'waxing',
-  // Permanent makeup. The studio renames this category in Vagaro with a
-  // parenthetical list of its services (e.g. "Permanent Makeup (Microblading/
-  // Nanobrows/Freckles/Lip Blushing)"). The parenthetical-stripping fallback in
-  // resolveCategoryId() handles those renames, but keep the bare title mapped
-  // too so an exact match short-circuits.
-  'permanent makeup': 'permanent-makeup',
-  // Permanent jewelry / specialty
-  'permanent jewelry': 'specialty',
-  'specialty': 'specialty',
-  // Fine line tattooing is its own Vagaro category and booking surface.
-  'fine line tattoos': 'fine-line-tattoos',
-  // Lashpop Pro Training — was falling through to NULL FK because the category
-  // title from the composite ("Lashpop Pro Training") wasn't mapped. Without a
-  // mapping the row stuck on whatever categoryId the previous sync wrote (which
-  // happened to be `specialty` from an earlier mis-classification), so the
-  // training course showed up under Permanent Jewelry on the booking flow.
-  'lashpop pro training': 'lashpop-pro-training',
-  // Injectables / botox
-  'injectables': 'injectables',
-  'botox': 'injectables',
-  // Bundles
-  'bundles': 'bundles',
-  // Nails
-  'nails': 'nails',
+export interface CategorySyncStats {
+  fetched: number
+  created: number
+  updated: number
+  deactivated: number
+  mappingsCreated: number
+  websiteCategoriesCreated: number
+  websiteCategoriesReordered: number
 }
 
-let categoryIdBySlugCache: Map<string, string> | null = null
+function categorySlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'vagaro-category'
+}
 
-async function resolveCategoryId(db: Db, parentTitle: string | null | undefined): Promise<string | null> {
-  if (!parentTitle) return null
-  const normalized = parentTitle.trim().toLowerCase()
-  // Try the exact title first, then fall back to the title with any trailing
-  // parenthetical stripped — Vagaro category titles drift as the studio appends
-  // "(Microblading/Nanobrows/...)" etc. Without this, a renamed category
-  // resolves to NULL and the sync silently leaves services on their stale
-  // categoryId (this is how the original Microblading/Nanobrows got stuck under
-  // Brows after they were moved to Permanent Makeup in Vagaro).
-  const slug =
-    VAGARO_CATEGORY_TO_SLUG[normalized] ??
-    VAGARO_CATEGORY_TO_SLUG[normalized.replace(/\s*\(.*\)\s*$/, '').trim()]
-  if (!slug) return null
-
-  if (!categoryIdBySlugCache) {
-    const rows = await db.all<{ id: string; slug: string }>(
-      sql`SELECT id, slug FROM service_categories`
-    )
-    categoryIdBySlugCache = new Map(rows.map(r => [r.slug, r.id]))
+function uniqueValue(base: string, used: Set<string>, suffix: string): string {
+  if (!used.has(base)) {
+    used.add(base)
+    return base
   }
-  return categoryIdBySlugCache.get(slug) ?? null
+  let candidate = `${base}-${suffix}`
+  let index = 2
+  while (used.has(candidate)) candidate = `${base}-${suffix}-${index++}`
+  used.add(candidate)
+  return candidate
+}
+
+/**
+ * Reconcile Vagaro's category taxonomy before syncing individual services.
+ * Stable external IDs make renames safe; the mapping table preserves local
+ * merges (Lash Extensions + Lash Lifts) and manual anchors (Botox).
+ */
+export async function syncVagaroCategories(
+  db: Db,
+  payload: PublicServicesPayload,
+): Promise<CategorySyncStats> {
+  const stats: CategorySyncStats = {
+    fetched: payload.categories.length,
+    created: 0,
+    updated: 0,
+    deactivated: 0,
+    mappingsCreated: 0,
+    websiteCategoriesCreated: 0,
+    websiteCategoriesReordered: 0,
+  }
+  if (payload.categories.length < 3) {
+    throw new Error(`Vagaro category payload is suspiciously small (${payload.categories.length}); refusing reconciliation`)
+  }
+
+  const now = new Date()
+  const existingRaw = await db.select().from(vagaroServiceCategories)
+  const rawByExternalId = new Map(existingRaw.map(row => [row.vagaroCategoryId, row]))
+  const incomingIds = new Set(payload.categories.map(category => category.categoryId))
+
+  for (const category of payload.categories) {
+    const existing = rawByExternalId.get(category.categoryId)
+    if (existing) {
+      await db
+        .update(vagaroServiceCategories)
+        .set({
+          title: category.title,
+          displayOrder: category.displayOrder,
+          serviceCount: category.serviceCount,
+          isActive: true,
+          lastSeenAt: now,
+          lastSyncedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(vagaroServiceCategories.id, existing.id))
+      stats.updated++
+    } else {
+      await db.insert(vagaroServiceCategories).values({
+        vagaroCategoryId: category.categoryId,
+        title: category.title,
+        displayOrder: category.displayOrder,
+        serviceCount: category.serviceCount,
+        isActive: true,
+        teamDisplayOrder: category.displayOrder * 10,
+        showOnTeam: true,
+        lastSeenAt: now,
+        lastSyncedAt: now,
+      })
+      stats.created++
+    }
+  }
+
+  for (const raw of existingRaw) {
+    if (!raw.isActive || incomingIds.has(raw.vagaroCategoryId)) continue
+    await db
+      .update(vagaroServiceCategories)
+      .set({ isActive: false, lastSyncedAt: now, updatedAt: now })
+      .where(eq(vagaroServiceCategories.id, raw.id))
+    stats.deactivated++
+  }
+
+  const refreshedRaw = await db.select().from(vagaroServiceCategories)
+  const existingMappings = await db.select().from(vagaroCategoryMappings)
+  const mappedRawIds = new Set(existingMappings.map(mapping => mapping.vagaroCategoryId))
+  const websiteRows = await db.select().from(serviceCategories)
+  const usedNames = new Set(websiteRows.map(row => row.name))
+  const usedSlugs = new Set(websiteRows.map(row => row.slug))
+
+  // A genuinely new Vagaro category becomes a booking category immediately.
+  // Presentation copy/art stay empty until LashPop chooses to enrich them.
+  for (const raw of refreshedRaw.filter(row => row.isActive)) {
+    if (mappedRawIds.has(raw.id)) continue
+    const suffix = raw.vagaroCategoryId.slice(-6).toLowerCase()
+    const internalName = usedNames.has(raw.title)
+      ? uniqueValue(`${raw.title} [Vagaro]`, usedNames, suffix)
+      : uniqueValue(raw.title, usedNames, suffix)
+    const slug = uniqueValue(categorySlug(raw.title), usedSlugs, suffix)
+    const websiteCategoryId = crypto.randomUUID()
+    await db.insert(serviceCategories).values({
+      id: websiteCategoryId,
+      name: internalName,
+      displayName: internalName === raw.title ? null : raw.title,
+      slug,
+      displayOrder: raw.displayOrder,
+      isActive: true,
+      sourceType: 'vagaro',
+      showInBooking: true,
+      syncStatus: 'synced',
+      lastSyncedAt: now,
+    })
+    await db.insert(vagaroCategoryMappings).values({
+      vagaroCategoryId: raw.id,
+      serviceCategoryId: websiteCategoryId,
+      mappingType: 'automatic',
+    })
+    stats.mappingsCreated++
+    stats.websiteCategoriesCreated++
+  }
+
+  const mappedRows = await db
+    .select({
+      rawId: vagaroServiceCategories.id,
+      externalId: vagaroServiceCategories.vagaroCategoryId,
+      rawTitle: vagaroServiceCategories.title,
+      rawOrder: vagaroServiceCategories.displayOrder,
+      rawActive: vagaroServiceCategories.isActive,
+      websiteId: serviceCategories.id,
+      websiteName: serviceCategories.name,
+      sourceType: serviceCategories.sourceType,
+      websiteOrder: serviceCategories.displayOrder,
+    })
+    .from(vagaroCategoryMappings)
+    .innerJoin(vagaroServiceCategories, eq(vagaroCategoryMappings.vagaroCategoryId, vagaroServiceCategories.id))
+    .innerJoin(serviceCategories, eq(vagaroCategoryMappings.serviceCategoryId, serviceCategories.id))
+
+  const mappingsByWebsiteId = new Map<string, typeof mappedRows>()
+  for (const row of mappedRows) {
+    const bucket = mappingsByWebsiteId.get(row.websiteId) ?? []
+    bucket.push(row)
+    mappingsByWebsiteId.set(row.websiteId, bucket)
+  }
+
+  // Reflect lifecycle and one-to-one renames without touching local displayName,
+  // copy, art, or manually-owned categories.
+  const currentWebsiteRows = await db.select().from(serviceCategories)
+  for (const website of currentWebsiteRows) {
+    const sources = mappingsByWebsiteId.get(website.id)
+    if (!sources?.length) continue
+    const activeSources = sources.filter(source => source.rawActive)
+    const sourceType = sources.length > 1 ? 'merged' : 'vagaro'
+    const namePatch: { name?: string; displayName?: string } = {}
+    if (sourceType === 'vagaro' && activeSources[0] && activeSources[0].rawTitle !== website.name) {
+      const conflict = currentWebsiteRows.some(
+        candidate => candidate.id !== website.id && candidate.name === activeSources[0].rawTitle,
+      )
+      if (!conflict) {
+        namePatch.name = activeSources[0].rawTitle
+      } else if (!website.displayName) {
+        // Preserve the externally visible rename even when SQLite's unique
+        // name constraint requires us to keep the old internal name.
+        namePatch.displayName = activeSources[0].rawTitle
+      }
+    }
+    await db
+      .update(serviceCategories)
+      .set({
+        ...namePatch,
+        sourceType,
+        isActive: activeSources.length > 0,
+        syncStatus: activeSources.length > 0 ? 'synced' : 'missing',
+        lastSyncedAt: now,
+        updatedAt: now,
+      })
+      .where(eq(serviceCategories.id, website.id))
+  }
+
+  // Manual booking categories keep their chosen slots. Vagaro-backed
+  // categories fill the remaining slots in Vagaro order, de-duplicating merges.
+  const finalWebsiteRows = await db.select().from(serviceCategories)
+  const reservedOrders = new Set(
+    finalWebsiteRows
+      .filter(row => row.sourceType === 'manual' && row.showInBooking && row.isActive)
+      .map(row => row.displayOrder),
+  )
+  const effectiveOrder = computeEffectiveCategoryOrder(
+    mappedRows.map(row => ({
+      websiteId: row.websiteId,
+      sourceOrder: row.rawOrder,
+      active: row.rawActive,
+    })),
+    reservedOrders,
+  )
+  for (const [websiteId, order] of effectiveOrder) {
+    const current = finalWebsiteRows.find(row => row.id === websiteId)
+    if (current && current.displayOrder !== order) {
+      await db
+        .update(serviceCategories)
+        .set({ displayOrder: order, updatedAt: now })
+        .where(eq(serviceCategories.id, websiteId))
+      stats.websiteCategoriesReordered++
+    }
+  }
+
+  return stats
+}
+
+async function loadCategoryMapping(db: Db): Promise<Map<string, string>> {
+  const rows = await db
+    .select({
+      externalId: vagaroServiceCategories.vagaroCategoryId,
+      websiteId: vagaroCategoryMappings.serviceCategoryId,
+    })
+    .from(vagaroCategoryMappings)
+    .innerJoin(vagaroServiceCategories, eq(vagaroCategoryMappings.vagaroCategoryId, vagaroServiceCategories.id))
+  return new Map(rows.map(row => [row.externalId, row.websiteId]))
 }
 
 export interface SyncStats {
@@ -133,7 +298,8 @@ async function syncService(
   // Every Vagaro serviceId present in THIS sync run. Used to stop the slug/name
   // fallback below from merging two genuinely-distinct services that happen to
   // share a title (see the guard comment in the lookup block).
-  runServiceIds: Set<string>
+  runServiceIds: Set<string>,
+  categoryIdByVagaroId: Map<string, string>,
 ): Promise<string | null> {
   const serviceId = publicRecord.serviceId
   // Prefer v2's title when available (it's the authenticated, canonical name);
@@ -175,12 +341,16 @@ async function syncService(
     console.log(`photo match for "${title}" was by title only, not serviceId — verify mapping`)
   }
 
-  // FK resolution: turn Vagaro's free-text category into a service_categories.id
-  // so the Service Browser actually sees the row. New categories that aren't
-  // mapped fall through to NULL (row still syncs, just no UI surface).
-  const categoryId = await resolveCategoryId(db, parentTitle)
-  if (!categoryId && parentTitle) {
-    console.log(`unmapped Vagaro category "${parentTitle}" — service "${title}" will sync without category FK`)
+  // Category identity is stable even when the Vagaro title changes. The
+  // preceding category stage guarantees new external IDs receive a mapping.
+  const categoryId = publicRecord.parentCategoryId
+    ? categoryIdByVagaroId.get(publicRecord.parentCategoryId) ?? null
+    : null
+  if (!categoryId && publicRecord.parentCategoryId) {
+    console.log(
+      `unmapped Vagaro category #${publicRecord.parentCategoryId} (${parentTitle ?? 'untitled'})` +
+      ` — service "${title}" will sync without category FK`,
+    )
   }
 
   // Only persist `vagaro_data` when v2 returned the service. The previous
@@ -371,14 +541,15 @@ async function syncTeamMember(db: Db, vagaroEmployee: any): Promise<void> {
 export async function syncAllServices(
   db: Db,
   client: VagaroClient,
-  numericBusinessId: string
+  numericBusinessId: string,
+  suppliedPayload?: PublicServicesPayload,
 ): Promise<SyncStats> {
   // PUBLIC COMPOSITE is the canonical source of the service LIST. Vagaro's
   // authenticated v2 /api/v2/services endpoint caps at 10 rows regardless of
   // pageSize/pageNumber (verified by hand), so driving the sync off v2 means
   // 85+ services never get revisited — that's why brow/nanobrow/microblading
   // photos went stale for months.
-  const publicPayload = await fetchPublicServicesFull(numericBusinessId)
+  const publicPayload = suppliedPayload ?? await fetchPublicServicesFull(numericBusinessId)
   const photosByTitle = publicPayload.photosByTitle
   const photosByServiceId = publicPayload.photosByServiceId
   const photosAvailable = photosByTitle.size > 0 || photosByServiceId.size > 0
@@ -431,6 +602,7 @@ export async function syncAllServices(
   // different id format" (safe to merge) apart from "different service, same
   // title" (must NOT merge — see the guard inside syncService).
   const runServiceIds = new Set(publicRecords.map(r => r.serviceId))
+  const categoryIdByVagaroId = await loadCategoryMapping(db)
 
   // positionalOrder mirrors Vagaro's booking-page order — the composite walks
   // categories in the order they're displayed and services within them in the
@@ -441,7 +613,17 @@ export async function syncAllServices(
     const rec = publicRecords[i]
     try {
       const v2Match = v2ById.get(rec.serviceId) ?? null
-      const touchedId = await syncService(db, rec, v2Match, photosByTitle, photosByServiceId, photosAvailable, i, runServiceIds)
+      const touchedId = await syncService(
+        db,
+        rec,
+        v2Match,
+        photosByTitle,
+        photosByServiceId,
+        photosAvailable,
+        i,
+        runServiceIds,
+        categoryIdByVagaroId,
+      )
       if (touchedId) touchedServiceIds.add(touchedId)
       synced++
     } catch (err) {
@@ -820,6 +1002,7 @@ export async function syncStylistServices(
         teamMemberId: string
         serviceId: string
         vagaroParentTitle: string | null
+        vagaroCategoryId: string | null
       }> = []
       for (const rec of records) {
         const localServiceId = serviceIdByVagaroId.get(rec.serviceId)
@@ -831,6 +1014,7 @@ export async function syncStylistServices(
           teamMemberId: stylist.id,
           serviceId: localServiceId,
           vagaroParentTitle: rec.vagaroCategoryTitle,
+          vagaroCategoryId: rec.vagaroCategoryId,
         })
       }
 
@@ -839,7 +1023,7 @@ export async function syncStylistServices(
         .where(eq(teamMemberServicesVagaro.teamMemberId, stylist.id))
       if (inserts.length > 0) {
         // D1 has a lower bind-variable ceiling than Postgres. Each row uses
-        // four parameters (generated id + three fields), so keep every insert
+        // five parameters (generated id + four fields), so keep every insert
         // safely below the limit and execute all chunks atomically with the
         // delete in one D1 batch.
         const insertChunks = Array.from(

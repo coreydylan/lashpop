@@ -2,42 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/db'
 import { teamMembers } from '@/db/schema/team_members'
 import { teamMemberServicesVagaro } from '@/db/schema/team_member_services_vagaro'
+import { vagaroServiceCategories } from '@/db/schema/vagaro_service_categories'
 import { eq, asc, inArray } from 'drizzle-orm'
 
 export const dynamic = 'force-dynamic'
 
-const SERVICE_TAG_ORDER = [
-  'Fine Line Tattoos',
-  'Lashes',
-  'Lash Lifts',
-  'Brows',
-  'Skin Care',
-  'Waxing',
-  'Permanent Makeup',
-  'Permanent Jewelry',
-  'Injectables',
-] as const
-
-function sortServiceTags(tags: string[]): string[] {
-  const rank = new Map<string, number>(SERVICE_TAG_ORDER.map((tag, index) => [tag, index]))
-  return [...tags].sort((a, b) => (rank.get(a) ?? 999) - (rank.get(b) ?? 999) || a.localeCompare(b))
-}
-
-// Map Vagaro parent-category title → frontend tag labels. Mirrors
-// vagaroParentToTags() in src/actions/team.ts so the admin preview shows the
-// same chip strings the public team section will render.
-function vagaroParentToTags(parentTitle: string | null | undefined): string[] {
-  const p = (parentTitle ?? '').toLowerCase().trim()
-  if (!p) return []
-  if (p.includes('lash extension')) return ['Lashes']
-  if (p.includes('lash lift')) return ['Lash Lifts', 'Lashes']
-  if (p.includes('brow')) return ['Brows']
-  if (p.includes('permanent makeup') || p.includes('microblading') || p.includes('nanobrow')) return ['Permanent Makeup']
-  if (p.includes('skin care') || p.includes('skincare') || p.includes('facial')) return ['Skin Care']
-  if (p.includes('permanent jewelry') || p.includes('perm jewelry')) return ['Permanent Jewelry']
-  if (p.includes('fine line tattoo')) return ['Fine Line Tattoos']
-  if (p.includes('wax')) return ['Waxing']
-  return []
+function sortServiceTags(tags: string[], rank: Map<string, number>): string[] {
+  return [...tags].sort((a, b) => (rank.get(a) ?? 9999) - (rank.get(b) ?? 9999) || a.localeCompare(b))
 }
 
 // GET - Fetch all team members (including inactive) with derived service categories.
@@ -53,35 +24,62 @@ export async function GET() {
       .orderBy(asc(teamMembers.displayOrder))
 
     const memberIds = members.map(m => m.id)
-    const vagaroMappings = memberIds.length > 0
-      ? await db
+    const [vagaroMappings, vagaroCategoryConfig] = await Promise.all([
+      memberIds.length > 0
+        ? db
           .select({
             teamMemberId: teamMemberServicesVagaro.teamMemberId,
-            vagaroParentTitle: teamMemberServicesVagaro.vagaroParentTitle,
+            vagaroCategoryId: teamMemberServicesVagaro.vagaroCategoryId,
           })
           .from(teamMemberServicesVagaro)
           .where(inArray(teamMemberServicesVagaro.teamMemberId, memberIds))
-      : []
+        : Promise.resolve([]),
+      db.select({
+        vagaroCategoryId: vagaroServiceCategories.vagaroCategoryId,
+        title: vagaroServiceCategories.title,
+        teamLabel: vagaroServiceCategories.teamLabel,
+        teamDisplayOrder: vagaroServiceCategories.teamDisplayOrder,
+        displayOrder: vagaroServiceCategories.displayOrder,
+        showOnTeam: vagaroServiceCategories.showOnTeam,
+      })
+        .from(vagaroServiceCategories)
+        .where(eq(vagaroServiceCategories.isActive, true)),
+    ])
+
+    const categoryByExternalId = new Map(
+      vagaroCategoryConfig.map(category => [category.vagaroCategoryId, category]),
+    )
+    const tagRank = new Map<string, number>()
+    for (const category of vagaroCategoryConfig) {
+      if (category.showOnTeam) {
+        tagRank.set(
+          category.teamLabel || category.title,
+          category.teamDisplayOrder ?? category.displayOrder * 10,
+        )
+      }
+    }
+    tagRank.set('Injectables', 80)
 
     // Group vagaroMappings by member into ordered tag-label lists (dedupe,
     // first-seen wins).
     const vagaroTagsByMember = new Map<string, string[]>()
     for (const mapping of vagaroMappings) {
-      const tags = vagaroParentToTags(mapping.vagaroParentTitle)
-      if (tags.length === 0) continue
+      const category = mapping.vagaroCategoryId
+        ? categoryByExternalId.get(mapping.vagaroCategoryId)
+        : undefined
+      if (!category?.showOnTeam) continue
+      const tag = category.teamLabel || category.title
       const list = vagaroTagsByMember.get(mapping.teamMemberId) ?? []
-      for (const tag of tags) {
-        if (!list.includes(tag)) list.push(tag)
-      }
+      if (!list.includes(tag)) list.push(tag)
       vagaroTagsByMember.set(mapping.teamMemberId, list)
     }
 
     const membersWithCategories = members.map((member) => {
       const vagaroCategories = member.usesLashpopBooking
-        ? sortServiceTags(vagaroTagsByMember.get(member.id) ?? [])
+        ? sortServiceTags(vagaroTagsByMember.get(member.id) ?? [], tagRank)
         : []
       const externalCategories = !member.usesLashpopBooking
-        ? sortServiceTags((member.externalServiceCategories as string[] | null) ?? [])
+        ? sortServiceTags((member.externalServiceCategories as string[] | null) ?? [], tagRank)
         : []
 
       return {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Sparkles, RefreshCw, Save, Check, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Trash2, ExternalLink } from 'lucide-react'
 import type { HomepageServiceCard, HomepageServicesContent } from '@/types/homepage-services'
@@ -127,9 +128,13 @@ export default function HomepageServicesAdminPage() {
       </motion.div>
 
       <div className="mb-6 p-4 bg-dusty-rose/10 rounded-2xl border border-dusty-rose/20 text-sm text-dune/70">
-        These cards are the marketing tiles in the homepage <strong>Choose a Service</strong> section. They are separate from the Vagaro
-        booking catalog. The <code className="text-xs">slug</code> controls where a card links (e.g. <code className="text-xs">injectables</code> opens
-        Naturtox, <code className="text-xs">lash-lifts</code> opens the lashes booking drawer) — leave it unchanged unless you know the behavior you want.
+        <p>
+          These cards are the marketing tiles in the homepage <strong>Choose a Service</strong> section. Vagaro never overwrites their order,
+          copy, art, or visibility. The <code className="text-xs">slug</code> only controls where a card links (for example <code className="text-xs">injectables</code> opens Naturtox).
+        </p>
+        <Link href="/admin/website/services" className="mt-2 inline-flex items-center gap-1 font-medium text-dusty-rose hover:text-dune">
+          View the automatically synced booking taxonomy <ExternalLink className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
       <div className="space-y-4">

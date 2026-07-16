@@ -27,6 +27,8 @@ export const teamMemberServicesVagaro = pgTable("team_member_services_vagaro", {
   // Used by the read path to map raw Vagaro categories to the frontend's
   // canonical tag labels.
   vagaroParentTitle: text("vagaro_parent_title"),
+  // Stable category identity from Vagaro. Titles can be renamed at any time.
+  vagaroCategoryId: text("vagaro_category_id"),
   syncedAt: timestamp("synced_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   uniqMemberService: unique("team_member_services_vagaro_member_service_unique")

@@ -20,6 +20,9 @@ import { customers } from "./schema/customers"
 import { teamMembers, teamMemberServices } from "./schema/team_members"
 import { teamMemberServicesVagaro } from "./schema/team_member_services_vagaro"
 import { serviceCategories } from "./schema/service_categories"
+import { vagaroServiceCategories } from "./schema/vagaro_service_categories"
+import { vagaroCategoryMappings } from "./schema/vagaro_category_mappings"
+import { vagaroSyncRuns } from "./schema/vagaro_sync_runs"
 import { services } from "./schema/services"
 import { testimonials } from "./schema/testimonials"
 import { reviews } from "./schema/reviews"
@@ -95,6 +98,9 @@ const dbSchema = {
   teamMemberServicesVagaro,
   teamQuickFacts,
   serviceCategories,
+  vagaroServiceCategories,
+  vagaroCategoryMappings,
+  vagaroSyncRuns,
   services,
   testimonials,
   reviews,
@@ -236,6 +242,9 @@ export {
   teamQuickFacts,
   QUICK_FACT_TYPES,
   serviceCategories,
+  vagaroServiceCategories,
+  vagaroCategoryMappings,
+  vagaroSyncRuns,
   services,
   testimonials,
   reviews,

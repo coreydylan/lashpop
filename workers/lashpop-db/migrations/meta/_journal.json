@@ -22,6 +22,13 @@
       "when": 1784158741543,
       "tag": "0002_fine_line_tattoos",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1784160808189,
+      "tag": "0003_far_stark_industries",
+      "breakpoints": true
     }
   ]
 }

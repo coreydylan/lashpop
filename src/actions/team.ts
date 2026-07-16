@@ -5,27 +5,12 @@ import { teamMembers } from "@/db/schema/team_members"
 import { teamQuickFacts } from "@/db/schema/team_quick_facts"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { teamMemberServicesVagaro } from "@/db/schema/team_member_services_vagaro"
+import { vagaroServiceCategories } from "@/db/schema/vagaro_service_categories"
 import { services } from "@/db/schema/services"
 import { and, eq, inArray, isNotNull, asc, sql } from "drizzle-orm"
 
-// Keep specialty chips stable across syncs. Fine Line Tattoos leads for the
-// artists who offer it so the new, uncommon service is visible without a
-// horizontal swipe; the remaining categories follow the public-site order.
-const SERVICE_TAG_ORDER = [
-  'Fine Line Tattoos',
-  'Lashes',
-  'Lash Lifts',
-  'Brows',
-  'Skin Care',
-  'Waxing',
-  'Permanent Makeup',
-  'Permanent Jewelry',
-  'Injectables',
-] as const
-
-function sortServiceTags(tags: string[]): string[] {
-  const rank = new Map<string, number>(SERVICE_TAG_ORDER.map((tag, index) => [tag, index]))
-  return [...tags].sort((a, b) => (rank.get(a) ?? 999) - (rank.get(b) ?? 999) || a.localeCompare(b))
+function sortServiceTags(tags: string[], rank: Map<string, number>): string[] {
+  return [...tags].sort((a, b) => (rank.get(a) ?? 9999) - (rank.get(b) ?? 9999) || a.localeCompare(b))
 }
 
 export async function getTeamMembers() {
@@ -93,7 +78,7 @@ export async function getTeamMembersWithServices() {
   const db = getDb()
 
   // Run all initial queries in parallel for better performance
-  const [members, vagaroMappings] = await Promise.all([
+  const [members, vagaroMappings, vagaroCategoryConfig] = await Promise.all([
     db.select()
       .from(teamMembers)
       .where(eq(teamMembers.isActive, true))
@@ -105,7 +90,18 @@ export async function getTeamMembersWithServices() {
     db.select({
       teamMemberId: teamMemberServicesVagaro.teamMemberId,
       vagaroParentTitle: teamMemberServicesVagaro.vagaroParentTitle,
-    }).from(teamMemberServicesVagaro)
+      vagaroCategoryId: teamMemberServicesVagaro.vagaroCategoryId,
+    }).from(teamMemberServicesVagaro),
+    db.select({
+      vagaroCategoryId: vagaroServiceCategories.vagaroCategoryId,
+      title: vagaroServiceCategories.title,
+      teamLabel: vagaroServiceCategories.teamLabel,
+      teamDisplayOrder: vagaroServiceCategories.teamDisplayOrder,
+      displayOrder: vagaroServiceCategories.displayOrder,
+      showOnTeam: vagaroServiceCategories.showOnTeam,
+    })
+      .from(vagaroServiceCategories)
+      .where(eq(vagaroServiceCategories.isActive, true)),
   ])
 
   const memberIds = members.map(m => m.id)
@@ -166,37 +162,19 @@ export async function getTeamMembersWithServices() {
     return acc
   }, {} as Record<string, { cropSquareUrl: string | null; cropCloseUpCircleUrl: string | null; cropMediumCircleUrl: string | null; cropFullVerticalUrl: string | null }>)
 
-  // Map a Vagaro parentServiceTitle (sub-category) to one or more frontend tag labels.
-  // Source of truth for this mapping is the spec Corey set when wiring up Vagaro-as-source-of-truth.
-  // Vagaro parentServiceTitle → canonical tag labels.
-  //
-  // IMPORTANT: tag strings here MUST match the CATEGORY_OPTIONS list in
-  // /admin/website/team/page.tsx so Vagaro-derived chips dedupe correctly
-  // against admin-set manual chips (allCategories merge dedupes by string
-  // equality further down). Mismatches like "Skincare" vs "Skin Care" or
-  // "waxing" vs "Waxing" cause the same artist to display two chips for
-  // the same concept.
-  //
-  // Vagaro also exposes TWO parent titles for the same body of lash work:
-  //   - "Eyelash Extension Services" (Emily et al)
-  //   - "Lash Extensions"            (Paige Gordon, Tori Burnett)
-  // We match the shared substring "lash extension" — safe against
-  // "Lash Lift Services" which doesn't contain that substring and is
-  // handled by the next branch.
-  function vagaroParentToTags(parentTitle: string | null | undefined): string[] {
-    const p = (parentTitle ?? '').toLowerCase().trim()
-    if (!p) return []
-    if (p.includes('lash extension')) return ['Lashes']
-    if (p.includes('lash lift')) return ['Lash Lifts', 'Lashes']
-    if (p.includes('brow')) return ['Brows']
-    if (p.includes('permanent makeup') || p.includes('microblading') || p.includes('nanobrow')) return ['Permanent Makeup']
-    if (p.includes('skin care') || p.includes('skincare') || p.includes('facial')) return ['Skin Care']
-    if (p.includes('permanent jewelry') || p.includes('perm jewelry')) return ['Permanent Jewelry']
-    if (p.includes('fine line tattoo')) return ['Fine Line Tattoos']
-    if (p.includes('wax')) return ['Waxing']
-    // Bundles, training, misc — skip (no tag)
-    return []
+  const categoryByExternalId = new Map(
+    vagaroCategoryConfig.map(category => [category.vagaroCategoryId, category]),
+  )
+  const tagRank = new Map<string, number>()
+  for (const category of vagaroCategoryConfig) {
+    if (!category.showOnTeam) continue
+    tagRank.set(
+      category.teamLabel || category.title,
+      category.teamDisplayOrder ?? category.displayOrder * 10,
+    )
   }
+  // External-booking artists can still use this local-only chip.
+  tagRank.set('Injectables', 80)
 
   // Build a map of teamMemberId → ordered list of frontend tag labels.
   // Walks the canonical Vagaro mapping table — one row per stylist×service —
@@ -204,12 +182,13 @@ export async function getTeamMembersWithServices() {
   // stylists with usesLashpopBooking=true have entries here.
   const tagsByMemberId = new Map<string, string[]>()
   for (const mapping of vagaroMappings) {
-    const tags = vagaroParentToTags(mapping.vagaroParentTitle)
-    if (tags.length === 0) continue
+    const category = mapping.vagaroCategoryId
+      ? categoryByExternalId.get(mapping.vagaroCategoryId)
+      : undefined
+    if (!category?.showOnTeam) continue
+    const tag = category.teamLabel || category.title
     const list = tagsByMemberId.get(mapping.teamMemberId) ?? []
-    for (const tag of tags) {
-      if (!list.includes(tag)) list.push(tag)
-    }
+    if (!list.includes(tag)) list.push(tag)
     tagsByMemberId.set(mapping.teamMemberId, list)
   }
 
@@ -217,8 +196,8 @@ export async function getTeamMembersWithServices() {
   // Dual-mode routing: the boolean is the authority. No merge, no fallback.
   const membersWithServices = members.map((member) => {
     const categories = member.usesLashpopBooking
-      ? sortServiceTags(tagsByMemberId.get(member.id) ?? [])
-      : sortServiceTags((member.externalServiceCategories as string[] | null) ?? [])
+      ? sortServiceTags(tagsByMemberId.get(member.id) ?? [], tagRank)
+      : sortServiceTags((member.externalServiceCategories as string[] | null) ?? [], tagRank)
 
     // Get photo crops for this member
     const photoCrops = photoCropsByMember[member.id] || {}

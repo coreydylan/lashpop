@@ -16,7 +16,14 @@ export function SyncNowButton() {
       const res = await fetch('/api/admin/website/team/sync', { method: 'POST' })
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
-        setMessage('Synced from Vagaro')
+        const workerResult = data?.result?.result
+        const categories = workerResult?.categories?.stats
+        const services = workerResult?.services?.stats
+        setMessage(
+          categories && services
+            ? `${categories.fetched} categories and ${services.synced} services synced`
+            : 'All Vagaro stages synced',
+        )
         router.refresh()
       } else {
         setMessage(`Sync failed: ${data.error || res.statusText}`)

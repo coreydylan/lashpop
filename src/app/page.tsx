@@ -127,11 +127,6 @@ export default async function HomePage() {
     cropFullVerticalUrl: member.cropFullVerticalUrl || undefined,
   }))
 
-  // Filter service categories to only include the main ones shown on the home page
-  // These should match the defaultServiceCategories in ServicesSection.tsx
-  const allowedCategorySlugs = ['lashes', 'brows', 'facials', 'waxing', 'permanent-makeup', 'specialty', 'fine-line-tattoos', 'injectables', 'bundles']
-  const filteredServiceCategories = serviceCategories.filter(cat => allowedCategorySlugs.includes(cat.slug))
-
   return <>
     <LandingPageV2Client
       services={formattedServices}
@@ -140,7 +135,7 @@ export default async function HomePage() {
       reviewStats={reviewStats}
       instagramPosts={instagramPosts}
       instagramSettings={instagramSettings}
-      serviceCategories={filteredServiceCategories}
+      serviceCategories={serviceCategories}
       homepageServices={homepageServiceCards}
       faqData={faqData}
       heroConfig={heroConfig}
