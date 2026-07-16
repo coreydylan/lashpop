@@ -24,6 +24,10 @@ export const user = pgTable('user', {
   // DAM Access Control
   damAccess: boolean('dam_access').default(false),
 
+  // Admin product role. During rollout, legacy dam_access=true users are
+  // treated as owners until this column is populated by the D1 migration.
+  adminRole: text('admin_role'),
+
   // Timestamps
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()

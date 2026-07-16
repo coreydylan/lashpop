@@ -1,186 +1,138 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Shield, ShieldOff, Users } from "lucide-react"
+import { useEffect, useState } from 'react'
+import { ShieldCheck, Users } from 'lucide-react'
 
-interface User {
+type AdminRole = 'owner' | 'publisher' | 'viewer' | null
+
+interface UserRow {
   id: string
-  phoneNumber: string
+  phoneNumber: string | null
   email: string | null
   name: string | null
-  damAccess: boolean
-  createdAt: Date
+  adminRole: AdminRole
+  createdAt: string
 }
 
-export default function DAMUsersAdmin() {
-  const [users, setUsers] = useState<User[]>([])
+const ROLE_COPY: Record<Exclude<AdminRole, null>, string> = {
+  owner: 'Full access, including roles and infrastructure controls.',
+  publisher: 'Can edit and publish content, reviews, and media.',
+  viewer: 'Read-only access for verification and support.',
+}
+
+export default function AdminAccessPage() {
+  const [users, setUsers] = useState<UserRow[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
+  useEffect(() => { void loadUsers() }, [])
 
-  const fetchUsers = async () => {
+  async function loadUsers() {
+    setError(null)
     try {
-      const response = await fetch("/api/admin/dam-users")
+      const response = await fetch('/api/admin/dam-users')
       const data = await response.json()
-
-      if (response.ok) {
-        setUsers(data.users)
-      } else {
-        console.error("Failed to fetch users:", data.error)
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error)
+      if (!response.ok) throw new Error(data.error || 'Failed to load users')
+      setUsers(data.users)
+      setCurrentUserId(data.currentUserId)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Failed to load users')
     } finally {
       setLoading(false)
     }
   }
 
-  const toggleDamAccess = async (userId: string, currentAccess: boolean) => {
+  async function updateRole(userId: string, adminRole: AdminRole) {
     setUpdating(userId)
-
+    setError(null)
+    setMessage(null)
     try {
-      const response = await fetch("/api/admin/dam-users", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-          damAccess: !currentAccess,
-        }),
+      const response = await fetch('/api/admin/dam-users', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ userId, adminRole }),
       })
-
-      if (response.ok) {
-        // Update local state
-        setUsers(users.map(u =>
-          u.id === userId ? { ...u, damAccess: !currentAccess } : u
-        ))
-      } else {
-        const data = await response.json()
-        alert(`Failed to update access: ${data.error}`)
-      }
-    } catch (error) {
-      console.error("Error updating DAM access:", error)
-      alert("Failed to update access")
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to update role')
+      setUsers((current) => current.map((user) => user.id === userId ? { ...user, adminRole } : user))
+      setMessage('Access updated.')
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : 'Failed to update role')
     } finally {
       setUpdating(null)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-dusty-rose border-t-transparent rounded-full" />
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream via-warm-sand to-dusty-rose/30">
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8"
-        >
-          <div className="flex items-center gap-3 mb-3">
-            <div className="h-12 w-12 flex items-center justify-center rounded-full bg-gradient-to-br from-dusty-rose/30 to-terracotta/30 backdrop-blur-sm border border-dusty-rose/20">
-              <Users className="h-6 w-6 text-terracotta" strokeWidth={1.5} />
-            </div>
-            <div>
-              <h1 className="h2 text-dune">DAM User Management</h1>
-              <p className="text-sm text-dune/60">Grant or revoke access to the Digital Asset Manager</p>
-            </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <header className="border-b border-black/10 pb-5">
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 items-center justify-center rounded-xl bg-[#c96f50]/10 text-[#a14f35]"><Users className="size-5" /></span>
+          <div>
+            <h1 className="font-serif text-3xl text-[#292a27]">Admin access</h1>
+            <p className="mt-1 text-sm text-black/60">Give each person only the access their work requires.</p>
           </div>
-        </motion.div>
+        </div>
+      </header>
 
-        {/* Users List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="glass border border-sage/20 rounded-3xl p-6 shadow-xl"
-        >
-          {users.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-dune/60">No users found</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 bg-cream/50 rounded-2xl border border-sage/10 hover:border-dusty-rose/20 transition-all"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm font-medium text-dune">
-                        {user.name || "No name"}
-                      </div>
-                      {user.damAccess && (
-                        <div className="px-2 py-0.5 bg-ocean-mist/30 text-ocean-mist rounded-full text-xs font-semibold uppercase tracking-wide border border-ocean-mist/30">
-                          DAM Access
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-sm text-dune/60 mt-1">
-                      {user.phoneNumber}
-                    </div>
-                    {user.email && (
-                      <div className="text-xs text-dune/40 mt-0.5">
-                        {user.email}
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => toggleDamAccess(user.id, user.damAccess)}
-                    disabled={updating === user.id}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-light transition-all ${
-                      user.damAccess
-                        ? "bg-terracotta/10 text-terracotta hover:bg-terracotta/20 border border-terracotta/30"
-                        : "bg-ocean-mist/10 text-ocean-mist hover:bg-ocean-mist/20 border border-ocean-mist/30"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {updating === user.id ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    ) : user.damAccess ? (
-                      <>
-                        <ShieldOff className="w-4 h-4" />
-                        <span className="text-sm">Revoke</span>
-                      </>
-                    ) : (
-                      <>
-                        <Shield className="w-4 h-4" />
-                        <span className="text-sm">Grant</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-6 p-4 bg-golden/10 border border-golden/20 rounded-2xl"
-        >
-          <p className="text-sm text-dune/70">
-            <strong>Note:</strong> Users must be registered (have an account) before they can be granted DAM access.
-            Users can register by attempting to login to the DAM with their phone number.
-          </p>
-        </motion.div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {(Object.entries(ROLE_COPY) as Array<[Exclude<AdminRole, null>, string]>).map(([role, copy]) => (
+          <div key={role} className="rounded-xl border border-black/10 bg-white p-4">
+            <p className="text-sm font-semibold capitalize">{role}</p>
+            <p className="mt-1 text-xs leading-5 text-black/55">{copy}</p>
+          </div>
+        ))}
       </div>
+
+      <div aria-live="polite" className="min-h-5 text-sm">
+        {error && <p className="text-red-700">{error}</p>}
+        {!error && message && <p className="text-emerald-700">{message}</p>}
+      </div>
+
+      <section className="overflow-hidden rounded-xl border border-black/10 bg-white" aria-busy={loading}>
+        <div className="border-b border-black/10 px-5 py-4">
+          <h2 className="font-semibold">Registered people</h2>
+          <p className="mt-1 text-xs text-black/50">People must sign in once before they appear here.</p>
+        </div>
+        {loading ? (
+          <div className="p-8 text-sm text-black/50">Loading access…</div>
+        ) : users.length === 0 ? (
+          <div className="p-8 text-sm text-black/50">No registered users found.</div>
+        ) : (
+          <ul className="divide-y divide-black/10">
+            {users.map((user) => (
+              <li key={user.id} className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_16rem] md:items-center">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-semibold">{user.name || 'Unnamed user'}</p>
+                    {user.id === currentUserId && <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black/50">You</span>}
+                    {user.adminRole && <ShieldCheck className="size-4 text-[#a14f35]" aria-label={`${user.adminRole} access`} />}
+                  </div>
+                  <p className="mt-1 truncate text-xs text-black/55">{user.email || user.phoneNumber || 'No contact information'}</p>
+                </div>
+                <div>
+                  <label htmlFor={`role-${user.id}`} className="sr-only">Role for {user.name || user.email || user.phoneNumber}</label>
+                  <select
+                    id={`role-${user.id}`}
+                    value={user.adminRole ?? 'none'}
+                    onChange={(event) => void updateRole(user.id, event.target.value === 'none' ? null : event.target.value as AdminRole)}
+                    disabled={updating === user.id || (user.id === currentUserId && user.adminRole === 'owner')}
+                    className="min-h-11 w-full rounded-lg border border-black/15 bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-black/45"
+                  >
+                    <option value="none">No admin access</option>
+                    <option value="viewer">Viewer — read only</option>
+                    <option value="publisher">Publisher — edit content</option>
+                    <option value="owner">Owner — full access</option>
+                  </select>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   )
 }

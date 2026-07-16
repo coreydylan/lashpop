@@ -16,6 +16,7 @@ import { eq } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +40,7 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdminApi()
+  const auth = await requireAdminApi(['owner', 'publisher'])
   if (auth instanceof NextResponse) return auth
 
   const { id } = await params
@@ -79,6 +80,8 @@ export async function PATCH(
   }
 
   const db = getDb()
+  const [before] = await db.select().from(reviews).where(eq(reviews.id, id)).limit(1)
+  if (!before) return NextResponse.json({ error: 'review not found' }, { status: 404 })
 
   // Update locks in application code so the query works identically on D1.
   if (lockColumns.size > 0 || (body.unlock && body.unlock.length > 0)) {
@@ -104,5 +107,14 @@ export async function PATCH(
   if (result.length === 0) {
     return NextResponse.json({ error: 'review not found' }, { status: 404 })
   }
+
+  const [after] = await db.select().from(reviews).where(eq(reviews.id, id)).limit(1)
+  await recordAdminAction({
+    action: 'review.override.update',
+    targetType: 'review',
+    targetId: id,
+    actorUserId: auth.userId,
+    diff: { before, after, requestedFields: Object.keys(body) },
+  })
   return NextResponse.json({ success: true, id })
 }

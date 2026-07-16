@@ -7,9 +7,11 @@ import { tags } from "@/db/schema/tags"
 import { assetTags } from "@/db/schema/asset_tags"
 import { services } from "@/db/schema/services"
 import { serviceSubcategories } from "@/db/schema/service_subcategories"
-import { eq, and, asc, isNull, sql } from "drizzle-orm"
+import { eq, and, asc, inArray, isNull, sql } from "drizzle-orm"
 import sharp from "sharp"
 import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
+import { requireAdminRole } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
 // Lash style → lash_type tag name used by import-quiz-photos.ts
 const LASH_STYLE_TO_TAG_NAME: Record<LashStyle, string> = {
@@ -109,6 +111,7 @@ export async function addQuizPhoto({
   assetId: string
   lashStyle: LashStyle
 }) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
 
   // Get the max sort order for this style
@@ -129,6 +132,17 @@ export async function addQuizPhoto({
     })
     .returning()
 
+  await recordAdminAction({
+    action: "quiz.photo.add",
+    targetType: "quiz-photo",
+    targetId: newPhoto.id,
+    actorUserId: auth.userId,
+    diff: {
+      before: null,
+      after: quizPhotoAuditSnapshot(newPhoto),
+    },
+  })
+
   return newPhoto
 }
 
@@ -137,6 +151,7 @@ export async function updateQuizPhotoCrop(
   photoId: string,
   cropData: QuizPhotoCropData
 ) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
 
   // First get the photo to access the asset
@@ -144,6 +159,9 @@ export async function updateQuizPhotoCrop(
     .select({
       id: quizPhotos.id,
       assetId: quizPhotos.assetId,
+      lashStyle: quizPhotos.lashStyle,
+      cropData: quizPhotos.cropData,
+      cropUrl: quizPhotos.cropUrl,
       filePath: assets.filePath,
       fileName: assets.fileName,
     })
@@ -203,16 +221,40 @@ export async function updateQuizPhotoCrop(
     })
     .where(eq(quizPhotos.id, photoId))
 
+  await recordAdminAction({
+    action: "quiz.photo.crop.update",
+    targetType: "quiz-photo",
+    targetId: photoId,
+    actorUserId: auth.userId,
+    diff: {
+      before: {
+        cropData: photo.cropData,
+        cropUrl: photo.cropUrl,
+      },
+      after: {
+        cropData,
+        cropUrl,
+      },
+      assetId: photo.assetId,
+      lashStyle: photo.lashStyle,
+    },
+  })
+
   return { success: true, cropUrl }
 }
 
 // Toggle quiz photo enabled status
 export async function toggleQuizPhotoEnabled(photoId: string) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
 
   // Get current status
   const [photo] = await db
-    .select({ isEnabled: quizPhotos.isEnabled })
+    .select({
+      assetId: quizPhotos.assetId,
+      lashStyle: quizPhotos.lashStyle,
+      isEnabled: quizPhotos.isEnabled,
+    })
     .from(quizPhotos)
     .where(eq(quizPhotos.id, photoId))
     .limit(1)
@@ -230,14 +272,49 @@ export async function toggleQuizPhotoEnabled(photoId: string) {
     })
     .where(eq(quizPhotos.id, photoId))
 
+  await recordAdminAction({
+    action: "quiz.photo.enabled.update",
+    targetType: "quiz-photo",
+    targetId: photoId,
+    actorUserId: auth.userId,
+    diff: {
+      before: { isEnabled: photo.isEnabled },
+      after: { isEnabled: !photo.isEnabled },
+      assetId: photo.assetId,
+      lashStyle: photo.lashStyle,
+    },
+  })
+
   return { success: true, isEnabled: !photo.isEnabled }
 }
 
 // Delete quiz photo
 export async function deleteQuizPhoto(photoId: string) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
 
+  const [photo] = await db
+    .select()
+    .from(quizPhotos)
+    .where(eq(quizPhotos.id, photoId))
+    .limit(1)
+
+  if (!photo) {
+    throw new Error("Quiz photo not found")
+  }
+
   await db.delete(quizPhotos).where(eq(quizPhotos.id, photoId))
+
+  await recordAdminAction({
+    action: "quiz.photo.delete",
+    targetType: "quiz-photo",
+    targetId: photoId,
+    actorUserId: auth.userId,
+    diff: {
+      before: quizPhotoAuditSnapshot(photo),
+      after: null,
+    },
+  })
 
   return { success: true }
 }
@@ -246,7 +323,18 @@ export async function deleteQuizPhoto(photoId: string) {
 export async function updateQuizPhotoSortOrders(
   updates: Array<{ photoId: string; sortOrder: number }>
 ) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
+
+  if (updates.length === 0) {
+    return { success: true }
+  }
+
+  const photoIds = Array.from(new Set(updates.map((update) => update.photoId)))
+  const beforeRows = await db
+    .select()
+    .from(quizPhotos)
+    .where(inArray(quizPhotos.id, photoIds))
 
   for (const update of updates) {
     await db
@@ -258,7 +346,35 @@ export async function updateQuizPhotoSortOrders(
       .where(eq(quizPhotos.id, update.photoId))
   }
 
+  const afterRows = await db
+    .select()
+    .from(quizPhotos)
+    .where(inArray(quizPhotos.id, photoIds))
+
+  await recordAdminAction({
+    action: "quiz.photo.reorder",
+    targetType: "quiz-photo-collection",
+    targetId: "comparison-photos",
+    actorUserId: auth.userId,
+    diff: {
+      before: beforeRows.map(({ id, lashStyle, sortOrder }) => ({ id, lashStyle, sortOrder })),
+      after: afterRows.map(({ id, lashStyle, sortOrder }) => ({ id, lashStyle, sortOrder })),
+    },
+  })
+
   return { success: true }
+}
+
+function quizPhotoAuditSnapshot(photo: typeof quizPhotos.$inferSelect) {
+  return {
+    id: photo.id,
+    assetId: photo.assetId,
+    lashStyle: photo.lashStyle,
+    cropData: photo.cropData,
+    cropUrl: photo.cropUrl,
+    isEnabled: photo.isEnabled,
+    sortOrder: photo.sortOrder,
+  }
 }
 
 // Base width percent used in the crop editor (must match QuizPhotoCropEditor)
@@ -384,6 +500,8 @@ const DEFAULT_RESULT_SETTINGS: Record<LashStyle, {
   },
 }
 
+const ALL_LASH_STYLES: LashStyle[] = ["classic", "hybrid", "wetAngel", "volume"]
+
 // Result settings with optional asset data
 export interface QuizResultSettingsWithAsset {
   id: string
@@ -403,38 +521,27 @@ export interface QuizResultSettingsWithAsset {
   resultImageFileName: string | null
 }
 
-// Get all result settings (creates defaults if missing)
+function quizResultSettingAuditSnapshot(
+  settings: typeof quizResultSettings.$inferSelect,
+) {
+  return {
+    id: settings.id,
+    lashStyle: settings.lashStyle,
+    resultImageAssetId: settings.resultImageAssetId,
+    resultImageCropData: settings.resultImageCropData,
+    resultImageCropUrl: settings.resultImageCropUrl,
+    displayName: settings.displayName,
+    description: settings.description,
+    bestFor: settings.bestFor,
+    recommendedService: settings.recommendedService,
+    bookingLabel: settings.bookingLabel,
+  }
+}
+
+// Get all result settings. Missing database rows resolve to in-memory defaults;
+// public reads must never bootstrap or otherwise mutate production data.
 export async function getAllResultSettings(): Promise<QuizResultSettingsWithAsset[]> {
   const db = getDb()
-
-  // First ensure all styles have settings
-  const allStyles: LashStyle[] = ["classic", "hybrid", "wetAngel", "volume"]
-
-  for (const style of allStyles) {
-    const existing = await db
-      .select({ id: quizResultSettings.id })
-      .from(quizResultSettings)
-      .where(eq(quizResultSettings.lashStyle, style))
-      .limit(1)
-
-    if (existing.length === 0) {
-      const defaults = DEFAULT_RESULT_SETTINGS[style]
-      await db.insert(quizResultSettings).values({
-        lashStyle: style,
-        displayName: defaults.displayName,
-        description: defaults.description,
-        bestFor: defaults.bestFor,
-        recommendedService: defaults.recommendedService,
-        bookingLabel: defaults.bookingLabel,
-      })
-    }
-  }
-
-  // Auto-seed result images from quiz_result-tagged DAM assets for any rows
-  // that don't have an image yet. Uses photos uploaded by import-quiz-photos.ts.
-  await autoSeedMissingResultImages(db)
-
-  // Now fetch all with asset data
   const results = await db
     .select({
       id: quizResultSettings.id,
@@ -455,13 +562,34 @@ export async function getAllResultSettings(): Promise<QuizResultSettingsWithAsse
     .from(quizResultSettings)
     .leftJoin(assets, eq(quizResultSettings.resultImageAssetId, assets.id))
 
-  return results as QuizResultSettingsWithAsset[]
+  const rowsByStyle = new Map(
+    results.map((row) => [row.lashStyle as LashStyle, row as QuizResultSettingsWithAsset]),
+  )
+
+  return ALL_LASH_STYLES.map((style) => {
+    const existing = rowsByStyle.get(style)
+    if (existing) return existing
+
+    const defaults = DEFAULT_RESULT_SETTINGS[style]
+    return {
+      id: `default:${style}`,
+      lashStyle: style,
+      resultImageAssetId: null,
+      resultImageCropData: null,
+      resultImageCropUrl: null,
+      ...defaults,
+      createdAt: new Date(0),
+      updatedAt: new Date(0),
+      resultImageFilePath: null,
+      resultImageFileName: null,
+    }
+  })
 }
 
-// For any quiz_result_settings row missing an image, look up an asset tagged
-// with both "quiz_result" and the matching lash_type tag, and link it.
-// Best-effort: silently skips styles with no matching asset.
-async function autoSeedMissingResultImages(db: ReturnType<typeof getDb>) {
+// Find an appropriate DAM image for each persisted result row that is missing
+// one. This helper is read-only; the authorized bootstrap action owns every
+// resulting write and the consolidated audit record.
+async function findMissingResultImageSeeds(db: ReturnType<typeof getDb>) {
   const missingRows = await db
     .select({
       id: quizResultSettings.id,
@@ -470,7 +598,7 @@ async function autoSeedMissingResultImages(db: ReturnType<typeof getDb>) {
     .from(quizResultSettings)
     .where(isNull(quizResultSettings.resultImageAssetId))
 
-  if (missingRows.length === 0) return
+  if (missingRows.length === 0) return []
 
   // quiz_result tag is shared across all styles
   const [quizResultTag] = await db
@@ -478,14 +606,16 @@ async function autoSeedMissingResultImages(db: ReturnType<typeof getDb>) {
     .from(tags)
     .where(eq(tags.name, "quiz_result"))
     .limit(1)
-  if (!quizResultTag) return
+  if (!quizResultTag) return []
 
   const quizResultAssetRows = await db
     .select({ assetId: assetTags.assetId })
     .from(assetTags)
     .where(eq(assetTags.tagId, quizResultTag.id))
   const quizResultAssetIds = new Set(quizResultAssetRows.map((r) => r.assetId))
-  if (quizResultAssetIds.size === 0) return
+  if (quizResultAssetIds.size === 0) return []
+
+  const seeds: Array<{ settingsId: string; lashStyle: LashStyle; assetId: string }> = []
 
   for (const row of missingRows) {
     const tagName = LASH_STYLE_TO_TAG_NAME[row.lashStyle as LashStyle]
@@ -506,10 +636,63 @@ async function autoSeedMissingResultImages(db: ReturnType<typeof getDb>) {
     const candidateId = styleAssetRows.find((r) => quizResultAssetIds.has(r.assetId))?.assetId
     if (!candidateId) continue
 
+    seeds.push({
+      settingsId: row.id,
+      lashStyle: row.lashStyle as LashStyle,
+      assetId: candidateId,
+    })
+  }
+
+  return seeds
+}
+
+/**
+ * Explicit, authorized bootstrap for result-setting rows and DAM image links.
+ * This is intentionally separate from all public read paths.
+ */
+export async function bootstrapQuizResultSettings() {
+  const auth = await requireAdminRole("owner", "publisher")
+  const db = getDb()
+
+  const beforeRows = await db.select().from(quizResultSettings)
+
+  for (const style of ALL_LASH_STYLES) {
+    const defaults = DEFAULT_RESULT_SETTINGS[style]
+    await db
+      .insert(quizResultSettings)
+      .values({
+        lashStyle: style,
+        ...defaults,
+      })
+      .onConflictDoNothing({ target: quizResultSettings.lashStyle })
+  }
+
+  const imageSeeds = await findMissingResultImageSeeds(db)
+  for (const seed of imageSeeds) {
     await db
       .update(quizResultSettings)
-      .set({ resultImageAssetId: candidateId, updatedAt: new Date() })
-      .where(eq(quizResultSettings.id, row.id))
+      .set({ resultImageAssetId: seed.assetId, updatedAt: new Date() })
+      .where(eq(quizResultSettings.id, seed.settingsId))
+  }
+
+  const afterRows = await db.select().from(quizResultSettings)
+
+  await recordAdminAction({
+    action: "quiz.result-settings.bootstrap",
+    targetType: "quiz-result-settings",
+    targetId: "all-styles",
+    actorUserId: auth.userId,
+    diff: {
+      before: beforeRows.map(quizResultSettingAuditSnapshot),
+      after: afterRows.map(quizResultSettingAuditSnapshot),
+      linkedImages: imageSeeds.map(({ lashStyle, assetId }) => ({ lashStyle, assetId })),
+    },
+  })
+
+  return {
+    success: true,
+    createdCount: Math.max(0, afterRows.length - beforeRows.length),
+    linkedImageCount: imageSeeds.length,
   }
 }
 
@@ -524,32 +707,95 @@ export async function updateResultSettingsText(
     bookingLabel?: string
   }
 ) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
 
-  await db
-    .update(quizResultSettings)
-    .set({
-      ...data,
-      updatedAt: new Date(),
-    })
+  const [before] = await db
+    .select()
+    .from(quizResultSettings)
     .where(eq(quizResultSettings.lashStyle, lashStyle))
+    .limit(1)
+
+  const defaults = DEFAULT_RESULT_SETTINGS[lashStyle]
+  const now = new Date()
+
+  const [after] = await db
+    .insert(quizResultSettings)
+    .values({
+      lashStyle,
+      ...defaults,
+      ...data,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: quizResultSettings.lashStyle,
+      set: {
+        ...data,
+        updatedAt: now,
+      },
+    })
+    .returning()
+
+  await recordAdminAction({
+    action: "quiz.result-settings.text.update",
+    targetType: "quiz-result-settings",
+    targetId: lashStyle,
+    actorUserId: auth.userId,
+    diff: {
+      before: before ? quizResultSettingAuditSnapshot(before) : null,
+      after: quizResultSettingAuditSnapshot(after),
+      changedFields: Object.keys(data),
+    },
+  })
 
   return { success: true }
 }
 
 // Set result image from DAM
 export async function setResultImage(lashStyle: LashStyle, assetId: string) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
 
-  await db
-    .update(quizResultSettings)
-    .set({
+  const [before] = await db
+    .select()
+    .from(quizResultSettings)
+    .where(eq(quizResultSettings.lashStyle, lashStyle))
+    .limit(1)
+
+  const defaults = DEFAULT_RESULT_SETTINGS[lashStyle]
+  const now = new Date()
+
+  const [after] = await db
+    .insert(quizResultSettings)
+    .values({
+      lashStyle,
+      ...defaults,
       resultImageAssetId: assetId,
       resultImageCropData: null,
       resultImageCropUrl: null,
-      updatedAt: new Date(),
+      updatedAt: now,
     })
-    .where(eq(quizResultSettings.lashStyle, lashStyle))
+    .onConflictDoUpdate({
+      target: quizResultSettings.lashStyle,
+      set: {
+        resultImageAssetId: assetId,
+        resultImageCropData: null,
+        resultImageCropUrl: null,
+        updatedAt: now,
+      },
+    })
+    .returning()
+
+  await recordAdminAction({
+    action: "quiz.result-image.update",
+    targetType: "quiz-result-settings",
+    targetId: lashStyle,
+    actorUserId: auth.userId,
+    diff: {
+      before: before ? quizResultSettingAuditSnapshot(before) : null,
+      after: quizResultSettingAuditSnapshot(after),
+    },
+  })
 
   return { success: true }
 }
@@ -559,12 +805,16 @@ export async function updateResultImageCrop(
   lashStyle: LashStyle,
   cropData: QuizPhotoCropData
 ) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
 
   // Get the current settings to access the asset
   const [settings] = await db
     .select({
+      id: quizResultSettings.id,
       resultImageAssetId: quizResultSettings.resultImageAssetId,
+      resultImageCropData: quizResultSettings.resultImageCropData,
+      resultImageCropUrl: quizResultSettings.resultImageCropUrl,
       filePath: assets.filePath,
       fileName: assets.fileName,
     })
@@ -615,6 +865,25 @@ export async function updateResultImageCrop(
     })
     .where(eq(quizResultSettings.lashStyle, lashStyle))
 
+  await recordAdminAction({
+    action: "quiz.result-image.crop.update",
+    targetType: "quiz-result-settings",
+    targetId: lashStyle,
+    actorUserId: auth.userId,
+    diff: {
+      before: {
+        resultImageAssetId: settings.resultImageAssetId,
+        resultImageCropData: settings.resultImageCropData,
+        resultImageCropUrl: settings.resultImageCropUrl,
+      },
+      after: {
+        resultImageAssetId: settings.resultImageAssetId,
+        resultImageCropData: cropData,
+        resultImageCropUrl: cropUrl,
+      },
+    },
+  })
+
   return { success: true, cropUrl }
 }
 
@@ -628,10 +897,9 @@ export interface QuizResultForDisplay {
   resultImage: string | null
 }
 
-// Public read for the quiz result screen — keyed by lash style.
-// Seeds default rows on first call (via getAllResultSettings) so this is safe
-// to call without auth. resultImage prefers cropUrl, falls back to filePath,
-// and is null if no image is set (caller should provide a fallback).
+// Public read for the quiz result screen — keyed by lash style. Missing rows
+// resolve to defaults without writes. resultImage prefers cropUrl, falls back
+// to filePath, and is null if no image is set (caller should provide a fallback).
 export async function getResultSettingsForQuiz(): Promise<Record<LashStyle, QuizResultForDisplay>> {
   const rows = await getAllResultSettings()
 
@@ -791,9 +1059,20 @@ export async function getQuizResultServices(
 
 // Remove result image
 export async function removeResultImage(lashStyle: LashStyle) {
+  const auth = await requireAdminRole("owner", "publisher")
   const db = getDb()
 
-  await db
+  const [before] = await db
+    .select()
+    .from(quizResultSettings)
+    .where(eq(quizResultSettings.lashStyle, lashStyle))
+    .limit(1)
+
+  if (!before) {
+    return { success: true }
+  }
+
+  const [after] = await db
     .update(quizResultSettings)
     .set({
       resultImageAssetId: null,
@@ -802,6 +1081,18 @@ export async function removeResultImage(lashStyle: LashStyle) {
       updatedAt: new Date(),
     })
     .where(eq(quizResultSettings.lashStyle, lashStyle))
+    .returning()
+
+  await recordAdminAction({
+    action: "quiz.result-image.remove",
+    targetType: "quiz-result-settings",
+    targetId: lashStyle,
+    actorUserId: auth.userId,
+    diff: {
+      before: quizResultSettingAuditSnapshot(before),
+      after: quizResultSettingAuditSnapshot(after),
+    },
+  })
 
   return { success: true }
 }

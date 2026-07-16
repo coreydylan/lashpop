@@ -10,6 +10,7 @@ import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { askMeshClaude } from '@/lib/mesh-claude'
 import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,7 +24,7 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireAdminApi()
+  const auth = await requireAdminApi(['owner', 'publisher'])
   if (auth instanceof NextResponse) return auth
 
   const { id } = await params
@@ -36,6 +37,8 @@ export async function POST(
       rating: reviews.rating,
       source: reviews.source,
       subject: reviews.subject,
+      qualityScore: reviews.qualityScore,
+      editorNotes: reviews.editorNotes,
       adminLockedFields: reviews.adminLockedFields,
     })
     .from(reviews)
@@ -86,6 +89,17 @@ export async function POST(
         WHERE value = 'quality_score'
       )`,
     ))
+
+  await recordAdminAction({
+    action: 'review.quality.rescore',
+    targetType: 'review',
+    targetId: id,
+    actorUserId: auth.userId,
+    diff: {
+      before: { qualityScore: review.qualityScore, editorNotes: review.editorNotes },
+      after: { qualityScore: clamped, editorNotes: parsed.notes ?? null },
+    },
+  })
 
   return NextResponse.json({ score: clamped, notes: parsed.notes ?? null })
 }

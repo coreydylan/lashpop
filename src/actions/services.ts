@@ -9,6 +9,8 @@ import { vagaroSyncRuns } from "@/db/schema/vagaro_sync_runs"
 import { serviceSubcategories } from "@/db/schema/service_subcategories"
 import { assetServices } from "@/db/schema/asset_services"
 import { assets } from "@/db/schema/assets"
+import { requireAdminRole } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 import { and, eq, asc, desc, inArray, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/sqlite-core"
 
@@ -222,24 +224,48 @@ export async function getAllServicesAdmin() {
   })
 }
 
-// Update service key image and demo settings
+// Update the local service image override. Demo mode is retired; it was never
+// consumed by the public frontend.
 export async function updateServiceImage(
   serviceId: string,
   data: {
     keyImageAssetId?: string | null
-    useDemoPhotos?: boolean
     imageUrl?: string | null
   }
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
 
-  await db
+  const [before] = await db
+    .select({
+      keyImageAssetId: services.keyImageAssetId,
+      imageUrl: services.imageUrl,
+    })
+    .from(services)
+    .where(eq(services.id, serviceId))
+    .limit(1)
+
+  if (!before) throw new Error('Service not found')
+
+  const [after] = await db
     .update(services)
     .set({
       ...data,
       updatedAt: new Date()
     })
     .where(eq(services.id, serviceId))
+    .returning({
+      keyImageAssetId: services.keyImageAssetId,
+      imageUrl: services.imageUrl,
+    })
+
+  await recordAdminAction({
+    action: 'service.image.update',
+    targetType: 'service',
+    targetId: serviceId,
+    actorUserId: auth.userId,
+    diff: { before, after },
+  })
 
   return { success: true }
 }
@@ -297,15 +323,33 @@ export async function updateServiceCategoryImage(
   categoryId: string,
   keyImageAssetId: string | null
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
 
-  await db
+  const [before] = await db
+    .select({ keyImageAssetId: serviceCategories.keyImageAssetId })
+    .from(serviceCategories)
+    .where(eq(serviceCategories.id, categoryId))
+    .limit(1)
+
+  if (!before) throw new Error('Service category not found')
+
+  const [after] = await db
     .update(serviceCategories)
     .set({
       keyImageAssetId,
       updatedAt: new Date()
     })
     .where(eq(serviceCategories.id, categoryId))
+    .returning({ keyImageAssetId: serviceCategories.keyImageAssetId })
+
+  await recordAdminAction({
+    action: 'service-category.image.update',
+    targetType: 'service-category',
+    targetId: categoryId,
+    actorUserId: auth.userId,
+    diff: { before, after },
+  })
 
   return { success: true }
 }
@@ -315,15 +359,33 @@ export async function updateServiceSubcategoryImage(
   subcategoryId: string,
   keyImageAssetId: string | null
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
 
-  await db
+  const [before] = await db
+    .select({ keyImageAssetId: serviceSubcategories.keyImageAssetId })
+    .from(serviceSubcategories)
+    .where(eq(serviceSubcategories.id, subcategoryId))
+    .limit(1)
+
+  if (!before) throw new Error('Service subcategory not found')
+
+  const [after] = await db
     .update(serviceSubcategories)
     .set({
       keyImageAssetId,
       updatedAt: new Date()
     })
     .where(eq(serviceSubcategories.id, subcategoryId))
+    .returning({ keyImageAssetId: serviceSubcategories.keyImageAssetId })
+
+  await recordAdminAction({
+    action: 'service-subcategory.image.update',
+    targetType: 'service-subcategory',
+    targetId: subcategoryId,
+    actorUserId: auth.userId,
+    diff: { before, after },
+  })
 
   return { success: true }
 }
@@ -335,6 +397,7 @@ export async function tagAssetWithService(
   assetId: string,
   serviceId: string
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
 
   // Check if already tagged
@@ -351,12 +414,24 @@ export async function tagAssetWithService(
 
   // Only insert if not already tagged
   if (existing.length === 0) {
-    await db
+    const [tag] = await db
       .insert(assetServices)
       .values({
         assetId,
         serviceId
       })
+      .returning({ id: assetServices.id })
+
+    await recordAdminAction({
+      action: 'dam.asset.service-tag.add',
+      targetType: 'asset-service',
+      targetId: tag.id,
+      actorUserId: auth.userId,
+      diff: {
+        before: null,
+        after: { assetId, serviceId },
+      },
+    })
   }
 
   return { success: true }
@@ -367,7 +442,19 @@ export async function untagAssetFromService(
   assetId: string,
   serviceId: string
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
+
+  const [existing] = await db
+    .select({ id: assetServices.id })
+    .from(assetServices)
+    .where(
+      and(
+        eq(assetServices.assetId, assetId),
+        eq(assetServices.serviceId, serviceId)
+      )
+    )
+    .limit(1)
 
   await db
     .delete(assetServices)
@@ -378,6 +465,19 @@ export async function untagAssetFromService(
       )
     )
 
+  if (existing) {
+    await recordAdminAction({
+      action: 'dam.asset.service-tag.remove',
+      targetType: 'asset-service',
+      targetId: existing.id,
+      actorUserId: auth.userId,
+      diff: {
+        before: { assetId, serviceId },
+        after: null,
+      },
+    })
+  }
+
   return { success: true }
 }
 
@@ -386,15 +486,33 @@ export async function updateSubcategoryDisplayOrder(
   subcategoryId: string,
   displayOrder: number
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
 
-  await db
+  const [before] = await db
+    .select({ displayOrder: serviceSubcategories.displayOrder })
+    .from(serviceSubcategories)
+    .where(eq(serviceSubcategories.id, subcategoryId))
+    .limit(1)
+
+  if (!before) throw new Error('Service subcategory not found')
+
+  const [after] = await db
     .update(serviceSubcategories)
     .set({
       displayOrder,
       updatedAt: new Date()
     })
     .where(eq(serviceSubcategories.id, subcategoryId))
+    .returning({ displayOrder: serviceSubcategories.displayOrder })
+
+  await recordAdminAction({
+    action: 'service-subcategory.reorder',
+    targetType: 'service-subcategory',
+    targetId: subcategoryId,
+    actorUserId: auth.userId,
+    diff: { before, after },
+  })
 
   return { success: true }
 }
@@ -403,7 +521,19 @@ export async function updateSubcategoryDisplayOrder(
 export async function updateSubcategoryDisplayOrders(
   updates: Array<{ subcategoryId: string; displayOrder: number }>
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
+
+  if (updates.length === 0) return { success: true }
+
+  const ids = updates.map(update => update.subcategoryId)
+  const before = await db
+    .select({
+      subcategoryId: serviceSubcategories.id,
+      displayOrder: serviceSubcategories.displayOrder,
+    })
+    .from(serviceSubcategories)
+    .where(inArray(serviceSubcategories.id, ids))
 
   // Update each subcategory's display order
   for (const update of updates) {
@@ -415,6 +545,17 @@ export async function updateSubcategoryDisplayOrders(
       })
       .where(eq(serviceSubcategories.id, update.subcategoryId))
   }
+
+  await recordAdminAction({
+    action: 'service-subcategory.reorder',
+    targetType: 'service-subcategory',
+    targetId: 'bulk',
+    actorUserId: auth.userId,
+    diff: {
+      before,
+      after: updates,
+    },
+  })
 
   return { success: true }
 }
@@ -458,15 +599,43 @@ export async function updateServiceCategoryContent(
     displayName?: string | null
   }
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
 
-  await db
+  const [before] = await db
+    .select({
+      description: serviceCategories.description,
+      tagline: serviceCategories.tagline,
+      icon: serviceCategories.icon,
+      displayName: serviceCategories.displayName,
+    })
+    .from(serviceCategories)
+    .where(eq(serviceCategories.id, categoryId))
+    .limit(1)
+
+  if (!before) throw new Error('Service category not found')
+
+  const [after] = await db
     .update(serviceCategories)
     .set({
       ...data,
       updatedAt: new Date()
     })
     .where(eq(serviceCategories.id, categoryId))
+    .returning({
+      description: serviceCategories.description,
+      tagline: serviceCategories.tagline,
+      icon: serviceCategories.icon,
+      displayName: serviceCategories.displayName,
+    })
+
+  await recordAdminAction({
+    action: 'service-category.content.update',
+    targetType: 'service-category',
+    targetId: categoryId,
+    actorUserId: auth.userId,
+    diff: { before, after },
+  })
 
   return { success: true }
 }
@@ -552,11 +721,39 @@ export async function updateVagaroCategoryPresentation(
     showOnTeam?: boolean
   },
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
-  await db
+
+  const [before] = await db
+    .select({
+      teamLabel: vagaroServiceCategories.teamLabel,
+      teamDisplayOrder: vagaroServiceCategories.teamDisplayOrder,
+      showOnTeam: vagaroServiceCategories.showOnTeam,
+    })
+    .from(vagaroServiceCategories)
+    .where(eq(vagaroServiceCategories.id, categoryId))
+    .limit(1)
+
+  if (!before) throw new Error('Vagaro category not found')
+
+  const [after] = await db
     .update(vagaroServiceCategories)
     .set({ ...data, updatedAt: new Date() })
     .where(eq(vagaroServiceCategories.id, categoryId))
+    .returning({
+      teamLabel: vagaroServiceCategories.teamLabel,
+      teamDisplayOrder: vagaroServiceCategories.teamDisplayOrder,
+      showOnTeam: vagaroServiceCategories.showOnTeam,
+    })
+
+  await recordAdminAction({
+    action: 'vagaro.category.presentation.update',
+    targetType: 'vagaro-category',
+    targetId: categoryId,
+    actorUserId: auth.userId,
+    diff: { before, after },
+  })
+
   return { success: true }
 }
 
@@ -592,9 +789,22 @@ export async function getServiceCategoriesForLanding() {
 
 // Reset service to use Vagaro image (removes DAM override)
 export async function resetServiceToVagaroImage(serviceId: string) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
 
-  await db
+  const [before] = await db
+    .select({
+      keyImageAssetId: services.keyImageAssetId,
+      imageUrl: services.imageUrl,
+      vagaroImageUrl: services.vagaroImageUrl,
+    })
+    .from(services)
+    .where(eq(services.id, serviceId))
+    .limit(1)
+
+  if (!before) throw new Error('Service not found')
+
+  const [after] = await db
     .update(services)
     .set({
       keyImageAssetId: null,
@@ -602,6 +812,19 @@ export async function resetServiceToVagaroImage(serviceId: string) {
       updatedAt: new Date()
     })
     .where(eq(services.id, serviceId))
+    .returning({
+      keyImageAssetId: services.keyImageAssetId,
+      imageUrl: services.imageUrl,
+      vagaroImageUrl: services.vagaroImageUrl,
+    })
+
+  await recordAdminAction({
+    action: 'service.image.reset-to-vagaro',
+    targetType: 'service',
+    targetId: serviceId,
+    actorUserId: auth.userId,
+    diff: { before, after },
+  })
 
   return { success: true }
 }
@@ -611,7 +834,19 @@ export async function updateServiceSubcategory(
   serviceId: string,
   subcategoryId: string | null
 ) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
+
+  const [before] = await db
+    .select({
+      subcategoryId: services.subcategoryId,
+      categoryId: services.categoryId,
+    })
+    .from(services)
+    .where(eq(services.id, serviceId))
+    .limit(1)
+
+  if (!before) throw new Error('Service not found')
 
   // If a subcategory is specified, get its category to ensure consistency
   let categoryId: string | null = null
@@ -627,7 +862,7 @@ export async function updateServiceSubcategory(
     }
   }
 
-  await db
+  const [after] = await db
     .update(services)
     .set({
       subcategoryId,
@@ -635,6 +870,18 @@ export async function updateServiceSubcategory(
       updatedAt: new Date()
     })
     .where(eq(services.id, serviceId))
+    .returning({
+      subcategoryId: services.subcategoryId,
+      categoryId: services.categoryId,
+    })
+
+  await recordAdminAction({
+    action: 'service.subcategory.assign',
+    targetType: 'service',
+    targetId: serviceId,
+    actorUserId: auth.userId,
+    diff: { before, after },
+  })
 
   return { success: true }
 }

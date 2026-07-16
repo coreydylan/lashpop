@@ -1,4 +1,4 @@
-"use server"
+import 'server-only'
 
 import { getDb } from "@/db"
 import { customers, type SelectCustomer } from "@/db/schema/customers"

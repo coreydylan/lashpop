@@ -9,6 +9,7 @@ import { getSEOSettings } from "@/actions/seo"
 import { getStudioSettings } from "@/actions/studio"
 import { getFounderLetter } from "@/actions/founder-letter"
 import { getHomepageServices } from "@/actions/homepage-services"
+import { getHeroContent } from "@/actions/hero-content"
 import { ReviewSchema } from "@/components/seo"
 import LandingPageV2Client from "./LandingPageV2Client"
 
@@ -33,6 +34,7 @@ export default async function HomePage() {
     founderLetterContent,
     homepageServices,
     instagramSettings,
+    heroContent,
   ] = await Promise.all([
     getAllServices(),
     getTeamMembersWithServices(),
@@ -47,6 +49,7 @@ export default async function HomePage() {
     getFounderLetter(),
     getHomepageServices(),
     getInstagramSettings(),
+    getHeroContent(),
   ])
 
   // Homepage "Choose a Service" marketing cards (editable in admin). Only the
@@ -139,6 +142,7 @@ export default async function HomePage() {
       homepageServices={homepageServiceCards}
       faqData={faqData}
       heroConfig={heroConfig}
+      heroContent={heroContent}
       studio={studio}
       founderLetterContent={founderLetterContent}
     />

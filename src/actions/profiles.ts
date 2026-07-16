@@ -4,7 +4,7 @@
  * Server actions for managing user profiles
  */
 
-'use server'
+import 'server-only'
 
 import { getDb } from '@/db'
 import { profiles } from '@/db/schema/profiles'

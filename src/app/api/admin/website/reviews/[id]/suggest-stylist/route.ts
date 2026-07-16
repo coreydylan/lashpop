@@ -10,6 +10,8 @@ import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { teamMembers } from '@/db/schema/team_members'
 import { askMeshClaude } from '@/lib/mesh-claude'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +24,9 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await params
   const db = getDb()
 
@@ -44,24 +49,80 @@ export async function POST(
     `\n\nReview text${review.subject ? ` (Vagaro subject: "${review.subject}")` : ''}:\n` +
     `"${review.reviewText.slice(0, 1500)}"`
 
+  const startedAt = Date.now()
+  const requestSummary = {
+    candidateCount: staff.length,
+    reviewCharactersSent: Math.min(review.reviewText.length, 1500),
+    subjectProvided: Boolean(review.subject),
+  }
   const reply = await askMeshClaude(prompt, { system: SYSTEM, timeoutMs: 25_000 })
   if (!reply) {
+    await recordAdminAction({
+      action: 'review.stylist.suggest',
+      surface: 'admin',
+      targetType: 'review',
+      targetId: id,
+      actorUserId: auth.userId,
+      diff: {
+        request: requestSummary,
+        outcome: { status: 'failed', reason: 'bridge_unreachable', durationMs: Date.now() - startedAt },
+      },
+    })
     return NextResponse.json({ error: 'mesh-claude bridge unreachable' }, { status: 502 })
   }
   const match = reply.match(/\{[\s\S]*\}/)
   if (!match) {
+    await recordAdminAction({
+      action: 'review.stylist.suggest',
+      surface: 'admin',
+      targetType: 'review',
+      targetId: id,
+      actorUserId: auth.userId,
+      diff: {
+        request: requestSummary,
+        outcome: { status: 'failed', reason: 'unparseable_reply', durationMs: Date.now() - startedAt },
+      },
+    })
     return NextResponse.json({ error: 'unparseable bridge reply', raw: reply.slice(0, 300) }, { status: 502 })
   }
   let parsed: { teamMemberId?: string; confidence?: number; reason?: string }
   try {
     parsed = JSON.parse(match[0])
   } catch {
+    await recordAdminAction({
+      action: 'review.stylist.suggest',
+      surface: 'admin',
+      targetType: 'review',
+      targetId: id,
+      actorUserId: auth.userId,
+      diff: {
+        request: requestSummary,
+        outcome: { status: 'failed', reason: 'invalid_json', durationMs: Date.now() - startedAt },
+      },
+    })
     return NextResponse.json({ error: 'json parse failed', raw: match[0].slice(0, 300) }, { status: 502 })
   }
 
   const validIds = new Set(staff.map(s => s.id))
   const teamMemberId =
     parsed.teamMemberId && validIds.has(parsed.teamMemberId) ? parsed.teamMemberId : null
+  await recordAdminAction({
+    action: 'review.stylist.suggest',
+    surface: 'admin',
+    targetType: 'review',
+    targetId: id,
+    actorUserId: auth.userId,
+    diff: {
+      request: requestSummary,
+      outcome: {
+        status: 'completed',
+        teamMemberId,
+        confidence: typeof parsed.confidence === 'number' ? parsed.confidence : null,
+        reasonProvided: typeof parsed.reason === 'string' && parsed.reason.length > 0,
+        durationMs: Date.now() - startedAt,
+      },
+    },
+  })
   return NextResponse.json({
     teamMemberId,
     teamMemberName: teamMemberId ? staff.find(s => s.id === teamMemberId)?.name : null,

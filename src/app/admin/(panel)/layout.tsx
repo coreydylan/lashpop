@@ -27,6 +27,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
         name: session.name,
         phoneNumber: session.phoneNumber,
         email: session.email,
+        role: session.role,
       }}
     >
       {children}

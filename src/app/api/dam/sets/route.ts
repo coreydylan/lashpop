@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { sets } from "@/db/schema/sets"
-import { setPhotos } from "@/db/schema/set_photos"
-import { eq } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
 // Get all sets
 export async function GET() {
@@ -22,9 +22,13 @@ export async function GET() {
 
 // Create a new set
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(["owner", "publisher"])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
-    const { teamMemberId, name } = body
+    const teamMemberId = typeof body.teamMemberId === "string" ? body.teamMemberId : ""
+    const name = typeof body.name === "string" && body.name.length > 0 ? body.name : null
 
     if (!teamMemberId) {
       return NextResponse.json(
@@ -39,9 +43,22 @@ export async function POST(request: NextRequest) {
       .insert(sets)
       .values({
         teamMemberId,
-        name: name || null
+        name
       })
       .returning()
+
+    await recordAdminAction({
+      action: "dam.set.create",
+      surface: "dam",
+      targetType: "set",
+      targetId: newSet.id,
+      actorUserId: auth.userId,
+      diff: {
+        teamMemberId,
+        before: null,
+        after: newSet,
+      },
+    })
 
     return NextResponse.json({ set: newSet })
   } catch (error) {

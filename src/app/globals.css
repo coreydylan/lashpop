@@ -712,4 +712,52 @@ a,
   .font-swanky {
     font-family: var(--font-swanky), cursive !important;
   }
+
+  /* Admin operations theme. Legacy editors still use the shared glass/button
+     utilities; scope their presentation here so the entire admin reads as one
+     solid, high-contrast system while public marketing surfaces stay intact. */
+  .admin-app {
+    --font-display: var(--font-playfair, 'Playfair Display'), serif;
+    --font-body: var(--font-inter, 'Inter'), system-ui, sans-serif;
+    font-family: var(--font-body);
+  }
+
+  .admin-app .glass {
+    background: #fff;
+    border-color: rgb(41 42 39 / 0.12);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .admin-app .btn {
+    min-height: 2.75rem;
+    padding: 0.625rem 1rem;
+    border-radius: 0.625rem;
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: 0.025em;
+    text-transform: none;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .admin-app .btn-primary,
+  .admin-app .btn-primary:hover {
+    background: #b5563d;
+    color: #fff;
+    transform: none;
+  }
+
+  .admin-app .btn-secondary,
+  .admin-app .btn-secondary:hover {
+    background: #fff;
+    color: #292a27;
+    border: 1px solid rgb(41 42 39 / 0.16);
+    transform: none;
+  }
+
+  .admin-app :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid #c96f50;
+    outline-offset: 2px;
+  }
 }

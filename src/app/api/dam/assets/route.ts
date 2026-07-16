@@ -5,6 +5,29 @@ import { assetTags } from "@/db/schema/asset_tags"
 import { tags } from "@/db/schema/tags"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { eq, desc } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
+
+type AssetTagSummary = {
+  id: string
+  name: string | null
+  displayName: string | null
+  category: {
+    id: string | null
+    name: string | null
+    displayName: string | null
+    color: string | null
+  }
+}
+
+function safeStoragePath(value: string): string {
+  try {
+    const url = new URL(value)
+    return `${url.origin}${url.pathname}`
+  } catch {
+    return value.split(/[?#]/, 1)[0]
+  }
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +59,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(tagCategories, eq(tags.categoryId, tagCategories.id))
 
     // Group tags by asset
-    const assetTagsMap = new Map<string, any[]>()
+    const assetTagsMap = new Map<string, AssetTagSummary[]>()
     allAssetTags.forEach((row) => {
       if (!assetTagsMap.has(row.assetId)) {
         assetTagsMap.set(row.assetId, [])
@@ -84,6 +107,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(["owner", "publisher"])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
     const { fileName, filePath, fileType, mimeType, fileSize, teamMemberId } = body
@@ -109,6 +135,26 @@ export async function POST(request: NextRequest) {
         teamMemberId: teamMemberId || null
       })
       .returning()
+
+    await recordAdminAction({
+      action: "dam.asset.metadata.create",
+      surface: "dam",
+      targetType: "asset",
+      targetId: asset.id,
+      actorUserId: auth.userId,
+      diff: {
+        before: null,
+        after: {
+          assetId: asset.id,
+          fileName: asset.fileName,
+          filePath: safeStoragePath(asset.filePath),
+          fileType: asset.fileType,
+          mimeType: asset.mimeType,
+          fileSize: asset.fileSize,
+          teamMemberId: asset.teamMemberId,
+        },
+      },
+    })
 
     return NextResponse.json({ asset })
   } catch (error) {

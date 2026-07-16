@@ -3,6 +3,8 @@ import { getDb } from "@/db"
 import { assets } from "@/db/schema/assets"
 import { uploadFile, uploadBuffer, generateAssetKey } from "@/lib/dam/r2-client"
 import { optimizeImage, isOptimizableImage, getOptimizedFilename } from "@/lib/dam/image-optimizer"
+import { requireAdminApi } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
 const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024 // 200MB
 const ALLOWED_MIME_PREFIXES = ["image/", "video/"]
@@ -26,11 +28,26 @@ type UploadFailure = {
 
 type UploadResult = UploadSuccess | UploadFailure
 
+function safeStoragePath(value: string): string {
+  try {
+    const url = new URL(value)
+    return `${url.origin}${url.pathname}`
+  } catch {
+    return value.split(/[?#]/, 1)[0]
+  }
+}
+
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(["owner", "publisher"])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const formData = await request.formData()
     const files = formData.getAll("files") as File[]
-    const teamMemberId = formData.get("teamMemberId") as string | null
+    const rawTeamMemberId = formData.get("teamMemberId")
+    const teamMemberId = typeof rawTeamMemberId === "string" && rawTeamMemberId.length > 0
+      ? rawTeamMemberId
+      : null
     const skipOptimization = formData.get("skipOptimization") === "true"
 
     if (!files || files.length === 0) {
@@ -184,6 +201,35 @@ export async function POST(request: NextRequest) {
         : successful.length === results.length
           ? 200
           : 207
+
+    if (successful.length > 0) {
+      await recordAdminAction({
+        action: "dam.asset.upload",
+        surface: "dam",
+        targetType: successful.length === 1 ? "asset" : "asset_batch",
+        targetId: successful.length === 1 ? successful[0].asset.id : undefined,
+        actorUserId: auth.userId,
+        diff: {
+          teamMemberId,
+          before: [],
+          after: successful.map((result) => ({
+            assetId: result.asset.id,
+            fileName: result.asset.fileName,
+            filePath: safeStoragePath(result.asset.filePath),
+            fileType: result.asset.fileType,
+            mimeType: result.asset.mimeType,
+            fileSize: result.asset.fileSize,
+            width: result.asset.width,
+            height: result.asset.height,
+            teamMemberId: result.asset.teamMemberId,
+            optimized: result.optimized === true,
+          })),
+          failures: results
+            .filter((result): result is UploadFailure => result.status === "error")
+            .map((result) => ({ fileName: result.fileName, errorCode: result.errorCode })),
+        },
+      })
+    }
 
     return NextResponse.json(
       {

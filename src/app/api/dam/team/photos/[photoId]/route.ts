@@ -4,8 +4,26 @@ import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { eq } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
 import { deleteObject } from "@/lib/dam/r2-client"
+import { requireAdminApi } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
-export async function DELETE(request: NextRequest, context: any) {
+type PhotoRouteContext = {
+  params: Promise<{ photoId: string }>
+}
+
+function safeStoragePath(value: string): string {
+  try {
+    const url = new URL(value)
+    return `${url.origin}${url.pathname}`
+  } catch {
+    return value.split(/[?#]/, 1)[0]
+  }
+}
+
+export async function DELETE(_request: NextRequest, context: PhotoRouteContext) {
+  const auth = await requireAdminApi(["owner", "publisher"])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const photoId = await getRouteParam(context, "photoId")
 
@@ -36,6 +54,8 @@ export async function DELETE(request: NextRequest, context: any) {
       )
     }
 
+    const storageDeleteFailures: string[] = []
+
     // If the photo is stored in R2, delete it from there too
     if (photo.filePath.startsWith('http')) {
       try {
@@ -59,11 +79,12 @@ export async function DELETE(request: NextRequest, context: any) {
             const cropKey = cropUrlObj.pathname.substring(1)
             await deleteObject(cropKey)
           } catch {
-            // Ignore errors deleting crop URLs
+            storageDeleteFailures.push(cropUrl!)
           }
         }
       } catch (r2Error) {
         console.error("Error deleting from R2:", r2Error)
+        storageDeleteFailures.push(photo.filePath)
         // Continue with database deletion even if R2 delete fails
       }
     }
@@ -72,6 +93,26 @@ export async function DELETE(request: NextRequest, context: any) {
     await db
       .delete(teamMemberPhotos)
       .where(eq(teamMemberPhotos.id, photoId))
+
+    await recordAdminAction({
+      action: "dam.team.photo.delete",
+      surface: "dam",
+      targetType: "team_member_photo",
+      targetId: photoId,
+      actorUserId: auth.userId,
+      diff: {
+        teamMemberId: photo.teamMemberId,
+        before: {
+          id: photo.id,
+          teamMemberId: photo.teamMemberId,
+          fileName: photo.fileName,
+          filePath: safeStoragePath(photo.filePath),
+          isPrimary: photo.isPrimary,
+        },
+        after: null,
+        storageDeleteFailures: storageDeleteFailures.map(safeStoragePath),
+      },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

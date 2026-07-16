@@ -24,6 +24,7 @@ import {
   GripVertical
 } from 'lucide-react'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
+import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
 import type {
   SlideshowPreset,
   SlideshowImage,
@@ -34,6 +35,7 @@ import type {
   NavigationConfig,
   TRANSITION_META
 } from '@/types/hero-slideshow'
+import { HeroContentEditor } from './HeroContentEditor'
 import {
   DEFAULT_TRANSITION,
   DEFAULT_TIMING,
@@ -53,9 +55,64 @@ interface HeroImage {
   objectFit: 'cover' | 'contain'
 }
 
+interface HeroArchwaySnapshot {
+  desktop: HeroImage | null
+  mobile: HeroImage | null
+}
+
 type DeviceType = 'desktop' | 'mobile'
 type EditorMode = 'single' | 'slideshow'
 type SlideshowTab = 'presets' | 'editor' | 'assignments'
+type HeroSettingKey = 'archway' | 'presets' | 'assignments'
+
+type HeroSettingVersions = Record<HeroSettingKey, number>
+type HeroSettingSources = Record<HeroSettingKey, string>
+
+interface VersionedResponse {
+  version: number
+  sourceOwner: string
+}
+
+interface ApiErrorPayload {
+  error?: string
+  conflict?: boolean
+  validationErrors?: string[]
+}
+
+class HeroSettingsRequestError extends Error {
+  readonly conflict: boolean
+
+  constructor(message: string, conflict = false) {
+    super(message)
+    this.name = 'HeroSettingsRequestError'
+    this.conflict = conflict
+  }
+}
+
+async function readResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
+  const payload = await response.json().catch(() => null) as (T & ApiErrorPayload) | null
+
+  if (!response.ok) {
+    const validationDetail = payload?.validationErrors?.length
+      ? ` ${payload.validationErrors.join(' ')}`
+      : ''
+    throw new HeroSettingsRequestError(
+      `${payload?.error || fallbackMessage}${validationDetail}`,
+      response.status === 409 || payload?.conflict === true,
+    )
+  }
+
+  if (!payload) throw new HeroSettingsRequestError(fallbackMessage)
+  return payload
+}
+
+function cloneSnapshot<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+function snapshotsEqual<T>(left: T, right: T): boolean {
+  return JSON.stringify(left) === JSON.stringify(right)
+}
 
 // ============================================
 // Transition Metadata
@@ -98,18 +155,39 @@ export default function HeroSectionEditor() {
   const [assignments, setAssignments] = useState<SlideshowAssignments>(DEFAULT_ASSIGNMENTS)
   const [editingPreset, setEditingPreset] = useState<SlideshowPreset | null>(null)
   const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null)
+  const [publishedArchway, setPublishedArchway] = useState<HeroArchwaySnapshot | null>(null)
+  const [publishedAssignments, setPublishedAssignments] = useState<SlideshowAssignments | null>(null)
+  const [publishedPreset, setPublishedPreset] = useState<SlideshowPreset | null>(null)
+  const [presetDraftIsNew, setPresetDraftIsNew] = useState(false)
 
   // UI state
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasConflict, setHasConflict] = useState(false)
+  const [hasLoadError, setHasLoadError] = useState(false)
+  const [versions, setVersions] = useState<HeroSettingVersions>({
+    archway: 0,
+    presets: 0,
+    assignments: 0,
+  })
+  const [sourceOwners, setSourceOwners] = useState<HeroSettingSources>({
+    archway: 'admin',
+    presets: 'admin',
+    assignments: 'admin',
+  })
   const [showImagePicker, setShowImagePicker] = useState(false)
   const [imagePickerMode, setImagePickerMode] = useState<'single' | 'slideshow'>('single')
 
   // Get current image based on active device (single mode)
   const currentImage = activeDevice === 'desktop' ? desktopImage : mobileImage
   const setCurrentImage = activeDevice === 'desktop' ? setDesktopImage : setMobileImage
+  const activeSettingKey: HeroSettingKey = editorMode === 'single'
+    ? 'archway'
+    : slideshowTab === 'assignments'
+      ? 'assignments'
+      : 'presets'
 
   // ============================================
   // Data Fetching
@@ -118,6 +196,8 @@ export default function HeroSectionEditor() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
     try {
       const [archwayRes, presetsRes, assignmentsRes, assetsRes] = await Promise.all([
         fetch('/api/admin/website/hero-archway'),
@@ -126,23 +206,40 @@ export default function HeroSectionEditor() {
         fetch('/api/dam/assets?tag=website:hero')
       ])
 
-      if (archwayRes.ok) {
-        const data = await archwayRes.json()
-        if (data.settings) {
-          if (data.settings.desktop) setDesktopImage(data.settings.desktop)
-          if (data.settings.mobile) setMobileImage(data.settings.mobile)
-        }
-      }
+      const [archwayData, presetsData, assignmentsData] = await Promise.all([
+        readResponse<{ settings: { desktop: HeroImage | null; mobile: HeroImage | null } } & VersionedResponse>(
+          archwayRes,
+          'Failed to load the hero image settings.',
+        ),
+        readResponse<{ presets: SlideshowPreset[] } & VersionedResponse>(
+          presetsRes,
+          'Failed to load slideshow presets.',
+        ),
+        readResponse<{ assignments: SlideshowAssignments } & VersionedResponse>(
+          assignmentsRes,
+          'Failed to load slideshow assignments.',
+        ),
+      ])
 
-      if (presetsRes.ok) {
-        const data = await presetsRes.json()
-        setPresets(data.presets || [])
-      }
+      const loadedArchway = cloneSnapshot(archwayData.settings || { desktop: null, mobile: null })
+      const loadedAssignments = cloneSnapshot(assignmentsData.assignments || DEFAULT_ASSIGNMENTS)
 
-      if (assignmentsRes.ok) {
-        const data = await assignmentsRes.json()
-        setAssignments(data.assignments || DEFAULT_ASSIGNMENTS)
-      }
+      setDesktopImage(loadedArchway.desktop)
+      setMobileImage(loadedArchway.mobile)
+      setPublishedArchway(cloneSnapshot(loadedArchway))
+      setPresets(cloneSnapshot(presetsData.presets || []))
+      setAssignments(loadedAssignments)
+      setPublishedAssignments(cloneSnapshot(loadedAssignments))
+      setVersions({
+        archway: archwayData.version,
+        presets: presetsData.version,
+        assignments: assignmentsData.version,
+      })
+      setSourceOwners({
+        archway: archwayData.sourceOwner,
+        presets: presetsData.sourceOwner,
+        assignments: assignmentsData.sourceOwner,
+      })
 
       if (assetsRes.ok) {
         const data = await assetsRes.json()
@@ -150,7 +247,8 @@ export default function HeroSectionEditor() {
       }
     } catch (err) {
       console.error('Error fetching data:', err)
-      setError('Failed to load data')
+      setHasLoadError(true)
+      setError(err instanceof Error ? err.message : 'Failed to load the hero settings.')
     } finally {
       setLoading(false)
     }
@@ -160,55 +258,87 @@ export default function HeroSectionEditor() {
     fetchAll()
   }, [fetchAll])
 
+  const reloadPublishedValues = () => {
+    if (activeSettingKey === 'presets') {
+      setEditingPreset(null)
+      setEditingImageIndex(null)
+      setPublishedPreset(null)
+      setPresetDraftIsNew(false)
+      setSlideshowTab('presets')
+    }
+    void fetchAll()
+  }
+
   // ============================================
   // Save Handlers
   // ============================================
 
-  const handleSaveSingleImage = async () => {
+  const saveSingleImage = async () => {
     setSaving(true)
     setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
     try {
       const response = await fetch('/api/admin/website/hero-archway', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          settings: { desktop: desktopImage, mobile: mobileImage }
+          settings: { desktop: desktopImage, mobile: mobileImage },
+          baseVersion: versions.archway,
         })
       })
-      if (!response.ok) throw new Error('Failed to save')
+      const data = await readResponse<{
+        settings: { desktop: HeroImage | null; mobile: HeroImage | null }
+      } & VersionedResponse>(response, 'Failed to save the hero image settings.')
+      setDesktopImage(data.settings.desktop)
+      setMobileImage(data.settings.mobile)
+      setPublishedArchway(cloneSnapshot(data.settings))
+      setVersions(prev => ({ ...prev, archway: data.version }))
+      setSourceOwners(prev => ({ ...prev, archway: data.sourceOwner }))
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      setHasConflict(err instanceof HeroSettingsRequestError && err.conflict)
+      setError(err instanceof Error ? err.message : 'Failed to save the hero image settings.')
+      throw err
     } finally {
       setSaving(false)
     }
   }
 
-  const handleSavePreset = async (preset: SlideshowPreset) => {
+  const savePreset = async (preset: SlideshowPreset) => {
     setSaving(true)
     setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
     try {
       const isNew = !presets.find(p => p.id === preset.id)
       const response = await fetch('/api/admin/website/hero-slideshow-presets', {
         method: isNew ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preset })
+        body: JSON.stringify({ preset, baseVersion: versions.presets })
       })
-      if (!response.ok) throw new Error('Failed to save preset')
-
-      const data = await response.json()
+      const data = await readResponse<{
+        preset: SlideshowPreset
+      } & VersionedResponse>(response, 'Failed to save the slideshow preset.')
       if (isNew) {
         setPresets(prev => [...prev, data.preset])
       } else {
         setPresets(prev => prev.map(p => p.id === preset.id ? data.preset : p))
       }
+      setVersions(prev => ({ ...prev, presets: data.version }))
+      setSourceOwners(prev => ({ ...prev, presets: data.sourceOwner }))
+      setPublishedPreset(cloneSnapshot(data.preset))
+      setPresetDraftIsNew(false)
 
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
       setEditingPreset(null)
+      setEditingImageIndex(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save preset')
+      setHasConflict(err instanceof HeroSettingsRequestError && err.conflict)
+      setError(err instanceof Error ? err.message : 'Failed to save the slideshow preset.')
+      throw err
     } finally {
       setSaving(false)
     }
@@ -217,33 +347,54 @@ export default function HeroSectionEditor() {
   const handleDeletePreset = async (presetId: string) => {
     if (!confirm('Delete this preset?')) return
     setSaving(true)
+    setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
     try {
       const response = await fetch(`/api/admin/website/hero-slideshow-presets?id=${presetId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ baseVersion: versions.presets }),
       })
-      if (!response.ok) throw new Error('Failed to delete')
+      const data = await readResponse<VersionedResponse>(
+        response,
+        'Failed to delete the slideshow preset.',
+      )
       setPresets(prev => prev.filter(p => p.id !== presetId))
+      setVersions(prev => ({ ...prev, presets: data.version }))
+      setSourceOwners(prev => ({ ...prev, presets: data.sourceOwner }))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete')
+      setHasConflict(err instanceof HeroSettingsRequestError && err.conflict)
+      setError(err instanceof Error ? err.message : 'Failed to delete the slideshow preset.')
     } finally {
       setSaving(false)
     }
   }
 
-  const handleSaveAssignments = async () => {
+  const saveAssignments = async () => {
     setSaving(true)
     setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
     try {
       const response = await fetch('/api/admin/website/hero-slideshow-assignments', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignments })
+        body: JSON.stringify({ assignments, baseVersion: versions.assignments })
       })
-      if (!response.ok) throw new Error('Failed to save assignments')
+      const data = await readResponse<{
+        assignments: SlideshowAssignments
+      } & VersionedResponse>(response, 'Failed to save slideshow assignments.')
+      setAssignments(data.assignments)
+      setPublishedAssignments(cloneSnapshot(data.assignments))
+      setVersions(prev => ({ ...prev, assignments: data.version }))
+      setSourceOwners(prev => ({ ...prev, assignments: data.sourceOwner }))
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save assignments')
+      setHasConflict(err instanceof HeroSettingsRequestError && err.conflict)
+      setError(err instanceof Error ? err.message : 'Failed to save slideshow assignments.')
+      throw err
     } finally {
       setSaving(false)
     }
@@ -314,8 +465,116 @@ export default function HeroSectionEditor() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
+    setPublishedPreset(null)
+    setPresetDraftIsNew(true)
+    setEditingImageIndex(null)
     setEditingPreset(newPreset)
     setSlideshowTab('editor')
+  }
+
+  const beginEditingPreset = (preset: SlideshowPreset) => {
+    const snapshot = cloneSnapshot(preset)
+    setPublishedPreset(snapshot)
+    setPresetDraftIsNew(false)
+    setEditingImageIndex(null)
+    setEditingPreset(cloneSnapshot(snapshot))
+    setSlideshowTab('editor')
+  }
+
+  const cancelPresetEditor = () => {
+    setEditingPreset(null)
+    setEditingImageIndex(null)
+    setPublishedPreset(null)
+    setPresetDraftIsNew(false)
+    setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
+    setSaved(false)
+    setSlideshowTab('presets')
+  }
+
+  const discardArchwayDraft = () => {
+    if (publishedArchway) {
+      const snapshot = cloneSnapshot(publishedArchway)
+      setDesktopImage(snapshot.desktop)
+      setMobileImage(snapshot.mobile)
+    }
+    setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
+    setSaved(false)
+  }
+
+  const discardAssignmentsDraft = () => {
+    if (publishedAssignments) {
+      setAssignments(cloneSnapshot(publishedAssignments))
+    }
+    setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
+    setSaved(false)
+  }
+
+  const discardPresetDraft = () => {
+    if (presetDraftIsNew) {
+      setEditingPreset(null)
+      setPublishedPreset(null)
+      setPresetDraftIsNew(false)
+      setSlideshowTab('presets')
+    } else if (publishedPreset) {
+      setEditingPreset(cloneSnapshot(publishedPreset))
+    }
+    setEditingImageIndex(null)
+    setError(null)
+    setHasConflict(false)
+    setHasLoadError(false)
+    setSaved(false)
+  }
+
+  const archwayDraft = { desktop: desktopImage, mobile: mobileImage }
+  const archwayDirty = publishedArchway !== null
+    && !snapshotsEqual(archwayDraft, publishedArchway)
+  const assignmentsDirty = publishedAssignments !== null
+    && !snapshotsEqual(assignments, publishedAssignments)
+  const presetDirty = editingPreset !== null
+    && (presetDraftIsNew || (publishedPreset !== null && !snapshotsEqual(editingPreset, publishedPreset)))
+
+  useDirtyBlock({
+    id: 'website.hero.archway',
+    label: 'Hero archway images',
+    dirty: archwayDirty,
+    save: saveSingleImage,
+    discard: discardArchwayDraft,
+  })
+
+  useDirtyBlock({
+    id: 'website.hero.assignments',
+    label: 'Hero slideshow assignments',
+    dirty: assignmentsDirty,
+    save: saveAssignments,
+    discard: discardAssignmentsDraft,
+  })
+
+  useDirtyBlock({
+    id: 'website.hero.preset-editor',
+    label: 'Active hero slideshow preset',
+    dirty: presetDirty,
+    save: async () => {
+      if (editingPreset) await savePreset(editingPreset)
+    },
+    discard: discardPresetDraft,
+  })
+
+  const handleSaveSingleImage = () => {
+    void saveSingleImage().catch(() => undefined)
+  }
+
+  const handleSavePreset = (preset: SlideshowPreset) => {
+    void savePreset(preset).catch(() => undefined)
+  }
+
+  const handleSaveAssignments = () => {
+    void saveAssignments().catch(() => undefined)
   }
 
   // ============================================
@@ -338,7 +597,7 @@ export default function HeroSectionEditor() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-dusty-rose/30 to-terracotta/20 flex items-center justify-center">
               <ImageIcon className="w-6 h-6 text-terracotta" />
@@ -348,18 +607,50 @@ export default function HeroSectionEditor() {
               <p className="text-sm text-dune/60">Configure the above-the-fold arch image or slideshow</p>
             </div>
           </div>
+          <div
+            className="hidden sm:flex items-center gap-2 rounded-full border border-sage/20 bg-cream/70 px-3 py-1.5 text-xs text-dune/60"
+            aria-label={`Publishing source ${sourceOwners[activeSettingKey]}, version ${versions[activeSettingKey]}`}
+          >
+            <span className="font-medium capitalize text-dune/80">
+              {sourceOwners[activeSettingKey].replace(/-/g, ' ')}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>Revision {versions[activeSettingKey]}</span>
+          </div>
         </div>
       </motion.div>
+
+      <HeroContentEditor />
 
       {/* Error Alert */}
       {error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          role="alert"
+          aria-live="assertive"
           className="mb-6 p-4 rounded-2xl bg-terracotta/10 border border-terracotta/20 flex items-center gap-3"
         >
           <AlertCircle className="w-5 h-5 text-terracotta flex-shrink-0" />
-          <p className="text-sm text-terracotta">{error}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-terracotta">
+              {hasConflict
+                ? 'A newer revision is already published.'
+                : hasLoadError
+                  ? 'The hero settings could not be loaded.'
+                  : 'This change was not saved.'}
+            </p>
+            <p className="mt-0.5 text-sm text-dune/70">{error}</p>
+          </div>
+          {(hasConflict || hasLoadError) && (
+            <button
+              type="button"
+              onClick={reloadPublishedValues}
+              className="shrink-0 rounded-full border border-terracotta/30 bg-cream px-3 py-1.5 text-xs font-medium text-terracotta transition-colors hover:bg-terracotta/10"
+            >
+              {hasConflict ? 'Reload published values' : 'Try again'}
+            </button>
+          )}
         </motion.div>
       )}
 
@@ -423,6 +714,8 @@ export default function HeroSectionEditor() {
             slideshowTab={slideshowTab}
             setSlideshowTab={setSlideshowTab}
             onCreatePreset={createNewPreset}
+            onBeginEditPreset={beginEditingPreset}
+            onCancelPreset={cancelPresetEditor}
             onSavePreset={handleSavePreset}
             onDeletePreset={handleDeletePreset}
             onSaveAssignments={handleSaveAssignments}
@@ -765,6 +1058,8 @@ interface SlideshowEditorProps {
   slideshowTab: SlideshowTab
   setSlideshowTab: (t: SlideshowTab) => void
   onCreatePreset: () => void
+  onBeginEditPreset: (p: SlideshowPreset) => void
+  onCancelPreset: () => void
   onSavePreset: (p: SlideshowPreset) => void
   onDeletePreset: (id: string) => void
   onSaveAssignments: () => void
@@ -782,6 +1077,8 @@ function SlideshowEditor({
   slideshowTab,
   setSlideshowTab,
   onCreatePreset,
+  onBeginEditPreset,
+  onCancelPreset,
   onSavePreset,
   onDeletePreset,
   onSaveAssignments,
@@ -839,7 +1136,7 @@ function SlideshowEditor({
           <PresetsList
             key="presets"
             presets={presets}
-            onEdit={(p) => { setEditingPreset(p); setSlideshowTab('editor'); }}
+            onEdit={onBeginEditPreset}
             onDelete={onDeletePreset}
             onCreate={onCreatePreset}
           />
@@ -851,7 +1148,7 @@ function SlideshowEditor({
             preset={editingPreset}
             setPreset={setEditingPreset}
             onSave={onSavePreset}
-            onCancel={() => { setEditingPreset(null); setSlideshowTab('presets'); }}
+            onCancel={onCancelPreset}
             openImagePicker={openImagePicker}
             saving={saving}
             saved={saved}

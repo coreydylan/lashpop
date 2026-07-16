@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { setPhotos } from "@/db/schema/set_photos"
 import { and, eq } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
 // Add or update a photo to a set stage
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(["owner", "publisher"])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
-    const { setId, assetId, stage } = body
+    const setId = typeof body.setId === "string" ? body.setId : ""
+    const assetId = typeof body.assetId === "string" ? body.assetId : ""
+    const stage = typeof body.stage === "string" ? body.stage : ""
 
     if (!setId || !assetId || !stage) {
       return NextResponse.json(
@@ -55,6 +62,30 @@ export async function POST(request: NextRequest) {
         stage
       })
     }
+
+    const after = await db
+      .select()
+      .from(setPhotos)
+      .where(
+        and(
+          eq(setPhotos.setId, setId),
+          eq(setPhotos.assetId, assetId)
+        )
+      )
+
+    await recordAdminAction({
+      action: existing.length > 0 ? "dam.set.photo.stage.update" : "dam.set.photo.add",
+      surface: "dam",
+      targetType: "set_photo",
+      targetId: after[0]?.id,
+      actorUserId: auth.userId,
+      diff: {
+        setId,
+        assetId,
+        before: existing,
+        after,
+      },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

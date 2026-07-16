@@ -3,6 +3,9 @@ import { eq } from 'drizzle-orm'
 
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
+import { writeWebsiteSetting } from '@/lib/admin/settings-writer'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +57,9 @@ function coerce(raw: Record<string, unknown>): ReviewSettings {
 }
 
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   const db = getDb()
   const [row] = await db
     .select()
@@ -61,27 +67,43 @@ export async function GET() {
     .where(eq(websiteSettings.section, SECTION))
     .limit(1)
   const config = coerce((row?.config ?? {}) as Record<string, unknown>)
-  return NextResponse.json({ settings: config, defaults: DEFAULTS })
+  return NextResponse.json({
+    settings: config,
+    defaults: DEFAULTS,
+    version: row?.version ?? 0,
+    sourceOwner: row?.sourceOwner ?? 'admin',
+  })
 }
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json()
-  const settings = coerce(body?.settings ?? {})
+  let body: { settings?: Record<string, unknown>; baseVersion?: unknown }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+  if (!body.settings || typeof body.settings !== 'object' || Array.isArray(body.settings)) {
+    return NextResponse.json({ error: 'settings is required' }, { status: 400 })
+  }
+  if (typeof body.baseVersion !== 'number') {
+    return NextResponse.json({ error: 'baseVersion is required' }, { status: 400 })
+  }
+  const settings = coerce(body.settings)
 
-  const db = getDb()
-  // Drizzle's `config` column expects Record<string, unknown>; cast through
-  // unknown because the typed ReviewSettings interface doesn't carry an
-  // index signature.
-  const configBlob = settings as unknown as Record<string, unknown>
-  await db
-    .insert(websiteSettings)
-    .values({ section: SECTION, config: configBlob })
-    .onConflictDoUpdate({
-      target: websiteSettings.section,
-      set: { config: configBlob, updatedAt: new Date() },
-    })
+  const result = await writeWebsiteSetting({
+    section: SECTION,
+    config: settings,
+    baseVersion: body.baseVersion,
+    action: 'reviews.pipeline.update',
+  })
+  if (!result.ok) return NextResponse.json(result, { status: result.status })
 
-  return NextResponse.json({ success: true, settings })
+  return NextResponse.json({
+    success: true,
+    settings: result.setting.config,
+    version: result.setting.version,
+    sourceOwner: result.setting.sourceOwner,
+  })
 }
 
 /**
@@ -93,6 +115,9 @@ export async function PUT(req: NextRequest) {
  *   REVIEWS_WORKER_TRIGGER_SECRET
  */
 export async function POST() {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   const workerUrl = process.env.REVIEWS_WORKER_URL
   const triggerSecret = process.env.REVIEWS_WORKER_TRIGGER_SECRET
   if (!workerUrl || !triggerSecret) {
@@ -108,6 +133,14 @@ export async function POST() {
     method: 'GET',
     headers: { Authorization: `Bearer ${triggerSecret}` },
   }).catch(err => console.error('[admin] worker trigger failed:', err))
+
+  await recordAdminAction({
+    action: 'reviews.editor-pass.trigger',
+    targetType: 'review_pipeline',
+    targetId: 'manual-editor-pass',
+    actorUserId: auth.userId,
+    diff: { dispatched: true },
+  })
 
   return NextResponse.json({ triggered: true, note: 'Editor pass started in background. Check back in 5-15 min.' })
 }

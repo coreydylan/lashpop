@@ -14,7 +14,15 @@ export interface AdminSession {
   email: string | null
   name: string | null
   isAdmin: boolean
+  role: AdminRole | null
   expiresAt: Date
+}
+
+export const ADMIN_ROLES = ['owner', 'publisher', 'viewer'] as const
+export type AdminRole = (typeof ADMIN_ROLES)[number]
+
+export function isAdminRole(value: unknown): value is AdminRole {
+  return typeof value === 'string' && ADMIN_ROLES.includes(value as AdminRole)
 }
 
 const LOGIN_REDIRECT = '/admin/login'
@@ -34,6 +42,7 @@ async function readSession(): Promise<AdminSession | null> {
       email: userSchema.email,
       name: userSchema.name,
       damAccess: userSchema.damAccess,
+      adminRole: userSchema.adminRole,
       expiresAt: sessionSchema.expiresAt,
     })
     .from(sessionSchema)
@@ -49,6 +58,12 @@ async function readSession(): Promise<AdminSession | null> {
   const row = result[0]
   if (!row) return null
 
+  const role: AdminRole | null = isAdminRole(row.adminRole)
+    ? row.adminRole
+    : row.adminRole == null && row.damAccess === true
+      ? 'owner'
+      : null
+
   return {
     userId: row.userId,
     sessionId: row.sessionId,
@@ -56,7 +71,8 @@ async function readSession(): Promise<AdminSession | null> {
     phoneNumber: row.phoneNumber,
     email: row.email,
     name: row.name,
-    isAdmin: row.damAccess === true,
+    isAdmin: role !== null,
+    role,
     expiresAt: row.expiresAt,
   }
 }
@@ -80,6 +96,12 @@ export async function requireAdmin(): Promise<AdminSession> {
   return sess
 }
 
+export async function requireAdminRole(...roles: AdminRole[]): Promise<AdminSession> {
+  const sess = await requireAdmin()
+  if (!sess.role || !roles.includes(sess.role)) redirect('/admin/no-access')
+  return sess
+}
+
 /**
  * For API route handlers. Returns either the session or a NextResponse
  * that the caller should return directly.
@@ -89,13 +111,16 @@ export async function requireAdmin(): Promise<AdminSession> {
  *   if (result instanceof NextResponse) return result
  *   const { userId } = result
  */
-export async function requireAdminApi(): Promise<AdminSession | NextResponse> {
+export async function requireAdminApi(roles?: AdminRole[]): Promise<AdminSession | NextResponse> {
   const sess = await readSession()
   if (!sess) {
     return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
   if (!sess.isAdmin) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  if (roles && (!sess.role || !roles.includes(sess.role))) {
+    return NextResponse.json({ error: 'This role cannot perform that action' }, { status: 403 })
   }
   return sess
 }

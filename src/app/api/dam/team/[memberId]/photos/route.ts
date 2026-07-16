@@ -4,8 +4,14 @@ import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { assets } from "@/db/schema/assets"
 import { and, eq, desc, inArray, isNull } from "drizzle-orm"
 import { getRouteParam } from "@/lib/server/getRouteParam"
+import { requireAdminApi } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
-export async function GET(request: NextRequest, context: any) {
+type TeamPhotosRouteContext = {
+  params: Promise<{ memberId: string }>
+}
+
+export async function GET(_request: NextRequest, context: TeamPhotosRouteContext) {
   try {
     const memberId = await getRouteParam(context, "memberId")
     if (!memberId) {
@@ -84,7 +90,10 @@ export async function GET(request: NextRequest, context: any) {
 
 // POST - Tag DAM assets to this team member. Same op as the DAM's "assign to team"
 // (assets.team_member_id is the single source of truth for portfolio photos).
-export async function POST(request: NextRequest, context: any) {
+export async function POST(request: NextRequest, context: TeamPhotosRouteContext) {
+  const auth = await requireAdminApi(["owner", "publisher"])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const memberId = await getRouteParam(context, "memberId")
     if (!memberId) {
@@ -95,9 +104,11 @@ export async function POST(request: NextRequest, context: any) {
     }
 
     const body = await request.json()
-    const { assetIds } = body
+    const assetIds: string[] = Array.isArray(body.assetIds)
+      ? Array.from(new Set<string>(body.assetIds.filter((assetId: unknown): assetId is string => typeof assetId === "string" && assetId.length > 0)))
+      : []
 
-    if (!assetIds || !Array.isArray(assetIds) || assetIds.length === 0) {
+    if (assetIds.length === 0) {
       return NextResponse.json(
         { error: "assetIds array is required" },
         { status: 400 }
@@ -105,12 +116,36 @@ export async function POST(request: NextRequest, context: any) {
     }
 
     const db = getDb()
+    const before = await db
+      .select({ assetId: assets.id, teamMemberId: assets.teamMemberId })
+      .from(assets)
+      .where(inArray(assets.id, assetIds))
 
     const updated = await db
       .update(assets)
       .set({ teamMemberId: memberId })
       .where(inArray(assets.id, assetIds))
       .returning({ id: assets.id })
+
+    const after = await db
+      .select({ assetId: assets.id, teamMemberId: assets.teamMemberId })
+      .from(assets)
+      .where(inArray(assets.id, assetIds))
+
+    await recordAdminAction({
+      action: "dam.asset.team.assign",
+      surface: "dam",
+      targetType: "team_member",
+      targetId: memberId,
+      actorUserId: auth.userId,
+      diff: {
+        teamMemberId: memberId,
+        assetIds,
+        updatedAssetIds: updated.map((asset) => asset.id),
+        before,
+        after,
+      },
+    })
 
     return NextResponse.json({
       success: true,

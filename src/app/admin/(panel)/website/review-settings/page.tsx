@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import {
   Save,
@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   Play,
 } from "lucide-react"
+import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
 
 interface ReviewSettings {
   homepage_capacity: number
@@ -121,22 +122,32 @@ const FIELDS: FieldDef[] = [
 
 export default function ReviewSettingsPage() {
   const [settings, setSettings] = useState<ReviewSettings | null>(null)
+  const [savedSettings, setSavedSettings] = useState<ReviewSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<number | null>(null)
   const [triggering, setTriggering] = useState(false)
   const [triggerMessage, setTriggerMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
+  const [baseVersion, setBaseVersion] = useState(0)
+  const [sourceOwner, setSourceOwner] = useState('admin')
 
   useEffect(() => {
     void fetchSettings()
   }, [])
 
   async function fetchSettings() {
+    setError(null)
     try {
       const res = await fetch("/api/admin/website/review-settings")
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? `Failed to load settings (${res.status})`)
       setSettings(data.settings as ReviewSettings)
+      setSavedSettings(data.settings as ReviewSettings)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -144,25 +155,57 @@ export default function ReviewSettingsPage() {
     }
   }
 
-  async function handleSave() {
-    if (!settings) return
+  const save = useCallback(async () => {
+    if (!settings) throw new Error('Review settings are not loaded')
     setSaving(true)
     setError(null)
     try {
       const res = await fetch("/api/admin/website/review-settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ settings }),
+        body: JSON.stringify({ settings, baseVersion }),
       })
-      if (!res.ok) throw new Error(await res.text())
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        if (res.status === 409 && data?.conflict) {
+          setConflict(true)
+          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+        }
+        throw new Error(data?.error ?? `Save failed (${res.status})`)
+      }
+      setSettings(data.settings as ReviewSettings)
+      setSavedSettings(data.settings as ReviewSettings)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
       setSavedAt(Date.now())
       setTimeout(() => setSavedAt(null), 2200)
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      const error = err instanceof Error ? err : new Error(String(err))
+      setError(error.message)
+      throw error
     } finally {
       setSaving(false)
     }
-  }
+  }, [baseVersion, settings])
+
+  const dirty = settings !== null
+    && savedSettings !== null
+    && JSON.stringify(settings) !== JSON.stringify(savedSettings)
+  const discard = useCallback(() => {
+    if (savedSettings) setSettings(savedSettings)
+    setError(null)
+    setConflict(false)
+    setSavedAt(null)
+  }, [savedSettings])
+
+  useDirtyBlock({
+    id: 'review-automation-settings',
+    label: 'Review automation settings',
+    dirty,
+    save,
+    discard,
+  })
 
   async function handleTrigger() {
     setTriggering(true)
@@ -209,13 +252,26 @@ export default function ReviewSettingsPage() {
             Controls how reviews flow into the homepage carousel and the per-stylist
             highlight reels. Saved values take effect on the next Worker tick (every 6h).
           </p>
+          <p className="mt-1 text-xs text-dune/45">
+            {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+          </p>
         </div>
       </motion.header>
 
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3 items-start">
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex flex-wrap gap-3 items-start" role="alert">
           <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
+          <p className="min-w-0 flex-1 text-sm text-red-700">{error}</p>
+          {conflict && (
+            <button
+              type="button"
+              onClick={() => void fetchSettings()}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50"
+            >
+              <RotateCw className="h-3.5 w-3.5" />
+              Discard edits &amp; load latest
+            </button>
+          )}
         </div>
       )}
 
@@ -262,8 +318,8 @@ export default function ReviewSettingsPage() {
 
       <div className="mt-10 flex flex-wrap gap-3 items-center">
         <button
-          onClick={handleSave}
-          disabled={saving}
+          onClick={() => void save().catch(() => undefined)}
+          disabled={saving || !dirty}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-golden text-white rounded-lg font-medium hover:bg-golden/90 disabled:opacity-60"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

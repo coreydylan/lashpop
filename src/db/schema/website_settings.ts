@@ -12,6 +12,12 @@ export const websiteSettings = pgTable("website_settings", {
   
   // JSON configuration for the section
   config: jsonb("config").$type<Record<string, unknown>>(),
+
+  // Publishing metadata used for ownership labels, history, and optimistic
+  // concurrency. Existing writers can omit these fields safely.
+  sourceOwner: text("source_owner").default("lashpop").notNull(),
+  version: integer("version").default(1).notNull(),
+  updatedByUserId: text("updated_by_user_id"),
   
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -43,4 +49,3 @@ export type InsertWebsiteSetting = typeof websiteSettings.$inferInsert
 export type SelectWebsiteSetting = typeof websiteSettings.$inferSelect
 export type InsertHomepageReview = typeof homepageReviews.$inferInsert
 export type SelectHomepageReview = typeof homepageReviews.$inferSelect
-

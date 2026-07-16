@@ -82,7 +82,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     title: 'FINE LINE TATTOOS',
     tagline: 'Tiny, personal + yours.',
     description: 'Delicate, custom tattoos designed around your story and style. From tiny symbols and meaningful words to soft florals and one-of-a-kind linework, each piece is thoughtfully created to feel uniquely yours.',
-    icon: '/lashpop-images/services/fine-line-tattoos.jpg',
+    icon: '/lashpop-images/services/thin/fine-line-tattoos-icon.svg',
   },
   {
     id: 'injectables',
@@ -110,9 +110,7 @@ function ServiceCard({
       {/* Icon */}
       <div className="flex justify-center mb-4">
         <div className={`relative ${
-          category.slug === 'fine-line-tattoos'
-            ? 'w-20 h-16 rounded-xl overflow-hidden'
-            : category.slug === 'lashes' || category.slug === 'lash-lifts' || category.slug === 'brows'
+          category.slug === 'lashes' || category.slug === 'lash-lifts' || category.slug === 'brows'
             ? 'w-20 h-10'
             : 'w-24 h-12'
         }`}>
@@ -256,9 +254,7 @@ function MobileSwipeableServiceCards({
           <div className="flex flex-col items-center text-center px-6 py-6 flex-1">
             {/* Icon */}
             <div className={`relative mb-4 ${
-              currentCategory.slug === 'fine-line-tattoos'
-                ? 'w-20 h-16 rounded-xl overflow-hidden'
-                : currentCategory.slug === 'lashes' || currentCategory.slug === 'lash-lifts' || currentCategory.slug === 'brows'
+              currentCategory.slug === 'lashes' || currentCategory.slug === 'lash-lifts' || currentCategory.slug === 'brows'
                 ? 'w-16 h-8'
                 : 'w-20 h-10'
             }`}>

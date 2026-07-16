@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 100" width="240" height="100" role="img" aria-labelledby="title">
+  <title id="title">Fine line tattoo symbols</title>
+  <g fill="none" stroke="#d3a392" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Four-point sparkle, heart, and radiating sparkle recreated from the approved Google Doc artwork. -->
+    <path d="M48 14c0 18.4 10.6 29 29 29-18.4 0-29 10.6-29 29 0-18.4-10.6-29-29-29 18.4 0 29-10.6 29-29Z" />
+    <path d="M108.5 31.5c-8.1-8.1-21.5-2.2-21.5 9.2 0 12.1 21.5 30.8 21.5 30.8S130 52.8 130 40.7c0-11.4-13.4-17.3-21.5-9.2Z" />
+    <circle cx="181" cy="43" r="3.2" />
+    <path d="M181 12v16M181 58v16M150 43h16M196 43h16M159.1 21.1l11.3 11.3M191.6 53.6l11.3 11.3M202.9 21.1l-11.3 11.3M170.4 53.6l-11.3 11.3" />
+  </g>
+</svg>

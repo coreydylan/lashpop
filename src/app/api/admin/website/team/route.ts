@@ -4,6 +4,8 @@ import { teamMembers } from '@/db/schema/team_members'
 import { teamMemberServicesVagaro } from '@/db/schema/team_member_services_vagaro'
 import { vagaroServiceCategories } from '@/db/schema/vagaro_service_categories'
 import { eq, asc, inArray } from 'drizzle-orm'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +17,9 @@ function sortServiceTags(tags: string[], rank: Map<string, number>): string[] {
 // Vagaro-mode rows read tags from team_member_services_vagaro; external-mode rows
 // read them from external_service_categories. No merging between the two.
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
 
@@ -105,6 +110,9 @@ export async function GET() {
 
 // PUT - Update team member visibility and order
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { updates } = await request.json()
@@ -116,9 +124,20 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    const updateIds = updates
+      .map((update: { id?: unknown }) => update.id)
+      .filter((id: unknown): id is string => typeof id === 'string')
+    const before = updateIds.length > 0
+      ? await db.select().from(teamMembers).where(inArray(teamMembers.id, updateIds))
+      : []
+
     // Update each member's isActive and displayOrder
     for (const update of updates) {
       if (!update.id) continue
+
+      if (typeof update.isActive !== 'boolean' || !Number.isInteger(update.displayOrder)) {
+        return NextResponse.json({ error: 'Each update requires a boolean isActive and integer displayOrder' }, { status: 400 })
+      }
 
       await db
         .update(teamMembers)
@@ -129,6 +148,14 @@ export async function PUT(request: NextRequest) {
         })
         .where(eq(teamMembers.id, update.id))
     }
+
+    const after = updateIds.length > 0
+      ? await db.select().from(teamMembers).where(inArray(teamMembers.id, updateIds))
+      : []
+    await recordAdminAction({
+      action: 'team.presentation.bulk-update', targetType: 'team_members', targetId: 'bulk',
+      actorUserId: auth.userId, diff: { before, after },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -144,6 +171,9 @@ export async function PUT(request: NextRequest) {
 // (usesLashpopBooking=true) reject writes to image/bio/categories because the
 // sync owns those fields; only external-mode rows can edit them here.
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -158,10 +188,7 @@ export async function PATCH(request: NextRequest) {
 
     // Load the row to enforce the dual-mode write gate before applying changes.
     const [member] = await db
-      .select({
-        id: teamMembers.id,
-        usesLashpopBooking: teamMembers.usesLashpopBooking,
-      })
+      .select()
       .from(teamMembers)
       .where(eq(teamMembers.id, memberId))
       .limit(1)
@@ -233,10 +260,16 @@ export async function PATCH(request: NextRequest) {
       updateData.imageUrl = imageUrl
     }
 
-    await db
+    const [after] = await db
       .update(teamMembers)
       .set(updateData)
       .where(eq(teamMembers.id, memberId))
+      .returning()
+
+    await recordAdminAction({
+      action: 'team.member.update', targetType: 'team_member', targetId: memberId,
+      actorUserId: auth.userId, diff: { before: member, after },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

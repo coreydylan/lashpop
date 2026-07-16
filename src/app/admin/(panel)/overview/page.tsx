@@ -1,380 +1,155 @@
-import { Metadata } from 'next'
 import Link from 'next/link'
-import { desc, eq, isNull, sql, and, or } from 'drizzle-orm'
-import { Activity, Star, Inbox, Building2, FileText, ArrowRight, Sparkles, AlertTriangle, Mail } from 'lucide-react'
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { AlertTriangle, ArrowRight, CheckCircle2, ClipboardCheck, Inbox, RefreshCw, Star } from 'lucide-react'
 import { getDb } from '@/db'
 import { adminAuditLog } from '@/db/schema/admin_audit_log'
-import { reviews } from '@/db/schema/reviews'
 import { homepageReviews, websiteSettings } from '@/db/schema/website_settings'
 import { newsletterSubscriptions } from '@/db/schema/newsletter_subscriptions'
+import { reviews } from '@/db/schema/reviews'
+import { vagaroSyncRuns } from '@/db/schema/vagaro_sync_runs'
+import { workWithUsSubmissions } from '@/db/schema/work_with_us_submissions'
 import { user as userSchema } from '@/db/schema/auth_user'
-import { STUDIO_SETTINGS_SECTION } from '@/types/studio'
-import { FOUNDER_LETTER_SECTION } from '@/types/founder-letter'
+import { requireAdmin } from '@/lib/admin/auth'
 
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: 'Overview — LashPop Admin',
-}
+const EXPECTED_SETTINGS = [
+  'founder_letter',
+  'hero_content',
+  'hero_archway',
+  'hero_slideshow_assignments',
+  'hero_slideshow_presets',
+  'homepage_services',
+  'instagram_carousel',
+  'review_pipeline',
+  'seo_metadata',
+  'studio',
+  'work_with_us_content',
+] as const
 
-interface RecentAction {
-  id: string
-  action: string
-  targetType: string | null
-  targetId: string | null
-  createdAt: Date
-  actorName: string | null
-  actorEmail: string | null
-  actorPhone: string | null
-}
-
-async function loadDashboardData() {
+export default async function TodayPage() {
+  const session = await requireAdmin()
   const db = getDb()
-
-  // Audit log read is wrapped so the page still renders when the
-  // admin_audit_log migration hasn't been applied yet.
-  const recentActionsPromise = db
-    .select({
-      id: adminAuditLog.id,
-      action: adminAuditLog.action,
-      targetType: adminAuditLog.targetType,
-      targetId: adminAuditLog.targetId,
-      createdAt: adminAuditLog.createdAt,
-      actorName: userSchema.name,
-      actorEmail: userSchema.email,
-      actorPhone: userSchema.phoneNumber,
-    })
-    .from(adminAuditLog)
-    .leftJoin(userSchema, eq(adminAuditLog.actorUserId, userSchema.id))
-    .orderBy(desc(adminAuditLog.createdAt))
-    .limit(10)
-    .catch((err) => {
-      console.warn('[overview] admin_audit_log read failed (migration not applied?)', err.message)
-      return [] as Array<{
-        id: string
-        action: string
-        targetType: string | null
-        targetId: string | null
-        createdAt: Date
-        actorName: string | null
-        actorEmail: string | null
-        actorPhone: string | null
-      }>
-    })
-
-  // Newsletter reads are wrapped so the page still renders if the table
-  // is missing or read perms change.
-  const newsletterCountPromise = db
-    .select({ count: sql<number>`count(*)` })
-    .from(newsletterSubscriptions)
-    .catch((err) => {
-      console.warn('[overview] newsletter count read failed', err.message)
-      return [{ count: 0 }]
-    })
-
-  const recentSubscribersPromise = db
-    .select({ email: newsletterSubscriptions.email, subscribedAt: newsletterSubscriptions.subscribedAt })
-    .from(newsletterSubscriptions)
-    .orderBy(desc(newsletterSubscriptions.subscribedAt))
-    .limit(5)
-    .catch((err) => {
-      console.warn('[overview] recent subscribers read failed', err.message)
-      return [] as Array<{ email: string; subscribedAt: Date | null }>
-    })
-
-  const [recentActions, pendingScore, pinnedCount, studioConfigured, founderConfigured, newsletterCount, recentSubscribers] = await Promise.all([
-    recentActionsPromise,
-
-    // Reviews that haven't been scored AND aren't already hidden
+  const [
+    [unscored],
+    [pinned],
+    [subscribers],
+    [applications],
+    latestRuns,
+    configuredRows,
+    activity,
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(reviews).where(and(isNull(reviews.qualityScore), eq(reviews.showOnWebsite, true))),
+    db.select({ count: sql<number>`count(*)` }).from(homepageReviews).where(eq(homepageReviews.isPinned, true)),
+    db.select({ count: sql<number>`count(*)` }).from(newsletterSubscriptions),
+    db.select({ count: sql<number>`count(*)` }).from(workWithUsSubmissions),
+    db.select().from(vagaroSyncRuns).orderBy(desc(vagaroSyncRuns.startedAt)).limit(1),
+    db.select({ section: websiteSettings.section }).from(websiteSettings).where(inArray(websiteSettings.section, [...EXPECTED_SETTINGS])),
     db
-      .select({ count: sql<number>`count(*)` })
-      .from(reviews)
-      .where(and(isNull(reviews.qualityScore), eq(reviews.showOnWebsite, true))),
-
-    // Pinned reviews currently rendering
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(homepageReviews)
-      .where(eq(homepageReviews.isPinned, true)),
-
-    // Whether studio_settings + founder_letter rows exist (else we're
-    // showing the seeded defaults — flag for the editor)
-    db
-      .select({ id: websiteSettings.id })
-      .from(websiteSettings)
-      .where(eq(websiteSettings.section, STUDIO_SETTINGS_SECTION))
-      .limit(1),
-
-    db
-      .select({ id: websiteSettings.id })
-      .from(websiteSettings)
-      .where(eq(websiteSettings.section, FOUNDER_LETTER_SECTION))
-      .limit(1),
-
-    newsletterCountPromise,
-    recentSubscribersPromise,
+      .select({
+        id: adminAuditLog.id,
+        action: adminAuditLog.action,
+        targetType: adminAuditLog.targetType,
+        targetId: adminAuditLog.targetId,
+        createdAt: adminAuditLog.createdAt,
+        actorName: userSchema.name,
+        actorEmail: userSchema.email,
+      })
+      .from(adminAuditLog)
+      .leftJoin(userSchema, eq(adminAuditLog.actorUserId, userSchema.id))
+      .orderBy(desc(adminAuditLog.createdAt))
+      .limit(8),
   ])
 
-  return {
-    recentActions: recentActions as RecentAction[],
-    unscoredReviewCount: pendingScore[0]?.count ?? 0,
-    pinnedReviewCount: pinnedCount[0]?.count ?? 0,
-    studioConfigured: studioConfigured.length > 0,
-    founderConfigured: founderConfigured.length > 0,
-    newsletterCount: newsletterCount[0]?.count ?? 0,
-    recentSubscribers: recentSubscribers as Array<{ email: string; subscribedAt: Date | null }>,
-  }
-}
-
-export default async function OverviewPage() {
-  const data = await loadDashboardData()
+  const latestRun = latestRuns[0]
+  const syncAge = latestRun ? Date.now() - new Date(latestRun.startedAt).getTime() : Number.POSITIVE_INFINITY
+  const syncHealthy = latestRun?.status === 'success' && syncAge < 45 * 60 * 1000
+  const configured = new Set(configuredRows.map((row) => row.section))
+  const defaultOnly = EXPECTED_SETTINGS.filter((section) => !configured.has(section))
+  const tasks = [
+    unscored.count > 0 ? { label: `Score ${unscored.count} public ${unscored.count === 1 ? 'review' : 'reviews'}`, detail: 'Fresh reviews need the reputation pipeline or a manual pass.', href: '/admin/website/reviews', tone: 'attention' as const } : null,
+    !syncHealthy ? { label: 'Check the Vagaro sync', detail: latestRun ? `Latest run is ${latestRun.status} from ${formatWhen(latestRun.startedAt)}.` : 'No sync run has been recorded.', href: '/admin/system/syncs', tone: 'attention' as const } : null,
+    defaultOnly.length > 0 ? { label: `Confirm ${defaultOnly.length} default-backed website ${defaultOnly.length === 1 ? 'section' : 'sections'}`, detail: 'They work today, but no admin-confirmed row has been saved yet.', href: '/admin/website', tone: 'normal' as const } : null,
+    { label: 'Verify Fine Line Tattoos end to end', detail: 'Confirm booking order, copy, imagery, and Evie + Kelly Richter’s profile chips.', href: '/admin/workflows/service-launch?category=fine-line-tattoos', tone: 'normal' as const },
+  ].filter(Boolean) as Array<{ label: string; detail: string; href: string; tone: 'attention' | 'normal' }>
 
   return (
     <div className="space-y-8">
-      <header>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dusty-rose to-terracotta flex items-center justify-center shadow-sm">
-            <Sparkles className="w-5 h-5 text-cream" />
-          </div>
-          <div>
-            <h1 className="font-serif text-2xl text-dune font-semibold">Welcome back</h1>
-            <p className="text-sm text-dune/60">Quick look at what&apos;s happening across the studio panel.</p>
-          </div>
+      <header className="grid gap-5 border-b border-black/10 pb-7 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Today</p>
+          <h1 className="mt-2 font-serif text-4xl">Good {dayPart()}, {firstName(session.name)}.</h1>
+          <p className="mt-2 text-sm text-black/55">Start with anything that can change what clients see or book.</p>
+        </div>
+        <div className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 text-sm font-semibold ${syncHealthy ? 'border-emerald-700/20 bg-emerald-50 text-emerald-800' : 'border-amber-700/20 bg-amber-50 text-amber-900'}`}>
+          {syncHealthy ? <CheckCircle2 className="size-4" /> : <AlertTriangle className="size-4" />}
+          Vagaro {syncHealthy ? 'current' : 'needs attention'}
         </div>
       </header>
 
-      {/* Setup nudges */}
-      {(!data.studioConfigured || !data.founderConfigured) && (
-        <section className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-700 mt-0.5 flex-shrink-0" />
-            <div className="flex-1">
-              <h2 className="font-medium text-amber-900 mb-1">Finish first-time setup</h2>
-              <p className="text-sm text-amber-900/80 mb-3">
-                These sections are still showing the seeded defaults. Open them once
-                to confirm everything looks right.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {!data.studioConfigured && (
-                  <SetupLink href="/admin/content/studio-info" label="Studio Info" />
-                )}
-                {!data.founderConfigured && (
-                  <SetupLink href="/admin/content/founder-letter" label="Founder Letter" />
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Stat cards */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={Mail}
-          label="Newsletter subscribers"
-          value={data.newsletterCount}
-          href="#newsletter"
-          tone="calm"
-        />
-        <StatCard
-          icon={Star}
-          label="Reviews needing a score"
-          value={data.unscoredReviewCount}
-          href="/admin/website/reviews"
-          tone={data.unscoredReviewCount > 0 ? 'attention' : 'calm'}
-        />
-        <StatCard
-          icon={Inbox}
-          label="Pinned reviews on homepage"
-          value={data.pinnedReviewCount}
-          href="/admin/website/reviews"
-          tone="calm"
-        />
-        <StatCard
-          icon={Activity}
-          label="Admin actions logged"
-          value={data.recentActions.length}
-          href="#recent-activity"
-          tone="calm"
-          suffix={data.recentActions.length >= 10 ? '+' : ''}
-        />
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Operational summary">
+        <Metric icon={Star} label="Reviews to score" value={unscored.count} href="/admin/website/reviews" />
+        <Metric icon={ClipboardCheck} label="Homepage pins" value={pinned.count} href="/admin/website/reviews" />
+        <Metric icon={Inbox} label="Applications" value={applications.count} href="/admin/inbox/work-with-us" />
+        <Metric icon={RefreshCw} label="Subscribers" value={subscribers.count} href="/admin/inbox/newsletter" />
       </section>
 
-      {/* Quick links */}
-      <section>
-        <h2 className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-3">Quick edits</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <QuickLink href="/admin/content/studio-info" icon={Building2} title="Studio info" description="Name, address, phone, hours, social URLs" />
-          <QuickLink href="/admin/content/founder-letter" icon={FileText} title="Founder letter" description="Emily's message on the homepage" />
-          <QuickLink href="/admin/website/hero" icon={Sparkles} title="Hero slideshow" description="Above-the-fold arch images" />
-          <QuickLink href="/admin/website/team" icon={Inbox} title="Team" description="Members, visibility, photos" />
-        </div>
-      </section>
-
-      {/* Newsletter signups */}
-      <section id="newsletter">
-        <h2 className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-3">
-          Newsletter signups
-        </h2>
-        {data.recentSubscribers.length === 0 ? (
-          <div className="bg-white/60 border border-sage/15 rounded-2xl p-8 text-center">
-            <Mail className="w-8 h-8 text-dune/30 mx-auto mb-2" />
-            <p className="text-sm text-dune/60">
-              No signups yet. Emails from the footer&apos;s &ldquo;Stay Connected&rdquo; form will land here.
-            </p>
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div><h2 className="font-serif text-2xl">Work queue</h2><p className="mt-1 text-xs text-black/50">Ordered by public impact.</p></div>
+            <span className="text-xs font-semibold text-black/40">{tasks.length} items</span>
           </div>
-        ) : (
-          <div className="bg-white/60 border border-sage/15 rounded-2xl divide-y divide-sage/10 overflow-hidden">
-            {data.recentSubscribers.map(sub => (
-              <div key={sub.email} className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
-                <span className="text-dune truncate">{sub.email}</span>
-                <time className="text-xs text-dune/50 flex-shrink-0">
-                  {sub.subscribedAt ? formatRelative(new Date(sub.subscribedAt)) : ''}
-                </time>
-              </div>
+          <ol className="overflow-hidden rounded-xl border border-black/10 bg-white divide-y divide-black/10">
+            {tasks.map((task, index) => (
+              <li key={task.label}>
+                <Link href={task.href} className="group grid gap-3 p-5 sm:grid-cols-[auto_1fr_auto] sm:items-center hover:bg-black/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#c96f50]">
+                  <span className={`flex size-8 items-center justify-center rounded-full text-xs font-semibold ${task.tone === 'attention' ? 'bg-amber-100 text-amber-800' : 'bg-black/[0.05] text-black/55'}`}>{index + 1}</span>
+                  <span><span className="block text-sm font-semibold">{task.label}</span><span className="mt-1 block text-xs leading-5 text-black/50">{task.detail}</span></span>
+                  <ArrowRight className="size-4 text-black/30 transition-transform group-hover:translate-x-0.5 group-hover:text-[#9f4c33]" />
+                </Link>
+              </li>
             ))}
-            {data.newsletterCount > data.recentSubscribers.length && (
-              <div className="px-5 py-3 text-xs text-dune/50">
-                + {data.newsletterCount - data.recentSubscribers.length} more — {data.newsletterCount} total
-              </div>
+          </ol>
+        </div>
+
+        <div>
+          <div className="mb-3"><h2 className="font-serif text-2xl">Recent changes</h2><p className="mt-1 text-xs text-black/50">The central log is expanding as editors move to the new foundation.</p></div>
+          <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
+            {activity.length === 0 ? <p className="p-6 text-sm text-black/50">No persistent changes recorded yet.</p> : (
+              <ul className="divide-y divide-black/10">
+                {activity.map((entry) => (
+                  <li key={entry.id} className="px-5 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0"><p className="truncate font-mono text-xs text-[#9f4c33]">{entry.action}</p><p className="mt-1 truncate text-xs text-black/45">{entry.actorName || entry.actorEmail || 'system'}{entry.targetType ? ` · ${entry.targetType}` : ''}{entry.targetId ? `:${entry.targetId}` : ''}</p></div>
+                      <time className="shrink-0 text-[10px] text-black/35">{formatWhen(entry.createdAt)}</time>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
+            <Link href="/admin/system/audit-log" className="flex min-h-11 items-center justify-center gap-2 border-t border-black/10 text-xs font-semibold text-black/55 hover:text-[#9f4c33]">View activity history <ArrowRight className="size-3.5" /></Link>
           </div>
-        )}
-      </section>
-
-      {/* Recent activity */}
-      <section id="recent-activity">
-        <h2 className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-3">
-          Recent activity
-        </h2>
-        {data.recentActions.length === 0 ? (
-          <div className="bg-white/60 border border-sage/15 rounded-2xl p-8 text-center">
-            <Activity className="w-8 h-8 text-dune/30 mx-auto mb-2" />
-            <p className="text-sm text-dune/60">
-              No admin actions logged yet. As soon as someone saves a change, it&apos;ll show up here.
-            </p>
-          </div>
-        ) : (
-          <div className="bg-white/60 border border-sage/15 rounded-2xl divide-y divide-sage/10 overflow-hidden">
-            {data.recentActions.map(action => (
-              <ActionRow key={action.id} action={action} />
-            ))}
-          </div>
-        )}
+        </div>
       </section>
     </div>
   )
 }
 
-function SetupLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-medium transition-colors"
-    >
-      Confirm {label}
-      <ArrowRight className="w-3 h-3" />
-    </Link>
-  )
+function Metric({ icon: Icon, label, value, href }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; href: string }) {
+  return <Link href={href} className="rounded-xl border border-black/10 bg-white p-5 hover:border-[#c96f50]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"><div className="flex items-center justify-between"><Icon className="size-4 text-[#9f4c33]" /><ArrowRight className="size-3.5 text-black/25" /></div><p className="mt-5 font-serif text-3xl">{value}</p><p className="mt-1 text-xs text-black/50">{label}</p></Link>
 }
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  href,
-  tone,
-  suffix = '',
-}: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  value: number
-  href: string
-  tone: 'calm' | 'attention'
-  suffix?: string
-}) {
-  return (
-    <Link
-      href={href}
-      className={`block bg-white/60 border rounded-2xl p-5 transition-all hover:bg-white/80 hover:shadow-sm ${
-        tone === 'attention' && value > 0 ? 'border-amber-200' : 'border-sage/15'
-      }`}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div
-          className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-            tone === 'attention' && value > 0 ? 'bg-amber-100' : 'bg-dusty-rose/15'
-          }`}
-        >
-          <Icon
-            className={`w-4 h-4 ${tone === 'attention' && value > 0 ? 'text-amber-700' : 'text-terracotta'}`}
-          />
-        </div>
-        <ArrowRight className="w-4 h-4 text-dune/30" />
-      </div>
-      <div className="text-3xl font-serif text-dune">{value}{suffix}</div>
-      <div className="text-xs text-dune/60 mt-1">{label}</div>
-    </Link>
-  )
+function firstName(name: string | null): string {
+  return name?.trim().split(/\s+/)[0] || 'there'
 }
 
-function QuickLink({
-  href,
-  icon: Icon,
-  title,
-  description,
-}: {
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  description: string
-}) {
-  return (
-    <Link
-      href={href}
-      className="group flex items-center gap-3 bg-white/60 border border-sage/15 rounded-xl p-4 hover:bg-white/80 transition-all"
-    >
-      <div className="w-9 h-9 rounded-lg bg-dusty-rose/15 flex items-center justify-center flex-shrink-0">
-        <Icon className="w-4 h-4 text-terracotta" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-dune">{title}</div>
-        <div className="text-xs text-dune/60 truncate">{description}</div>
-      </div>
-      <ArrowRight className="w-4 h-4 text-dune/30 group-hover:text-dune/60 transition-colors" />
-    </Link>
-  )
+function dayPart(): string {
+  const hour = new Date().getHours()
+  return hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
 }
 
-function ActionRow({ action }: { action: RecentAction }) {
-  const actor = action.actorName || action.actorEmail || action.actorPhone || 'system'
-  const when = action.createdAt instanceof Date ? action.createdAt : new Date(action.createdAt)
-  const relative = formatRelative(when)
-
-  return (
-    <div className="flex items-center justify-between gap-4 px-5 py-3 text-sm">
-      <div className="min-w-0">
-        <span className="font-mono text-xs text-terracotta">{action.action}</span>
-        {action.targetId && (
-          <span className="text-xs text-dune/50 ml-2 font-mono">{action.targetType}:{action.targetId}</span>
-        )}
-        <div className="text-xs text-dune/60 mt-0.5">
-          by <span className="text-dune">{actor}</span>
-        </div>
-      </div>
-      <time className="text-xs text-dune/50 flex-shrink-0">{relative}</time>
-    </div>
-  )
-}
-
-function formatRelative(date: Date): string {
-  const diff = Date.now() - date.getTime()
-  const minutes = Math.floor(diff / 60_000)
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return date.toLocaleDateString()
+function formatWhen(value: Date | string): string {
+  const date = typeof value === 'string' ? new Date(value) : value
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date)
 }

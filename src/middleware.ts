@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest, NextFetchEvent } from "next/server"
 import { features } from "@/config/features"
 
-type AdminAccess = "admin" | "forbidden" | "unauthenticated" | "unavailable"
+type AdminAccess = "owner" | "publisher" | "viewer" | "forbidden" | "unauthenticated" | "unavailable"
 
 async function getAdminAccess(sessionToken: string): Promise<AdminAccess> {
   const databaseUrl = process.env.CLOUDFLARE_DB_URL
@@ -17,7 +17,7 @@ async function getAdminAccess(sessionToken: string): Promise<AdminAccess> {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        sql: `SELECT u.dam_access
+        sql: `SELECT COALESCE(u.admin_role, CASE WHEN u.dam_access = 1 THEN 'owner' ELSE NULL END)
               FROM "session" s
               INNER JOIN "user" u ON u.id = s.user_id
               WHERE s.token = ? AND s.expires_at > ?
@@ -31,7 +31,8 @@ async function getAdminAccess(sessionToken: string): Promise<AdminAccess> {
     if (!response.ok) return "unavailable"
     const payload = await response.json() as { rows?: unknown[] }
     if (!payload.rows?.length) return "unauthenticated"
-    return payload.rows[0] === 1 ? "admin" : "forbidden"
+    const role = payload.rows[0]
+    return role === "owner" || role === "publisher" || role === "viewer" ? role : "forbidden"
   } catch {
     return "unavailable"
   }
@@ -39,6 +40,15 @@ async function getAdminAccess(sessionToken: string): Promise<AdminAccess> {
 
 export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
   const { pathname } = req.nextUrl
+
+  // The standalone punchlist was replaced by the authenticated Today queue.
+  // Keep the old URL deterministic while its legacy tables await archival.
+  if (pathname === "/punchlist" || pathname.startsWith("/punchlist/")) {
+    const url = req.nextUrl.clone()
+    url.pathname = "/admin/overview"
+    url.search = ""
+    return NextResponse.redirect(url)
+  }
 
   // Propagate the request pathname to RSC/layouts. Next.js doesn't expose
   // the current URL inside server components by default; we read this in
@@ -98,6 +108,12 @@ export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
     }
     if (access === "unavailable") {
       return NextResponse.json({ error: "Authentication service unavailable" }, { status: 503 })
+    }
+    if (access === "viewer" && req.method !== "GET" && req.method !== "HEAD") {
+      return NextResponse.json({ error: "Viewer access is read-only" }, { status: 403 })
+    }
+    if (pathname === "/api/admin/dam-users" && req.method !== "GET" && access !== "owner") {
+      return NextResponse.json({ error: "Only owners can manage admin access" }, { status: 403 })
     }
   }
 

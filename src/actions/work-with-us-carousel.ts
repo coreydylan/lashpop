@@ -3,7 +3,9 @@
 import { getDb } from '@/db'
 import { workWithUsCarouselPhotos } from '@/db/schema/work_with_us_carousel'
 import { assets } from '@/db/schema/assets'
-import { eq, asc, and, isNull } from 'drizzle-orm'
+import { requireAdminRole } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
+import { eq, asc, and, inArray, isNull } from 'drizzle-orm'
 
 const db = getDb()
 
@@ -74,6 +76,15 @@ export async function getEnabledCarouselPhotos(): Promise<CarouselDisplayPhoto[]
  * Add a photo to the carousel
  */
 export async function addCarouselPhoto(assetId: string): Promise<CarouselPhotoWithAsset> {
+  const auth = await requireAdminRole('owner', 'publisher')
+
+  const [asset] = await db
+    .select({ filePath: assets.filePath, fileName: assets.fileName })
+    .from(assets)
+    .where(eq(assets.id, assetId))
+
+  if (!asset) throw new Error('Asset not found')
+
   // Get current max sort order
   const existing = await db
     .select({ sortOrder: workWithUsCarouselPhotos.sortOrder })
@@ -91,11 +102,20 @@ export async function addCarouselPhoto(assetId: string): Promise<CarouselPhotoWi
     })
     .returning()
 
-  // Get asset data
-  const [asset] = await db
-    .select({ filePath: assets.filePath, fileName: assets.fileName })
-    .from(assets)
-    .where(eq(assets.id, assetId))
+  await recordAdminAction({
+    action: 'careers.carousel.add',
+    targetType: 'careers-carousel-photo',
+    targetId: newPhoto.id,
+    actorUserId: auth.userId,
+    diff: {
+      before: null,
+      after: {
+        assetId: newPhoto.assetId,
+        sortOrder: newPhoto.sortOrder,
+        isEnabled: newPhoto.isEnabled,
+      },
+    },
+  })
 
   return {
     id: newPhoto.id,
@@ -111,10 +131,16 @@ export async function addCarouselPhoto(assetId: string): Promise<CarouselPhotoWi
  * Toggle a photo's enabled status
  */
 export async function toggleCarouselPhotoEnabled(photoId: string): Promise<{ isEnabled: boolean }> {
+  const auth = await requireAdminRole('owner', 'publisher')
   const [photo] = await db
-    .select({ isEnabled: workWithUsCarouselPhotos.isEnabled })
+    .select({
+      assetId: workWithUsCarouselPhotos.assetId,
+      isEnabled: workWithUsCarouselPhotos.isEnabled,
+    })
     .from(workWithUsCarouselPhotos)
     .where(eq(workWithUsCarouselPhotos.id, photoId))
+
+  if (!photo) throw new Error('Carousel photo not found')
 
   const [updated] = await db
     .update(workWithUsCarouselPhotos)
@@ -125,6 +151,17 @@ export async function toggleCarouselPhotoEnabled(photoId: string): Promise<{ isE
     .where(eq(workWithUsCarouselPhotos.id, photoId))
     .returning({ isEnabled: workWithUsCarouselPhotos.isEnabled })
 
+  await recordAdminAction({
+    action: 'careers.carousel.toggle',
+    targetType: 'careers-carousel-photo',
+    targetId: photoId,
+    actorUserId: auth.userId,
+    diff: {
+      before: { assetId: photo.assetId, isEnabled: photo.isEnabled },
+      after: { assetId: photo.assetId, isEnabled: updated.isEnabled },
+    },
+  })
+
   return { isEnabled: updated.isEnabled }
 }
 
@@ -132,15 +169,47 @@ export async function toggleCarouselPhotoEnabled(photoId: string): Promise<{ isE
  * Delete a photo from the carousel
  */
 export async function deleteCarouselPhoto(photoId: string): Promise<void> {
+  const auth = await requireAdminRole('owner', 'publisher')
+  const [before] = await db
+    .select({
+      assetId: workWithUsCarouselPhotos.assetId,
+      sortOrder: workWithUsCarouselPhotos.sortOrder,
+      isEnabled: workWithUsCarouselPhotos.isEnabled,
+    })
+    .from(workWithUsCarouselPhotos)
+    .where(eq(workWithUsCarouselPhotos.id, photoId))
+
+  if (!before) throw new Error('Carousel photo not found')
+
   await db
     .delete(workWithUsCarouselPhotos)
     .where(eq(workWithUsCarouselPhotos.id, photoId))
+
+  await recordAdminAction({
+    action: 'careers.carousel.delete',
+    targetType: 'careers-carousel-photo',
+    targetId: photoId,
+    actorUserId: auth.userId,
+    diff: { before, after: null },
+  })
 }
 
 /**
  * Reorder carousel photos
  */
 export async function reorderCarouselPhotos(photoIds: string[]): Promise<void> {
+  const auth = await requireAdminRole('owner', 'publisher')
+  if (photoIds.length === 0) return
+
+  const before = await db
+    .select({
+      photoId: workWithUsCarouselPhotos.id,
+      sortOrder: workWithUsCarouselPhotos.sortOrder,
+    })
+    .from(workWithUsCarouselPhotos)
+    .where(inArray(workWithUsCarouselPhotos.id, photoIds))
+    .orderBy(asc(workWithUsCarouselPhotos.sortOrder))
+
   // Update each photo's sort order based on its position in the array
   await Promise.all(
     photoIds.map((id, index) =>
@@ -150,4 +219,15 @@ export async function reorderCarouselPhotos(photoIds: string[]): Promise<void> {
         .where(eq(workWithUsCarouselPhotos.id, id))
     )
   )
+
+  await recordAdminAction({
+    action: 'careers.carousel.reorder',
+    targetType: 'careers-carousel',
+    targetId: 'work-with-us',
+    actorUserId: auth.userId,
+    diff: {
+      before,
+      after: photoIds.map((photoId, sortOrder) => ({ photoId, sortOrder })),
+    },
+  })
 }

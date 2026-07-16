@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { eq } from 'drizzle-orm'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { writeWebsiteSetting } from '@/lib/admin/settings-writer'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,26 +19,25 @@ const defaultSettings = {
 
 // GET - Fetch Instagram carousel settings
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
+    const [setting] = await db
+      .select()
+      .from(websiteSettings)
+      .where(eq(websiteSettings.section, INSTAGRAM_SECTION))
+      .limit(1)
+    const settings = setting?.config
+      ? { ...defaultSettings, ...(setting.config as Record<string, unknown>) }
+      : { ...defaultSettings }
 
-    let settings = { ...defaultSettings }
-
-    try {
-      const [setting] = await db
-        .select()
-        .from(websiteSettings)
-        .where(eq(websiteSettings.section, INSTAGRAM_SECTION))
-        .limit(1)
-      
-      if (setting?.config) {
-        settings = { ...settings, ...(setting.config as any) }
-      }
-    } catch {
-      // Table might not exist yet
-    }
-
-    return NextResponse.json({ settings })
+    return NextResponse.json({
+      settings,
+      version: setting?.version ?? 0,
+      sourceOwner: setting?.sourceOwner ?? 'admin',
+    })
   } catch (error) {
     console.error('Error fetching Instagram settings:', error)
     return NextResponse.json(
@@ -49,47 +50,42 @@ export async function GET() {
 // PUT - Update Instagram carousel settings
 export async function PUT(request: NextRequest) {
   try {
-    const db = getDb()
-    const { settings } = await request.json()
+    const body = await request.json() as { settings?: Record<string, unknown>; baseVersion?: unknown }
+    const settings = body.settings
 
-    if (!settings || typeof settings !== 'object') {
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
       return NextResponse.json(
         { error: 'Invalid request body' },
         { status: 400 }
       )
     }
+    if (typeof body.baseVersion !== 'number') {
+      return NextResponse.json({ error: 'baseVersion is required' }, { status: 400 })
+    }
 
     // Validate and merge with defaults
     const config = {
-      maxPosts: Math.max(4, Math.min(24, settings.maxPosts || defaultSettings.maxPosts)),
+      maxPosts: Math.max(4, Math.min(24, Number(settings.maxPosts || defaultSettings.maxPosts))),
       autoScroll: Boolean(settings.autoScroll ?? defaultSettings.autoScroll),
-      scrollSpeed: Math.max(10, Math.min(40, settings.scrollSpeed || defaultSettings.scrollSpeed)),
+      scrollSpeed: Math.max(10, Math.min(40, Number(settings.scrollSpeed || defaultSettings.scrollSpeed))),
       showCaptions: Boolean(settings.showCaptions ?? defaultSettings.showCaptions),
       updatedAt: new Date().toISOString()
     }
 
-    try {
-      const [existing] = await db
-        .select()
-        .from(websiteSettings)
-        .where(eq(websiteSettings.section, INSTAGRAM_SECTION))
-        .limit(1)
+    const result = await writeWebsiteSetting({
+      section: INSTAGRAM_SECTION,
+      config,
+      baseVersion: body.baseVersion,
+      action: 'instagram.settings.update',
+    })
+    if (!result.ok) return NextResponse.json(result, { status: result.status })
 
-      if (existing) {
-        await db
-          .update(websiteSettings)
-          .set({ config, updatedAt: new Date() })
-          .where(eq(websiteSettings.section, INSTAGRAM_SECTION))
-      } else {
-        await db
-          .insert(websiteSettings)
-          .values({ section: INSTAGRAM_SECTION, config })
-      }
-    } catch (dbError) {
-      console.error('Could not persist to database:', dbError)
-    }
-
-    return NextResponse.json({ success: true, settings: config })
+    return NextResponse.json({
+      success: true,
+      settings: result.setting.config,
+      version: result.setting.version,
+      sourceOwner: result.setting.sourceOwner,
+    })
   } catch (error) {
     console.error('Error updating Instagram settings:', error)
     return NextResponse.json(
@@ -98,4 +94,3 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
-

@@ -8,6 +8,7 @@ import WeatherLocationBadge from './WeatherLocationBadge'
 import { HeroArchSlideshow } from './slideshow'
 import { GracefulHeroImage } from './GracefulHeroImage'
 import type { SlideshowPreset } from '@/types/hero-slideshow'
+import { DEFAULT_HERO_CONTENT, type HeroContent } from '@/types/hero-content'
 
 // New config format from slideshow system
 interface HeroSlideshowConfig {
@@ -27,6 +28,7 @@ interface HeroSectionProps {
     reviewCount: number
   }>
   heroConfig?: HeroSlideshowConfig
+  content?: HeroContent
 }
 
 function CircleDecoration({ className = "w-full h-full" }: { className?: string }) {
@@ -46,7 +48,7 @@ const defaultFallbackImage = {
   objectFit: 'cover' as const
 }
 
-export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProps) {
+export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT_HERO_CONTENT }: HeroSectionProps) {
   // Determine what to render: slideshow preset or single image
   const hasSlideshow = heroConfig?.preset && heroConfig.preset.images.length > 0
   const archImage = heroConfig?.fallbackImage || defaultFallbackImage
@@ -96,7 +98,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 className="font-serif"
                 style={{ fontSize: '2.25rem', fontWeight: 500, letterSpacing: '0.05em', color: '#cc947f' }}
               >
-                lashes + beauty
+                {content.heading}
               </h1>
               <div className="mt-1">
                 <span
@@ -111,7 +113,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     borderColor: 'rgba(181, 86, 61, 0.8)',
                   }}
                 >
-                  for the modern woman
+                  {content.subheading}
                 </span>
               </div>
 
@@ -146,7 +148,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
                 <div className="relative py-3.5 px-6 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]" style={{ backgroundColor: 'rgba(204, 148, 127, 0.9)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
-                  <span className="font-sans font-medium text-base text-white">Book Now</span>
+                  <span className="font-sans font-medium text-base text-white">{content.primaryCta}</span>
                 </div>
               </button>
 
@@ -157,7 +159,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]" style={{ borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.35)' }}>
-                  <span className="font-sans font-medium text-base text-dune">Take Our Lash Quiz</span>
+                  <span className="font-sans font-medium text-base text-dune">{content.quizCta}</span>
                 </div>
               </button>
 
@@ -168,7 +170,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] text-center" style={{ borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.35)' }}>
-                  <span className="font-sans font-medium text-base text-dune">Work With Us</span>
+                  <span className="font-sans font-medium text-base text-dune">{content.careersCta}</span>
                 </div>
               </a>
 
@@ -195,7 +197,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                           </svg>
                         ))}
                       </div>
-                      <span className="text-xs font-sans font-medium" style={{ color: '#b5563d' }}>Reviews</span>
+                      <span className="text-xs font-sans font-medium" style={{ color: '#b5563d' }}>{content.reviewsLabel}</span>
                     </div>
                   </div>
                 </button>
@@ -287,7 +289,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                             </svg>
                           ))}
                         </div>
-                        <span className="font-sans text-xs font-medium ml-0.5" style={{ color: '#cc947f' }}>Reviews</span>
+                        <span className="font-sans text-xs font-medium ml-0.5" style={{ color: '#cc947f' }}>{content.reviewsLabel}</span>
                       </div>
                     </div>
                   </div>
@@ -301,7 +303,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                 className="font-serif relative z-10"
                 style={{ fontSize: 'clamp(2.15rem, 5.2vw, 3.9rem)', fontWeight: 500, letterSpacing: '0.05em', color: '#cc947f' }}
               >
-                lashes + beauty
+                {content.heading}
               </h1>
               <div className="mt-2">
                 <span
@@ -316,7 +318,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
                     borderColor: 'rgba(181, 86, 61, 0.8)',
                   }}
                 >
-                  for the modern woman
+                  {content.subheading}
                 </span>
               </div>
             </div>
@@ -329,7 +331,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
                 <div className="relative px-8 py-3.5 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] transition-[transform,opacity]" style={{ backgroundColor: '#cc947f', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
-                  <span className="font-sans font-medium text-white">Book Now</span>
+                  <span className="font-sans font-medium text-white">{content.primaryCta}</span>
                 </div>
               </button>
               <button
@@ -338,7 +340,7 @@ export default function HeroSection({ reviewStats, heroConfig }: HeroSectionProp
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative px-8 py-3.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] hover:bg-white/60 transition-[background-color,transform,opacity]">
-                  <span className="font-sans font-medium text-dune">Take Our Lash Quiz</span>
+                  <span className="font-sans font-medium text-dune">{content.quizCta}</span>
                 </div>
               </button>
             </div>

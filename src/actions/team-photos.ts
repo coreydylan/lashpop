@@ -5,6 +5,8 @@ import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { eq } from "drizzle-orm"
 import sharp from "sharp"
 import { uploadFile, uploadBufferWithOptions } from "@/lib/dam/r2-client"
+import { requireAdminRole } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
 import { promises as fs } from 'fs'
 import path from 'path'
@@ -32,6 +34,7 @@ interface SaveCropsParams {
 }
 
 export async function saveTeamPhotoCrops({ photoId, crops }: SaveCropsParams) {
+  const auth = await requireAdminRole('owner', 'publisher')
   const db = getDb()
 
   // 1. Fetch photo record
@@ -43,6 +46,19 @@ export async function saveTeamPhotoCrops({ photoId, crops }: SaveCropsParams) {
 
   if (!photo) {
     throw new Error("Photo not found")
+  }
+
+  const before = {
+    cropFullVertical: photo.cropFullVertical,
+    cropFullHorizontal: photo.cropFullHorizontal,
+    cropMediumCircle: photo.cropMediumCircle,
+    cropCloseUpCircle: photo.cropCloseUpCircle,
+    cropSquare: photo.cropSquare,
+    cropFullVerticalUrl: photo.cropFullVerticalUrl,
+    cropFullHorizontalUrl: photo.cropFullHorizontalUrl,
+    cropMediumCircleUrl: photo.cropMediumCircleUrl,
+    cropCloseUpCircleUrl: photo.cropCloseUpCircleUrl,
+    cropSquareUrl: photo.cropSquareUrl,
   }
 
   // 2. Fetch original image
@@ -143,6 +159,18 @@ export async function saveTeamPhotoCrops({ photoId, crops }: SaveCropsParams) {
         updatedAt: new Date()
     })
     .where(eq(teamMemberPhotos.id, photoId))
+
+  await recordAdminAction({
+    action: 'team.photo.crops.update',
+    targetType: 'team-photo',
+    targetId: photoId,
+    actorUserId: auth.userId,
+    diff: {
+      before,
+      after: { ...before, ...updates },
+      teamMemberId: photo.teamMemberId,
+    },
+  })
     
   return { success: true, updates }
 }
@@ -220,4 +248,3 @@ async function generateCrop(
          .toBuffer()
     })
 }
-

@@ -1,45 +1,101 @@
 'use client'
 
-import { useState } from 'react'
-import { FileText, Save, Check, AlertCircle, Plus, X, MoveUp, MoveDown } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { FileText, Save, Check, AlertCircle, Plus, X, MoveUp, MoveDown, RefreshCw } from 'lucide-react'
+import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
 import type { FounderLetterContent } from '@/types/founder-letter'
 
 interface FounderLetterEditorProps {
   initialContent: FounderLetterContent
+  initialVersion: number
+  initialSourceOwner: string
 }
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
-export function FounderLetterEditor({ initialContent }: FounderLetterEditorProps) {
+export function FounderLetterEditor({ initialContent, initialVersion, initialSourceOwner }: FounderLetterEditorProps) {
   const [content, setContent] = useState<FounderLetterContent>(initialContent)
   const [savedState, setSavedState] = useState<FounderLetterContent>(initialContent)
+  const [baseVersion, setBaseVersion] = useState(initialVersion)
+  const [sourceOwner, setSourceOwner] = useState(initialSourceOwner)
   const [status, setStatus] = useState<SaveStatus>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
 
   const isDirty = JSON.stringify(content) !== JSON.stringify(savedState)
 
-  async function handleSave() {
+  const save = useCallback(async () => {
     setStatus('saving')
     setErrorMsg(null)
     try {
       const res = await fetch('/api/admin/website/founder-letter', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(content),
+        body: JSON.stringify({ content, baseVersion }),
       })
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err?.error ?? `Save failed (${res.status})`)
+        if (res.status === 409 && data?.conflict) {
+          setConflict(true)
+          throw new Error(`Another admin published a newer version. Load latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+        }
+        throw new Error(data?.error ?? `Save failed (${res.status})`)
       }
-      const data = await res.json()
       setSavedState(data.content)
       setContent(data.content)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2500)
     } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown error')
       setStatus('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Unknown error')
+      setErrorMsg(error.message)
+      throw error
     }
+  }, [baseVersion, content])
+
+  async function reloadLatest() {
+    setStatus('saving')
+    setErrorMsg(null)
+    try {
+      const res = await fetch('/api/admin/website/founder-letter')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? `Reload failed (${res.status})`)
+      setContent(data.content)
+      setSavedState(data.content)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
+      setStatus('idle')
+    } catch (err) {
+      setStatus('error')
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to load the latest version')
+    }
+  }
+
+  const discard = useCallback(() => {
+    setContent(savedState)
+    setStatus('idle')
+    setErrorMsg(null)
+    setConflict(false)
+  }, [savedState])
+
+  useDirtyBlock({
+    id: 'founder-letter',
+    label: 'Founder letter',
+    dirty: isDirty,
+    save,
+    discard,
+  })
+
+  async function handleSave() {
+    if (conflict) {
+      await reloadLatest()
+      return
+    }
+    await save().catch(() => undefined)
   }
 
   function updateParagraph(i: number, value: string) {
@@ -81,8 +137,11 @@ export function FounderLetterEditor({ initialContent }: FounderLetterEditorProps
             in <span className="font-mono text-xs">FounderLetterSection.tsx</span>; now
             edited here.
           </p>
+          <p className="mt-1 text-xs text-dune/50">
+            {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+          </p>
         </div>
-        <SaveButton isDirty={isDirty} status={status} errorMsg={errorMsg} onSave={handleSave} />
+        <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={handleSave} />
       </div>
 
       {/* Editor */}
@@ -199,7 +258,7 @@ export function FounderLetterEditor({ initialContent }: FounderLetterEditorProps
             {isDirty && status !== 'saving' && (
               <span className="text-xs text-dune/60">Unsaved changes</span>
             )}
-            <SaveButton isDirty={isDirty} status={status} errorMsg={errorMsg} onSave={handleSave} />
+            <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={handleSave} />
           </div>
         </div>
       )}
@@ -210,12 +269,12 @@ export function FounderLetterEditor({ initialContent }: FounderLetterEditorProps
 function SaveButton({
   isDirty,
   status,
-  errorMsg: _errorMsg,
+  conflict,
   onSave,
 }: {
   isDirty: boolean
   status: SaveStatus
-  errorMsg: string | null
+  conflict: boolean
   onSave: () => void
 }) {
   const disabled = (!isDirty && status !== 'error') || status === 'saving'
@@ -224,6 +283,8 @@ function SaveButton({
       ? 'Saving…'
       : status === 'saved'
         ? 'Saved'
+        : conflict
+          ? 'Load latest'
         : status === 'error'
           ? 'Retry'
           : 'Save'
@@ -238,7 +299,11 @@ function SaveButton({
           : 'bg-terracotta text-cream hover:bg-terracotta/90 disabled:opacity-40 disabled:cursor-not-allowed'
       }`}
     >
-      {status === 'saved' ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+      {status === 'saved'
+        ? <Check className="w-4 h-4" />
+        : conflict
+          ? <RefreshCw className="w-4 h-4" />
+          : <Save className="w-4 h-4" />}
       {label}
     </button>
   )

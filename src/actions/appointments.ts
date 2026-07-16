@@ -1,4 +1,4 @@
-'use server'
+import 'server-only'
 
 import { getDb } from '@/db'
 import { appointments } from '@/db/schema/appointments'

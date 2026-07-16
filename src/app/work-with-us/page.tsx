@@ -8,6 +8,8 @@ import { Navigation } from '@/components/sections/Navigation'
 import { MobileHeader } from '@/components/landing-v2/MobileHeader'
 import { FooterV2 } from '@/components/landing-v2/sections/FooterV2'
 import { submitWorkWithUsForm, type CareerPath } from '@/actions/work-with-us'
+import { getWorkWithUsContent } from '@/actions/work-with-us-content'
+import { DEFAULT_WORK_WITH_US_CONTENT, type WorkWithUsContent } from '@/types/work-with-us-content'
 import { TeamCarousel } from '@/components/work-with-us/TeamCarousel'
 import {
   CheckCircle2,
@@ -467,10 +469,21 @@ const sliderStyles = `
 `
 
 export default function WorkWithUsPage() {
+  const [content, setContent] = useState<WorkWithUsContent>(DEFAULT_WORK_WITH_US_CONTENT)
   const [activeSection, setActiveSection] = useState<CareerPath | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState<CareerPath | null>(null)
   const [boothDays, setBoothDays] = useState(3)
+
+  useEffect(() => {
+    let active = true
+    getWorkWithUsContent()
+      .then((next) => {
+        if (active) setContent(next)
+      })
+      .catch((error) => console.error('[work-with-us] failed to refresh managed content', error))
+    return () => { active = false }
+  }, [])
 
   // Refs on the desktop expandable sections so we can scroll their top into
   // view when the user clicks a path card. Without this the page either
@@ -658,22 +671,22 @@ export default function WorkWithUsPage() {
     {
       id: 'employee',
       icon: Users,
-      title: 'Join as an Employee',
-      description: 'Full support, training, and benefits. Perfect for those who want structure and growth.',
+      title: content.employee.title,
+      description: content.employee.description,
       image: '/lashpop-images/culture/join-our-team.webp'
     },
     {
       id: 'booth',
       icon: Building2,
-      title: 'Booth Rental',
-      description: 'Run your own business in our beautiful space. Independence with community.',
+      title: content.booth.title,
+      description: content.booth.description,
       image: '/lashpop-images/culture/booth-rental.webp'
     },
     {
       id: 'training',
       icon: GraduationCap,
-      title: 'LashPop Pro Training',
-      description: 'Master the LashPop approach to lash artistry. Comprehensive training program.',
+      title: content.training.title,
+      description: content.training.description,
       image: '/lashpop-images/culture/training.webp'
     }
   ]
@@ -700,13 +713,13 @@ export default function WorkWithUsPage() {
             transition={{ duration: 0.6, ease: smoothEase }}
           >
             <p className="text-xs md:text-sm font-medium tracking-[0.2em] uppercase mb-3" style={{ color: '#cc947f' }}>
-              Join Our Team
+              {content.heroEyebrow}
             </p>
             <h1 className="font-display text-3xl md:text-5xl font-medium mb-4 md:mb-6" style={{ color: '#3d3632' }}>
-              Find Your Place at LashPop
+              {content.heroTitle}
             </h1>
             <p className="text-base md:text-lg font-light leading-relaxed" style={{ color: '#3d3632' }}>
-              Three paths to be part of something special. Choose what fits you best.
+              {content.heroDescription}
             </p>
           </motion.div>
 

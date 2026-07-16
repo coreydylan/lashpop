@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { Instagram, RefreshCw, Settings, AlertCircle, ExternalLink, Heart, MessageCircle, Save, Check } from 'lucide-react'
 import Link from 'next/link'
+import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
 
 interface InstagramPost {
   id: string
@@ -15,18 +16,42 @@ interface InstagramPost {
   timestamp?: string
 }
 
+interface InstagramDamAsset {
+  id: string
+  filePath: string
+  caption?: string
+  sourceMetadata?: {
+    likeCount?: number
+    commentCount?: number
+    timestamp?: string
+  }
+}
+
+interface InstagramSettings {
+  maxPosts: number
+  showCaptions: boolean
+  autoScroll: boolean
+  scrollSpeed: number
+}
+
+const DEFAULT_INSTAGRAM_SETTINGS: InstagramSettings = {
+  maxPosts: 12,
+  showCaptions: false,
+  autoScroll: true,
+  scrollSpeed: 20,
+}
+
 export default function InstagramCarouselEditor() {
   const [posts, setPosts] = useState<InstagramPost[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
-  const [settings, setSettings] = useState({
-    maxPosts: 12,
-    showCaptions: false,
-    autoScroll: true,
-    scrollSpeed: 20
-  })
+  const [error, setError] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
+  const [baseVersion, setBaseVersion] = useState(0)
+  const [sourceOwner, setSourceOwner] = useState('admin')
+  const [settings, setSettings] = useState<InstagramSettings>(DEFAULT_INSTAGRAM_SETTINGS)
+  const [savedSettings, setSavedSettings] = useState<InstagramSettings>(DEFAULT_INSTAGRAM_SETTINGS)
 
   useEffect(() => {
     fetchInstagramSettings()
@@ -34,47 +59,78 @@ export default function InstagramCarouselEditor() {
   }, [])
 
   const fetchInstagramSettings = async () => {
+    setError(null)
     try {
       const response = await fetch('/api/admin/website/instagram')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.settings) {
-          setSettings(data.settings)
-        }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data?.error ?? `Failed to load settings (${response.status})`)
+      if (data.settings) {
+        setSettings(data.settings)
+        setSavedSettings(data.settings)
+        setBaseVersion(data.version)
+        setSourceOwner(data.sourceOwner)
+        setConflict(false)
       }
     } catch (error) {
       console.error('Error fetching Instagram settings:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load Instagram settings')
     }
   }
 
-  const handleSaveSettings = async () => {
+  const save = useCallback(async () => {
     setSaving(true)
+    setError(null)
     try {
       const response = await fetch('/api/admin/website/instagram', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings })
+        body: JSON.stringify({ settings, baseVersion })
       })
 
-      if (response.ok) {
-        setSaved(true)
-        setHasChanges(false)
-        setTimeout(() => setSaved(false), 2000)
-      } else {
-        alert('Failed to save settings')
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        if (response.status === 409 && data?.conflict) {
+          setConflict(true)
+          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+        }
+        throw new Error(data?.error ?? `Failed to save settings (${response.status})`)
       }
+      setSettings(data.settings)
+      setSavedSettings(data.settings)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
     } catch (error) {
-      console.error('Error saving settings:', error)
-      alert('Failed to save settings')
+      const saveError = error instanceof Error ? error : new Error('Failed to save settings')
+      console.error('Error saving settings:', saveError)
+      setError(saveError.message)
+      throw saveError
     } finally {
       setSaving(false)
     }
-  }
+  }, [baseVersion, settings])
 
   const updateSetting = <K extends keyof typeof settings>(key: K, value: typeof settings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }))
-    setHasChanges(true)
   }
+
+  const dirty = JSON.stringify(settings) !== JSON.stringify(savedSettings)
+  const discard = useCallback(() => {
+    setSettings(savedSettings)
+    setError(null)
+    setConflict(false)
+    setSaved(false)
+  }, [savedSettings])
+
+  useDirtyBlock({
+    id: 'instagram-settings',
+    label: 'Instagram carousel settings',
+    dirty,
+    save,
+    discard,
+  })
 
   const fetchInstagramPosts = async () => {
     setLoading(true)
@@ -83,14 +139,15 @@ export default function InstagramCarouselEditor() {
       const response = await fetch('/api/dam/assets?tag=source:instagram')
       if (response.ok) {
         const data = await response.json()
-        setPosts(data.assets?.map((asset: any) => ({
+        const assets = Array.isArray(data.assets) ? data.assets as InstagramDamAsset[] : []
+        setPosts(assets.map((asset) => ({
           id: asset.id,
           url: asset.filePath,
           caption: asset.caption,
           likes: asset.sourceMetadata?.likeCount || 0,
           comments: asset.sourceMetadata?.commentCount || 0,
           timestamp: asset.sourceMetadata?.timestamp
-        })) || [])
+        })))
       }
     } catch (error) {
       console.error('Error fetching Instagram posts:', error)
@@ -123,6 +180,9 @@ export default function InstagramCarouselEditor() {
             <div>
               <h1 className="h2 text-dune">Instagram Carousel</h1>
               <p className="text-sm text-dune/60">Social media feed display settings</p>
+              <p className="text-xs text-dune/45">
+                {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+              </p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -134,9 +194,9 @@ export default function InstagramCarouselEditor() {
               Sync Posts
             </button>
             <button
-              onClick={handleSaveSettings}
-              disabled={saving || !hasChanges}
-              className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} ${!hasChanges && !saved ? 'opacity-50' : ''}`}
+              onClick={() => void save().catch(() => undefined)}
+              disabled={saving || !dirty}
+              className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} ${!dirty && !saved ? 'opacity-50' : ''}`}
             >
               {saving ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -150,6 +210,19 @@ export default function InstagramCarouselEditor() {
           </div>
         </div>
       </motion.div>
+
+      {error && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-terracotta/25 bg-terracotta/10 p-4 text-sm text-terracotta" role="alert">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <p className="min-w-0 flex-1">{error}</p>
+          {conflict && (
+            <button type="button" onClick={() => void fetchInstagramSettings()} className="btn btn-secondary text-xs">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Discard edits &amp; load latest
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Settings Panel */}
@@ -300,4 +373,3 @@ export default function InstagramCarouselEditor() {
     </div>
   )
 }
-

@@ -1,6 +1,7 @@
-import { Mail, Download } from 'lucide-react'
+import { Mail, ShieldCheck } from 'lucide-react'
 import { requireAdmin } from '@/lib/admin/auth'
 import { listNewsletterSubscribers } from '@/app/actions/newsletter'
+import { SubscriberExportActions } from './SubscriberExportActions'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,8 +15,11 @@ export default async function NewsletterInboxPage() {
   await requireAdmin()
 
   const subscribers = await listNewsletterSubscribers()
-  const allEmails = subscribers.map((s) => s.email).join(', ')
-  const mailtoHref = subscribers.length > 0 ? `mailto:?bcc=${encodeURIComponent(allEmails)}` : undefined
+  const exportSubscribers = subscribers.map((subscriber) => ({
+    email: subscriber.email,
+    subscribedAt: subscriber.subscribedAt?.toISOString() ?? null,
+    source: subscriber.source,
+  }))
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -32,12 +36,19 @@ export default async function NewsletterInboxPage() {
             </p>
           </div>
         </div>
-        {mailtoHref && (
-          <a href={mailtoHref} className="btn btn-secondary">
-            <Mail className="w-4 h-4" /> Email all (BCC)
-          </a>
-        )}
+        {subscribers.length > 0 && <SubscriberExportActions subscribers={exportSubscribers} />}
       </div>
+
+      {subscribers.length > 0 && (
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-black/10 bg-white p-4 text-sm text-black/65">
+          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-[#9a4932]" aria-hidden="true" />
+          <p>
+            Import the CSV into LashPop&apos;s approved email platform so unsubscribe handling,
+            consent records, and delivery controls stay intact. Do not paste this list into an
+            email&apos;s To, Cc, or Bcc fields.
+          </p>
+        </div>
+      )}
 
       {subscribers.length === 0 ? (
         <div className="glass rounded-3xl border border-sage/20 p-12 text-center">
@@ -45,8 +56,9 @@ export default async function NewsletterInboxPage() {
           <p className="text-dune/60">No one has signed up yet.</p>
         </div>
       ) : (
-        <div className="glass rounded-3xl border border-sage/20 overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="glass rounded-3xl border border-sage/20 overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-sm">
+            <caption className="sr-only">Opted-in newsletter subscribers</caption>
             <thead>
               <tr className="border-b border-sage/15 text-left text-xs uppercase tracking-wider text-dune/50">
                 <th className="px-5 py-3 font-medium">Email</th>
@@ -75,12 +87,6 @@ export default async function NewsletterInboxPage() {
         </div>
       )}
 
-      {subscribers.length > 0 && (
-        <p className="mt-4 text-xs text-dune/40 flex items-center gap-1.5">
-          <Download className="w-3.5 h-3.5" />
-          Tip: &quot;Email all&quot; opens your mail client with everyone BCC&apos;d.
-        </p>
-      )}
     </div>
   )
 }

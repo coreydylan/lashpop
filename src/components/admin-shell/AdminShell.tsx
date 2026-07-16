@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Menu, X, Sparkles, ChevronRight } from 'lucide-react'
-import { ADMIN_GROUPS, findSectionByPath } from './sections'
+import { usePathname, useRouter } from 'next/navigation'
+import { ExternalLink, Menu, X } from 'lucide-react'
+import { ADMIN_AREAS, findAreaByPath, findSectionByPath, type ContentOwner } from './sections'
+import { AdminWorkspaceProvider, useAdminWorkspace } from './AdminWorkspaceContext'
+import { AdminActionBar } from './AdminActionBar'
 
 interface AdminShellProps {
   children: React.ReactNode
@@ -13,192 +14,226 @@ interface AdminShellProps {
     name: string | null
     phoneNumber: string | null
     email: string | null
+    role?: string | null
   }
-  /**
-   * `constrained` (default): main content sits in a max-w-6xl, centered,
-   * padded box — right for forms and dashboards.
-   * `fullbleed`: main content stretches edge-to-edge with no inner padding
-   * — used by the DAM grid + sticky omnibar, which manage their own layout.
-   */
   contentMode?: 'constrained' | 'fullbleed'
 }
 
+const OWNER_STYLES: Record<ContentOwner, string> = {
+  LashPop: 'border-[#d99177]/30 bg-[#d99177]/10 text-[#9e5037]',
+  Vagaro: 'border-[#7da3a0]/30 bg-[#7da3a0]/10 text-[#3d6d69]',
+  Automation: 'border-[#ad8b4d]/30 bg-[#ad8b4d]/10 text-[#745a27]',
+  System: 'border-[#8c8d86]/30 bg-[#8c8d86]/10 text-[#5d5e59]',
+  Mixed: 'border-[#8b748f]/30 bg-[#8b748f]/10 text-[#654d6a]',
+}
 
 export function AdminShell({ children, user, contentMode = 'constrained' }: AdminShellProps) {
+  return (
+    <AdminWorkspaceProvider>
+      <AdminShellContent user={user} contentMode={contentMode}>{children}</AdminShellContent>
+      <AdminActionBar />
+    </AdminWorkspaceProvider>
+  )
+}
+
+function AdminShellContent({ children, user, contentMode = 'constrained' }: AdminShellProps) {
   const pathname = usePathname()
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const currentArea = findAreaByPath(pathname) ?? ADMIN_AREAS[0]
   const currentSection = findSectionByPath(pathname)
+  const fullbleed = contentMode === 'fullbleed' || pathname?.startsWith('/admin/assets')
 
-  // The Asset Manager (/admin/assets) needs the full content width for its
-  // grid + sticky omnibar, so force fullbleed there regardless of the prop.
-  const effectiveContentMode =
-    contentMode === 'fullbleed' || pathname?.startsWith('/admin/assets')
-      ? 'fullbleed'
-      : contentMode
+  useEffect(() => setMobileOpen(false), [pathname])
 
-  // Close mobile menu on navigation
   useEffect(() => {
-    setIsMobileMenuOpen(false)
-  }, [pathname])
+    if (!mobileOpen) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [mobileOpen])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream via-warm-sand/30 to-dusty-rose/10">
-      {/* Mobile header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-cream/90 backdrop-blur-xl border-b border-sage/10">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Link href="/admin/overview" className="flex items-center gap-2">
-            <BrandMark />
-            <div className="flex flex-col leading-tight">
-              <span className="font-serif text-dune font-medium text-sm">LashPop Admin</span>
-              {currentSection && (
-                <span className="text-xs text-dune/60 truncate max-w-[180px]">{currentSection.label}</span>
-              )}
-            </div>
-          </Link>
-          <button
-            onClick={() => setIsMobileMenuOpen(o => !o)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-sage/10"
-            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+    <div className="admin-app min-h-screen bg-[#f5f0e9] text-[#292a27]">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-black/10 bg-[#f8f4ee]/95 px-4 backdrop-blur lg:hidden">
+        <GuardedLink href="/admin/overview" className="flex min-h-11 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">
+          <BrandMark />
+          <span>
+            <span className="block font-serif text-base leading-tight">LashPop Admin</span>
+            <span className="block text-xs text-black/55">{currentArea.shortLabel}</span>
+          </span>
+        </GuardedLink>
+        <button
+          type="button"
+          onClick={() => setMobileOpen((open) => !open)}
+          className="flex size-11 items-center justify-center rounded-lg border border-black/10 bg-white text-[#292a27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+          aria-label={mobileOpen ? 'Close admin navigation' : 'Open admin navigation'}
+          aria-expanded={mobileOpen}
+          aria-controls="admin-mobile-navigation"
+        >
+          {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+        </button>
+      </header>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 bg-black/35 pt-16 lg:hidden" onMouseDown={() => setMobileOpen(false)}>
+          <aside
+            id="admin-mobile-navigation"
+            className="h-full w-[min(92vw,22rem)] overflow-y-auto bg-[#20211f] text-white shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
           >
-            {isMobileMenuOpen ? <X className="w-5 h-5 text-dune" /> : <Menu className="w-5 h-5 text-dune" />}
-          </button>
+            <AdminNav pathname={pathname} />
+            <UserFooter user={user} />
+          </aside>
         </div>
+      )}
 
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="border-t border-sage/10 bg-cream/95 backdrop-blur-xl max-h-[80vh] overflow-y-auto"
-            >
-              <Nav pathname={pathname} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col overflow-y-auto bg-cream/90 backdrop-blur-xl border-r border-sage/10">
-          <div className="px-6 pt-8 pb-4">
-            <Link href="/admin/overview" className="flex items-center gap-3">
-              <BrandMark />
-              <div>
-                <div className="font-serif text-lg text-dune font-medium leading-tight">LashPop Admin</div>
-                <div className="text-xs text-dune/50">Studio control panel</div>
-              </div>
-            </Link>
-          </div>
-
-          <div className="flex-1 px-3 pb-6">
-            <Nav pathname={pathname} />
-          </div>
-
-          {/* User footer */}
-          <div className="border-t border-sage/10 px-6 py-4">
-            <div className="text-xs text-dune/50 uppercase tracking-wider mb-1">Signed in as</div>
-            <div className="text-sm text-dune truncate">{user.name || user.email || user.phoneNumber || 'admin'}</div>
-            <Link
-              href="/"
-              className="mt-3 inline-flex items-center gap-1 text-xs text-dune/60 hover:text-terracotta transition-colors"
-            >
-              <ChevronRight className="w-3 h-3 rotate-180" />
-              Back to lashpop.com
-            </Link>
-          </div>
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-white/10 bg-[#20211f] text-white lg:flex">
+        <div className="px-5 pb-5 pt-7">
+          <GuardedLink href="/admin/overview" className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69]">
+            <BrandMark />
+            <span>
+              <span className="block font-serif text-lg leading-tight">LashPop Admin</span>
+              <span className="block text-xs text-white/50">Studio operations</span>
+            </span>
+          </GuardedLink>
         </div>
+        <div className="flex-1 overflow-y-auto px-3 pb-5">
+          <AdminNav pathname={pathname} />
+        </div>
+        <UserFooter user={user} />
       </aside>
 
-      {/* Main */}
-      <main className="lg:pl-72 pt-14 lg:pt-0 min-h-screen">
-        {effectiveContentMode === 'fullbleed' ? (
-          children
-        ) : (
-          <div className="px-4 sm:px-6 lg:px-8 py-6 lg:py-10 max-w-6xl mx-auto">{children}</div>
-        )}
+      <main className="min-h-screen pt-16 lg:pl-72 lg:pt-0">
+        <div className="border-b border-black/10 bg-[#f8f4ee] px-4 py-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/45">{currentArea.label}</p>
+                {currentSection && <OwnerBadge owner={currentSection.owner} />}
+              </div>
+              <p className="mt-1 truncate text-sm text-black/60">{currentSection?.description ?? currentArea.description}</p>
+            </div>
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="hidden min-h-11 shrink-0 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-medium hover:border-black/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] sm:inline-flex"
+            >
+              Preview site <ExternalLink className="size-4" />
+            </a>
+          </div>
+        </div>
+        {fullbleed ? children : <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>}
       </main>
     </div>
   )
 }
 
-function Nav({ pathname }: { pathname: string | null }) {
+function AdminNav({ pathname }: { pathname: string | null }) {
+  const currentArea = findAreaByPath(pathname) ?? ADMIN_AREAS[0]
+
   return (
-    <nav className="space-y-6 py-2">
-      {ADMIN_GROUPS.map(group => (
-        <div key={group.id}>
-          {group.label && (
-            <div className="px-3 mb-2 text-[10px] uppercase tracking-[0.15em] text-dune/40 font-semibold">
-              {group.label}
-            </div>
-          )}
-          <ul className="space-y-0.5">
-            {group.sections.map(section => {
-              const isActive = pathname === section.href || (pathname?.startsWith(section.href + '/') ?? false)
-              const Icon = section.icon
-              const isComingSoon = section.status === 'coming-soon'
+    <nav aria-label="Admin navigation" className="py-2">
+      <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">Work areas</p>
+      <ul className="space-y-1">
+        {ADMIN_AREAS.map((area) => {
+          const active = area.id === currentArea.id
+          const Icon = area.icon
+          return (
+            <li key={area.id}>
+              <GuardedLink
+                href={area.href}
+                aria-current={active ? 'page' : undefined}
+                className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] ${active ? 'bg-white text-[#20211f]' : 'text-white/72 hover:bg-white/[0.08] hover:text-white'}`}
+              >
+                <Icon className={`size-4 shrink-0 ${active ? 'text-[#b75f42]' : 'text-white/45'}`} />
+                <span className="truncate">{area.label}</span>
+              </GuardedLink>
 
-              const content = (
-                <div
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all border ${
-                    isActive
-                      ? 'bg-gradient-to-r from-dusty-rose/15 to-terracotta/5 border-dusty-rose/30 shadow-sm'
-                      : isComingSoon
-                        ? 'border-transparent text-dune/40 cursor-not-allowed'
-                        : 'hover:bg-sage/10 border-transparent'
-                  }`}
-                >
-                  <Icon
-                    className={`w-4 h-4 flex-shrink-0 ${
-                      isActive
-                        ? 'text-terracotta'
-                        : isComingSoon
-                          ? 'text-dune/30'
-                          : 'text-dune/50 group-hover:text-dune/70'
-                    }`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div
-                      className={`font-medium truncate flex items-center gap-2 ${
-                        isActive ? 'text-dune' : isComingSoon ? 'text-dune/40' : 'text-dune/80'
-                      }`}
-                    >
-                      <span className="truncate">{section.label}</span>
-                    </div>
-                    <div className={`text-[11px] truncate ${isComingSoon ? 'text-dune/30' : 'text-dune/50'}`}>
-                      {section.description}
-                    </div>
-                  </div>
-                </div>
-              )
-
-              return (
-                <li key={section.id}>
-                  {isComingSoon ? (
-                    content
-                  ) : (
-                    // `block` is load-bearing: without it, the <a> defaults to
-                    // inline display, which can make the clickable region
-                    // smaller than the visual row and produce phantom "click
-                    // does nothing" behavior on parts of the row.
-                    <Link href={section.href} prefetch={false} className="block">
-                      {content}
-                    </Link>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
+              {active && area.sections.length > 1 && (
+                <ul className="mb-3 mt-1 space-y-0.5 border-l border-white/15 py-1 pl-3 ml-5">
+                  {area.sections.map((section) => {
+                    const sectionActive = pathname === section.href || pathname?.startsWith(`${section.href}/`)
+                    return (
+                      <li key={section.id}>
+                        <GuardedLink
+                          href={section.href}
+                          aria-current={sectionActive ? 'page' : undefined}
+                          className={`flex min-h-10 items-center justify-between gap-2 rounded-md px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] ${sectionActive ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white/85'}`}
+                        >
+                          <span className="truncate">{section.label}</span>
+                          <span className="shrink-0 text-[9px] uppercase tracking-wide text-white/30">{section.owner === 'LashPop' ? 'Local' : section.owner}</span>
+                        </GuardedLink>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </li>
+          )
+        })}
+      </ul>
     </nav>
   )
 }
 
+function UserFooter({ user }: { user: AdminShellProps['user'] }) {
+  return (
+    <div className="border-t border-white/10 px-5 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-white/90">{user.name || user.email || user.phoneNumber || 'Admin'}</p>
+          <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-white/35">{user.role || 'Administrator'}</p>
+        </div>
+        <GuardedLink href="/" className="rounded-md px-2 py-1 text-xs text-white/50 hover:bg-white/5 hover:text-white">Site</GuardedLink>
+      </div>
+    </div>
+  )
+}
+
+function OwnerBadge({ owner }: { owner: ContentOwner }) {
+  return <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${OWNER_STYLES[owner]}`}>{owner}</span>
+}
+
 function BrandMark() {
   return (
-    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-dusty-rose to-terracotta flex items-center justify-center shadow-md">
-      <Sparkles className="w-4 h-4 text-cream" />
-    </div>
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#c96f50] font-serif text-lg text-white shadow-sm" aria-hidden="true">
+      L
+    </span>
+  )
+}
+
+function GuardedLink({
+  href,
+  className,
+  children,
+  ...props
+}: {
+  href: string
+  className?: string
+  children: React.ReactNode
+  'aria-current'?: 'page'
+}) {
+  const router = useRouter()
+  const { confirmNavigation } = useAdminWorkspace()
+
+  return (
+    <Link
+      href={href}
+      prefetch={false}
+      className={className}
+      {...props}
+      onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+        event.preventDefault()
+        void confirmNavigation().then((confirmed) => {
+          if (confirmed) router.push(href)
+        })
+      }}
+    >
+      {children}
+    </Link>
   )
 }

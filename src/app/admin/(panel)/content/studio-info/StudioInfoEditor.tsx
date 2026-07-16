@@ -1,50 +1,113 @@
 'use client'
 
-import { useState } from 'react'
-import { Building2, Save, Check, AlertCircle, Phone, Mail, MapPin, Clock, Calendar, ExternalLink } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { Building2, Save, Check, AlertCircle, Phone, Mail, MapPin, Clock, Calendar, ExternalLink, RefreshCw } from 'lucide-react'
+import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
 import type { StudioSettings } from '@/types/studio'
 
 interface StudioInfoEditorProps {
   initialSettings: StudioSettings
+  initialVersion: number
+  initialSourceOwner: string
 }
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
-export function StudioInfoEditor({ initialSettings }: StudioInfoEditorProps) {
+export function StudioInfoEditor({ initialSettings, initialVersion, initialSourceOwner }: StudioInfoEditorProps) {
   const [s, setS] = useState<StudioSettings>(initialSettings)
   const [savedState, setSavedState] = useState<StudioSettings>(initialSettings)
+  const [baseVersion, setBaseVersion] = useState(initialVersion)
+  const [sourceOwner, setSourceOwner] = useState(initialSourceOwner)
   const [status, setStatus] = useState<SaveStatus>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
 
   const isDirty = JSON.stringify(s) !== JSON.stringify(savedState)
 
-  async function handleSave() {
+  const save = useCallback(async () => {
     setStatus('saving')
     setErrorMsg(null)
     try {
       const res = await fetch('/api/admin/website/studio', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(s),
+        body: JSON.stringify({ settings: s, baseVersion }),
       })
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err?.error ?? `Save failed (${res.status})`)
+        if (res.status === 409 && data?.conflict) {
+          setConflict(true)
+          throw new Error(`Another admin published a newer version. Load latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+        }
+        throw new Error(data?.error ?? `Save failed (${res.status})`)
       }
-      const data = await res.json()
       setSavedState(data.settings)
       setS(data.settings)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2500)
     } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown error')
       setStatus('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Unknown error')
+      setErrorMsg(error.message)
+      throw error
     }
+  }, [baseVersion, s])
+
+  async function reloadLatest() {
+    setStatus('saving')
+    setErrorMsg(null)
+    try {
+      const res = await fetch('/api/admin/website/studio')
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? `Reload failed (${res.status})`)
+      setS(data.settings)
+      setSavedState(data.settings)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
+      setStatus('idle')
+    } catch (err) {
+      setStatus('error')
+      setErrorMsg(err instanceof Error ? err.message : 'Unable to load the latest version')
+    }
+  }
+
+  const discard = useCallback(() => {
+    setS(savedState)
+    setStatus('idle')
+    setErrorMsg(null)
+    setConflict(false)
+  }, [savedState])
+
+  useDirtyBlock({
+    id: 'studio-info',
+    label: 'Studio information',
+    dirty: isDirty,
+    save,
+    discard,
+  })
+
+  async function handleSave() {
+    if (conflict) {
+      await reloadLatest()
+      return
+    }
+    await save().catch(() => undefined)
   }
 
   return (
     <div className="space-y-8">
-      <Header isDirty={isDirty} status={status} errorMsg={errorMsg} onSave={handleSave} />
+      <Header
+        isDirty={isDirty}
+        status={status}
+        conflict={conflict}
+        version={baseVersion}
+        sourceOwner={sourceOwner}
+        onSave={handleSave}
+      />
 
       <Section
         icon={Building2}
@@ -148,7 +211,7 @@ export function StudioInfoEditor({ initialSettings }: StudioInfoEditorProps) {
         </div>
       </Section>
 
-      <StickySaveBar isDirty={isDirty} status={status} errorMsg={errorMsg} onSave={handleSave} />
+      <StickySaveBar isDirty={isDirty} status={status} errorMsg={errorMsg} conflict={conflict} onSave={handleSave} />
     </div>
   )
 }
@@ -156,12 +219,16 @@ export function StudioInfoEditor({ initialSettings }: StudioInfoEditorProps) {
 function Header({
   isDirty,
   status,
-  errorMsg,
+  conflict,
+  version,
+  sourceOwner,
   onSave,
 }: {
   isDirty: boolean
   status: SaveStatus
-  errorMsg: string | null
+  conflict: boolean
+  version: number
+  sourceOwner: string
   onSave: () => void
 }) {
   return (
@@ -178,8 +245,11 @@ function Header({
           place the site renders the name, address, phone, email, hours, social URLs, or
           Vagaro booking link. Replaces ~30 hardcoded values across the codebase.
         </p>
+        <p className="mt-1 text-xs text-dune/50">
+          {version === 0 ? 'Not published yet' : `Version ${version}`} · Source: {sourceOwner}
+        </p>
       </div>
-      <SaveButton isDirty={isDirty} status={status} errorMsg={errorMsg} onSave={onSave} />
+      <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={onSave} />
     </div>
   )
 }
@@ -188,11 +258,13 @@ function StickySaveBar({
   isDirty,
   status,
   errorMsg,
+  conflict,
   onSave,
 }: {
   isDirty: boolean
   status: SaveStatus
   errorMsg: string | null
+  conflict: boolean
   onSave: () => void
 }) {
   if (!isDirty && status !== 'saved' && status !== 'error') return null
@@ -208,7 +280,7 @@ function StickySaveBar({
         {isDirty && status !== 'saving' && (
           <span className="text-xs text-dune/60">Unsaved changes</span>
         )}
-        <SaveButton isDirty={isDirty} status={status} errorMsg={errorMsg} onSave={onSave} />
+        <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={onSave} />
       </div>
     </div>
   )
@@ -217,12 +289,12 @@ function StickySaveBar({
 function SaveButton({
   isDirty,
   status,
-  errorMsg: _errorMsg,
+  conflict,
   onSave,
 }: {
   isDirty: boolean
   status: SaveStatus
-  errorMsg: string | null
+  conflict: boolean
   onSave: () => void
 }) {
   const disabled = (!isDirty && status !== 'error') || status === 'saving'
@@ -231,6 +303,8 @@ function SaveButton({
       ? 'Saving…'
       : status === 'saved'
         ? 'Saved'
+        : conflict
+          ? 'Load latest'
         : status === 'error'
           ? 'Retry'
           : 'Save'
@@ -246,7 +320,11 @@ function SaveButton({
           : 'bg-terracotta text-cream hover:bg-terracotta/90 disabled:opacity-40 disabled:cursor-not-allowed'
       }`}
     >
-      {status === 'saved' ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+      {status === 'saved'
+        ? <Check className="w-4 h-4" />
+        : conflict
+          ? <RefreshCw className="w-4 h-4" />
+          : <Save className="w-4 h-4" />}
       {label}
     </button>
   )

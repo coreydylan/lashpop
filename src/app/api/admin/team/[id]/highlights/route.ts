@@ -13,6 +13,8 @@ import { getDb } from '@/db'
 import { reviews } from '@/db/schema/reviews'
 import { teamMemberHighlights } from '@/db/schema/team_member_highlights'
 import { teamMembers } from '@/db/schema/team_members'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +24,9 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await params
   const db = getDb()
 
@@ -87,6 +92,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await params
   const body = (await req.json()) as { reels: Array<{ reviewId: string; rank: number }> }
   const reels = Array.isArray(body.reels) ? body.reels.slice(0, 10) : []
@@ -109,6 +117,11 @@ export async function PUT(
   }
 
   const db = getDb()
+  const before = await db
+    .select({ reviewId: teamMemberHighlights.reviewId, rank: teamMemberHighlights.rank })
+    .from(teamMemberHighlights)
+    .where(eq(teamMemberHighlights.teamMemberId, id))
+    .orderBy(teamMemberHighlights.rank)
   await db.delete(teamMemberHighlights).where(eq(teamMemberHighlights.teamMemberId, id))
   if (reels.length > 0) {
     await db.insert(teamMemberHighlights).values(
@@ -121,6 +134,14 @@ export async function PUT(
     )
   }
 
+  await recordAdminAction({
+    action: 'team.highlights.update',
+    targetType: 'team_member',
+    targetId: id,
+    actorUserId: auth.userId,
+    diff: { before, after: reels },
+  })
+
   return NextResponse.json({ success: true, count: reels.length })
 }
 
@@ -128,8 +149,21 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   const { id } = await params
   const db = getDb()
-  await db.delete(teamMemberHighlights).where(eq(teamMemberHighlights.teamMemberId, id))
+  const before = await db
+    .delete(teamMemberHighlights)
+    .where(eq(teamMemberHighlights.teamMemberId, id))
+    .returning({ reviewId: teamMemberHighlights.reviewId, rank: teamMemberHighlights.rank })
+  await recordAdminAction({
+    action: 'team.highlights.clear',
+    targetType: 'team_member',
+    targetId: id,
+    actorUserId: auth.userId,
+    diff: { before, after: [] },
+  })
   return NextResponse.json({ success: true, note: 'pins cleared — editor will rebuild on next pass' })
 }

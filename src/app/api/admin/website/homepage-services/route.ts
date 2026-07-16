@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { requireAdminApi } from '@/lib/admin/auth'
-import { recordAdminAction } from '@/lib/admin/audit'
+import { writeWebsiteSetting } from '@/lib/admin/settings-writer'
 import {
-  DEFAULT_HOMEPAGE_SERVICES,
   HOMEPAGE_SERVICES_SECTION,
   mergeHomepageServices,
   type HomepageServicesContent,
@@ -26,53 +24,39 @@ export async function GET() {
     .limit(1)
 
   const content = mergeHomepageServices(rows[0]?.config as Partial<HomepageServicesContent> | null)
-  return NextResponse.json({ content })
+  return NextResponse.json({
+    content,
+    version: rows[0]?.version ?? 0,
+    sourceOwner: rows[0]?.sourceOwner ?? 'admin',
+  })
 }
 
 export async function PUT(req: NextRequest) {
-  const auth = await requireAdminApi()
-  if (auth instanceof NextResponse) return auth
-
-  let body: Partial<HomepageServicesContent>
+  let body: { cards?: HomepageServicesContent['cards']; baseVersion?: unknown }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
+  if (!Array.isArray(body.cards)) {
+    return NextResponse.json({ error: 'cards is required' }, { status: 400 })
+  }
+  if (typeof body.baseVersion !== 'number') {
+    return NextResponse.json({ error: 'baseVersion is required' }, { status: 400 })
+  }
 
-  const merged = mergeHomepageServices(body)
-
-  const db = getDb()
-  const prevRows = await db
-    .select()
-    .from(websiteSettings)
-    .where(eq(websiteSettings.section, HOMEPAGE_SERVICES_SECTION))
-    .limit(1)
-  const prev = prevRows[0]?.config as Partial<HomepageServicesContent> | null
-
-  await db
-    .insert(websiteSettings)
-    .values({
-      section: HOMEPAGE_SERVICES_SECTION,
-      config: merged as unknown as Record<string, unknown>,
-    })
-    .onConflictDoUpdate({
-      target: websiteSettings.section,
-      set: {
-        config: merged as unknown as Record<string, unknown>,
-        updatedAt: new Date(),
-      },
-    })
-
-  await recordAdminAction({
+  const merged = mergeHomepageServices({ cards: body.cards })
+  const result = await writeWebsiteSetting({
+    section: HOMEPAGE_SERVICES_SECTION,
+    config: merged,
+    baseVersion: body.baseVersion,
     action: 'homepage-services.update',
-    targetType: 'website_settings',
-    targetId: HOMEPAGE_SERVICES_SECTION,
-    diff: { before: prev ?? DEFAULT_HOMEPAGE_SERVICES, after: merged },
   })
+  if (!result.ok) return NextResponse.json(result, { status: result.status })
 
-  // Services section renders on the homepage.
-  revalidatePath('/', 'page')
-
-  return NextResponse.json({ content: merged })
+  return NextResponse.json({
+    content: result.setting.config as unknown as HomepageServicesContent,
+    version: result.setting.version,
+    sourceOwner: result.setting.sourceOwner,
+  })
 }

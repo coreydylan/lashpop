@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/db'
 import { faqCategories, faqItems } from '@/db/schema/faqs'
 import { eq, asc } from 'drizzle-orm'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
+import { revalidatePath } from 'next/cache'
 
 export const dynamic = 'force-dynamic'
 
 // GET - Fetch all FAQ categories and items
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
 
@@ -37,6 +43,9 @@ export async function GET() {
 
 // POST - Create a new FAQ category or item
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -72,6 +81,15 @@ export async function POST(request: NextRequest) {
         })
         .returning()
 
+      await recordAdminAction({
+        action: 'faq.category.create',
+        targetType: 'faq_category',
+        targetId: newCategory.id,
+        actorUserId: auth.userId,
+        diff: { after: newCategory },
+      })
+      revalidatePath('/', 'page')
+
       return NextResponse.json({ category: newCategory })
     } else if (type === 'item') {
       const [newItem] = await db
@@ -85,6 +103,15 @@ export async function POST(request: NextRequest) {
           isFeatured: data.isFeatured ?? false
         })
         .returning()
+
+      await recordAdminAction({
+        action: 'faq.item.create',
+        targetType: 'faq_item',
+        targetId: newItem.id,
+        actorUserId: auth.userId,
+        diff: { after: newItem },
+      })
+      revalidatePath('/', 'page')
 
       return NextResponse.json({ item: newItem })
     }
@@ -104,6 +131,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update FAQ category or item
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -117,25 +147,53 @@ export async function PUT(request: NextRequest) {
     }
 
     if (type === 'category') {
+      const [before] = await db.select().from(faqCategories).where(eq(faqCategories.id, id)).limit(1)
+      if (!before) return NextResponse.json({ error: 'FAQ category not found' }, { status: 404 })
+      const categoryChanges: Partial<typeof faqCategories.$inferInsert> = { updatedAt: new Date() }
+      if (typeof data?.displayName === 'string') categoryChanges.displayName = data.displayName
+      if (typeof data?.description === 'string' || data?.description === null) categoryChanges.description = data.description
+      if (Number.isInteger(data?.displayOrder)) categoryChanges.displayOrder = data.displayOrder
+      if (typeof data?.isActive === 'boolean') categoryChanges.isActive = data.isActive
       const [updated] = await db
         .update(faqCategories)
-        .set({
-          ...data,
-          updatedAt: new Date()
-        })
+        .set(categoryChanges)
         .where(eq(faqCategories.id, id))
         .returning()
 
+      await recordAdminAction({
+        action: 'faq.category.update',
+        targetType: 'faq_category',
+        targetId: id,
+        actorUserId: auth.userId,
+        diff: { before, after: updated },
+      })
+      revalidatePath('/', 'page')
+
       return NextResponse.json({ category: updated })
     } else if (type === 'item') {
+      const [before] = await db.select().from(faqItems).where(eq(faqItems.id, id)).limit(1)
+      if (!before) return NextResponse.json({ error: 'FAQ item not found' }, { status: 404 })
+      const itemChanges: Partial<typeof faqItems.$inferInsert> = { updatedAt: new Date() }
+      if (typeof data?.categoryId === 'string') itemChanges.categoryId = data.categoryId
+      if (typeof data?.question === 'string') itemChanges.question = data.question
+      if (typeof data?.answer === 'string') itemChanges.answer = data.answer
+      if (Number.isInteger(data?.displayOrder)) itemChanges.displayOrder = data.displayOrder
+      if (typeof data?.isActive === 'boolean') itemChanges.isActive = data.isActive
+      if (typeof data?.isFeatured === 'boolean') itemChanges.isFeatured = data.isFeatured
       const [updated] = await db
         .update(faqItems)
-        .set({
-          ...data,
-          updatedAt: new Date()
-        })
+        .set(itemChanges)
         .where(eq(faqItems.id, id))
         .returning()
+
+      await recordAdminAction({
+        action: 'faq.item.update',
+        targetType: 'faq_item',
+        targetId: id,
+        actorUserId: auth.userId,
+        diff: { before, after: updated },
+      })
+      revalidatePath('/', 'page')
 
       return NextResponse.json({ item: updated })
     }
@@ -155,6 +213,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete FAQ category or item
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { searchParams } = new URL(request.url)
@@ -169,19 +230,33 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (type === 'category') {
-      await db
+      const [deleted] = await db
         .delete(faqCategories)
         .where(eq(faqCategories.id, id))
+        .returning()
+      if (!deleted) return NextResponse.json({ error: 'FAQ category not found' }, { status: 404 })
+      await recordAdminAction({
+        action: 'faq.category.delete', targetType: 'faq_category', targetId: id,
+        actorUserId: auth.userId, diff: { before: deleted, after: null },
+      })
     } else if (type === 'item') {
-      await db
+      const [deleted] = await db
         .delete(faqItems)
         .where(eq(faqItems.id, id))
+        .returning()
+      if (!deleted) return NextResponse.json({ error: 'FAQ item not found' }, { status: 404 })
+      await recordAdminAction({
+        action: 'faq.item.delete', targetType: 'faq_item', targetId: id,
+        actorUserId: auth.userId, diff: { before: deleted, after: null },
+      })
     } else {
       return NextResponse.json(
         { error: 'Invalid type' },
         { status: 400 }
       )
     }
+
+    revalidatePath('/', 'page')
 
     return NextResponse.json({ success: true })
   } catch (error) {
@@ -192,4 +267,3 @@ export async function DELETE(request: NextRequest) {
     )
   }
 }
-

@@ -3,11 +3,16 @@ import { getDb } from '@/db'
 import { teamQuickFacts } from '@/db/schema/team_quick_facts'
 import { teamMembers } from '@/db/schema/team_members'
 import { eq, asc, inArray } from 'drizzle-orm'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
 
 export const dynamic = 'force-dynamic'
 
 // GET - Fetch quick facts for a team member (or all if no memberId provided)
 export async function GET(request: NextRequest) {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { searchParams } = new URL(request.url)
@@ -51,6 +56,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create a new quick fact
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -100,6 +108,11 @@ export async function POST(request: NextRequest) {
       })
       .returning()
 
+    await recordAdminAction({
+      action: 'team.quick-fact.create', targetType: 'team_quick_fact', targetId: newFact.id,
+      actorUserId: auth.userId, diff: { after: newFact },
+    })
+
     return NextResponse.json({ fact: newFact })
   } catch (error) {
     console.error('Error creating quick fact:', error)
@@ -112,6 +125,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update an existing quick fact
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -127,6 +143,9 @@ export async function PUT(request: NextRequest) {
     const updateData: Partial<typeof teamQuickFacts.$inferInsert> = {
       updatedAt: new Date(),
     }
+
+    const [before] = await db.select().from(teamQuickFacts).where(eq(teamQuickFacts.id, id)).limit(1)
+    if (!before) return NextResponse.json({ error: 'Quick fact not found' }, { status: 404 })
 
     if (factType !== undefined) updateData.factType = factType
     if (value !== undefined) updateData.value = value
@@ -147,6 +166,11 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    await recordAdminAction({
+      action: 'team.quick-fact.update', targetType: 'team_quick_fact', targetId: id,
+      actorUserId: auth.userId, diff: { before, after: updatedFact },
+    })
+
     return NextResponse.json({ fact: updatedFact })
   } catch (error) {
     console.error('Error updating quick fact:', error)
@@ -159,6 +183,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete a quick fact
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const { searchParams } = new URL(request.url)
@@ -183,6 +210,11 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    await recordAdminAction({
+      action: 'team.quick-fact.delete', targetType: 'team_quick_fact', targetId: id,
+      actorUserId: auth.userId, diff: { before: deletedFact, after: null },
+    })
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error deleting quick fact:', error)
@@ -195,6 +227,9 @@ export async function DELETE(request: NextRequest) {
 
 // PATCH - Reorder quick facts for a team member
 export async function PATCH(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher'])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
     const body = await request.json()
@@ -207,6 +242,16 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    const before = await db
+      .select()
+      .from(teamQuickFacts)
+      .where(eq(teamQuickFacts.teamMemberId, teamMemberId))
+      .orderBy(asc(teamQuickFacts.displayOrder))
+    const allowedIds = new Set(before.map((fact) => fact.id))
+    if (factIds.some((id: unknown) => typeof id !== 'string' || !allowedIds.has(id))) {
+      return NextResponse.json({ error: 'Every factId must belong to the selected team member' }, { status: 400 })
+    }
+
     // Update display order for each fact
     for (let i = 0; i < factIds.length; i++) {
       await db
@@ -217,6 +262,12 @@ export async function PATCH(request: NextRequest) {
         })
         .where(eq(teamQuickFacts.id, factIds[i]))
     }
+
+    await recordAdminAction({
+      action: 'team.quick-fact.reorder', targetType: 'team_member', targetId: teamMemberId,
+      actorUserId: auth.userId,
+      diff: { before: before.map((fact) => fact.id), after: factIds },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

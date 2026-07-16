@@ -13,8 +13,18 @@
  * the next editor pass leaves it alone. The "Unlock from editor" checkbox
  * removes specific column locks.
  */
-import { useEffect, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { Loader2, X, Sparkles, RotateCw, Lock, Unlock } from "lucide-react"
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',')
 
 export interface ReviewRow {
   id: string
@@ -47,6 +57,15 @@ interface Props {
 
 export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved }: Props) {
   const locks = new Set(review.adminLockedFields ?? [])
+  const titleId = useId()
+  const descriptionId = useId()
+  const qualityId = useId()
+  const stylistId = useId()
+  const visibilityId = useId()
+  const notesId = useId()
+  const drawerRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const onCloseRef = useRef(onClose)
 
   const [qualityScore, setQualityScore] = useState<number | null>(review.qualityScore)
   const [editorNotes, setEditorNotes] = useState<string>(review.editorNotes ?? "")
@@ -66,16 +85,65 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
   } | null>(null)
 
   useEffect(() => {
-    function onEsc(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose()
-    }
-    window.addEventListener("keydown", onEsc)
-    return () => window.removeEventListener("keydown", onEsc)
+    onCloseRef.current = onClose
   }, [onClose])
+
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus())
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault()
+        onCloseRef.current()
+        return
+      }
+
+      if (event.key !== "Tab") return
+      const drawer = drawerRef.current
+      if (!drawer) return
+
+      const focusable = Array.from(drawer.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
+        .filter((element) => !element.hidden && element.getClientRects().length > 0)
+
+      if (focusable.length === 0) {
+        event.preventDefault()
+        drawer.focus()
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+
+      if (event.shiftKey && (active === first || !drawer.contains(active))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (active === last || !drawer.contains(active))) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      document.removeEventListener("keydown", handleKeyDown)
+      document.body.style.overflow = previousOverflow
+      if (opener?.isConnected) opener.focus()
+    }
+  }, [])
 
   function toggleUnlock(column: string) {
     const next = new Set(unlockFields)
-    next.has(column) ? next.delete(column) : next.add(column)
+    if (next.has(column)) {
+      next.delete(column)
+    } else {
+      next.add(column)
+    }
     setUnlockFields(next)
   }
 
@@ -164,16 +232,40 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
     )
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={onClose}>
+  if (typeof document === "undefined") return null
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex justify-end bg-black/30"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
       <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        aria-busy={saving || suggesting || rescoring}
+        tabIndex={-1}
         className="w-full max-w-xl h-full bg-ivory shadow-2xl overflow-y-auto"
-        onClick={e => e.stopPropagation()}
       >
         <header className="sticky top-0 bg-ivory border-b border-sage/30 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-dune">Edit review</h2>
-          <button onClick={onClose} className="text-dune/60 hover:text-dune">
-            <X className="w-5 h-5" />
+          <div>
+            <h2 id={titleId} className="text-xl font-semibold text-dune">Edit review</h2>
+            <p id={descriptionId} className="sr-only">
+              Edit website display settings for {review.reviewerName}&apos;s review.
+            </p>
+          </div>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Close review editor"
+            className="rounded-md p-2 text-dune/60 hover:text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden"
+          >
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </header>
 
@@ -201,7 +293,7 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
           {/* Quality score */}
           <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="quality" className="block text-sm font-medium text-dune">
+              <label htmlFor={qualityId} className="block text-sm font-medium text-dune">
                 Quality score (1-10)
               </label>
               <button
@@ -211,15 +303,15 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
                 className="inline-flex items-center gap-1 text-xs text-golden hover:underline disabled:opacity-50"
               >
                 {rescoring ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
                 ) : (
-                  <RotateCw className="w-3 h-3" />
+                  <RotateCw className="w-3 h-3" aria-hidden="true" />
                 )}
                 Re-score with Claude
               </button>
             </div>
             <input
-              id="quality"
+              id={qualityId}
               type="number"
               min={1}
               max={10}
@@ -240,7 +332,7 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
           {/* Team member tag */}
           <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <label htmlFor="stylist" className="block text-sm font-medium text-dune">
+              <label htmlFor={stylistId} className="block text-sm font-medium text-dune">
                 Tagged stylist
               </label>
               <button
@@ -250,15 +342,15 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
                 className="inline-flex items-center gap-1 text-xs text-golden hover:underline disabled:opacity-50"
               >
                 {suggesting ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
                 ) : (
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="w-3 h-3" aria-hidden="true" />
                 )}
                 Suggest from text
               </button>
             </div>
             <select
-              id="stylist"
+              id={stylistId}
               value={teamMemberId ?? ""}
               onChange={e => setTeamMemberId(e.target.value || null)}
               className="w-full px-3 py-2 border border-sage/40 rounded-lg bg-white focus:outline-none focus:border-golden"
@@ -281,7 +373,11 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
                 ))}
             </select>
             {suggestion && (
-              <div className="text-xs text-dune/70 bg-sage/10 px-3 py-2 rounded-lg space-y-1">
+              <div
+                className="text-xs text-dune/70 bg-sage/10 px-3 py-2 rounded-lg space-y-1"
+                role="status"
+                aria-live="polite"
+              >
                 <p>
                   Suggestion:{" "}
                   <span className="font-medium text-dune">
@@ -305,11 +401,12 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
           </section>
 
           {/* Visibility */}
-          <section className="space-y-2">
-            <label className="block text-sm font-medium text-dune">Visibility</label>
+          <fieldset className="space-y-2">
+            <legend className="block text-sm font-medium text-dune">Visibility</legend>
             <div className="flex items-center gap-3">
-              <label className="inline-flex items-center gap-2 cursor-pointer">
+              <label htmlFor={visibilityId} className="inline-flex items-center gap-2 cursor-pointer">
                 <input
+                  id={visibilityId}
                   type="checkbox"
                   checked={showOnWebsite}
                   onChange={e => setShowOnWebsite(e.target.checked)}
@@ -321,15 +418,15 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
               </label>
             </div>
             <LockHint column="show_on_website" />
-          </section>
+          </fieldset>
 
           {/* Editor notes (read/edit) */}
           <section className="space-y-2">
-            <label htmlFor="notes" className="block text-sm font-medium text-dune">
+            <label htmlFor={notesId} className="block text-sm font-medium text-dune">
               Editor notes
             </label>
             <textarea
-              id="notes"
+              id={notesId}
               value={editorNotes}
               onChange={e => setEditorNotes(e.target.value)}
               rows={3}
@@ -340,7 +437,11 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
           </section>
 
           {error && (
-            <div className="text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
+            <div
+              className="text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg"
+              role="alert"
+              aria-live="assertive"
+            >
               {error}
             </div>
           )}
@@ -348,21 +449,24 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
 
         <footer className="sticky bottom-0 bg-ivory border-t border-sage/30 px-6 py-4 flex justify-end gap-2">
           <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-2 text-dune/70 hover:text-dune"
+            className="px-4 py-2 text-dune/70 hover:text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2 bg-golden text-white rounded-lg font-medium hover:bg-golden/90 disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-golden text-white rounded-lg font-medium hover:bg-golden/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden focus-visible:ring-offset-2 disabled:opacity-60"
           >
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            Save & lock
+            {saving && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
+            {saving ? "Saving…" : "Save & lock"}
           </button>
         </footer>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -23,6 +23,7 @@ import {
   reorderCarouselPhotos,
   type CarouselPhotoWithAsset
 } from '@/actions/work-with-us-carousel'
+import { WorkWithUsContentEditor } from './WorkWithUsContentEditor'
 
 export default function WorkWithUsCarouselAdminPage() {
   // Data state
@@ -138,6 +139,8 @@ export default function WorkWithUsCarouselAdminPage() {
           </button>
         </div>
       </motion.div>
+
+      <WorkWithUsContentEditor />
 
       {/* Stats */}
       <motion.div

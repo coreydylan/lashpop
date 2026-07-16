@@ -37,6 +37,7 @@ import {
   DEFAULT_SEO_SETTINGS,
   BUSINESS_TYPES
 } from '@/types/seo'
+import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
 import {
   Award,
   FileCheck,
@@ -70,6 +71,7 @@ type ImagePickerContext = {
 export default function SEOSettingsEditor() {
   // Data state
   const [settings, setSettings] = useState<SEOSettings>(DEFAULT_SEO_SETTINGS)
+  const [savedSettings, setSavedSettings] = useState<SEOSettings>(DEFAULT_SEO_SETTINGS)
 
   // UI state
   const [activeTab, setActiveTab] = useState<TabType>('site')
@@ -77,6 +79,9 @@ export default function SEOSettingsEditor() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
+  const [baseVersion, setBaseVersion] = useState(0)
+  const [sourceOwner, setSourceOwner] = useState('admin')
 
   // Image picker state
   const [showImagePicker, setShowImagePicker] = useState(false)
@@ -94,6 +99,10 @@ export default function SEOSettingsEditor() {
       if (!response.ok) throw new Error('Failed to fetch SEO settings')
       const data = await response.json()
       setSettings(data.settings)
+      setSavedSettings(data.settings)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
     } catch (err) {
       console.error('Error fetching SEO settings:', err)
       setError('Failed to load settings')
@@ -110,24 +119,54 @@ export default function SEOSettingsEditor() {
   // Save Handler
   // ============================================
 
-  const handleSave = async () => {
+  const save = useCallback(async () => {
     setSaving(true)
     setError(null)
     try {
       const response = await fetch('/api/admin/website/seo', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings })
+        body: JSON.stringify({ settings, baseVersion })
       })
-      if (!response.ok) throw new Error('Failed to save settings')
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        if (response.status === 409 && data?.conflict) {
+          setConflict(true)
+          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+        }
+        throw new Error(data?.error ?? `Failed to save settings (${response.status})`)
+      }
+      setSettings(data.settings)
+      setSavedSettings(data.settings)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      const error = err instanceof Error ? err : new Error('Failed to save')
+      setError(error.message)
+      throw error
     } finally {
       setSaving(false)
     }
-  }
+  }, [baseVersion, settings])
+
+  const dirty = JSON.stringify(settings) !== JSON.stringify(savedSettings)
+  const discard = useCallback(() => {
+    setSettings(savedSettings)
+    setError(null)
+    setConflict(false)
+    setSaved(false)
+  }, [savedSettings])
+
+  useDirtyBlock({
+    id: 'seo-settings',
+    label: 'SEO settings',
+    dirty,
+    save,
+    discard,
+  })
 
   // ============================================
   // Update Handlers
@@ -219,7 +258,7 @@ export default function SEOSettingsEditor() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-mist/30 to-sage/20 flex items-center justify-center">
               <Search className="w-6 h-6 text-ocean-mist" />
@@ -227,11 +266,14 @@ export default function SEOSettingsEditor() {
             <div>
               <h1 className="h2 text-dune">SEO Settings</h1>
               <p className="text-sm text-dune/60">Configure site metadata, social sharing, and search optimization</p>
+              <p className="text-xs text-dune/45">
+                {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+              </p>
             </div>
           </div>
 
           <button
-            onClick={handleSave}
+            onClick={() => void save().catch(() => undefined)}
             disabled={saving}
             className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}
           >
@@ -252,10 +294,17 @@ export default function SEOSettingsEditor() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 p-4 rounded-2xl bg-terracotta/10 border border-terracotta/20 flex items-center gap-3"
+          className="mb-6 p-4 rounded-2xl bg-terracotta/10 border border-terracotta/20 flex flex-wrap items-center gap-3"
+          role="alert"
         >
           <AlertCircle className="w-5 h-5 text-terracotta flex-shrink-0" />
-          <p className="text-sm text-terracotta">{error}</p>
+          <p className="min-w-0 flex-1 text-sm text-terracotta">{error}</p>
+          {conflict && (
+            <button type="button" onClick={() => void fetchSettings()} className="btn btn-secondary text-xs">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Discard edits &amp; load latest
+            </button>
+          )}
         </motion.div>
       )}
 

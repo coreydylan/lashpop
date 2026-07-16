@@ -149,6 +149,7 @@ interface FAQData {
 import type { SlideshowPreset, SlideshowImage } from '@/types/hero-slideshow';
 import type { StudioSettings } from '@/types/studio';
 import type { FounderLetterContent } from '@/types/founder-letter';
+import type { HeroContent } from '@/types/hero-content';
 
 interface HeroSlideshowConfig {
   preset: SlideshowPreset | null;
@@ -177,6 +178,7 @@ interface LandingPageV2ClientProps {
   faqData?: FAQData;
   founderLetterContent?: FounderLetterContent;
   heroConfig?: HeroConfig;
+  heroContent?: HeroContent;
   studio: StudioSettings;
 }
 
@@ -320,7 +322,7 @@ function ServiceQueryDeepLink() {
   return null;
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], instagramSettings, serviceCategories = [], homepageServices, faqData, founderLetterContent, heroConfig, studio }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], instagramSettings, serviceCategories = [], homepageServices, faqData, founderLetterContent, heroConfig, heroContent, studio }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -407,7 +409,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                     data-section-id="hero"
                     style={isMobile ? { background: 'transparent' } : undefined}
                   >
-                    <HeroSection reviewStats={reviewStats} heroConfig={heroConfig?.desktop} />
+                    <HeroSection reviewStats={reviewStats} heroConfig={heroConfig?.desktop} content={heroContent} />
                   </div>
 
                 {/* Continuous ivory background wrapper for all sections from founder onwards */}
@@ -490,4 +492,3 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
     </DevModeProvider>
   );
 }
-

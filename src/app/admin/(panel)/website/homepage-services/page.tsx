@@ -1,18 +1,23 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Sparkles, RefreshCw, Save, Check, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Trash2, ExternalLink } from 'lucide-react'
+import { Sparkles, RefreshCw, Save, Check, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Trash2, ExternalLink, AlertCircle } from 'lucide-react'
+import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
 import type { HomepageServiceCard, HomepageServicesContent } from '@/types/homepage-services'
 
 export default function HomepageServicesAdminPage() {
   const [cards, setCards] = useState<HomepageServiceCard[]>([])
+  const [savedCards, setSavedCards] = useState<HomepageServiceCard[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [conflict, setConflict] = useState(false)
+  const [baseVersion, setBaseVersion] = useState(0)
+  const [sourceOwner, setSourceOwner] = useState('admin')
 
   useEffect(() => {
     void load()
@@ -24,8 +29,12 @@ export default function HomepageServicesAdminPage() {
     try {
       const res = await fetch('/api/admin/website/homepage-services')
       if (!res.ok) throw new Error(`Failed to load (${res.status})`)
-      const data: { content: HomepageServicesContent } = await res.json()
+      const data: { content: HomepageServicesContent; version: number; sourceOwner: string } = await res.json()
       setCards(data.content.cards)
+      setSavedCards(data.content.cards)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
@@ -66,29 +75,54 @@ export default function HomepageServicesAdminPage() {
     setCards((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const save = async () => {
+  const save = useCallback(async () => {
     setSaving(true)
     setError(null)
     try {
       const res = await fetch('/api/admin/website/homepage-services', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cards }),
+        body: JSON.stringify({ cards, baseVersion }),
       })
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
+        if (res.status === 409 && data?.conflict) {
+          setConflict(true)
+          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+        }
         throw new Error(data.error || `Save failed (${res.status})`)
       }
-      const data: { content: HomepageServicesContent } = await res.json()
       setCards(data.content.cards)
+      setSavedCards(data.content.cards)
+      setBaseVersion(data.version)
+      setSourceOwner(data.sourceOwner)
+      setConflict(false)
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Save failed')
+      const error = e instanceof Error ? e : new Error('Save failed')
+      setError(error.message)
+      throw error
     } finally {
       setSaving(false)
     }
-  }
+  }, [baseVersion, cards])
+
+  const dirty = JSON.stringify(cards) !== JSON.stringify(savedCards)
+  const discard = useCallback(() => {
+    setCards(savedCards)
+    setError(null)
+    setConflict(false)
+    setSaved(false)
+  }, [savedCards])
+
+  useDirtyBlock({
+    id: 'homepage-services',
+    label: 'Homepage service cards',
+    dirty,
+    save,
+    discard,
+  })
 
   if (loading) {
     return (
@@ -116,16 +150,31 @@ export default function HomepageServicesAdminPage() {
           <div>
             <h1 className="h2 text-dune">Homepage Service Cards</h1>
             <p className="text-sm text-dune/60">{enabledCount} of {cards.length} shown in the &quot;Choose a Service&quot; section</p>
+            <p className="text-xs text-dune/45">
+              {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+            </p>
           </div>
         </div>
         <div className="flex gap-3 items-center">
-          {error && <span className="text-sm text-red-600">{error}</span>}
-          <button onClick={save} disabled={saving} className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}>
+          <button onClick={() => void save().catch(() => undefined)} disabled={saving} className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}>
             {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             {saved ? 'Saved!' : 'Save Changes'}
           </button>
         </div>
       </motion.div>
+
+      {error && (
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-terracotta/25 bg-terracotta/10 p-4 text-sm text-terracotta" role="alert">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
+          <p className="min-w-0 flex-1">{error}</p>
+          {conflict && (
+            <button type="button" onClick={() => void load()} className="btn btn-secondary text-xs">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Discard edits &amp; load latest
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mb-6 p-4 bg-dusty-rose/10 rounded-2xl border border-dusty-rose/20 text-sm text-dune/70">
         <p>

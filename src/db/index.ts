@@ -42,6 +42,7 @@ import { damUserSettings } from "./schema/dam_user_settings"
 import { damUserActions } from "./schema/dam_user_actions"
 import { adminAuditLog } from "./schema/admin_audit_log"
 import { websiteSettings, homepageReviews } from "./schema/website_settings"
+import { websiteSettingVersions } from "./schema/website_setting_versions"
 import { faqCategories, faqItems } from "./schema/faqs"
 import { quizPhotos, quizLashStyle, quizResultSettings } from "./schema/quiz_photos"
 import { workWithUsCarouselPhotos } from "./schema/work_with_us_carousel"
@@ -119,6 +120,7 @@ const dbSchema = {
   damUserActions,
   adminAuditLog,
   websiteSettings,
+  websiteSettingVersions,
   homepageReviews,
   faqCategories,
   faqItems,
@@ -161,6 +163,12 @@ interface WorkerBatchResponse {
   results: WorkerQueryResponse[]
 }
 
+export interface DatabaseBatchInput {
+  sql: string
+  params: Array<string | number | boolean | null>
+  method: 'run' | 'all' | 'values' | 'get'
+}
+
 async function postToDatabase<T>(path: string, body: unknown): Promise<T> {
   if (!databaseUrl) {
     throw new Error("CLOUDFLARE_DB_URL is not set")
@@ -193,6 +201,12 @@ const remoteQuery: AsyncRemoteCallback = async (sql, params, method) => {
 
 const remoteBatch: AsyncBatchRemoteCallback = async (batch) => {
   const response = await postToDatabase<WorkerBatchResponse>("/batch", { batch })
+  return response.results
+}
+
+/** Execute an atomic D1 batch when a mutation and its audit row must commit together. */
+export async function executeDatabaseBatch(batch: DatabaseBatchInput[]): Promise<WorkerQueryResponse[]> {
+  const response = await postToDatabase<WorkerBatchResponse>('/batch', { batch })
   return response.results
 }
 
@@ -263,6 +277,7 @@ export {
   damUserActions,
   adminAuditLog,
   websiteSettings,
+  websiteSettingVersions,
   homepageReviews,
   faqCategories,
   faqItems,

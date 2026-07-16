@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { getDb } from "@/db"
 import { tagCategories } from "@/db/schema/tag_categories"
 import { tags } from "@/db/schema/tags"
-import { asc, eq, isNull } from "drizzle-orm"
+import { asc, eq } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
 // Tag type with optional children for hierarchy
 interface TagWithChildren {
@@ -18,6 +20,44 @@ interface TagWithChildren {
   createdAt: Date
   updatedAt: Date
   children?: TagWithChildren[]
+}
+
+interface UpdatedTagInput {
+  id: string
+  name: string
+  displayName: string
+  sortOrder?: number
+}
+
+interface UpdatedCategoryInput {
+  id: string
+  name: string
+  displayName: string
+  color?: string | null
+  sortOrder?: number
+  isCollection?: boolean
+  isRating?: boolean
+  description?: string | null
+  selectionMode?: string
+  selectionLimit?: number | null
+  tags?: UpdatedTagInput[]
+}
+
+function isUpdatedTag(value: unknown): value is UpdatedTagInput {
+  if (!value || typeof value !== "object") return false
+  const tag = value as Record<string, unknown>
+  return typeof tag.id === "string"
+    && typeof tag.name === "string"
+    && typeof tag.displayName === "string"
+}
+
+function isUpdatedCategory(value: unknown): value is UpdatedCategoryInput {
+  if (!value || typeof value !== "object") return false
+  const category = value as Record<string, unknown>
+  return typeof category.id === "string"
+    && typeof category.name === "string"
+    && typeof category.displayName === "string"
+    && (category.tags === undefined || (Array.isArray(category.tags) && category.tags.every(isUpdatedTag)))
 }
 
 export async function GET() {
@@ -81,11 +121,16 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(["owner", "publisher"])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
-    const { categories: updatedCategories } = body
+    const updatedCategories = Array.isArray(body.categories) && body.categories.every(isUpdatedCategory)
+      ? body.categories as UpdatedCategoryInput[]
+      : null
 
-    if (!updatedCategories || !Array.isArray(updatedCategories)) {
+    if (!updatedCategories) {
       return NextResponse.json(
         { error: "Categories array is required" },
         { status: 400 }
@@ -206,8 +251,8 @@ export async function POST(request: NextRequest) {
         const existingCategoryTags = existingTags.filter(t => t.categoryId === category.id)
 
         const updatedTagIds = categoryTags
-          .filter((t: any) => !t.id.startsWith('tag-'))
-          .map((t: any) => t.id)
+          .filter((tag) => !tag.id.startsWith('tag-'))
+          .map((tag) => tag.id)
         const existingTagIds = existingCategoryTags.map(t => t.id)
 
         // Delete tags that were removed
@@ -244,6 +289,27 @@ export async function POST(request: NextRequest) {
         }
       }
     }
+
+    const afterCategories = await db.select().from(tagCategories)
+    const afterTags = await db.select().from(tags)
+
+    await recordAdminAction({
+      action: "dam.tags.catalog.update",
+      surface: "dam",
+      targetType: "tag_taxonomy",
+      targetId: "catalog",
+      actorUserId: auth.userId,
+      diff: {
+        before: {
+          categories: existingCategories,
+          tags: existingTags,
+        },
+        after: {
+          categories: afterCategories,
+          tags: afterTags,
+        },
+      },
+    })
 
     return NextResponse.json({
       success: true,

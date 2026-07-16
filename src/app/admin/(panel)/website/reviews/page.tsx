@@ -296,11 +296,14 @@ export default function ReviewsManagerPage() {
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Edit drawer trigger */}
           <button
+            type="button"
             onClick={() => setEditing(review)}
+            aria-label={`Edit review by ${review.reviewerName}`}
+            aria-haspopup="dialog"
             className="w-8 h-8 rounded-lg bg-sage/10 hover:bg-sage/20 flex items-center justify-center text-dune/60 hover:text-dune transition-colors"
             title="Edit (quality / stylist / hide / lock)"
           >
-            <Pencil className="w-4 h-4" />
+            <Pencil className="w-4 h-4" aria-hidden="true" />
           </button>
 
           {/* Expand/Collapse */}
@@ -556,4 +559,3 @@ export default function ReviewsManagerPage() {
     </div>
   )
 }
-

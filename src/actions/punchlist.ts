@@ -20,6 +20,10 @@ import type {
   PunchlistPriority
 } from '@/db/schema/punchlist'
 
+// Retired in favor of the authenticated admin Today queue. Keep read helpers
+// temporarily for archival/export work, but make every legacy write inert.
+const PUNCHLIST_WRITES_RETIRED = true
+
 // Extended types with relations
 export interface PunchlistItemWithRelations extends PunchlistItem {
   createdBy: PunchlistUser
@@ -63,6 +67,7 @@ export async function getPunchlistUserByPhone(phoneNumber: string): Promise<Punc
  * Create a session for a user
  */
 export async function createPunchlistSession(userId: string): Promise<string | null> {
+  if (PUNCHLIST_WRITES_RETIRED) return null
   try {
     const db = getDb()
     const token = randomBytes(32).toString('hex')
@@ -169,6 +174,7 @@ export async function updatePunchlistUserPhone(
   userId: string,
   phoneNumber: string
 ): Promise<boolean> {
+  if (PUNCHLIST_WRITES_RETIRED) return false
   try {
     const db = getDb()
     await db
@@ -275,6 +281,7 @@ export async function createPunchlistItem(data: {
   category?: string
   assignedToId?: string
 }): Promise<PunchlistItem | null> {
+  if (PUNCHLIST_WRITES_RETIRED) return null
   try {
     const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
@@ -320,6 +327,7 @@ export async function updatePunchlistItem(
     assignedToId?: string | null
   }
 ): Promise<boolean> {
+  if (PUNCHLIST_WRITES_RETIRED) return false
   try {
     const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
@@ -347,6 +355,7 @@ export async function updatePunchlistItemStatus(
   itemId: string,
   newStatus: PunchlistStatus
 ): Promise<boolean> {
+  if (PUNCHLIST_WRITES_RETIRED) return false
   try {
     const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
@@ -405,6 +414,7 @@ export async function updatePunchlistItemStatus(
  * Delete a punchlist item (owner only)
  */
 export async function deletePunchlistItem(itemId: string): Promise<boolean> {
+  if (PUNCHLIST_WRITES_RETIRED) return false
   try {
     const db = getDb()
     const currentUser = await getCurrentPunchlistUser()
@@ -454,6 +464,7 @@ export async function addPunchlistComment(
   itemId: string,
   content: string
 ): Promise<PunchlistComment | null> {
+  if (PUNCHLIST_WRITES_RETIRED) return null
   try {
     const db = getDb()
     const currentUser = await getCurrentPunchlistUser()

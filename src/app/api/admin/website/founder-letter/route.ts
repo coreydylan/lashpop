@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { requireAdminApi } from '@/lib/admin/auth'
-import { recordAdminAction } from '@/lib/admin/audit'
+import { writeWebsiteSetting } from '@/lib/admin/settings-writer'
 import {
-  DEFAULT_FOUNDER_LETTER,
   FOUNDER_LETTER_SECTION,
   mergeFounderLetter,
   type FounderLetterContent,
@@ -26,54 +24,41 @@ export async function GET() {
     .limit(1)
 
   const content = mergeFounderLetter(rows[0]?.config as Partial<FounderLetterContent> | null)
-  return NextResponse.json({ content })
+  return NextResponse.json({
+    content,
+    version: rows[0]?.version ?? 0,
+    sourceOwner: rows[0]?.sourceOwner ?? 'admin',
+  })
 }
 
 export async function PUT(req: NextRequest) {
-  const auth = await requireAdminApi()
-  if (auth instanceof NextResponse) return auth
-
-  let body: Partial<FounderLetterContent>
+  let body: { content?: Partial<FounderLetterContent>; baseVersion?: unknown }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
+  if (!body.content || typeof body.content !== 'object' || Array.isArray(body.content)) {
+    return NextResponse.json({ error: 'content is required' }, { status: 400 })
+  }
+  if (typeof body.baseVersion !== 'number') {
+    return NextResponse.json({ error: 'baseVersion is required' }, { status: 400 })
+  }
 
-  const merged = mergeFounderLetter(body)
+  const merged = mergeFounderLetter(body.content)
   merged.updatedAt = new Date().toISOString()
 
-  const db = getDb()
-  const prevRows = await db
-    .select()
-    .from(websiteSettings)
-    .where(eq(websiteSettings.section, FOUNDER_LETTER_SECTION))
-    .limit(1)
-  const prev = prevRows[0]?.config as Partial<FounderLetterContent> | null
-
-  await db
-    .insert(websiteSettings)
-    .values({
-      section: FOUNDER_LETTER_SECTION,
-      config: merged as unknown as Record<string, unknown>,
-    })
-    .onConflictDoUpdate({
-      target: websiteSettings.section,
-      set: {
-        config: merged as unknown as Record<string, unknown>,
-        updatedAt: new Date(),
-      },
-    })
-
-  await recordAdminAction({
+  const result = await writeWebsiteSetting({
+    section: FOUNDER_LETTER_SECTION,
+    config: merged,
+    baseVersion: body.baseVersion,
     action: 'founder-letter.update',
-    targetType: 'website_settings',
-    targetId: FOUNDER_LETTER_SECTION,
-    diff: { before: prev ?? DEFAULT_FOUNDER_LETTER, after: merged },
   })
+  if (!result.ok) return NextResponse.json(result, { status: result.status })
 
-  // Founder letter renders on the homepage.
-  revalidatePath('/', 'page')
-
-  return NextResponse.json({ content: merged })
+  return NextResponse.json({
+    content: result.setting.config as unknown as FounderLetterContent,
+    version: result.setting.version,
+    sourceOwner: result.setting.sourceOwner,
+  })
 }

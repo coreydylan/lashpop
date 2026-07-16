@@ -1,216 +1,80 @@
-"use client"
-
-import { motion } from 'framer-motion'
 import Link from 'next/link'
-import {
-  Image,
-  Users,
-  Star,
-  Instagram,
-  FileText,
-  HelpCircle,
-  ArrowRight,
-  Sparkles,
-  Search
-} from 'lucide-react'
+import { ArrowRight, CheckCircle2, ExternalLink, Workflow } from 'lucide-react'
+import { ADMIN_AREAS, type ContentOwner } from '@/components/admin-shell/sections'
 
-const sections = [
-  {
-    id: 'hero',
-    label: 'Hero Section',
-    icon: Image,
-    description: 'Manage the above-the-fold hero image displayed in the arch shape',
-    color: 'dusty-rose',
-    stats: 'DAM Integration'
-  },
-  {
-    id: 'services',
-    label: 'Services Manager',
-    icon: Sparkles,
-    description: 'Manage service images, demo mode, and Vagaro sync status',
-    color: 'ocean-mist',
-    stats: 'Database + DAM'
-  },
-  {
-    id: 'homepage-services',
-    label: 'Homepage Service Cards',
-    icon: Sparkles,
-    description: 'Edit the "Choose a Service" cards on the homepage — copy, icons, and order',
-    color: 'dusty-rose',
-    stats: 'Homepage'
-  },
-  {
-    id: 'quiz',
-    label: 'Find Your Look Quiz',
-    icon: Search,
-    description: 'Manage quiz photos for each lash style (Classic, Hybrid, Wet/Angel, Volume)',
-    color: 'terracotta',
-    stats: 'Database + DAM'
-  },
-  {
-    id: 'founder-letter',
-    label: 'Founder Letter',
-    icon: FileText,
-    description: 'Emily\'s welcome message and signature section',
-    color: 'sage',
-    stats: 'HTML Source'
-  },
-  { 
-    id: 'team', 
-    label: 'Team Members', 
-    icon: Users, 
-    description: 'Manage team visibility, order, and profile information',
-    color: 'ocean-mist',
-    stats: 'Database + Vagaro'
-  },
-  { 
-    id: 'instagram', 
-    label: 'Instagram Carousel', 
-    icon: Instagram, 
-    description: 'Set the number of posts and display settings',
-    color: 'terracotta',
-    stats: 'DAM Integration'
-  },
-  { 
-    id: 'reviews', 
-    label: 'Reviews', 
-    icon: Star, 
-    description: 'Select and order which reviews appear on the homepage',
-    color: 'golden',
-    stats: 'Database'
-  },
-  {
-    id: 'faq',
-    label: 'FAQ Manager',
-    icon: HelpCircle,
-    description: 'Manage FAQ categories, questions, and featured items',
-    color: 'sage',
-    stats: 'Database'
-  },
-  {
-    id: 'seo',
-    label: 'SEO & Metadata',
-    icon: Search,
-    description: 'Configure meta tags, social images, and structured data settings',
-    color: 'ocean-mist',
-    stats: 'Database + DAM'
-  },
-  {
-    id: 'work-with-us',
-    label: 'Work With Us Carousel',
-    icon: Users,
-    description: 'Manage the team photo carousel on the careers page',
-    color: 'dusty-rose',
-    stats: 'Database + DAM'
-  },
-]
-
-const colorMap: Record<string, string> = {
-  'dusty-rose': 'from-dusty-rose/20 to-dusty-rose/5 border-dusty-rose/20 hover:border-dusty-rose/40',
-  'golden': 'from-golden/20 to-golden/5 border-golden/20 hover:border-golden/40',
-  'sage': 'from-sage/20 to-sage/5 border-sage/20 hover:border-sage/40',
-  'ocean-mist': 'from-ocean-mist/20 to-ocean-mist/5 border-ocean-mist/20 hover:border-ocean-mist/40',
-  'terracotta': 'from-terracotta/20 to-terracotta/5 border-terracotta/20 hover:border-terracotta/40',
+const OWNER_COPY: Record<ContentOwner, string> = {
+  LashPop: 'Edited here and published directly by the studio.',
+  Vagaro: 'Core booking data syncs from Vagaro; presentation stays local.',
+  Automation: 'A worker keeps this current; admins configure the rules.',
+  System: 'Operational state and accountability, not public content.',
+  Mixed: 'Vagaro or automation owns the facts; LashPop owns selected presentation fields.',
 }
 
-const iconColorMap: Record<string, string> = {
-  'dusty-rose': 'text-dusty-rose',
-  'golden': 'text-golden',
-  'sage': 'text-sage',
-  'ocean-mist': 'text-ocean-mist',
-  'terracotta': 'text-terracotta',
+const OWNER_STYLE: Record<ContentOwner, string> = {
+  LashPop: 'bg-[#c96f50]/10 text-[#9f4c33] border-[#c96f50]/25',
+  Vagaro: 'bg-[#6f9693]/10 text-[#466f6c] border-[#6f9693]/25',
+  Automation: 'bg-[#aa8748]/10 text-[#755b28] border-[#aa8748]/25',
+  System: 'bg-black/[0.04] text-black/55 border-black/10',
+  Mixed: 'bg-[#8b748f]/10 text-[#654d6a] border-[#8b748f]/25',
 }
 
-export default function WebsiteAdminPage() {
+export default function WebsiteOverviewPage() {
+  const website = ADMIN_AREAS.find((area) => area.id === 'website')!
+  const editors = website.sections.filter((section) => section.id !== 'website-home' && section.id !== 'service-launch')
+
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="mb-10"
-      >
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-dusty-rose to-terracotta flex items-center justify-center shadow-lg">
-            <Sparkles className="w-7 h-7 text-cream" />
-          </div>
-          <div>
-            <h1 className="h2 text-dune">Landing Page Editor</h1>
-            <p className="text-dune/60">Select a section to customize your website</p>
-          </div>
+    <div className="space-y-8">
+      <header className="grid gap-6 border-b border-black/10 pb-7 lg:grid-cols-[1fr_22rem] lg:items-end">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Publishing workspace</p>
+          <h1 className="mt-2 max-w-3xl font-serif text-4xl leading-tight text-[#292a27]">Keep every public promise in one coherent story.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-black/60">Each editor below names its source of truth. Vagaro owns booking facts; LashPop owns how those facts are explained and presented.</p>
         </div>
-      </motion.div>
+        <div className="flex gap-2 lg:justify-end">
+          <a href="/" target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">
+            View live site <ExternalLink className="size-4" />
+          </a>
+        </div>
+      </header>
 
-      {/* Section Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {sections.map((section, index) => (
-          <motion.div
-            key={section.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <Link href={`/admin/website/${section.id}`}>
-              <div 
-                className={`group relative h-full p-6 rounded-3xl bg-gradient-to-br ${colorMap[section.color]} border backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}
-              >
-                {/* Icon */}
-                <div className={`w-12 h-12 rounded-2xl bg-cream/80 flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform`}>
-                  <section.icon className={`w-6 h-6 ${iconColorMap[section.color]}`} />
+      <section className="rounded-2xl border border-[#c96f50]/25 bg-[#f4dfd5] p-5 sm:p-6">
+        <div className="grid gap-5 md:grid-cols-[auto_1fr_auto] md:items-center">
+          <span className="flex size-12 items-center justify-center rounded-xl bg-[#292a27] text-white"><Workflow className="size-5" /></span>
+          <div>
+            <h2 className="font-serif text-2xl">Launching or changing a service?</h2>
+            <p className="mt-1 text-sm leading-6 text-black/60">Use the guided workflow to verify Vagaro sync, booking order, homepage copy, stylist eligibility, imagery, and public presentation together.</p>
+          </div>
+          <Link href="/admin/workflows/service-launch" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">
+            Open workflow <ArrowRight className="size-4" />
+          </Link>
+        </div>
+      </section>
+
+      <section aria-labelledby="ownership-heading">
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <h2 id="ownership-heading" className="font-serif text-2xl">Publishing ownership</h2>
+            <p className="mt-1 text-sm text-black/55">Know what can safely be edited here and what will sync back in.</p>
+          </div>
+          <CheckCircle2 className="hidden size-5 text-[#5f8174] sm:block" />
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {editors.map((section) => {
+            const Icon = section.icon
+            return (
+              <Link key={section.id} href={section.href} className="group flex min-h-44 flex-col rounded-xl border border-black/10 bg-white p-5 hover:border-[#c96f50]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">
+                <div className="flex items-start justify-between gap-4">
+                  <span className="flex size-10 items-center justify-center rounded-lg bg-black/[0.04] text-black/65"><Icon className="size-4" /></span>
+                  <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${OWNER_STYLE[section.owner]}`}>{section.owner}</span>
                 </div>
-
-                {/* Content */}
-                <h2 className="font-serif text-lg text-dune font-medium mb-2">
-                  {section.label}
-                </h2>
-                <p className="text-sm text-dune/60 mb-4 leading-relaxed">
-                  {section.description}
-                </p>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-dune/40 uppercase tracking-wider font-medium">
-                    {section.stats}
-                  </span>
-                  <div className="w-8 h-8 rounded-full bg-cream/50 flex items-center justify-center group-hover:bg-cream transition-colors">
-                    <ArrowRight className="w-4 h-4 text-dune/60 group-hover:text-dune group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Quick Tips */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-        className="mt-10 p-6 bg-cream/60 backdrop-blur-sm rounded-3xl border border-sage/10"
-      >
-        <h3 className="font-serif text-lg text-dune mb-3">Quick Tips</h3>
-        <ul className="space-y-2 text-sm text-dune/70">
-          <li className="flex items-start gap-2">
-            <span className="text-golden">•</span>
-            <span>Hero images are managed through the <strong>DAM</strong> - tag them with &quot;Website: Hero&quot; to make available</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-ocean-mist">•</span>
-            <span><strong>Team visibility</strong> changes take effect immediately - toggle the eye icon to show/hide members</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-dusty-rose">•</span>
-            <span><strong>Review order</strong> can be customized - drag to reorder featured reviews on the homepage</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-terracotta">•</span>
-            <span>Instagram posts sync automatically from your connected account via the DAM</span>
-          </li>
-        </ul>
-      </motion.div>
+                <h3 className="mt-5 text-sm font-semibold">{section.label}</h3>
+                <p className="mt-1 flex-1 text-xs leading-5 text-black/55">{OWNER_COPY[section.owner]}</p>
+                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#9f4c33]">Open editor <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+              </Link>
+            )
+          })}
+        </div>
+      </section>
     </div>
   )
 }
-

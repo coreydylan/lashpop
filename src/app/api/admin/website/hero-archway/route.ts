@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { eq } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
+import { requireAdminApi } from '@/lib/admin/auth'
+import { writeWebsiteSetting } from '@/lib/admin/settings-writer'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,10 +44,15 @@ const defaultSettings: HeroArchwayConfig = {
 
 // GET - Fetch hero archway settings
 export async function GET() {
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+
   try {
     const db = getDb()
 
     let settings: HeroArchwayConfig = { ...defaultSettings }
+    let version = 0
+    let sourceOwner = 'admin'
 
     try {
       const [setting] = await db
@@ -63,11 +69,13 @@ export async function GET() {
           updatedAt: config.updatedAt
         }
       }
+      version = setting?.version ?? 0
+      sourceOwner = setting?.sourceOwner ?? 'admin'
     } catch {
       // Table might not exist yet, return defaults
     }
 
-    return NextResponse.json({ settings })
+    return NextResponse.json({ settings, version, sourceOwner })
   } catch (error) {
     console.error('Error fetching hero archway settings:', error)
     return NextResponse.json(
@@ -80,9 +88,11 @@ export async function GET() {
 // PUT - Update hero archway settings
 export async function PUT(request: NextRequest) {
   try {
-    const db = getDb()
     const body = await request.json()
-    const { settings } = body as { settings: HeroArchwayConfig }
+    const { settings, baseVersion } = body as {
+      settings: HeroArchwayConfig
+      baseVersion: number
+    }
 
     if (!settings || typeof settings !== 'object') {
       return NextResponse.json(
@@ -112,35 +122,23 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date().toISOString()
     }
 
-    try {
-      const [existing] = await db
-        .select()
-        .from(websiteSettings)
-        .where(eq(websiteSettings.section, HERO_ARCHWAY_SECTION))
-        .limit(1)
+    const result = await writeWebsiteSetting({
+      section: HERO_ARCHWAY_SECTION,
+      config,
+      baseVersion,
+      action: 'hero.archway.update',
+    })
 
-      if (existing) {
-        await db
-          .update(websiteSettings)
-          .set({ config: config as unknown as Record<string, unknown>, updatedAt: new Date() })
-          .where(eq(websiteSettings.section, HERO_ARCHWAY_SECTION))
-      } else {
-        await db
-          .insert(websiteSettings)
-          .values({ section: HERO_ARCHWAY_SECTION, config: config as unknown as Record<string, unknown> })
-      }
-    } catch (dbError) {
-      console.error('Could not persist to database:', dbError)
-      return NextResponse.json(
-        { error: 'Failed to save to database' },
-        { status: 500 }
-      )
+    if (!result.ok) {
+      return NextResponse.json(result, { status: result.status })
     }
 
-    // Revalidate the homepage so changes appear
-    revalidatePath('/')
-
-    return NextResponse.json({ success: true, settings: config })
+    return NextResponse.json({
+      success: true,
+      settings: config,
+      version: result.setting.version,
+      sourceOwner: result.setting.sourceOwner,
+    })
   } catch (error) {
     console.error('Error updating hero archway settings:', error)
     return NextResponse.json(

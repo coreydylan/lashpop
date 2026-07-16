@@ -40,44 +40,42 @@ export default async function AuditLogPage() {
     .limit(200)
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sage/30 to-sage/10 flex items-center justify-center">
-          <ScrollText className="w-6 h-6 text-sage" />
-        </div>
-        <div>
-          <h1 className="h2 text-dune">Activity Log</h1>
-          <p className="text-sm text-dune/60">Recent admin changes (latest {entries.length})</p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <header className="border-b border-black/10 pb-6">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/45">Settings</p>
+        <h1 className="mt-2 flex items-center gap-3 font-serif text-3xl text-[#292a27] sm:text-4xl">
+          <ScrollText className="size-7 text-[#9f4c33]" aria-hidden="true" /> Activity history
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
+          The latest {entries.length} persistent admin and media changes, with the operator and affected record.
+        </p>
+      </header>
 
       {entries.length === 0 ? (
-        <div className="glass rounded-3xl border border-sage/20 p-12 text-center">
-          <ScrollText className="w-12 h-12 text-dune/20 mx-auto mb-4" />
-          <p className="text-dune/60">No activity recorded yet.</p>
+        <div className="rounded-xl border border-black/10 bg-white p-12 text-center">
+          <ScrollText className="mx-auto mb-4 size-10 text-black/20" />
+          <p className="text-sm text-black/50">No persistent changes have been recorded yet.</p>
         </div>
       ) : (
-        <div className="glass rounded-3xl border border-sage/20 divide-y divide-sage/10">
+        <ol className="overflow-hidden rounded-xl border border-black/10 bg-white divide-y divide-black/10">
           {entries.map((e) => (
-            <div key={e.id} className="px-5 py-3 flex items-start gap-3 hover:bg-cream/40 transition-colors">
-              <span className={`mt-0.5 px-2 py-0.5 text-[11px] rounded-full border shrink-0 ${SURFACE_STYLES[e.surface] ?? 'bg-sage/10 text-dune/60 border-sage/20'}`}>
+            <li key={e.id} className="grid gap-3 px-5 py-4 sm:grid-cols-[auto_1fr_auto] sm:items-start">
+              <span className={`mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${SURFACE_STYLES[e.surface] ?? 'bg-black/[0.03] text-black/55 border-black/10'}`}>
                 {e.surface}
               </span>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-dune">
-                  <span className="font-mono text-[13px] text-dune/80">{e.action}</span>
+              <div className="min-w-0">
+                <div className="text-sm text-[#292a27]">
+                  <span className="font-mono text-[13px] text-[#9f4c33]">{e.action}</span>
                   {e.targetType && (
-                    <span className="text-dune/50"> · {e.targetType}{e.targetId ? ` (${e.targetId})` : ''}</span>
+                    <span className="text-black/45"> · {e.targetType}{e.targetId ? ` (${e.targetId})` : ''}</span>
                   )}
                 </div>
-                <div className="text-xs text-dune/50">
-                  {e.actorName || e.actorPhone || 'system'} · {formatWhen(e.createdAt)}
-                  {e.notes ? ` · ${e.notes}` : ''}
-                </div>
+                <p className="mt-1 text-xs text-black/45">{e.actorName || e.actorPhone || 'system'}{e.notes ? ` · ${e.notes}` : ''}</p>
               </div>
-            </div>
+              <time className="text-xs text-black/35">{formatWhen(e.createdAt)}</time>
+            </li>
           ))}
-        </div>
+        </ol>
       )}
     </div>
   )

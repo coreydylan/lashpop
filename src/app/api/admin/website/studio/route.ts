@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
 import { eq } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { websiteSettings } from '@/db/schema/website_settings'
 import { requireAdminApi } from '@/lib/admin/auth'
-import { recordAdminAction } from '@/lib/admin/audit'
+import { writeWebsiteSetting } from '@/lib/admin/settings-writer'
 import {
-  DEFAULT_STUDIO_SETTINGS,
   STUDIO_SETTINGS_SECTION,
   mergeStudioSettings,
   type StudioSettings,
@@ -27,59 +25,41 @@ export async function GET() {
 
   const row = rows[0]
   const settings = mergeStudioSettings(row?.config as Partial<StudioSettings> | null)
-  return NextResponse.json({ settings })
+  return NextResponse.json({
+    settings,
+    version: row?.version ?? 0,
+    sourceOwner: row?.sourceOwner ?? 'admin',
+  })
 }
 
 export async function PUT(req: NextRequest) {
-  const auth = await requireAdminApi()
-  if (auth instanceof NextResponse) return auth
-
-  let body: Partial<StudioSettings>
+  let body: { settings?: Partial<StudioSettings>; baseVersion?: unknown }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
+  if (!body.settings || typeof body.settings !== 'object' || Array.isArray(body.settings)) {
+    return NextResponse.json({ error: 'settings is required' }, { status: 400 })
+  }
+  if (typeof body.baseVersion !== 'number') {
+    return NextResponse.json({ error: 'baseVersion is required' }, { status: 400 })
+  }
 
-  const merged = mergeStudioSettings(body)
+  const merged = mergeStudioSettings(body.settings)
   merged.updatedAt = new Date().toISOString()
 
-  const db = getDb()
-
-  // Read previous state for the audit diff before we overwrite.
-  const prevRows = await db
-    .select()
-    .from(websiteSettings)
-    .where(eq(websiteSettings.section, STUDIO_SETTINGS_SECTION))
-    .limit(1)
-  const prev = prevRows[0]?.config as Partial<StudioSettings> | null
-
-  // Upsert into website_settings.
-  await db
-    .insert(websiteSettings)
-    .values({
-      section: STUDIO_SETTINGS_SECTION,
-      config: merged as unknown as Record<string, unknown>,
-    })
-    .onConflictDoUpdate({
-      target: websiteSettings.section,
-      set: {
-        config: merged as unknown as Record<string, unknown>,
-        updatedAt: new Date(),
-      },
-    })
-
-  await recordAdminAction({
+  const result = await writeWebsiteSetting({
+    section: STUDIO_SETTINGS_SECTION,
+    config: merged,
+    baseVersion: body.baseVersion,
     action: 'studio.update',
-    targetType: 'website_settings',
-    targetId: STUDIO_SETTINGS_SECTION,
-    diff: { before: prev ?? DEFAULT_STUDIO_SETTINGS, after: merged },
   })
+  if (!result.ok) return NextResponse.json(result, { status: result.status })
 
-  // Revalidate every page that reads studio info — currently the
-  // homepage and each public route. Cheap with `dynamic = 'force-dynamic'`
-  // but explicit so future ISR cutover keeps working.
-  revalidatePath('/', 'layout')
-
-  return NextResponse.json({ settings: merged })
+  return NextResponse.json({
+    settings: result.setting.config as unknown as StudioSettings,
+    version: result.setting.version,
+    sourceOwner: result.setting.sourceOwner,
+  })
 }

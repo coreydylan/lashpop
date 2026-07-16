@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
+import NextLink from 'next/link'
 import {
   Layers,
   Image as ImageIcon,
@@ -20,8 +21,6 @@ import {
   Settings2,
   Search,
   Filter,
-  ToggleLeft,
-  ToggleRight,
   X,
   Save,
   ExternalLink,
@@ -75,7 +74,6 @@ interface Service {
   vagaroServiceCode: string | null
   keyImageAssetId: string | null
   keyImagePath: string | null
-  useDemoPhotos: boolean
   isActive: boolean
   vagaroServiceId: string | null
   lastSyncedAt: Date | null
@@ -129,7 +127,6 @@ export default function ServicesAdminPage() {
   const [expandedSubcategories, setExpandedSubcategories] = useState<Set<string>>(new Set())
   const [searchQuery, setSearchQuery] = useState('')
   const [showOnlyWithImages, setShowOnlyWithImages] = useState(false)
-  const [showOnlyWithDemoMode, setShowOnlyWithDemoMode] = useState(false)
 
   // Image picker state (for categories and subcategories - uses MiniDamExplorer)
   const [imagePicker, setImagePicker] = useState<{
@@ -305,12 +302,8 @@ export default function ServicesAdminPage() {
       filtered = filtered.filter(s => s.keyImageAssetId)
     }
 
-    if (showOnlyWithDemoMode) {
-      filtered = filtered.filter(s => s.useDemoPhotos)
-    }
-
     return filtered
-  }, [services, searchQuery, showOnlyWithImages, showOnlyWithDemoMode])
+  }, [services, searchQuery, showOnlyWithImages])
 
   // Group services by category and subcategory
   const servicesByCategory = useMemo(() => {
@@ -473,21 +466,6 @@ export default function ServicesAdminPage() {
       }
     } catch (error) {
       console.error('Error removing image:', error)
-    } finally {
-      setSaving(null)
-    }
-  }
-
-  // Toggle demo photos mode
-  const handleToggleDemoPhotos = async (serviceId: string, currentValue: boolean) => {
-    setSaving(serviceId)
-    try {
-      await updateServiceImage(serviceId, { useDemoPhotos: !currentValue })
-      setServices(prev => prev.map(s =>
-        s.id === serviceId ? { ...s, useDemoPhotos: !currentValue } : s
-      ))
-    } catch (error) {
-      console.error('Error toggling demo photos:', error)
     } finally {
       setSaving(null)
     }
@@ -934,18 +912,6 @@ export default function ServicesAdminPage() {
               <ImageIcon className="w-3 h-3" />
               Has Image
             </button>
-            <button
-              onClick={() => setShowOnlyWithDemoMode(!showOnlyWithDemoMode)}
-              className={clsx(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all",
-                showOnlyWithDemoMode
-                  ? "bg-golden/20 text-dune border border-golden/30"
-                  : "text-dune/60 hover:text-dune border border-sage/20"
-              )}
-            >
-              <Eye className="w-3 h-3" />
-              Demo Mode
-            </button>
           </div>
         </div>
       </motion.div>
@@ -1177,6 +1143,15 @@ export default function ServicesAdminPage() {
                                             </div>
                                           </div>
 
+                                          <NextLink
+                                            href={`/admin/website/services/${service.id}`}
+                                            className="p-1.5 rounded-md hover:bg-dusty-rose/10 text-dusty-rose/60 hover:text-dusty-rose transition-colors"
+                                            title={`Edit customer-facing copy for ${service.name}`}
+                                            aria-label={`Edit customer-facing copy for ${service.name}`}
+                                          >
+                                            <Edit3 className="w-3.5 h-3.5" />
+                                          </NextLink>
+
                                           {/* Change Subcategory Button */}
                                           <button
                                             onClick={(e) => {
@@ -1195,28 +1170,6 @@ export default function ServicesAdminPage() {
                                             <FolderOpen className="w-3.5 h-3.5" />
                                           </button>
 
-                                          {/* Demo Toggle */}
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation()
-                                              handleToggleDemoPhotos(service.id, service.useDemoPhotos)
-                                            }}
-                                            disabled={saving === service.id}
-                                            className={clsx(
-                                              "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] transition-all",
-                                              service.useDemoPhotos
-                                                ? "bg-golden/20 text-golden border border-golden/30"
-                                                : "bg-sage/10 text-sage/60 border border-sage/20 hover:border-sage/40"
-                                            )}
-                                            title={service.useDemoPhotos ? 'Demo mode ON' : 'Demo mode OFF'}
-                                          >
-                                            {service.useDemoPhotos ? (
-                                              <ToggleRight className="w-3 h-3" />
-                                            ) : (
-                                              <ToggleLeft className="w-3 h-3" />
-                                            )}
-                                            Demo
-                                          </button>
                                         </div>
                                       ))}
                                     </div>
@@ -1281,7 +1234,6 @@ export default function ServicesAdminPage() {
                   <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider hidden md:table-cell">Category</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider hidden lg:table-cell">Details</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider hidden lg:table-cell">Vagaro</th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider">Demo</th>
                 </tr>
               </thead>
               <tbody>
@@ -1297,7 +1249,9 @@ export default function ServicesAdminPage() {
                       {renderServiceImageCell(service)}
                     </td>
                     <td className="px-4 py-3">
-                      <p className="font-medium text-dune text-sm">{service.name}</p>
+                      <NextLink href={`/admin/website/services/${service.id}`} className="font-medium text-dune text-sm hover:text-terracotta">
+                        {service.name}
+                      </NextLink>
                       {service.subtitle && (
                         <p className="text-xs text-dune/60 truncate max-w-[200px]">{service.subtitle}</p>
                       )}
@@ -1322,30 +1276,6 @@ export default function ServicesAdminPage() {
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell">
                       {renderVagaroStatus(service)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => handleToggleDemoPhotos(service.id, service.useDemoPhotos)}
-                        disabled={saving === service.id}
-                        className={clsx(
-                          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                          service.useDemoPhotos
-                            ? "bg-golden/20 text-golden border border-golden/30"
-                            : "bg-sage/10 text-sage/60 border border-sage/20 hover:border-sage/40"
-                        )}
-                      >
-                        {service.useDemoPhotos ? (
-                          <>
-                            <ToggleRight className="w-4 h-4" />
-                            On
-                          </>
-                        ) : (
-                          <>
-                            <ToggleLeft className="w-4 h-4" />
-                            Off
-                          </>
-                        )}
-                      </button>
                     </td>
                   </tr>
                 ))}
@@ -1381,10 +1311,6 @@ export default function ServicesAdminPage() {
           <li className="flex items-start gap-2">
             <span className="text-sage">&#8226;</span>
             <span><strong>Image Priority:</strong> DAM override → Vagaro image → Subcategory fallback.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-golden">&#8226;</span>
-            <span><strong>Demo Mode</strong> shows curated demo photos instead of real service photos - great for new services or staging.</span>
           </li>
         </ul>
       </motion.div>

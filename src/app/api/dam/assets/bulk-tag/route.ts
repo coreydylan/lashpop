@@ -3,15 +3,26 @@ import { getDb } from "@/db"
 import { assetTags } from "@/db/schema/asset_tags"
 import { tags } from "@/db/schema/tags"
 import { tagCategories } from "@/db/schema/tag_categories"
-import { and, inArray, eq, sql } from "drizzle-orm"
+import { and, inArray, eq } from "drizzle-orm"
+import { requireAdminApi } from "@/lib/admin/auth"
+import { recordAdminAction } from "@/lib/admin/audit"
 
 // Update tags for multiple assets at once
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(["owner", "publisher"])
+  if (auth instanceof NextResponse) return auth
+
   try {
     const body = await request.json()
-    const { assetIds, tagIds, additive = false } = body // Arrays of asset IDs and tag IDs
+    const assetIds: string[] = Array.isArray(body.assetIds)
+      ? Array.from(new Set<string>(body.assetIds.filter((assetId: unknown): assetId is string => typeof assetId === "string" && assetId.length > 0)))
+      : []
+    const tagIds: string[] = Array.isArray(body.tagIds)
+      ? Array.from(new Set<string>(body.tagIds.filter((tagId: unknown): tagId is string => typeof tagId === "string" && tagId.length > 0)))
+      : []
+    const additive = body.additive === true
 
-    if (!assetIds || assetIds.length === 0) {
+    if (assetIds.length === 0) {
       return NextResponse.json(
         { error: "No assets specified" },
         { status: 400 }
@@ -19,6 +30,10 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDb()
+    const before = await db
+      .select({ assetId: assetTags.assetId, tagId: assetTags.tagId })
+      .from(assetTags)
+      .where(inArray(assetTags.assetId, assetIds))
 
     // If not additive, delete existing tags for these assets
     if (!additive) {
@@ -26,7 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle selection mode enforcement based on category settings
-    if (tagIds && tagIds.length > 0) {
+    if (tagIds.length > 0) {
       // Get tag metadata with category info
       const tagMeta = await db
         .select({
@@ -142,7 +157,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert new tags for all assets
-    if (tagIds && tagIds.length > 0) {
+    if (tagIds.length > 0) {
       const values = assetIds.flatMap((assetId: string) =>
         tagIds.map((tagId: string) => ({
           assetId,
@@ -153,6 +168,26 @@ export async function POST(request: NextRequest) {
       // Use onConflictDoNothing to prevent duplicate tag assignments when additive
       await db.insert(assetTags).values(values).onConflictDoNothing()
     }
+
+    const after = await db
+      .select({ assetId: assetTags.assetId, tagId: assetTags.tagId })
+      .from(assetTags)
+      .where(inArray(assetTags.assetId, assetIds))
+
+    await recordAdminAction({
+      action: additive ? "dam.asset.tags.bulk.add" : "dam.asset.tags.bulk.replace",
+      surface: "dam",
+      targetType: assetIds.length === 1 ? "dam_asset" : "dam_asset_batch",
+      targetId: assetIds.length === 1 ? assetIds[0] : undefined,
+      actorUserId: auth.userId,
+      diff: {
+        assetIds,
+        requestedTagIds: tagIds,
+        additive,
+        before,
+        after,
+      },
+    })
 
     return NextResponse.json({ success: true })
   } catch (error) {
