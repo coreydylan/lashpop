@@ -55,6 +55,7 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
     let lastScrollTop = 0
     let lastVisible = true
     let cancelled = false
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const handleScroll = () => {
       if (rafId) cancelAnimationFrame(rafId)
@@ -84,6 +85,8 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
         // transform write so we stop touching the element once the
         // animation is at its final scale (1.5) — no need to keep writing
         // the same value every scroll frame.
+        if (prefersReducedMotion) return
+
         const zoomProgress = Math.min(scrollTop / (viewportHeight * 0.6), 1)
         if (zoomProgress >= 1 && lastScrollTop > viewportHeight * 0.6) return
         const scale = 1 + (zoomProgress * 0.5)

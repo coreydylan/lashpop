@@ -38,6 +38,9 @@ const SITE_PATH_PREFIX = 'lashpop-images/'
 // External hosts we'll fetch and optimize. Vagaro serves staff photos as
 // multi-MB "/Original/" JPEGs from Rackspace CDN.
 const EXT_HOST_RE = /\.rackcdn\.com$/i
+// R2 contains operational objects in addition to public DAM media. Never let
+// an image URL become a generic object-download endpoint for private prefixes.
+const PRIVATE_KEY_PREFIXES = ['backups/', '.backups/']
 
 const OUTPUT = {
   avif: 'image/avif',
@@ -96,6 +99,13 @@ export default {
     const url = new URL(request.url)
     const key = decodeURIComponent(url.pathname.replace(/^\/+/, ''))
     if (!key) return new Response('lashpop-img ok', { status: 200 })
+    const normalizedKey = key.toLowerCase()
+    if (PRIVATE_KEY_PREFIXES.some((prefix) => normalizedKey.startsWith(prefix))) {
+      return new Response('Not found', {
+        status: 404,
+        headers: { 'cache-control': 'private, no-store' },
+      })
+    }
 
     const fmtOverride = (url.searchParams.get('f') || url.searchParams.get('format') || '').toLowerCase()
     const format = negotiateFormat(request, fmtOverride === 'auto' ? '' : fmtOverride)
@@ -128,6 +138,12 @@ export default {
 
     const src = await getSource(url, key, env)
     if (src instanceof Response) return src
+    if (!/^image\//i.test(src.contentType)) {
+      return new Response('Unsupported media type', {
+        status: 415,
+        headers: { 'cache-control': 'private, no-store' },
+      })
+    }
 
     // SVGs can't go through the Images binding — serve as-is.
     const isSvg = /image\/svg/.test(src.contentType) || /\.svg(\?|$)/i.test(key)

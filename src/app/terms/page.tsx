@@ -3,6 +3,13 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Terms of Service | LashPop Studios',
   description: 'LashPop Studios Terms of Service governing access to and use of our website and services.',
+  alternates: { canonical: 'https://lashpopstudios.com/terms' },
+  openGraph: {
+    title: 'Terms of Service | LashPop Studios',
+    description: 'Terms governing access to and use of the LashPop Studios website and services.',
+    url: 'https://lashpopstudios.com/terms',
+    type: 'website',
+  },
 }
 
 export default function TermsOfServicePage() {

@@ -155,6 +155,7 @@ export async function getAllServices() {
 
 // Get all services including inactive ones (for admin)
 export async function getAllServicesAdmin() {
+  await requireAdminRole('owner', 'publisher', 'viewer')
   const db = getDb()
 
   // Create aliases for assets table to join
@@ -642,6 +643,7 @@ export async function updateServiceCategoryContent(
 
 // Get all service categories for admin (including inactive)
 export async function getAllServiceCategoriesAdmin() {
+  await requireAdminRole('owner', 'publisher', 'viewer')
   const db = getDb()
 
   const categories = await db
@@ -669,6 +671,7 @@ export async function getAllServiceCategoriesAdmin() {
 }
 
 export async function getVagaroTaxonomyAdmin() {
+  await requireAdminRole('owner', 'publisher', 'viewer')
   const db = getDb()
 
   const [rawCategories, websiteCategories] = await Promise.all([
@@ -758,6 +761,7 @@ export async function updateVagaroCategoryPresentation(
 }
 
 export async function getVagaroSyncRunsAdmin(limit = 10) {
+  await requireAdminRole('owner', 'publisher', 'viewer')
   const db = getDb()
   return db
     .select()

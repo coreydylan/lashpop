@@ -11,6 +11,7 @@ import {
 import { eq, desc, asc, and } from 'drizzle-orm'
 import { cookies } from 'next/headers'
 import { randomBytes } from 'crypto'
+import { requireAdmin } from '@/lib/admin/auth'
 import type {
   PunchlistUser,
   PunchlistItem,
@@ -48,6 +49,7 @@ export interface PunchlistActivityWithUser extends PunchlistActivityEntry {
  * Get user by phone number (for login)
  */
 export async function getPunchlistUserByPhone(phoneNumber: string): Promise<PunchlistUser | null> {
+  if (PUNCHLIST_WRITES_RETIRED) return null
   try {
     const db = getDb()
     const users = await db
@@ -159,6 +161,7 @@ export async function logoutPunchlist(): Promise<void> {
  */
 export async function getAllPunchlistUsers(): Promise<PunchlistUser[]> {
   try {
+    await requireAdmin()
     const db = getDb()
     return await db.select().from(punchlistUsers).orderBy(asc(punchlistUsers.name))
   } catch (error) {
@@ -199,6 +202,7 @@ export async function getPunchlistItems(
   statusFilter?: PunchlistStatus
 ): Promise<PunchlistItemWithRelations[]> {
   try {
+    await requireAdmin()
     const db = getDb()
     // Get all users for mapping
     const users = await db.select().from(punchlistUsers)
@@ -240,6 +244,7 @@ export async function getPunchlistItems(
  */
 export async function getPunchlistItem(itemId: string): Promise<PunchlistItemWithRelations | null> {
   try {
+    await requireAdmin()
     const db = getDb()
     const items = await db
       .select()
@@ -437,6 +442,7 @@ export async function deletePunchlistItem(itemId: string): Promise<boolean> {
  */
 export async function getPunchlistComments(itemId: string): Promise<PunchlistCommentWithUser[]> {
   try {
+    await requireAdmin()
     const db = getDb()
     const users = await db.select().from(punchlistUsers)
     const userMap = new Map(users.map(u => [u.id, u]))
@@ -509,6 +515,7 @@ export async function addPunchlistComment(
  */
 export async function getPunchlistActivity(itemId: string): Promise<PunchlistActivityWithUser[]> {
   try {
+    await requireAdmin()
     const db = getDb()
     const users = await db.select().from(punchlistUsers)
     const userMap = new Map(users.map(u => [u.id, u]))
@@ -545,6 +552,7 @@ export async function getPunchlistStats(): Promise<{
   closed: number
 }> {
   try {
+    await requireAdmin()
     const db = getDb()
     const items = await db.select().from(punchlistItems)
 

@@ -12,15 +12,24 @@ import { user as userSchema } from '@/db/schema/auth_user'
 import { session as sessionSchema } from '@/db/schema/auth_session'
 import { eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
-import { createProfile, matchAndLinkVagaroCustomer } from '@/actions/profiles'
+import { consumeRateLimit, requestIp } from '@/lib/request-rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
-    const { phoneNumber, otp } = await req.json()
+    const body: unknown = await req.json().catch(() => null)
+    const phoneNumber = body && typeof body === 'object' && 'phoneNumber' in body
+      ? (body as { phoneNumber?: unknown }).phoneNumber
+      : null
+    const otp = body && typeof body === 'object' && 'otp' in body
+      ? (body as { otp?: unknown }).otp
+      : null
 
-    if (!phoneNumber || !otp) {
+    if (
+      typeof phoneNumber !== 'string' || phoneNumber.length > 32 ||
+      typeof otp !== 'string' || !/^\d{4,10}$/.test(otp)
+    ) {
       return NextResponse.json(
-        { error: 'Phone number and OTP are required' },
+        { error: 'A valid phone number and verification code are required' },
         { status: 400 }
       )
     }
@@ -28,9 +37,49 @@ export async function POST(req: NextRequest) {
     // Convert to E.164 format
     const formattedPhone = toE164(phoneNumber)
 
-    // Verify OTP via Twilio Verify
-    const isValid = await verifyOTPCode(formattedPhone, otp)
+    const [ipLimit, phoneLimit] = await Promise.all([
+      consumeRateLimit({
+        scope: 'otp-verify-ip',
+        identity: requestIp(req.headers),
+        limit: 15,
+        windowMs: 15 * 60 * 1_000,
+      }),
+      consumeRateLimit({
+        scope: 'otp-verify-phone',
+        identity: formattedPhone,
+        limit: 8,
+        windowMs: 15 * 60 * 1_000,
+      }),
+    ])
+    const blocked = !ipLimit.allowed ? ipLimit : !phoneLimit.allowed ? phoneLimit : null
+    if (blocked) {
+      return NextResponse.json(
+        { error: 'Too many verification attempts. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Cache-Control': 'no-store',
+            'Retry-After': String(blocked.retryAfterSeconds),
+          },
+        }
+      )
+    }
 
+    const db = getDb()
+    const [user] = await db
+      .select()
+      .from(userSchema)
+      .where(eq(userSchema.phoneNumber, formattedPhone))
+      .limit(1)
+    if (!user || (!user.adminRole && !user.damAccess)) {
+      return NextResponse.json(
+        { error: 'Invalid verification code' },
+        { status: 400 }
+      )
+    }
+
+    // Verify OTP only after confirming this is an existing admin account.
+    const isValid = await verifyOTPCode(formattedPhone, otp)
     if (!isValid) {
       return NextResponse.json(
         { error: 'Invalid verification code' },
@@ -38,48 +87,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const db = getDb()
-
-    // Find or create user
-    let [user] = await db
-      .select()
-      .from(userSchema)
-      .where(eq(userSchema.phoneNumber, formattedPhone))
-      .limit(1)
-
-    if (!user) {
-      // Create new user
-      const [newUser] = await db
-        .insert(userSchema)
-        .values({
-          id: nanoid(),
-          phoneNumber: formattedPhone,
-          phoneNumberVerified: true,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        })
-        .returning()
-
-      user = newUser
-
-      // Create profile and try Vagaro matching
-      try {
-        await createProfile(user.id)
-        await matchAndLinkVagaroCustomer(user.id)
-      } catch (error) {
-        console.error('Post-signup flow error:', error)
-        // Don't fail auth if profile creation fails
-      }
-    } else {
-      // Update phone verified status
-      await db
-        .update(userSchema)
-        .set({
-          phoneNumberVerified: true,
-          updatedAt: new Date()
-        })
-        .where(eq(userSchema.id, user.id))
-    }
+    await db
+      .update(userSchema)
+      .set({
+        phoneNumberVerified: true,
+        updatedAt: new Date()
+      })
+      .where(eq(userSchema.id, user.id))
 
     // Create session
     const sessionToken = nanoid(32)
@@ -115,10 +129,10 @@ export async function POST(req: NextRequest) {
     })
 
     return response
-  } catch (error: any) {
-    console.error('Verify OTP error:', error)
+  } catch (error: unknown) {
+    console.error('Verify OTP failed', error instanceof Error ? error.name : 'UnknownError')
     return NextResponse.json(
-      { error: error.message || 'Failed to verify code' },
+      { error: 'Failed to verify code. Please try again.' },
       { status: 500 }
     )
   }

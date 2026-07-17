@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
-import { motion, useInView, useMotionValue, useTransform, animate } from 'framer-motion'
+import { motion, useInView, useMotionValue, useTransform, animate, useReducedMotion } from 'framer-motion'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { useEdgeHoverScroll } from '@/hooks/useEdgeHoverScroll'
 import { ChevronUp } from 'lucide-react'
@@ -14,16 +14,21 @@ function CountUp({ to, inView }: { to: number; inView: boolean }) {
   const mv = useMotionValue(0)
   const rounded = useTransform(mv, (latest) => Math.round(latest).toLocaleString())
   const [display, setDisplay] = useState('0')
+  const prefersReducedMotion = useReducedMotion()
 
   useEffect(() => {
     if (!inView) return
+    if (prefersReducedMotion) {
+      setDisplay(to.toLocaleString())
+      return
+    }
     const controls = animate(mv, to, { duration: 0.9, ease: [0.22, 1, 0.36, 1] })
     const unsubscribe = rounded.on('change', (v) => setDisplay(v))
     return () => {
       controls.stop()
       unsubscribe()
     }
-  }, [inView, to, mv, rounded])
+  }, [inView, prefersReducedMotion, to, mv, rounded])
 
   return <>{display}</>
 }
@@ -230,7 +235,7 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: '#cc947f' }}
+            style={{ color: 'rgb(var(--terracotta-ink))' }}
           >
             What People Are Saying
           </h2>
@@ -349,12 +354,12 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
                               {review.reviewerName}
                             </h3>
                             {review.stylistName && (
-                              <p className="text-xs text-soft-terracotta font-sans truncate">
+                              <p className="text-xs text-[rgb(var(--terracotta-ink))] font-sans truncate">
                                 with {review.stylistName}
                               </p>
                             )}
                             {review.reviewDate && (
-                              <p className="text-xs text-dune/50 font-sans">
+                              <p className="text-xs text-[#6f6254] font-sans">
                                 {new Date(review.reviewDate).toLocaleDateString('en-US', {
                                   month: 'long',
                                   year: 'numeric'

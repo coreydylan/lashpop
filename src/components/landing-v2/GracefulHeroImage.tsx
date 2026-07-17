@@ -63,9 +63,7 @@ export function GracefulHeroImage({
         src={src}
         alt={alt}
         fill
-        className={`${objectFit === 'contain' ? 'object-contain' : 'object-cover'} transition-opacity duration-700 ease-out ${
-          status === 'loaded' ? 'opacity-100' : 'opacity-0'
-        } ${className}`}
+        className={`${objectFit === 'contain' ? 'object-contain' : 'object-cover'} ${className}`}
         style={{ objectPosition }}
         sizes={sizes}
         priority={priority}

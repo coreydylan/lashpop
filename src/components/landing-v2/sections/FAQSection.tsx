@@ -47,7 +47,7 @@ function enhanceTabularLists(root: HTMLElement) {
         <div style="display:flex;align-items:baseline;gap:0.5rem;">
           <span style="font-weight:500;color:#2f2a26;">${escapeHtml(row.label)}</span>
           <span aria-hidden="true" style="flex:1;align-self:flex-end;height:4px;margin-bottom:0.45em;background-image:radial-gradient(circle, rgba(204,148,127,0.4) 1px, transparent 1.5px);background-size:7px 4px;background-repeat:repeat-x;"></span>
-          <span style="font-weight:500;color:#cc947f;font-variant-numeric:tabular-nums;white-space:nowrap;">${escapeHtml(row.value)}</span>
+          <span style="font-weight:500;color:#a24730;font-variant-numeric:tabular-nums;white-space:nowrap;">${escapeHtml(row.value)}</span>
         </div>`,
       )
       .join('')
@@ -243,7 +243,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: '#cc947f' }}
+            style={{ color: 'rgb(var(--terracotta-ink))' }}
           >
             FAQ
           </h2>
@@ -285,7 +285,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                       onClick={() => handleCategoryChange(category.id)}
                       aria-label={`Filter by ${category.label}`}
                       aria-pressed={isActive}
-                      className="relative group focus:outline-none focus-visible:outline-none"
+                      className="relative group rounded-full"
                     >
                       {/* Inactive base layer (always present so unselected chips have hover bg) */}
                       <div className="absolute inset-0 rounded-full bg-white/50 group-hover:bg-white/80 transition-colors" />
@@ -295,7 +295,7 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
                         <motion.div
                           layoutId="activeFaqChip"
                           className="absolute inset-0 rounded-full shadow-md"
-                          style={{ backgroundColor: '#d3a392' }}
+                          style={{ backgroundColor: 'rgb(var(--terracotta-ink))' }}
                           transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                         />
                       )}
@@ -349,27 +349,27 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           <div className="flex flex-wrap justify-center gap-3">
             <a
               href="tel:+17602120448"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:-translate-y-0.5 border border-dusty-rose/20 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:-translate-y-0.5 border border-dusty-rose/20 transition-[background-color,transform] duration-200"
             >
-              <svg className="w-4 h-4" style={{ color: '#d3a392' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" style={{ color: 'rgb(var(--terracotta-ink))' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
               <span className="font-sans font-medium text-sm text-charcoal">Call Us</span>
             </a>
             <a
               href="sms:+17602120448"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:-translate-y-0.5 border border-dusty-rose/20 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:-translate-y-0.5 border border-dusty-rose/20 transition-[background-color,transform] duration-200"
             >
-              <svg className="w-4 h-4" style={{ color: '#d3a392' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" style={{ color: 'rgb(var(--terracotta-ink))' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               <span className="font-sans font-medium text-sm text-charcoal">Text Us</span>
             </a>
             <a
               href="mailto:lashpopstudios@gmail.com"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:-translate-y-0.5 border border-dusty-rose/20 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/50 backdrop-blur-sm hover:bg-white/80 hover:-translate-y-0.5 border border-dusty-rose/20 transition-[background-color,transform] duration-200"
             >
-              <svg className="w-4 h-4" style={{ color: '#d3a392' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" style={{ color: 'rgb(var(--terracotta-ink))' }} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <span className="font-sans font-medium text-sm text-charcoal">Email Us</span>
@@ -402,7 +402,7 @@ function FAQCard({ faq, isExpanded, isDimmed, showCategory, onToggle }: FAQCardP
   return (
     <div
       id={faq.id ? `faq-card-${faq.id}` : undefined}
-      className={`bg-white rounded-xl md:rounded-2xl overflow-hidden border border-dusty-rose/20 transition-all duration-300 ease-out ${
+      className={`bg-white rounded-xl md:rounded-2xl overflow-hidden border border-dusty-rose/20 transition-[box-shadow,opacity,transform] duration-300 ease-out ${
         isExpanded ? 'shadow-lg' : 'shadow-sm hover:shadow-md'
       } ${isDimmed ? 'opacity-60' : 'opacity-100'} ${!isExpanded && !isDimmed ? 'hover:-translate-y-0.5' : ''}`}
     >
@@ -415,19 +415,19 @@ function FAQCard({ faq, isExpanded, isDimmed, showCategory, onToggle }: FAQCardP
           {showCategory && (
             <span
               className="text-[10px] md:text-xs font-sans font-medium uppercase tracking-wider"
-              style={{ color: '#d3a392' }}
+              style={{ color: 'rgb(var(--terracotta-ink))' }}
             >
               {faq.category}
             </span>
           )}
-          <h3 className="font-sans text-sm md:text-base font-semibold text-charcoal pr-6 md:pr-8 group-hover:[color:#d3a392]">
+          <h3 className="font-sans text-sm md:text-base font-semibold text-charcoal pr-6 md:pr-8 group-hover:text-[rgb(var(--terracotta-ink))]">
             {faq.question}
           </h3>
         </div>
         <motion.div
           animate={{ rotate: isExpanded ? 180 : 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-          className="shrink-0 ml-3 md:ml-4 rounded-full p-1 md:p-1.5 transition-colors [color:#d3a392] [background-color:rgba(211,163,146,0.1)] group-hover:[background-color:#d3a392] group-hover:text-white"
+          className="shrink-0 ml-3 md:ml-4 rounded-full p-1 md:p-1.5 transition-colors text-[rgb(var(--terracotta-ink))] [background-color:rgba(162,71,48,0.1)] group-hover:bg-[rgb(var(--terracotta-ink))] group-hover:text-white"
         >
           <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

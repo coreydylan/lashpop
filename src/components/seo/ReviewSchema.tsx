@@ -11,6 +11,8 @@
  * with grounded citations.
  */
 
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
+
 interface ReviewSchemaProps {
   siteSettings: {
     businessName: string
@@ -96,7 +98,7 @@ export function ReviewSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(graph) }}
     />
   )
 }

@@ -9,9 +9,6 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { getDb } from '@/db'
 
-// Lazy-initialized auth instance
-let _auth: ReturnType<typeof betterAuth> | null = null
-
 function createAuth() {
   return betterAuth({
     database: drizzleAdapter(getDb(), {
@@ -46,8 +43,13 @@ function createAuth() {
   })
 }
 
+type AuthInstance = ReturnType<typeof createAuth>
+
+// Lazy-initialized auth instance
+let _auth: AuthInstance | null = null
+
 // Export auth getter function for direct use
-export function getAuth(): ReturnType<typeof betterAuth> {
+export function getAuth(): AuthInstance {
   if (!_auth) {
     _auth = createAuth()
   }
@@ -55,10 +57,10 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 }
 
 // Export auth as a getter that lazily initializes (for backwards compatibility)
-export const auth = new Proxy({} as ReturnType<typeof betterAuth>, {
+export const auth = new Proxy({} as AuthInstance, {
   get(_target, prop) {
     const instance = getAuth()
-    const value = (instance as any)[prop]
+    const value = Reflect.get(instance as object, prop)
     // Bind functions to the instance to preserve 'this' context
     if (typeof value === 'function') {
       return value.bind(instance)
@@ -68,4 +70,4 @@ export const auth = new Proxy({} as ReturnType<typeof betterAuth>, {
 })
 
 // Export types for use in API routes
-export type Auth = ReturnType<typeof createAuth>
+export type Auth = AuthInstance

@@ -8,6 +8,8 @@
 import { getDb } from '@/db'
 import { faqItems } from '@/db/schema/faqs'
 import { eq } from 'drizzle-orm'
+import { sanitizeFaqHtml } from '@/lib/sanitize-faq-html'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
 interface FAQ {
   id: string
@@ -49,7 +51,7 @@ export async function FAQSchema() {
       name: faq.question,
       acceptedAnswer: {
         '@type': 'Answer',
-        text: faq.answer
+        text: sanitizeFaqHtml(faq.answer)
       }
     }))
   }
@@ -57,7 +59,7 @@ export async function FAQSchema() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
     />
   )
 }

@@ -155,7 +155,7 @@ export async function matchAndLinkVagaroCustomer(userId: string) {
     ))
 
   if (matchingCustomers.length === 0) {
-    console.log('No matching Vagaro customer found for phone:', user.phoneNumber)
+    console.log('No matching Vagaro customer found')
     return null
   }
 
@@ -185,7 +185,7 @@ export async function matchAndLinkVagaroCustomer(userId: string) {
   }
 
   // Multiple matches - flag for manual review
-  console.log(`Multiple Vagaro customers found for phone ${user.phoneNumber}, manual review needed`)
+  console.log('Multiple Vagaro customers found; manual review needed')
 
   // TODO: Create manual review record
   // For now, just log it

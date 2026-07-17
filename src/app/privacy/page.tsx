@@ -3,6 +3,13 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Privacy Policy | LashPop Studios',
   description: 'LashPop Studios Privacy Policy - how we collect, use, share, and protect your information.',
+  alternates: { canonical: 'https://lashpopstudios.com/privacy' },
+  openGraph: {
+    title: 'Privacy Policy | LashPop Studios',
+    description: 'How LashPop Studios collects, uses, shares, and protects your information.',
+    url: 'https://lashpopstudios.com/privacy',
+    type: 'website',
+  },
 }
 
 export default function PrivacyPolicyPage() {

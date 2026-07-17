@@ -31,6 +31,7 @@ import { FooterV2 } from '@/components/landing-v2/sections/FooterV2';
 import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { ServiceBrowserProvider, ServiceBrowserModal, useServiceBrowser } from '@/components/service-browser';
+import { MotionConfig } from 'framer-motion';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -344,6 +345,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
   }, []);
 
   return (
+    <MotionConfig reducedMotion="user">
     <DevModeProvider>
     <BookingOrchestratorProvider>
         <ServiceBrowserProvider services={services} categories={serviceCategories}>
@@ -354,6 +356,12 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 paint ivory over the fixed arch background — that was part of the
                 hero flash on phones. */}
             <div className="min-h-screen relative theme-v2 md:bg-ivory">
+              <a
+                href="#main-content"
+                className="sr-only fixed left-4 top-4 z-[10000] rounded-full bg-ivory px-5 py-3 font-sans font-semibold text-[rgb(var(--terracotta-ink))] shadow-lg focus:not-sr-only"
+              >
+                Skip to Main Content
+              </a>
               {/* Inject mobile scroll styles */}
               <style dangerouslySetInnerHTML={{ __html: mobileScrollStyles }} />
 
@@ -399,7 +407,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 <PanelRenderer />
 
                 {/* Z-1: Page Surface - panels now overlay instead of pushing content */}
-                <main className={`page-content overflow-x-hidden ${isMobile ? 'mobile-scroll-container' : ''}`}>
+                <main id="main-content" tabIndex={-1} className={`page-content overflow-x-hidden ${isMobile ? 'mobile-scroll-container' : ''}`}>
 
                   {/*
                     HERO SECTION: Transparent on mobile to show MobileHeroBackground through.
@@ -490,5 +498,6 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
       </ServiceBrowserProvider>
     </BookingOrchestratorProvider>
     </DevModeProvider>
+    </MotionConfig>
   );
 }

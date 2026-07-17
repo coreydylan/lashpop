@@ -41,6 +41,29 @@ async function getAdminAccess(sessionToken: string): Promise<AdminAccess> {
 export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
   const { pathname } = req.nextUrl
 
+  // Retire unfinished customer-auth/booking utilities from the public launch.
+  if (pathname === "/login" || pathname.startsWith("/confirm/")) {
+    const url = req.nextUrl.clone()
+    url.pathname = "/"
+    url.search = ""
+    return NextResponse.redirect(url, 308)
+  }
+  if (pathname === "/seoguide") {
+    const url = req.nextUrl.clone()
+    url.pathname = "/admin/website/seo"
+    url.search = ""
+    return NextResponse.redirect(url, 308)
+  }
+  if (pathname === "/staffphoto") {
+    const url = req.nextUrl.clone()
+    url.pathname = "/admin/assets"
+    url.search = ""
+    return NextResponse.redirect(url, 308)
+  }
+  if (pathname === "/api/bookings/friend" || pathname.startsWith("/api/bookings/friend/")) {
+    return NextResponse.json({ error: "This booking flow has been retired" }, { status: 410 })
+  }
+
   // The standalone punchlist was replaced by the authenticated Today queue.
   // Keep the old URL deterministic while its legacy tables await archival.
   if (pathname === "/punchlist" || pathname.startsWith("/punchlist/")) {

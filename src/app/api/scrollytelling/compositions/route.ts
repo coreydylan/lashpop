@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, compositions, layers, tracks, clips, cues, cueActions, triggers, blocks } from '@/db';
 import { eq } from 'drizzle-orm';
+import { requireAdminApi } from '@/lib/admin/auth';
 
 // ============================================
 // API ENDPOINTS - Composition CRUD
@@ -9,6 +10,9 @@ import { eq } from 'drizzle-orm';
 // GET /api/scrollytelling/compositions - List all compositions
 // GET /api/scrollytelling/compositions?id=xxx - Get specific composition
 export async function GET(request: NextRequest) {
+  const auth = await requireAdminApi();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const db = getDb();
     const { searchParams } = new URL(request.url);
@@ -42,6 +46,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/scrollytelling/compositions - Create new composition
 export async function POST(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher']);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const db = getDb();
     const data = await request.json();
@@ -93,6 +100,9 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/scrollytelling/compositions - Update composition
 export async function PUT(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher']);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const db = getDb();
     const data = await request.json();
@@ -140,6 +150,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE /api/scrollytelling/compositions?id=xxx - Delete composition
 export async function DELETE(request: NextRequest) {
+  const auth = await requireAdminApi(['owner', 'publisher']);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const db = getDb();
     const { searchParams } = new URL(request.url);

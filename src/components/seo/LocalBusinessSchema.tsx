@@ -12,6 +12,7 @@ import { reviews } from '@/db/schema/reviews'
 import { teamMembers, type TeamMemberCredential } from '@/db/schema/team_members'
 import { sql, eq, and, isNotNull, gte } from 'drizzle-orm'
 import type { BusinessCredential } from '@/types/seo'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
 interface LocalBusinessSchemaProps {
   siteSettings: {
@@ -160,7 +161,7 @@ export async function LocalBusinessSchema({ siteSettings }: LocalBusinessSchemaP
         <script
           key={index}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
         />
       ))}
     </>

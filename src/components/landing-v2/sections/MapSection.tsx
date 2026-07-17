@@ -218,10 +218,10 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
 
           {/* Loading state */}
           {!mapLoaded && (
-            <div className="absolute inset-0 bg-warm-sand/20 flex items-center justify-center">
+            <div className="absolute inset-0 bg-warm-sand/20 flex items-center justify-center" role="status" aria-live="polite">
               <div className="text-center">
-                <div className="w-12 h-12 mx-auto border-2 border-dusty-rose border-t-transparent rounded-full" />
-                <p className="caption text-charcoal mt-4">Loading map...</p>
+                <div className="w-12 h-12 mx-auto border-2 border-dusty-rose border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+                <p className="caption text-charcoal mt-4">Loading Map…</p>
               </div>
             </div>
           )}
@@ -247,7 +247,7 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
                     backgroundRepeat: 'repeat-x',
                   }}
                 />
-                <span className="font-medium tabular-nums whitespace-nowrap" style={{ color: '#cc947f' }}>
+                <span className="font-medium tabular-nums whitespace-nowrap" style={{ color: 'rgb(var(--terracotta-ink))' }}>
                   8:00 AM – 7:30 PM
                 </span>
               </div>
@@ -309,7 +309,7 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
                     backgroundRepeat: 'repeat-x',
                   }}
                 />
-                <span className="font-medium text-sm tabular-nums whitespace-nowrap" style={{ color: '#cc947f' }}>
+                <span className="font-medium text-sm tabular-nums whitespace-nowrap" style={{ color: 'rgb(var(--terracotta-ink))' }}>
                   8:00 AM – 7:30 PM
                 </span>
               </div>

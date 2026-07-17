@@ -5,6 +5,7 @@ import { eq, asc } from 'drizzle-orm'
 import { requireAdminApi } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
 import { revalidatePath } from 'next/cache'
+import { sanitizeFaqHtml } from '@/lib/sanitize-faq-html'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +31,7 @@ export async function GET() {
 
     return NextResponse.json({
       categories,
-      items
+      items: items.map(item => ({ ...item, answer: sanitizeFaqHtml(item.answer) }))
     })
   } catch (error) {
     console.error('Error fetching FAQs:', error)
@@ -97,7 +98,7 @@ export async function POST(request: NextRequest) {
         .values({
           categoryId: data.categoryId,
           question: data.question,
-          answer: data.answer,
+          answer: sanitizeFaqHtml(String(data.answer || '')),
           displayOrder: data.displayOrder || 0,
           isActive: data.isActive ?? true,
           isFeatured: data.isFeatured ?? false
@@ -176,7 +177,7 @@ export async function PUT(request: NextRequest) {
       const itemChanges: Partial<typeof faqItems.$inferInsert> = { updatedAt: new Date() }
       if (typeof data?.categoryId === 'string') itemChanges.categoryId = data.categoryId
       if (typeof data?.question === 'string') itemChanges.question = data.question
-      if (typeof data?.answer === 'string') itemChanges.answer = data.answer
+      if (typeof data?.answer === 'string') itemChanges.answer = sanitizeFaqHtml(data.answer)
       if (Number.isInteger(data?.displayOrder)) itemChanges.displayOrder = data.displayOrder
       if (typeof data?.isActive === 'boolean') itemChanges.isActive = data.isActive
       if (typeof data?.isFeatured === 'boolean') itemChanges.isFeatured = data.isFeatured

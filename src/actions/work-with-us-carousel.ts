@@ -22,6 +22,7 @@ export type CarouselPhotoWithAsset = {
  * Get all carousel photos with asset data
  */
 export async function getAllCarouselPhotos(): Promise<CarouselPhotoWithAsset[]> {
+  await requireAdminRole('owner', 'publisher', 'viewer')
   const results = await db
     .select({
       id: workWithUsCarouselPhotos.id,

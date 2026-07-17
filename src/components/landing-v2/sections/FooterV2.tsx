@@ -198,7 +198,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-serif text-lg text-terracotta mb-4">Services</h4>
+            <h4 className="font-serif text-lg text-[rgb(var(--terracotta-ink))] mb-4">Services</h4>
             <ul className="space-y-1">
               {FOOTER_SERVICES.map((service) => (
                 <li key={service.label}>
@@ -214,7 +214,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
               <li className="pt-3">
                 <a
                   href="/work-with-us"
-                  className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium transition-colors duration-300 text-terracotta hover:bg-terracotta hover:text-cream"
+                  className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-medium transition-colors duration-300 text-[rgb(var(--terracotta-ink))] hover:bg-[rgb(var(--terracotta-ink))] hover:text-cream"
                   style={{
                     background: 'transparent',
                     border: '1px solid rgb(var(--terracotta))',
@@ -228,7 +228,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
 
           {/* Contact Info */}
           <div>
-            <h4 className="font-serif text-lg text-terracotta mb-4">Visit Us</h4>
+            <h4 className="font-serif text-lg text-[rgb(var(--terracotta-ink))] mb-4">Visit Us</h4>
             <address className="not-italic space-y-4">
               <a
                 href={directionsUrl}
@@ -280,30 +280,36 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
 
           {/* Newsletter */}
           <div>
-            <h4 className="font-serif text-lg text-terracotta mb-4">Stay Connected</h4>
+            <h4 className="font-serif text-lg text-[rgb(var(--terracotta-ink))] mb-4">Stay Connected</h4>
             <p className="caption text-charcoal mb-4">
               Subscribe for exclusive offers and beauty tips
             </p>
             <form onSubmit={handleSubscribe} className="space-y-3">
+              <label htmlFor="footer-newsletter-email" className="sr-only">Email Address</label>
               <input
+                id="footer-newsletter-email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Your email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                spellCheck={false}
                 className="w-full px-4 py-2 bg-white border border-sage/20 rounded-lg focus:outline-none focus:border-terracotta transition-colors"
                 required
               />
               <button
                 type="submit"
-                className="w-full inline-flex items-center justify-center px-6 py-3 rounded-full font-medium transition-colors duration-300 text-terracotta hover:bg-terracotta hover:text-cream disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center px-6 py-3 rounded-full font-medium transition-colors duration-300 text-[rgb(var(--terracotta-ink))] hover:bg-[rgb(var(--terracotta-ink))] hover:text-cream disabled:opacity-50"
                 style={{
                   background: 'transparent',
                   border: '1px solid rgb(var(--terracotta))',
                 }}
                 disabled={status === 'loading' || status === 'success'}
               >
-                {status === 'loading' ? 'Subscribing...' : status === 'success' ? message : status === 'error' ? message : 'Subscribe'}
+                {status === 'loading' ? 'Subscribing…' : status === 'success' ? message : status === 'error' ? message : 'Subscribe'}
               </button>
+              <p className="sr-only" aria-live="polite">{message}</p>
             </form>
           </div>
         </div>

@@ -42,6 +42,7 @@ export interface QuizPhotoWithAsset {
 
 // Get all quiz photos (for admin panel)
 export async function getAllQuizPhotos(): Promise<QuizPhotoWithAsset[]> {
+  await requireAdminRole("owner", "publisher", "viewer")
   const db = getDb()
 
   const results = await db

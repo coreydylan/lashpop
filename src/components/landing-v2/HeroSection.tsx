@@ -96,7 +96,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
             <div className="text-center">
               <h1
                 className="font-serif"
-                style={{ fontSize: '2.25rem', fontWeight: 500, letterSpacing: '0.05em', color: '#cc947f' }}
+                style={{ fontSize: '2.25rem', fontWeight: 500, letterSpacing: '0.05em', color: 'rgb(var(--terracotta-ink))' }}
               >
                 {content.heading}
               </h1>
@@ -107,10 +107,10 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
                     fontSize: '0.9rem',
                     letterSpacing: '0.03em',
                     fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                    color: '#b5563d',
+                    color: 'rgb(var(--terracotta-ink))',
                     borderWidth: '1px',
                     borderStyle: 'solid',
-                    borderColor: 'rgba(181, 86, 61, 0.8)',
+                    borderColor: 'rgba(162, 71, 48, 0.85)',
                   }}
                 >
                   {content.subheading}
@@ -147,7 +147,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
                 className="relative group w-full"
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
-                <div className="relative py-3.5 px-6 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]" style={{ backgroundColor: 'rgba(204, 148, 127, 0.9)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
+                <div className="relative py-3.5 px-6 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]" style={{ backgroundColor: 'rgba(162, 71, 48, 0.94)', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(162, 71, 48, 0.7)' }}>
                   <span className="font-sans font-medium text-base text-white">{content.primaryCta}</span>
                 </div>
               </button>
@@ -178,13 +178,12 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
               {totalReviews > 0 && (
                 <button
                   onClick={() => smoothScrollToElement('#reviews', 60, 800, 'center')}
-                  aria-label={`${totalReviews.toLocaleString()} reviews - scroll to reviews`}
                   className="relative group w-full"
                 >
                   <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                   <div className="relative py-3 px-5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98]">
                     <div className="flex items-center justify-center gap-2.5">
-                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10" style={{ color: '#cc947f' }}>
+                      <div className="flex items-center gap-1.5 pr-2.5 border-r border-dune/10" style={{ color: 'rgb(var(--terracotta-ink))' }}>
                         <GoogleLogoCompact monochrome />
                         <YelpLogoCompact monochrome />
                         <VagaroLogoCompact monochrome />
@@ -267,13 +266,12 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
                       window.scrollTo({ top: targetPosition, behavior: 'smooth' });
                     }
                   }}
-                  aria-label={`${totalReviews.toLocaleString()} reviews - scroll to reviews`}
                   className="relative group cursor-pointer text-left"
                 >
                   <div className="absolute inset-0 rounded-full bg-cream/30 blur-lg opacity-30" />
                   <div className="relative px-3 py-1.5 rounded-full bg-white/60 backdrop-blur-sm border border-white/80 shadow-sm">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1.5 pr-2 border-r" style={{ borderColor: 'rgba(204, 148, 127, 0.3)', color: '#cc947f' }}>
+                      <div className="flex items-center gap-1.5 pr-2 border-r" style={{ borderColor: 'rgba(162, 71, 48, 0.3)', color: 'rgb(var(--terracotta-ink))' }}>
                         <GoogleLogoCompact monochrome />
                         <YelpLogoCompact monochrome />
                         <VagaroLogoCompact monochrome />
@@ -289,7 +287,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
                             </svg>
                           ))}
                         </div>
-                        <span className="font-sans text-xs font-medium ml-0.5" style={{ color: '#cc947f' }}>{content.reviewsLabel}</span>
+                        <span className="font-sans text-xs font-medium ml-0.5" style={{ color: 'rgb(var(--terracotta-ink))' }}>{content.reviewsLabel}</span>
                       </div>
                     </div>
                   </div>
@@ -301,7 +299,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
             <div className="relative mt-4">
               <h1
                 className="font-serif relative z-10"
-                style={{ fontSize: 'clamp(2.15rem, 5.2vw, 3.9rem)', fontWeight: 500, letterSpacing: '0.05em', color: '#cc947f' }}
+                style={{ fontSize: 'clamp(2.15rem, 5.2vw, 3.9rem)', fontWeight: 500, letterSpacing: '0.05em', color: 'rgb(var(--terracotta-ink))' }}
               >
                 {content.heading}
               </h1>
@@ -312,10 +310,10 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
                     fontSize: 'clamp(1rem, 2vw, 1.5rem)',
                     letterSpacing: '0.03em',
                     fontFamily: 'var(--font-playfair), "Playfair Display", serif',
-                    color: '#b5563d',
+                    color: 'rgb(var(--terracotta-ink))',
                     borderWidth: '2px',
                     borderStyle: 'solid',
-                    borderColor: 'rgba(181, 86, 61, 0.8)',
+                    borderColor: 'rgba(162, 71, 48, 0.85)',
                   }}
                 >
                   {content.subheading}
@@ -330,7 +328,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
                 className="relative group"
               >
                 <div className="absolute inset-0 rounded-full blur-md opacity-50" style={{ backgroundColor: 'rgba(204, 148, 127, 0.3)' }} />
-                <div className="relative px-8 py-3.5 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] transition-[transform,opacity]" style={{ backgroundColor: '#cc947f', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.6)' }}>
+                <div className="relative px-8 py-3.5 rounded-full backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.3),0_1px_3px_rgba(0,0,0,0.1)] transition-[transform,opacity]" style={{ backgroundColor: 'rgb(var(--terracotta-ink))', borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(162, 71, 48, 0.7)' }}>
                   <span className="font-sans font-medium text-white">{content.primaryCta}</span>
                 </div>
               </button>

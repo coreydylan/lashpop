@@ -315,24 +315,15 @@ async function handleOptimize(req: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
-    if (req.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS_HEADERS })
-    }
     const url = new URL(req.url)
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
-      return json({ ok: true, service: 'lashpop-staffphoto-optimize' })
+      return json({ ok: false, service: 'lashpop-staffphoto-optimize', disabled: true }, 503)
     }
-    if (req.method !== 'POST') {
-      return json({ error: 'Method not allowed' }, 405)
-    }
-    try {
-      return await handleOptimize(req, env)
-    } catch (err) {
-      console.error('optimize error', err)
-      return json(
-        { error: err instanceof Error ? err.message : 'Optimization failed' },
-        500,
-      )
-    }
+    // This standalone utility is not part of the client launch. Keep it
+    // fail-closed until it is rebuilt behind authenticated admin infrastructure.
+    return new Response('Not found', {
+      status: 404,
+      headers: { 'Cache-Control': 'private, no-store' },
+    })
   },
 }

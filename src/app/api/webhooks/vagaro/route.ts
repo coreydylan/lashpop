@@ -1,13 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { syncService, syncTeamMember, syncAllServices, syncAllTeamMembers } from '@/lib/vagaro-sync'
-import {
-  syncAppointment,
-  syncCustomer,
-  syncBusinessLocation,
-  syncFormResponse,
-  syncTransaction
-} from '@/lib/vagaro-sync-all'
-import { autoLinkAppointmentByPhone } from '@/actions/appointments'
+import { syncBusinessLocation } from '@/lib/vagaro-sync-all'
+import { timingSafeEqual } from 'crypto'
+
+// Published by Vagaro for webhook delivery. Vercel overwrites forwarded IP
+// headers, so callers cannot spoof these values at the public function edge.
+const VAGARO_WEBHOOK_IPS = new Set([
+  '20.220.12.83',
+  '13.67.143.68',
+  '13.70.105.4',
+  '20.62.123.184',
+  '51.140.65.108',
+  '51.143.95.2',
+])
+
+function constantTimeMatch(actual: string, expected: string): boolean {
+  const actualBytes = Buffer.from(actual)
+  const expectedBytes = Buffer.from(expected)
+  return actualBytes.length === expectedBytes.length && timingSafeEqual(actualBytes, expectedBytes)
+}
+
+function isAuthorizedWebhook(request: NextRequest): boolean {
+  const verificationToken = process.env.VAGARO_WEBHOOK_SECRET?.trim()
+  const signature = request.headers.get('x-vagaro-signature')?.trim()
+
+  if (verificationToken) {
+    return Boolean(signature && constantTimeMatch(signature, verificationToken))
+  }
+
+  const forwardedFor = request.headers.get('x-vercel-forwarded-for')
+    || request.headers.get('x-forwarded-for')
+    || request.headers.get('x-real-ip')
+    || ''
+  const sourceIp = forwardedFor.split(',')[0]?.trim()
+  return VAGARO_WEBHOOK_IPS.has(sourceIp)
+}
 
 /**
  * Trigger a full service + team_members sync via the canonical CF Worker
@@ -39,39 +66,37 @@ async function triggerFullSync(reason: string): Promise<void> {
 /**
  * Vagaro Webhook Endpoint
  *
- * Receives ALL webhook events from Vagaro and syncs to local database mirror.
- * Subscribed to: Appointments, Customers, Employees, Business Locations, Form Responses, Transactions
+ * Receives Vagaro webhook events and syncs only the minimum fields used by the
+ * website. Intake-form answers and payment transactions remain in Vagaro.
  */
 export async function POST(request: NextRequest) {
+  if (!isAuthorizedWebhook(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
-    const body = await request.json()
-    const eventType = (body.type || body.eventType || '').toLowerCase()
-    const action = (body.action || '').toLowerCase()
-    const payload = body.payload || body
+    const body: unknown = await request.json()
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 })
+    }
+
+    const event = body as Record<string, unknown>
+    const eventType = String(event.type || event.eventType || '').toLowerCase()
+    const action = String(event.action || '').toLowerCase()
+    const payload: Record<string, unknown> = event.payload && typeof event.payload === 'object' && !Array.isArray(event.payload)
+      ? event.payload as Record<string, unknown>
+      : event
 
     console.log(`🎣 Vagaro Webhook: ${eventType} - ${action}`)
 
     // Route to appropriate sync function based on event type
     switch (eventType) {
       case 'appointment':
-        console.log('📅 Syncing appointment...')
-        await syncAppointment(payload)
-
-        // Auto-link appointment to LashPop user by phone number
-        if (payload.appointmentId) {
-          try {
-            console.log('🔗 Attempting to auto-link appointment to user...')
-            await autoLinkAppointmentByPhone(payload.appointmentId)
-          } catch (error) {
-            console.error('  ⚠️ Failed to auto-link appointment:', error)
-            // Continue even if auto-link fails
-          }
-        }
+        console.log('ℹ️ Appointment retained in Vagaro only')
         break
 
       case 'customer':
-        console.log('👤 Syncing customer...')
-        await syncCustomer(payload)
+        console.log('ℹ️ Customer retained in Vagaro only')
         break
 
       case 'employee':
@@ -92,19 +117,16 @@ export async function POST(request: NextRequest) {
 
       case 'formresponse':
       case 'form_response':
-        console.log('📋 Syncing form response...')
-        await syncFormResponse(payload)
+        console.log('ℹ️ Form response retained in Vagaro only')
         break
 
       case 'transaction':
-        console.log('💰 Syncing transaction...')
-        await syncTransaction(payload)
+        console.log('ℹ️ Transaction retained in Vagaro only')
         break
 
       default:
-        // Log unknown event types for future handling
+        // Keep unknown event logs metadata-only; payloads can contain client PII.
         console.log(`ℹ️ Unknown event type: ${eventType}`)
-        console.log('   Payload:', JSON.stringify(payload, null, 2))
     }
 
     // Return 200 to acknowledge receipt
@@ -117,14 +139,14 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Webhook error:', error)
-    // Still return 200 to prevent retries for non-recoverable errors
+    // Vagaro retries non-2xx responses with exponential backoff. Sync handlers
+    // are idempotent, so transient failures should be retried instead of lost.
     return NextResponse.json(
       {
-        received: true,
-        error: 'Processing failed but acknowledged',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        received: false,
+        error: 'Webhook processing failed'
       },
-      { status: 200 } // Return 200 to prevent Vagaro from retrying
+      { status: 500 }
     )
   }
 }

@@ -3,10 +3,11 @@ import { downloadImage, fetchRecentPosts } from './ig'
 interface Env {
   BUCKET: R2Bucket
   DB: D1Database
-  IG_SESSION_ID: string
-  IG_DS_USER_ID: string
-  IG_CSRF_TOKEN: string
+  IG_SESSION_ID?: string
+  IG_DS_USER_ID?: string
+  IG_CSRF_TOKEN?: string
   NEXT_PUBLIC_R2_BUCKET_URL: string
+  SYNC_SCHEDULED: string
   MANUAL_TRIGGER_SECRET?: string
 }
 
@@ -185,15 +186,23 @@ export default {
     const url = new URL(req.url)
 
     if (url.pathname === '/health') {
+      const missingSecrets = [
+        ['IG_SESSION_ID', env.IG_SESSION_ID],
+        ['IG_DS_USER_ID', env.IG_DS_USER_ID],
+        ['IG_CSRF_TOKEN', env.IG_CSRF_TOKEN],
+      ].filter(([, value]) => !value).map(([name]) => name)
+      const scheduleEnabled = env.SYNC_SCHEDULED === 'true'
+      const healthy = missingSecrets.length === 0
       return Response.json({
-        status: 'ok',
-        instagramSessionConfigured: Boolean(
-          env.IG_SESSION_ID && env.IG_DS_USER_ID && env.IG_CSRF_TOKEN,
-        ),
-      })
+        status: healthy ? 'ready' : 'configuration_required',
+        instagramSessionConfigured: healthy,
+        missingSecrets,
+        scheduleEnabled,
+        service: 'lashpop-instagram-sync',
+      }, { status: healthy ? 200 : 503 })
     }
 
-    if (url.pathname !== '/run') {
+    if (url.pathname !== '/run' || req.method !== 'POST') {
       return new Response('Not found', { status: 404 })
     }
 

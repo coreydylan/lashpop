@@ -35,63 +35,157 @@ const nextConfig = {
     ],
   },
   // Note: Body size limits are configured in vercel.json for Vercel deployments
-  // Configure API routes to handle large uploads
+  // Launch-safe browser headers. A blocking CSP is intentionally omitted until
+  // every third-party script, image, booking, and analytics origin is inventoried.
   async headers() {
     return [
       {
-        source: '/api/dam/:path*',
+        source: '/:path*',
         headers: [
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(self)',
+          },
+          {
+            // Do not include subdomains until every mail and vendor subdomain
+            // has been verified to support HTTPS.
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000',
+          },
         ],
       },
     ]
   },
-  // Redirects from old lashpopstudios.com site structure
+  // One-hop redirects from the legacy Squarespace information architecture.
+  // Keep this list explicit: these paths were crawled while Squarespace was
+  // still authoritative, and each destination is a canonical 200 page/section.
   async redirects() {
     return [
-      // Old homepage alternate URL
       {
         source: '/home',
         destination: '/',
         permanent: true,
       },
-      // Old about/team page → team section on homepage
       {
         source: '/about-us-1',
         destination: '/#team',
         permanent: true,
       },
-      // Old services page → services section on homepage
       {
-        source: '/services',
-        destination: '/#services',
+        source: '/about-us-lashpop-studios',
+        destination: '/#team',
         permanent: true,
       },
-      // Old booking/contact page → find-us/map section on homepage
+      {
+        source: '/about-us-home',
+        destination: '/#team',
+        permanent: true,
+      },
+      {
+        source: '/our-story',
+        destination: '/#team',
+        permanent: true,
+      },
+      {
+        source: '/meet-the-team',
+        destination: '/#team',
+        permanent: true,
+      },
+      {
+        source: '/join-us',
+        destination: '/work-with-us',
+        permanent: true,
+      },
+      {
+        source: '/about-us-1/join-us',
+        destination: '/work-with-us',
+        permanent: true,
+      },
+      {
+        source: '/about-us-1/:path*',
+        destination: '/#team',
+        permanent: true,
+      },
       {
         source: '/book-contact-1',
         destination: '/#find-us',
         permanent: true,
       },
-      // Old join the team section → new careers page
       {
-        source: '/about-us-1/:path*',
-        destination: '/work-with-us',
+        source: '/faq',
+        destination: '/#faq',
         permanent: true,
       },
-      // Cart page (no longer needed - external booking via Vagaro)
+      {
+        source: '/home-hero-image',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/services-offered',
+        destination: '/services',
+        permanent: true,
+      },
+      {
+        source: '/location-homepage',
+        destination: '/#find-us',
+        permanent: true,
+      },
+      {
+        source: '/refer-a-friend',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/referrals',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/email-list',
+        destination: '/',
+        permanent: true,
+      },
       {
         source: '/cart',
         destination: '/',
         permanent: true,
       },
-      // Search page
       {
         source: '/search',
         destination: '/',
+        permanent: true,
+      },
+      // These inactive taxonomy pages were also exposed by the bad staging
+      // sitemap. Route them to the closest live canonical content.
+      {
+        source: '/services/nails',
+        destination: '/services',
+        permanent: true,
+      },
+      {
+        source: '/services/lashpop-pro-training',
+        destination: '/work-with-us',
+        permanent: true,
+      },
+      // A prior staging sitemap accidentally published category-nested service
+      // URLs. Preserve any links already crawled and send them directly to the
+      // canonical one-segment service URL without a redirect chain.
+      {
+        source: '/services/:category/:service',
+        destination: '/services/:service',
         permanent: true,
       },
       // DAM was consolidated into the admin panel. Keep old /dam URLs working.

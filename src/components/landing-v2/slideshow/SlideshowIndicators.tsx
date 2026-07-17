@@ -31,28 +31,31 @@ export function SlideshowIndicators({
 
   if (style === 'dots') {
     return (
-      <div className={containerClass} style={{ zIndex: 10 }}>
+      <div className={containerClass} style={{ zIndex: 10 }} role="group" aria-label="Hero slideshow">
         {Array.from({ length: count }).map((_, index) => (
           <button
             key={index}
             onClick={() => onSelect(index)}
-            className="group relative p-1 min-h-0 min-w-0"
+            className="group relative flex h-11 w-11 items-center justify-center rounded-full"
             aria-label={`Go to slide ${index + 1}`}
+            aria-current={index === currentIndex ? 'true' : undefined}
           >
-            <div
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? 'bg-white scale-125'
-                  : 'bg-white/50 group-hover:bg-white/80'
-              }`}
-            />
-            {index === currentIndex && (
-              <motion.div
-                layoutId="indicator-ring"
-                className="absolute inset-0 rounded-full border border-white/80"
-                transition={{ duration: 0.2 }}
+            <span className="relative flex h-4 w-4 items-center justify-center">
+              <span
+                className={`h-2 w-2 rounded-full transition-[background-color,transform] duration-300 ${
+                  index === currentIndex
+                    ? 'bg-white scale-125'
+                    : 'bg-white/60 group-hover:bg-white/90'
+                }`}
               />
-            )}
+              {index === currentIndex && (
+                <motion.span
+                  layoutId="indicator-ring"
+                  className="absolute inset-0 rounded-full border border-white/90"
+                  transition={{ duration: 0.2 }}
+                />
+              )}
+            </span>
           </button>
         ))}
       </div>
@@ -61,16 +64,17 @@ export function SlideshowIndicators({
 
   if (style === 'lines') {
     return (
-      <div className={containerClass} style={{ zIndex: 10 }}>
+      <div className={containerClass} style={{ zIndex: 10 }} role="group" aria-label="Hero slideshow">
         {Array.from({ length: count }).map((_, index) => (
           <button
             key={index}
             onClick={() => onSelect(index)}
-            className="group relative min-h-0 min-w-0"
+            className="group relative flex h-11 w-11 items-center justify-center rounded-full"
             aria-label={`Go to slide ${index + 1}`}
+            aria-current={index === currentIndex ? 'true' : undefined}
           >
             <div
-              className={`h-1 rounded-full transition-all duration-300 ${
+              className={`h-1 rounded-full transition-[background-color,width] duration-300 ${
                 index === currentIndex
                   ? 'w-8 bg-white'
                   : 'w-4 bg-white/50 group-hover:bg-white/80 group-hover:w-6'
@@ -85,7 +89,7 @@ export function SlideshowIndicators({
   if (style === 'numbers') {
     return (
       <div className={containerClass} style={{ zIndex: 10 }}>
-        <div className="px-3 py-1.5 rounded-full bg-black/30 backdrop-blur-sm">
+        <div className="px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm" aria-label={`Slide ${currentIndex + 1} of ${count}`}>
           <span className="text-white text-sm font-medium">
             {currentIndex + 1} / {count}
           </span>

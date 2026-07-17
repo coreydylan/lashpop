@@ -3,6 +3,7 @@
 import { getDb } from '@/db'
 import { faqCategories, faqItems } from '@/db/schema/faqs'
 import { eq, asc, and } from 'drizzle-orm'
+import { sanitizeFaqHtml } from '@/lib/sanitize-faq-html'
 
 export interface FAQCategory {
   id: string
@@ -26,6 +27,10 @@ export interface FAQItem {
 export interface FAQWithCategory extends FAQItem {
   categoryName: string
   categoryDisplayName: string
+}
+
+function sanitizeFAQItem<T extends FAQItem>(item: T): T {
+  return { ...item, answer: sanitizeFaqHtml(item.answer) }
 }
 
 /**
@@ -59,7 +64,7 @@ export async function getFAQItems(): Promise<FAQItem[]> {
       .where(eq(faqItems.isActive, true))
       .orderBy(asc(faqItems.displayOrder))
 
-    return items
+    return items.map(sanitizeFAQItem)
   } catch (error) {
     console.error('Error fetching FAQ items:', error)
     return []
@@ -93,7 +98,9 @@ export async function getFAQsGroupedByCategory(): Promise<{
     // Group items by category
     const itemsByCategory: Record<string, FAQItem[]> = {}
     for (const category of categories) {
-      itemsByCategory[category.id] = items.filter(item => item.categoryId === category.id)
+      itemsByCategory[category.id] = items
+        .filter(item => item.categoryId === category.id)
+        .map(sanitizeFAQItem)
     }
 
     // Get featured items with category info, sorted by category displayOrder then item displayOrder
@@ -103,7 +110,7 @@ export async function getFAQsGroupedByCategory(): Promise<{
       .map(item => {
         const category = categories.find(c => c.id === item.categoryId)
         return {
-          ...item,
+          ...sanitizeFAQItem(item),
           categoryName: category?.name || '',
           categoryDisplayName: category?.displayName || ''
         }
@@ -159,7 +166,7 @@ export async function getFeaturedFAQs(): Promise<FAQWithCategory[]> {
       .map(item => {
         const category = categories.find(c => c.id === item.categoryId)
         return {
-          ...item,
+          ...sanitizeFAQItem(item),
           categoryName: category?.name || '',
           categoryDisplayName: category?.displayName || ''
         }
@@ -176,4 +183,3 @@ export async function getFeaturedFAQs(): Promise<FAQWithCategory[]> {
     return []
   }
 }
-

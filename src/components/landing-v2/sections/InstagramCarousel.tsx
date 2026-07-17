@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { useEdgeHoverScroll } from '@/hooks/useEdgeHoverScroll'
 import { SectionRule } from '../SectionRule'
@@ -49,6 +49,7 @@ interface GalleryItem {
 
 export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed = 20 }: InstagramCarouselProps) {
   const ref = useRef(null)
+  const prefersReducedMotion = useReducedMotion()
   // Index into the (un-duplicated) source list, or null when the lightbox is closed
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
@@ -56,7 +57,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
   // Map the admin's 10–40 scroll-speed value to an Embla auto-scroll speed
   // (~1.0–4.0 px/frame). Disable the plugin entirely when auto-scroll is off.
   const plugins = useMemo(() => {
-    if (!autoScroll) return []
+    if (!autoScroll || prefersReducedMotion) return []
     const emblaSpeed = Math.max(0.5, Math.min(4, scrollSpeed * 0.1))
     return [
       AutoScroll({
@@ -67,7 +68,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
         rootNode: (emblaRoot: HTMLElement) => emblaRoot.parentElement,
       }),
     ]
-  }, [autoScroll, scrollSpeed])
+  }, [autoScroll, prefersReducedMotion, scrollSpeed])
 
   // Initialize Embla with AutoScroll (wheel gestures handled by useCarouselWheelScroll)
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -88,12 +89,12 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
   const { edgeScrollRef } = useEdgeHoverScroll(emblaApi)
 
   // Use provided posts or fallback to gallery images
-  const rawItems: GalleryItem[] = posts.length > 0
+  const rawItems: GalleryItem[] = useMemo(() => posts.length > 0
     ? posts.map(p => ({ mediaUrl: p.mediaUrl, permalink: p.permalink, caption: p.caption }))
-    : galleryImages.map(url => ({ mediaUrl: url, permalink: null, caption: null }))
+    : galleryImages.map(url => ({ mediaUrl: url, permalink: null, caption: null })), [posts])
 
   // Triple the items to ensure absolutely seamless infinite scroll on large screens
-  const displayItems = [...rawItems, ...rawItems, ...rawItems]
+  const displayItems = useMemo(() => [...rawItems, ...rawItems, ...rawItems], [rawItems])
 
   // URL builder shared between the lightbox <img> and the post-load preloader
   // so prefetched bytes hit the same cache key the lightbox eventually
@@ -107,68 +108,29 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
     return src
   }, [])
 
-  // Warm the lightbox-sized variant of every gallery photo into the browser
-  // cache after the rest of the page has finished loading, so the first tap
-  // on a card opens instantly instead of waiting for a cold CF Image fetch.
-  // Waits on the window `load` event (so we don't fight first-paint or any
-  // priority hero/team images) and then drips one fetch per idle slot.
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (rawItems.length === 0) return
-
-    let cancelled = false
-    let i = 0
-
-    type IdleCb = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void
-    const idle: (cb: IdleCb, opts?: { timeout: number }) => number =
-      (window as { requestIdleCallback?: typeof idle }).requestIdleCallback ??
-      ((cb) => window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 16))
-
-    // STRICTLY serialized, low-priority prefetch: on a cold edge cache each
-    // lightbox variant is a ~1s worker transform, so parallel prefetches
-    // saturate the connection pool and visible images queue behind them.
-    // One request at a time, fetchPriority=low, next starts only after the
-    // previous finishes.
-    const prefetch = (idx: number, done: () => void) => {
-      if (cancelled || idx >= rawItems.length) return
-      const url = lightboxSrc(rawItems[idx].mediaUrl)
-      // new Image() triggers a real GET that lands in the browser cache.
-      // We don't keep the reference — once the response is cached, the
-      // lightbox <img> with the same src hits the cache instantly.
-      const img = new globalThis.Image()
-      img.decoding = 'async'
-      img.referrerPolicy = 'no-referrer'
-      ;(img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
-      img.onload = img.onerror = () => done()
-      img.src = url
-    }
-
-    const tick = () => {
-      if (cancelled || i >= rawItems.length) return
-      prefetch(i++, () => idle(tick, { timeout: 2000 }))
-    }
-
-    const start = () => {
-      if (cancelled) return
-      // 3s runway so visible images (which may also be cold) finish first.
-      window.setTimeout(() => idle(tick, { timeout: 2000 }), 3000)
-    }
-
-    if (document.readyState === 'complete') {
-      start()
-    } else {
-      window.addEventListener('load', start, { once: true })
-    }
-
-    return () => {
-      cancelled = true
-      window.removeEventListener('load', start)
-    }
-  }, [rawItems, lightboxSrc])
-
   const total = rawItems.length
   const isOpen = lightboxIndex !== null
   const activeItem = isOpen ? rawItems[lightboxIndex] : null
+
+  // Once the visitor opens the gallery, warm only the 2 neighboring images.
+  // This keeps next/previous feeling instant without spending mobile bandwidth
+  // on every full-size lightbox asset during the initial page load.
+  useEffect(() => {
+    if (lightboxIndex === null || total <= 1) return
+
+    const adjacentIndexes = new Set([
+      (lightboxIndex - 1 + total) % total,
+      (lightboxIndex + 1) % total,
+    ])
+
+    adjacentIndexes.forEach((index) => {
+      const image = new globalThis.Image()
+      image.decoding = 'async'
+      image.referrerPolicy = 'no-referrer'
+      ;(image as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
+      image.src = lightboxSrc(rawItems[index].mediaUrl)
+    })
+  }, [lightboxIndex, lightboxSrc, rawItems, total])
 
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
   const goPrev = useCallback(
@@ -204,7 +166,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: '#cc947f' }}
+            style={{ color: 'rgb(var(--terracotta-ink))' }}
           >
             Gallery
           </h2>
@@ -221,15 +183,19 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
             {/* Embla Container */}
             <div className="flex touch-pan-y gap-4 px-4">
               {displayItems.map((item, index) => (
-                <div
+                <button
+                  type="button"
                   key={`${index}-${item.mediaUrl}`}
-                  className="flex-[0_0_auto] w-80 h-80 min-w-0 cursor-pointer group relative"
+                  className="flex-[0_0_auto] w-80 h-80 min-w-0 cursor-pointer group relative rounded-2xl"
                   onClick={() => setLightboxIndex(index % total)}
+                  aria-label={item.caption ? `Open Gallery Image: ${item.caption}` : `Open Gallery Image ${(index % total) + 1}`}
+                  aria-hidden={index >= total ? 'true' : undefined}
+                  tabIndex={index >= total ? -1 : undefined}
                 >
                   <div className="relative w-full h-full overflow-hidden rounded-2xl bg-cream transform transition-transform duration-300 group-hover:scale-[1.02]">
                     <Image
                       src={item.mediaUrl}
-                      alt={`Gallery image ${(index % total) + 1}`}
+                      alt=""
                       fill
                       sizes="(max-width: 768px) 100vw, 320px"
                       className="object-cover transition-opacity duration-300 ease-out"
@@ -245,7 +211,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
 
                     {/* Clean hover - no dark overlay or icon */}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -272,7 +238,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
                 <div className="relative px-5 py-3 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] transition-[background-color] duration-300 group-hover:bg-white/60">
                   <div className="flex items-center gap-3">
                     {/* Instagram Icon */}
-                    <svg className="w-5 h-5" style={{ color: '#cc947f' }} fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" style={{ color: 'rgb(var(--terracotta-ink))' }} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
                     </svg>
 
@@ -280,7 +246,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
                     <div className="h-5 w-px bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
 
                     {/* Text */}
-                    <span className="font-sans text-sm font-medium tracking-tight" style={{ color: '#cc947f' }}>
+                    <span className="font-sans text-sm font-medium tracking-tight" style={{ color: 'rgb(var(--terracotta-ink))' }}>
                       Follow @lashpopstudios
                     </span>
 
@@ -302,6 +268,9 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
           <motion.div
             key="gallery-lightbox-backdrop"
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Gallery Image Viewer"
             onClick={closeLightbox}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -312,9 +281,9 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
             <button
               onClick={closeLightbox}
               aria-label="Close gallery"
-              className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors min-h-0 min-w-0"
+              className="absolute top-4 right-4 z-20 flex h-11 w-11 items-center justify-center bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
             >
-              <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -324,9 +293,9 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
               <button
                 onClick={(e) => { e.stopPropagation(); goPrev() }}
                 aria-label="Previous image"
-                className="absolute left-3 md:left-6 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 md:p-3 hover:bg-white transition-colors min-h-0 min-w-0"
+                className="absolute left-3 md:left-6 z-20 flex h-11 w-11 items-center justify-center bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
               >
-                <svg className="w-5 h-5 md:w-6 md:h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
@@ -337,9 +306,9 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
               <button
                 onClick={(e) => { e.stopPropagation(); goNext() }}
                 aria-label="Next image"
-                className="absolute right-3 md:right-6 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 md:p-3 hover:bg-white transition-colors min-h-0 min-w-0"
+                className="absolute right-3 md:right-6 z-20 flex h-11 w-11 items-center justify-center bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
               >
-                <svg className="w-5 h-5 md:w-6 md:h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-dune" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>

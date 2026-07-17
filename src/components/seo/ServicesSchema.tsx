@@ -9,6 +9,7 @@ import { getDb } from '@/db'
 import { services } from '@/db/schema/services'
 import { serviceCategories } from '@/db/schema/service_categories'
 import { eq, sql } from 'drizzle-orm'
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
 
 interface Service {
   id: string
@@ -105,7 +106,7 @@ export async function ServicesSchema({ siteSettings }: ServicesSchemaProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
     />
   )
 }

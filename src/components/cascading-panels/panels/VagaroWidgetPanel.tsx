@@ -19,9 +19,6 @@ export interface VagaroWidgetPanelData {
 }
 
 export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
-  // DEBUG: Log on every render
-  console.log('🟡🟡🟡 VagaroWidgetPanel RENDER - CASCADING-PANELS version (OLD) 🟡🟡🟡');
-
   const { actions } = useCascadingPanels();
   const data = panel.data as VagaroWidgetPanelData;
   const [isLoading, setIsLoading] = useState(true);
@@ -30,12 +27,12 @@ export function VagaroWidgetPanel({ panel }: VagaroWidgetPanelProps) {
   // Listen for booking completion events from the Vagaro widget
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== 'https://www.vagaro.com') return;
       // Vagaro widget may post messages on booking completion
       // The exact event structure depends on Vagaro's implementation
       if (event.data?.type === 'vagaro-booking-complete' ||
           event.data?.type === 'booking_completed') {
         // Handle successful booking
-        console.log('Booking completed:', event.data);
         // Could close panel or show confirmation
       }
     };

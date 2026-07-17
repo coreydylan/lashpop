@@ -156,7 +156,6 @@ export async function autoLinkAppointmentByPhone(vagaroAppointmentId: string) {
     ].filter(Boolean)
 
     if (phoneNumbers.length === 0) {
-      console.log(`No phone numbers found for Vagaro customer ${appointment.vagaroCustomerId}`)
       return null
     }
 
@@ -183,12 +182,11 @@ export async function autoLinkAppointmentByPhone(vagaroAppointmentId: string) {
           userId: user.id,
         })
 
-        console.log(`✓ Auto-linked appointment ${vagaroAppointmentId} to user ${user.id} via phone ${normalizedPhone}`)
+        console.log('✓ Auto-linked appointment to user')
         return user.id
       }
     }
 
-    console.log(`No LashPop user found matching phones:`, phoneNumbers)
     return null
   } catch (error) {
     console.error('Failed to auto-link appointment by phone:', error)

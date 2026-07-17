@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useServiceBrowser } from '@/components/service-browser'
 import { SectionRule } from '../SectionRule'
@@ -105,7 +105,7 @@ function ServiceCard({
   return (
     <button
       onClick={onClick}
-      className="group text-center p-6 rounded-2xl transition-all duration-300 ease-out hover:bg-white/40 hover:-translate-y-1 hover:shadow-lg"
+      className="group text-center p-6 rounded-2xl transition-[background-color,box-shadow,transform] duration-300 ease-out hover:bg-white/40 hover:-translate-y-1 hover:shadow-lg"
     >
       {/* Icon */}
       <div className="flex justify-center mb-4">
@@ -126,7 +126,7 @@ function ServiceCard({
       {/* Title */}
       <h3
         className="text-lg font-display font-semibold tracking-[0.15em] mb-3"
-        style={{ color: 'rgb(var(--soft-terracotta))' }}
+        style={{ color: 'rgb(var(--terracotta-ink))' }}
       >
         {category.title}
       </h3>
@@ -134,7 +134,7 @@ function ServiceCard({
       {/* Tagline */}
       <p
         className="text-sm font-sans font-semibold uppercase tracking-wide mb-3"
-        style={{ color: '#cc947f' }}
+        style={{ color: 'rgb(var(--terracotta-ink))' }}
       >
         {category.tagline}
       </p>
@@ -164,6 +164,7 @@ function MobileSwipeableServiceCards({
   const touchStartY = useRef<number | null>(null)
   const isHorizontalSwipe = useRef<boolean | null>(null)
   const currentIndexRef = useRef(currentIndex)
+  const prefersReducedMotion = useReducedMotion()
 
   // Keep ref in sync with state for use in event handlers
   useEffect(() => {
@@ -270,7 +271,7 @@ function MobileSwipeableServiceCards({
             {/* Title */}
             <h3
               className="text-base font-display font-semibold tracking-[0.15em] mb-2"
-              style={{ color: 'rgb(var(--soft-terracotta))' }}
+              style={{ color: 'rgb(var(--terracotta-ink))' }}
             >
               {currentCategory.title}
             </h3>
@@ -278,7 +279,7 @@ function MobileSwipeableServiceCards({
             {/* Tagline */}
             <p
               className="text-xs font-sans font-semibold uppercase tracking-wide mb-3"
-              style={{ color: '#cc947f' }}
+              style={{ color: 'rgb(var(--terracotta-ink))' }}
             >
               {currentCategory.tagline}
             </p>
@@ -307,7 +308,7 @@ function MobileSwipeableServiceCards({
       </div>
 
       {/* Progress indicator - all dots visible */}
-      <div className="flex justify-center gap-2 mt-8">
+      <div className="flex justify-center mt-5" role="group" aria-label="Choose a service slide">
         {categories.map((_, index) => {
           const isActive = index === currentIndex
           return (
@@ -315,17 +316,17 @@ function MobileSwipeableServiceCards({
               key={index}
               onClick={() => setCurrentIndex(index)}
               aria-label={`Go to slide ${index + 1}`}
-              className="relative h-1.5 min-h-0 min-w-0 cursor-pointer"
-              style={{ width: isActive ? 20 : 6 }}
+              aria-current={isActive ? 'true' : undefined}
+              className="relative flex h-7 w-7 items-center justify-center rounded-full cursor-pointer"
             >
               {isActive ? (
                 <motion.div
                   layoutId="activeServiceDot"
-                  className="absolute inset-0 rounded-full bg-terracotta"
+                  className="h-1.5 w-5 rounded-full bg-terracotta"
                   transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                 />
               ) : (
-                <div className="absolute inset-0 rounded-full bg-terracotta/40" />
+                <div className="h-1.5 w-1.5 rounded-full bg-terracotta/50" />
               )}
             </button>
           )
@@ -337,22 +338,21 @@ function MobileSwipeableServiceCards({
         {/* Left arrow */}
         <motion.button
           onClick={() => setCurrentIndex((prev) => prev === 0 ? categories.length - 1 : prev - 1)}
-          className="w-10 h-10 min-h-0 min-w-0 rounded-full border border-soft-terracotta/60 bg-white/60 flex items-center justify-center"
-          animate={{
-            opacity: [0.6, 1, 0.6],
-          }}
+          className="w-11 h-11 rounded-full border border-terracotta/60 bg-white/60 flex items-center justify-center"
+          aria-label="Previous service"
+          animate={prefersReducedMotion ? { opacity: 1 } : { opacity: [0.6, 1, 0.6] }}
           transition={{
             duration: 2,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         >
-          <ChevronLeft className="w-5 h-5 text-soft-terracotta" strokeWidth={1.5} />
+          <ChevronLeft className="w-5 h-5 text-[rgb(var(--terracotta-ink))]" strokeWidth={1.5} aria-hidden="true" />
         </motion.button>
 
         <p
           className="text-sm font-sans font-light tracking-[0.1em] uppercase"
-          style={{ color: 'rgb(var(--soft-terracotta))' }}
+          style={{ color: 'rgb(var(--terracotta-ink))' }}
         >
           swipe to explore
         </p>
@@ -360,17 +360,16 @@ function MobileSwipeableServiceCards({
         {/* Right arrow */}
         <motion.button
           onClick={() => setCurrentIndex((prev) => (prev + 1) % categories.length)}
-          className="w-10 h-10 min-h-0 min-w-0 rounded-full border border-soft-terracotta/60 bg-white/60 flex items-center justify-center"
-          animate={{
-            opacity: [0.6, 1, 0.6],
-          }}
+          className="w-11 h-11 rounded-full border border-terracotta/60 bg-white/60 flex items-center justify-center"
+          aria-label="Next service"
+          animate={prefersReducedMotion ? { opacity: 1 } : { opacity: [0.6, 1, 0.6] }}
           transition={{
             duration: 2,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         >
-          <ChevronRight className="w-5 h-5 text-soft-terracotta" strokeWidth={1.5} />
+          <ChevronRight className="w-5 h-5 text-[rgb(var(--terracotta-ink))]" strokeWidth={1.5} aria-hidden="true" />
         </motion.button>
       </div>
     </div>
@@ -435,7 +434,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
         <div className="text-center mb-6">
           <h2
             className="text-2xl font-display font-medium tracking-wide mb-4"
-            style={{ color: 'rgb(var(--soft-terracotta))' }}
+            style={{ color: 'rgb(var(--terracotta-ink))' }}
           >
             Choose a Service
           </h2>
@@ -460,7 +459,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
         <div className="text-center mb-12">
           <h2
             className="text-5xl font-display font-medium tracking-wide mb-6"
-            style={{ color: 'rgb(var(--soft-terracotta))' }}
+            style={{ color: 'rgb(var(--terracotta-ink))' }}
           >
             Choose a Service
           </h2>

@@ -62,6 +62,7 @@
     --terracotta-light: 196 107 78; /* #c46b4e - Lighter terracotta */
     --terracotta: 181 86 61;       /* #b5563d - Primary brand color (matches logo) */
     --rust: 172 77 60;             /* #ac4d3c - Deep accent / CTA */
+    --terracotta-ink: 162 71 48;   /* #a24730 - Brand text with WCAG AA contrast on cream */
 
     /* Legacy colors */
     --sage: 161 151 129;
@@ -124,6 +125,11 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  .theme-v2 :is(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid rgb(var(--terracotta-ink));
+    outline-offset: 3px;
+  }
+
   /*
    * MOBILE HERO TRANSPARENCY
    * On mobile, we need a layered approach:
@@ -170,6 +176,21 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--sage) / 0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  .theme-v2 *,
+  .theme-v2 *::before,
+  .theme-v2 *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

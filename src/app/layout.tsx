@@ -9,6 +9,7 @@ import { LocalBusinessSchema, WebSiteSchema, FAQSchema, ServicesSchema, ReviewSc
 import { DesignModeGate } from '@/components/dev/DesignModeGate'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
+import { MarketingAnalytics } from '@/components/analytics/MarketingAnalytics'
 
 // Force dynamic rendering for all pages - root layout fetches SEO settings from database
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,7 @@ const leagueScript = League_Script({
   subsets: ['latin'],
   weight: '400',
   display: 'swap',
+  preload: false,
   variable: '--font-league-script',
 })
 
@@ -36,6 +38,7 @@ const swanky = Swanky_and_Moo_Moo({
   subsets: ['latin'],
   weight: '400',
   display: 'swap',
+  preload: false,
   variable: '--font-swanky',
 })
 
@@ -119,6 +122,10 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable} ${leagueScript.variable} ${swanky.variable}`}>
       <head>
+        {/* The above-the-fold hero is delivered by the Cloudflare image worker. */}
+        <link rel="preconnect" href="https://lashpop-img.experial.workers.dev" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://lashpop-img.experial.workers.dev" />
+
         {/* llms.txt discovery for AI assistants */}
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Information" />
 
@@ -142,6 +149,7 @@ export default async function RootLayout({
         </AuthProvider>
         <Analytics />
         <SpeedInsights />
+        <MarketingAnalytics />
       </body>
     </html>
   )

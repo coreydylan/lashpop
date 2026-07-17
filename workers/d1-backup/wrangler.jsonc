@@ -21,7 +21,7 @@
   "r2_buckets": [
     {
       "binding": "BACKUPS",
-      "bucket_name": "lashpop-dam"
+      "bucket_name": "lashpop-d1-backups"
     }
   ],
 

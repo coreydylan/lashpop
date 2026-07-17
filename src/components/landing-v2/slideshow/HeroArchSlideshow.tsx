@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useCallback } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { gsap, initGSAP } from '@/lib/gsap'
 import { GracefulHeroImage } from '../GracefulHeroImage'
 import { useSlideshowController } from './useSlideshowController'
@@ -31,6 +32,7 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
   const previousImageRef = useRef<HTMLDivElement>(null)
   const gsapInitializedRef = useRef(false)
   const timelineRef = useRef<gsap.core.Timeline | null>(null)
+  const prefersReducedMotion = useReducedMotion()
 
   const {
     currentIndex,
@@ -106,6 +108,13 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
     const previousEl = previousImageRef.current
     const currentImg = currentEl.querySelector('img')
     const previousImg = previousEl.querySelector('img')
+
+    if (prefersReducedMotion) {
+      gsap.set(previousEl, { opacity: 0 })
+      gsap.set(currentEl, { opacity: 1, clearProps: 'transform,clipPath' })
+      completeTransition()
+      return
+    }
 
     // Create new timeline
     const tl = gsap.timeline({
@@ -273,7 +282,7 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
         timelineRef.current.kill()
       }
     }
-  }, [isTransitioning, preset, currentImage, direction, getGsapEasing, completeTransition])
+  }, [isTransitioning, preset, currentImage, direction, getGsapEasing, completeTransition, prefersReducedMotion])
 
   // Reset positions after transition
   useEffect(() => {

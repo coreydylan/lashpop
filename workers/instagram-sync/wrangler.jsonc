@@ -24,6 +24,10 @@
     }
   ],
 
+  "vars": {
+    "SYNC_SCHEDULED": "false"
+  },
+
   "observability": {
     "enabled": true
   },
@@ -37,5 +41,5 @@
   //   IG_DS_USER_ID         — ds_user_id cookie (numeric user id)
   //   IG_CSRF_TOKEN         — csrftoken cookie
   //   NEXT_PUBLIC_R2_BUCKET_URL — public R2 URL prefix (e.g. https://pub-xxx.r2.dev)
-  //   MANUAL_TRIGGER_SECRET — bearer token for GET /run?limit=24
+  //   MANUAL_TRIGGER_SECRET — bearer token for POST /run?limit=24
 }

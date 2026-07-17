@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import type {
   SlideshowPreset,
   SlideshowImage,
@@ -24,6 +25,7 @@ interface SlideshowState {
 export function useSlideshowController({ preset, onSlideChange }: UseSlideshowControllerProps) {
   const { images, timing, navigation } = preset
   const imageCount = images.length
+  const prefersReducedMotion = useReducedMotion()
 
   const [state, setState] = useState<SlideshowState>({
     currentIndex: 0,
@@ -139,6 +141,7 @@ export function useSlideshowController({ preset, onSlideChange }: UseSlideshowCo
   useEffect(() => {
     if (
       !timing.autoAdvance ||
+      prefersReducedMotion ||
       state.isPaused ||
       state.isTransitioning ||
       isHoveringRef.current ||
@@ -164,6 +167,7 @@ export function useSlideshowController({ preset, onSlideChange }: UseSlideshowCo
     }
   }, [
     timing.autoAdvance,
+    prefersReducedMotion,
     timing.interval,
     timing.startDelay,
     state.isPaused,

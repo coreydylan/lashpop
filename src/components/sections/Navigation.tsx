@@ -188,7 +188,7 @@ export function Navigation() {
                 Work With Us
               </Link>
               <button
-                className="btn text-cream transition-colors duration-300 hover:opacity-90"
+                className="btn text-white transition-colors duration-300 hover:opacity-90"
                 style={{ backgroundColor: '#b14e33' }}
                 onClick={handleBookNow}
               >

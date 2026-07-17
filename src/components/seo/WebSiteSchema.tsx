@@ -5,6 +5,8 @@
  * Includes site name, URL, and potential actions (search, etc.).
  */
 
+import { serializeJsonLd } from '@/lib/serialize-json-ld'
+
 interface WebSiteSchemaProps {
   siteSettings: {
     siteName: string
@@ -29,7 +31,7 @@ export function WebSiteSchema({ siteSettings }: WebSiteSchemaProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
     />
   )
 }

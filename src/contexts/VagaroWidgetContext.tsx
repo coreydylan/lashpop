@@ -157,35 +157,7 @@ export function VagaroWidgetProvider({ children }: VagaroWidgetProviderProps) {
   // This ensures we catch events even before any subscribers are registered
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      console.log('[VagaroWidgetProvider] Starting event listener on mount');
       startVagaroEventListener();
-
-      // Also add a raw debug listener to catch ALL postMessages
-      // This helps diagnose what messages are actually being sent
-      const rawDebugListener = (event: MessageEvent) => {
-        // Only log if it looks like it might be from an iframe (not internal React/Next.js)
-        if (
-          event.data &&
-          typeof event.data === 'object' &&
-          !event.data.type?.startsWith('webpack') &&
-          !event.data.type?.startsWith('next') &&
-          !event.data.source?.includes('react')
-        ) {
-          console.log('[Raw PostMessage]', {
-            origin: event.origin,
-            type: event.data.type,
-            eventName: event.data.eventName,
-            keys: Object.keys(event.data).slice(0, 10),
-          });
-        }
-      };
-
-      window.addEventListener('message', rawDebugListener);
-      console.log('[VagaroWidgetProvider] Raw postMessage listener attached');
-
-      return () => {
-        window.removeEventListener('message', rawDebugListener);
-      };
     }
   }, []);
 

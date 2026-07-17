@@ -4,6 +4,8 @@ import { desc, eq } from 'drizzle-orm'
 import { getDb } from '@/db'
 import { newsletterSubscriptions } from '@/db/schema/newsletter_subscriptions'
 import { requireAdmin } from '@/lib/admin/auth'
+import { headers } from 'next/headers'
+import { consumeRateLimit, requestIp } from '@/lib/request-rate-limit'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -14,11 +16,30 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  */
 export async function subscribeToNewsletter(email: string) {
   const trimmed = email.trim().toLowerCase()
-  if (!trimmed || !EMAIL_RE.test(trimmed)) {
+  if (!trimmed || trimmed.length > 320 || !EMAIL_RE.test(trimmed)) {
     return { success: false, message: 'Please enter a valid email.' }
   }
 
   try {
+    const requestHeaders = await headers()
+    const [ipLimit, emailLimit] = await Promise.all([
+      consumeRateLimit({
+        scope: 'newsletter-ip',
+        identity: requestIp(requestHeaders),
+        limit: 30,
+        windowMs: 60 * 60 * 1_000,
+      }),
+      consumeRateLimit({
+        scope: 'newsletter-email',
+        identity: trimmed,
+        limit: 5,
+        windowMs: 24 * 60 * 60 * 1_000,
+      }),
+    ])
+    if (!ipLimit.allowed || !emailLimit.allowed) {
+      return { success: false, message: 'Too many signup attempts. Please try again later.' }
+    }
+
     const db = getDb()
     const [existing] = await db
       .select({ id: newsletterSubscriptions.id, status: newsletterSubscriptions.status })
