@@ -235,7 +235,7 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: 'rgb(var(--terracotta-ink))' }}
+            style={{ color: '#cc947f' }}
           >
             What People Are Saying
           </h2>
@@ -354,7 +354,7 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
                               {review.reviewerName}
                             </h3>
                             {review.stylistName && (
-                              <p className="text-xs text-[rgb(var(--terracotta-ink))] font-sans truncate">
+                              <p className="text-xs text-soft-terracotta font-sans truncate">
                                 with {review.stylistName}
                               </p>
                             )}

@@ -660,16 +660,16 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         <div className="text-center mb-12 px-4">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-6"
-            style={{ color: 'rgb(var(--terracotta-ink))' }}
+            style={{ color: '#cc947f' }}
           >
             Find Your Stylist
           </h2>
           <div className="w-24 h-px bg-terracotta/30 mx-auto mb-6" />
           <div className="max-w-2xl mx-auto space-y-4">
-            <p className="text-base md:text-lg leading-relaxed text-pretty" style={{ color: 'rgb(var(--terracotta-ink))' }}>
+            <p className="text-base md:text-lg leading-relaxed text-pretty" style={{ color: '#cc947f' }}>
               LashPop Studios is home to a collective of independent beauty businesses, each offering their own services, pricing, schedules,&nbsp;and&nbsp;policies.
             </p>
-            <p className="text-xs md:text-sm leading-relaxed uppercase tracking-wider font-medium mt-10" style={{ color: 'rgb(var(--terracotta-ink))' }}>
+            <p className="text-xs md:text-sm leading-relaxed uppercase tracking-wider font-medium mt-10" style={{ color: '#cc947f' }}>
               <span className="font-semibold block md:inline">Click the profiles</span>
               <span className="block md:inline"> below to find a stylist that fits your vibe.</span>
             </p>
@@ -1056,10 +1056,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         <div className="text-center px-4 mt-12 md:mt-20">
           <a
             href="/work-with-us"
-            className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-[background-color,border-color,color,transform] duration-300 hover:bg-[rgb(var(--terracotta-ink))] hover:text-white hover:border-[rgb(var(--terracotta-ink))]"
+            className="inline-block px-6 py-3 md:px-8 md:py-3.5 rounded-full border-2 transition-[background-color,border-color,color,transform] duration-300 hover:bg-[#ac4d3c] hover:text-white hover:border-[#ac4d3c]"
             style={{
-              borderColor: 'rgb(var(--terracotta-ink))',
-              color: 'rgb(var(--terracotta-ink))',
+              borderColor: '#ac4d3c',
+              color: '#ac4d3c',
             }}
           >
             <span className="text-sm font-medium tracking-[0.1em] uppercase">

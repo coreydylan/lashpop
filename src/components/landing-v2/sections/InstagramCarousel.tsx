@@ -166,7 +166,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
         <div className="text-center mb-8 md:mb-12">
           <h2
             className="text-2xl md:text-5xl font-display font-medium tracking-wide mb-4 md:mb-6"
-            style={{ color: 'rgb(var(--terracotta-ink))' }}
+            style={{ color: '#cc947f' }}
           >
             Gallery
           </h2>
@@ -238,7 +238,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
                 <div className="relative px-5 py-3 rounded-full bg-white/50 backdrop-blur-md border border-white/60 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] transition-[background-color] duration-300 group-hover:bg-white/60">
                   <div className="flex items-center gap-3">
                     {/* Instagram Icon */}
-                    <svg className="w-5 h-5" style={{ color: 'rgb(var(--terracotta-ink))' }} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <svg className="w-5 h-5" style={{ color: '#cc947f' }} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
                     </svg>
 
@@ -246,7 +246,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
                     <div className="h-5 w-px bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
 
                     {/* Text */}
-                    <span className="font-sans text-sm font-medium tracking-tight" style={{ color: 'rgb(var(--terracotta-ink))' }}>
+                    <span className="font-sans text-sm font-medium tracking-tight" style={{ color: '#cc947f' }}>
                       Follow @lashpopstudios
                     </span>
 

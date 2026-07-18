@@ -126,7 +126,7 @@ function ServiceCard({
       {/* Title */}
       <h3
         className="text-lg font-display font-semibold tracking-[0.15em] mb-3"
-        style={{ color: 'rgb(var(--terracotta-ink))' }}
+        style={{ color: 'rgb(var(--soft-terracotta))' }}
       >
         {category.title}
       </h3>
@@ -134,7 +134,7 @@ function ServiceCard({
       {/* Tagline */}
       <p
         className="text-sm font-sans font-semibold uppercase tracking-wide mb-3"
-        style={{ color: 'rgb(var(--terracotta-ink))' }}
+        style={{ color: '#cc947f' }}
       >
         {category.tagline}
       </p>
@@ -271,7 +271,7 @@ function MobileSwipeableServiceCards({
             {/* Title */}
             <h3
               className="text-base font-display font-semibold tracking-[0.15em] mb-2"
-              style={{ color: 'rgb(var(--terracotta-ink))' }}
+              style={{ color: 'rgb(var(--soft-terracotta))' }}
             >
               {currentCategory.title}
             </h3>
@@ -279,7 +279,7 @@ function MobileSwipeableServiceCards({
             {/* Tagline */}
             <p
               className="text-xs font-sans font-semibold uppercase tracking-wide mb-3"
-              style={{ color: 'rgb(var(--terracotta-ink))' }}
+              style={{ color: '#cc947f' }}
             >
               {currentCategory.tagline}
             </p>
@@ -326,7 +326,7 @@ function MobileSwipeableServiceCards({
                   transition={{ type: 'spring', stiffness: 380, damping: 32 }}
                 />
               ) : (
-                <div className="h-1.5 w-1.5 rounded-full bg-terracotta/50" />
+                <div className="h-1.5 w-1.5 rounded-full bg-terracotta/40" />
               )}
             </button>
           )
@@ -338,7 +338,7 @@ function MobileSwipeableServiceCards({
         {/* Left arrow */}
         <motion.button
           onClick={() => setCurrentIndex((prev) => prev === 0 ? categories.length - 1 : prev - 1)}
-          className="w-11 h-11 rounded-full border border-terracotta/60 bg-white/60 flex items-center justify-center"
+          className="w-11 h-11 rounded-full border border-soft-terracotta/60 bg-white/60 flex items-center justify-center"
           aria-label="Previous service"
           animate={prefersReducedMotion ? { opacity: 1 } : { opacity: [0.6, 1, 0.6] }}
           transition={{
@@ -347,12 +347,12 @@ function MobileSwipeableServiceCards({
             ease: "easeInOut"
           }}
         >
-          <ChevronLeft className="w-5 h-5 text-[rgb(var(--terracotta-ink))]" strokeWidth={1.5} aria-hidden="true" />
+          <ChevronLeft className="w-5 h-5 text-soft-terracotta" strokeWidth={1.5} aria-hidden="true" />
         </motion.button>
 
         <p
           className="text-sm font-sans font-light tracking-[0.1em] uppercase"
-          style={{ color: 'rgb(var(--terracotta-ink))' }}
+          style={{ color: 'rgb(var(--soft-terracotta))' }}
         >
           swipe to explore
         </p>
@@ -360,7 +360,7 @@ function MobileSwipeableServiceCards({
         {/* Right arrow */}
         <motion.button
           onClick={() => setCurrentIndex((prev) => (prev + 1) % categories.length)}
-          className="w-11 h-11 rounded-full border border-terracotta/60 bg-white/60 flex items-center justify-center"
+          className="w-11 h-11 rounded-full border border-soft-terracotta/60 bg-white/60 flex items-center justify-center"
           aria-label="Next service"
           animate={prefersReducedMotion ? { opacity: 1 } : { opacity: [0.6, 1, 0.6] }}
           transition={{
@@ -369,7 +369,7 @@ function MobileSwipeableServiceCards({
             ease: "easeInOut"
           }}
         >
-          <ChevronRight className="w-5 h-5 text-[rgb(var(--terracotta-ink))]" strokeWidth={1.5} aria-hidden="true" />
+          <ChevronRight className="w-5 h-5 text-soft-terracotta" strokeWidth={1.5} aria-hidden="true" />
         </motion.button>
       </div>
     </div>
@@ -434,7 +434,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
         <div className="text-center mb-6">
           <h2
             className="text-2xl font-display font-medium tracking-wide mb-4"
-            style={{ color: 'rgb(var(--terracotta-ink))' }}
+            style={{ color: 'rgb(var(--soft-terracotta))' }}
           >
             Choose a Service
           </h2>
@@ -459,7 +459,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
         <div className="text-center mb-12">
           <h2
             className="text-5xl font-display font-medium tracking-wide mb-6"
-            style={{ color: 'rgb(var(--terracotta-ink))' }}
+            style={{ color: 'rgb(var(--soft-terracotta))' }}
           >
             Choose a Service
           </h2>

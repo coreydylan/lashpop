@@ -237,7 +237,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                   >
                     <span className={`
                       text-[11px] font-sans font-medium tracking-wide
-                      text-[rgb(var(--terracotta-ink))]
+                      ${isActive ? 'text-terracotta' : 'text-terracotta/70'}
                     `}>
                       {item.label}
                     </span>
@@ -306,7 +306,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                     smoothScrollToElement('#services', 60, 800, 'top')
                   }
                 }}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full bg-[rgb(var(--terracotta-ink))] text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-rust transition-colors"
+                className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-colors"
               >
                 Book Now
               </button>
@@ -327,13 +327,13 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                 aria-expanded={isMenuOpen}
               >
                 <span
-                  className={`block w-5 h-0.5 bg-[rgb(var(--terracotta-ink))] transition-[transform,opacity] duration-200 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-[transform,opacity] duration-200 ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-[rgb(var(--terracotta-ink))] transition-opacity duration-200 ${isMenuOpen ? 'opacity-0' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-opacity duration-200 ${isMenuOpen ? 'opacity-0' : ''}`}
                 />
                 <span
-                  className={`block w-5 h-0.5 bg-[rgb(var(--terracotta-ink))] transition-[transform,opacity] duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
+                  className={`block w-5 h-0.5 bg-terracotta-light transition-[transform,opacity] duration-200 ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}
                 />
               </button>
             </div>

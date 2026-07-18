@@ -247,7 +247,7 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
                     backgroundRepeat: 'repeat-x',
                   }}
                 />
-                <span className="font-medium tabular-nums whitespace-nowrap" style={{ color: 'rgb(var(--terracotta-ink))' }}>
+                <span className="font-medium tabular-nums whitespace-nowrap" style={{ color: '#cc947f' }}>
                   8:00 AM – 7:30 PM
                 </span>
               </div>
@@ -309,7 +309,7 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
                     backgroundRepeat: 'repeat-x',
                   }}
                 />
-                <span className="font-medium text-sm tabular-nums whitespace-nowrap" style={{ color: 'rgb(var(--terracotta-ink))' }}>
+                <span className="font-medium text-sm tabular-nums whitespace-nowrap" style={{ color: '#cc947f' }}>
                   8:00 AM – 7:30 PM
                 </span>
               </div>
