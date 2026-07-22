@@ -4,7 +4,7 @@ export { ReviewEditor } from './editor-do'
 
 /**
  * Thin Worker entry — routes to the ReviewEditor Durable Object. The DO owns
- * all state (last-fetch timestamps, last-editor timestamps, alarms) so this
+ * all state (last-fetch timestamps, last-editor timestamps) so this
  * Worker is essentially a router.
  *
  * Routes:
@@ -12,7 +12,7 @@ export { ReviewEditor } from './editor-do'
  *                            editor pass runs iff ≥7d since last run)
  *   GET /run?editor=1      → trigger one cycle and force the editor pass
  *   GET /state             → introspection (last run, next alarm, last result)
- *   GET /schedule          → ensure the alarm is set (idempotent)
+ *   GET /schedule          → clears legacy alarms (410; cron owns scheduling)
  *
  * All routes auth'd via MANUAL_TRIGGER_SECRET when set.
  */
@@ -24,8 +24,7 @@ function getStub(env: Env): DurableObjectStub {
 
 export default {
   async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-    // Cron triggers also hit the DO. Mostly redundant (DO alarm self-schedules)
-    // but useful belt-and-suspenders if the alarm ever drops.
+    // Cron is the single scheduler. The DO clears any legacy alarm on /run.
     ctx.waitUntil(
       (async () => {
         try {

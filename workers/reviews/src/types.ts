@@ -35,6 +35,14 @@ export interface FetcherResult {
   reviews: NormalizedReview[]
   /** Total available at source, when known. Helps surface "we're behind" signals. */
   totalAvailable?: number
+  /** Attempted billable API calls made by this fetcher during the cycle. */
+  meteredUsage?: {
+    authCalls: number
+    apiCalls: number
+    totalCalls: number
+    maxCallsPerCycle: number
+    byEndpoint: Record<string, number>
+  }
   errors: string[]
 }
 

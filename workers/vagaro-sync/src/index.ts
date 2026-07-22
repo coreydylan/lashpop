@@ -1,7 +1,6 @@
 import { openDb } from './db'
 import {
   syncAllServices,
-  syncAllTeamMembers,
   syncPublicStaff,
   syncStylistServices,
   syncVagaroCategories,
@@ -13,7 +12,7 @@ import {
 import { fetchPublicServicesFull, type PublicServicesPayload } from './public-services'
 import { vagaroSyncRuns } from './schema'
 import { eq } from 'drizzle-orm'
-import { VagaroClient, type VagaroEnv } from './vagaro-client'
+import { VagaroClient, type VagaroEnv, type VagaroMeteredUsage } from './vagaro-client'
 
 interface Env extends VagaroEnv {
   DB: D1Database
@@ -24,14 +23,19 @@ interface Result {
   categories: { success: boolean; stats?: CategorySyncStats; error?: string }
   services: { success: boolean; stats?: SyncStats; error?: string }
   publicStaff: { success: boolean; stats?: PublicStaffStats; error?: string }
-  teamMembers: { success: boolean; stats?: SyncStats; error?: string }
   stylistServices: { success: boolean; stats?: StylistServicesStats; error?: string }
 }
+
+interface RecordedResult extends Result {
+  meteredUsage: VagaroMeteredUsage & { projected30DayCallsAtCurrentSchedule: number }
+}
+
+const SCHEDULED_RUNS_PER_30_DAYS = 3 * 30
 
 async function runSync(
   env: Env,
   trigger: 'cron' | 'manual',
-): Promise<{ result: Result; allOk: boolean; runId: string }> {
+): Promise<{ result: RecordedResult; allOk: boolean; runId: string }> {
   const db = openDb(env.DB)
   const vagaro = new VagaroClient(env)
 
@@ -39,7 +43,6 @@ async function runSync(
     categories: { success: false },
     services: { success: false },
     publicStaff: { success: false },
-    teamMembers: { success: false },
     stylistServices: { success: false },
   }
 
@@ -82,8 +85,10 @@ async function runSync(
     result.services.error = 'Skipped because the Vagaro category source or mapping stage failed'
   }
 
-  // Public staff mirror (photos, bios, order, list parity) — runs BEFORE the v2
-  // team sync so contact-info refreshes don't get overwritten by the older API.
+  // Public staff is the canonical team source: it already provides names,
+  // contact fields, photos, bios, order, and active-list parity. The former
+  // v2 pass refetched every employee individually after this stage, adding 15
+  // metered calls per run without supplying any field the website consumes.
   try {
     result.publicStaff.stats = await syncPublicStaff(db, env.VAGARO_PUBLIC_BUSINESS_ID)
     result.publicStaff.success = result.publicStaff.stats.errors.length === 0
@@ -93,17 +98,6 @@ async function runSync(
   } catch (err) {
     result.publicStaff.error = err instanceof Error ? err.message : String(err)
     console.error('public staff sync threw:', err)
-  }
-
-  try {
-    result.teamMembers.stats = await syncAllTeamMembers(db, vagaro)
-    result.teamMembers.success = result.teamMembers.stats.failed === 0
-    if (!result.teamMembers.success) {
-      result.teamMembers.error = `${result.teamMembers.stats.failed} team record(s) failed`
-    }
-  } catch (err) {
-    result.teamMembers.error = err instanceof Error ? err.message : String(err)
-    console.error('team members sync threw:', err)
   }
 
   // Per-stylist service mapping (drives the tag chips on the Find Your Stylist
@@ -126,13 +120,19 @@ async function runSync(
     result.categories.success &&
     result.services.success &&
     result.publicStaff.success &&
-    result.teamMembers.success &&
     result.stylistServices.success
+  const usage = vagaro.getMeteredUsage()
+  const meteredUsage: RecordedResult['meteredUsage'] = {
+    ...usage,
+    projected30DayCallsAtCurrentSchedule:
+      usage.totalCalls * SCHEDULED_RUNS_PER_30_DAYS,
+  }
+  const recordedResult: RecordedResult = { ...result, meteredUsage }
   await db
     .update(vagaroSyncRuns)
     .set({
       status: allOk ? 'success' : Object.values(result).some(stage => stage.success) ? 'partial' : 'failed',
-      result: result as unknown as Record<string, unknown>,
+      result: recordedResult as unknown as Record<string, unknown>,
       error: allOk
         ? null
         : Object.entries(result)
@@ -143,7 +143,8 @@ async function runSync(
     })
     .where(eq(vagaroSyncRuns.id, runId))
 
-  return { result, allOk, runId }
+  console.log('Vagaro metered usage:', JSON.stringify(meteredUsage))
+  return { result: recordedResult, allOk, runId }
 }
 
 export default {

@@ -1,11 +1,11 @@
 # lashpop-reviews Worker
 
-Replaces the Vercel-cron + BrightData review sync. Cloudflare Worker runs every
-6 hours, fans out to three sources, writes directly to Supabase.
+Replaces the Vercel-cron + BrightData review sync. One Cloudflare cron runs
+daily at 12:15 UTC, fans out to three sources, and writes directly to D1.
 
 | Source | Path | Cloak Mesh? | Cost | Status |
 |---|---|---|---|---|
-| Vagaro | OAuth Merchant API | No | $0 | **live** |
+| Vagaro | OAuth Merchant API | No | metered; max 25 calls/run | **live** |
 | Google | Places API (Place Details) | No | needs billing-enabled GCP project | not wired |
 | Yelp | GQL persisted queries via Cloak Mesh | Yes | $0 | not wired |
 
@@ -24,10 +24,10 @@ returns clean structured data — see `src/fetchers/vagaro.ts`.
 src/
 ├── index.ts        scheduled() + fetch() handlers, manual /run endpoint
 ├── types.ts        NormalizedReview, FetcherResult, Env
-├── db.ts           Supabase postgres connection + upsert
+├── db.ts           D1 adapter + upsert
 └── fetchers/
     ├── google.ts   Place Details, newest 5
-    ├── vagaro.ts   /api/v2/merchants/{businessId}/reviews — paginated, ~200/run
+    ├── vagaro.ts   /api/v2/merchants/{businessId}/reviews — 50/page, ~400/run
     └── yelp.ts     /gql/batch via cloak.experialstudio.com — paginated
 ```
 
@@ -43,7 +43,6 @@ Secrets (set via `wrangler secret put <NAME>`):
 
 | Name | Required for | Source |
 |---|---|---|
-| `DATABASE_URL` | all | Supabase pooler URL (same as the Next.js app) |
 | `VAGARO_CLIENT_ID` | vagaro | lashpop `.env.local` |
 | `VAGARO_CLIENT_SECRET` | vagaro | lashpop `.env.local` |
 | `VAGARO_BUSINESS_ID` | vagaro | lashpop `.env.local` |
@@ -62,7 +61,9 @@ curl -H "Authorization: Bearer $MANUAL_TRIGGER_SECRET" \
   https://lashpop-reviews.<...>.workers.dev/run
 ```
 
-Returns a JSON summary: per-source `{fetched, totalAvailable, errors, upsert}`.
+Returns a JSON summary: per-source
+`{fetched, totalAvailable, meteredUsage, errors, upsert}`. Vagaro usage includes
+auth calls, API calls, endpoint counts, and the 25-call cycle ceiling.
 
 ## Yelp service (Cloak Mesh)
 
@@ -106,6 +107,5 @@ After the first run on 2026-05-18:
 "Verified", "Beauty", "Fitness", "Wellness", "Venue" — all Vagaro UI labels
 the old Jina scraper mistook for reviewer names. None on the homepage.
 
-The old Vercel cron at `/api/cron/sync-reviews` is still wired and will keep
-silently failing on BrightData. Once this Worker has a successful Cron run or
-two, remove the entry from `vercel.json` and delete the route.
+The old Vercel review crons and routes have been removed. The Worker cron is the
+only scheduler; legacy Durable Object alarms are cleared without fetching.

@@ -1,15 +1,15 @@
 /**
  * ReviewEditor Durable Object — single instance per business that owns the
- * whole review pipeline: fetch (every 6h), filter, auto-promote, and the
+ * whole review pipeline: fetch (daily), filter, auto-promote, and the
  * weekly LLM "editor" pass (scoring, ex-staff hide, highlight reels).
  *
  * Why a DO and not just a Worker cron?
  *   - Single instance → guarantees no two cron ticks step on each other while
  *     a long-running mesh-claude call is in flight.
  *   - Persistent storage → tracks lastFetchAt / lastEditorAt so we can run
- *     fetches every 6h but the editor pass only weekly without state in DB.
- *   - Alarms → built-in scheduling, survives Worker restarts, fires even when
- *     no traffic arrives.
+ *     fetches daily but the editor pass only weekly without state in DB.
+ *   - Scheduling is owned by the Worker cron. Legacy DO alarms are cancelled
+ *     so two schedulers cannot double-fetch the same paid API.
  */
 import { buildTeamMemberIndex, closeDb, openDb, upsertReviews, type Sql, type UpsertStats } from './db'
 import { runEditor, type EditorStats } from './editor'
@@ -20,12 +20,16 @@ import { applyStaleTeamMemberFilter, autoPromoteToHomepage, updateReviewStats, t
 import { loadReviewSettings, DEFAULT_SETTINGS } from './settings'
 import type { Env, FetcherResult } from './types'
 
-const FETCH_INTERVAL_MS = 6 * 60 * 60 * 1000 // 6h
-
 interface RunRecord {
   startedAt: string
   finishedAt: string
-  sources: Record<string, { fetched: number; totalAvailable?: number; errors: string[]; upsert?: UpsertStats }>
+  sources: Record<string, {
+    fetched: number
+    totalAvailable?: number
+    meteredUsage?: FetcherResult['meteredUsage']
+    errors: string[]
+    upsert?: UpsertStats
+  }>
   stale?: StaleStats
   autoPromote?: AutoPromoteStats
   reviewStats?: ReviewStatsResult
@@ -45,12 +49,20 @@ export class ReviewEditor {
   async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url)
 
-    if (url.pathname === '/run' || url.pathname === '/alarm') {
+    if (url.pathname === '/run') {
+      // Cron is the sole scheduler. Clear any alarm left by the pre-cost-control
+      // version before doing work so it cannot create a second daily cycle.
+      await this.state.storage.deleteAlarm()
       const forceEditor = url.searchParams.get('editor') === '1'
       const result = await this.runCycle({ forceEditor })
       return new Response(JSON.stringify(result, null, 2), {
         headers: { 'content-type': 'application/json' },
       })
+    }
+
+    if (url.pathname === '/alarm') {
+      await this.state.storage.deleteAlarm()
+      return new Response('Durable Object alarms are disabled; the Worker cron owns scheduling.', { status: 410 })
     }
 
     if (url.pathname === '/state') {
@@ -74,8 +86,8 @@ export class ReviewEditor {
     }
 
     if (url.pathname === '/schedule') {
-      await this.state.storage.setAlarm(Date.now() + FETCH_INTERVAL_MS)
-      return new Response('alarm scheduled', { status: 200 })
+      await this.state.storage.deleteAlarm()
+      return new Response('Durable Object alarms are disabled; the Worker cron owns scheduling.', { status: 410 })
     }
 
     return new Response('lashpop-reviews DO — GET /run | /run?editor=1 | /state | /schedule', {
@@ -84,14 +96,9 @@ export class ReviewEditor {
   }
 
   async alarm(): Promise<void> {
-    try {
-      await this.runCycle({})
-    } catch (err) {
-      console.error('[review-editor] alarm cycle threw:', err)
-    } finally {
-      // Reset the alarm regardless — never want the DO to go silent.
-      await this.state.storage.setAlarm(Date.now() + FETCH_INTERVAL_MS)
-    }
+    // Drain one legacy alarm without running or rescheduling the paid fetch.
+    await this.state.storage.deleteAlarm()
+    console.log('[review-editor] ignored and cleared legacy alarm; cron is authoritative')
   }
 
   /**
@@ -145,12 +152,14 @@ export class ReviewEditor {
         sources[name] = {
           fetched: result.reviews.length,
           totalAvailable: result.totalAvailable,
+          meteredUsage: result.meteredUsage,
           errors: result.errors,
           upsert,
         }
         console.log(
           `[${name}] fetched=${result.reviews.length} ` +
-            `inserted=${upsert.inserted} errors=${result.errors.length}`,
+            `inserted=${upsert.inserted} errors=${result.errors.length} ` +
+            `meteredCalls=${result.meteredUsage?.totalCalls ?? 0}`,
         )
       }
 

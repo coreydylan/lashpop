@@ -250,7 +250,7 @@ export default function ReviewSettingsPage() {
           <h1 className="text-3xl font-semibold text-dune">Review pipeline</h1>
           <p className="text-sm text-dune/60 mt-1 max-w-xl">
             Controls how reviews flow into the homepage carousel and the per-stylist
-            highlight reels. Saved values take effect on the next Worker tick (every 6h).
+            highlight reels. Saved values take effect on the next daily Worker tick.
           </p>
           <p className="mt-1 text-xs text-dune/45">
             {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}

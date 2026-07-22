@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { syncService, syncTeamMember, syncAllServices, syncAllTeamMembers } from '@/lib/vagaro-sync'
+import { syncTeamMember } from '@/lib/vagaro-sync'
 import { syncBusinessLocation } from '@/lib/vagaro-sync-all'
 import { timingSafeEqual } from 'crypto'
 
@@ -38,9 +38,9 @@ function isAuthorizedWebhook(request: NextRequest): boolean {
 
 /**
  * Trigger a full service + team_members sync via the canonical CF Worker
- * (`workers/vagaro-sync`). Falls back to the legacy in-process syncs in
- * `@/lib/vagaro-sync` when VAGARO_SYNC_URL isn't configured, so this is
- * safe to deploy before the secret is set.
+ * (`workers/vagaro-sync`). There is intentionally no in-process fallback:
+ * that old path authenticated separately and fetched every employee one by
+ * one, bypassing the Worker's metered-call ceiling.
  *
  * Set in Vercel env:
  *   VAGARO_SYNC_URL    e.g. https://lashpop-vagaro-sync.<acct>.workers.dev/sync
@@ -49,15 +49,18 @@ function isAuthorizedWebhook(request: NextRequest): boolean {
 async function triggerFullSync(reason: string): Promise<void> {
   const workerUrl = process.env.VAGARO_SYNC_URL
   if (!workerUrl) {
-    console.log(`  (no VAGARO_SYNC_URL set — running in-process syncs for ${reason})`)
-    await Promise.all([syncAllServices(), syncAllTeamMembers()])
+    console.warn(`  (no VAGARO_SYNC_URL set — skipping full sync for ${reason})`)
     return
   }
-  console.log(`  → calling worker ${workerUrl} (reason: ${reason})`)
+  const url = new URL(workerUrl)
+  if (!url.pathname.endsWith('/sync')) {
+    url.pathname = url.pathname.replace(/\/$/, '') + '/sync'
+  }
+  console.log(`  → calling canonical Vagaro sync Worker (reason: ${reason})`)
   const token = process.env.VAGARO_SYNC_TOKEN
   const headers: Record<string, string> = { 'content-type': 'application/json' }
   if (token) headers.authorization = `Bearer ${token}`
-  const res = await fetch(workerUrl, { method: 'GET', headers })
+  const res = await fetch(url, { method: 'GET', headers })
   if (!res.ok) {
     throw new Error(`worker sync ${res.status}: ${await res.text()}`)
   }

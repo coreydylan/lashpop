@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 export const maxDuration = 120
 export const dynamic = 'force-dynamic'
 
-const SYNC_STAGES = ['categories', 'services', 'publicStaff', 'teamMembers', 'stylistServices'] as const
+const SYNC_STAGES = ['categories', 'services', 'publicStaff', 'stylistServices'] as const
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -33,6 +33,7 @@ function summarizeSyncResult(value: unknown) {
   return {
     success: typeof payload?.success === 'boolean' ? payload.success : null,
     runId: typeof payload?.runId === 'string' ? payload.runId : null,
+    meteredUsage: summarizeStats(stages?.meteredUsage),
     stages: Object.fromEntries(SYNC_STAGES.map((name) => {
       const stage = asRecord(stages?.[name])
       return [name, {
@@ -45,7 +46,7 @@ function summarizeSyncResult(value: unknown) {
 }
 
 // POST - Admin-triggered, on-demand Vagaro sync. Calls the lashpop-vagaro-sync
-// Cloudflare worker's /sync endpoint (the same one the 15-minute cron hits), so
+// Cloudflare worker's /sync endpoint (the same one the three-times-daily cron hits), so
 // taxonomy/service/staff changes made in Vagaro show up on the site immediately
 // instead of waiting for the next scheduled run.
 export async function POST() {

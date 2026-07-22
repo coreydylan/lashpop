@@ -6,9 +6,10 @@
   "compatibility_flags": ["nodejs_compat"],
   "account_id": "4f7293208a9aa982963007fffd966b56",
 
-  // Every 6 hours (0:00, 6:00, 12:00, 18:00 UTC)
+  // Daily at 12:15 UTC. Vagaro returns the full review history, so more
+  // frequent runs only repeat metered calls without improving correctness.
   "triggers": {
-    "crons": ["0 */6 * * *"]
+    "crons": ["15 12 * * *"]
   },
 
   "observability": {

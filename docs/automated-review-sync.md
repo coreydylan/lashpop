@@ -1,7 +1,7 @@
 # Automated Review Syncing
 
 LashPop's review sync lives in a **Cloudflare Worker** at `workers/reviews/`,
-not in the Next.js app. It runs every 6 hours, fetches reviews from Vagaro,
+not in the Next.js app. It runs daily, fetches reviews from Vagaro,
 Google, and Yelp, deduplicates them, runs post-sync filters, and rotates the
 homepage selection.
 
@@ -9,7 +9,7 @@ homepage selection.
 
 | Source | Path | Cloak Mesh? | Cost | Status |
 |---|---|---|---|---|
-| Vagaro | OAuth Merchant API (`/api/v2/merchants/{businessId}/reviews`) | No | $0 | live |
+| Vagaro | OAuth Merchant API (`/api/v2/merchants/{businessId}/reviews`) | No | metered; max 25 calls/run | live |
 | Google | `/maps/preview/place` web RPC | No | $0 | live (cookies refreshed via local script) |
 | Yelp | `/gql/batch` persisted queries via Cloak Mesh | Yes | $0 | needs CLOAK_TOKEN |
 
@@ -18,10 +18,10 @@ homepage selection.
 Configured via `workers/reviews/wrangler.jsonc`:
 
 ```jsonc
-"triggers": { "crons": ["0 */6 * * *"] }
+"triggers": { "crons": ["15 12 * * *"] }
 ```
 
-Every 6 hours, the Worker runs `scheduled()` which:
+Daily at 12:15 UTC, the Worker runs `scheduled()` which:
 1. Fans out to all three fetchers in parallel
 2. Looks up team_member_id for each review (matching subject ↔ team_members.name)
 3. Upserts new reviews + testimonials, deduping on `(source, lower(reviewer_name), lower(review_text))`
@@ -38,7 +38,6 @@ curl -H "Authorization: Bearer $MANUAL_TRIGGER_SECRET" \
 
 | Name | Used by | How to refresh |
 |---|---|---|
-| `DATABASE_URL` | all | same as the Next.js app's Supabase pooler URL |
 | `VAGARO_CLIENT_ID` / `VAGARO_CLIENT_SECRET` / `VAGARO_BUSINESS_ID` | vagaro | mirrors `.env.local` |
 | `GOOGLE_PLACE_FID` | google | LashPop's Maps FID — `0x80dc73710da0172f:0x49e879bec593fc5e` |
 | `GOOGLE_PREVIEW_URL` / `GOOGLE_COOKIES` | google | `python3 workers/reviews/scripts/mint-google-session.py` |
@@ -80,3 +79,11 @@ Pre-2026 sync used:
 - Various CLI scripts in `scripts/scrape-*.ts` → **deleted**
 
 If you find any lingering references to those, they're dead code.
+
+## Vagaro cost guardrails
+
+- The Worker cron is the only review scheduler. Durable Object alarms are
+  disabled and any legacy alarm is drained without fetching.
+- Vagaro review runs record `meteredUsage` in the Durable Object's `lastResult`.
+- A run stops before attempting more than 25 Vagaro calls. At the current
+  review count, a normal run is 9 calls: one authentication plus eight pages.

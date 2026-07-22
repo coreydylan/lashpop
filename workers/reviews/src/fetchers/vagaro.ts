@@ -1,7 +1,7 @@
 /**
  * Vagaro fetcher — uses the OAuth Merchant API directly. No scraping.
  *
- * Endpoint: GET /us02/api/v2/merchants/{businessId}/reviews?pageNumber=N&pageSize=10
+ * Endpoint: GET /us02/api/v2/merchants/{businessId}/reviews?pageNumber=N&pageSize=50
  * Auth:     `accessToken` request header (NOT Bearer)
  * Dedup:    each review has a stable `reviewIds` we surface as externalId
  *
@@ -14,6 +14,11 @@ import type { Env, FetcherResult, NormalizedReview } from '../types'
 const DEFAULT_BASE = 'https://api.vagaro.com'
 const DEFAULT_REGION = 'us02'
 const PAGE_SIZE = 50
+// Daily cron × 25-call ceiling = at most 750 metered calls in 30 days.
+// Current volume is 9 calls/cycle (1 auth + 8 pages for 400 reviews).
+const MAX_METERED_CALLS_PER_CYCLE = 25
+
+type MeteredUsage = NonNullable<FetcherResult['meteredUsage']>
 
 interface VagaroAuthResp {
   status?: number
@@ -49,10 +54,25 @@ interface VagaroReviewsResp {
   }
 }
 
-async function getAccessToken(env: Env): Promise<string> {
+function recordMeteredCall(usage: MeteredUsage, endpoint: string, kind: 'auth' | 'api'): void {
+  if (usage.totalCalls >= usage.maxCallsPerCycle) {
+    throw new Error(
+      `Vagaro review call budget exhausted before ${endpoint} ` +
+      `(${usage.totalCalls}/${usage.maxCallsPerCycle} attempted this cycle)`,
+    )
+  }
+  if (kind === 'auth') usage.authCalls++
+  else usage.apiCalls++
+  usage.totalCalls++
+  usage.byEndpoint[endpoint] = (usage.byEndpoint[endpoint] ?? 0) + 1
+}
+
+async function getAccessToken(env: Env, usage: MeteredUsage): Promise<string> {
   const base = env.VAGARO_API_BASE_URL ?? DEFAULT_BASE
   const region = env.VAGARO_REGION ?? DEFAULT_REGION
-  const res = await fetch(`${base}/${region}/api/v2/merchants/generate-access-token`, {
+  const endpoint = '/api/v2/merchants/generate-access-token'
+  recordMeteredCall(usage, endpoint, 'auth')
+  const res = await fetch(`${base}/${region}${endpoint}`, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -115,11 +135,19 @@ function normalize(row: VagaroReviewRow): NormalizedReview | null {
 export async function fetchVagaroReviews(env: Env): Promise<FetcherResult> {
   const errors: string[] = []
   const reviews: NormalizedReview[] = []
+  const meteredUsage: MeteredUsage = {
+    authCalls: 0,
+    apiCalls: 0,
+    totalCalls: 0,
+    maxCallsPerCycle: MAX_METERED_CALLS_PER_CYCLE,
+    byEndpoint: {},
+  }
 
   if (!env.VAGARO_CLIENT_ID || !env.VAGARO_CLIENT_SECRET || !env.VAGARO_BUSINESS_ID) {
     return {
       source: 'vagaro',
       reviews: [],
+      meteredUsage,
       errors: ['Missing VAGARO_CLIENT_ID / VAGARO_CLIENT_SECRET / VAGARO_BUSINESS_ID'],
     }
   }
@@ -130,11 +158,12 @@ export async function fetchVagaroReviews(env: Env): Promise<FetcherResult> {
 
   let token: string
   try {
-    token = await getAccessToken(env)
+    token = await getAccessToken(env, meteredUsage)
   } catch (err) {
     return {
       source: 'vagaro',
       reviews: [],
+      meteredUsage,
       errors: [err instanceof Error ? err.message : String(err)],
     }
   }
@@ -144,6 +173,13 @@ export async function fetchVagaroReviews(env: Env): Promise<FetcherResult> {
   let totalRecords: number | undefined
 
   while (pageNumber <= totalPages) {
+    const endpoint = '/api/v2/merchants/{businessId}/reviews'
+    try {
+      recordMeteredCall(meteredUsage, endpoint, 'api')
+    } catch (err) {
+      errors.push(err instanceof Error ? err.message : String(err))
+      break
+    }
     const url =
       `${base}/${region}/api/v2/merchants/${bizPath}/reviews` +
       `?pageNumber=${pageNumber}&pageSize=${PAGE_SIZE}`
@@ -172,5 +208,5 @@ export async function fetchVagaroReviews(env: Env): Promise<FetcherResult> {
     if (pageNumber > totalPages) break
   }
 
-  return { source: 'vagaro', reviews, totalAvailable: totalRecords, errors }
+  return { source: 'vagaro', reviews, totalAvailable: totalRecords, meteredUsage, errors }
 }

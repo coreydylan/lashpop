@@ -71,7 +71,7 @@ export default async function SyncsPage() {
           </div>
           <div>
             <h1 className="h2 text-dune">Vagaro Sync</h1>
-            <p className="text-sm text-dune/60">Category → service → team → stylist mapping pipeline</p>
+            <p className="text-sm text-dune/60">Category → service → public staff → stylist mapping pipeline</p>
           </div>
         </div>
         <SyncNowButton />
@@ -80,8 +80,8 @@ export default async function SyncsPage() {
       <div className="mb-6 p-4 bg-ocean-mist/10 rounded-2xl border border-ocean-mist/20 flex items-start gap-3 text-sm text-dune/70">
         <Clock className="w-4 h-4 text-ocean-mist" />
         <div>
-          <p className="font-medium text-dune">Automatic every 15 minutes</p>
-          <p className="mt-0.5 text-dune/60">A run mirrors category identity and order first, then services, staff profiles, and each stylist&apos;s eligible services. Use the manual trigger after a Vagaro edit when you do not want to wait.</p>
+          <p className="font-medium text-dune">Automatic three times daily</p>
+          <p className="mt-0.5 text-dune/60">Runs start at 6:00, 14:00, and 22:00 UTC. Use the manual trigger after a Vagaro edit when you do not want to wait.</p>
         </div>
       </div>
 
@@ -117,7 +117,6 @@ export default async function SyncsPage() {
                 ['categories', 'Categories'],
                 ['services', 'Services'],
                 ['publicStaff', 'Public staff'],
-                ['teamMembers', 'Team details'],
                 ['stylistServices', 'Stylist services'],
               ] as const
               const ok = run.status === 'success'

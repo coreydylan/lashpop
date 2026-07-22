@@ -508,36 +508,6 @@ async function syncService(
   }
 }
 
-async function syncTeamMember(db: Db, vagaroEmployee: any): Promise<void> {
-  const employeeId = vagaroEmployee.serviceProviderId || vagaroEmployee.employee_id
-  const firstName = vagaroEmployee.employeeFirstName || vagaroEmployee.firstName || ''
-  const lastName = vagaroEmployee.employeeLastName || vagaroEmployee.lastName || ''
-  const name = `${firstName} ${lastName}`.trim()
-  const email = vagaroEmployee.email || vagaroEmployee.emailId || ''
-  const phone = vagaroEmployee.phone || vagaroEmployee.phoneNumber || ''
-
-  if (!employeeId) return
-
-  const existing = await db.select().from(teamMembers).where(eq(teamMembers.vagaroEmployeeId, employeeId)).limit(1)
-
-  if (existing.length > 0) {
-    await db
-      .update(teamMembers)
-      .set({
-        name,
-        phone,
-        email,
-        vagaroData: vagaroEmployee,
-        lastSyncedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(teamMembers.id, existing[0].id))
-  }
-  // We intentionally don't insert new rows from the worker — new team members
-  // need local enrichment (role, image, bio) before they show up. Matches the
-  // main app's syncAllTeamMembers behavior of only syncing existing rows.
-}
-
 export async function syncAllServices(
   db: Db,
   client: VagaroClient,
@@ -871,54 +841,6 @@ export async function syncPublicStaff(
   }
 
   return stats
-}
-
-export async function syncAllTeamMembers(db: Db, client: VagaroClient): Promise<SyncStats> {
-  // Dual-mode gate: external-booking rows should never be touched by Vagaro
-  // sync. In practice they don't carry a vagaroEmployeeId, so the IS NOT NULL
-  // filter already excludes them — the explicit equality below keeps the
-  // intent obvious and survives future schema drift.
-  const rows = await db
-    .select({
-      id: teamMembers.id,
-      name: teamMembers.name,
-      vagaroEmployeeId: teamMembers.vagaroEmployeeId,
-    })
-    .from(teamMembers)
-    .where(and(
-      isNotNull(teamMembers.vagaroEmployeeId),
-      eq(teamMembers.usesLashpopBooking, true),
-      eq(teamMembers.isActive, true),
-    ))
-
-  const total = rows.length
-  let synced = 0
-  let failed = 0
-  let lastError: unknown = null
-
-  for (const row of rows) {
-    try {
-      const employee = await client.getEmployee(row.vagaroEmployeeId!)
-      if (employee) {
-        await syncTeamMember(db, employee)
-        synced++
-      }
-    } catch (err) {
-      failed++
-      lastError = err
-      console.error(`team member sync failed: ${row.name}`, err instanceof Error ? err.message : err)
-    }
-  }
-
-  if (total > 0 && synced === 0) {
-    throw new Error(
-      `All ${total} team member upserts failed — connection issue. Last: ${
-        lastError instanceof Error ? lastError.message : String(lastError)
-      }`
-    )
-  }
-
-  return { synced, failed, total }
 }
 
 export interface StylistServicesStats {

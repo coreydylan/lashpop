@@ -7,17 +7,62 @@ export interface VagaroEnv {
   VAGARO_CLIENT_SECRET: string
   VAGARO_API_BASE_URL: string
   VAGARO_BUSINESS_ID: string
+  /** Hard safety ceiling for attempted metered calls in one Worker run. */
+  VAGARO_MAX_METERED_CALLS_PER_RUN?: string
+}
+
+export interface VagaroMeteredUsage {
+  authCalls: number
+  apiCalls: number
+  totalCalls: number
+  maxCallsPerRun: number
+  byEndpoint: Record<string, number>
 }
 
 export class VagaroClient {
   private accessToken: string | null = null
   private tokenExpiry: number | null = null
+  private readonly maxMeteredCallsPerRun: number
+  private readonly callsByEndpoint = new Map<string, number>()
+  private authCalls = 0
+  private apiCalls = 0
 
-  constructor(private env: VagaroEnv) {}
+  constructor(private env: VagaroEnv) {
+    const configured = Number.parseInt(env.VAGARO_MAX_METERED_CALLS_PER_RUN ?? '', 10)
+    this.maxMeteredCallsPerRun = Number.isFinite(configured) && configured > 0
+      ? Math.min(configured, 50)
+      : 5
+  }
+
+  private recordMeteredCall(endpoint: string, kind: 'auth' | 'api'): void {
+    const attempted = this.authCalls + this.apiCalls
+    if (attempted >= this.maxMeteredCallsPerRun) {
+      throw new Error(
+        `Vagaro metered-call budget exhausted before ${endpoint} ` +
+        `(${attempted}/${this.maxMeteredCallsPerRun} attempted this run)`,
+      )
+    }
+
+    if (kind === 'auth') this.authCalls++
+    else this.apiCalls++
+    this.callsByEndpoint.set(endpoint, (this.callsByEndpoint.get(endpoint) ?? 0) + 1)
+  }
+
+  getMeteredUsage(): VagaroMeteredUsage {
+    return {
+      authCalls: this.authCalls,
+      apiCalls: this.apiCalls,
+      totalCalls: this.authCalls + this.apiCalls,
+      maxCallsPerRun: this.maxMeteredCallsPerRun,
+      byEndpoint: Object.fromEntries(this.callsByEndpoint),
+    }
+  }
 
   private async authenticate(): Promise<string> {
+    const endpoint = '/api/v2/merchants/generate-access-token'
+    this.recordMeteredCall(endpoint, 'auth')
     const res = await fetch(
-      `${this.env.VAGARO_API_BASE_URL}/${this.env.VAGARO_REGION}/api/v2/merchants/generate-access-token`,
+      `${this.env.VAGARO_API_BASE_URL}/${this.env.VAGARO_REGION}${endpoint}`,
       {
         method: 'POST',
         headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
@@ -45,6 +90,7 @@ export class VagaroClient {
 
   private async request<T>(method: 'GET' | 'POST', endpoint: string, body?: unknown): Promise<T> {
     const token = await this.token()
+    this.recordMeteredCall(endpoint, 'api')
     const res = await fetch(`${this.env.VAGARO_API_BASE_URL}/${this.env.VAGARO_REGION}${endpoint}`, {
       method,
       headers: {
@@ -101,11 +147,4 @@ export class VagaroClient {
     return all
   }
 
-  async getEmployee(employeeId: string): Promise<any> {
-    const res = await this.request<{ data: any }>('POST', '/api/v2/employees', {
-      businessId: this.env.VAGARO_BUSINESS_ID,
-      serviceProviderId: employeeId,
-    })
-    return res.data
-  }
 }
