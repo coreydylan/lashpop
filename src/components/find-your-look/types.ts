@@ -137,7 +137,9 @@ export const RESULT_IMAGES: Record<LashStyle, string> = {
 // Quiz configuration
 export const QUIZ_CONFIG = {
   MIN_ROUNDS: 4,
-  MAX_ROUNDS: 8,
+  // Four styles have exactly six unique head-to-head pairings. Stopping at
+  // six guarantees the quiz never has to recycle a comparison.
+  MAX_ROUNDS: 6,
   WIN_MARGIN: 2, // Points ahead to win early
 }
 
@@ -157,37 +159,97 @@ export function getPairKey(style1: LashStyle, style2: LashStyle): string {
   return `${sorted[0]}-${sorted[1]}`
 }
 
+export function applyScoreChanges(
+  scores: StyleScores,
+  changes: Partial<StyleScores>,
+): StyleScores {
+  const next = { ...scores }
+  Object.entries(changes).forEach(([style, points]) => {
+    if (points) next[style as LashStyle] += points
+  })
+  return next
+}
+
+export function getRankedStyles(
+  scores: StyleScores,
+  tieBreakStyle?: LashStyle,
+  baselineScores?: StyleScores,
+): LashStyle[] {
+  return [...LASH_STYLE_SPECTRUM].sort((a, b) => {
+    const scoreDifference = scores[b] - scores[a]
+    if (scoreDifference !== 0) return scoreDifference
+
+    if (tieBreakStyle === a) return -1
+    if (tieBreakStyle === b) return 1
+
+    const baselineDifference = (baselineScores?.[b] ?? 0) - (baselineScores?.[a] ?? 0)
+    if (baselineDifference !== 0) return baselineDifference
+
+    return LASH_STYLE_SPECTRUM.indexOf(a) - LASH_STYLE_SPECTRUM.indexOf(b)
+  })
+}
+
 // Helper: get top 2 scoring styles
 export function getTopTwoStyles(scores: StyleScores): [LashStyle, LashStyle] {
-  const sorted = (Object.entries(scores) as [LashStyle, number][])
-    .sort((a, b) => b[1] - a[1])
+  const sorted = getRankedStyles(scores)
+  return [sorted[0], sorted[1]]
+}
 
-  return [sorted[0][0], sorted[1][0]]
+export function getUnusedStylePairs(
+  scores: StyleScores,
+  usedPairs: Set<string>,
+  firstRound = false,
+): Array<[LashStyle, LashStyle]> {
+  const pairs: Array<[LashStyle, LashStyle]> = []
+  const addPair = (first: LashStyle, second: LashStyle) => {
+    const key = getPairKey(first, second)
+    if (!usedPairs.has(key) && !pairs.some(([a, b]) => getPairKey(a, b) === key)) {
+      pairs.push([first, second])
+    }
+  }
+
+  if (firstRound) addPair("classic", "volume")
+
+  const ranked = getRankedStyles(scores)
+  addPair(ranked[0], ranked[1])
+
+  const allPairs: Array<[LashStyle, LashStyle]> = []
+  for (let i = 0; i < ranked.length; i++) {
+    for (let j = i + 1; j < ranked.length; j++) {
+      allPairs.push([ranked[i], ranked[j]])
+    }
+  }
+
+  allPairs
+    .sort((a, b) => {
+      const aTotal = scores[a[0]] + scores[a[1]]
+      const bTotal = scores[b[0]] + scores[b[1]]
+      return bTotal - aTotal
+    })
+    .forEach(([first, second]) => addPair(first, second))
+
+  return pairs
 }
 
 // Helper: check win condition
 export function checkWinCondition(
   scores: StyleScores,
-  roundNumber: number
+  completedRounds: number,
+  tieBreakStyle?: LashStyle,
+  baselineScores?: StyleScores,
 ): LashStyle | null {
-  const sorted = (Object.entries(scores) as [LashStyle, number][])
-    .sort((a, b) => b[1] - a[1])
-
+  const sorted = getRankedStyles(scores, tieBreakStyle, baselineScores)
   const [first, second] = sorted
-  const margin = first[1] - second[1]
+  const margin = scores[first] - scores[second]
 
   // Early win: leader has 2+ point margin after minimum rounds
-  if (roundNumber >= QUIZ_CONFIG.MIN_ROUNDS && margin >= QUIZ_CONFIG.WIN_MARGIN) {
-    return first[0]
+  if (completedRounds >= QUIZ_CONFIG.MIN_ROUNDS && margin >= QUIZ_CONFIG.WIN_MARGIN) {
+    return first
   }
 
   // Max rounds reached: highest score wins
-  if (roundNumber >= QUIZ_CONFIG.MAX_ROUNDS) {
-    // If tied, pick first alphabetically for consistency
-    if (margin === 0) {
-      return [first[0], second[0]].sort()[0]
-    }
-    return first[0]
+  if (completedRounds >= QUIZ_CONFIG.MAX_ROUNDS) {
+    return first
   }
 
   return null

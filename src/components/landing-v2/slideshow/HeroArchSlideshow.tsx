@@ -306,7 +306,6 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
           objectPosition={`${currentImage.position.x}% ${currentImage.position.y}%`}
           priority
           fetchPriority="high"
-          quality={75}
           sizes="80vw"
         />
       </div>
@@ -334,7 +333,6 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
             alt="Previous image"
             objectFit={previousImage.objectFit}
             objectPosition={`${previousImage.position.x}% ${previousImage.position.y}%`}
-            quality={75}
             sizes="80vw"
           />
         )}
@@ -355,7 +353,6 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
             objectPosition={`${currentImage.position.x}% ${currentImage.position.y}%`}
             priority
             fetchPriority="high"
-            quality={75}
             sizes="80vw"
           />
         )}

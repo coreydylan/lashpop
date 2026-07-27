@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useRef } from "react"
 import {
   type LashStyle,
   type StyleScores,
@@ -8,11 +8,12 @@ import {
   type Q2Answer,
   Q1_SCORES,
   Q2_SCORES,
-  QUIZ_CONFIG,
   createEmptyScores,
   getPairKey,
-  getTopTwoStyles,
+  getRankedStyles,
+  getUnusedStylePairs,
   checkWinCondition,
+  applyScoreChanges,
 } from "./types"
 
 interface UseQuizAlgorithmProps {
@@ -20,338 +21,226 @@ interface UseQuizAlgorithmProps {
 }
 
 interface UseQuizAlgorithmReturn {
-  // State
   scores: StyleScores
   roundNumber: number
   result: LashStyle | null
   currentPair: PhotoPair | null
   isLoading: boolean
-
-  // Actions
   applyQ1Answer: (answer: Q1Answer) => void
   applyQ2Answer: (answer: Q2Answer) => void
   selectPhoto: (selectedStyle: LashStyle) => void
   skipPair: () => void
   startPhotoComparison: () => PhotoPair | null
   reset: () => void
-
-  // Computed
   canStartQuiz: boolean
 }
 
 export function useQuizAlgorithm({
   photosByStyle,
 }: UseQuizAlgorithmProps): UseQuizAlgorithmReturn {
-  // State
-  const [scores, setScores] = useState<StyleScores>(createEmptyScores())
+  const emptyScores = useMemo(() => createEmptyScores(), [])
+  const [scores, setScores] = useState<StyleScores>(emptyScores)
   const [roundNumber, setRoundNumber] = useState(0)
-  const [usedPairs, setUsedPairs] = useState<Set<string>>(new Set())
-  const [usedPhotoIds, setUsedPhotoIds] = useState<Set<string>>(new Set())
   const [result, setResult] = useState<LashStyle | null>(null)
   const [currentPair, setCurrentPair] = useState<PhotoPair | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Check if we have enough photos to run the quiz
+  // Event handlers in the modal apply questionnaire points and start the photo
+  // phase in the same tick. Refs keep those calculations synchronous while the
+  // mirrored React state drives rendering.
+  const scoresRef = useRef<StyleScores>(emptyScores)
+  const baselineScoresRef = useRef<StyleScores>(emptyScores)
+  const roundNumberRef = useRef(0)
+  const currentPairRef = useRef<PhotoPair | null>(null)
+  const usedPairsRef = useRef<Set<string>>(new Set())
+  const usedAssetIdsRef = useRef<Set<string>>(new Set())
+
   const canStartQuiz = useMemo(() => {
-    const hasEnoughPhotos = Object.values(photosByStyle).every(
-      (photos) => photos.filter((p) => p.isEnabled).length >= 2
-    )
-    return hasEnoughPhotos
+    return Object.values(photosByStyle).every((photos) => {
+      const enabledAssetIds = new Set(
+        photos.filter((photo) => photo.isEnabled).map((photo) => photo.assetId),
+      )
+      return enabledAssetIds.size >= 2
+    })
   }, [photosByStyle])
 
-  // Apply Q1 answer scores
+  const commitScores = useCallback((next: StyleScores) => {
+    scoresRef.current = next
+    setScores(next)
+  }, [])
+
   const applyQ1Answer = useCallback((answer: Q1Answer) => {
-    const scoreChanges = Q1_SCORES[answer]
-    setScores((prev) => {
-      const next = { ...prev }
-      Object.entries(scoreChanges).forEach(([style, points]) => {
-        if (points) {
-          next[style as LashStyle] += points
-        }
-      })
-      return next
-    })
-  }, [])
+    commitScores(applyScoreChanges(scoresRef.current, Q1_SCORES[answer]))
+  }, [commitScores])
 
-  // Apply Q2 answer scores
   const applyQ2Answer = useCallback((answer: Q2Answer) => {
-    const scoreChanges = Q2_SCORES[answer]
-    setScores((prev) => {
-      const next = { ...prev }
-      Object.entries(scoreChanges).forEach(([style, points]) => {
-        if (points) {
-          next[style as LashStyle] += points
-        }
-      })
-      return next
-    })
+    const next = applyScoreChanges(scoresRef.current, Q2_SCORES[answer])
+    baselineScoresRef.current = { ...next }
+    commitScores(next)
+  }, [commitScores])
+
+  const getRandomPhoto = useCallback((
+    style: LashStyle,
+    excludedAssetIds: Set<string>,
+  ): QuizPhoto | null => {
+    const available = (photosByStyle[style] ?? []).filter(
+      (photo) => photo.isEnabled && !excludedAssetIds.has(photo.assetId),
+    )
+    if (available.length === 0) return null
+    return available[Math.floor(Math.random() * available.length)]
+  }, [photosByStyle])
+
+  const createPhotoPair = useCallback((
+    currentScores: StyleScores,
+    completedRounds: number,
+  ): PhotoPair | null => {
+    const candidates = getUnusedStylePairs(
+      currentScores,
+      usedPairsRef.current,
+      completedRounds === 0,
+    )
+
+    for (const [style1, style2] of candidates) {
+      const photo1 = getRandomPhoto(style1, usedAssetIdsRef.current)
+      if (!photo1) continue
+
+      const secondPhotoExclusions = new Set(usedAssetIdsRef.current)
+      secondPhotoExclusions.add(photo1.assetId)
+      const photo2 = getRandomPhoto(style2, secondPhotoExclusions)
+      if (!photo2) continue
+
+      return Math.random() > 0.5
+        ? { left: photo2, right: photo1, leftStyle: style2, rightStyle: style1 }
+        : { left: photo1, right: photo2, leftStyle: style1, rightStyle: style2 }
+    }
+
+    return null
+  }, [getRandomPhoto])
+
+  const commitPair = useCallback((pair: PhotoPair) => {
+    const nextPairs = new Set(usedPairsRef.current)
+    nextPairs.add(getPairKey(pair.leftStyle, pair.rightStyle))
+    usedPairsRef.current = nextPairs
+
+    const nextAssets = new Set(usedAssetIdsRef.current)
+    nextAssets.add(pair.left.assetId)
+    nextAssets.add(pair.right.assetId)
+    usedAssetIdsRef.current = nextAssets
+
+    currentPairRef.current = pair
+    setCurrentPair(pair)
   }, [])
 
-  // Get a random photo for a style, avoiding recently used ones
-  const getRandomPhoto = useCallback(
-    (style: LashStyle): QuizPhoto | null => {
-      const availablePhotos = photosByStyle[style].filter(
-        (p) => p.isEnabled && !usedPhotoIds.has(p.id)
-      )
+  const finish = useCallback((
+    currentScores: StyleScores,
+    tieBreakStyle?: LashStyle,
+  ) => {
+    const winner = getRankedStyles(
+      currentScores,
+      tieBreakStyle,
+      baselineScoresRef.current,
+    )[0]
+    currentPairRef.current = null
+    setCurrentPair(null)
+    setResult(winner)
+  }, [])
 
-      // If all photos have been used, reset and use any enabled photo
-      if (availablePhotos.length === 0) {
-        const allEnabled = photosByStyle[style].filter((p) => p.isEnabled)
-        if (allEnabled.length === 0) return null
-        return allEnabled[Math.floor(Math.random() * allEnabled.length)]
-      }
-
-      return availablePhotos[Math.floor(Math.random() * availablePhotos.length)]
-    },
-    [photosByStyle, usedPhotoIds]
-  )
-
-  // Select the next pair of styles to compare
-  const selectNextStylePair = useCallback((): [LashStyle, LashStyle] | null => {
-    // Round 1 is always Classic vs Volume (extremes of spectrum)
-    if (roundNumber === 0) {
-      const pairKey = getPairKey("classic", "volume")
-      if (!usedPairs.has(pairKey)) {
-        return ["classic", "volume"]
-      }
-    }
-
-    // Subsequent rounds: compare top 2 scoring styles
-    const [top1, top2] = getTopTwoStyles(scores)
-    const preferredPairKey = getPairKey(top1, top2)
-
-    // If this pair hasn't been used, use it
-    if (!usedPairs.has(preferredPairKey)) {
-      return [top1, top2]
-    }
-
-    // Otherwise, find any unused pair from the top 3 styles
-    const sortedStyles = (Object.entries(scores) as [LashStyle, number][])
-      .sort((a, b) => b[1] - a[1])
-      .map(([style]) => style)
-
-    for (let i = 0; i < sortedStyles.length; i++) {
-      for (let j = i + 1; j < sortedStyles.length; j++) {
-        const pairKey = getPairKey(sortedStyles[i], sortedStyles[j])
-        if (!usedPairs.has(pairKey)) {
-          return [sortedStyles[i], sortedStyles[j]]
-        }
-      }
-    }
-
-    // All pairs used - pick a random pair (shouldn't happen with 4-8 rounds)
-    const allStyles: LashStyle[] = ["classic", "hybrid", "wetAngel", "volume"]
-    const shuffled = allStyles.sort(() => Math.random() - 0.5)
-    return [shuffled[0], shuffled[1]]
-  }, [roundNumber, scores, usedPairs])
-
-  // Start photo comparison phase (called after Q2)
   const startPhotoComparison = useCallback((): PhotoPair | null => {
-    const stylePair = selectNextStylePair()
-    if (!stylePair) return null
+    baselineScoresRef.current = { ...scoresRef.current }
+    const pair = createPhotoPair(scoresRef.current, 0)
 
-    const [style1, style2] = stylePair
-    const photo1 = getRandomPhoto(style1)
-    const photo2 = getRandomPhoto(style2)
-
-    if (!photo1 || !photo2) {
-      console.error("Not enough photos for comparison")
+    if (!pair) {
+      finish(scoresRef.current)
       return null
     }
 
-    // Randomly assign left/right
-    const isSwapped = Math.random() > 0.5
-    const pair: PhotoPair = isSwapped
-      ? {
-          left: photo2,
-          right: photo1,
-          leftStyle: style2,
-          rightStyle: style1,
-        }
-      : {
-          left: photo1,
-          right: photo2,
-          leftStyle: style1,
-          rightStyle: style2,
-        }
-
-    setCurrentPair(pair)
+    roundNumberRef.current = 1
     setRoundNumber(1)
-
-    // Mark pair and photos as used
-    setUsedPairs((prev) => new Set(prev).add(getPairKey(style1, style2)))
-    setUsedPhotoIds((prev) => {
-      const next = new Set(prev)
-      next.add(photo1.id)
-      next.add(photo2.id)
-      return next
-    })
-
+    commitPair(pair)
     return pair
-  }, [selectNextStylePair, getRandomPhoto])
+  }, [commitPair, createPhotoPair, finish])
 
-  // Handle photo selection
-  const selectPhoto = useCallback(
-    (selectedStyle: LashStyle) => {
-      // Add 1 point to selected style
-      const newScores = { ...scores, [selectedStyle]: scores[selectedStyle] + 1 }
-      setScores(newScores)
+  const advanceAfterRound = useCallback((
+    nextScores: StyleScores,
+    tieBreakStyle?: LashStyle,
+  ) => {
+    const completedRounds = roundNumberRef.current
+    const winner = checkWinCondition(
+      nextScores,
+      completedRounds,
+      tieBreakStyle,
+      baselineScoresRef.current,
+    )
 
-      const newRoundNumber = roundNumber + 1
-
-      // Check win condition
-      const winner = checkWinCondition(newScores, newRoundNumber)
-      if (winner) {
-        setResult(winner)
-        setCurrentPair(null)
-        return
-      }
-
-      // Select next pair
-      setRoundNumber(newRoundNumber)
-
-      const stylePair = selectNextStylePair()
-      if (!stylePair) {
-        // Fallback: pick highest scorer
-        const sortedStyles = (Object.entries(newScores) as [LashStyle, number][])
-          .sort((a, b) => b[1] - a[1])
-        setResult(sortedStyles[0][0])
-        setCurrentPair(null)
-        return
-      }
-
-      const [style1, style2] = stylePair
-      const photo1 = getRandomPhoto(style1)
-      const photo2 = getRandomPhoto(style2)
-
-      if (!photo1 || !photo2) {
-        // Fallback: pick highest scorer
-        const sortedStyles = (Object.entries(newScores) as [LashStyle, number][])
-          .sort((a, b) => b[1] - a[1])
-        setResult(sortedStyles[0][0])
-        setCurrentPair(null)
-        return
-      }
-
-      // Randomly assign left/right
-      const isSwapped = Math.random() > 0.5
-      const pair: PhotoPair = isSwapped
-        ? {
-            left: photo2,
-            right: photo1,
-            leftStyle: style2,
-            rightStyle: style1,
-          }
-        : {
-            left: photo1,
-            right: photo2,
-            leftStyle: style1,
-            rightStyle: style2,
-          }
-
-      setCurrentPair(pair)
-
-      // Mark pair and photos as used
-      setUsedPairs((prev) => new Set(prev).add(getPairKey(style1, style2)))
-      setUsedPhotoIds((prev) => {
-        const next = new Set(prev)
-        next.add(photo1.id)
-        next.add(photo2.id)
-        return next
-      })
-    },
-    [scores, roundNumber, selectNextStylePair, getRandomPhoto]
-  )
-
-  // Handle "neither" skip — deduct 1 point from both styles, advance round
-  const skipPair = useCallback(() => {
-    if (!currentPair) return
-
-    const newScores = {
-      ...scores,
-      [currentPair.leftStyle]: Math.max(0, scores[currentPair.leftStyle] - 1),
-      [currentPair.rightStyle]: Math.max(0, scores[currentPair.rightStyle] - 1),
-    }
-    setScores(newScores)
-
-    const newRoundNumber = roundNumber + 1
-
-    // Check win condition
-    const winner = checkWinCondition(newScores, newRoundNumber)
     if (winner) {
+      currentPairRef.current = null
+      setCurrentPair(null)
       setResult(winner)
-      setCurrentPair(null)
       return
     }
 
-    // Select next pair
-    setRoundNumber(newRoundNumber)
-
-    const stylePair = selectNextStylePair()
-    if (!stylePair) {
-      const sortedStyles = (Object.entries(newScores) as [LashStyle, number][])
-        .sort((a, b) => b[1] - a[1])
-      setResult(sortedStyles[0][0])
-      setCurrentPair(null)
+    const nextPair = createPhotoPair(nextScores, completedRounds)
+    if (!nextPair) {
+      finish(nextScores, tieBreakStyle)
       return
     }
 
-    const [style1, style2] = stylePair
-    const photo1 = getRandomPhoto(style1)
-    const photo2 = getRandomPhoto(style2)
+    const nextRound = completedRounds + 1
+    roundNumberRef.current = nextRound
+    setRoundNumber(nextRound)
+    commitPair(nextPair)
+  }, [commitPair, createPhotoPair, finish])
 
-    if (!photo1 || !photo2) {
-      const sortedStyles = (Object.entries(newScores) as [LashStyle, number][])
-        .sort((a, b) => b[1] - a[1])
-      setResult(sortedStyles[0][0])
-      setCurrentPair(null)
-      return
+  const selectPhoto = useCallback((selectedStyle: LashStyle) => {
+    const nextScores = {
+      ...scoresRef.current,
+      [selectedStyle]: scoresRef.current[selectedStyle] + 1,
     }
+    commitScores(nextScores)
+    advanceAfterRound(nextScores, selectedStyle)
+  }, [advanceAfterRound, commitScores])
 
-    const isSwapped = Math.random() > 0.5
-    const pair: PhotoPair = isSwapped
-      ? { left: photo2, right: photo1, leftStyle: style2, rightStyle: style1 }
-      : { left: photo1, right: photo2, leftStyle: style1, rightStyle: style2 }
+  const skipPair = useCallback(() => {
+    const pair = currentPairRef.current
+    if (!pair) return
 
-    setCurrentPair(pair)
+    const nextScores = {
+      ...scoresRef.current,
+      [pair.leftStyle]: Math.max(0, scoresRef.current[pair.leftStyle] - 1),
+      [pair.rightStyle]: Math.max(0, scoresRef.current[pair.rightStyle] - 1),
+    }
+    commitScores(nextScores)
+    advanceAfterRound(nextScores)
+  }, [advanceAfterRound, commitScores])
 
-    setUsedPairs((prev) => new Set(prev).add(getPairKey(style1, style2)))
-    setUsedPhotoIds((prev) => {
-      const next = new Set(prev)
-      next.add(photo1.id)
-      next.add(photo2.id)
-      return next
-    })
-  }, [scores, roundNumber, currentPair, selectNextStylePair, getRandomPhoto])
-
-  // Reset quiz state
   const reset = useCallback(() => {
-    setScores(createEmptyScores())
+    const nextScores = createEmptyScores()
+    scoresRef.current = nextScores
+    baselineScoresRef.current = nextScores
+    roundNumberRef.current = 0
+    currentPairRef.current = null
+    usedPairsRef.current = new Set()
+    usedAssetIdsRef.current = new Set()
+
+    setScores(nextScores)
     setRoundNumber(0)
-    setUsedPairs(new Set())
-    setUsedPhotoIds(new Set())
     setResult(null)
     setCurrentPair(null)
     setIsLoading(false)
   }, [])
 
   return {
-    // State
     scores,
     roundNumber,
     result,
     currentPair,
     isLoading,
-
-    // Actions
     applyQ1Answer,
     applyQ2Answer,
     selectPhoto,
     skipPair,
     startPhotoComparison,
     reset,
-
-    // Computed
     canStartQuiz,
   }
 }

@@ -707,11 +707,13 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
 
                     {step === 4 && quiz.result && (() => {
                       const display = buildResultDisplay(quiz.result, resultSettings);
+                      const resolvedImage =
+                        resultServices?.bookingImage || display.resultImage;
                       return (
                         <ResultScreen
                           key="result"
                           result={display}
-                          resultImage={display.resultImage}
+                          resultImage={resolvedImage}
                           services={resultServices?.services ?? []}
                           servicesLoading={resultServices === null}
                           onBookService={handleBookService}

@@ -7,7 +7,7 @@ import { LPLogoLoader } from '@/components/ui/LPLogoLoader'
 import { useVagaroWidget } from '@/contexts/VagaroWidgetContext'
 import { subscribeToVagaroEvent } from '@/lib/vagaro-events'
 import type { BookingCompletedData } from '@/lib/vagaro-events'
-import { getVagaroWidgetUrl } from '@/lib/vagaro-widget'
+import { resolveVagaroServiceWidgetUrl } from '@/lib/vagaro-widget'
 import { installVagaroIframeSandbox } from '@/lib/vagaro-sandbox'
 import { BookingConfirmation } from '@/components/booking/BookingConfirmation'
 import { useServiceBrowser } from '../ServiceBrowserContext'
@@ -34,8 +34,11 @@ export function BookingView({ service }: BookingViewProps) {
   // Widget is truly ready when Vagaro sends WidgetLoaded event
   const isWidgetReady = widgetState.isLoaded
 
-  // Get widget script URL from service code
-  const widgetScriptUrl = getVagaroWidgetUrl(service.vagaroServiceCode)
+  // Preserve Vagaro's service-specific URL token when one is available.
+  const widgetScriptUrl = resolveVagaroServiceWidgetUrl({
+    widgetUrl: service.vagaroWidgetUrl,
+    serviceCode: service.vagaroServiceCode,
+  })
 
   // Trigger fade-in animation when widget becomes ready
   useEffect(() => {
@@ -96,7 +99,7 @@ export function BookingView({ service }: BookingViewProps) {
 
   // Load Vagaro widget script
   useEffect(() => {
-    if (!widgetContainerRef.current || scriptLoadedRef.current) return
+    if (!widgetContainerRef.current || scriptLoadedRef.current || !widgetScriptUrl) return
 
     const container = widgetContainerRef.current
 
@@ -153,7 +156,8 @@ export function BookingView({ service }: BookingViewProps) {
     window.open('https://www.vagaro.com/lashpop', '_blank', 'width=800,height=900')
   }
 
-  const showLoading = !isWidgetReady && !hasError
+  const showConfigurationError = !widgetScriptUrl
+  const showLoading = !isWidgetReady && !hasError && !showConfigurationError
 
   return (
     <motion.div
@@ -243,14 +247,18 @@ export function BookingView({ service }: BookingViewProps) {
         )}
 
         {/* Error State */}
-        {hasError && (
+        {(hasError || showConfigurationError) && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-ivory z-10 p-6">
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
               <AlertCircle className="w-6 h-6 text-red-500" />
             </div>
-            <p className="text-charcoal font-medium mb-2">Unable to load booking</p>
+            <p className="text-charcoal font-medium mb-2">
+              {showConfigurationError ? 'Online booking is not configured for this service' : 'Unable to load booking'}
+            </p>
             <p className="text-sage text-sm text-center mb-4">
-              There was a problem loading the booking widget. Please try again or book directly.
+              {showConfigurationError
+                ? 'Please open LashPop booking to choose this service, or contact the studio for help.'
+                : 'There was a problem loading the booking widget. Please try again or book directly.'}
             </p>
             <button
               onClick={handleOpenExternal}

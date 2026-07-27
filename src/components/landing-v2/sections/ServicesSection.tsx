@@ -81,7 +81,7 @@ export const defaultServiceCategories: ServiceCategory[] = [
     slug: 'fine-line-tattoos',
     title: 'FINE LINE TATTOOS',
     tagline: 'Tiny, personal + yours.',
-    description: 'Delicate, custom tattoos designed around your story and style. From tiny symbols and meaningful words to soft florals and one-of-a-kind linework, each piece is thoughtfully created to feel uniquely yours.',
+    description: "Thoughtfully designed fine-line tattoos featuring clean, delicate details. Choose from curated flash designs or create a small custom piece that’s uniquely yours",
     icon: '/lashpop-images/services/thin/fine-line-tattoos-icon.svg',
   },
   {

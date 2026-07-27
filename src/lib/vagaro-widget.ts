@@ -28,6 +28,40 @@ export function getVagaroWidgetUrl(serviceCode: string | null | undefined): stri
 }
 
 /**
+ * Resolve the widget loader for one specific service.
+ *
+ * Vagaro issues a distinct version token in each stored widget URL. Rebuilding
+ * every URL with the account-level token can make Vagaro open a different
+ * service, so a valid stored URL must win over the derived-code fallback.
+ */
+export function resolveVagaroServiceWidgetUrl({
+  widgetUrl,
+  serviceCode,
+}: {
+  widgetUrl?: string | null
+  serviceCode?: string | null
+}): string | null {
+  const trimmedUrl = widgetUrl?.trim()
+
+  if (trimmedUrl) {
+    try {
+      const parsed = new URL(trimmedUrl)
+      const isVagaroHost = parsed.hostname === 'vagaro.com' || parsed.hostname === 'www.vagaro.com'
+      const isWidgetLoader = parsed.pathname.includes('/resources/WidgetEmbeddedLoader/')
+
+      if (parsed.protocol === 'https:' && isVagaroHost && isWidgetLoader) {
+        return trimmedUrl
+      }
+    } catch {
+      // Invalid stored URLs fall through to the service-code fallback.
+    }
+  }
+
+  const trimmedCode = serviceCode?.trim()
+  return trimmedCode ? getVagaroWidgetUrl(trimmedCode) : null
+}
+
+/**
  * Extracts the service code from a full Vagaro widget URL
  * @param url - The full Vagaro widget URL
  * @returns The 5-character service code, or null if invalid
