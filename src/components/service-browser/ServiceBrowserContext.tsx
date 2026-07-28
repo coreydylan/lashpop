@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react'
 import { hasSeenLashQuizPrompt } from './LashQuizPrompt'
+import { isVagaroDirectBookingUrl } from '@/lib/vagaro-widget'
 
 export interface Service {
   id: string
@@ -156,6 +157,12 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
           && normalizeName(candidate.name) === normalizeName(service.name)
         )) || service
 
+    const directBookingUrl = selectedService.vagaroWidgetUrl?.trim()
+    if (directBookingUrl && isVagaroDirectBookingUrl(directBookingUrl)) {
+      window.open(directBookingUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+
     setState(prev => ({
       ...prev,
       view: 'booking',
@@ -278,6 +285,12 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
           Boolean(candidate.vagaroWidgetUrl || candidate.vagaroServiceCode)
           && candidate.name.toLowerCase() === service.name.toLowerCase()
         )) || service
+
+    const directBookingUrl = selectedService.vagaroWidgetUrl?.trim()
+    if (directBookingUrl && isVagaroDirectBookingUrl(directBookingUrl)) {
+      window.open(directBookingUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
 
     setState(prev => ({
       ...prev,

@@ -16,6 +16,8 @@ const VAGARO_VERSION_PARAM = '?v=hiLxqW4Klh4bZZdrYo8KnJ4QSz12Y9nutihT1iqCSyC#';
 
 // Fallback code for "all services" widget
 const ALL_SERVICES_CODE = '6PmS0';
+const VAGARO_BOOKING_HOSTS = new Set(['vagaro.com', 'www.vagaro.com'])
+const LASHPOP_VAGARO_SLUG = 'lashpop32'
 
 /**
  * Constructs a Vagaro widget URL from a service code
@@ -25,6 +27,46 @@ const ALL_SERVICES_CODE = '6PmS0';
 export function getVagaroWidgetUrl(serviceCode: string | null | undefined): string {
   const code = serviceCode || ALL_SERVICES_CODE;
   return `https://www.vagaro.com//resources/WidgetEmbeddedLoader/${VAGARO_BUSINESS_PREFIX}${code}${VAGARO_VERSION_PARAM}`;
+}
+
+/**
+ * Builds Vagaro's stable service-specific booking URL.
+ *
+ * Unlike an embedded widget, this link identifies the service directly and
+ * does not retain a category ID that can become stale when Vagaro categories
+ * are reorganized.
+ */
+export function getVagaroDirectBookingUrl(
+  serviceId: string | null | undefined,
+): string | null {
+  const trimmedId = serviceId?.trim()
+  if (!trimmedId || !/^\d+$/.test(trimmedId)) return null
+
+  return `https://www.vagaro.com/${LASHPOP_VAGARO_SLUG}/book-now?ServiceId=${trimmedId}`
+}
+
+/**
+ * Returns true only for a service-specific booking link on LashPop's Vagaro
+ * listing. This keeps externally supplied database URLs from becoming an
+ * unrestricted redirect.
+ */
+export function isVagaroDirectBookingUrl(url: string | null | undefined): boolean {
+  const trimmedUrl = url?.trim()
+  if (!trimmedUrl) return false
+
+  try {
+    const parsed = new URL(trimmedUrl)
+    const serviceId = parsed.searchParams.get('ServiceId')
+
+    return (
+      parsed.protocol === 'https:' &&
+      VAGARO_BOOKING_HOSTS.has(parsed.hostname) &&
+      parsed.pathname.replace(/\/+$/, '') === `/${LASHPOP_VAGARO_SLUG}/book-now` &&
+      Boolean(serviceId && /^\d+$/.test(serviceId))
+    )
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -46,7 +88,7 @@ export function resolveVagaroServiceWidgetUrl({
   if (trimmedUrl) {
     try {
       const parsed = new URL(trimmedUrl)
-      const isVagaroHost = parsed.hostname === 'vagaro.com' || parsed.hostname === 'www.vagaro.com'
+      const isVagaroHost = VAGARO_BOOKING_HOSTS.has(parsed.hostname)
       const isWidgetLoader = parsed.pathname.includes('/resources/WidgetEmbeddedLoader/')
 
       if (parsed.protocol === 'https:' && isVagaroHost && isWidgetLoader) {

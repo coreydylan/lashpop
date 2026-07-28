@@ -6,6 +6,10 @@ import { Clock, DollarSign, ChevronLeft, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { AssetWithTags } from '@/actions/dam';
+import {
+  getVagaroDirectBookingUrl,
+  isVagaroDirectBookingUrl,
+} from '@/lib/vagaro-widget';
 
 interface ServiceDetailClientProps {
   service: {
@@ -40,16 +44,12 @@ export function ServiceDetailClient({ service, gallery }: ServiceDetailClientPro
   const priceDisplay = `$${(service.priceStarting / 100).toFixed(0)}+`;
   const visiblePhotos = showAllPhotos ? gallery : gallery.slice(0, 8);
 
-  // Generate Vagaro booking URL
-  // If service has a specific Vagaro service ID, we could append it to filter
-  // For now, just use the base booking URL
   const getBookingUrl = () => {
-    // If service has vagaroServiceId, we can try to construct a filtered URL
-    // Vagaro URL pattern for specific service: https://www.vagaro.com/lashpop32/services?sId=SERVICE_ID
-    if (service.vagaroServiceId) {
-      return `${VAGARO_BASE_BOOKING_URL}?sId=${service.vagaroServiceId}`;
+    if (isVagaroDirectBookingUrl(service.vagaroWidgetUrl)) {
+      return service.vagaroWidgetUrl!;
     }
-    return VAGARO_BASE_BOOKING_URL;
+
+    return getVagaroDirectBookingUrl(service.vagaroServiceId) ?? VAGARO_BASE_BOOKING_URL;
   };
 
   const handleContinueToBook = () => {
