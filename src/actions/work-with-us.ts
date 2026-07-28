@@ -96,7 +96,7 @@ function formatPathTitle(path: CareerPath): string {
     case "booth":
       return "Booth Rental Inquiry";
     case "training":
-      return "Training Waitlist";
+      return "Training Inquiry";
   }
 }
 

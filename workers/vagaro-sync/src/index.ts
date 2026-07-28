@@ -9,6 +9,7 @@ import {
   type StylistServicesStats,
   type SyncStats,
 } from './sync'
+import { serviceSyncHealthError } from './booking-health'
 import { fetchPublicServicesFull, type PublicServicesPayload } from './public-services'
 import { vagaroSyncRuns } from './schema'
 import { eq } from 'drizzle-orm'
@@ -73,10 +74,9 @@ async function runSync(
         env.VAGARO_PUBLIC_BUSINESS_ID,
         publicPayload,
       )
-      result.services.success = result.services.stats.failed === 0
-      if (!result.services.success) {
-        result.services.error = `${result.services.stats.failed} service record(s) failed`
-      }
+      const serviceHealthError = serviceSyncHealthError(result.services.stats)
+      result.services.success = serviceHealthError === null
+      if (serviceHealthError) result.services.error = serviceHealthError
     } catch (err) {
       result.services.error = err instanceof Error ? err.message : String(err)
       console.error('services sync threw:', err)

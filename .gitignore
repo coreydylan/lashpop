@@ -117,3 +117,7 @@ scripts/instagram-import/launchd-*.log
 /tmp/
 /.claude/
 s3-recovery/
+
+# Local client photo intake batches (managed through the DAM, not Git)
+/_emily_batch_20260630/
+/emily-616/

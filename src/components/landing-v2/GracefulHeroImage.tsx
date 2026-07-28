@@ -29,7 +29,7 @@ export function GracefulHeroImage({
   sizes,
   priority = false,
   fetchPriority = 'auto',
-  quality = 70,
+  quality,
   className = '',
 }: GracefulHeroImageProps) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)

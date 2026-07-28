@@ -9,6 +9,7 @@ import {
   vagaroServiceCategories,
 } from './schema'
 import type { VagaroClient } from './vagaro-client'
+import { hasBookingConfiguration } from './booking-health'
 import { computeEffectiveCategoryOrder } from './category-order'
 import { fetchPublicStaff, nameKey, originalPhotoUrl } from './public-staff'
 import {
@@ -258,7 +259,11 @@ export interface SyncStats {
   failed: number
   total: number
   /** Services deactivated this run because Vagaro no longer offers them. */
-  deactivated?: number
+  deactivated: number
+  /** Active Vagaro services that would render publicly but cannot book. */
+  bookingMisconfigured: string[]
+  /** Newly discovered services kept hidden until widget metadata is supplied. */
+  bookingPending: string[]
 }
 
 export interface PublicStaffStats {
@@ -285,6 +290,12 @@ export interface PublicStaffStats {
  *    missing we DO NOT touch those fields on existing rows (preserve whatever
  *    the previous sync wrote).
  */
+interface SyncedService {
+  id: string | null
+  isActive: boolean
+  bookingReady: boolean
+}
+
 async function syncService(
   db: Db,
   publicRecord: PublicServiceRecord,
@@ -300,7 +311,7 @@ async function syncService(
   // share a title (see the guard comment in the lookup block).
   runServiceIds: Set<string>,
   categoryIdByVagaroId: Map<string, string>,
-): Promise<string | null> {
+): Promise<SyncedService> {
   const serviceId = publicRecord.serviceId
   // Prefer v2's title when available (it's the authenticated, canonical name);
   // fall back to the public record's title otherwise.
@@ -377,15 +388,15 @@ async function syncService(
   // hand-edited slugs (e.g. "volume" instead of the auto-generated
   // "volume-full-set") so the slug fallback misses them and we end up
   // double-inserting. Matching by name catches those before we INSERT.
-  // All three lookups filter to is_active=true. Inactive rows are tombstones
-  // from the dedupe pass — we don't want syncs to revive them or write updates
-  // into the dead row instead of the live one. If every match is inactive, we
-  // fall through to INSERT, which is the correct behavior (Vagaro has a
-  // service we don't have a live row for).
+  // Slug/name fallbacks filter to is_active=true so they cannot merge into a
+  // historical tombstone. Exact public IDs deliberately include inactive rows:
+  // a newly discovered service is inserted inactive until its widget metadata
+  // is configured, and later syncs must update that same pending row instead
+  // of repeatedly attempting duplicate inserts.
   let existing = await db
     .select()
     .from(services)
-    .where(and(eq(services.vagaroServiceId, serviceId), eq(services.isActive, true)))
+    .where(eq(services.vagaroServiceId, serviceId))
     .limit(1)
   const matchedByExactId = existing.length > 0
   if (existing.length === 0 && slug) {
@@ -422,16 +433,13 @@ async function syncService(
     }
   }
 
-  const v2ServiceIdString = v2Service?.serviceId ? String(v2Service.serviceId) : null
-
   if (existing.length > 0) {
     const currentVagaroId = existing[0].vagaroServiceId
-    // Prefer v2's id when we have it (long-lived format used everywhere else
-    // in the codebase). Only overwrite an existing id if it differs from what
-    // we'd write — avoids no-op churn on rows already in the right shape.
-    const preferredVagaroId = v2ServiceIdString ?? serviceId
-    const migrateVagaroId = currentVagaroId !== preferredVagaroId
-      ? { vagaroServiceId: preferredVagaroId }
+    // The public composite drives the canonical list, stylist mappings, and
+    // lifecycle reconciliation. Keep its numeric ID canonical even when v2
+    // enrichment identifies the same service with an encoded ID.
+    const migrateVagaroId = currentVagaroId !== serviceId
+      ? { vagaroServiceId: serviceId }
       : {}
     await db
       .update(services)
@@ -458,7 +466,11 @@ async function syncService(
         updatedAt: new Date(),
       })
       .where(eq(services.id, existing[0].id))
-    return existing[0].id
+    return {
+      id: existing[0].id,
+      isActive: existing[0].isActive,
+      bookingReady: hasBookingConfiguration(existing[0]),
+    }
   } else {
     // Insert path. duration_minutes and price_starting are NOT NULL in the
     // schema so we have to provide *something* when v2 didn't enrich. Use
@@ -500,11 +512,19 @@ async function syncService(
       // Position in the composite walk — keeps insertion order aligned with
       // Vagaro's booking-page order on first sync.
       displayOrder: positionalOrder,
-      isActive: true,
+      // Vagaro does not expose widget-builder codes through either service
+      // API. Publishing immediately would create a service that looks
+      // bookable but has nowhere correct to go. Keep it hidden until an admin
+      // supplies verified widget metadata and explicitly activates it.
+      isActive: false,
       mainCategory: parentTitle || 'Other Services',
       lastSyncedAt: new Date(),
     }).returning({ id: services.id })
-    return inserted[0]?.id ?? null
+    return {
+      id: inserted[0]?.id ?? null,
+      isActive: false,
+      bookingReady: false,
+    }
   }
 }
 
@@ -543,6 +563,7 @@ export async function syncAllServices(
   // A failure here is non-fatal — we still sync the full list, just without
   // updates to price/duration/description on this pass.
   const v2ById = new Map<string, any>()
+  const v2ByTitle = new Map<string, any | null>()
   try {
     const v2List = await client.getServices()
     if (!Array.isArray(v2List)) {
@@ -551,6 +572,12 @@ export async function syncAllServices(
     for (const s of v2List) {
       const id = s?.serviceId ?? s?.id
       if (id != null) v2ById.set(String(id), s)
+      const titleKey = serviceTitleKey(s?.serviceTitle || s?.name)
+      if (titleKey) {
+        // This fallback is enrichment-only and safe only for a unique title.
+        // The public numeric ID remains the persisted canonical identity.
+        v2ByTitle.set(titleKey, v2ByTitle.has(titleKey) ? null : s)
+      }
     }
     console.log(`v2 enrichment: ${v2ById.size} services with full detail`)
   } catch (err) {
@@ -564,6 +591,8 @@ export async function syncAllServices(
   let synced = 0
   let failed = 0
   let lastError: unknown = null
+  const bookingMisconfigured: string[] = []
+  const bookingPending: string[] = []
   // Local service IDs touched (inserted or updated) this run. Used by the
   // reconciliation pass below to deactivate rows Vagaro no longer offers.
   const touchedServiceIds = new Set<string>()
@@ -582,8 +611,11 @@ export async function syncAllServices(
   for (let i = 0; i < publicRecords.length; i++) {
     const rec = publicRecords[i]
     try {
-      const v2Match = v2ById.get(rec.serviceId) ?? null
-      const touchedId = await syncService(
+      const v2Match =
+        v2ById.get(rec.serviceId) ??
+        v2ByTitle.get(serviceTitleKey(rec.serviceTitle)) ??
+        null
+      const syncedService = await syncService(
         db,
         rec,
         v2Match,
@@ -594,7 +626,11 @@ export async function syncAllServices(
         runServiceIds,
         categoryIdByVagaroId,
       )
-      if (touchedId) touchedServiceIds.add(touchedId)
+      if (syncedService.id) touchedServiceIds.add(syncedService.id)
+      if (!syncedService.bookingReady) {
+        if (syncedService.isActive) bookingMisconfigured.push(rec.serviceTitle)
+        else bookingPending.push(rec.serviceTitle)
+      }
       synced++
     } catch (err) {
       failed++
@@ -667,7 +703,14 @@ export async function syncAllServices(
     )
   }
 
-  return { synced, failed, total, deactivated }
+  return {
+    synced,
+    failed,
+    total,
+    deactivated,
+    bookingMisconfigured,
+    bookingPending,
+  }
 }
 
 /**

@@ -54,6 +54,7 @@ interface Service {
   // New fields for key image and demo mode
   keyImageAssetId?: string | null;
   useDemoPhotos?: boolean;
+  vagaroWidgetUrl?: string | null;
   vagaroServiceCode?: string | null;
 }
 

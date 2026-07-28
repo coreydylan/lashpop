@@ -230,11 +230,11 @@ function PathForm({
           <CheckCircle2 className="w-7 h-7 text-green-600" />
         </div>
         <h3 className="font-display text-xl font-medium text-charcoal mb-2">
-          {path === 'training' ? 'You\'re on the list!' : 'Application Received!'}
+          {path === 'training' ? 'Training Inquiry Received!' : 'Application Received!'}
         </h3>
         <p className="text-charcoal/70 text-sm">
           {path === 'training'
-            ? 'We\'ll notify you as soon as enrollment opens.'
+            ? 'I\'ll reach out soon to discuss a personalized training experience.'
             : 'We\'ll review your application and reach out soon.'}
         </p>
       </motion.div>
@@ -264,9 +264,9 @@ function PathForm({
       messagePlaceholder: 'Tell us about your current business, clientele, and what you\'re looking for in a space...'
     },
     training: {
-      title: 'Join the Waitlist',
-      subtitle: 'Be first to know when enrollment opens',
-      buttonText: 'Join Waitlist',
+      title: 'Interested in training?',
+      subtitle: 'Fill out the form below and I\'ll reach out to discuss a personalized training experience tailored to you',
+      buttonText: 'Inquire About Training',
       showExperience: true,
       showInstagram: true,
       messagePlaceholder: 'What are you hoping to learn? Any specific techniques you\'re interested in?'

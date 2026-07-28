@@ -65,6 +65,10 @@ export const services = sqliteTable('services', {
   id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
   vagaroServiceId: text('vagaro_service_id').unique(),
   vagaroParentServiceId: text('vagaro_parent_service_id'),
+  // Admin-owned booking metadata. Vagaro's service APIs do not return these
+  // widget-builder values, but the sync reads them for booking health checks.
+  vagaroWidgetUrl: text('vagaro_widget_url'),
+  vagaroServiceCode: text('vagaro_service_code'),
   vagaroData: json<unknown>('vagaro_data'),
   vagaroImageUrl: text('vagaro_image_url'),
   name: text('name').notNull(),
