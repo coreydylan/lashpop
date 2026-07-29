@@ -1,6 +1,9 @@
+import widgetManifest from './vagaro-widget-manifest.json'
+
 export interface BookingConfiguration {
   vagaroWidgetUrl?: string | null
   vagaroServiceCode?: string | null
+  vagaroServiceId?: string | null
 }
 
 export interface ServiceSyncHealth {
@@ -9,6 +12,13 @@ export interface ServiceSyncHealth {
   bookingPending: string[]
 }
 
+const verifiedWidgetUrlByServiceId = new Map(
+  widgetManifest.mappings.map(mapping => [
+    mapping.vagaroServiceId,
+    mapping.widgetUrl,
+  ]),
+)
+
 /**
  * A booking mapping is structurally valid only when it contains Vagaro's
  * complete generated WidgetEmbeddedLoader URL and the generated version token.
@@ -16,6 +26,12 @@ export interface ServiceSyncHealth {
  * Do not weaken this to "any URL" or "a service code exists." Numeric
  * ServiceID URLs and BusinessWidget.aspx links can render the full menu, while
  * rebuilding a loader from a five-character code can use the wrong token.
+ * When the numeric Vagaro service ID is available, the URL must also match the
+ * checked-in manifest produced from Vagaro's authenticated widget builder.
+ * This catches syntactically valid loaders copied onto the wrong service — the
+ * failure mode that previously sent duplicate Microblading and Brow Shaping
+ * rows to one another's booking screens.
+ *
  * See ../../docs/VAGARO_BOOKING_CONTRACT.md.
  */
 export function hasBookingConfiguration(service: BookingConfiguration): boolean {
@@ -28,7 +44,17 @@ export function hasBookingConfiguration(service: BookingConfiguration): boolean 
     const isGeneratedLoader = parsed.pathname.includes('/resources/WidgetEmbeddedLoader/')
     const hasVersionToken = Boolean(parsed.searchParams.get('v')?.trim())
 
-    return parsed.protocol === 'https:' && isVagaroHost && isGeneratedLoader && hasVersionToken
+    const isGeneratedUrl =
+      parsed.protocol === 'https:' &&
+      isVagaroHost &&
+      isGeneratedLoader &&
+      hasVersionToken
+    if (!isGeneratedUrl) return false
+
+    const vagaroServiceId = service.vagaroServiceId?.trim()
+    if (!vagaroServiceId) return true
+
+    return verifiedWidgetUrlByServiceId.get(vagaroServiceId) === widgetUrl
   } catch {
     return false
   }

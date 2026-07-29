@@ -103,6 +103,8 @@ export function BookingView({ service }: BookingViewProps) {
   // - Preserve the URL's original ?v= token.
   // - Keep the DOM order script -> .vagaro -> container so Vagaro's loader
   //   handshake can create its own service-scoped iframe.
+  // - Mapping identity is enforced by the generated manifest; do not accept a
+  //   different syntactically-valid loader for the same numeric service ID.
   // History: b5c6cd1, 2036182, 48ed862, 9c33d38.
   // Full runbook: docs/VAGARO_BOOKING_CONTRACT.md.
   useEffect(() => {

@@ -14,8 +14,9 @@ export const services = pgTable("services", {
   // BusinessWidget.aspx or numeric ServiceID URL. See
   // docs/VAGARO_BOOKING_CONTRACT.md.
   vagaroWidgetUrl: text("vagaro_widget_url"),
-  // Legacy fallback when no full generated loader URL is stored.
-  vagaroServiceCode: text("vagaro_service_code"), // 5-char code from Vagaro widget URL (e.g., "6XoR0")
+  // Deprecated historical artifact. Vagaro's current opaque loader format
+  // cannot be generated from this field, and runtime booking must never use it.
+  vagaroServiceCode: text("vagaro_service_code"),
   vagaroData: jsonb("vagaro_data").$type<any>(), // Store full Vagaro response for reference
   vagaroImageUrl: text("vagaro_image_url"), // Original image from Vagaro sync
 

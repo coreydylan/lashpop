@@ -31,6 +31,16 @@ test('accepts only a complete generated Vagaro loader URL', () => {
   )
 })
 
+test('rejects an unverified loader when a numeric Vagaro service id is known', () => {
+  assert.equal(
+    hasBookingConfiguration({
+      vagaroServiceId: '35729654',
+      vagaroWidgetUrl: GENERATED_LOADER,
+    }),
+    false,
+  )
+})
+
 test('summarizes failures, active gaps, and fail-closed new services', () => {
   assert.equal(
     serviceSyncHealthError({

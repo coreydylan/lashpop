@@ -7,8 +7,10 @@ Updated July 29, 2026.
 | Area | Update |
 | --- | --- |
 | Homepage hero | Restored adaptive high-quality image delivery on mobile and desktop instead of forcing quality 70–75. |
-| Choose a Service / booking | Restored Vagaro's generated script-loader integration and removed numeric-service/new-window shortcuts. Missing or invalid booking configuration now fails closed instead of silently opening Classic lashes. See `docs/VAGARO_BOOKING_CONTRACT.md`. |
-| Fine Line Tattoos | Replaced the homepage description with the approved copy. Booking remains fail-closed until a fresh service-scoped widget is generated in Vagaro; the archived widget currently falls back to Lash Extensions and must not be restored. |
+| Choose a Service / booking | Restored Vagaro's generated script-loader integration and removed numeric-service/new-window shortcuts. Regenerated all 90 active Vagaro-backed mappings from the current authenticated widget API using exact service + parent-category matching. Missing, swapped, or invalid booking configuration now fails closed. See `docs/VAGARO_BOOKING_CONTRACT.md`. |
+| Fine Line Tattoos | Replaced the homepage description with the approved copy and generated a current Fine Line-only inline loader from Vagaro. |
+| Volume Fill | Replaced the stale loader with a current Volume Fill-only inline loader generated from the authenticated widget service/category selection. |
+| Duplicate service names | Gave Brows vs. Permanent Makeup Microblading/Nanobrows rows and Brows vs. Waxing Brow Shaping rows distinct verified loaders instead of the name-only duplicates created by the old CSV import. |
 | Botox | Opens the Naturtox booking site directly instead of entering the LashPop Vagaro flow. |
 | Find Your Stylist | Added “Licensed Tattoo Practitioner” to Evie Ells and Kelly Richter. |
 | Reviews | Google, Yelp, and Vagaro summary ratings display with one decimal place (for example, `5.0`). |
@@ -42,17 +44,14 @@ Add each staff member in Vagaro and keep a disabled Vagaro profile containing th
 
 ## Remaining verification
 
-- In Vagaro Settings → Booking Widget, generate and save a new In Website
-  widget containing Fine Line Tattoos (`35729654`), then store the complete
-  generated `WidgetEmbeddedLoader` URL and version token.
-- Verify the newer duplicate Microblading/Nanobrows service rows against the
-  actual Vagaro widget contents; matching names or reused loader URLs do not
-  prove the numeric service IDs are mapped.
-- Run the complete service-card click-through after deployment on both desktop and mobile.
-- Run the Lash Quiz several times on the deployed build and confirm the visual classification of the remaining photos with the LashPop team.
+- Run a customer-level spot check of the regenerated service screens on both
+  desktop and mobile after deployment. The automated audit now proves the
+  selected Vagaro service/category used to generate every loader, while this
+  visual check covers Vagaro's rendered booking UI.
+- Run the Lash Quiz several times on the deployed build and confirm the visual
+  classification of the remaining photos with the LashPop team.
 
-`Volume Fill` has a generated Vagaro loader URL, but Vagaro currently renders
-the Lash Extensions category before its widget-service filter resolves. It
-must be browser-verified end to end before calling the mapping complete. The
-sync now keeps newly discovered services hidden and reports active services
-unless they have a complete generated loader URL with its version token.
+The sync keeps newly discovered services hidden until the widget refresh tool
+adds them to the verified manifest. A syntactically valid loader copied onto
+the wrong numeric service now fails the sync health check instead of being
+accepted.
