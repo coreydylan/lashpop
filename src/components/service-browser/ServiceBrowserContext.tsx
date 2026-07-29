@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react'
 import { hasSeenLashQuizPrompt } from './LashQuizPrompt'
-import { isVagaroDirectBookingUrl } from '@/lib/vagaro-widget'
+import { getExternalBookingUrl } from '@/lib/booking-routes'
 
 export interface Service {
   id: string
@@ -21,6 +21,7 @@ export interface Service {
   displayOrder?: number | null
   vagaroWidgetUrl?: string | null
   vagaroServiceCode?: string | null
+  vagaroServiceId?: string | null
 }
 
 export interface ServiceCategory {
@@ -135,8 +136,9 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
   // the old DetailView middle step (price/time/description/gallery) is
   // gone. Card UI is the new source of truth for that information.
   const selectService = useCallback((service: Service) => {
-    if (service.categorySlug === 'injectables' || /\bbotox\b/i.test(service.name)) {
-      window.open('https://www.naturtox.com/', '_blank', 'noopener,noreferrer')
+    const externalBookingUrl = getExternalBookingUrl(service)
+    if (externalBookingUrl) {
+      window.open(externalBookingUrl, '_blank', 'noopener,noreferrer')
       return
     }
 
@@ -150,18 +152,12 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
       .replace(/[^a-z0-9]+/g, ' ')
       .trim()
 
-    const selectedService = service.vagaroWidgetUrl || service.vagaroServiceCode
+    const selectedService = service.vagaroServiceId || service.vagaroWidgetUrl || service.vagaroServiceCode
       ? service
       : services.find((candidate) => (
-          Boolean(candidate.vagaroWidgetUrl || candidate.vagaroServiceCode)
+          Boolean(candidate.vagaroServiceId || candidate.vagaroWidgetUrl || candidate.vagaroServiceCode)
           && normalizeName(candidate.name) === normalizeName(service.name)
         )) || service
-
-    const directBookingUrl = selectedService.vagaroWidgetUrl?.trim()
-    if (directBookingUrl && isVagaroDirectBookingUrl(directBookingUrl)) {
-      window.open(directBookingUrl, '_blank', 'noopener,noreferrer')
-      return
-    }
 
     setState(prev => ({
       ...prev,
@@ -279,18 +275,12 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
       console.warn(`[ServiceBrowser] bookServiceFromQuiz: no service found for slug "${serviceSlug}"`)
       return
     }
-    const selectedService = service.vagaroWidgetUrl || service.vagaroServiceCode
+    const selectedService = service.vagaroServiceId || service.vagaroWidgetUrl || service.vagaroServiceCode
       ? service
       : services.find((candidate) => (
-          Boolean(candidate.vagaroWidgetUrl || candidate.vagaroServiceCode)
+          Boolean(candidate.vagaroServiceId || candidate.vagaroWidgetUrl || candidate.vagaroServiceCode)
           && candidate.name.toLowerCase() === service.name.toLowerCase()
         )) || service
-
-    const directBookingUrl = selectedService.vagaroWidgetUrl?.trim()
-    if (directBookingUrl && isVagaroDirectBookingUrl(directBookingUrl)) {
-      window.open(directBookingUrl, '_blank', 'noopener,noreferrer')
-      return
-    }
 
     setState(prev => ({
       ...prev,

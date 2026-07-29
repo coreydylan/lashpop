@@ -84,6 +84,7 @@ export default async function HomePage() {
     subcategoryDisplayOrder: service.subcategoryDisplayOrder,
     vagaroWidgetUrl: service.vagaroWidgetUrl ?? undefined,
     vagaroServiceCode: service.vagaroServiceCode ?? undefined,
+    vagaroServiceId: service.vagaroServiceId ?? undefined,
   }))
 
   // Transform database format to component format

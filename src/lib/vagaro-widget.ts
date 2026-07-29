@@ -17,7 +17,23 @@ const VAGARO_VERSION_PARAM = '?v=hiLxqW4Klh4bZZdrYo8KnJ4QSz12Y9nutihT1iqCSyC#';
 // Fallback code for "all services" widget
 const ALL_SERVICES_CODE = '6PmS0';
 const VAGARO_BOOKING_HOSTS = new Set(['vagaro.com', 'www.vagaro.com'])
-const LASHPOP_VAGARO_SLUG = 'lashpop32'
+
+/**
+ * LashPop's public Vagaro BusinessWidget page.
+ *
+ * Vagaro's generated loader scripts eventually create this same iframe. The
+ * opaque `enc` value identifies LashPop's public widget configuration; it is
+ * shipped to every browser by Vagaro and is not a credential. Keeping one
+ * canonical iframe template lets the current numeric service ID be the only
+ * per-service mapping we maintain.
+ *
+ * `WidgetServiceId=0` is intentional. Old generated widgets retain a category
+ * snapshot, which is why moved services such as Fine Line Tattoos could fall
+ * back to the full menu. Clearing that snapshot and setting `ServiceID`
+ * selects the exact current service.
+ */
+const VAGARO_DIRECT_BOOKING_PREFIX =
+  'https://www.vagaro.com/Users/BusinessWidget.aspx?enc=MMLjhIwJMcwFQhXLL7ifVNktU+6gVG/xKebyJuJZAstemTnIIIKeu0QS8AhhSYXpPqb0D/obnhonLWVrRgENjVYs3JtTfqU8CaATRsRBExg82SjvbpaaJj/xgNGXz9tP05/mSHjXeIApPZOQ4417unuF/38gFm4LOsgznCtFcvfknouEkPRJzvFjgmuZxsCNNphibWlOXi33Q+uLIVjw6vX1VL6XX8djewz8V40GVgMfLfP7uXi/mcXkrtXYvUIp4qx4pm/R3xAWN1Z9ofHT3QCL3nrJ4nkPHE2HRtPKY0JjR4hn+ZSBmqPbWJ9nRi/SGr0fTbA5Zyv2g0HIy+Ht02Xc76Exb4O+SzfHKIrBxsJ5di+3pYTzSApYcOh7UtEydX4Rpd3IqiwPyLSYK71oTVWK23zdCOAmznJf2gftBwc=&WidgetServiceId=0&ServiceID='
 
 /**
  * Constructs a Vagaro widget URL from a service code
@@ -30,11 +46,7 @@ export function getVagaroWidgetUrl(serviceCode: string | null | undefined): stri
 }
 
 /**
- * Builds Vagaro's stable service-specific booking URL.
- *
- * Unlike an embedded widget, this link identifies the service directly and
- * does not retain a category ID that can become stale when Vagaro categories
- * are reorganized.
+ * Build LashPop's inline Vagaro iframe URL for one exact numeric service.
  */
 export function getVagaroDirectBookingUrl(
   serviceId: string | null | undefined,
@@ -42,13 +54,16 @@ export function getVagaroDirectBookingUrl(
   const trimmedId = serviceId?.trim()
   if (!trimmedId || !/^\d+$/.test(trimmedId)) return null
 
-  return `https://www.vagaro.com/${LASHPOP_VAGARO_SLUG}/book-now?ServiceId=${trimmedId}`
+  return `${VAGARO_DIRECT_BOOKING_PREFIX}${trimmedId}`
 }
 
 /**
- * Returns true only for a service-specific booking link on LashPop's Vagaro
- * listing. This keeps externally supplied database URLs from becoming an
- * unrestricted redirect.
+ * Returns true only for Vagaro's service-specific embeddable booking page.
+ *
+ * A plain `/book-now?ServiceId=...` URL does not preserve the service in
+ * Vagaro. Their generated BusinessWidget iframe does recognize `ServiceID`,
+ * so stale widget configurations can use that page directly while keeping
+ * the booking flow inline.
  */
 export function isVagaroDirectBookingUrl(url: string | null | undefined): boolean {
   const trimmedUrl = url?.trim()
@@ -56,12 +71,15 @@ export function isVagaroDirectBookingUrl(url: string | null | undefined): boolea
 
   try {
     const parsed = new URL(trimmedUrl)
-    const serviceId = parsed.searchParams.get('ServiceId')
+    const serviceId = parsed.searchParams.get('ServiceID')
+    const widgetServiceId = parsed.searchParams.get('WidgetServiceId')
 
     return (
       parsed.protocol === 'https:' &&
       VAGARO_BOOKING_HOSTS.has(parsed.hostname) &&
-      parsed.pathname.replace(/\/+$/, '') === `/${LASHPOP_VAGARO_SLUG}/book-now` &&
+      parsed.pathname.toLowerCase() === '/users/businesswidget.aspx' &&
+      Boolean(parsed.searchParams.get('enc')) &&
+      widgetServiceId === '0' &&
       Boolean(serviceId && /^\d+$/.test(serviceId))
     )
   } catch {
@@ -147,4 +165,5 @@ export function getAllServicesWidgetUrl(): string {
 export const VAGARO_CONSTANTS = {
   BUSINESS_PREFIX: VAGARO_BUSINESS_PREFIX,
   ALL_SERVICES_CODE,
+  DIRECT_BOOKING_PREFIX: VAGARO_DIRECT_BOOKING_PREFIX,
 } as const;

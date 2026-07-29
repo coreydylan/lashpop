@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useServiceBrowser } from '@/components/service-browser'
+import { NATURTOX_BOOKING_URL } from '@/lib/booking-routes'
 import { SectionRule } from '../SectionRule'
 
 // Service category type for data from database
@@ -401,7 +402,7 @@ export function ServicesSection({ isMobile: propIsMobile, categories: propCatego
   const handleCategoryClick = useCallback((categorySlug: string) => {
     // Special case: Botox links directly to Grace's Naturtox site
     if (categorySlug === 'injectables') {
-      window.open('https://www.naturtox.com/', '_blank', 'noopener,noreferrer')
+      window.open(NATURTOX_BOOKING_URL, '_blank', 'noopener,noreferrer')
       return
     }
 

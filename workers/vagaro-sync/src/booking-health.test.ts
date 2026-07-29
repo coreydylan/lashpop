@@ -2,9 +2,11 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { hasBookingConfiguration, serviceSyncHealthError } from './booking-health'
 
-test('accepts either an exact widget URL or a service code', () => {
+test('accepts a numeric service ID or a legacy widget mapping', () => {
+  assert.equal(hasBookingConfiguration({ vagaroServiceId: '35729654' }), true)
   assert.equal(hasBookingConfiguration({ vagaroWidgetUrl: 'https://www.vagaro.com/widget' }), true)
   assert.equal(hasBookingConfiguration({ vagaroServiceCode: '6fWR0' }), true)
+  assert.equal(hasBookingConfiguration({ vagaroServiceId: 'not-numeric' }), false)
   assert.equal(hasBookingConfiguration({ vagaroWidgetUrl: '  ', vagaroServiceCode: null }), false)
 })
 

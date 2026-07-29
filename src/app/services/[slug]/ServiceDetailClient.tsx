@@ -45,11 +45,16 @@ export function ServiceDetailClient({ service, gallery }: ServiceDetailClientPro
   const visiblePhotos = showAllPhotos ? gallery : gallery.slice(0, 8);
 
   const getBookingUrl = () => {
+    const directBookingUrl = getVagaroDirectBookingUrl(service.vagaroServiceId);
+    if (directBookingUrl) {
+      return directBookingUrl;
+    }
+
     if (isVagaroDirectBookingUrl(service.vagaroWidgetUrl)) {
       return service.vagaroWidgetUrl!;
     }
 
-    return getVagaroDirectBookingUrl(service.vagaroServiceId) ?? VAGARO_BASE_BOOKING_URL;
+    return VAGARO_BASE_BOOKING_URL;
   };
 
   const handleContinueToBook = () => {

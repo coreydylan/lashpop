@@ -30,21 +30,37 @@ test("a service without booking metadata does not fall back to all services", ()
   assert.equal(resolveVagaroServiceWidgetUrl({}), null)
 })
 
-test("direct service booking URLs identify a numeric Vagaro service", () => {
+test("direct iframe URLs identify a numeric Vagaro service", () => {
   const directUrl = getVagaroDirectBookingUrl("35729654")
 
+  assert.ok(directUrl)
+  assert.equal(new URL(directUrl).searchParams.get("ServiceID"), "35729654")
+  assert.equal(new URL(directUrl).searchParams.get("WidgetServiceId"), "0")
   assert.equal(
-    directUrl,
-    "https://www.vagaro.com/lashpop32/book-now?ServiceId=35729654",
+    isVagaroDirectBookingUrl(directUrl),
+    true,
   )
-  assert.equal(isVagaroDirectBookingUrl(directUrl), true)
 })
 
 test("direct booking URL validation rejects unrelated and unscoped links", () => {
   assert.equal(
-    isVagaroDirectBookingUrl("https://example.com/lashpop32/book-now?ServiceId=35729654"),
+    isVagaroDirectBookingUrl(
+      "https://example.com/Users/BusinessWidget.aspx?enc=opaque-token&WidgetServiceId=0&ServiceID=35729654",
+    ),
     false,
   )
-  assert.equal(isVagaroDirectBookingUrl("https://www.vagaro.com/lashpop32"), false)
+  assert.equal(
+    isVagaroDirectBookingUrl(
+      "https://www.vagaro.com/lashpop32/book-now?ServiceId=35729654",
+    ),
+    false,
+  )
+  assert.equal(
+    isVagaroDirectBookingUrl(
+      "https://www.vagaro.com/Users/BusinessWidget.aspx?enc=opaque-token&WidgetServiceId=96540&ServiceID=35729654",
+    ),
+    false,
+  )
   assert.equal(getVagaroDirectBookingUrl("not-a-service"), null)
+  assert.equal(getVagaroDirectBookingUrl(null), null)
 })

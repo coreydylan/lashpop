@@ -469,7 +469,10 @@ async function syncService(
     return {
       id: existing[0].id,
       isActive: existing[0].isActive,
-      bookingReady: hasBookingConfiguration(existing[0]),
+      bookingReady: hasBookingConfiguration({
+        ...existing[0],
+        vagaroServiceId: serviceId,
+      }),
     }
   } else {
     // Insert path. duration_minutes and price_starting are NOT NULL in the
@@ -512,10 +515,10 @@ async function syncService(
       // Position in the composite walk — keeps insertion order aligned with
       // Vagaro's booking-page order on first sync.
       displayOrder: positionalOrder,
-      // Vagaro does not expose widget-builder codes through either service
-      // API. Publishing immediately would create a service that looks
-      // bookable but has nowhere correct to go. Keep it hidden until an admin
-      // supplies verified widget metadata and explicitly activates it.
+      // Keep newly discovered services hidden until an admin reviews their
+      // presentation and explicitly activates them. Booking itself no longer
+      // needs a hand-copied widget code: the numeric service ID drives the
+      // exact inline iframe URL.
       isActive: false,
       mainCategory: parentTitle || 'Other Services',
       lastSyncedAt: new Date(),
@@ -523,7 +526,7 @@ async function syncService(
     return {
       id: inserted[0]?.id ?? null,
       isActive: false,
-      bookingReady: false,
+      bookingReady: hasBookingConfiguration({ vagaroServiceId: serviceId }),
     }
   }
 }
