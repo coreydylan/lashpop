@@ -97,7 +97,15 @@ export function BookingView({ service }: BookingViewProps) {
     resetWidgetState()
   }, [service.id, resetWidgetState])
 
-  // Load Vagaro widget script
+  // CRITICAL VAGARO INTEGRATION CONTRACT:
+  // - Inject the generated WidgetEmbeddedLoader URL as a <script>.
+  // - Never use that URL, BusinessWidget.aspx, or a numeric ServiceID URL as
+  //   an iframe src; those paths caused the full menu/"Click to Book" regression.
+  // - Preserve the URL's original ?v= token.
+  // - Keep the DOM order script -> .vagaro -> container so Vagaro's loader
+  //   handshake can create its own service-scoped iframe.
+  // History: b5c6cd1, 2036182, 48ed862, 9c33d38.
+  // Full runbook: docs/VAGARO_BOOKING_CONTRACT.md.
   useEffect(() => {
     if (!widgetContainerRef.current || scriptLoadedRef.current || !widgetScriptUrl) return
 

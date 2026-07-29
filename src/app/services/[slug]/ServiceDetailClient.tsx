@@ -6,10 +6,6 @@ import { Clock, DollarSign, ChevronLeft, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { AssetWithTags } from '@/actions/dam';
-import {
-  getVagaroDirectBookingUrl,
-  isVagaroDirectBookingUrl,
-} from '@/lib/vagaro-widget';
 
 interface ServiceDetailClientProps {
   service: {
@@ -44,16 +40,12 @@ export function ServiceDetailClient({ service, gallery }: ServiceDetailClientPro
   const priceDisplay = `$${(service.priceStarting / 100).toFixed(0)}+`;
   const visiblePhotos = showAllPhotos ? gallery : gallery.slice(0, 8);
 
-  const getBookingUrl = () => {
-    if (isVagaroDirectBookingUrl(service.vagaroWidgetUrl)) {
-      return service.vagaroWidgetUrl!;
-    }
-
-    return getVagaroDirectBookingUrl(service.vagaroServiceId) ?? VAGARO_BASE_BOOKING_URL;
-  };
-
   const handleContinueToBook = () => {
-    window.open(getBookingUrl(), '_blank', 'noopener,noreferrer');
+    // Numeric Vagaro ServiceID URLs do not reliably preselect a service. This
+    // legacy standalone page therefore links to the honest all-services page;
+    // the home-page Service Browser owns service-scoped inline booking.
+    // See docs/VAGARO_BOOKING_CONTRACT.md.
+    window.open(VAGARO_BASE_BOOKING_URL, '_blank', 'noopener,noreferrer');
   };
 
   return (

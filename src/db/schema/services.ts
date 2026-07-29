@@ -9,7 +9,12 @@ export const services = pgTable("services", {
   // Vagaro Integration - Source of truth for core service data
   vagaroServiceId: text("vagaro_service_id").unique(), // Links to Vagaro service
   vagaroParentServiceId: text("vagaro_parent_service_id"), // Links to parent category in Vagaro
-  vagaroWidgetUrl: text("vagaro_widget_url"), // DEPRECATED: Use vagaroServiceCode instead
+  // Canonical booking mapping: the complete generated WidgetEmbeddedLoader
+  // URL, including its service-specific ?v= token. Do not replace this with a
+  // BusinessWidget.aspx or numeric ServiceID URL. See
+  // docs/VAGARO_BOOKING_CONTRACT.md.
+  vagaroWidgetUrl: text("vagaro_widget_url"),
+  // Legacy fallback when no full generated loader URL is stored.
   vagaroServiceCode: text("vagaro_service_code"), // 5-char code from Vagaro widget URL (e.g., "6XoR0")
   vagaroData: jsonb("vagaro_data").$type<any>(), // Store full Vagaro response for reference
   vagaroImageUrl: text("vagaro_image_url"), // Original image from Vagaro sync

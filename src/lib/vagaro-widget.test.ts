@@ -1,9 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import {
-  getVagaroDirectBookingUrl,
   getVagaroWidgetUrl,
-  isVagaroDirectBookingUrl,
   resolveVagaroServiceWidgetUrl,
 } from "./vagaro-widget"
 
@@ -30,21 +28,17 @@ test("a service without booking metadata does not fall back to all services", ()
   assert.equal(resolveVagaroServiceWidgetUrl({}), null)
 })
 
-test("direct service booking URLs identify a numeric Vagaro service", () => {
-  const directUrl = getVagaroDirectBookingUrl("35729654")
-
+test("numeric ServiceID links are rejected because they render the full menu", () => {
   assert.equal(
-    directUrl,
-    "https://www.vagaro.com/lashpop32/book-now?ServiceId=35729654",
+    resolveVagaroServiceWidgetUrl({
+      widgetUrl: "https://www.vagaro.com/lashpop32/book-now?ServiceId=35729654",
+    }),
+    null,
   )
-  assert.equal(isVagaroDirectBookingUrl(directUrl), true)
-})
-
-test("direct booking URL validation rejects unrelated and unscoped links", () => {
   assert.equal(
-    isVagaroDirectBookingUrl("https://example.com/lashpop32/book-now?ServiceId=35729654"),
-    false,
+    resolveVagaroServiceWidgetUrl({
+      widgetUrl: "https://www.vagaro.com/Users/BusinessWidget.aspx?WidgetServiceId=0&ServiceID=35729654",
+    }),
+    null,
   )
-  assert.equal(isVagaroDirectBookingUrl("https://www.vagaro.com/lashpop32"), false)
-  assert.equal(getVagaroDirectBookingUrl("not-a-service"), null)
 })

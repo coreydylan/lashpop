@@ -17,7 +17,6 @@ const VAGARO_VERSION_PARAM = '?v=hiLxqW4Klh4bZZdrYo8KnJ4QSz12Y9nutihT1iqCSyC#';
 // Fallback code for "all services" widget
 const ALL_SERVICES_CODE = '6PmS0';
 const VAGARO_BOOKING_HOSTS = new Set(['vagaro.com', 'www.vagaro.com'])
-const LASHPOP_VAGARO_SLUG = 'lashpop32'
 
 /**
  * Constructs a Vagaro widget URL from a service code
@@ -30,51 +29,18 @@ export function getVagaroWidgetUrl(serviceCode: string | null | undefined): stri
 }
 
 /**
- * Builds Vagaro's stable service-specific booking URL.
- *
- * Unlike an embedded widget, this link identifies the service directly and
- * does not retain a category ID that can become stale when Vagaro categories
- * are reorganized.
- */
-export function getVagaroDirectBookingUrl(
-  serviceId: string | null | undefined,
-): string | null {
-  const trimmedId = serviceId?.trim()
-  if (!trimmedId || !/^\d+$/.test(trimmedId)) return null
-
-  return `https://www.vagaro.com/${LASHPOP_VAGARO_SLUG}/book-now?ServiceId=${trimmedId}`
-}
-
-/**
- * Returns true only for a service-specific booking link on LashPop's Vagaro
- * listing. This keeps externally supplied database URLs from becoming an
- * unrestricted redirect.
- */
-export function isVagaroDirectBookingUrl(url: string | null | undefined): boolean {
-  const trimmedUrl = url?.trim()
-  if (!trimmedUrl) return false
-
-  try {
-    const parsed = new URL(trimmedUrl)
-    const serviceId = parsed.searchParams.get('ServiceId')
-
-    return (
-      parsed.protocol === 'https:' &&
-      VAGARO_BOOKING_HOSTS.has(parsed.hostname) &&
-      parsed.pathname.replace(/\/+$/, '') === `/${LASHPOP_VAGARO_SLUG}/book-now` &&
-      Boolean(serviceId && /^\d+$/.test(serviceId))
-    )
-  } catch {
-    return false
-  }
-}
-
-/**
  * Resolve the widget loader for one specific service.
  *
  * Vagaro issues a distinct version token in each stored widget URL. Rebuilding
  * every URL with the account-level token can make Vagaro open a different
  * service, so a valid stored URL must win over the derived-code fallback.
+ *
+ * CRITICAL INTEGRATION CONTRACT:
+ * Only a generated WidgetEmbeddedLoader URL is service-scoped. Neither
+ * BusinessWidget.aspx nor the public /book-now URL becomes service-scoped by
+ * adding a numeric ServiceID query parameter; both can render the full menu.
+ * Keep this allowlist narrow and preserve the stored ?v= token. See
+ * docs/VAGARO_BOOKING_CONTRACT.md before changing this resolver.
  */
 export function resolveVagaroServiceWidgetUrl({
   widgetUrl,

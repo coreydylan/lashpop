@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "types": "tsc --noEmit",
+    "test:vagaro-widget": "tsx --test src/lib/vagaro-widget.test.ts",
+    "prebuild": "npm run test:vagaro-widget",
     "validate:seo-migration": "node scripts/validate-seo-migration.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
