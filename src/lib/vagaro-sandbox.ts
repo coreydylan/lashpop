@@ -16,10 +16,8 @@
  * `allow-popups-to-escape-sandbox`): the widget opens real popups mid-flow —
  * "Log in with Google" OAuth, card capture — and revoking popups breaks those.
  * Sandbox flags can't distinguish a good popup (Google) from the bad one (the
- * end-of-booking redirect), so the popup variant of the redirect is handled at
- * a different layer: BookingModal tears the Vagaro iframe out of the DOM the
- * instant the `BookingCompleted` postMessage arrives, so Vagaro's redirect code
- * has no live document left to open the popup from. See BookingModal.tsx.
+ * end-of-booking redirect), so the remaining redirect defense is handled in
+ * BookingView while the branded confirmation is visible.
  *
  * Subtleties this util handles that a simple `setAttribute('sandbox', ...)`
  * misses — and which were causing desktop (but not mobile) to redirect:
@@ -49,8 +47,7 @@
 
 // Popups ARE allowed — the widget needs them for "Log in with Google" OAuth
 // and card capture. The unwanted post-booking redirect popup is suppressed by
-// tearing down the iframe on BookingCompleted (see this file's header and
-// BookingModal.tsx), not by revoking popup permission.
+// BookingView's confirmation guard, not by revoking popup permission.
 const SANDBOX =
   'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals';
 

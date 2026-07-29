@@ -36,7 +36,8 @@ usually beginning with Classic lashes. Opening either path from the Service
 Browser also breaks the required inline modal behavior.
 
 If a service lacks a verified generated loader URL, fail closed with the
-configuration message. Do not silently fall back to the all-services widget.
+configuration message. Do not rebuild a URL from `vagaro_service_code` and do
+not silently fall back to the all-services widget.
 
 ## Adding or repairing a service
 

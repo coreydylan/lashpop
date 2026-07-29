@@ -37,7 +37,6 @@ export function BookingView({ service }: BookingViewProps) {
   // Preserve Vagaro's service-specific URL token when one is available.
   const widgetScriptUrl = resolveVagaroServiceWidgetUrl({
     widgetUrl: service.vagaroWidgetUrl,
-    serviceCode: service.vagaroServiceCode,
   })
 
   // Trigger fade-in animation when widget becomes ready

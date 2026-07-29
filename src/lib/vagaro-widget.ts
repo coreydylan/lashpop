@@ -1,39 +1,18 @@
 /**
  * Vagaro Widget URL Utilities
  *
- * Handles constructing Vagaro embedded widget URLs from service codes.
- * The widget URLs follow this pattern:
- * https://www.vagaro.com//resources/WidgetEmbeddedLoader/[BUSINESS_PREFIX][SERVICE_CODE]
+ * Validates stored, generated Vagaro widget loader URLs.
+ * See docs/VAGARO_BOOKING_CONTRACT.md before changing this integration.
  */
 
-// Business-specific prefix that identifies the Vagaro account
-// This is constant for all services in the LashPop account
-const VAGARO_BUSINESS_PREFIX = 'OZqsEJatCoPqFJ1y6BuSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfoR';
-
-// Version parameter required by Vagaro's widget loader
-// Without this, the script loads but doesn't initialize the iframe
-const VAGARO_VERSION_PARAM = '?v=hiLxqW4Klh4bZZdrYo8KnJ4QSz12Y9nutihT1iqCSyC#';
-
-// Fallback code for "all services" widget
-const ALL_SERVICES_CODE = '6PmS0';
 const VAGARO_BOOKING_HOSTS = new Set(['vagaro.com', 'www.vagaro.com'])
-
-/**
- * Constructs a Vagaro widget URL from a service code
- * @param serviceCode - The 5-character service-specific code (e.g., "6XoR0")
- * @returns The full Vagaro widget URL with version parameter
- */
-export function getVagaroWidgetUrl(serviceCode: string | null | undefined): string {
-  const code = serviceCode || ALL_SERVICES_CODE;
-  return `https://www.vagaro.com//resources/WidgetEmbeddedLoader/${VAGARO_BUSINESS_PREFIX}${code}${VAGARO_VERSION_PARAM}`;
-}
 
 /**
  * Resolve the widget loader for one specific service.
  *
- * Vagaro issues a distinct version token in each stored widget URL. Rebuilding
- * every URL with the account-level token can make Vagaro open a different
- * service, so a valid stored URL must win over the derived-code fallback.
+ * Vagaro issues a distinct version token in each stored widget URL. A loader
+ * cannot be safely rebuilt from the five-character service code, so the
+ * complete generated URL is the only accepted source.
  *
  * CRITICAL INTEGRATION CONTRACT:
  * Only a generated WidgetEmbeddedLoader URL is service-scoped. Neither
@@ -44,10 +23,8 @@ export function getVagaroWidgetUrl(serviceCode: string | null | undefined): stri
  */
 export function resolveVagaroServiceWidgetUrl({
   widgetUrl,
-  serviceCode,
 }: {
   widgetUrl?: string | null
-  serviceCode?: string | null
 }): string | null {
   const trimmedUrl = widgetUrl?.trim()
 
@@ -56,61 +33,15 @@ export function resolveVagaroServiceWidgetUrl({
       const parsed = new URL(trimmedUrl)
       const isVagaroHost = VAGARO_BOOKING_HOSTS.has(parsed.hostname)
       const isWidgetLoader = parsed.pathname.includes('/resources/WidgetEmbeddedLoader/')
+      const hasVersionToken = Boolean(parsed.searchParams.get('v')?.trim())
 
-      if (parsed.protocol === 'https:' && isVagaroHost && isWidgetLoader) {
+      if (parsed.protocol === 'https:' && isVagaroHost && isWidgetLoader && hasVersionToken) {
         return trimmedUrl
       }
     } catch {
-      // Invalid stored URLs fall through to the service-code fallback.
+      // Invalid stored URLs fail closed below.
     }
-  }
-
-  const trimmedCode = serviceCode?.trim()
-  return trimmedCode ? getVagaroWidgetUrl(trimmedCode) : null
-}
-
-/**
- * Extracts the service code from a full Vagaro widget URL
- * @param url - The full Vagaro widget URL
- * @returns The 5-character service code, or null if invalid
- */
-export function extractVagaroServiceCode(url: string): string | null {
-  if (!url) return null;
-
-  // Remove query params and hash
-  const cleanUrl = url.split('?')[0].split('#')[0];
-
-  // Check if it's a valid Vagaro widget URL
-  if (!cleanUrl.includes('WidgetEmbeddedLoader/')) {
-    return null;
-  }
-
-  // Extract everything after the business prefix
-  const afterLoader = cleanUrl.split('WidgetEmbeddedLoader/')[1];
-  if (!afterLoader || afterLoader.length < VAGARO_BUSINESS_PREFIX.length) {
-    return null;
-  }
-
-  // The service code is everything after the business prefix
-  const serviceCode = afterLoader.slice(VAGARO_BUSINESS_PREFIX.length);
-
-  // Validate: codes are typically 5 characters
-  if (serviceCode.length >= 4 && serviceCode.length <= 6) {
-    return serviceCode;
   }
 
   return null;
 }
-
-/**
- * Gets the all-services widget URL (shows full service menu)
- */
-export function getAllServicesWidgetUrl(): string {
-  return getVagaroWidgetUrl(ALL_SERVICES_CODE);
-}
-
-// Export constants for reference
-export const VAGARO_CONSTANTS = {
-  BUSINESS_PREFIX: VAGARO_BUSINESS_PREFIX,
-  ALL_SERVICES_CODE,
-} as const;

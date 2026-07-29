@@ -4,7 +4,7 @@
  *
  * Stored as a `website_settings` row with `section = 'studio'`.
  * Consumed by FooterV2, MapSection, ReviewsSection, InstagramCarousel,
- * FAQSection, ServiceDetailClient, BookingModal/BookingView,
+ * FAQSection, ServiceDetailClient, BookingView,
  * LocalBusinessSchema, llms.txt, privacy/terms pages.
  */
 
