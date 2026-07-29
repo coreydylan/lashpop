@@ -1,14 +1,14 @@
 # LashPop Website — Home-Stretch Tracker
 
-Updated July 27, 2026.
+Updated July 29, 2026.
 
 ## Ready in this update
 
 | Area | Update |
 | --- | --- |
 | Homepage hero | Restored adaptive high-quality image delivery on mobile and desktop instead of forcing quality 70–75. |
-| Choose a Service / booking | Uses each service's exact Vagaro widget URL and token. Legacy duplicate Microblading and Nanobrows records now carry explicit verified booking mappings. A missing booking configuration can no longer silently open Classic lashes. |
-| Fine Line Tattoos | Replaced the homepage description with the approved copy. |
+| Choose a Service / booking | Restored Vagaro's generated script-loader integration and removed numeric-service/new-window shortcuts. Missing or invalid booking configuration now fails closed instead of silently opening Classic lashes. See `docs/VAGARO_BOOKING_CONTRACT.md`. |
+| Fine Line Tattoos | Replaced the homepage description with the approved copy. Booking remains fail-closed until a fresh service-scoped widget is generated in Vagaro; the archived widget currently falls back to Lash Extensions and must not be restored. |
 | Botox | Opens the Naturtox booking site directly instead of entering the LashPop Vagaro flow. |
 | Find Your Stylist | Added “Licensed Tattoo Practitioner” to Evie Ells and Kelly Richter. |
 | Reviews | Google, Yelp, and Vagaro summary ratings display with one decimal place (for example, `5.0`). |
@@ -42,7 +42,17 @@ Add each staff member in Vagaro and keep a disabled Vagaro profile containing th
 
 ## Remaining verification
 
+- In Vagaro Settings → Booking Widget, generate and save a new In Website
+  widget containing Fine Line Tattoos (`35729654`), then store the complete
+  generated `WidgetEmbeddedLoader` URL and version token.
+- Verify the newer duplicate Microblading/Nanobrows service rows against the
+  actual Vagaro widget contents; matching names or reused loader URLs do not
+  prove the numeric service IDs are mapped.
 - Run the complete service-card click-through after deployment on both desktop and mobile.
 - Run the Lash Quiz several times on the deployed build and confirm the visual classification of the remaining photos with the LashPop team.
 
-`Volume Fill` was reconnected to its verified Vagaro widget configuration on July 27, 2026. The Vagaro sync now keeps newly discovered services hidden until booking metadata is configured and reports any active service that lacks a widget URL or service code.
+`Volume Fill` has a generated Vagaro loader URL, but Vagaro currently renders
+the Lash Extensions category before its widget-service filter resolves. It
+must be browser-verified end to end before calling the mapping complete. The
+sync now keeps newly discovered services hidden and reports active services
+unless they have a complete generated loader URL with its version token.

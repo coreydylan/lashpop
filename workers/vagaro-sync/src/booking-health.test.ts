@@ -2,10 +2,33 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { hasBookingConfiguration, serviceSyncHealthError } from './booking-health'
 
-test('accepts either an exact widget URL or a service code', () => {
-  assert.equal(hasBookingConfiguration({ vagaroWidgetUrl: 'https://www.vagaro.com/widget' }), true)
-  assert.equal(hasBookingConfiguration({ vagaroServiceCode: '6fWR0' }), true)
-  assert.equal(hasBookingConfiguration({ vagaroWidgetUrl: '  ', vagaroServiceCode: null }), false)
+const GENERATED_LOADER =
+  'https://www.vagaro.com//resources/WidgetEmbeddedLoader/example6fWR0?v=service-token#'
+
+test('accepts only a complete generated Vagaro loader URL', () => {
+  assert.equal(hasBookingConfiguration({ vagaroWidgetUrl: GENERATED_LOADER }), true)
+  assert.equal(hasBookingConfiguration({ vagaroWidgetUrl: 'https://www.vagaro.com/widget' }), false)
+  assert.equal(hasBookingConfiguration({ vagaroServiceCode: '6fWR0' }), false)
+  assert.equal(
+    hasBookingConfiguration({
+      vagaroWidgetUrl:
+        'https://www.vagaro.com/Users/BusinessWidget.aspx?WidgetServiceId=0&ServiceID=35729654',
+    }),
+    false,
+  )
+  assert.equal(
+    hasBookingConfiguration({
+      vagaroWidgetUrl: 'https://www.vagaro.com/lashpop32/book-now?ServiceId=35729654',
+    }),
+    false,
+  )
+  assert.equal(
+    hasBookingConfiguration({
+      vagaroWidgetUrl:
+        'https://www.vagaro.com//resources/WidgetEmbeddedLoader/example6fWR0',
+    }),
+    false,
+  )
 })
 
 test('summarizes failures, active gaps, and fail-closed new services', () => {
@@ -16,8 +39,8 @@ test('summarizes failures, active gaps, and fail-closed new services', () => {
       bookingPending: ['New Service'],
     }),
     '1 service record(s) failed | ' +
-      '1 active service(s) lack booking configuration: Legacy Fill | ' +
-      '1 new service(s) are hidden pending booking configuration: New Service'
+      '1 active service(s) lack a verified Vagaro loader URL: Legacy Fill | ' +
+      '1 new service(s) are hidden pending a verified Vagaro loader URL: New Service'
   )
 })
 

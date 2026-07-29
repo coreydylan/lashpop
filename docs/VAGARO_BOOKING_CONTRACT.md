@@ -50,11 +50,13 @@ configuration message. Do not silently fall back to the all-services widget.
    - there is no "Click to Book" interstitial;
    - the first screen is scoped to the selected service;
    - back/close navigation still works.
-5. Run `npm run test:vagaro-widget`, `npm run types`, and `npm run build`.
+5. Run `npm run test:vagaro`, `npm run types`, and `npm run build`.
 
-A numeric `vagaro_service_id` proves only that the catalog row exists. It does
-not prove that its widget is correctly mapped. Do not write an audit that
-declares mappings valid from numeric IDs alone.
+A numeric `vagaro_service_id` proves only that the catalog row exists. A
+five-character `vagaro_service_code` also does not prove that the required
+version token is correct. Neither field proves that a widget is correctly
+mapped. Do not write an audit that declares mappings valid from numeric IDs,
+non-empty URLs, or service codes alone.
 
 ## Historical fixes
 
@@ -66,5 +68,6 @@ These commits document the exact integration behavior:
 - `9a02ff2` — make Vagaro's generated iframe fill the modal
 - `9c33d38` — stop disrupting Vagaro's loader handshake
 
-The regression guard is `src/lib/vagaro-widget.test.ts`; it runs automatically
-before production builds.
+The frontend regression guard is `src/lib/vagaro-widget.test.ts`. The sync
+health guard is `workers/vagaro-sync/src/booking-health.test.ts`. Both run
+automatically before production builds.
