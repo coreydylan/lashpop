@@ -56,7 +56,6 @@ interface Service {
   useDemoPhotos?: boolean;
   vagaroWidgetUrl?: string | null;
   vagaroServiceCode?: string | null;
-  vagaroServiceId?: string | null;
 }
 
 interface QuickFact {

@@ -1,5 +1,4 @@
 export interface BookingConfiguration {
-  vagaroServiceId?: string | null
   vagaroWidgetUrl?: string | null
   vagaroServiceCode?: string | null
 }
@@ -11,12 +10,7 @@ export interface ServiceSyncHealth {
 }
 
 export function hasBookingConfiguration(service: BookingConfiguration): boolean {
-  const serviceId = service.vagaroServiceId?.trim()
-  return Boolean(
-    (serviceId && /^\d+$/.test(serviceId))
-    || service.vagaroWidgetUrl?.trim()
-    || service.vagaroServiceCode?.trim(),
-  )
+  return Boolean(service.vagaroWidgetUrl?.trim() || service.vagaroServiceCode?.trim())
 }
 
 export function serviceSyncHealthError(health: ServiceSyncHealth): string | null {

@@ -7,11 +7,7 @@ import { LPLogoLoader } from '@/components/ui/LPLogoLoader'
 import { useVagaroWidget } from '@/contexts/VagaroWidgetContext'
 import { subscribeToVagaroEvent } from '@/lib/vagaro-events'
 import type { BookingCompletedData } from '@/lib/vagaro-events'
-import {
-  getVagaroDirectBookingUrl,
-  isVagaroDirectBookingUrl,
-  resolveVagaroServiceWidgetUrl,
-} from '@/lib/vagaro-widget'
+import { resolveVagaroServiceWidgetUrl } from '@/lib/vagaro-widget'
 import { installVagaroIframeSandbox } from '@/lib/vagaro-sandbox'
 import { BookingConfirmation } from '@/components/booking/BookingConfirmation'
 import { useServiceBrowser } from '../ServiceBrowserContext'
@@ -38,27 +34,19 @@ export function BookingView({ service }: BookingViewProps) {
   // Widget is truly ready when Vagaro sends WidgetLoaded event
   const isWidgetReady = widgetState.isLoaded
 
-  // Numeric Vagaro IDs are the source of truth. Generated loader codes are a
-  // legacy fallback only; they can retain stale category state when Vagaro
-  // reorganizes its service menu.
+  // Preserve Vagaro's service-specific URL token when one is available.
   const widgetScriptUrl = resolveVagaroServiceWidgetUrl({
     widgetUrl: service.vagaroWidgetUrl,
     serviceCode: service.vagaroServiceCode,
   })
-  const directBookingUrl =
-    getVagaroDirectBookingUrl(service.vagaroServiceId)
-    || (isVagaroDirectBookingUrl(service.vagaroWidgetUrl)
-      ? service.vagaroWidgetUrl!.trim()
-      : null)
-  const isBookingReady = directBookingUrl ? scriptLoaded : isWidgetReady
 
   // Trigger fade-in animation when widget becomes ready
   useEffect(() => {
-    if (isBookingReady) {
+    if (isWidgetReady) {
       const timer = setTimeout(() => setIsVisible(true), 50)
       return () => clearTimeout(timer)
     }
-  }, [isBookingReady])
+  }, [isWidgetReady])
 
   // Subscribe to BookingCompleted — swap the iframe for a branded confirmation
   useEffect(() => {
@@ -109,51 +97,11 @@ export function BookingView({ service }: BookingViewProps) {
     resetWidgetState()
   }, [service.id, resetWidgetState])
 
-  // Load either a Vagaro widget script or its service-specific BusinessWidget
-  // iframe. The direct iframe keeps the flow inline and lets ServiceID override
-  // a stale category saved inside an older Vagaro widget.
+  // Load Vagaro widget script
   useEffect(() => {
-    if (
-      !widgetContainerRef.current
-      || scriptLoadedRef.current
-      || (!widgetScriptUrl && !directBookingUrl)
-    ) return
+    if (!widgetContainerRef.current || scriptLoadedRef.current || !widgetScriptUrl) return
 
     const container = widgetContainerRef.current
-    const uninstallSandbox = installVagaroIframeSandbox(container)
-
-    if (directBookingUrl) {
-      const iframe = document.createElement('iframe')
-      iframe.src = directBookingUrl
-      iframe.title = `Book ${service.name} at LashPop`
-      iframe.allow = 'payment'
-      iframe.referrerPolicy = 'strict-origin-when-cross-origin'
-
-      iframe.onload = () => {
-        setScriptLoaded(true)
-        scriptLoadedRef.current = true
-      }
-
-      iframe.onerror = () => {
-        console.error('[BookingView] Vagaro booking page failed to load')
-        setHasError(true)
-      }
-
-      container.appendChild(iframe)
-
-      return () => {
-        uninstallSandbox()
-        if (container.contains(iframe)) {
-          container.removeChild(iframe)
-        }
-        scriptLoadedRef.current = false
-      }
-    }
-
-    if (!widgetScriptUrl) {
-      uninstallSandbox()
-      return
-    }
 
     // Create the Vagaro widget structure
     const vagaroDiv = document.createElement('div')
@@ -182,6 +130,8 @@ export function BookingView({ service }: BookingViewProps) {
     // is what blocks Vagaro's post-checkout top-navigation to the old
     // Squarespace site. Order matters: install first, THEN attach the
     // script-bearing div so the MO sees the addition.
+    const uninstallSandbox = installVagaroIframeSandbox(container)
+
     vagaroDiv.appendChild(script)
     container.appendChild(vagaroDiv)
 
@@ -200,18 +150,14 @@ export function BookingView({ service }: BookingViewProps) {
       }
       scriptLoadedRef.current = false
     }
-  }, [directBookingUrl, widgetScriptUrl, service.id, service.name])
+  }, [widgetScriptUrl, service.id])
 
   const handleOpenExternal = () => {
-    window.open(
-      directBookingUrl || 'https://www.vagaro.com/lashpop32',
-      '_blank',
-      'noopener,noreferrer,width=800,height=900',
-    )
+    window.open('https://www.vagaro.com/lashpop', '_blank', 'width=800,height=900')
   }
 
-  const showConfigurationError = !widgetScriptUrl && !directBookingUrl
-  const showLoading = !isBookingReady && !hasError && !showConfigurationError
+  const showConfigurationError = !widgetScriptUrl
+  const showLoading = !isWidgetReady && !hasError && !showConfigurationError
 
   return (
     <motion.div
