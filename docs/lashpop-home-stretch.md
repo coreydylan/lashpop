@@ -67,7 +67,8 @@ npm run lint:vagaro
 `lint:vagaro` reads the active production catalog and fails unless every row is
 accounted for. Each LashPop Vagaro service must have a unique numeric service
 ID. The only current exception is `Botox Treatment`, which intentionally routes
-to Naturtox through the shared external-booking rule.
+to Naturtox through the shared external-booking rule. The regression tests run
+automatically before every production build.
 
 As of July 28, 2026, the production audit covers all 91 active services: 90
 exact Vagaro service IDs and one intentional Naturtox route.

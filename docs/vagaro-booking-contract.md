@@ -30,6 +30,10 @@ npm run test:vagaro
 npm run lint:vagaro
 ```
 
+`test:vagaro` also runs automatically before every production build, so a
+regression to popup routing, the ignored public `book-now` URL, or a malformed
+inline iframe blocks deployment.
+
 The production audit fails on:
 
 - an active non-external service without a numeric Vagaro ID;
