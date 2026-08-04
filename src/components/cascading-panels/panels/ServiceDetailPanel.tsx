@@ -120,8 +120,10 @@ export function ServiceDetailPanel({ panel }: ServiceDetailPanelProps) {
     // Track service selection
     actions.selectService(service.id);
 
-    // Check for widget URL: first from database, then from demo hardcoded URLs
-    const widgetUrl = service.vagaroWidgetUrl || DEMO_WIDGET_URLS[service.slug];
+    // This legacy panel must never revive the hard-coded BusinessWidget URLs
+    // above: those links render the full menu. Only the database's verified
+    // generated loader is eligible. The current site uses BookingView instead.
+    const widgetUrl = service.vagaroWidgetUrl;
 
     if (widgetUrl) {
       // Open the Vagaro widget panel
@@ -144,8 +146,7 @@ export function ServiceDetailPanel({ panel }: ServiceDetailPanelProps) {
 
   const priceDisplay = `$${(service.priceStarting / 100).toFixed(0)}+`;
   const visiblePhotos = showAllPhotos ? gallery : gallery.slice(0, 8);
-  // Check for widget URL from database OR demo hardcoded URLs
-  const hasWidgetUrl = !!(service.vagaroWidgetUrl || DEMO_WIDGET_URLS[service.slug]);
+  const hasWidgetUrl = !!service.vagaroWidgetUrl;
 
   return (
     <PanelWrapper

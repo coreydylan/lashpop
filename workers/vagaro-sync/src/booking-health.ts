@@ -4,6 +4,8 @@ export interface BookingConfiguration {
   vagaroWidgetUrl?: string | null
   vagaroServiceCode?: string | null
   vagaroServiceId?: string | null
+  serviceName?: string | null
+  serviceCategory?: string | null
 }
 
 export interface ServiceSyncHealth {
@@ -11,13 +13,6 @@ export interface ServiceSyncHealth {
   bookingMisconfigured: string[]
   bookingPending: string[]
 }
-
-const verifiedWidgetUrlByServiceId = new Map(
-  widgetManifest.mappings.map(mapping => [
-    mapping.vagaroServiceId,
-    mapping.widgetUrl,
-  ]),
-)
 
 /**
  * A booking mapping is structurally valid only when it contains Vagaro's
@@ -54,7 +49,22 @@ export function hasBookingConfiguration(service: BookingConfiguration): boolean 
     const vagaroServiceId = service.vagaroServiceId?.trim()
     if (!vagaroServiceId) return true
 
-    return verifiedWidgetUrlByServiceId.get(vagaroServiceId) === widgetUrl
+    const verified = widgetManifest.mappings.find(
+      mapping => mapping.vagaroServiceId === vagaroServiceId,
+    )
+    if (!verified || verified.widgetUrl !== widgetUrl) return false
+
+    if (service.serviceName?.trim() && service.serviceName.trim() !== verified.name) {
+      return false
+    }
+    if (
+      service.serviceCategory?.trim() &&
+      service.serviceCategory.trim() !== verified.category
+    ) {
+      return false
+    }
+
+    return true
   } catch {
     return false
   }

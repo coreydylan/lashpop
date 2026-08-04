@@ -1,5 +1,5 @@
-import { AlertTriangle, CheckCircle2, Clock, Database, RefreshCw } from 'lucide-react'
-import { desc, sql } from 'drizzle-orm'
+import { AlertTriangle, CheckCircle2, Clock, Database, RefreshCw, ShieldCheck } from 'lucide-react'
+import { desc, isNotNull, sql } from 'drizzle-orm'
 import { requireAdmin } from '@/lib/admin/auth'
 import { getDb } from '@/db'
 import { teamMembers } from '@/db/schema/team_members'
@@ -7,6 +7,7 @@ import { services } from '@/db/schema/services'
 import { vagaroServiceCategories } from '@/db/schema/vagaro_service_categories'
 import { teamMemberServicesVagaro } from '@/db/schema/team_member_services_vagaro'
 import { vagaroSyncRuns } from '@/db/schema/vagaro_sync_runs'
+import { getVagaroBookingStatus } from '@/lib/vagaro-booking-readiness'
 import { SyncNowButton } from './SyncNowButton'
 
 export const dynamic = 'force-dynamic'
@@ -23,7 +24,7 @@ export default async function SyncsPage() {
   await requireAdmin()
 
   const db = getDb()
-  const [[team], [svc], [category], [stylistMappings], recentRuns] = await Promise.all([
+  const [[team], [svc], [category], [stylistMappings], bookingRows, recentRuns] = await Promise.all([
     db
       .select({
         total: sql<number>`count(*)`,
@@ -52,12 +53,35 @@ export default async function SyncsPage() {
         lastSync: sql<Date | null>`max(${teamMemberServicesVagaro.syncedAt})`,
       })
       .from(teamMemberServicesVagaro),
+    db
+      .select({
+        id: services.id,
+        vagaroServiceId: services.vagaroServiceId,
+        name: services.name,
+        category: services.mainCategory,
+        isActive: services.isActive,
+        widgetUrl: services.vagaroWidgetUrl,
+      })
+      .from(services)
+      .where(isNotNull(services.vagaroServiceId)),
     db.select().from(vagaroSyncRuns).orderBy(desc(vagaroSyncRuns.startedAt)).limit(8),
   ])
+
+  const bookingServices = bookingRows.map((service) => ({
+    ...service,
+    status: getVagaroBookingStatus(service),
+  }))
+  const activeVagaroServices = bookingServices.filter((service) => service.isActive)
+  const readyActiveBookings = activeVagaroServices.filter((service) => service.status === 'ready')
+  const bookingIssues = activeVagaroServices.filter((service) => service.status !== 'ready')
+  const pendingServices = bookingServices.filter(
+    (service) => !service.isActive && service.status === 'pending',
+  )
 
   const cards = [
     { label: 'Booking categories', active: category.active, total: category.total, lastSync: category.lastSync, detail: 'active categories' },
     { label: 'Services', active: svc.active, total: svc.total, lastSync: svc.lastSync, detail: 'active services' },
+    { label: 'Booking mappings', active: readyActiveBookings.length, total: activeVagaroServices.length, lastSync: svc.lastSync, detail: 'verified active services' },
     { label: 'Team members', active: team.active, total: team.total, lastSync: team.lastSync },
     { label: 'Stylist mappings', active: stylistMappings.active, total: stylistMappings.total, lastSync: stylistMappings.lastSync, detail: 'stylists / service links' },
   ]
@@ -85,7 +109,7 @@ export default async function SyncsPage() {
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {cards.map((c) => (
           <div key={c.label} className="glass rounded-2xl border border-sage/20 p-5">
             <div className="text-sm text-dune/50 uppercase tracking-wider mb-1">{c.label}</div>
@@ -97,6 +121,48 @@ export default async function SyncsPage() {
           </div>
         ))}
       </div>
+
+      <section
+        className={`mt-6 rounded-2xl border p-5 ${
+          bookingIssues.length || pendingServices.length
+            ? 'border-amber-300 bg-amber-50'
+            : 'border-emerald-700/20 bg-emerald-50'
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          {bookingIssues.length || pendingServices.length ? (
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+          ) : (
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
+          )}
+          <div className="min-w-0 flex-1">
+            <h2 className="font-serif text-xl text-dune">
+              {bookingIssues.length || pendingServices.length
+                ? 'Booking setup needs attention'
+                : 'Every active Vagaro service is mapped'}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-dune/65">
+              The public catalog sync discovers services automatically. A new service stays hidden until its static, service-filtered Vagaro widget is generated and verified.
+            </p>
+
+            {(bookingIssues.length > 0 || pendingServices.length > 0) && (
+              <ul className="mt-3 grid gap-2 text-sm text-dune/75">
+                {[...bookingIssues, ...pendingServices].map((service) => (
+                  <li key={service.id} className="rounded-lg border border-amber-300/70 bg-white/65 px-3 py-2">
+                    <span className="font-semibold text-dune">{service.name}</span>
+                    <span className="text-dune/50"> · {service.category} · {service.status}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold">
+              <a href="/admin/workflows/service-launch" className="text-[#9f4c33] hover:text-[#7e3925]">Open service launch workflow</a>
+              <a href="/api/vagaro/catalog" target="_blank" rel="noreferrer" className="text-[#9f4c33] hover:text-[#7e3925]">View public catalog status</a>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="mt-8 overflow-hidden rounded-3xl border border-sage/15 bg-white/65 shadow-sm">
         <div className="flex items-center justify-between border-b border-sage/10 px-5 py-4">

@@ -11,6 +11,10 @@ import { assetServices } from "@/db/schema/asset_services"
 import { assets } from "@/db/schema/assets"
 import { requireAdminRole } from "@/lib/admin/auth"
 import { recordAdminAction } from "@/lib/admin/audit"
+import {
+  getVagaroBookingStatus,
+  hasVerifiedVagaroBooking,
+} from "@/lib/vagaro-booking-readiness"
 import { and, eq, asc, desc, inArray, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/sqlite-core"
 
@@ -66,6 +70,7 @@ export async function getServiceBySlug(slug: string) {
       vagaroWidgetUrl: services.vagaroWidgetUrl,
       vagaroServiceCode: services.vagaroServiceCode,
       vagaroServiceId: services.vagaroServiceId,
+      bookingCategory: services.mainCategory,
     })
     .from(services)
     .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))
@@ -73,7 +78,25 @@ export async function getServiceBySlug(slug: string) {
     .where(and(eq(services.slug, slug), eq(services.isActive, true)))
     .limit(1)
 
-  return result[0] || null
+  const service = result[0]
+  if (!service) return null
+
+  const { bookingCategory, ...publicService } = service
+  const bookingReady =
+    !service.vagaroServiceId ||
+    hasVerifiedVagaroBooking({
+      vagaroServiceId: service.vagaroServiceId,
+      name: service.name,
+      category: bookingCategory,
+      widgetUrl: service.vagaroWidgetUrl,
+    })
+
+  return {
+    ...publicService,
+    // Fail closed on a stale/swapped mapping. The service page can still
+    // render, but it cannot send a customer into the wrong Vagaro flow.
+    vagaroWidgetUrl: bookingReady ? service.vagaroWidgetUrl : null,
+  }
 }
 
 export async function getServicesByCategory(categorySlug: string) {
@@ -141,6 +164,7 @@ export async function getAllServices() {
       isActive: services.isActive,
       vagaroServiceId: services.vagaroServiceId,
       lastSyncedAt: services.lastSyncedAt,
+      bookingCategory: services.mainCategory,
     })
     .from(services)
     .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))
@@ -150,7 +174,24 @@ export async function getAllServices() {
     .where(eq(services.isActive, true))
     .orderBy(asc(services.displayOrder))
 
-  return allServices
+  return allServices.map((service) => {
+    const { bookingCategory, ...publicService } = service
+    const bookingReady =
+      !service.vagaroServiceId ||
+      hasVerifiedVagaroBooking({
+        vagaroServiceId: service.vagaroServiceId,
+        name: service.name,
+        category: bookingCategory,
+        widgetUrl: service.vagaroWidgetUrl,
+      })
+
+    return {
+      ...publicService,
+      // Never expose a merely plausible loader to the browser. It must match
+      // the generated manifest by numeric ID, title, category, and full URL.
+      vagaroWidgetUrl: bookingReady ? service.vagaroWidgetUrl : null,
+    }
+  })
 }
 
 // Get all services including inactive ones (for admin)
@@ -193,6 +234,7 @@ export async function getAllServicesAdmin() {
       isActive: services.isActive,
       vagaroServiceId: services.vagaroServiceId,
       lastSyncedAt: services.lastSyncedAt,
+      bookingCategory: services.mainCategory,
     })
     .from(services)
     .leftJoin(serviceCategories, eq(services.categoryId, serviceCategories.id))
@@ -220,7 +262,15 @@ export async function getAllServicesAdmin() {
     return {
       ...service,
       imageSource,
-      resolvedImageUrl
+      resolvedImageUrl,
+      bookingStatus: service.vagaroServiceId
+        ? getVagaroBookingStatus({
+            vagaroServiceId: service.vagaroServiceId,
+            name: service.name,
+            category: service.bookingCategory,
+            widgetUrl: service.vagaroWidgetUrl,
+          })
+        : null,
     }
   })
 }

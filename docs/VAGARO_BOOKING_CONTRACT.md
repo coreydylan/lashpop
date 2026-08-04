@@ -23,6 +23,14 @@ token and this DOM order:
 
 Do not set the loader URL directly as an iframe `src`.
 
+Do not pre-sandbox, reload, or rewrite the iframe created by Vagaro. A
+May 2026 redirect workaround patched `document.createElement` and applied a
+sandbox before Vagaro initialized. That modification sat in front of the
+service-filter, login, and payment handshakes and was removed in August 2026.
+The current redirect guard waits for `BookingCompleted` and then synchronously
+removes the already-finished iframe before Vagaro can follow the merchant's old
+Return URL.
+
 The loader path is entirely opaque. Vagaro changed its generated path format
 between the original 2025 setup and July 2026, including the portion that had
 previously looked like a stable business prefix. No substring of one loader is
@@ -74,6 +82,35 @@ not silently fall back to the all-services widget.
    - the first screen is scoped to the selected service;
    - back/close navigation still works.
 5. Run `npm run test:vagaro`, `npm run types`, and `npm run build`.
+
+## What happens when LashPop adds a service
+
+The login-free half is automatic:
+
+1. The Cloudflare worker reads Vagaro's public booking catalog at 06:00,
+   14:00, and 22:00 UTC.
+2. A newly discovered service is mirrored into D1 with its public numeric ID,
+   name, category, photo, order, and other public fields.
+3. The new row stays inactive with booking status `pending`. This is
+   deliberate: it cannot appear bookable and silently open the full menu.
+4. Current mirror state is available without a Vagaro login at
+   `/api/vagaro/catalog` and in **Admin → System → Vagaro Sync**.
+
+The service-specific widget is the one manual boundary. Vagaro's current
+Booking Widget documentation says generated code is static, a new widget is
+created on every Save, and changing Booking Widget settings does not update old
+code. The public catalog and Public API do not return the opaque loader snapshot
+created by Save. Therefore:
+
+- an “all current and future services” widget is useful as a general booking
+  menu, but cannot safely preselect one service for LashPop's service cards;
+- numeric `ServiceID` is discovery identity, not service-scoped embed code; and
+- after a new service appears as `pending`, run the authenticated full-catalog
+  refresh and deploy the resulting manifest.
+
+Do not copy an existing loader to make a pending service active. The server
+compares numeric ID, title, category, and complete loader URL; drift or a swapped
+loader is removed from the public read path and reported in sync health.
 
 A numeric `vagaro_service_id` proves only that the catalog row exists. A
 five-character `vagaro_service_code` also does not prove that the required
@@ -128,3 +165,9 @@ health guard is `workers/vagaro-sync/src/booking-health.test.ts`. The manifest
 integrity and duplicate-title guard is
 `workers/vagaro-sync/src/vagaro-widget-manifest.test.ts`. All run
 automatically before production builds.
+
+These checks validate code, identity, and stored configuration. They cannot
+inspect the rendered contents of Vagaro's cross-origin iframe. Before a client
+handoff, open representative services in a normal desktop and mobile browser
+and confirm that Vagaro honors the filter. A generated URL existing is not by
+itself proof that Vagaro's runtime returned the filtered screen.

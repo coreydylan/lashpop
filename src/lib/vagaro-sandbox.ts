@@ -1,4 +1,12 @@
 /**
+ * @deprecated Do not install this around the Vagaro booking widget.
+ *
+ * Kept only as historical context for the May 2026 redirect investigation.
+ * Pre-sandboxing Vagaro's generated iframe can interfere with its service
+ * filter, login, and payment handshakes. BookingView now leaves the official
+ * embed untouched and removes it only after BookingCompleted. See
+ * docs/VAGARO_BOOKING_CONTRACT.md.
+ *
  * Vagaro Iframe Sandbox
  *
  * Vagaro's embedded widget ships with a merchant-admin "Return URL" config

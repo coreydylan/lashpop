@@ -1,6 +1,6 @@
 # LashPop Website — Home-Stretch Tracker
 
-Updated July 29, 2026.
+Updated August 4, 2026.
 
 ## Ready in this update
 
@@ -55,3 +55,9 @@ The sync keeps newly discovered services hidden until the widget refresh tool
 adds them to the verified manifest. A syntactically valid loader copied onto
 the wrong numeric service now fails the sync health check instead of being
 accepted.
+
+Future services are visible without a Vagaro login at
+`/api/vagaro/catalog` and in **Admin → System → Vagaro Sync**. The mirror runs
+three times daily. Because Vagaro generates a new static widget on every Save,
+the final filtered embed snapshot still requires the authenticated refresh;
+pending services remain hidden until that step is complete.

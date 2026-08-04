@@ -469,7 +469,14 @@ async function syncService(
     return {
       id: existing[0].id,
       isActive: existing[0].isActive,
-      bookingReady: hasBookingConfiguration(existing[0]),
+      // Validate against the identity Vagaro returned in THIS run, not the
+      // pre-update row. A category move or rename can make a static widget
+      // snapshot stale even though its URL remains structurally valid.
+      bookingReady: hasBookingConfiguration({
+        ...existing[0],
+        serviceName: title,
+        serviceCategory: parentTitle,
+      }),
     }
   } else {
     // Insert path. duration_minutes and price_starting are NOT NULL in the

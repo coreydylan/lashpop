@@ -139,33 +139,20 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
       return
     }
 
-    // Vagaro sync can leave older duplicate rows in a second category without
-    // booking metadata (notably Microblading). Prefer the current bookable row
-    // with the same normalized service name instead of falling back to an
-    // unrelated all-services widget.
-    const normalizeName = (name: string) => name
-      .toLowerCase()
-      .replace(/\b(lash|lashes|extension|extensions)\b/g, '')
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim()
-
-    const selectedService = service.vagaroWidgetUrl || service.vagaroServiceCode
-      ? service
-      : services.find((candidate) => (
-          Boolean(candidate.vagaroWidgetUrl || candidate.vagaroServiceCode)
-          && normalizeName(candidate.name) === normalizeName(service.name)
-        )) || service
-
     // Vagaro services must stay in the inline BookingView. Do not special-case
     // a stored URL with window.open(): numeric ServiceID links are not actually
     // service-scoped and previously produced the full menu/"Click to Book".
+    // Do not substitute another same-named service either: Vagaro can contain
+    // identical titles in different categories, and guessing is how the old
+    // Microblading/Brow Shaping mappings crossed wires. Missing configuration
+    // must fail closed in BookingView.
     // See docs/VAGARO_BOOKING_CONTRACT.md.
     setState(prev => ({
       ...prev,
       view: 'booking',
-      selectedService,
+      selectedService: service,
     }))
-  }, [services])
+  }, [])
 
   const goBack = useCallback(() => {
     setState(prev => ({
@@ -276,13 +263,6 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
       console.warn(`[ServiceBrowser] bookServiceFromQuiz: no service found for slug "${serviceSlug}"`)
       return
     }
-    const selectedService = service.vagaroWidgetUrl || service.vagaroServiceCode
-      ? service
-      : services.find((candidate) => (
-          Boolean(candidate.vagaroWidgetUrl || candidate.vagaroServiceCode)
-          && candidate.name.toLowerCase() === service.name.toLowerCase()
-        )) || service
-
     setState(prev => ({
       ...prev,
       isOpen: true,
@@ -291,7 +271,9 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
       categorySlug: 'lashes',
       categoryName: 'Lashes',
       activeSubcategory: subcategorySlug,
-      selectedService,
+      // Use the exact quiz result row. Same-title fallback is unsafe because
+      // Vagaro legitimately has duplicate names in different categories.
+      selectedService: service,
       view: 'booking',
     }))
   }, [services])

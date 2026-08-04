@@ -8,7 +8,6 @@ import { useVagaroWidget } from '@/contexts/VagaroWidgetContext'
 import { subscribeToVagaroEvent } from '@/lib/vagaro-events'
 import type { BookingCompletedData } from '@/lib/vagaro-events'
 import { resolveVagaroServiceWidgetUrl } from '@/lib/vagaro-widget'
-import { installVagaroIframeSandbox } from '@/lib/vagaro-sandbox'
 import { BookingConfirmation } from '@/components/booking/BookingConfirmation'
 import { useServiceBrowser } from '../ServiceBrowserContext'
 import type { Service } from '../ServiceBrowserContext'
@@ -54,6 +53,14 @@ export function BookingView({ service }: BookingViewProps) {
       const data = event.data as BookingCompletedData | null
       setCardOnFile(Boolean(data?.cardOnFile))
       setIsConfirmed(true)
+
+      // Leave Vagaro's iframe completely untouched during service selection,
+      // login, payment, and booking. Once BookingCompleted fires, the booking
+      // is already finalized; remove the iframe synchronously so Vagaro's old
+      // merchant Return URL cannot redirect the top window afterward. This
+      // replaces the pre-navigation iframe sandbox, which could interfere with
+      // Vagaro's own service-filter request.
+      widgetContainerRef.current?.replaceChildren()
     })
 
     return () => {
@@ -103,6 +110,8 @@ export function BookingView({ service }: BookingViewProps) {
   // - Preserve the URL's original ?v= token.
   // - Keep the DOM order script -> .vagaro -> container so Vagaro's loader
   //   handshake can create its own service-scoped iframe.
+  // - Do not sandbox, reload, or otherwise rewrite Vagaro's generated iframe.
+  //   Their service filter, login, and payment handshakes must run untouched.
   // - Mapping identity is enforced by the generated manifest; do not accept a
   //   different syntactically-valid loader for the same numeric service ID.
   // History: b5c6cd1, 2036182, 48ed862, 9c33d38.
@@ -133,27 +142,10 @@ export function BookingView({ service }: BookingViewProps) {
       setHasError(true)
     }
 
-    // Install the Vagaro iframe sandbox BEFORE the loader script runs.
-    // See src/lib/vagaro-sandbox.ts — the observer catches the iframe at
-    // insertion time and forces it to navigate under the sandbox, which
-    // is what blocks Vagaro's post-checkout top-navigation to the old
-    // Squarespace site. Order matters: install first, THEN attach the
-    // script-bearing div so the MO sees the addition.
-    const uninstallSandbox = installVagaroIframeSandbox(container)
-
     vagaroDiv.appendChild(script)
     container.appendChild(vagaroDiv)
 
-    // Timeout for error state
-    const timeout = setTimeout(() => {
-      if (!widgetState.isLoaded) {
-        console.warn('[BookingView] Widget load timeout')
-      }
-    }, 15000)
-
     return () => {
-      clearTimeout(timeout)
-      uninstallSandbox()
       if (container.contains(vagaroDiv)) {
         container.removeChild(vagaroDiv)
       }

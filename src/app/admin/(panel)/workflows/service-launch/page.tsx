@@ -49,6 +49,9 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
   const homepageCard = homepage.cards.find((card) => card.slug === selected.slug || card.id === selected.slug)
   const describedServices = categoryServices.filter((service) => Boolean(service.description || service.vagaroDescription))
   const imagedServices = categoryServices.filter((service) => Boolean(service.resolvedImageUrl))
+  const bookingReadyServices = categoryServices.filter(
+    (service) => !service.vagaroServiceId || service.bookingStatus === 'ready',
+  )
   const latestRun = runs[0]
   const sourceOrderMatches = sourceRows.length === 0 || sourceRows.some((source) => source.sourceOrder === selected.displayOrder)
 
@@ -87,6 +90,13 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
       detail: `${describedServices.length}/${categoryServices.length} descriptions · ${imagedServices.length}/${categoryServices.length} images`,
       href: '/admin/website/services',
       action: 'Review services',
+    },
+    {
+      label: 'Every Vagaro service has a verified booking mapping',
+      ok: categoryServices.length > 0 && bookingReadyServices.length === categoryServices.length,
+      detail: `${bookingReadyServices.length}/${categoryServices.length} verified · new services remain hidden until ready`,
+      href: '/admin/system/syncs',
+      action: 'Review booking health',
     },
     {
       label: 'Eligible stylists surface on the public team',

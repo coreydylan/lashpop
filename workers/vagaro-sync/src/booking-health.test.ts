@@ -41,6 +41,31 @@ test('rejects an unverified loader when a numeric Vagaro service id is known', (
   )
 })
 
+test('rejects identity drift for an otherwise verified loader', () => {
+  const known = '35729654'
+  const verifiedUrl =
+    'https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfYPcHiPce?v=swlN4y3YLvFyVk4lRpyjUo28ODY4nm8e760Wz8N2GInm#'
+
+  assert.equal(
+    hasBookingConfiguration({
+      vagaroServiceId: known,
+      vagaroWidgetUrl: verifiedUrl,
+      serviceName: 'Fine Line Tattoos',
+      serviceCategory: 'Fine Line Tattoos',
+    }),
+    true,
+  )
+  assert.equal(
+    hasBookingConfiguration({
+      vagaroServiceId: known,
+      vagaroWidgetUrl: verifiedUrl,
+      serviceName: 'Fine Line Tattoos',
+      serviceCategory: 'Moved Category',
+    }),
+    false,
+  )
+})
+
 test('summarizes failures, active gaps, and fail-closed new services', () => {
   assert.equal(
     serviceSyncHealthError({
