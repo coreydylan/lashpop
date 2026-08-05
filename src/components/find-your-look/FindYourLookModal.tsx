@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, X, ArrowRight, AlertCircle } from 'lucide-react';
 
 import { useQuizAlgorithm } from './useQuizAlgorithm';
 import { PhotoComparisonRound } from './PhotoComparisonRound';
+import { QuizBlurFadeImage } from './QuizBlurFadeImage';
+import { preloadQuizImages } from './quiz-image-preloader';
 import {
   type LashStyle,
   type QuizPhoto,
@@ -87,9 +88,6 @@ const modalVariantsMobile = {
   exit: { opacity: 0, y: '100%' },
 };
 
-// Blur placeholder for smooth image loading - warm cream tone matching brand palette
-const BLUR_DATA_URL = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZDlkMCIvPjwvc3ZnPg==';
-
 // Quiz step type - 0 = intro, 1 = q1, 2 = q2, 3 = photo comparison, 4 = results
 type QuizStep = 0 | 1 | 2 | 3 | 4;
 
@@ -143,7 +141,12 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
             getQuizPhotosForQuiz(),
             getResultSettingsForQuiz(),
           ]);
-          setPhotosByStyle(photos as Record<LashStyle, QuizPhoto[]>);
+          const typedPhotos = photos as Record<LashStyle, QuizPhoto[]>;
+          const resultImages = Object.values(settings)
+            .map((setting) => setting.resultImage)
+            .filter((src): src is string => Boolean(src));
+          preloadQuizImages(typedPhotos, resultImages);
+          setPhotosByStyle(typedPhotos);
           setResultSettings(settings);
         } catch (error) {
           console.error('Error loading quiz data:', error);
@@ -416,7 +419,12 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
             getQuizPhotosForQuiz(),
             getResultSettingsForQuiz(),
           ]);
-          setPhotosByStyle(photos as Record<LashStyle, QuizPhoto[]>);
+          const typedPhotos = photos as Record<LashStyle, QuizPhoto[]>;
+          const resultImages = Object.values(settings)
+            .map((setting) => setting.resultImage)
+            .filter((src): src is string => Boolean(src));
+          preloadQuizImages(typedPhotos, resultImages);
+          setPhotosByStyle(typedPhotos);
           setResultSettings(settings);
         } catch (error) {
           console.error('Error loading quiz data:', error);
@@ -923,14 +931,10 @@ function ResultScreen({
 
         {/* Result Image */}
         <div className="relative w-full h-36 md:h-48 rounded-xl overflow-hidden mb-3 md:mb-4 shrink-0">
-          <Image
+          <QuizBlurFadeImage
             src={resultImage}
             alt={result.displayName}
-            fill
             sizes="(max-width: 768px) 100vw, 400px"
-            placeholder="blur"
-            blurDataURL={BLUR_DATA_URL}
-            className="object-cover"
           />
         </div>
 
@@ -972,7 +976,7 @@ function ResultScreen({
                   whileHover={!isMobile ? { scale: 1.01 } : undefined}
                   whileTap={{ scale: 0.99 }}
                   onClick={() => onBookService(service)}
-                  disabled={!service.vagaroServiceCode}
+                  disabled={!service.vagaroWidgetUrl}
                   className="w-full text-left px-4 py-3 rounded-xl bg-white/70 hover:bg-white border border-white
                              transition-colors flex items-center justify-between gap-3
                              disabled:opacity-50 disabled:cursor-not-allowed"

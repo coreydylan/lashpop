@@ -170,6 +170,20 @@ export function applyScoreChanges(
   return next
 }
 
+export function pickQuizPhoto(
+  photos: QuizPhoto[],
+  excludedAssetIds: Set<string>,
+  preferFirst = false,
+  randomValue = Math.random(),
+): QuizPhoto | null {
+  const available = photos.filter(
+    (photo) => photo.isEnabled && !excludedAssetIds.has(photo.assetId),
+  )
+  if (available.length === 0) return null
+  if (preferFirst) return available[0]
+  return available[Math.floor(randomValue * available.length)] ?? available[0]
+}
+
 export function getRankedStyles(
   scores: StyleScores,
   tieBreakStyle?: LashStyle,

@@ -14,6 +14,7 @@ import {
   getUnusedStylePairs,
   checkWinCondition,
   applyScoreChanges,
+  pickQuizPhoto,
 } from "./types"
 
 interface UseQuizAlgorithmProps {
@@ -82,12 +83,13 @@ export function useQuizAlgorithm({
   const getRandomPhoto = useCallback((
     style: LashStyle,
     excludedAssetIds: Set<string>,
+    preferFirst = false,
   ): QuizPhoto | null => {
-    const available = (photosByStyle[style] ?? []).filter(
-      (photo) => photo.isEnabled && !excludedAssetIds.has(photo.assetId),
+    return pickQuizPhoto(
+      photosByStyle[style] ?? [],
+      excludedAssetIds,
+      preferFirst,
     )
-    if (available.length === 0) return null
-    return available[Math.floor(Math.random() * available.length)]
   }, [photosByStyle])
 
   const createPhotoPair = useCallback((
@@ -100,13 +102,23 @@ export function useQuizAlgorithm({
       completedRounds === 0,
     )
 
+    const preferPreloadedFirstPair = completedRounds === 0
+
     for (const [style1, style2] of candidates) {
-      const photo1 = getRandomPhoto(style1, usedAssetIdsRef.current)
+      const photo1 = getRandomPhoto(
+        style1,
+        usedAssetIdsRef.current,
+        preferPreloadedFirstPair,
+      )
       if (!photo1) continue
 
       const secondPhotoExclusions = new Set(usedAssetIdsRef.current)
       secondPhotoExclusions.add(photo1.assetId)
-      const photo2 = getRandomPhoto(style2, secondPhotoExclusions)
+      const photo2 = getRandomPhoto(
+        style2,
+        secondPhotoExclusions,
+        preferPreloadedFirstPair,
+      )
       if (!photo2) continue
 
       return Math.random() > 0.5

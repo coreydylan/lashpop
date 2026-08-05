@@ -8,6 +8,8 @@ import {
   createEmptyScores,
   getPairKey,
   getUnusedStylePairs,
+  pickQuizPhoto,
+  type QuizPhoto,
 } from "./types"
 
 test("questionnaire answers are immediately reflected in quiz scores", () => {
@@ -62,4 +64,14 @@ test("questionnaire preference resolves a skipped final tie", () => {
   }
 
   assert.equal(checkWinCondition(scores, 6, undefined, baseline), "wetAngel")
+})
+
+test("the first comparison uses the same sorted photos that were preloaded", () => {
+  const photos = [
+    { assetId: "first", isEnabled: true },
+    { assetId: "second", isEnabled: true },
+  ] as QuizPhoto[]
+
+  assert.equal(pickQuizPhoto(photos, new Set(), true)?.assetId, "first")
+  assert.equal(pickQuizPhoto(photos, new Set(["first"]), true)?.assetId, "second")
 })

@@ -114,7 +114,7 @@ export function ServiceBrowserModal() {
   // Quiz result → user picked a specific Vagaro service. Jump straight to the
   // booking widget for that service, skipping the Service Browser intermediate step.
   const handleQuizBookService = (
-    service: { slug: string },
+    service: { id: string },
     _lashStyle: string,
   ) => {
     // Map lash style → subcategory slug; mirrors actions.handleQuizResult mapping.
@@ -125,7 +125,7 @@ export function ServiceBrowserModal() {
       volume: 'volume-extensions',
     }
     const subcategorySlug = styleToSubcategory[_lashStyle] || ''
-    actions.bookServiceFromQuiz(service.slug, subcategorySlug)
+    actions.bookServiceFromQuiz(service.id, subcategorySlug)
   }
 
   // Handle quiz step changes

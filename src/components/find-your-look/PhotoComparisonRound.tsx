@@ -2,12 +2,9 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import Image from "next/image"
 import type { PhotoPair, LashStyle } from "./types"
-
-// Blur placeholder for smooth image loading - warm cream tone matching brand palette
-const BLUR_DATA_URL =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZDlkMCIvPjwvc3ZnPg=="
+import { QuizBlurFadeImage } from "./QuizBlurFadeImage"
+import { getQuizPhotoUrl } from "./quiz-image-preloader"
 
 // Lash/Eye icon for tap indicator
 const LashIcon = () => (
@@ -48,11 +45,6 @@ export function PhotoComparisonRound({
 }: PhotoComparisonRoundProps) {
   const [feedbackSide, setFeedbackSide] = useState<"left" | "right" | null>(null)
 
-  // Get the display URL for a photo (prefer cropUrl, fallback to filePath)
-  const getPhotoUrl = (photo: PhotoPair["left"]) => {
-    return photo.cropUrl || photo.filePath
-  }
-
   const handleSelect = (side: "left" | "right", style: LashStyle) => {
     if (disabled || feedbackSide) return
     setFeedbackSide(side)
@@ -91,15 +83,12 @@ export function PhotoComparisonRound({
           disabled={isLocked}
           className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
-          <Image
-            src={getPhotoUrl(pair.left)}
+          <QuizBlurFadeImage
+            src={getQuizPhotoUrl(pair.left)}
             alt="Left option"
-            fill
             priority
             sizes="(max-width: 768px) 45vw, 200px"
-            placeholder="blur"
-            blurDataURL={BLUR_DATA_URL}
-            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            className="group-hover:scale-105"
           />
           {/* Selection overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/0 via-transparent to-dusty-rose/0 group-hover:from-dusty-rose/15 group-hover:to-dusty-rose/5 transition-all duration-300" />
@@ -124,15 +113,12 @@ export function PhotoComparisonRound({
           disabled={isLocked}
           className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
-          <Image
-            src={getPhotoUrl(pair.right)}
+          <QuizBlurFadeImage
+            src={getQuizPhotoUrl(pair.right)}
             alt="Right option"
-            fill
             priority
             sizes="(max-width: 768px) 45vw, 200px"
-            placeholder="blur"
-            blurDataURL={BLUR_DATA_URL}
-            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            className="group-hover:scale-105"
           />
           {/* Selection overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/0 via-transparent to-dusty-rose/0 group-hover:from-dusty-rose/15 group-hover:to-dusty-rose/5 transition-all duration-300" />

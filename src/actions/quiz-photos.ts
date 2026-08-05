@@ -12,6 +12,7 @@ import sharp from "sharp"
 import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
 import { requireAdminRole } from "@/lib/admin/auth"
 import { recordAdminAction } from "@/lib/admin/audit"
+import { hasVerifiedVagaroBooking } from "@/lib/vagaro-booking-readiness"
 
 // Lash style → lash_type tag name used by import-quiz-photos.ts
 const LASH_STYLE_TO_TAG_NAME: Record<LashStyle, string> = {
@@ -955,6 +956,7 @@ export interface QuizResultService {
   durationMinutes: number
   vagaroServiceCode: string | null
   vagaroServiceId: string | null
+  vagaroWidgetUrl: string | null
 }
 
 export interface QuizResultServices {
@@ -1008,6 +1010,8 @@ export async function getQuizResultServices(
       durationMinutes: services.durationMinutes,
       vagaroServiceCode: services.vagaroServiceCode,
       vagaroServiceId: services.vagaroServiceId,
+      vagaroWidgetUrl: services.vagaroWidgetUrl,
+      bookingCategory: services.mainCategory,
       // Match the booking-flow resolution: Vagaro is source of truth, fall
       // back to the local override.
       bookingImageUrl: sql<string | null>`COALESCE(${services.vagaroImageUrl}, ${services.imageUrl})`,
@@ -1045,15 +1049,27 @@ export async function getQuizResultServices(
   return {
     subcategorySlug,
     subcategoryName: rows[0].subcategoryName,
-    services: rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      slug: r.slug,
-      priceStarting: r.priceStarting,
-      durationMinutes: r.durationMinutes,
-      vagaroServiceCode: r.vagaroServiceCode,
-      vagaroServiceId: r.vagaroServiceId,
-    })),
+    services: rows.map((r) => {
+      const bookingReady = hasVerifiedVagaroBooking({
+        vagaroServiceId: r.vagaroServiceId,
+        name: r.name,
+        category: r.bookingCategory,
+        widgetUrl: r.vagaroWidgetUrl,
+      })
+
+      return {
+        id: r.id,
+        name: r.name,
+        slug: r.slug,
+        priceStarting: r.priceStarting,
+        durationMinutes: r.durationMinutes,
+        vagaroServiceCode: r.vagaroServiceCode,
+        vagaroServiceId: r.vagaroServiceId,
+        // Quiz booking follows the same fail-closed contract as the main
+        // Service Browser. Never enable a button for a stale/swapped loader.
+        vagaroWidgetUrl: bookingReady ? r.vagaroWidgetUrl : null,
+      }
+    }),
     bookingImage: fullSetRow?.bookingImageUrl ?? null,
   }
 }

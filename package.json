@@ -13,7 +13,7 @@
     "test:vagaro-health": "tsx --test workers/vagaro-sync/src/booking-health.test.ts",
     "test:vagaro-manifest": "tsx --test workers/vagaro-sync/src/vagaro-widget-manifest.test.ts",
     "test:vagaro-readiness": "tsx --test src/lib/vagaro-booking-readiness.test.ts",
-    "test:quiz": "tsx --test src/components/find-your-look/types.test.ts",
+    "test:quiz": "tsx --test src/components/find-your-look/*.test.ts",
     "test:vagaro": "npm run test:vagaro-widget && npm run test:vagaro-embed && npm run test:vagaro-health && npm run test:vagaro-manifest && npm run test:vagaro-readiness",
     "vagaro:widgets:audit": "tsx scripts/vagaro-widget-admin.ts audit",
     "vagaro:widgets:refresh": "tsx scripts/vagaro-widget-admin.ts refresh --apply",
