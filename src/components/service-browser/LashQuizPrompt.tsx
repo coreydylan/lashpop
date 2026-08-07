@@ -14,6 +14,7 @@ interface LashQuizPromptProps {
 }
 
 export function LashQuizPrompt({ isOpen, onTakeQuiz, onSkip, onClose }: LashQuizPromptProps) {
+  const titleId = 'lash-quiz-prompt-title'
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -70,6 +71,9 @@ export function LashQuizPrompt({ isOpen, onTakeQuiz, onSkip, onClose }: LashQuiz
             <div
               className="relative w-full max-w-md bg-ivory rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
             >
               {/* Close button */}
               <button
@@ -88,7 +92,7 @@ export function LashQuizPrompt({ isOpen, onTakeQuiz, onSkip, onClose }: LashQuiz
                 </div>
 
                 {/* Heading */}
-                <h2 className="text-2xl font-display font-medium text-charcoal mb-3">
+                <h2 id={titleId} className="text-2xl font-display font-medium text-charcoal mb-3">
                   Find Your Perfect Lashes
                 </h2>
 

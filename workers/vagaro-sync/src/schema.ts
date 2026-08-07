@@ -113,6 +113,9 @@ export const teamMembers = sqliteTable('team_members', {
   externalServiceCategories: json<string[]>('external_service_categories'),
   displayOrder: text('display_order').default('0'),
   isActive: boolean('is_active').default(true).notNull(),
+  // Admin-owned publication gate. The sync reads but never overwrites this
+  // field for existing rows.
+  showOnWebsite: boolean('show_on_website').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   lastSyncedAt: timestamp('last_synced_at'),

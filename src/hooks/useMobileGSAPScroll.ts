@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useMemo } from 'react'
 import { gsap, initGSAPSync } from '@/lib/gsap'
 
 // Per-section snap configuration
@@ -19,6 +19,8 @@ interface UseMobileGSAPScrollOptions {
   sectionConfigs?: Record<string, SectionSnapConfig>  // Per-section overrides by data-section-id
   onSectionChange?: (sectionId: string, index: number) => void
 }
+
+const EMPTY_SECTION_CONFIGS: Record<string, SectionSnapConfig> = {}
 
 // Get default config for ALL sections (computed at runtime to avoid SSR issues)
 // More sensitive thresholds (0.7+) = more likely to snap
@@ -74,7 +76,7 @@ export function useMobileGSAPScroll({
   containerSelector,
   snapThreshold = 0.4,
   snapDuration = 0.4,
-  sectionConfigs = {},
+  sectionConfigs = EMPTY_SECTION_CONFIGS,
   onSectionChange
 }: UseMobileGSAPScrollOptions) {
   const currentSectionRef = useRef<number>(0)
@@ -84,7 +86,10 @@ export function useMobileGSAPScroll({
   const heroAwardExpandedRef = useRef(false) // Track if hero award badge is expanded
 
   // Merge default configs with custom configs
-  const mergedConfigs = { ...getDefaultSectionConfigs(), ...sectionConfigs }
+  const mergedConfigs = useMemo(
+    () => ({ ...getDefaultSectionConfigs(), ...sectionConfigs }),
+    [sectionConfigs]
+  )
 
   // Get config for a section
   const getConfigForSection = useCallback((section: HTMLElement) => {

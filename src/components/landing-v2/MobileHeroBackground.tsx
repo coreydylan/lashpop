@@ -158,7 +158,11 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
         >
           {hasSlideshow && heroConfig?.preset ? (
             /* Slideshow Mode - render the carousel */
-            <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
+            <HeroArchSlideshow
+              preset={heroConfig.preset}
+              className="w-full h-full"
+              cropAspectRatio={4 / 9}
+            />
           ) : (
             <>
               <GracefulHeroImage
@@ -168,7 +172,10 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
                 objectPosition={`${archImage.position.x}% ${archImage.position.y}%`}
                 priority
                 fetchPriority="high"
-                sizes="100vw"
+                sizes="80vw"
+                quality={90}
+                cropAspectRatio={4 / 9}
+                cropPosition={archImage.position}
               />
             </>
           )}

@@ -97,7 +97,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
   }
 
   return (
-    <footer ref={ref} className="bg-ivory pt-8 md:pt-20 pb-8">
+    <footer ref={ref} data-section-id="footer" className="bg-ivory pt-8 md:pt-20 pb-8">
       <div className="container">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 lg:gap-20 mb-16">

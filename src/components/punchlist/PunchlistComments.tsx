@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { PunchlistUserAvatar } from './PunchlistUserAvatar'
@@ -43,11 +43,7 @@ export function PunchlistComments({
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
 
-  useEffect(() => {
-    loadComments()
-  }, [itemId])
-
-  const loadComments = async () => {
+  const loadComments = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await getPunchlistComments(itemId)
@@ -55,7 +51,11 @@ export function PunchlistComments({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [itemId])
+
+  useEffect(() => {
+    void loadComments()
+  }, [loadComments])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

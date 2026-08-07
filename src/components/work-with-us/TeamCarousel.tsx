@@ -294,6 +294,7 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- Natural dimensions keep the lightbox frame tight; the image-worker URL is already optimized. */}
               <img
                 src={lightboxSrc(activePhoto.filePath)}
                 alt={`Team photo ${lightboxIndex! + 1}`}

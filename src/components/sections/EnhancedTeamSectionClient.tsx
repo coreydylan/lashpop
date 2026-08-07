@@ -16,6 +16,30 @@ import { QuickFactsGrid, QuickFactCard, type QuickFact } from '@/components/team
 import type { TeamMemberCredential } from '@/db/schema/team_members'
 import { MemberTakeover } from '@/components/team/MemberTakeover'
 
+const optimizedTeamImagePreloads = new Map<string, Promise<void>>()
+
+function preloadOptimizedTeamImage(src: string | undefined, width = 1200): Promise<void> {
+  if (!src || typeof window === 'undefined' || isPlaceholderImage(src)) return Promise.resolve()
+  const optimizedSrc = cfImageLoader({ src, width, quality: 90 })
+  const cached = optimizedTeamImagePreloads.get(optimizedSrc)
+  if (cached) return cached
+
+  const pending = new Promise<void>((resolve) => {
+    const image = new window.Image()
+    image.decoding = 'async'
+    image.onload = () => {
+      image.decode().catch(() => undefined).finally(resolve)
+    }
+    image.onerror = () => {
+      optimizedTeamImagePreloads.delete(optimizedSrc)
+      resolve()
+    }
+    image.src = optimizedSrc
+  })
+  optimizedTeamImagePreloads.set(optimizedSrc, pending)
+  return pending
+}
+
 const CRED_ICON: Record<string, typeof Award> = {
   founder: Sparkles,
   license: FileCheck,
@@ -150,6 +174,8 @@ function DraggableChipRow({ categories }: { categories: string[] }) {
       <div
         ref={scrollRef}
         className={`overflow-x-auto scrollbar-hide ${isOverflowing ? 'cursor-grab active:cursor-grabbing' : ''}`}
+        tabIndex={isOverflowing ? 0 : undefined}
+        aria-label="Stylist service filters"
         onMouseDown={(e) => {
           const el = scrollRef.current
           if (!el || !isOverflowing) return
@@ -449,6 +475,16 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     if (selectedMember?.uuid) {
       setCurrentImageIndex(0)
 
+      // Never leave the previous stylist's carousel mounted while the next
+      // request is in flight. The selected headshot is already visible on the
+      // card and becomes a stable first frame immediately.
+      const headshot: PortfolioImage = {
+        id: 'headshot',
+        url: selectedMember.image,
+      }
+      setPortfolioImages([headshot])
+      void preloadOptimizedTeamImage(selectedMember.image)
+
       // Check if we already have cached photos from preloading
       const cachedPhotos = preloadedPhotosCache.current.get(selectedMember.uuid)
       if (cachedPhotos) {
@@ -459,16 +495,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
       setIsLoadingPortfolio(true)
 
-      // Headshot is always the first image in the carousel.
-      const headshot: PortfolioImage = {
-        id: 'headshot',
-        url: selectedMember.image,
-      }
+      const controller = new AbortController()
+      let cancelled = false
 
       // Fetch DAM assets tagged to this team member
-      fetch(`/api/dam/team/${selectedMember.uuid}/photos`)
+      fetch(`/api/dam/team/${selectedMember.uuid}/photos`, { signal: controller.signal })
         .then(res => res.json())
         .then(data => {
+          if (cancelled) return
           const workImages: PortfolioImage[] = (data.photos || []).map((photo: any, index: number) => ({
             id: photo.id || `photo-${index}`,
             url: photo.filePath,
@@ -479,16 +513,41 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           }))
           const images = [headshot, ...workImages]
           setPortfolioImages(images)
+          workImages.slice(0, 3).forEach((image) => {
+            void preloadOptimizedTeamImage(image.url)
+          })
           if (selectedMember.uuid) {
             preloadedPhotosCache.current.set(selectedMember.uuid, images)
           }
         })
-        .catch(() => setPortfolioImages([headshot]))
-        .finally(() => setIsLoadingPortfolio(false))
+        .catch((error) => {
+          if (!cancelled && error instanceof Error && error.name !== 'AbortError') {
+            setPortfolioImages([headshot])
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoadingPortfolio(false)
+        })
+
+      return () => {
+        cancelled = true
+        controller.abort()
+      }
     } else {
       setPortfolioImages([])
+      setIsLoadingPortfolio(false)
     }
-  }, [selectedMember?.uuid])
+  }, [selectedMember?.uuid, selectedMember?.image])
+
+  // Keep the neighboring portfolio images decoded so a swipe never exposes a
+  // blank or deliberately blurred frame while the next asset downloads.
+  useEffect(() => {
+    if (portfolioImages.length <= 1) return
+    const next = (currentImageIndex + 1) % portfolioImages.length
+    const previous = (currentImageIndex - 1 + portfolioImages.length) % portfolioImages.length
+    void preloadOptimizedTeamImage(portfolioImages[next]?.url)
+    void preloadOptimizedTeamImage(portfolioImages[previous]?.url)
+  }, [currentImageIndex, portfolioImages])
 
   // Auto-advance carousel when there are multiple images
   useEffect(() => {
@@ -558,9 +617,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
   // Preload portfolio photos on hover (desktop only)
   const preloadPhotosForMember = useCallback((memberUuid: string | undefined, headshotUrl: string) => {
-    if (!memberUuid || isMobile || preloadedPhotosCache.current.has(memberUuid)) return
+    if (!memberUuid || preloadedPhotosCache.current.has(memberUuid)) return
 
     const headshot: PortfolioImage = { id: 'headshot', url: headshotUrl }
+    void preloadOptimizedTeamImage(headshotUrl)
 
     // Fetch photos in the background
     fetch(`/api/dam/team/${memberUuid}/photos`)
@@ -581,18 +641,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
         // shown elsewhere). Preload the worker-optimized variant, not the raw
         // original — raw DAM/Vagaro URLs are multi-MB and aren't even the URL
         // the drawer's <Image> will request.
-        workImages.forEach(img => {
-          const link = document.createElement('link')
-          link.rel = 'preload'
-          link.as = 'image'
-          link.href = cfImageLoader({ src: img.url, width: 1200 })
-          document.head.appendChild(link)
+        workImages.slice(0, 3).forEach(img => {
+          void preloadOptimizedTeamImage(img.url)
         })
       })
       .catch(() => {
         preloadedPhotosCache.current.set(memberUuid, [headshot])
       })
-  }, [isMobile])
+  }, [])
 
   const isHighlighted = (memberId: number) => highlights.includes(memberId.toString())
 
@@ -653,6 +709,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     <>
       <section
         ref={sectionRef}
+        data-section-id="team"
         className="relative py-12 md:py-20 overflow-x-hidden"
         style={{ backgroundColor: '#f0e0db' }}
       >
@@ -731,7 +788,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       <div
                         className="relative flex flex-col h-full bg-ivory rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 active:scale-[0.98] border border-terracotta/10"
                         style={isLastOrphan ? { width: 'calc(50% - 0.375rem)' } : undefined}
-                        onTouchStart={(e) => {
+                      onTouchStart={(e) => {
+                        preloadPhotosForMember(member.uuid, member.image)
                         const touch = e.touches[0]
                         const card = e.currentTarget
                         card.dataset.touchStartX = touch.clientX.toString()
@@ -794,10 +852,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     >
                       {/* Service Tags - Horizontally scrollable row */}
                       {memberCategories.length > 0 && (
-                        <div className="absolute top-2 left-0 right-0 px-3 z-20">
+                        <div className="absolute top-2 left-0 right-0 max-w-full overflow-hidden px-3 z-20">
                           <div
                             data-tags-scroll
-                            className="overflow-x-auto scrollbar-hide"
+                            className="max-w-full overflow-x-auto scrollbar-hide"
+                            tabIndex={0}
+                            aria-label={`${member.name} services`}
                           >
                             <div className="flex gap-1 min-w-max">
                               {memberCategories.map((category, idx) => (
@@ -837,6 +897,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             // takeover hero, which already does this).
                             className={`${isPlaceholder ? "object-contain p-4" : "object-cover object-top"} transition-opacity duration-300 opacity-0`}
                             onLoad={(e) => (e.currentTarget.style.opacity = '1')}
+                            onLoadCapture={() => {
+                              void preloadOptimizedTeamImage(member.image)
+                            }}
                             // Each card occupies ~50vw on mobile and ~25vw on
                             // desktop. The previous 155px static hint was
                             // under-fetching on 3x displays, causing the
@@ -1270,14 +1333,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             // See the spacer for the live handlers.
                           >
                             {/* Photo carousel - swipe or tap to cycle album photos */}
-                            <AnimatePresence mode="wait">
+                            <AnimatePresence initial={false}>
                               <motion.div
                                 key={portfolioImages.length > 0 ? `photo-${currentImageIndex}` : 'headshot'}
                                 className="absolute inset-0"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 0.3 }}
+                                transition={{ duration: 0.18 }}
                               >
                                 {(() => {
                                   const curPhoto = portfolioImages.length > 0 ? portfolioImages[currentImageIndex] : null
@@ -1506,6 +1569,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                             <div className="relative px-5 pb-4 pointer-events-auto z-10 bg-cream">
                               <div
                                 className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-1 touch-pan-x"
+                                tabIndex={0}
+                                aria-label={`${selectedMember.name} portfolio photos`}
                                 // Any horizontal scroll on this thumbnail strip
                                 // bubbles up to the outer mobile member-swipe
                                 // wrapper. Isolate the touches so a sideways
@@ -1560,6 +1625,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                               <h3 className="font-serif text-lg mb-3" style={{ color: 'rgb(61, 54, 50)' }}>Services</h3>
                               <div
                                 className="overflow-x-auto scrollbar-hide -mx-1 px-1 touch-pan-x"
+                                tabIndex={0}
+                                aria-label={`${selectedMember.name} services`}
                                 // Same isolation as the portfolio thumb strip
                                 // — horizontal scroll on the chip row should
                                 // never bubble out as a member-swipe.
@@ -1598,6 +1665,8 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                 /* Multiple facts - swipeable row with expanded touch area */
                                 <div
                                   className="overflow-x-auto overflow-y-visible scrollbar-hide -mx-5 touch-pan-x"
+                                  tabIndex={0}
+                                  aria-label={`${selectedMember.name} quick facts`}
                                   onTouchStart={(e) => e.stopPropagation()}
                                   onTouchMove={(e) => e.stopPropagation()}
                                 >

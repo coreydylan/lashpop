@@ -58,7 +58,10 @@ export const teamMembers = pgTable("team_members", {
   availability: text("availability"),
   displayOrder: text("display_order").default("0"),
   isActive: boolean("is_active").default(true).notNull(),
-  showOnWebsite: boolean("show_on_website").default(true), // Legacy column - preserved for data
+  // Sync-owned source state and admin-owned publication state are deliberately
+  // separate. Vagaro may keep a provider active while LashPop hides that
+  // person from the public website (for example during offboarding).
+  showOnWebsite: boolean("show_on_website").default(true).notNull(),
 
   // SEO/Schema.org structured data fields
   // Credentials appear in JSON-LD for search engines but not necessarily displayed publicly

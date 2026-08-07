@@ -8,6 +8,7 @@ import { useQuizAlgorithm } from './useQuizAlgorithm';
 import { PhotoComparisonRound } from './PhotoComparisonRound';
 import { QuizBlurFadeImage } from './QuizBlurFadeImage';
 import { preloadQuizImages } from './quiz-image-preloader';
+import { getQuizResultFallbackImages } from './quiz-result-image';
 import {
   type LashStyle,
   type QuizPhoto,
@@ -125,6 +126,7 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
       Record<LashStyle, QuizResultForDisplay> | null
     >(EMPTY_RESULT_SETTINGS);
     const [resultServices, setResultServices] = useState<QuizResultServices | null>(null);
+    const [servicesLoadedFor, setServicesLoadedFor] = useState<LashStyle | null>(null);
     const [photosLoading, setPhotosLoading] = useState(false);
     const [photosError, setPhotosError] = useState<string | null>(null);
 
@@ -231,11 +233,6 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
 
     const handlePhotoSelect = (selectedStyle: LashStyle) => {
       quiz.selectPhoto(selectedStyle);
-
-      // Check if quiz is complete
-      if (quiz.result) {
-        setStep(4);
-      }
     };
 
     const handlePhotoSkip = () => {
@@ -255,10 +252,17 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
       let cancelled = false;
       getQuizResultServices(quiz.result)
         .then((data) => {
-          if (!cancelled) setResultServices(data);
+          if (!cancelled) {
+            setResultServices(data);
+            setServicesLoadedFor(quiz.result);
+          }
         })
         .catch((err) => {
           console.error('Failed to load quiz result services:', err);
+          if (!cancelled) {
+            setResultServices(null);
+            setServicesLoadedFor(quiz.result);
+          }
         });
       return () => {
         cancelled = true;
@@ -354,19 +358,20 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
 
             {step === 4 && quiz.result && (() => {
               const display = buildResultDisplay(quiz.result, resultSettings);
-              // Prefer the booking-flow image for the matched style's Full Set
-              // service so the result hero matches the service card the user
-              // will see in the booking flow. Falls back to the admin-managed
-              // quiz_result_settings image, then to the hardcoded R2 default.
-              const resolvedImage =
-                resultServices?.bookingImage || display.resultImage;
+              const activeServices = servicesLoadedFor === quiz.result ? resultServices : null;
+              const fallbackImages = getQuizResultFallbackImages(
+                quiz.result,
+                photosByStyle,
+                activeServices?.bookingImage,
+              );
               return (
                 <ResultScreen
                   key="result"
                   result={display}
-                  resultImage={resolvedImage}
-                  services={resultServices?.services ?? []}
-                  servicesLoading={resultServices === null}
+                  resultImage={display.resultImage}
+                  resultImageFallbacks={fallbackImages}
+                  services={activeServices?.services ?? []}
+                  servicesLoading={servicesLoadedFor !== quiz.result}
                   onBookService={handleBookService}
                   isMobile={isMobile}
                 />
@@ -397,20 +402,23 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
     Record<LashStyle, QuizResultForDisplay> | null
   >(EMPTY_RESULT_SETTINGS);
   const [resultServices, setResultServices] = useState<QuizResultServices | null>(null);
+  const [servicesLoadedFor, setServicesLoadedFor] = useState<LashStyle | null>(null);
   const [photosLoading, setPhotosLoading] = useState(false);
   const [photosError, setPhotosError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   // Quiz algorithm hook
   const quiz = useQuizAlgorithm({ photosByStyle });
+  const resetQuiz = quiz.reset;
 
   // Reset quiz state when modal opens
   // Also fetch photos + result settings
   useEffect(() => {
     if (isOpen) {
       setStep(0);
-      quiz.reset();
+      resetQuiz();
       setPhotosError(null);
+      setServicesLoadedFor(null);
 
       const load = async () => {
         setPhotosLoading(true);
@@ -436,7 +444,7 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
 
       load();
     }
-  }, [isOpen]);
+  }, [isOpen, resetQuiz]);
 
   // Detect mobile viewport
   useEffect(() => {
@@ -527,10 +535,17 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
     let cancelled = false;
     getQuizResultServices(quiz.result)
       .then((data) => {
-        if (!cancelled) setResultServices(data);
+        if (!cancelled) {
+          setResultServices(data);
+          setServicesLoadedFor(quiz.result);
+        }
       })
       .catch((err) => {
         console.error('Failed to load quiz result services:', err);
+        if (!cancelled) {
+          setResultServices(null);
+          setServicesLoadedFor(quiz.result);
+        }
       });
     return () => {
       cancelled = true;
@@ -588,6 +603,9 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
             <div
               className="relative w-full h-full md:w-full md:max-w-[480px] md:h-auto md:max-h-[90vh] bg-rose-mist md:rounded-3xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col"
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Find Your Look Quiz"
               style={isMobile ? {
                 paddingTop: 'env(safe-area-inset-top)',
                 paddingBottom: 'env(safe-area-inset-bottom)'
@@ -629,6 +647,7 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
                 <>
                   <button
                     onClick={handleClose}
+                    aria-label="Close"
                     className="absolute top-4 right-4 z-10 w-8 h-8 min-h-0 min-w-0 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
                                text-charcoal hover:text-charcoal transition-all shadow-sm"
                   >
@@ -638,6 +657,7 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
                   {step > 0 && (
                     <button
                       onClick={handleBack}
+                      aria-label="Go back"
                       className="absolute top-4 left-4 z-10 w-8 h-8 min-h-0 min-w-0 flex items-center justify-center rounded-full bg-white/80 hover:bg-white
                                  text-charcoal hover:text-charcoal transition-all shadow-sm"
                     >
@@ -715,15 +735,20 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
 
                     {step === 4 && quiz.result && (() => {
                       const display = buildResultDisplay(quiz.result, resultSettings);
-                      const resolvedImage =
-                        resultServices?.bookingImage || display.resultImage;
+                      const activeServices = servicesLoadedFor === quiz.result ? resultServices : null;
+                      const fallbackImages = getQuizResultFallbackImages(
+                        quiz.result,
+                        photosByStyle,
+                        activeServices?.bookingImage,
+                      );
                       return (
                         <ResultScreen
                           key="result"
                           result={display}
-                          resultImage={resolvedImage}
-                          services={resultServices?.services ?? []}
-                          servicesLoading={resultServices === null}
+                          resultImage={display.resultImage}
+                          resultImageFallbacks={fallbackImages}
+                          services={activeServices?.services ?? []}
+                          servicesLoading={servicesLoadedFor !== quiz.result}
                           onBookService={handleBookService}
                           isMobile={isMobile}
                         />
@@ -897,6 +922,7 @@ function Q2LashLookFeel({ onAnswer }: { onAnswer: (answer: Q2Answer) => void }) 
 interface ResultScreenProps {
   result: Pick<QuizResultForDisplay, 'displayName' | 'description' | 'bestFor'>;
   resultImage: string;
+  resultImageFallbacks: string[];
   services: QuizResultService[];
   servicesLoading: boolean;
   onBookService: (service: QuizResultService) => void;
@@ -906,6 +932,7 @@ interface ResultScreenProps {
 function ResultScreen({
   result,
   resultImage,
+  resultImageFallbacks,
   services,
   servicesLoading,
   onBookService,
@@ -933,6 +960,7 @@ function ResultScreen({
         <div className="relative w-full h-36 md:h-48 rounded-xl overflow-hidden mb-3 md:mb-4 shrink-0">
           <QuizBlurFadeImage
             src={resultImage}
+            fallbackSrcs={resultImageFallbacks}
             alt={result.displayName}
             sizes="(max-width: 768px) 100vw, 400px"
           />

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { uniqueImageCandidates } from './quiz-result-image'
 
 interface QuizBlurFadeImageProps {
   src: string
@@ -9,6 +10,7 @@ interface QuizBlurFadeImageProps {
   sizes: string
   priority?: boolean
   className?: string
+  fallbackSrcs?: Array<string | null | undefined>
 }
 
 export function QuizBlurFadeImage({
@@ -17,9 +19,13 @@ export function QuizBlurFadeImage({
   sizes,
   priority = false,
   className = '',
+  fallbackSrcs = [],
 }: QuizBlurFadeImageProps) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
-  const isLoaded = loadedSrc === src
+  const [failedSrcs, setFailedSrcs] = useState<Set<string>>(() => new Set())
+  const candidates = uniqueImageCandidates(src, fallbackSrcs)
+  const activeSrc = candidates.find((candidate) => !failedSrcs.has(candidate)) ?? null
+  const isLoaded = loadedSrc === activeSrc
 
   return (
     <>
@@ -33,20 +39,26 @@ export function QuizBlurFadeImage({
         <div className="absolute inset-0 animate-pulse bg-white/10 motion-reduce:animate-none" />
       </div>
 
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={sizes}
-        priority={priority}
-        quality={90}
-        onLoad={() => setLoadedSrc(src)}
-        className={`object-cover will-change-[opacity,filter,transform] transition-[opacity,filter,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
-          isLoaded
-            ? 'opacity-100 blur-0 scale-100'
-            : 'opacity-0 blur-[14px] scale-[1.04]'
-        } ${className}`}
-      />
+      {activeSrc && (
+        <Image
+          key={activeSrc}
+          src={activeSrc}
+          alt={alt}
+          fill
+          sizes={sizes}
+          priority={priority}
+          quality={90}
+          onLoad={() => setLoadedSrc(activeSrc)}
+          onError={() => {
+            setFailedSrcs((current) => new Set(current).add(activeSrc))
+          }}
+          className={`object-cover will-change-[opacity,filter,transform] transition-[opacity,filter,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+            isLoaded
+              ? 'opacity-100 blur-0 scale-100'
+              : 'opacity-0 blur-[14px] scale-[1.04]'
+          } ${className}`}
+        />
+      )}
     </>
   )
 }

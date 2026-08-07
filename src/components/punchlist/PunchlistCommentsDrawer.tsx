@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import {
@@ -75,19 +75,7 @@ export function PunchlistCommentsDrawer({
   const inputRef = useRef<HTMLInputElement>(null)
   const commentsEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (itemId) {
-      loadData()
-    }
-  }, [itemId])
-
-  useEffect(() => {
-    if (commentsEndRef.current) {
-      commentsEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [comments])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!itemId) return
     setIsLoading(true)
     try {
@@ -100,7 +88,19 @@ export function PunchlistCommentsDrawer({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [itemId])
+
+  useEffect(() => {
+    if (itemId) {
+      void loadData()
+    }
+  }, [itemId, loadData])
+
+  useEffect(() => {
+    if (commentsEndRef.current) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [comments])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

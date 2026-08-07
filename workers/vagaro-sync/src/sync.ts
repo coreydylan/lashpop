@@ -856,6 +856,9 @@ export async function syncPublicStaff(
           imageUrl: photoUrl ?? PLACEHOLDER, // notNull — seed local with vagaro photo or branded placeholder
           displayOrder: sortOrder,
           isActive: true,
+          // Newly discovered providers must be reviewed before publication.
+          // Subsequent syncs intentionally leave this admin-owned flag alone.
+          showOnWebsite: false,
           lastSyncedAt: new Date(),
         })
         stats.created++
@@ -875,7 +878,8 @@ export async function syncPublicStaff(
       if (!row.isActive) continue
       // Dual-mode gate (belt-and-suspenders): external-booking stylists must
       // never be tombstoned by the Vagaro sync even if Vagaro doesn't list
-      // them at all. Admin owns their isActive flag.
+      // them at all. Admin owns their source state in this mode. Website
+      // publication is always controlled independently by showOnWebsite.
       if (row.usesLashpopBooking === false) continue
       try {
         await db

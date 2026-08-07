@@ -38,8 +38,6 @@ const FONT_WEIGHTS = [
 const FONT_FAMILIES = [
   { value: "var(--font-inter, 'Inter'), system-ui, sans-serif", label: 'Inter', preview: 'var(--font-inter, Inter)' },
   { value: "var(--font-playfair, 'Playfair Display'), serif", label: 'Playfair', preview: 'var(--font-playfair, Playfair Display)' },
-  { value: "var(--font-league-script, 'League Script'), cursive", label: 'League Script', preview: 'var(--font-league-script, League Script)' },
-  { value: "var(--font-swanky, 'Swanky and Moo Moo'), cursive", label: 'Swanky', preview: 'var(--font-swanky, Swanky and Moo Moo)' },
 ]
 
 const FONT_SIZES = ['12', '14', '16', '18', '20', '24', '28', '32', '36', '40', '48', '56', '64']

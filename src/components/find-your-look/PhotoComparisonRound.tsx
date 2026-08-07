@@ -56,7 +56,10 @@ export function PhotoComparisonRound({
   const isLocked = disabled || feedbackSide !== null
 
   return (
-    <div className="h-full flex flex-col">
+    <div
+      className="h-full flex flex-col"
+      data-photo-pair={`${pair.left.assetId}:${pair.right.assetId}`}
+    >
       {/* Header - static, doesn't animate between rounds */}
       <div className="text-center mb-4 shrink-0">
         <h2 className="text-xl md:text-2xl font-display font-medium text-charcoal">
@@ -134,7 +137,7 @@ export function PhotoComparisonRound({
         transition={{ delay: 0.4, duration: 0.3 }}
         onClick={() => !isLocked && onSkip()}
         disabled={isLocked}
-        className="mt-3 py-2 text-sm text-charcoal/50 hover:text-charcoal/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+        className="mt-3 min-h-11 self-center rounded-full border border-dusty-rose/40 bg-cream/50 px-6 py-2.5 text-sm font-medium text-charcoal/70 shadow-sm transition-[background-color,border-color,color,transform] hover:border-dusty-rose hover:bg-cream hover:text-charcoal active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 shrink-0"
       >
         Neither of these
       </motion.button>

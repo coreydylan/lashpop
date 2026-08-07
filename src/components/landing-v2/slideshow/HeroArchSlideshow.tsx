@@ -20,13 +20,20 @@ interface HeroArchSlideshowProps {
   className?: string
   /** Container dimensions for positioning */
   containerStyle?: React.CSSProperties
+  /** Optional server-side crop used by the tall mobile arch. */
+  cropAspectRatio?: number
 }
 
 /**
  * Premium slideshow component that displays within the hero arch shape.
  * Supports multiple transition effects including fade, slide, Ken Burns, and more.
  */
-export function HeroArchSlideshow({ preset, className = '', containerStyle }: HeroArchSlideshowProps) {
+export function HeroArchSlideshow({
+  preset,
+  className = '',
+  containerStyle,
+  cropAspectRatio,
+}: HeroArchSlideshowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const currentImageRef = useRef<HTMLDivElement>(null)
   const previousImageRef = useRef<HTMLDivElement>(null)
@@ -282,7 +289,7 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
         timelineRef.current.kill()
       }
     }
-  }, [isTransitioning, preset, currentImage, direction, getGsapEasing, completeTransition, prefersReducedMotion])
+  }, [isTransitioning, preset, currentImage, previousImage?.kenBurns, direction, getGsapEasing, completeTransition, prefersReducedMotion])
 
   // Reset positions after transition
   useEffect(() => {
@@ -307,6 +314,9 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
           priority
           fetchPriority="high"
           sizes="80vw"
+          quality={90}
+          cropAspectRatio={cropAspectRatio}
+          cropPosition={currentImage.position}
         />
       </div>
     )
@@ -334,6 +344,9 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
             objectFit={previousImage.objectFit}
             objectPosition={`${previousImage.position.x}% ${previousImage.position.y}%`}
             sizes="80vw"
+            quality={90}
+            cropAspectRatio={cropAspectRatio}
+            cropPosition={previousImage.position}
           />
         )}
       </div>
@@ -354,6 +367,9 @@ export function HeroArchSlideshow({ preset, className = '', containerStyle }: He
             priority
             fetchPriority="high"
             sizes="80vw"
+            quality={90}
+            cropAspectRatio={cropAspectRatio}
+            cropPosition={currentImage.position}
           />
         )}
       </div>

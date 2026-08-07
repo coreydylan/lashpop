@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import { DEFAULT_STUDIO_SETTINGS, type StudioSettings } from '@/types/studio'
 import { getPublicImageBlur } from '@/lib/image-blur'
 
@@ -23,7 +24,10 @@ function escapeHtml(value: string): string {
 
 export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps) {
   // Mapbox wants [lng, lat]; StudioSettings stores them named.
-  const studioLocation: [number, number] = [studio.coordinates.lng, studio.coordinates.lat]
+  const studioLocation = useMemo<[number, number]>(
+    () => [studio.coordinates.lng, studio.coordinates.lat],
+    [studio.coordinates.lat, studio.coordinates.lng]
+  )
   const directionsUrl = studio.social.google ?? DEFAULT_STUDIO_SETTINGS.social.google!
 
   const mapContainer = useRef<HTMLDivElement>(null)
@@ -65,15 +69,6 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
       try {
         // Dynamically import mapbox-gl
         const mapboxgl = await import('mapbox-gl')
-
-        // Load CSS dynamically if not already loaded
-        if (!document.getElementById('mapbox-gl-css')) {
-          const link = document.createElement('link')
-          link.id = 'mapbox-gl-css'
-          link.rel = 'stylesheet'
-          link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css'
-          document.head.appendChild(link)
-        }
 
         if (!isMounted || !mapContainer.current) return
 
@@ -192,8 +187,9 @@ export function MapSection({ studio = DEFAULT_STUDIO_SETTINGS }: MapSectionProps
         map.current = null
         setMapLoaded(false)
       }
+      mapInitializedRef.current = false
     }
-  }, [isInView])
+  }, [directionsUrl, isInView, studio.address.city, studio.address.state, studio.name, studioLocation])
 
   return (
     <section ref={sectionRef} id="find-us" className="relative bg-ivory md:mt-0 -mt-[60px]">

@@ -1,4 +1,6 @@
-# LashPop Studios - Master Color Guide
+# LashPop Studios - Master Color Guide (Historical)
+
+> Superseded for implementation purposes by `docs/design/brand-contract.json`. Do not use this historical document to change the live palette.
 
 ## Color Philosophy
 

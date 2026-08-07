@@ -50,12 +50,8 @@ const config: Config = {
         // Aliases for clarity
         body: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
         heading: ['var(--font-playfair)', 'Playfair Display', 'serif'],
-        // Legacy/decorative fonts
+        // Display alias
         serif: ['var(--font-playfair)', 'Playfair Display', 'serif'],
-        'league-script': ['var(--font-league-script)', 'cursive'],
-        swanky: ['var(--font-swanky)', 'cursive'],
-        licorice: ['var(--font-licorice)', 'cursive'],
-        corey: ['Corey Nice', 'cursive'],
       },
       animation: {
         'fade-in': 'fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards',

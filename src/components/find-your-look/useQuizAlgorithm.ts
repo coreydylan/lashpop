@@ -14,6 +14,7 @@ import {
   getUnusedStylePairs,
   checkWinCondition,
   applyScoreChanges,
+  applySkippedPair,
   pickQuizPhoto,
 } from "./types"
 
@@ -216,11 +217,7 @@ export function useQuizAlgorithm({
     const pair = currentPairRef.current
     if (!pair) return
 
-    const nextScores = {
-      ...scoresRef.current,
-      [pair.leftStyle]: Math.max(0, scoresRef.current[pair.leftStyle] - 1),
-      [pair.rightStyle]: Math.max(0, scoresRef.current[pair.rightStyle] - 1),
-    }
+    const nextScores = applySkippedPair(scoresRef.current)
     commitScores(nextScores)
     advanceAfterRound(nextScores)
   }, [advanceAfterRound, commitScores])

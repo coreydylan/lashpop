@@ -234,6 +234,9 @@ export function ServiceBrowserModal() {
                       ? 'w-[480px] max-w-[90vw]'
                       : 'w-[900px] max-w-[90vw] h-[80vh] max-h-[90vh]'
                 }`}
+                role="dialog"
+                aria-modal="true"
+                aria-label={getHeaderTitle() || 'Book a service'}
                 onClick={(e) => e.stopPropagation()}
                 style={isMobile ? {
                   paddingTop: 'env(safe-area-inset-top)',

@@ -170,6 +170,13 @@ export function applyScoreChanges(
   return next
 }
 
+// "Neither" means the comparison supplied no preference signal. Advancing
+// must preserve the questionnaire and prior photo-selection scores exactly;
+// subtracting from both displayed styles can otherwise manufacture a winner.
+export function applySkippedPair(scores: StyleScores): StyleScores {
+  return { ...scores }
+}
+
 export function pickQuizPhoto(
   photos: QuizPhoto[],
   excludedAssetIds: Set<string>,

@@ -117,7 +117,12 @@ async function getTeamMembersWithCredentials(): Promise<TeamMemberWithCredential
         credentials: teamMembers.credentials
       })
       .from(teamMembers)
-      .where(eq(teamMembers.isActive, true))
+      .where(
+        and(
+          eq(teamMembers.isActive, true),
+          eq(teamMembers.showOnWebsite, true),
+        ),
+      )
 
     // Filter to only members who have credentials
     return members

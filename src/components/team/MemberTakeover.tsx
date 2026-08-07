@@ -771,13 +771,16 @@ function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
           Falls back to a soft shimmer only when no blur data exists. */}
       {!loaded && (
         photo.blurDataUrl ? (
-          <img
-            src={photo.blurDataUrl}
-            alt=""
-            aria-hidden
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ filter: 'blur(24px)', transform: 'scale(1.1)' }}
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element -- This is an inline LQIP data URL used only as a blur underlay. */}
+            <img
+              src={photo.blurDataUrl}
+              alt=""
+              aria-hidden
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ filter: 'blur(24px)', transform: 'scale(1.1)' }}
+            />
+          </>
         ) : (
           <div
             aria-hidden
@@ -792,6 +795,7 @@ function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
           />
         )
       )}
+      {/* eslint-disable-next-line @next/next/no-img-element -- The image-worker URL is pre-optimized and must fill a dimension-derived frame without Next Image rewriting. */}
       <img
         src={src}
         alt=""

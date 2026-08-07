@@ -108,7 +108,8 @@ export async function GET() {
   }
 }
 
-// PUT - Update team member visibility and order
+// PUT - Update admin-owned website publication and order. isActive remains
+// source/sync-owned and must never be used as the editorial visibility toggle.
 export async function PUT(request: NextRequest) {
   const auth = await requireAdminApi(['owner', 'publisher'])
   if (auth instanceof NextResponse) return auth
@@ -131,18 +132,18 @@ export async function PUT(request: NextRequest) {
       ? await db.select().from(teamMembers).where(inArray(teamMembers.id, updateIds))
       : []
 
-    // Update each member's isActive and displayOrder
+    // Update each member's publication flag and display order.
     for (const update of updates) {
       if (!update.id) continue
 
-      if (typeof update.isActive !== 'boolean' || !Number.isInteger(update.displayOrder)) {
-        return NextResponse.json({ error: 'Each update requires a boolean isActive and integer displayOrder' }, { status: 400 })
+      if (typeof update.showOnWebsite !== 'boolean' || !Number.isInteger(update.displayOrder)) {
+        return NextResponse.json({ error: 'Each update requires a boolean showOnWebsite and integer displayOrder' }, { status: 400 })
       }
 
       await db
         .update(teamMembers)
         .set({
-          isActive: update.isActive,
+          showOnWebsite: update.showOnWebsite,
           displayOrder: update.displayOrder,
           updatedAt: new Date()
         })

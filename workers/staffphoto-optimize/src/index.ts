@@ -313,7 +313,7 @@ async function handleOptimize(req: Request, env: Env): Promise<Response> {
   })
 }
 
-export default {
+const staffPhotoOptimizeWorker = {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
     if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
@@ -327,3 +327,5 @@ export default {
     })
   },
 }
+
+export default staffPhotoOptimizeWorker

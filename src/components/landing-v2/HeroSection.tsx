@@ -79,7 +79,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
   // the desktop hero on phones first, a visible flash on every load.
   // ============================================
   const mobileLayout = (
-      <section className="relative min-h-[100dvh] md:hidden" style={{ background: 'transparent' }}>
+      <section data-section-id="hero" className="relative min-h-[100dvh] md:hidden" style={{ background: 'transparent' }}>
         {/* Background shows through from MobileHeroBackground */}
         <div className="relative">
           {/* ABOVE THE FOLD - exactly 100dvh, gradient fades to ivory at bottom */}
@@ -212,7 +212,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
   // DESKTOP LAYOUT - Full viewport photo with overlaid content
   // ============================================
   const desktopLayout = (
-    <section ref={containerRef} className="relative h-screen w-screen overflow-hidden hidden md:block">
+    <section ref={containerRef} data-section-id="hero" className="relative h-screen w-screen overflow-hidden hidden md:block">
       {/* Full viewport background image */}
       <div
         ref={imageContainerRef}
@@ -233,6 +233,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
               priority
               fetchPriority="high"
               sizes="100vw"
+              quality={90}
             />
           </div>
         )}

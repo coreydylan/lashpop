@@ -377,6 +377,8 @@ export function ReviewsSection({ reviews, reviewStats = [], studio = DEFAULT_STU
                         {/* Review Text - Scrollable */}
                         <div
                           className="flex-1 overflow-y-auto review-text-scroll pr-2 relative"
+                          tabIndex={0}
+                          aria-label="Review text"
                           onScroll={(e) => {
                             if (index === 0 && !hasScrolledText && (e.target as HTMLElement).scrollTop > 10) {
                               setHasScrolledText(true)

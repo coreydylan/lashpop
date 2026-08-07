@@ -66,6 +66,7 @@ interface TeamMember {
   bookingUrl: string
   usesLashpopBooking: boolean
   isActive: boolean
+  showOnWebsite: boolean
   displayOrder: string
   vagaroEmployeeId: string | null
   vagaroPublicProviderId: number | null
@@ -290,7 +291,7 @@ export default function TeamManagerPage() {
   const toggleVisibility = (memberId: string) => {
     setTeamMembers(prev => prev.map(member => 
       member.id === memberId 
-        ? { ...member, isActive: !member.isActive }
+        ? { ...member, showOnWebsite: !member.showOnWebsite }
         : member
     ))
     setHasChanges(true)
@@ -306,7 +307,7 @@ export default function TeamManagerPage() {
     try {
       const updates = teamMembers.map((member, index) => ({
         id: member.id,
-        isActive: member.isActive,
+        showOnWebsite: member.showOnWebsite,
         displayOrder: index.toString()
       }))
 
@@ -397,7 +398,8 @@ export default function TeamManagerPage() {
     updateExternalCategories(memberId, currentCategories.filter(c => c !== category))
   }
 
-  const activeCount = teamMembers.filter(m => m.isActive).length
+  const visibleCount = teamMembers.filter(m => m.isActive && m.showOnWebsite).length
+  const sourceActiveCount = teamMembers.filter(m => m.isActive).length
 
   if (loading) {
     return (
@@ -423,7 +425,7 @@ export default function TeamManagerPage() {
             <div>
               <h1 className="h2 text-dune">Team Members</h1>
               <p className="text-sm text-dune/60">
-                {activeCount} of {teamMembers.length} visible on website
+                {visibleCount} of {sourceActiveCount} active profiles visible on website
               </p>
             </div>
           </div>
@@ -480,7 +482,7 @@ export default function TeamManagerPage() {
           <div className="text-xs text-dune/50 uppercase tracking-wider">Total</div>
         </div>
         <div className="glass rounded-2xl p-4 border border-ocean-mist/30 text-center">
-          <div className="text-2xl font-serif text-ocean-mist">{activeCount}</div>
+          <div className="text-2xl font-serif text-ocean-mist">{visibleCount}</div>
           <div className="text-xs text-dune/50 uppercase tracking-wider">Visible</div>
         </div>
         <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
@@ -499,7 +501,8 @@ export default function TeamManagerPage() {
         className="mb-6 p-4 bg-ocean-mist/10 rounded-2xl border border-ocean-mist/20"
       >
         <p className="text-sm text-dune/70">
-          <strong>Drag to reorder</strong> team members. Toggle the eye icon to show/hide on the website. 
+          <strong>Drag to reorder</strong> team members. The eye controls website publication only;
+          Vagaro sync controls whether a provider is active. New Vagaro providers stay hidden until reviewed.
           Changes are saved when you click &quot;Save Changes&quot;.
         </p>
       </motion.div>
@@ -549,7 +552,7 @@ export default function TeamManagerPage() {
                           src={member.imageUrl}
                           alt={member.name}
                           fill
-                          className={`object-cover transition-all ${!member.isActive ? 'grayscale opacity-50' : ''}`}
+                          className={`object-cover transition-all ${!member.isActive || !member.showOnWebsite ? 'grayscale opacity-50' : ''}`}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-dune/30">
@@ -561,7 +564,7 @@ export default function TeamManagerPage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className={`font-medium truncate ${member.isActive ? 'text-dune' : 'text-dune/50'}`}>
+                        <h3 className={`font-medium truncate ${member.isActive && member.showOnWebsite ? 'text-dune' : 'text-dune/50'}`}>
                           {member.name}
                         </h3>
                         {member.vagaroEmployeeId && (
@@ -574,8 +577,13 @@ export default function TeamManagerPage() {
                             Independent
                           </span>
                         )}
+                        {!member.isActive && (
+                          <span className="px-2 py-0.5 bg-sage/10 text-dune/50 text-xs rounded-full">
+                            Not active in Vagaro
+                          </span>
+                        )}
                       </div>
-                      <p className={`text-sm truncate ${member.isActive ? 'text-dune/60' : 'text-dune/40'}`}>
+                      <p className={`text-sm truncate ${member.isActive && member.showOnWebsite ? 'text-dune/60' : 'text-dune/40'}`}>
                         {member.role}
                         {member.businessName && ` • ${member.businessName}`}
                       </p>
@@ -587,13 +595,13 @@ export default function TeamManagerPage() {
                       <button
                         onClick={() => toggleVisibility(member.id)}
                         className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                          member.isActive
+                          member.showOnWebsite
                             ? 'bg-ocean-mist/20 text-ocean-mist hover:bg-ocean-mist/30'
                             : 'bg-sage/10 text-dune/40 hover:bg-sage/20'
                         }`}
-                        title={member.isActive ? 'Hide from website' : 'Show on website'}
+                        title={member.showOnWebsite ? 'Hide from website' : 'Show on website'}
                       >
-                        {member.isActive ? (
+                        {member.showOnWebsite ? (
                           <Eye className="w-5 h-5" />
                         ) : (
                           <EyeOff className="w-5 h-5" />

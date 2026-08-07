@@ -128,6 +128,8 @@ export function SubcategoryTabs({ subcategories, activeSubcategory, onSelect }: 
       <div
         ref={scrollRef}
         className="subcategory-tabs-scroll flex gap-1.5 overflow-x-auto pb-2 px-4 md:px-6"
+        tabIndex={0}
+        aria-label="Service subcategories"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',

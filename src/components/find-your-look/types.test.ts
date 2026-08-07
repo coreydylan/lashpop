@@ -4,6 +4,7 @@ import {
   Q1_SCORES,
   Q2_SCORES,
   applyScoreChanges,
+  applySkippedPair,
   checkWinCondition,
   createEmptyScores,
   getPairKey,
@@ -22,6 +23,12 @@ test("questionnaire answers are immediately reflected in quiz scores", () => {
     wetAngel: 2,
     volume: 0,
   })
+})
+
+test('skipping a photo pair does not change any preference scores', () => {
+  const scores = { classic: 3, wetAngel: 2, hybrid: 1, volume: 0 }
+
+  assert.deepEqual(applySkippedPair(scores), scores)
 })
 
 test("four styles produce six unique comparisons without recycling a pair", () => {

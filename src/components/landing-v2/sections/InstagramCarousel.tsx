@@ -336,6 +336,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element -- Natural dimensions keep the lightbox frame tight; the URL is already optimized by the image worker. */}
               <img
                 src={lightboxSrc(activeItem.mediaUrl)}
                 alt={activeItem.caption ?? `Gallery image ${lightboxIndex! + 1}`}

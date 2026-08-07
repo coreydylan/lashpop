@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Playfair_Display, League_Script, Swanky_and_Moo_Moo } from 'next/font/google'
+import { Inter, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/components/auth/AuthProvider'
 import { UserKnowledgeProvider } from '@/contexts/UserKnowledgeContext'
@@ -24,22 +24,6 @@ const playfair = Playfair_Display({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-playfair',
-})
-
-const leagueScript = League_Script({
-  subsets: ['latin'],
-  weight: '400',
-  display: 'swap',
-  preload: false,
-  variable: '--font-league-script',
-})
-
-const swanky = Swanky_and_Moo_Moo({
-  subsets: ['latin'],
-  weight: '400',
-  display: 'swap',
-  preload: false,
-  variable: '--font-swanky',
 })
 
 export const viewport: Viewport = {
@@ -120,7 +104,7 @@ export default async function RootLayout({
   const settings = await getSEOSettings()
 
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} ${leagueScript.variable} ${swanky.variable}`}>
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
         {/* The above-the-fold hero is delivered by the Cloudflare image worker. */}
         <link rel="preconnect" href="https://lashpop-img.experial.workers.dev" crossOrigin="anonymous" />

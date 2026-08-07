@@ -1,4 +1,6 @@
-# LashPop Studios - Brand Style Guide & Technical Specifications
+# LashPop Studios - Brand Style Guide & Technical Specifications (Historical)
+
+> Superseded for implementation purposes by `docs/design/brand-contract.json`. Do not use this historical document to change the live palette or typography.
 
 ## Brand Overview
 - **Business**: LashPop Studios  

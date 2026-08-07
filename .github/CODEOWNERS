@@ -1,0 +1,8 @@
+# Visual and launch-critical changes require explicit owner review.
+* @coreydylan
+
+/docs/design/ @coreydylan
+/src/app/globals.css @coreydylan
+/src/styles/brand-contract.css @coreydylan
+/tailwind.config.ts @coreydylan
+/tests/browser/ @coreydylan

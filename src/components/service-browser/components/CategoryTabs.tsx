@@ -82,6 +82,8 @@ export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryT
       <div
         ref={scrollRef}
         className="category-tabs-scroll flex gap-1 overflow-x-auto"
+        tabIndex={0}
+        aria-label="Service categories"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',

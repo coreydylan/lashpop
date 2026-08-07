@@ -7,12 +7,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { phoneNumberAuth } from '@/lib/auth-client'
 import { formatPhoneNumber, validatePhoneNumber } from '@/lib/phone-utils'
 
 type Step = 'phone' | 'verify'
 
 export function PhoneLoginForm() {
+  const router = useRouter()
   const [step, setStep] = useState<Step>('phone')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
@@ -57,7 +59,8 @@ export function PhoneLoginForm() {
 
       // Success! User is now signed in
       // The page will automatically update via useSession
-      window.location.href = '/dashboard' // or wherever you want to redirect
+      router.push('/dashboard')
+      router.refresh()
     } catch (err: any) {
       setError(err.message || 'Invalid verification code')
     } finally {

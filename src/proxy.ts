@@ -38,7 +38,7 @@ async function getAdminAccess(sessionToken: string): Promise<AdminAccess> {
   }
 }
 
-export default async function middleware(req: NextRequest, ev: NextFetchEvent) {
+export default async function proxy(req: NextRequest, ev: NextFetchEvent) {
   const { pathname } = req.nextUrl
 
   // Retire unfinished customer-auth/booking utilities from the public launch.

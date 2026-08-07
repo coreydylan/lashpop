@@ -3,7 +3,7 @@
 // Cloudflare Images binding. Lives on the experialstudio account (no zone
 // needed) since the old account's cdn.lashpopstudios.com transform is offline.
 //
-//   GET /<key>?w=<width>&q=<quality>&dpr=<1|2>&f=<auto|avif|webp|jpeg>   R2 object
+//   GET /<key>?w=<width>&h=<height>&fit=cover&gx=<0..1>&gy=<0..1>        optional focal crop
 //   GET /site/<path>?w=&q=                                              site /public asset (proxied from SITE_ORIGIN)
 //   GET /ext?url=<https://...rackcdn.com/...>&w=&q=                     allow-listed external origin (Vagaro CDN)
 //
@@ -28,6 +28,7 @@
 // 3840 covers a 2x-retina ~1920-CSS-px hero without browser upscale — a 2400
 // cap forced 1.5-1.7x upscaling on large Mac displays, which read as blurry.
 const MAX_WIDTH = 3840 // cap so a bare (no-width) request still optimizes huge originals
+const MAX_HEIGHT = 4096
 // 90, not 82: faces dominate this site and AVIF/WebP at 82 visibly smooths
 // skin texture vs the originals. Bytes are still 10-20x under the raw files.
 const DEFAULT_QUALITY = 90
@@ -91,7 +92,7 @@ async function getSource(url, key, env) {
   return { body: await obj.arrayBuffer(), contentType: obj.httpMetadata?.contentType || 'image/jpeg' }
 }
 
-export default {
+const lashpopImageWorker = {
   async fetch(request, env, ctx) {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response('Method not allowed', { status: 405 })
@@ -120,6 +121,17 @@ export default {
     let dpr = parseInt(url.searchParams.get('dpr') || '1', 10)
     if (isNaN(dpr) || dpr < 1) dpr = 1
     if (dpr > 2) dpr = 2
+
+    let height = parseInt(url.searchParams.get('h') || url.searchParams.get('height') || '', 10)
+    if (isNaN(height) || height <= 0) height = 0
+    if (height > MAX_HEIGHT) height = MAX_HEIGHT
+
+    const fit = height && url.searchParams.get('fit') === 'cover' ? 'cover' : 'scale-down'
+    const normalizedGravity = (name) => {
+      const value = Number.parseFloat(url.searchParams.get(name) || '')
+      return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0.5
+    }
+    const gravity = { x: normalizedGravity('gx'), y: normalizedGravity('gy') }
 
     // Optional sharpen override (s=0..5). Default 1 on downscales — the CF
     // resize kernel is slightly soft; docs recommend 1 for downscaled photos.
@@ -151,13 +163,16 @@ export default {
     // Effective render width accounting for retina. scale-down still prevents
     // upscaling past the source, so dpr only ever helps when the source is big.
     const renderWidth = width ? width * dpr : MAX_WIDTH * dpr
+    const renderHeight = height ? height * dpr : 0
 
     let resp
     if (isSvg) {
       resp = new Response(src.body, { headers: { 'content-type': 'image/svg+xml' } })
     } else {
       try {
-        const transform = { fit: 'scale-down', width: renderWidth }
+        const transform = renderHeight
+          ? { fit, width: renderWidth, height: renderHeight, gravity }
+          : { fit: 'scale-down', width: renderWidth }
         // Light sharpening helps perceived crispness after downscaling photos.
         if (sharpen) transform.sharpen = sharpen
         const out = await env.IMAGES.input(src.body)
@@ -175,8 +190,11 @@ export default {
     headers.set('access-control-allow-origin', '*')
     headers.set('vary', 'Accept')
     headers.set('x-lp-img-format', format)
+    if (renderHeight) headers.set('x-lp-img-crop', `${renderWidth}x${renderHeight}`)
     const final = new Response(resp.body, { status: resp.status, headers })
     ctx.waitUntil(cache.put(cacheKey, final.clone()))
     return final
   },
 }
+
+export default lashpopImageWorker

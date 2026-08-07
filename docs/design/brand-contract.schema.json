@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["name", "version", "status", "policy", "tokens", "fonts", "protectedRoots", "approvedHexLiterals"],
+  "properties": {
+    "name": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "status": { "const": "approved-pre-launch-baseline" },
+    "policy": { "type": "string" },
+    "tokens": { "type": "object", "additionalProperties": { "type": "string" } },
+    "fonts": { "type": "object" },
+    "protectedRoots": { "type": "array", "items": { "type": "string" } },
+    "approvedHexLiterals": { "type": "array", "items": { "type": "string", "pattern": "^#[0-9a-f]{3,8}$" } }
+  },
+  "additionalProperties": true
+}

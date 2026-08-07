@@ -19,7 +19,10 @@ export async function getTeamMembers() {
   const members = await db
     .select()
     .from(teamMembers)
-    .where(eq(teamMembers.isActive, true))
+    .where(and(
+      eq(teamMembers.isActive, true),
+      eq(teamMembers.showOnWebsite, true),
+    ))
     .orderBy(teamMembers.displayOrder)
 
   return members
@@ -81,7 +84,10 @@ export async function getTeamMembersWithServices() {
   const [members, vagaroMappings, vagaroCategoryConfig] = await Promise.all([
     db.select()
       .from(teamMembers)
-      .where(eq(teamMembers.isActive, true))
+      .where(and(
+        eq(teamMembers.isActive, true),
+        eq(teamMembers.showOnWebsite, true),
+      ))
       // displayOrder is TEXT — cast to int so "2" < "10". Vagaro sends EmployeeSortOrder as a number.
       .orderBy(sql`CAST(${teamMembers.displayOrder} AS INTEGER) ASC NULLS LAST`),
     // One batched query for every (active stylist → vagaroParentTitle) pair,
@@ -226,7 +232,8 @@ export async function getTeamMembersByType(type: 'employee' | 'independent') {
     .where(
       and(
         eq(teamMembers.type, type),
-        eq(teamMembers.isActive, true)
+        eq(teamMembers.isActive, true),
+        eq(teamMembers.showOnWebsite, true),
       )
     )
     .orderBy(teamMembers.displayOrder)
@@ -258,7 +265,8 @@ export async function getTeamMembersByServiceId(serviceId: string) {
     .where(
       and(
         inArray(teamMembers.id, memberIds.map(m => m.teamMemberId)),
-        eq(teamMembers.isActive, true)
+        eq(teamMembers.isActive, true),
+        eq(teamMembers.showOnWebsite, true),
       )
     )
     .orderBy(teamMembers.displayOrder)

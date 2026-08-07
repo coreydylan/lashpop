@@ -154,6 +154,7 @@ const boothBenefits = [
   { icon: Building2, title: 'All Station Furniture & Amenities Provided', description: 'Everything you need is included.' },
   { icon: Percent, title: '1 Month Free Rent', description: 'One month of free rent with a 1 year lease.' },
   { icon: Calendar, title: '1 Week Free for Vacation', description: 'One week of free booth rent for vacation.' },
+  { icon: Heart, title: 'Maternity Leave', description: '8 weeks of complimentary booth rent for maternity leave.' },
   { icon: Percent, title: 'Employee Discount', description: '30% off all retail products.' }
 ]
 

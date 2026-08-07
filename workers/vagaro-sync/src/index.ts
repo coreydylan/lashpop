@@ -147,7 +147,7 @@ async function runSync(
   return { result: recordedResult, allOk, runId }
 }
 
-export default {
+const vagaroSyncWorker = {
   // Cron trigger entry point — fires on the schedule in wrangler.jsonc
   async scheduled(event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
     console.log(`🔄 cron fired at ${new Date(event.scheduledTime).toISOString()} (${event.cron})`)
@@ -193,3 +193,5 @@ export default {
     }
   },
 }
+
+export default vagaroSyncWorker

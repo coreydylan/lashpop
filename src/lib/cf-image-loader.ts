@@ -11,6 +11,11 @@ const IMG_WORKER_BASE = "https://lashpop-img.experial.workers.dev"
 
 type Props = { src: string; width: number; quality?: number }
 
+type CropProps = Props & {
+  aspectRatio: number
+  position?: { x: number; y: number }
+}
+
 export default function cfImageLoader({ src, width, quality }: Props): string {
   // Quality scales inversely with width. Small variants render near 1:1 on
   // screen where compression artifacts on faces are obvious — keep them at 90.
@@ -46,4 +51,32 @@ export default function cfImageLoader({ src, width, quality }: Props): string {
   }
 
   return src
+}
+
+/**
+ * Ask the image worker for a real crop at the destination aspect ratio.
+ * This matters for the tall mobile hero: width-only resizing produces a
+ * short landscape derivative that the browser must enlarge by ~3x vertically.
+ * Cropping from the original at the edge preserves the exact configured focal
+ * point while delivering enough real pixels for the portrait arch.
+ */
+export function cfCroppedImageLoader({
+  src,
+  width,
+  quality,
+  aspectRatio,
+  position = { x: 50, y: 50 },
+}: CropProps): string {
+  const optimized = cfImageLoader({ src, width, quality })
+  if (!optimized.startsWith(IMG_WORKER_BASE) || !Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+    return optimized
+  }
+
+  const url = new URL(optimized)
+  const clampPercent = (value: number) => Math.min(100, Math.max(0, value)) / 100
+  url.searchParams.set('h', String(Math.max(1, Math.round(width / aspectRatio))))
+  url.searchParams.set('fit', 'cover')
+  url.searchParams.set('gx', String(clampPercent(position.x)))
+  url.searchParams.set('gy', String(clampPercent(position.y)))
+  return url.toString()
 }

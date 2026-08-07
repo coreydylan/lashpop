@@ -7,6 +7,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { PhoneLoginForm } from '@/components/auth/PhoneLoginForm'
 import { usePhoneAuth } from '@/lib/auth-client'
 
@@ -19,6 +20,7 @@ export function FriendBookingConfirmation({
   service: any
   teamMember: any
 }) {
+  const router = useRouter()
   const { isAuthenticated, user } = usePhoneAuth()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState('')
@@ -37,7 +39,7 @@ export function FriendBookingConfirmation({
       }
 
       // Success! Redirect to appointment confirmation
-      window.location.href = '/appointments'
+      router.push('/appointments')
     } catch (err: any) {
       setError(err.message || 'Failed to confirm booking')
     } finally {
@@ -64,7 +66,7 @@ export function FriendBookingConfirmation({
 
       // Show decline confirmation
       alert('Booking declined. Your friend has been notified.')
-      window.location.href = '/'
+      router.push('/')
     } catch (err: any) {
       setError(err.message || 'Failed to decline booking')
     } finally {

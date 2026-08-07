@@ -269,7 +269,11 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
           } : undefined}
         >
           {/* Scrollable container for mobile */}
-          <div className="overflow-x-auto py-2 -my-2 -mx-4 px-4 md:mx-0 md:px-0 md:py-0 md:my-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative">
+          <div
+            className="overflow-x-auto py-2 -my-2 -mx-4 px-4 md:mx-0 md:px-0 md:py-0 md:my-0 md:overflow-visible scrollbar-hide [-ms-overflow-style:'none'] [scrollbar-width:'none'] [&::-webkit-scrollbar]:hidden relative"
+            tabIndex={0}
+            aria-label="FAQ categories"
+          >
             <div className="flex flex-nowrap md:flex-wrap justify-start md:justify-center gap-2 md:gap-3 min-w-max md:min-w-0">
               {categoryOptions.map((category, index) => {
                 const isActive = activeCategory === category.id

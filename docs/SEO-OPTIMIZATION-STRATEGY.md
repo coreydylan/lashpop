@@ -414,7 +414,7 @@ The footer is prime real estate for local SEO signals. Transform it from purely 
     LashPop Studios - Premier Lash Extensions in Oceanside, North County San Diego
   </span>
   {/* Decorative visible text */}
-  <span aria-hidden="true" className="font-league-script">welcome to</span>
+  <span aria-hidden="true" className="font-display">welcome to</span>
 </h1>
 
 // Welcome Section

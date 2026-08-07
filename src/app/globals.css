@@ -1,13 +1,6 @@
-/* Google Fonts moved to next/font in layout.tsx to eliminate render-blocking */
+@import '../styles/brand-contract.css';
 
-@font-face {
-    font-family: 'Corey Nice';
-    src: url('/fonts/corey-nice/CoreyNice-Regular.woff2') format('woff2'),
-        url('/fonts/corey-nice/CoreyNice-Regular.woff') format('woff');
-    font-weight: 400;
-    font-style: normal;
-    font-display: block;
-}
+/* Google Fonts moved to next/font in layout.tsx to eliminate render-blocking */
 
 @tailwind base;
 @tailwind components;
@@ -40,59 +33,6 @@
 }
 
 @layer base {
-  :root {
-    /* Typography - Two-font system
-       Uses Next.js font variables (--font-playfair, --font-inter) with CSS fallbacks */
-    --font-display: var(--font-playfair, 'Playfair Display'), serif;      /* Headlines, titles, names, hero text */
-    --font-body: var(--font-inter, 'Inter'), system-ui, sans-serif;  /* Paragraphs, buttons, nav, forms */
-    --font-sans: var(--font-inter, 'Inter'), system-ui, sans-serif;
-    --font-serif: var(--font-playfair, 'Playfair Display'), serif;
-
-    /* LashPop Brand Palette (light to dark) */
-    /* Using space-separated RGB values for modern CSS color syntax with alpha support */
-    --ivory: 250 246 242;          /* #faf6f2 - Main background color */
-    --cream: 240 224 219;          /* #f0e0db - Background (testing blush-light) */
-    --blush-light: 240 224 219;    /* #f0e0db - Subtle highlights */
-    --peach: 238 217 200;          /* #eed9c8 - Soft accents */
-    --blush: 233 209 200;          /* #e9d1c8 - Light accent */
-    --rose-mist: 226 194 182;      /* #e2c2b6 - Medium accent */
-    --dusty-rose: 219 178 164;     /* #dbb2a4 - Primary accent */
-    --soft-terracotta: 211 163 146; /* #d3a392 - Soft Terracotta (DesignMode picker) */
-    --warm-terracotta: 204 148 127; /* #cc947f - Warm Terracotta (DesignMode picker) */
-    --terracotta-light: 196 107 78; /* #c46b4e - Lighter terracotta */
-    --terracotta: 181 86 61;       /* #b5563d - Primary brand color (matches logo) */
-    --rust: 172 77 60;             /* #ac4d3c - Deep accent / CTA */
-    --terracotta-ink: 162 71 48;   /* #a24730 - Brand text with WCAG AA contrast on cream */
-
-    /* Legacy colors */
-    --sage: 161 151 129;
-    --warm-sand: 235 224 203;
-    --golden: 177 78 51;            /* #b14e33 - Dark terracotta */
-    --gold: 177 78 51;               /* #b14e33 - Dark terracotta for stars & accents */
-    --ocean-mist: 188 201 194;
-    --dune: 138 124 105;
-
-    /* Spacing */
-    --space-xs: clamp(0.75rem, 2vw, 1rem);
-    --space-sm: clamp(1.5rem, 4vw, 2rem);
-    --space-md: clamp(2.5rem, 6vw, 4rem);
-    --space-lg: clamp(4rem, 8vw, 6rem);
-    --space-xl: clamp(6rem, 10vw, 8rem);
-
-    /* Border Radius */
-    --radius-soft: 24px;
-    --radius-arch: 50% 50% 0 0;
-
-    /* iOS Safe Area Insets (fallback to 0 for non-iOS) */
-    --safe-area-inset-top: env(safe-area-inset-top, 0px);
-    --safe-area-inset-right: env(safe-area-inset-right, 0px);
-    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-area-inset-left: env(safe-area-inset-left, 0px);
-
-    /* Mobile Header Height - single source of truth */
-    --mobile-header-height: 60px;
-  }
-
   * {
     margin: 0;
     padding: 0;
@@ -725,13 +665,6 @@ a,
   .theme-v2 .btn,
   .theme-v2 button {
     font-family: var(--font-body);
-  }
-
-  /* Allow overrides inside theme v2 sections */
-  .theme-v2 .font-swanky,
-  .theme-v2 .font-swanky *,
-  .font-swanky {
-    font-family: var(--font-swanky), cursive !important;
   }
 
   /* Admin operations theme. Legacy editors still use the shared glass/button

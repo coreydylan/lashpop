@@ -967,19 +967,18 @@ export interface QuizResultServices {
    * Booking-flow image for the matched lash style. Pulled from the "Full Set"
    * service in the subcategory (slug: classic / hybrid / angel / volume) using
    * the same COALESCE(vagaro_image_url, image_url) resolution the booking flow
-   * uses. The quiz result screen renders this so the hero photo matches the
-   * service card shown in the booking flow.
+   * uses. The quiz result screen uses this only as a final same-style fallback;
+   * the admin-managed quiz result image remains canonical and never swaps when
+   * service data arrives asynchronously.
    *
-   * null if no Full Set is found or it has no image. The result screen falls
-   * back to the admin-managed quiz_result_settings image (and then to the
-   * hardcoded R2 fallback) in that case.
+   * null if no Full Set is found or it has no image.
    */
   bookingImage: string | null
 }
 
 // Each lash style's "Full Set" service slug. The Full Set is the canonical
-// service used for that style in the booking flow, so its image is what we
-// surface on the quiz result screen.
+// service used for that style in the booking flow, so its image is the last
+// same-style fallback if the canonical quiz imagery cannot load.
 const LASH_STYLE_TO_FULL_SET_SLUG: Record<LashStyle, string> = {
   classic: "classic",
   hybrid: "hybrid",
@@ -990,8 +989,7 @@ const LASH_STYLE_TO_FULL_SET_SLUG: Record<LashStyle, string> = {
 // Fetch the Vagaro-synced services for a quiz result, keyed by lash style.
 // Returns the matched subcategory + its services (Full Set / Fill / Mini Fill),
 // sorted by services.displayOrder so the Full Set lands first, plus the
-// booking-flow image for the Full Set so the result-screen hero matches what
-// the user sees on the booking page.
+// booking-flow image for the result image fallback chain.
 export async function getQuizResultServices(
   lashStyle: LashStyle,
 ): Promise<QuizResultServices | null> {

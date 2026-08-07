@@ -1,0 +1,43 @@
+/*
+ * GENERATED CONTRACT SURFACE — values are frozen to the approved pre-launch UI.
+ * Edit docs/design/brand-contract.json first and run npm run check:design.
+ */
+  :root {
+    --font-display: var(--font-playfair, 'Playfair Display'), serif;
+    --font-body: var(--font-inter, 'Inter'), system-ui, sans-serif;
+    --font-sans: var(--font-inter, 'Inter'), system-ui, sans-serif;
+    --font-serif: var(--font-playfair, 'Playfair Display'), serif;
+
+    --ivory: 250 246 242;
+    --cream: 240 224 219;
+    --blush-light: 240 224 219;
+    --peach: 238 217 200;
+    --blush: 233 209 200;
+    --rose-mist: 226 194 182;
+    --dusty-rose: 219 178 164;
+    --soft-terracotta: 211 163 146;
+    --warm-terracotta: 204 148 127;
+    --terracotta-light: 196 107 78;
+    --terracotta: 181 86 61;
+    --rust: 172 77 60;
+    --terracotta-ink: 162 71 48;
+    --sage: 161 151 129;
+    --warm-sand: 235 224 203;
+    --golden: 177 78 51;
+    --gold: 177 78 51;
+    --ocean-mist: 188 201 194;
+    --dune: 138 124 105;
+
+    --space-xs: clamp(0.75rem, 2vw, 1rem);
+    --space-sm: clamp(1.5rem, 4vw, 2rem);
+    --space-md: clamp(2.5rem, 6vw, 4rem);
+    --space-lg: clamp(4rem, 8vw, 6rem);
+    --space-xl: clamp(6rem, 10vw, 8rem);
+    --radius-soft: 24px;
+    --radius-arch: 50% 50% 0 0;
+    --safe-area-inset-top: env(safe-area-inset-top, 0px);
+    --safe-area-inset-right: env(safe-area-inset-right, 0px);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-inset-left: env(safe-area-inset-left, 0px);
+    --mobile-header-height: 60px;
+}

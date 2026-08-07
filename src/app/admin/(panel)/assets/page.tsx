@@ -1,7 +1,5 @@
 "use client"
 
-/* eslint-disable @next/next/no-img-element */
-
 // Force dynamic rendering so middleware runs on every request
 export const dynamic = 'force-dynamic'
 
@@ -32,6 +30,7 @@ import { useDamActions } from "@/hooks/useDamActions"
 import { useDamInitialData } from "@/hooks/useDamData"
 import { useDamTutorial } from "@/contexts/DamTutorialContext"
 import { useQueryClient } from "@tanstack/react-query"
+import { useRouter } from "next/navigation"
 
 // Lazy load heavy components that aren't immediately visible
 const FileUploader = lazy(() => import("@/components/dam/FileUploader").then(mod => ({ default: mod.FileUploader })))
@@ -88,6 +87,7 @@ interface ActiveFilter {
 import { GroupedChipList } from "@/components/dam/GroupedChipList"
 
 export default function DAMPage() {
+  const router = useRouter()
   // DAM Settings & Actions hooks
   const {
     settings,
@@ -1793,7 +1793,7 @@ export default function DAMPage() {
       label: "Team management",
       description: "Manage team members and photos",
       onSelect: () => {
-        window.location.href = "/admin/assets/team"
+        router.push("/admin/assets/team")
       }
     })
 
@@ -1877,6 +1877,7 @@ export default function DAMPage() {
     omniTags,
     openCardSettings,
     restartTutorial,
+    router,
     assets,
     selectedAssets,
     setActiveCollectionId,
