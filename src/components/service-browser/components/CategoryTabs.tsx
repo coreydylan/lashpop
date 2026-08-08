@@ -8,9 +8,10 @@ interface CategoryTabsProps {
   categories: ServiceCategory[]
   activeCategory: string | null
   onSelect: (categorySlug: string) => void
+  onIntent?: (categorySlug: string) => void
 }
 
-export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryTabsProps) {
+export function CategoryTabs({ categories, activeCategory, onSelect, onIntent }: CategoryTabsProps) {
   // Server actions already return the authoritative database order.
   const sortedCategories = categories
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -97,6 +98,9 @@ export function CategoryTabs({ categories, activeCategory, onSelect }: CategoryT
               key={category.id}
               data-category={category.slug}
               onClick={() => onSelect(category.slug)}
+              onPointerEnter={() => onIntent?.(category.slug)}
+              onPointerDown={() => onIntent?.(category.slug)}
+              onFocus={() => onIntent?.(category.slug)}
               className={`
                 relative px-4 py-2.5 text-sm font-sans font-medium whitespace-nowrap shrink-0
                 transition-colors duration-200

@@ -13,9 +13,10 @@ interface SubcategoryTabsProps {
   subcategories: Subcategory[]
   activeSubcategory: string | null
   onSelect: (subcategorySlug: string | null) => void
+  onIntent?: (subcategorySlug: string | null) => void
 }
 
-export function SubcategoryTabs({ subcategories, activeSubcategory, onSelect }: SubcategoryTabsProps) {
+export function SubcategoryTabs({ subcategories, activeSubcategory, onSelect, onIntent }: SubcategoryTabsProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [showLeftGradient, setShowLeftGradient] = useState(false)
   const [showRightGradient, setShowRightGradient] = useState(true)
@@ -142,6 +143,9 @@ export function SubcategoryTabs({ subcategories, activeSubcategory, onSelect }: 
             <motion.button
               key={tab.id || `tab-${index}`}
               onClick={() => onSelect(tab.slug)}
+              onPointerEnter={() => onIntent?.(tab.slug)}
+              onPointerDown={() => onIntent?.(tab.slug)}
+              onFocus={() => onIntent?.(tab.slug)}
               className={`
                 relative px-2.5 py-1 rounded-full text-xs font-sans font-medium whitespace-nowrap shrink-0
                 transition-colors duration-200

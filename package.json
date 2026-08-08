@@ -19,7 +19,7 @@
     "test:vagaro-manifest": "tsx --test workers/vagaro-sync/src/vagaro-widget-manifest.test.ts",
     "test:vagaro-readiness": "tsx --test src/lib/vagaro-booking-readiness.test.ts",
     "test:quiz": "tsx --test src/components/find-your-look/*.test.ts",
-    "test:images": "tsx --test src/lib/cf-image-loader.test.ts",
+    "test:images": "tsx --test src/lib/cf-image-loader.test.ts src/components/service-browser/service-image-preloader.test.ts",
     "test:staff": "tsx --test src/lib/team-publication-contract.test.ts",
     "test:vagaro": "npm run test:vagaro-widget && npm run test:vagaro-embed && npm run test:vagaro-health && npm run test:vagaro-manifest && npm run test:vagaro-readiness",
     "vagaro:widgets:audit": "tsx scripts/vagaro-widget-admin.ts audit",

@@ -264,6 +264,7 @@ export function ServiceBrowserModal() {
                           categories={categories}
                           activeCategory={categorySlug}
                           onSelect={actions.setCategory}
+                          onIntent={actions.warmCategory}
                         />
                       </div>
                       <div className="shrink-0 px-2">
@@ -329,6 +330,7 @@ export function ServiceBrowserModal() {
                           categories={categories}
                           activeCategory={categorySlug}
                           onSelect={actions.setCategory}
+                          onIntent={actions.warmCategory}
                         />
                       </div>
                       <div className="shrink-0 px-4">

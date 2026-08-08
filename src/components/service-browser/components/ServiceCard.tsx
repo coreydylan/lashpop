@@ -1,9 +1,11 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Clock, DollarSign } from 'lucide-react'
 import type { Service } from '../ServiceBrowserContext'
+import { SERVICE_CARD_SIZES } from '../service-image-preloader'
 
 // Mapping of category slug → icon SVG path
 const categoryIconMap: Record<string, string> = {
@@ -28,6 +30,8 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageFailed, setImageFailed] = useState(false)
   const priceDisplay = service.priceStarting
     ? `$${(service.priceStarting / 100).toFixed(0)}+`
     : null
@@ -37,6 +41,13 @@ export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
   const categoryIcon = service.categorySlug
     ? categoryIconMap[service.categorySlug]
     : null
+  const showPhoto = Boolean(service.imageUrl && !imageFailed)
+  const prioritizePhoto = index < 6
+
+  useEffect(() => {
+    setImageLoaded(false)
+    setImageFailed(false)
+  }, [service.imageUrl])
 
   return (
     <motion.button
@@ -50,30 +61,47 @@ export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
     >
       {/* Image */}
       <div className="relative aspect-[4/3] w-full bg-sage/10">
-        {service.imageUrl ? (
-          <Image
-            src={service.imageUrl}
-            alt={service.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 50vw, 33vw"
-          />
-        ) : categoryIcon ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-ivory">
+        {categoryIcon && (
+          <div
+            className={`absolute inset-0 flex items-center justify-center bg-ivory transition-opacity duration-300 ${
+              showPhoto && imageLoaded ? 'opacity-0' : 'opacity-100'
+            }`}
+            aria-hidden={showPhoto ? 'true' : undefined}
+          >
             <div className="relative w-16 h-16 md:w-20 md:h-20 opacity-80">
               <Image
                 src={categoryIcon}
-                alt={service.name}
+                alt={showPhoto ? '' : service.name}
                 fill
                 className="object-contain"
               />
             </div>
           </div>
-        ) : (
+        )}
+        {showPhoto ? (
+          <Image
+            src={service.imageUrl!}
+            alt={service.name}
+            fill
+            data-service-image
+            data-loaded={imageLoaded ? 'true' : 'false'}
+            className={`object-cover group-hover:scale-105 transition-[opacity,transform] duration-300 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            sizes={SERVICE_CARD_SIZES}
+            loading={prioritizePhoto ? 'eager' : 'lazy'}
+            fetchPriority={prioritizePhoto ? 'high' : 'low'}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageLoaded(false)
+              setImageFailed(true)
+            }}
+          />
+        ) : !categoryIcon ? (
           <div className="absolute inset-0 flex items-center justify-center bg-ivory">
             <span className="text-sage/40 font-display text-lg">No image</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Content */}

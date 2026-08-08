@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useServiceBrowser } from '../ServiceBrowserContext'
 import { SubcategoryTabs } from '../components/SubcategoryTabs'
 import { ServiceCard } from '../components/ServiceCard'
+import { preloadServiceCardImages } from '../service-image-preloader'
 
 export function BrowseView() {
   const { state, actions, services } = useServiceBrowser()
@@ -52,6 +53,13 @@ export function BrowseView() {
     return [...filtered].sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999))
   }, [categoryServices, activeSubcategory])
 
+  // The modal is opened by deliberate user intent, so give the visible rows a
+  // head start and drizzle the rest in after they finish. This also covers the
+  // quiz-to-service morph, which bypasses the normal category click handler.
+  useEffect(() => {
+    preloadServiceCardImages(filteredServices, 'active')
+  }, [filteredServices])
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -67,6 +75,9 @@ export function BrowseView() {
             subcategories={subcategories}
             activeSubcategory={activeSubcategory}
             onSelect={actions.setActiveSubcategory}
+            onIntent={(subcategorySlug) => {
+              if (categorySlug) actions.warmCategory(categorySlug, subcategorySlug)
+            }}
           />
         </div>
       )}

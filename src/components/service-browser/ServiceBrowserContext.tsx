@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react'
 import { hasSeenLashQuizPrompt } from './LashQuizPrompt'
+import { preloadServiceCardImages } from './service-image-preloader'
 
 export interface Service {
   id: string
@@ -67,6 +68,7 @@ interface ServiceBrowserActions {
   handleQuizResult: (lashStyle: string) => void
   /** Jump from the quiz result screen straight to the booking widget for a specific service. */
   bookServiceFromQuiz: (serviceId: string, subcategorySlug: string) => void
+  warmCategory: (categorySlug: string, subcategorySlug?: string | null) => void
   // Morphing animation actions
   completeMorph: () => void
 }
@@ -104,7 +106,25 @@ const initialState: ServiceBrowserState = {
 export function ServiceBrowserProvider({ children, services, categories = [] }: ServiceBrowserProviderProps) {
   const [state, setState] = useState<ServiceBrowserState>(initialState)
 
+  const categoryServices = useCallback((categorySlug: string, subcategorySlug?: string | null) => {
+    return services
+      .filter((service) => (
+        service.categorySlug === categorySlug &&
+        (!subcategorySlug || service.subcategorySlug === subcategorySlug)
+      ))
+      .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999))
+  }, [services])
+
+  const warmCategory = useCallback((categorySlug: string, subcategorySlug?: string | null) => {
+    preloadServiceCardImages(categoryServices(categorySlug, subcategorySlug), 'intent')
+  }, [categoryServices])
+
+  const activateCategoryImages = useCallback((categorySlug: string, subcategorySlug?: string | null) => {
+    preloadServiceCardImages(categoryServices(categorySlug, subcategorySlug), 'active')
+  }, [categoryServices])
+
   const openModal = useCallback((categorySlug: string, categoryName: string, subcategorySlug?: string) => {
+    activateCategoryImages(categorySlug, subcategorySlug)
     // Check if this is the lashes category and user hasn't seen the quiz prompt
     // Skip the quiz prompt if a specific subcategory is requested (like lash-enhancements)
     if (categorySlug === 'lashes' && !subcategorySlug && !hasSeenLashQuizPrompt()) {
@@ -124,7 +144,7 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
         activeSubcategory: subcategorySlug || null,
       })
     }
-  }, [])
+  }, [activateCategoryImages])
 
   const closeModal = useCallback(() => {
     setState(initialState)
@@ -172,6 +192,7 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
   // Switch to a different category (resets subcategory filter)
   const setCategory = useCallback((categorySlug: string) => {
     const category = categories.find(c => c.slug === categorySlug)
+    activateCategoryImages(categorySlug)
     setState(prev => ({
       ...prev,
       categorySlug,
@@ -180,7 +201,7 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
       view: 'browse',
       selectedService: null,
     }))
-  }, [categories])
+  }, [categories, activateCategoryImages])
 
   // Change view to booking (embedded in same modal)
   const openBooking = useCallback(() => {
@@ -199,13 +220,14 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
 
   // User chose to skip the quiz - open the lashes modal directly
   const confirmLashQuizSkip = useCallback(() => {
+    activateCategoryImages('lashes')
     setState(prev => ({
       ...initialState,
       isOpen: true,
       categorySlug: prev.categorySlug,
       categoryName: prev.categoryName,
     }))
-  }, [])
+  }, [activateCategoryImages])
 
   // Open the Find Your Look quiz - now opens as embedded morphing modal
   const openFindYourLookQuiz = useCallback(() => {
@@ -293,8 +315,9 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
     closeFindYourLookQuiz,
     handleQuizResult,
     bookServiceFromQuiz,
+    warmCategory,
     completeMorph,
-  }), [openModal, closeModal, selectService, goBack, setActiveSubcategory, setCategory, openBooking, closeBooking, closeLashQuizPrompt, confirmLashQuizSkip, openFindYourLookQuiz, closeFindYourLookQuiz, handleQuizResult, bookServiceFromQuiz, completeMorph])
+  }), [openModal, closeModal, selectService, goBack, setActiveSubcategory, setCategory, openBooking, closeBooking, closeLashQuizPrompt, confirmLashQuizSkip, openFindYourLookQuiz, closeFindYourLookQuiz, handleQuizResult, bookServiceFromQuiz, warmCategory, completeMorph])
 
   const value = useMemo<ServiceBrowserContextValue>(() => ({
     state,

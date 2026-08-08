@@ -38,6 +38,30 @@ test('Classic Fill reaches the exact booking handoff', async ({ page }) => {
   await expect(page.locator('script[src*="vagaro"]')).toHaveCount(1)
 })
 
+test('service browser prioritizes and smoothly resolves visible card photos', async ({ page }) => {
+  await preparePublicHome(page)
+
+  await page.getByRole('button', { name: /^LASH EXTENSIONS/ }).click()
+  const browser = page.getByRole('dialog')
+  await expect(browser).toBeVisible()
+
+  const photos = browser.locator('img[data-service-image]')
+  await expect(photos.first()).toBeVisible()
+  await expect.poll(() => photos.count()).toBeGreaterThan(1)
+
+  const firstPhoto = photos.first()
+  await expect(firstPhoto).toHaveAttribute('loading', 'eager')
+  await expect(firstPhoto).toHaveAttribute('fetchpriority', 'high')
+  await expect(firstPhoto).toHaveAttribute('sizes', '(max-width: 767px) calc(50vw - 22px), 274px')
+  await expect(firstPhoto).toHaveAttribute('data-loaded', 'true')
+  await expect.poll(
+    () => firstPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth),
+  ).toBeGreaterThan(0)
+
+  const currentSource = await firstPhoto.evaluate((image) => (image as HTMLImageElement).currentSrc)
+  expect(currentSource).toMatch(/[?&]w=(320|600)(?:&|$)/)
+})
+
 test('quiz reaches one stable result image when every comparison is skipped', async ({ page }) => {
   await preparePublicHome(page)
 
