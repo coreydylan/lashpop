@@ -70,8 +70,8 @@ Use this workflow for copy, service subtitles, FAQ text, team order, benefits, a
 ### Hero photos
 
 1. Keep separate desktop and mobile crops when the same source composition is used in differently shaped containers.
-2. Mobile hero delivery must use a portrait crop from the original—not a low-resolution landscape derivative enlarged into the tall arch.
-3. Preserve the approved focal point configured in the hero admin.
+2. Mobile hero delivery must request enough full-frame source resolution for the tallest arch state. Do not bake a fixed server crop into the derivative: the `85dvh` arch changes shape as mobile browser chrome expands and collapses, so CSS `object-position` must remain the single crop source of truth.
+3. Preserve the approved focal point configured in the hero admin and verify that the optimized derivative matches the approved composition pixel-for-pixel.
 4. Test at standard and narrow iPhone widths, Android Chrome, desktop Safari, and a retina desktop viewport.
 5. Test a cold reload with network throttling. A placeholder may appear while loading, but the final image must settle once and remain sharp.
 
@@ -170,7 +170,21 @@ Then:
 5. Complete `docs/launch/website-acceptance-signoff.md` against the exact commit and URL.
 6. Retain the prior known-good deployment as the rollback target.
 
-When hero crop delivery changes, deploy `workers/lashpop-img` before the website candidate and verify the live response reports the requested `x-lp-img-crop` dimensions. When staff sync ownership changes, deploy `workers/vagaro-sync` before testing publication behavior.
+When hero delivery changes, verify the live mobile request receives an oversampled full-frame derivative without fixed `h`, `fit`, `gx`, or `gy` crop parameters, then confirm the approved mobile baseline still passes. Deploy `workers/lashpop-img` first only when its transformation behavior changes. When staff sync ownership changes, deploy `workers/vagaro-sync` before testing publication behavior.
+
+## DNS cutover workflow
+
+The production-domain cutover moves the entire authoritative zone, not only the website records. Treat email and verification records as launch-critical infrastructure.
+
+1. Push the exact release commit and confirm its CI checks pass. Deploy that commit to `lashpop.vercel.app` and run `npm run test:launch` plus `npm run validate:seo-migration -- https://lashpop.vercel.app`.
+2. Export or inventory both the active and replacement Cloudflare zones. Confirm exact parity for MX, SPF, DKIM, DMARC, MTA-STS, TLS reporting, autoconfig, mail host, SRV, payment, domain-connect, and verification records.
+3. Confirm the replacement zone points the apex and `www` to the project-specific values shown by `vercel domains inspect lashpopstudios.com`. Keep Vercel records DNS-only unless Vercel explicitly documents a different setup.
+4. Confirm Vercel has both custom hostnames attached to the exact production deployment and retain the prior Squarespace deployment and nameservers as the rollback target.
+5. At the registrar, replace only the authoritative nameservers. The prepared replacement zone uses `fatima.ns.cloudflare.com` and `nicolas.ns.cloudflare.com`; the rollback nameservers are `coleman.ns.cloudflare.com` and `katelyn.ns.cloudflare.com`.
+6. Monitor authoritative DNS from multiple resolvers. As soon as the new zone answers publicly, verify Vercel domain status and TLS issuance for the apex and `www`.
+7. Smoke-test homepage, legacy redirects, booking, quiz, forms, admin login, email delivery, mail autoconfig, and Worker health. Re-run the SEO migration validator against `https://lashpopstudios.com`.
+8. Submit the production sitemap in Search Console/Bing and monitor errors, redirects, indexing, and conversions during the observation window.
+9. If a critical web, TLS, or mail issue cannot be corrected promptly, restore the prior nameservers as a unit. Never attempt rollback by changing mail records independently.
 
 ## Regression or incident workflow
 
