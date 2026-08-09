@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import type { Locator } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { preparePublicHome } from './helpers'
@@ -6,6 +7,21 @@ import { preparePublicHome } from './helpers'
 const contract = JSON.parse(
   readFileSync(resolve(process.cwd(), 'docs/design/brand-contract.json'), 'utf8')
 ) as { tokens: Record<string, string>, computedTokenOverrides: Record<string, string> }
+
+async function decodeImages(images: Locator) {
+  await images.evaluateAll(async (elements) => {
+    await Promise.all(elements.map(async (element) => {
+      const image = element as HTMLImageElement
+      image.loading = 'eager'
+      if (!image.complete || image.naturalWidth === 0) {
+        await image.decode()
+      }
+      if (image.naturalWidth === 0) {
+        throw new Error(`Image failed to load: ${image.currentSrc || image.src}`)
+      }
+    }))
+  })
+}
 
 test.beforeEach(async ({ page }) => {
   await preparePublicHome(page)
@@ -56,6 +72,10 @@ for (const section of [
   test(`${section.name} matches the approved launch baseline`, async ({ page }) => {
     const target = page.locator(section.selector)
     await target.scrollIntoViewIfNeeded()
+    const images = section.name === 'hero'
+      ? page.locator('img[alt="LashPop Studio Interior"]:visible')
+      : target.locator('img')
+    await decodeImages(images)
     await page.waitForTimeout(300)
     await expect(target).toHaveScreenshot(`${section.name}.png`)
   })

@@ -21,7 +21,7 @@ interface HeroArchSlideshowProps {
   /** Container dimensions for positioning */
   containerStyle?: React.CSSProperties
   /** Optional server-side crop used by the tall mobile arch. */
-  cropAspectRatio?: number
+  portraitAspectRatio?: number
 }
 
 /**
@@ -32,7 +32,7 @@ export function HeroArchSlideshow({
   preset,
   className = '',
   containerStyle,
-  cropAspectRatio,
+  portraitAspectRatio,
 }: HeroArchSlideshowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const currentImageRef = useRef<HTMLDivElement>(null)
@@ -315,8 +315,7 @@ export function HeroArchSlideshow({
           fetchPriority="high"
           sizes="80vw"
           quality={90}
-          cropAspectRatio={cropAspectRatio}
-          cropPosition={currentImage.position}
+          portraitAspectRatio={portraitAspectRatio}
         />
       </div>
     )
@@ -345,8 +344,7 @@ export function HeroArchSlideshow({
             objectPosition={`${previousImage.position.x}% ${previousImage.position.y}%`}
             sizes="80vw"
             quality={90}
-            cropAspectRatio={cropAspectRatio}
-            cropPosition={previousImage.position}
+            portraitAspectRatio={portraitAspectRatio}
           />
         )}
       </div>
@@ -368,8 +366,7 @@ export function HeroArchSlideshow({
             fetchPriority="high"
             sizes="80vw"
             quality={90}
-            cropAspectRatio={cropAspectRatio}
-            cropPosition={currentImage.position}
+            portraitAspectRatio={portraitAspectRatio}
           />
         )}
       </div>

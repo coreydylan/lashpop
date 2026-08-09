@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { getPublicImageBlur } from '@/lib/image-blur'
-import { cfCroppedImageLoader } from '@/lib/cf-image-loader'
+import { cfPortraitImageLoader } from '@/lib/cf-image-loader'
 
 interface GracefulHeroImageProps {
   src: string
@@ -15,8 +15,7 @@ interface GracefulHeroImageProps {
   fetchPriority?: 'high' | 'low' | 'auto'
   quality?: number
   className?: string
-  cropAspectRatio?: number
-  cropPosition?: { x: number; y: number }
+  portraitAspectRatio?: number
 }
 
 /**
@@ -34,8 +33,7 @@ export function GracefulHeroImage({
   fetchPriority = 'auto',
   quality,
   className = '',
-  cropAspectRatio,
-  cropPosition,
+  portraitAspectRatio,
 }: GracefulHeroImageProps) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
   const [erroredSrc, setErroredSrc] = useState<string | null>(null)
@@ -75,13 +73,12 @@ export function GracefulHeroImage({
         fetchPriority={fetchPriority}
         decoding="async"
         quality={quality}
-        loader={cropAspectRatio && objectFit === 'cover'
-          ? ({ src: loaderSrc, width, quality: loaderQuality }) => cfCroppedImageLoader({
+        loader={portraitAspectRatio && objectFit === 'cover'
+          ? ({ src: loaderSrc, width, quality: loaderQuality }) => cfPortraitImageLoader({
               src: loaderSrc,
               width,
               quality: loaderQuality,
-              aspectRatio: cropAspectRatio,
-              position: cropPosition,
+              aspectRatio: portraitAspectRatio,
             })
           : undefined}
         onLoad={() => setLoadedSrc(src)}

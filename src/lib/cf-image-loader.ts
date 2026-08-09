@@ -11,10 +11,12 @@ const IMG_WORKER_BASE = "https://lashpop-img.experial.workers.dev"
 
 type Props = { src: string; width: number; quality?: number }
 
-type CropProps = Props & {
+type PortraitProps = Props & {
   aspectRatio: number
-  position?: { x: number; y: number }
 }
+
+const MAX_WORKER_WIDTH = 3840
+const PORTRAIT_SOURCE_ASPECT_CEILING = 2
 
 export default function cfImageLoader({ src, width, quality }: Props): string {
   // Quality scales inversely with width. Small variants render near 1:1 on
@@ -54,29 +56,30 @@ export default function cfImageLoader({ src, width, quality }: Props): string {
 }
 
 /**
- * Ask the image worker for a real crop at the destination aspect ratio.
- * This matters for the tall mobile hero: width-only resizing produces a
- * short landscape derivative that the browser must enlarge by ~3x vertically.
- * Cropping from the original at the edge preserves the exact configured focal
- * point while delivering enough real pixels for the portrait arch.
+ * Request enough source pixels for a tall portrait viewport without baking a
+ * crop into the derivative. The mobile hero is 85dvh, so its actual aspect
+ * ratio changes as browser chrome expands and collapses. A fixed server crop
+ * shifts the accepted composition between those states. Oversampling the full
+ * frame lets CSS object-position remain the single source of crop truth while
+ * still preventing the browser from enlarging a short landscape derivative.
  */
-export function cfCroppedImageLoader({
+export function cfPortraitImageLoader({
   src,
   width,
   quality,
   aspectRatio,
-  position = { x: 50, y: 50 },
-}: CropProps): string {
+}: PortraitProps): string {
   const optimized = cfImageLoader({ src, width, quality })
   if (!optimized.startsWith(IMG_WORKER_BASE) || !Number.isFinite(aspectRatio) || aspectRatio <= 0) {
     return optimized
   }
 
   const url = new URL(optimized)
-  const clampPercent = (value: number) => Math.min(100, Math.max(0, value)) / 100
-  url.searchParams.set('h', String(Math.max(1, Math.round(width / aspectRatio))))
-  url.searchParams.set('fit', 'cover')
-  url.searchParams.set('gx', String(clampPercent(position.x)))
-  url.searchParams.set('gy', String(clampPercent(position.y)))
+  const portraitHeight = width / aspectRatio
+  const sourceWidth = Math.min(
+    MAX_WORKER_WIDTH,
+    Math.max(width, Math.ceil(portraitHeight * PORTRAIT_SOURCE_ASPECT_CEILING)),
+  )
+  url.searchParams.set('w', String(sourceWidth))
   return url.toString()
 }

@@ -161,7 +161,7 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
             <HeroArchSlideshow
               preset={heroConfig.preset}
               className="w-full h-full"
-              cropAspectRatio={4 / 9}
+              portraitAspectRatio={4 / 9}
             />
           ) : (
             <>
@@ -174,8 +174,7 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
                 fetchPriority="high"
                 sizes="80vw"
                 quality={90}
-                cropAspectRatio={4 / 9}
-                cropPosition={archImage.position}
+                portraitAspectRatio={4 / 9}
               />
             </>
           )}
