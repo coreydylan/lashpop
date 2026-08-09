@@ -13,6 +13,9 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      PLAYWRIGHT_FIXTURES: "1"
+      NEXT_PUBLIC_MAPBOX_TOKEN: "pk.ci-fixture"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -26,6 +29,9 @@ jobs:
   browser-regression:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      PLAYWRIGHT_FIXTURES: "1"
+      NEXT_PUBLIC_MAPBOX_TOKEN: "pk.ci-fixture"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

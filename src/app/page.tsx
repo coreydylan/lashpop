@@ -13,13 +13,52 @@ import { getHeroContent } from "@/actions/hero-content"
 import { ReviewSchema } from "@/components/seo"
 import LandingPageV2Client from "./LandingPageV2Client"
 
-// Ensure fresh data on each request (for admin-managed content)
-export const dynamic = 'force-dynamic'
-// Allow up to 60 seconds for database queries
-export const maxDuration = 60
+type HomePageData = {
+  services: Awaited<ReturnType<typeof getAllServices>>
+  teamMembers: Awaited<ReturnType<typeof getTeamMembersWithServices>>
+  reviews: Awaited<ReturnType<typeof getHomepageReviews>>
+  reviewStats: Awaited<ReturnType<typeof getReviewStats>>
+  instagramPosts: Awaited<ReturnType<typeof getInstagramPosts>>
+  serviceCategories: Awaited<ReturnType<typeof getServiceCategories>>
+  faqData: Awaited<ReturnType<typeof getFAQsGroupedByCategory>>
+  heroConfig: Awaited<ReturnType<typeof getSlideshowConfigs>>
+  seoSettings: Awaited<ReturnType<typeof getSEOSettings>>
+  studio: Awaited<ReturnType<typeof getStudioSettings>>
+  founderLetterContent: Awaited<ReturnType<typeof getFounderLetter>>
+  homepageServices: Awaited<ReturnType<typeof getHomepageServices>>
+  instagramSettings: Awaited<ReturnType<typeof getInstagramSettings>>
+  heroContent: Awaited<ReturnType<typeof getHeroContent>>
+}
 
-export default async function HomePage() {
-  // Fetch all data in parallel for faster loads
+async function getHomePageData(): Promise<HomePageData> {
+  if (process.env.PLAYWRIGHT_FIXTURES === "1") {
+    const [servicesFixture, teamFixture, contentFixture, socialFixture] = await Promise.all([
+      import("@/test-fixtures/homepage-services.json"),
+      import("@/test-fixtures/homepage-team.json"),
+      import("@/test-fixtures/homepage-content.json"),
+      import("@/test-fixtures/homepage-social.json"),
+    ])
+
+    const socialData = {
+      ...socialFixture.default,
+      reviews: socialFixture.default.reviews.map((review) => ({
+        ...review,
+        reviewDate: review.reviewDate ? new Date(review.reviewDate) : null,
+      })),
+      reviewStats: socialFixture.default.reviewStats.map((stat) => ({
+        ...stat,
+        updatedAt: new Date(stat.updatedAt),
+      })),
+    }
+
+    return {
+      ...servicesFixture.default,
+      ...teamFixture.default,
+      ...contentFixture.default,
+      ...socialData,
+    } as unknown as HomePageData
+  }
+
   const [
     services,
     teamMembers,
@@ -51,6 +90,47 @@ export default async function HomePage() {
     getInstagramSettings(),
     getHeroContent(),
   ])
+
+  return {
+    services,
+    teamMembers,
+    reviews,
+    reviewStats,
+    instagramPosts,
+    serviceCategories,
+    faqData,
+    heroConfig,
+    seoSettings,
+    studio,
+    founderLetterContent,
+    homepageServices,
+    instagramSettings,
+    heroContent,
+  }
+}
+
+// Ensure fresh data on each request (for admin-managed content)
+export const dynamic = 'force-dynamic'
+// Allow up to 60 seconds for database queries
+export const maxDuration = 60
+
+export default async function HomePage() {
+  const {
+    services,
+    teamMembers,
+    reviews,
+    reviewStats,
+    instagramPosts,
+    serviceCategories,
+    faqData,
+    heroConfig,
+    seoSettings,
+    studio,
+    founderLetterContent,
+    homepageServices,
+    instagramSettings,
+    heroContent,
+  } = await getHomePageData()
 
   // Homepage "Choose a Service" marketing cards (editable in admin). Only the
   // enabled cards render; shape matches ServicesSection's ServiceCategory.

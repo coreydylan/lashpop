@@ -170,6 +170,21 @@ Then:
 5. Complete `docs/launch/website-acceptance-signoff.md` against the exact commit and URL.
 6. Retain the prior known-good deployment as the rollback target.
 
+### Browser regression fixtures
+
+GitHub browser tests use the approved public homepage snapshot in `src/test-fixtures/`. This keeps screenshot and accessibility checks deterministic without giving pull-request jobs access to the production database.
+
+Refresh the snapshot only after the client has approved an intentional public content change:
+
+```bash
+npm run fixtures:browser:refresh
+npm run test:fixtures
+npm run test:visual
+npm run test:a11y
+```
+
+Review the fixture diff before committing it. The exporter intentionally omits raw Vagaro payloads, staff email addresses and phone numbers, internal review fields, credentials, and other non-public data. `npm run test:fixtures` fails if protected fields appear. A screenshot failure is not permission to refresh either the data fixture or the screenshot baseline.
+
 When hero delivery changes, verify the live mobile request receives an oversampled full-frame derivative without fixed `h`, `fit`, `gx`, or `gy` crop parameters, then confirm the approved mobile baseline still passes. Deploy `workers/lashpop-img` first only when its transformation behavior changes. When staff sync ownership changes, deploy `workers/vagaro-sync` before testing publication behavior.
 
 ## DNS cutover workflow

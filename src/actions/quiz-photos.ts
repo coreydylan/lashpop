@@ -69,6 +69,11 @@ export async function getAllQuizPhotos(): Promise<QuizPhotoWithAsset[]> {
 
 // Get quiz photos for the quiz (enabled only, grouped by style)
 export async function getQuizPhotosForQuiz(): Promise<Record<LashStyle, QuizPhotoWithAsset[]>> {
+  if (process.env.PLAYWRIGHT_FIXTURES === "1") {
+    const fixture = (await import("@/test-fixtures/homepage-quiz.json")).default
+    return fixture.quizPhotos as unknown as Record<LashStyle, QuizPhotoWithAsset[]>
+  }
+
   const db = getDb()
 
   const results = await db
@@ -903,6 +908,11 @@ export interface QuizResultForDisplay {
 // resolve to defaults without writes. resultImage prefers cropUrl, falls back
 // to filePath, and is null if no image is set (caller should provide a fallback).
 export async function getResultSettingsForQuiz(): Promise<Record<LashStyle, QuizResultForDisplay>> {
+  if (process.env.PLAYWRIGHT_FIXTURES === "1") {
+    const fixture = (await import("@/test-fixtures/homepage-quiz.json")).default
+    return fixture.quizResultSettings as Record<LashStyle, QuizResultForDisplay>
+  }
+
   const rows = await getAllResultSettings()
 
   const out: Record<LashStyle, QuizResultForDisplay> = {
@@ -993,6 +1003,11 @@ const LASH_STYLE_TO_FULL_SET_SLUG: Record<LashStyle, string> = {
 export async function getQuizResultServices(
   lashStyle: LashStyle,
 ): Promise<QuizResultServices | null> {
+  if (process.env.PLAYWRIGHT_FIXTURES === "1") {
+    const fixture = (await import("@/test-fixtures/homepage-quiz.json")).default
+    return fixture.quizResultServices[lashStyle] as QuizResultServices | null
+  }
+
   const subcategorySlug = LASH_STYLE_TO_SUBCATEGORY_SLUG[lashStyle]
   if (!subcategorySlug) return null
 
