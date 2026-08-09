@@ -14,23 +14,40 @@ const requireEnv = (name: string, fallback?: string) => {
   return cleaned
 }
 
-// Cloudflare R2 configuration
-const R2_ACCOUNT_ID = requireEnv("R2_ACCOUNT_ID")
-const R2_ACCESS_KEY_ID = requireEnv("R2_ACCESS_KEY_ID")
-const R2_SECRET_ACCESS_KEY = requireEnv("R2_SECRET_ACCESS_KEY")
-const BUCKET_NAME = requireEnv("R2_BUCKET_NAME", "lashpop-dam")
-const BUCKET_URL =
-  sanitizeEnvValue(process.env.NEXT_PUBLIC_R2_BUCKET_URL) ||
-  `https://${BUCKET_NAME}.${R2_ACCOUNT_ID}.r2.dev`
+interface R2Config {
+  bucketName: string
+  bucketUrl: string
+  endpoint: string
+  client: AwsClient
+}
 
-const R2_ENDPOINT = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
+let cachedConfig: R2Config | undefined
 
-const r2 = new AwsClient({
-  accessKeyId: R2_ACCESS_KEY_ID,
-  secretAccessKey: R2_SECRET_ACCESS_KEY,
-  region: "auto",
-  service: "s3",
-})
+function getR2Config(): R2Config {
+  if (cachedConfig) return cachedConfig
+
+  const accountId = requireEnv("R2_ACCOUNT_ID")
+  const accessKeyId = requireEnv("R2_ACCESS_KEY_ID")
+  const secretAccessKey = requireEnv("R2_SECRET_ACCESS_KEY")
+  const bucketName = requireEnv("R2_BUCKET_NAME", "lashpop-dam")
+  const bucketUrl =
+    sanitizeEnvValue(process.env.NEXT_PUBLIC_R2_BUCKET_URL) ||
+    `https://${bucketName}.${accountId}.r2.dev`
+
+  cachedConfig = {
+    bucketName,
+    bucketUrl,
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    client: new AwsClient({
+      accessKeyId,
+      secretAccessKey,
+      region: "auto",
+      service: "s3",
+    }),
+  }
+
+  return cachedConfig
+}
 
 export interface UploadParams {
   file: File
@@ -47,9 +64,10 @@ export interface UploadBufferParams {
 export async function uploadFile(params: UploadParams) {
   const { file, key, contentType } = params
   const body = new Uint8Array(await file.arrayBuffer())
+  const { endpoint, bucketName, bucketUrl, client } = getR2Config()
 
-  const url = `${R2_ENDPOINT}/${BUCKET_NAME}/${key}`
-  const res = await r2.fetch(url, {
+  const url = `${endpoint}/${bucketName}/${key}`
+  const res = await client.fetch(url, {
     method: "PUT",
     headers: { "Content-Type": contentType },
     body,
@@ -60,16 +78,17 @@ export async function uploadFile(params: UploadParams) {
   }
 
   return {
-    url: `${BUCKET_URL}/${key}`,
+    url: `${bucketUrl}/${key}`,
     key
   }
 }
 
 export async function uploadBuffer(params: UploadBufferParams) {
   const { buffer, key, contentType } = params
+  const { endpoint, bucketName, bucketUrl, client } = getR2Config()
 
-  const url = `${R2_ENDPOINT}/${BUCKET_NAME}/${key}`
-  const res = await r2.fetch(url, {
+  const url = `${endpoint}/${bucketName}/${key}`
+  const res = await client.fetch(url, {
     method: "PUT",
     headers: { "Content-Type": contentType },
     body: new Uint8Array(buffer),
@@ -80,14 +99,15 @@ export async function uploadBuffer(params: UploadBufferParams) {
   }
 
   return {
-    url: `${BUCKET_URL}/${key}`,
+    url: `${bucketUrl}/${key}`,
     key
   }
 }
 
 export async function deleteObject(key: string) {
-  const url = `${R2_ENDPOINT}/${BUCKET_NAME}/${key}`
-  const res = await r2.fetch(url, { method: "DELETE" })
+  const { endpoint, bucketName, client } = getR2Config()
+  const url = `${endpoint}/${bucketName}/${key}`
+  const res = await client.fetch(url, { method: "DELETE" })
 
   if (!res.ok && res.status !== 404) {
     throw new Error(`R2 delete failed: ${res.status} ${await res.text()}`)
@@ -95,8 +115,9 @@ export async function deleteObject(key: string) {
 }
 
 export async function downloadBuffer(key: string): Promise<Buffer> {
-  const url = `${R2_ENDPOINT}/${BUCKET_NAME}/${key}`
-  const res = await r2.fetch(url, { method: "GET" })
+  const { endpoint, bucketName, client } = getR2Config()
+  const url = `${endpoint}/${bucketName}/${key}`
+  const res = await client.fetch(url, { method: "GET" })
 
   if (!res.ok) {
     throw new Error(`R2 download failed: ${res.status} ${await res.text()}`)
@@ -107,10 +128,11 @@ export async function downloadBuffer(key: string): Promise<Buffer> {
 }
 
 export async function getPresignedUploadUrl(key: string, contentType: string, expiresIn: number = 3600) {
-  const url = new URL(`${R2_ENDPOINT}/${BUCKET_NAME}/${key}`)
+  const { endpoint, bucketName, client } = getR2Config()
+  const url = new URL(`${endpoint}/${bucketName}/${key}`)
   url.searchParams.set("X-Amz-Expires", String(expiresIn))
 
-  const signed = await r2.sign(url.toString(), {
+  const signed = await client.sign(url.toString(), {
     method: "PUT",
     headers: { "Content-Type": contentType },
     aws: { signQuery: true },
@@ -126,12 +148,13 @@ export async function uploadBufferWithOptions(params: {
   cacheControl?: string
 }) {
   const { buffer, key, contentType, cacheControl } = params
+  const { endpoint, bucketName, bucketUrl, client } = getR2Config()
 
-  const url = `${R2_ENDPOINT}/${BUCKET_NAME}/${key}`
+  const url = `${endpoint}/${bucketName}/${key}`
   const headers: Record<string, string> = { "Content-Type": contentType }
   if (cacheControl) headers["Cache-Control"] = cacheControl
 
-  const res = await r2.fetch(url, {
+  const res = await client.fetch(url, {
     method: "PUT",
     headers,
     body: new Uint8Array(buffer),
@@ -142,13 +165,13 @@ export async function uploadBufferWithOptions(params: {
   }
 
   return {
-    url: `${BUCKET_URL}/${key}`,
+    url: `${bucketUrl}/${key}`,
     key
   }
 }
 
 export function getStorageBucketUrl(): string {
-  return BUCKET_URL
+  return getR2Config().bucketUrl
 }
 
 export function generateAssetKey(fileName: string, teamMemberId?: string): string {
