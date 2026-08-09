@@ -1,94 +1,240 @@
-# LashPop Website Launch Acceptance & Sign-Off
+# LashPop Website — Final Go-Live Acceptance
 
-This document records final acceptance of the public LashPop website release. Complete it against the exact production candidate commit and URL that will be launched.
+This is the final client approval before the new website replaces the current public site. It is written in plain English so each person signing can understand what they are approving.
 
-## Release identification
+Every item marked **Required before launch** must be checked. If an item is not complete, record it in **Open items and accepted exceptions** and decide whether it blocks launch. A blank required item means **do not launch**.
 
-- Production candidate URL: ______________________________
-- Git commit SHA: ________________________________________
-- Planned launch date/time: _______________________________
-- Business approver: _____________________________________
-- Technical approver: ____________________________________
-- Date signed: ___________________________________________
+This document records decisions and authorization. It does not waive anyone's legal rights, remove accessibility or privacy obligations, or replace advice from qualified legal counsel.
 
-## Approved scope and intentional exclusions
+## 1. Identify the exact version being approved
 
-The approver confirms that:
+This prevents a different version from being launched after the review.
 
-- The site's current colors, typography, and overall visual appearance are approved as shown in the production candidate.
-- The Classic Fill booking path and representative booking paths have been tested through the Vagaro handoff.
-- Mobile stylist service chips remain horizontally usable and do not escape their cards.
-- The studio map loads with its matching local Mapbox stylesheet before map initialization.
-- No new FAQs or gallery images are part of this release.
-- The existing mobile reviews presentation is accepted without redesign in this release.
+- Client/business name: LashPop Studios
+- Production candidate URL: `https://lashpop.vercel.app`
+- Deployment ID: ______________________________________________
+- Git commit: __________________________________________________
+- Date and time reviewed: ______________________________________
+- Planned launch date and time: _________________________________
+- Client approver's name and title: ______________________________
+- Experial release owner: _______________________________________
+- Rollback version or deployment: _______________________________
 
-## Explicit accessibility color-contrast acknowledgment
+- [ ] **Required before launch — Same version:** I understand that my approval applies only to the URL, deployment, and commit written above. Any material change after this review requires new testing and, when it changes what I approved, new client approval.
 
-The approver understands and accepts all of the following:
+## 2. Final visual and content review
 
-1. Some approved foreground/background color combinations do **not** meet WCAG 2.2 AA minimum color-contrast requirements.
-2. LashPop has instructed the implementation team to preserve the approved colors exactly and not remediate those contrast failures in this release.
-3. Reduced contrast can make content harder to perceive for people with low vision, color-vision differences, age-related vision changes, or use in difficult lighting conditions.
-4. This acknowledgment does not make the website WCAG-conformant, does not remove statutory or contractual accessibility obligations, and is not legal advice. LashPop should consult qualified accessibility and legal counsel about its obligations and risk.
-5. All non-color accessibility defects remain in scope for normal regression prevention and remediation.
+These checks confirm that the site looks right and says the right things. Automated tests can catch many mistakes, but they cannot decide whether a photo, price, biography, or business statement is correct.
 
-Business approver initials for contrast exception: __________
+- [ ] **Required before launch — Overall appearance:** I reviewed the homepage and main pages on a phone and a desktop computer. The colors, fonts, spacing, photos, layout, and general appearance match the approved design.
+- [ ] **Required before launch — Hero photo:** The main homepage photo looks sharp on phone and desktop, and its composition has not changed from the approved version.
+- [ ] **Required before launch — Business facts:** The business name, address, phone number, email, hours, service names, prices, policies, and other factual information are correct.
+- [ ] **Required before launch — Navigation and footer:** The menu, buttons, social links, legal links, and footer links go where I expect.
+- [ ] **Required before launch — Services:** The public service categories and service cards are accurate. The removed pink lash-service subtitles do not appear.
+- [ ] **Required before launch — Team:** The correct staff members, biographies, service assignments, photos, and links are public. Ava Z. and anyone else marked not visible on the website are not shown.
+- [ ] **Required before launch — Client-requested copy:** Booth Rental includes “8 weeks of complimentary booth rent for maternity leave.”
+- [ ] **Required before launch — No unfinished material:** I did not find draft copy, placeholder content, test records, internal notes, or images that should not be public.
+- [ ] **Accepted unchanged for this launch:** No new FAQs or gallery photos are part of this release, and the current mobile reviews layout is approved without a redesign.
 
-## Final acceptance checklist
+Client initials for visual and content approval: __________
 
-### Client update verification
+## 3. Booking and Vagaro
 
-- [ ] The homepage hero photo is sharp after a cold load on retina desktop and standard/narrow iPhone widths.
-- [ ] Classic, Wet/Angel, Hybrid, and Volume Full Set cards do not show the removed pink subtitles.
-- [ ] Ava Z. and every other profile marked **not visible on website** are absent from public team surfaces, while their historical records remain intact.
-- [ ] Opening a stylist and rapidly changing profile/work photos does not show the prior stylist, a blank frame, or an intentional blur animation.
-- [ ] The lash quiz returns approved results for client-provided example answer paths; “Neither of these” is visually obvious and does not change either style score.
-- [ ] Quiz result imagery loads once, remains stable while service data arrives, and has a working same-style fallback.
-- [ ] Booth Rental benefits include “8 weeks of complimentary booth rent for maternity leave.”
-- [ ] Newsletter subscribers are accessible to an authorized admin at `/admin/inbox/newsletter`, including active-only copy/export.
-- [ ] Microblading images are visible inside the hosted Vagaro booking experience. This item must be completed in Vagaro; the website’s six service images and exact widget mappings have been verified.
+The website sends visitors into Vagaro to complete booking. Vagaro is a separate service, so LashPop must approve both the website handoff and the experience that appears after Vagaro opens.
 
-### Content and business
+- [ ] **Required before launch — Classic Fill:** I completed the “Book a Classic Fill” handoff on phone and desktop and reached the correct Vagaro booking choice.
+- [ ] **Required before launch — Representative bookings:** I tested at least one service in every public category and confirmed that each opens the intended Vagaro location, service, and staff choice.
+- [ ] **Required before launch — Stylist bookings:** I tested representative booking buttons from stylist profiles and reached the correct Vagaro destination.
+- [ ] **Required before launch — Exit and recovery:** I can go back, close, retry, or cancel without getting stuck.
+- [ ] **Required decision — Microblading photos:** I understand that photos shown after the visitor enters Vagaro are controlled in Vagaro, not by the LashPop website. The website's brow images and booking links have been checked, but the missing microblading photos inside Vagaro must be fixed or accepted in Vagaro before launch.
 
-- [ ] Business name, address, phone, email, hours, service names, pricing, policies, and team information are current.
-- [ ] Header, navigation, calls to action, social links, legal links, and footer links go to the intended destinations.
-- [ ] Contact/newsletter forms show a success state and submissions arrive at the intended destination.
-- [ ] No draft, placeholder, test, or internal-only content is visible.
-- [ ] Privacy policy, terms, cookie behavior, and required business disclosures have owner/counsel approval.
+Microblading/Vagaro decision — check one:
 
-### Booking
+- [ ] The images are now correct in Vagaro.
+- [ ] LashPop accepts launching while this remains open. Owner: __________________ Due date: ______________ Client initials: __________
 
-- [ ] Classic Fill completes the expected Vagaro handoff on desktop and mobile.
-- [ ] At least one service from each public service category opens the correct booking destination.
-- [ ] Stylist-specific booking buttons open the correct stylist/service destination.
-- [ ] Back, close, retry, and cancellation behavior work without trapping the visitor.
+## 4. Lash quiz
 
-### Browser and device acceptance
+The quiz can run without a technical error and still recommend the wrong service if the business rules are wrong. The client must therefore approve real examples of the answers and results.
 
-- [ ] Current Chrome desktop.
-- [ ] Current Safari desktop.
-- [ ] Current Firefox desktop.
-- [ ] iPhone Safari at narrow and standard widths.
-- [ ] Android Chrome at narrow and standard widths.
-- [ ] Keyboard-only navigation and visible focus indicators.
-- [ ] 200% browser zoom and landscape mobile orientation.
-- [ ] Slow/reloaded network behavior for hero media, team photos, booking embed, and map.
+- [ ] **Required before launch — Result accuracy:** I tested representative answer paths for Classic, Wet/Angel, Hybrid, and Volume results, and the recommendation matched what LashPop would tell that client.
+- [ ] **Required before launch — Stable result:** The final result does not switch between two photos, disappear, or show the wrong fallback image while the page is loading.
+- [ ] **Required before launch — “Neither” choice:** “Neither of these” looks like a clear button, can be selected, and does not add a preference for either pictured style.
+- [ ] **Required before launch — Recovery:** I can go back, change an answer, restart, and complete the quiz again without stale answers or images.
 
-### Technical and discovery
+Client initials for quiz recommendation accuracy: __________
 
-- [ ] `npm run test:launch` passes on the signed commit.
-- [ ] `npm run test:visual` passes against approved baselines.
-- [ ] `npm run test:a11y` passes with only the documented color-contrast exception disabled.
-- [ ] `npm run build` passes on the signed commit.
-- [ ] Canonicals, metadata, Open Graph image, sitemap, robots.txt, redirects, and structured data match the production domain.
-- [ ] Production HTTPS, DNS, www/apex redirects, caching, compression, and security headers are correct.
-- [ ] Analytics and conversion events are visible in their real-time/debug views without collecting prohibited data.
-- [ ] Error monitoring, uptime monitoring, and a post-launch owner are assigned.
-- [ ] A rollback target and the exact rollback procedure have been recorded and tested.
+## 5. Photos, stylist profiles, map, and forms
 
-## Acceptance
+These are high-visibility interactions that rely on images, data, or outside services.
 
-By signing below, the business approver accepts the identified production candidate for launch, including the intentional exclusions and explicit color-contrast exception above.
+- [ ] **Required before launch — Stylist photos:** Opening a stylist and moving between work photos feels stable. I do not see the previous stylist, an empty frame, an unintended blur effect, or broken images.
+- [ ] **Required before launch — Gallery:** Gallery images open, move forward and backward, close, and remain clear on phone and desktop.
+- [ ] **Required before launch — Map:** The map loads in the correct style, shows the correct LashPop location, and provides a useful directions path.
+- [ ] **Required before launch — Contact and newsletter:** Each public form shows a clear success or error message, and a real test submission reaches the intended destination.
+- [ ] **Required before launch — Subscriber access:** An authorized admin can sign in, open `/admin/inbox/newsletter`, view the active subscriber list, and copy or export it.
 
-- Business approver signature: ____________________________  Date: __________
-- Technical approver signature: ___________________________  Date: __________
+## 6. Accessibility and the approved color exception
+
+Accessibility means people with disabilities can perceive, understand, and operate the site. This includes color contrast, keyboard use, visible focus, labels, page structure, motion, zoom, and error messages.
+
+WCAG 2.2 Level AA generally calls for a contrast ratio of at least **4.5:1 for normal text**, **3:1 for large text**, and **3:1 for visual information needed to identify controls and meaningful graphics**. Lower contrast can make text and controls difficult or impossible to see for some people with low vision, color-vision differences, age-related vision changes, or difficult lighting conditions.
+
+### Color-contrast exception — explicit approval required
+
+- [ ] **I understand the issue:** Some of LashPop's approved text/background and interface color combinations do not meet WCAG 2.2 Level AA minimum contrast requirements.
+- [ ] **I understand the impact:** Some visitors may have difficulty reading content or recognizing controls because of the approved colors.
+- [ ] **I am choosing to keep the colors:** LashPop has directed Experial not to change the approved colors for this release, even where changing them could correct a contrast failure.
+- [ ] **I understand what this approval does not mean:** This decision does not make the site fully WCAG conformant, does not guarantee compliance with accessibility law, and does not remove LashPop's accessibility obligations or risk.
+- [ ] **I understand the scope:** This exception covers only the approved color contrast. It does not approve broken keyboard access, missing labels, missing alternative text, keyboard traps, invisible focus, unusable zoom, or other accessibility defects.
+
+Client initials accepting the color-contrast exception: __________
+
+### Fonts and all other accessibility checks
+
+- [ ] **Required before launch — Approved fonts:** The site uses Inter for body/interface text and Playfair Display for display headings. I approve those fonts as shown. “Swank” and “Moo Moo” are not loaded or used by the public site.
+- [ ] **Required before launch — Readability:** Important text is not cut off or unreadable, and the site remains usable at 200% browser zoom and in mobile landscape orientation.
+- [ ] **Required before launch — Keyboard:** I can reach and operate navigation, buttons, forms, dialogs, the quiz, and other important controls without a mouse. Focus is visible and I do not get trapped.
+- [ ] **Required before launch — Meaning and labels:** Important images have appropriate text alternatives; form controls and buttons have understandable names; headings and page structure make sense.
+- [ ] **Required before launch — Motion:** The site respects reduced-motion preferences, and movement does not prevent a visitor from using the site.
+- [ ] **Required before launch — Automated check:** The launch accessibility test passes for serious and critical issues, with only the documented color-contrast rule excluded. I understand that automated testing cannot find every accessibility problem.
+
+## 7. Privacy, analytics, and legal content
+
+The site includes tools that may collect visitor or marketing data. The business owner must decide which tools are authorized and how consent and disclosures should work.
+
+- [ ] **Required before launch — Privacy and legal review:** The Privacy Policy, Terms, cookie behavior, form notices, and required business disclosures have been reviewed and approved by LashPop and, when appropriate, qualified counsel.
+- [ ] **Required before launch — Tracking decision:** LashPop has confirmed whether Google Tag Manager `GTM-KDJ34BG`, Meta Pixel `314609749250536`, Vercel Analytics, and Speed Insights are authorized for launch.
+- [ ] **Required before launch — Consent behavior:** The approved consent, opt-out, and browser-based privacy signals such as Global Privacy Control (GPC) have been tested. Tracking does not collect information that LashPop has prohibited.
+- [ ] **Required before launch — Measurement:** Approved page views and important conversion events appear once in the intended real-time or debug reports.
+
+Client initials for privacy, legal content, and tracking approval: __________
+
+## 8. Admin, photo manager, and ongoing content
+
+This confirms that the people responsible for the site can manage it after launch without making a public mistake.
+
+- [ ] **Required before launch — Admin login:** An authorized LashPop user has signed in successfully after the most recent session reset.
+- [ ] **Required before launch — Permissions:** Owner, publisher, and viewer accounts can do only what each role is supposed to do.
+- [ ] **Required before launch — Photo manager:** An authorized user opened `https://lashpop.vercel.app/dam`, uploaded or selected a test image, and confirmed the expected public result.
+- [ ] **Required before launch — Content editing:** An authorized user made and verified a safe test edit, then confirmed that logout works.
+- [ ] **Ongoing workflow understood:** New staff must first be added in Vagaro. If the website needs a public photo and biography while booking should remain unavailable, LashPop will use the documented disabled-profile workflow and verify the public result before publishing.
+
+## 9. Security and prior backup exposure
+
+This item records a required privacy decision. It is separate from the normal visual and functional website review.
+
+During the launch audit, historical database backup files containing client/contact, appointment, form-response, transaction, and session data were found reachable without authentication. The files were moved to private storage, the public copies were removed, affected sessions were revoked, and the exposed paths now return a private `404`. The technical exposure is contained. Available evidence has not established whether anyone outside the team downloaded the files before containment.
+
+- [ ] **Required before launch — Decision recorded:** LashPop received the incident record at `docs/ops/security-incident-2026-07-17-public-backup.md` and obtained appropriate privacy/legal advice about investigation, evidence retention, and any notice to affected people or regulators.
+- [ ] **Required before launch — Named decision owner:** The person responsible for the incident decision, any notice, and the archive retention/deletion date is named below.
+
+Decision owner: _________________________________________________
+
+Decision/date or counsel reference: ______________________________
+
+Client initials acknowledging receipt and the recorded decision: __________
+
+## 10. Third-party services and remaining integrations
+
+Vagaro, Mapbox, Instagram, Google, Meta, Vercel, and other outside services can change, expire a login, or have an outage. The site can be tested against them, but LashPop and Experial cannot guarantee that an outside service will always be available.
+
+- [ ] **Required before launch — Vagaro verification:** The production webhook verification secret is configured, and a real Vagaro delivery has been tested successfully.
+- [ ] **Required decision — Instagram:** The current Instagram sync requires a valid session and can expire or be challenged. Check one:
+  - [ ] Instagram sync is configured, healthy, and approved for launch.
+  - [ ] Instagram sync remains disabled and LashPop accepts that limitation for launch. Client initials: __________
+- [ ] **Third-party limitation understood:** I understand that a later outage or change inside an outside service may require separate troubleshooting and is not, by itself, a defect in the signed website release.
+
+## 11. Browser and device acceptance
+
+The goal is not to make every browser look pixel-for-pixel identical. The goal is for the approved design and all important actions to remain clear and usable.
+
+- [ ] **Required before launch — Desktop:** I reviewed the site in current Chrome and Safari, and the agreed Firefox compatibility check also passed.
+- [ ] **Required before launch — iPhone:** Reviewed in Safari at narrow and standard phone widths.
+- [ ] **Required before launch — Android:** Reviewed in Chrome at narrow and standard phone widths.
+- [ ] **Required before launch — Less-than-perfect connections:** Hero media, staff photos, the booking handoff, quiz images, and map recover acceptably after a slow load or refresh.
+
+Devices/browsers personally reviewed by client: _____________________________
+
+Client initials for browser and device approval: __________
+
+## 12. Technical release checks
+
+The technical approver completes this section. These checks provide evidence that the exact release builds correctly and still matches the signed design and behavior.
+
+- [ ] **Required before launch — Full launch test:** `npm run test:launch` passes on the exact signed commit.
+- [ ] **Required before launch — Visual protection:** The approved visual screenshots pass. No one updated a baseline simply to hide an unexplained visual change.
+- [ ] **Required before launch — Design contract:** The color, typography, spacing, and protected-file checks pass against the approved design contract.
+- [ ] **Required before launch — Repository protection:** The main code branch requires a reviewed change request and passing quality/visual checks. Direct and forced changes that could bypass review are blocked.
+- [ ] **Future-change process understood:** A material color, font, spacing, layout, or other visual-system change requires written approval, before-and-after phone and desktop screenshots, an intentional design-contract update, and passing launch checks.
+- [ ] **Required before launch — Security and dependencies:** The production dependency audit has no unresolved vulnerability that the release owner has classified as a launch blocker.
+- [ ] **Required before launch — Search migration:** Search-engine signals—including each page's preferred address, title and description, social preview, site map, crawler instructions, business data, and old-page redirects—pass against the candidate site.
+- [ ] **Required before launch — Monitoring:** Error monitoring, uptime monitoring, and the person responsible for the first post-launch observation window are recorded.
+- [ ] **Required before launch — Rollback:** The last known-good site/version and exact rollback method are recorded and available.
+
+Technical approver initials: __________
+
+## 13. DNS, email, and the go-live change
+
+Going live changes the domain's authoritative nameservers. This affects more than the website: incorrect DNS can also interrupt email, verification, and other services. The replacement zone must preserve all required mail and non-web records.
+
+- [ ] **Required before launch — Domain access:** The authorized person has access to the registrar and approves the nameserver change.
+- [ ] **Required before launch — DNS parity:** The replacement DNS zone preserves every required email-delivery and email-authentication record (including MX, SPF, DKIM, and DMARC), plus mail setup, payment, domain connection, and ownership-verification records.
+- [ ] **Required before launch — Website records:** The apex domain and `www` point to the approved Vercel project, and both custom hostnames are attached to the signed deployment.
+- [ ] **Required before launch — Search baseline:** Existing Google Search Console and Bing access/history have been preserved where available. The new sitemap is ready for submission after cutover.
+- [ ] **Required before launch — Observation team:** A person is assigned to watch DNS, HTTPS, website behavior, booking, forms, admin access, error logs, and incoming/outgoing email during propagation.
+- [ ] **Required before launch — Rollback authority:** The launch owner is authorized to restore the previous nameservers if a critical website, certificate, or email problem cannot be corrected promptly.
+
+Launch owner: __________________________ Observation window: _______________
+
+Rollback nameservers or reference: ________________________________________
+
+## 14. Open items and accepted exceptions
+
+List every incomplete, disputed, or deferred item. Mark **Blocks launch** as “Yes” or “No.” A “No” means LashPop knowingly accepts launching with that item open; it does not mean the issue is fixed.
+
+| Open item or exception | Plain-English impact | Blocks launch? | Owner | Due date | Client initials |
+| --- | --- | --- | --- | --- | --- |
+| Approved color contrast exception | Some text or controls may be hard for some visitors to see; the site is not represented as fully WCAG conformant. | No — explicitly accepted above | LashPop | Revisit date: ______ | ______ |
+| Microblading photos inside Vagaro | Visitors may not see the expected example photos after entering Vagaro. | ______ | ______ | ______ | ______ |
+| Client quiz result examples | Without client-approved examples, technical tests cannot prove that recommendations match LashPop's consultation rules. | ______ | ______ | ______ | ______ |
+| Instagram sync/session | The Instagram-driven content may remain unavailable or stop updating. | ______ | ______ | ______ | ______ |
+| Other: __________________________ | __________________________ | ______ | ______ | ______ | ______ |
+
+## 15. Final authorization
+
+Check one decision only.
+
+- [ ] **GO LIVE:** I am authorized to approve this release for LashPop. I reviewed the exact production candidate identified in Section 1, completed every required item or recorded an explicit accepted exception, and authorize Experial to perform the DNS cutover and make this version public. I understand that DNS and certificate changes can take time to propagate and that the documented rollback may be used if a critical problem occurs.
+- [ ] **DO NOT LAUNCH:** One or more required items remain unresolved. Do not change public DNS until a new written approval is completed.
+
+### Client approval
+
+- Printed name: __________________________________________________
+- Title/authority: _______________________________________________
+- Signature: ____________________________________________________
+- Date and time: _________________________________________________
+
+### Experial release approval
+
+- Printed name: __________________________________________________
+- Signature: ____________________________________________________
+- Date and time: _________________________________________________
+
+### Launch record — complete after the change
+
+- Nameservers changed at: ________________________________________
+- New site first verified at apex and `www`: ______________________
+- HTTPS verified: ________________________________________________
+- Booking and forms verified: ____________________________________
+- Incoming and outgoing email verified: __________________________
+- Search sitemap submitted: ______________________________________
+- Observation owner released the launch at: ______________________
+- Rollback used? If yes, when and why: ____________________________
+
+## Reference
+
+- WCAG 2.2, Contrast (Minimum) and Non-text Contrast: <https://www.w3.org/TR/WCAG22/#contrast-minimum> and <https://www.w3.org/TR/WCAG22/#non-text-contrast>
+- [Technical launch workflow](../../MAINTENANCE.md)
+- [Regression safeguards](./regression-protection.md)
+- [Incident record](../ops/security-incident-2026-07-17-public-backup.md)
