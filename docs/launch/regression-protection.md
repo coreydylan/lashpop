@@ -22,9 +22,9 @@ Do not regenerate screenshots simply because a test failed. First establish whet
 
 The `main` branch is protected with these release controls. Treat weakening or removing them as a launch-affecting change:
 
-- Require pull requests and at least one approval.
-- Require Code Owner review.
+- Require a pull request for every change to `main`.
+- Record written owner approval and reviewed before/after evidence in the pull request for every material visual change; `CODEOWNERS` identifies the responsible owner.
 - Require the `quality` and `browser-regression` status checks.
-- Dismiss stale approvals when new commits are pushed.
+- Require all review conversations to be resolved before merge.
 - Block force pushes and branch deletion.
 - Restrict direct pushes to `main`, including administrator bypass.

@@ -24,3 +24,11 @@ Before declaring website work complete, run:
 8. `npm run build`
 
 Color-contrast failures are an explicitly documented launch exception; do not change colors to resolve them. All other accessibility regressions remain defects.
+
+## Change and merge rules
+
+- Do not push directly to `main`. Work on a branch and use a pull request.
+- The `quality` and `browser-regression` checks must pass before merge.
+- A material visual change must include the owner's written approval and reviewed before/after phone and desktop evidence in the pull request.
+- An AI agent must not approve or merge its own material visual change, change the canonical contract, or replace a screenshot baseline without that written approval.
+- Run `npm run test:launch` before handing off a launch candidate. It is the complete release gate and includes the design, dependency, lint, type, integration, fixture/privacy, build, screenshot, and accessibility checks.
