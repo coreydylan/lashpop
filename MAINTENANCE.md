@@ -185,6 +185,8 @@ npm run test:a11y
 
 Review the fixture diff before committing it. The exporter intentionally omits raw Vagaro payloads, staff email addresses and phone numbers, internal review fields, credentials, and other non-public data. `npm run test:fixtures` fails if protected fields appear. A screenshot failure is not permission to refresh either the data fixture or the screenshot baseline.
 
+The approved screenshot contract has separate macOS and Linux images because Chromium rasterizes font edges differently on those platforms. Layout, content, imagery, spacing, and brand colors must match before a platform-specific image is accepted. GitHub retains the actual and diff images from a failed browser run for seven days so the change can be reviewed; do not weaken the pixel threshold or replace a baseline merely to make CI green.
+
 When hero delivery changes, verify the live mobile request receives an oversampled full-frame derivative without fixed `h`, `fit`, `gx`, or `gy` crop parameters, then confirm the approved mobile baseline still passes. Deploy `workers/lashpop-img` first only when its transformation behavior changes. When staff sync ownership changes, deploy `workers/vagaro-sync` before testing publication behavior.
 
 ## DNS cutover workflow

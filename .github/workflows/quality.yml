@@ -17,8 +17,8 @@ jobs:
       PLAYWRIGHT_FIXTURES: "1"
       NEXT_PUBLIC_MAPBOX_TOKEN: "pk.ci-fixture"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -33,8 +33,8 @@ jobs:
       PLAYWRIGHT_FIXTURES: "1"
       NEXT_PUBLIC_MAPBOX_TOKEN: "pk.ci-fixture"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -46,7 +46,7 @@ jobs:
         run: npm run test:a11y
       - name: Upload browser failure evidence
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-regression-${{ github.run_id }}
           path: |
