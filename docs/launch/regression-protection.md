@@ -18,13 +18,13 @@ A material visual change requires all of the following:
 
 Do not regenerate screenshots simply because a test failed. First establish whether the change is intended. An unexplained screenshot difference is a release blocker.
 
-## Repository settings still required
+## Enforced repository settings
 
-After this change is committed and pushed, enable branch protection for `main`:
+The `main` branch is protected with these release controls. Treat weakening or removing them as a launch-affecting change:
 
 - Require pull requests and at least one approval.
 - Require Code Owner review.
 - Require the `quality` and `browser-regression` status checks.
 - Dismiss stale approvals when new commits are pushed.
 - Block force pushes and branch deletion.
-- Restrict direct pushes to `main`.
+- Restrict direct pushes to `main`, including administrator bypass.

@@ -18,6 +18,8 @@ Describe the user-visible and technical change.
 - [ ] `npm run test:vagaro`
 - [ ] `npm run test:quiz`
 - [ ] `npm run test:images`
+- [ ] `npm run test:storage`
+- [ ] `npm run test:fixtures`
 - [ ] `npm run test:staff`
 - [ ] `npm run test:visual` when public UI changed
 - [ ] `npm run test:a11y` when public UI or interaction changed
