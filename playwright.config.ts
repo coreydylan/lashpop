@@ -2,6 +2,11 @@ import { defineConfig, devices } from '@playwright/test'
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000'
 const usesExternalServer = Boolean(process.env.PLAYWRIGHT_BASE_URL)
+// Chromium text rasterization differs slightly between macOS (where the
+// client-approved baselines are reviewed) and Linux (where GitHub runs).
+// Keep a separately reviewed Linux baseline instead of weakening the pixel
+// threshold for both environments.
+const snapshotPlatformSuffix = process.platform === 'linux' ? '-linux' : ''
 
 export default defineConfig({
   testDir: './tests/browser',
@@ -17,7 +22,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
-  snapshotPathTemplate: '{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}',
+  snapshotPathTemplate: `{testDir}/{testFilePath}-snapshots/{arg}-{projectName}${snapshotPlatformSuffix}{ext}`,
   use: {
     baseURL,
     colorScheme: 'light',
