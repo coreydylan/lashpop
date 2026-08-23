@@ -274,6 +274,10 @@ export interface PublicStaffStats {
   deactivated: number
   unmatchedInDb: string[]    // db rows with vagaroPublicProviderId set but absent from this run's fetch
   unmatchedInVagaro: string[] // providers in Vagaro response with no matching db row
+  /** Providers this run saw, for the post-sync reconciliation report. */
+  providerIdentities: { providerId: number | null; name: string }[]
+  /** Providers skipped because their name matched more than one row. */
+  ambiguousNameMatches: string[]
   errors: string[]
 }
 
@@ -742,6 +746,8 @@ export async function syncPublicStaff(
     deactivated: 0,
     unmatchedInDb: [],
     unmatchedInVagaro: [],
+    providerIdentities: [],
+    ambiguousNameMatches: [],
     errors: [],
   }
 
@@ -767,16 +773,20 @@ export async function syncPublicStaff(
     })
     .from(teamMembers)
 
-  // Build lookup indexes
+  // Build lookup indexes. The name index keeps every candidate rather than
+  // last-wins: duplicate rows (live row plus an old tombstone) used to make the
+  // fallback silently pick whichever row was read last, which could reactivate
+  // a ghost row sitting at display_order 0 with a placeholder photo.
   const byProviderId = new Map<number, (typeof existing)[number]>()
-  const byNameKey = new Map<string, (typeof existing)[number]>()
+  const byNameKey = new Map<string, (typeof existing)[number][]>()
   for (const row of existing) {
     if (row.vagaroPublicProviderId != null) byProviderId.set(row.vagaroPublicProviderId, row)
     // Parse "First Last" out of the stored display name
     const parts = row.name.trim().split(/\s+/)
     const first = parts.shift() ?? ''
     const last = parts.join(' ')
-    byNameKey.set(nameKey(first, last), row)
+    const key = nameKey(first, last)
+    byNameKey.set(key, [...(byNameKey.get(key) ?? []), row])
   }
 
   // Track which existing rows were touched this run (for deactivation step)
@@ -785,9 +795,31 @@ export async function syncPublicStaff(
   for (const p of providers) {
     try {
       const matchById = p.ServiceProviderID != null ? byProviderId.get(p.ServiceProviderID) : null
-      const matchByName = matchById ?? byNameKey.get(nameKey(p.FirstName, p.LastName))
 
       const fullName = `${p.FirstName ?? ''} ${p.LastName ?? ''}`.trim()
+      stats.providerIdentities.push({ providerId: p.ServiceProviderID ?? null, name: fullName })
+
+      // Name fallback, only when the provider id didn't match. An ambiguous
+      // name is never resolved by guessing: writing to the wrong row can
+      // reactivate a tombstone and publish it. Protect every candidate from
+      // the deactivation phase, write nothing, and report it.
+      let matchByName = matchById ?? null
+      if (!matchByName) {
+        const candidates = byNameKey.get(nameKey(p.FirstName, p.LastName)) ?? []
+        const activeCandidates = candidates.filter(candidate => candidate.isActive)
+        const pool = activeCandidates.length > 0 ? activeCandidates : candidates
+        if (pool.length === 1) {
+          matchByName = pool[0]
+        } else if (pool.length > 1) {
+          for (const candidate of pool) matchedExistingIds.add(candidate.id)
+          stats.ambiguousNameMatches.push(
+            `${fullName || `provider ${p.ServiceProviderID}`}: ${pool.length} rows share this name (${pool
+              .map(candidate => candidate.id)
+              .join(', ')}) — skipped, resolve the duplicate or set the provider id`,
+          )
+          continue
+        }
+      }
       const photoUrl = originalPhotoUrl(p)
       const phone = (p.Cell || p.DayPhone || '').trim()
       const email = (p.EmailId || '').trim()
