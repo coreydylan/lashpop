@@ -115,7 +115,7 @@ export const teamMembers = sqliteTable('team_members', {
   isActive: boolean('is_active').default(true).notNull(),
   // Admin-owned publication gate. The sync reads but never overwrites this
   // field for existing rows.
-  showOnWebsite: boolean('show_on_website').default(true).notNull(),
+  showOnWebsite: boolean('show_on_website').default(false).notNull(),
   // Provenance for the publication flag: why it holds its current value, who
   // set it, and when.
   showOnWebsiteReason: text('show_on_website_reason'),

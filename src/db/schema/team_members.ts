@@ -61,7 +61,7 @@ export const teamMembers = pgTable("team_members", {
   // Sync-owned source state and admin-owned publication state are deliberately
   // separate. Vagaro may keep a provider active while LashPop hides that
   // person from the public website (for example during offboarding).
-  showOnWebsite: boolean("show_on_website").default(true).notNull(),
+  showOnWebsite: boolean("show_on_website").default(false).notNull(),
   // Provenance for the publication flag. Before these columns existed nobody
   // could say who hid a stylist or why — that is exactly how two published
   // artists sat hidden for months without anyone noticing.
