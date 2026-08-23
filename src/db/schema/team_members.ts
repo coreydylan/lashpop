@@ -62,6 +62,12 @@ export const teamMembers = pgTable("team_members", {
   // separate. Vagaro may keep a provider active while LashPop hides that
   // person from the public website (for example during offboarding).
   showOnWebsite: boolean("show_on_website").default(true).notNull(),
+  // Provenance for the publication flag. Before these columns existed nobody
+  // could say who hid a stylist or why — that is exactly how two published
+  // artists sat hidden for months without anyone noticing.
+  showOnWebsiteReason: text("show_on_website_reason"),
+  showOnWebsiteActor: text("show_on_website_actor"),
+  showOnWebsiteChangedAt: timestamp("show_on_website_changed_at"),
 
   // SEO/Schema.org structured data fields
   // Credentials appear in JSON-LD for search engines but not necessarily displayed publicly

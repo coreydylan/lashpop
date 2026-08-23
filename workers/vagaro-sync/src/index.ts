@@ -10,6 +10,7 @@ import {
   type SyncStats,
 } from './sync'
 import { serviceSyncHealthError } from './booking-health'
+import { reconcileRoster, type RosterReconciliation } from './reconcile'
 import { fetchPublicServicesFull, type PublicServicesPayload } from './public-services'
 import { vagaroSyncRuns } from './schema'
 import { eq } from 'drizzle-orm'
@@ -25,6 +26,8 @@ interface Result {
   services: { success: boolean; stats?: SyncStats; error?: string }
   publicStaff: { success: boolean; stats?: PublicStaffStats; error?: string }
   stylistServices: { success: boolean; stats?: StylistServicesStats; error?: string }
+  /** Cross-layer roster check run after the staff sync. */
+  reconciliation?: RosterReconciliation
 }
 
 interface RecordedResult extends Result {
@@ -116,6 +119,30 @@ async function runSync(
     console.error('stylist services sync threw:', err)
   }
 
+  // Reconciliation: compare Vagaro, the source flags, and the publication
+  // flags after the writes have landed. This is the check that would have
+  // caught two published artists sitting hidden.
+  try {
+    result.reconciliation = await reconcileRoster(db, result.publicStaff.stats?.providerIdentities ?? [])
+    for (const alert of result.reconciliation.alerts) {
+      console.error(`[ROSTER-ALERT] ${alert}`)
+    }
+    for (const warning of result.reconciliation.warnings) {
+      console.warn(`[ROSTER-WARN] ${warning}`)
+    }
+    for (const ambiguous of result.publicStaff.stats?.ambiguousNameMatches ?? []) {
+      console.error(`[ROSTER-ALERT] ambiguous name match — ${ambiguous}`)
+    }
+    console.log(
+      `[ROSTER] ${result.reconciliation.counts.activePublished} published, ` +
+        `${result.reconciliation.counts.activeHiddenAcknowledged} hidden with a reason, ` +
+        `${result.reconciliation.counts.activeHiddenUnexplained} hidden with no reason, ` +
+        `${result.reconciliation.counts.inactivePublished} inactive rows still flagged for publication`,
+    )
+  } catch (err) {
+    console.error('roster reconciliation threw:', err)
+  }
+
   const allOk =
     result.categories.success &&
     result.services.success &&
@@ -169,6 +196,17 @@ const vagaroSyncWorker = {
     const url = new URL(req.url)
     if (url.pathname === '/health') {
       return Response.json({ ok: true, ts: new Date().toISOString() })
+    }
+    if (url.pathname === '/reconcile') {
+      // Read-only: report the current cross-layer state without syncing.
+      if (env.SYNC_TRIGGER_TOKEN) {
+        const token = url.searchParams.get('token') || req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+        if (token !== env.SYNC_TRIGGER_TOKEN) {
+          return new Response('unauthorized', { status: 401 })
+        }
+      }
+      const reconciliation = await reconcileRoster(openDb(env.DB), [])
+      return Response.json(reconciliation, { status: reconciliation.ok ? 200 : 207 })
     }
     if (url.pathname !== '/sync') {
       return new Response('not found', { status: 404 })

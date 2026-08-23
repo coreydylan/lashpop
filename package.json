@@ -22,8 +22,8 @@
     "test:images": "tsx --test src/lib/cf-image-loader.test.ts src/components/service-browser/service-image-preloader.test.ts",
     "test:storage": "tsx --test src/lib/dam/r2-client.test.ts",
     "test:fixtures": "node scripts/check-browser-fixtures.mjs",
-    "test:staff": "tsx --test src/lib/team-publication-contract.test.ts",
-    "test:vagaro": "npm run test:vagaro-widget && npm run test:vagaro-embed && npm run test:vagaro-health && npm run test:vagaro-manifest && npm run test:vagaro-readiness",
+    "test:staff": "tsx --test src/lib/team-publication-contract.test.ts src/lib/admin/team-presentation.test.ts",
+    "test:vagaro": "npm run test:vagaro-widget && npm run test:vagaro-embed && npm run test:vagaro-health && npm run test:vagaro-manifest && npm run test:vagaro-readiness && npm run test:roster-reconcile",
     "fixtures:browser:refresh": "DOTENV_CONFIG_PATH=.env.production.local tsx -r dotenv/config scripts/export-browser-fixture.ts --write",
     "vagaro:widgets:audit": "tsx scripts/vagaro-widget-admin.ts audit",
     "vagaro:widgets:refresh": "tsx scripts/vagaro-widget-admin.ts refresh --apply",
@@ -33,7 +33,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:status": "drizzle-kit status",
     "db:seed": "tsx src/db/seed-all.ts",
-    "dev:original": "next dev"
+    "dev:original": "next dev",
+    "test:roster-reconcile": "tsx --test workers/vagaro-sync/src/reconcile.test.ts"
   },
   "keywords": [],
   "author": "",
@@ -72,7 +73,6 @@
     "plaiceholder": "^3.0.0",
     "postcss": "^8.5.26",
     "postgres": "^3.4.7",
-    "puppeteer": "^24.43.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-photo-view": "^1.2.7",
