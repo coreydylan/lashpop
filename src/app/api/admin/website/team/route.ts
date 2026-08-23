@@ -146,17 +146,53 @@ export async function PUT(request: NextRequest) {
     }
 
     const now = Date.now()
+    const beforeById = new Map(before.map(row => [row.id, row]))
+    const publicationReason = parsed.reason ?? 'Changed in the admin team panel'
     const after = before.map(row => {
       const update = updates.find(candidate => candidate.id === row.id)!
-      return { ...row, showOnWebsite: update.showOnWebsite, displayOrder: String(update.displayOrder) }
+      const flipped = update.showOnWebsite !== row.showOnWebsite
+      return {
+        ...row,
+        showOnWebsite: update.showOnWebsite,
+        displayOrder: String(update.displayOrder),
+        ...(flipped
+          ? {
+              showOnWebsiteReason: publicationReason,
+              showOnWebsiteActor: auth.userId,
+              showOnWebsiteChangedAt: new Date(now),
+            }
+          : {}),
+      }
     })
 
     await executeDatabaseBatch([
-      ...updates.map(update => ({
-        sql: 'UPDATE team_members SET show_on_website = ?, display_order = ?, updated_at = ? WHERE id = ?',
-        params: [update.showOnWebsite, String(update.displayOrder), now, update.id],
-        method: 'run' as const,
-      })),
+      ...updates.map(update => {
+        // Only a real publication change rewrites provenance. A pure reorder
+        // must not overwrite the reason someone is hidden.
+        const flipped = update.showOnWebsite !== beforeById.get(update.id)?.showOnWebsite
+        return flipped
+          ? {
+              sql: `UPDATE team_members
+                    SET show_on_website = ?, display_order = ?, updated_at = ?,
+                        show_on_website_reason = ?, show_on_website_actor = ?, show_on_website_changed_at = ?
+                    WHERE id = ?`,
+              params: [
+                update.showOnWebsite,
+                String(update.displayOrder),
+                now,
+                publicationReason,
+                auth.userId,
+                now,
+                update.id,
+              ],
+              method: 'run' as const,
+            }
+          : {
+              sql: 'UPDATE team_members SET show_on_website = ?, display_order = ?, updated_at = ? WHERE id = ?',
+              params: [update.showOnWebsite, String(update.displayOrder), now, update.id],
+              method: 'run' as const,
+            }
+      }),
       {
         sql: `INSERT INTO admin_audit_log
               (id, actor_user_id, surface, action, target_type, target_id, diff, created_at)
@@ -168,7 +204,7 @@ export async function PUT(request: NextRequest) {
           'team.presentation.bulk-update',
           'team_members',
           'bulk',
-          JSON.stringify({ before, after }),
+          JSON.stringify({ before, after, reason: parsed.reason }),
           now,
         ],
         method: 'run' as const,

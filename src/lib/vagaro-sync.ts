@@ -245,6 +245,9 @@ export async function syncTeamMember(vagaroEmployee: any) {
         displayOrder: '0',
         isActive: true,
         showOnWebsite: false,
+        showOnWebsiteReason: 'Created by the Vagaro employee webhook, hidden until someone publishes them in the admin panel',
+        showOnWebsiteActor: 'system:vagaro-webhook',
+        showOnWebsiteChangedAt: new Date(),
         lastSyncedAt: new Date()
       })
       .returning({ id: teamMembers.id})

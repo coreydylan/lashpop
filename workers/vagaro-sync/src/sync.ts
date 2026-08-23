@@ -859,6 +859,9 @@ export async function syncPublicStaff(
           // Newly discovered providers must be reviewed before publication.
           // Subsequent syncs intentionally leave this admin-owned flag alone.
           showOnWebsite: false,
+          showOnWebsiteReason: 'New Vagaro provider, hidden until someone publishes them in the admin panel',
+          showOnWebsiteActor: 'system:vagaro-sync',
+          showOnWebsiteChangedAt: new Date(),
           lastSyncedAt: new Date(),
         })
         stats.created++

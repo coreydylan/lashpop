@@ -33,7 +33,7 @@ import { QuickFactsEditor } from '@/components/team/QuickFactsEditor'
 import { CredentialsEditor } from '@/components/team/CredentialsEditor'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
-import { buildTeamPresentationUpdates } from '@/lib/admin/team-presentation'
+import { buildTeamPresentationUpdates, MAX_PUBLICATION_REASON_LENGTH } from '@/lib/admin/team-presentation'
 
 interface QuickFact {
   id: string
@@ -106,6 +106,7 @@ export default function TeamManagerPage() {
   const [saved, setSaved] = useState(false)
   const [expandedMember, setExpandedMember] = useState<string | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
+  const [publicationReason, setPublicationReason] = useState('')
   const [editingBio, setEditingBio] = useState<string | null>(null)
   const [bioValue, setBioValue] = useState('')
   const [showImagePicker, setShowImagePicker] = useState(false)
@@ -311,12 +312,13 @@ export default function TeamManagerPage() {
       const response = await fetch('/api/admin/website/team', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates })
+        body: JSON.stringify({ updates, reason: publicationReason })
       })
 
       if (response.ok) {
         setSaved(true)
         setHasChanges(false)
+        setPublicationReason('')
         setTimeout(() => setSaved(false), 2000)
       } else {
         const data = await response.json()
@@ -449,6 +451,15 @@ export default function TeamManagerPage() {
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
+            <input
+              type="text"
+              value={publicationReason}
+              onChange={(event) => setPublicationReason(event.target.value)}
+              maxLength={MAX_PUBLICATION_REASON_LENGTH}
+              placeholder="Why (optional, saved with the change)"
+              className="w-64 px-3 py-2 text-sm border border-sage/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40"
+              aria-label="Reason for this publication change"
+            />
             <button
               onClick={handleSave}
               disabled={saving || !hasChanges}

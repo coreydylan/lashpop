@@ -30,8 +30,10 @@ export function buildTeamPresentationUpdates(
   }))
 }
 
+export const MAX_PUBLICATION_REASON_LENGTH = 300
+
 export type ParsedTeamPresentation =
-  | { ok: true; updates: TeamPresentationUpdate[] }
+  | { ok: true; updates: TeamPresentationUpdate[]; reason: string | null }
   | { ok: false; error: string }
 
 /**
@@ -43,9 +45,21 @@ export function parseTeamPresentationUpdates(body: unknown): ParsedTeamPresentat
     return { ok: false, error: 'Request body must be an object with an "updates" array' }
   }
 
-  const { updates } = body as { updates: unknown }
+  const { updates, reason } = body as { updates: unknown; reason?: unknown }
   if (!Array.isArray(updates)) {
     return { ok: false, error: 'Request body must be an object with an "updates" array' }
+  }
+
+  let parsedReason: string | null = null
+  if (reason !== undefined && reason !== null) {
+    if (typeof reason !== 'string') {
+      return { ok: false, error: 'reason must be a string when provided' }
+    }
+    const trimmed = reason.trim()
+    if (trimmed.length > MAX_PUBLICATION_REASON_LENGTH) {
+      return { ok: false, error: `reason must be ${MAX_PUBLICATION_REASON_LENGTH} characters or fewer` }
+    }
+    parsedReason = trimmed === '' ? null : trimmed
   }
 
   const parsed: TeamPresentationUpdate[] = []
@@ -86,5 +100,5 @@ export function parseTeamPresentationUpdates(body: unknown): ParsedTeamPresentat
     })
   }
 
-  return { ok: true, updates: parsed }
+  return { ok: true, updates: parsed, reason: parsedReason }
 }

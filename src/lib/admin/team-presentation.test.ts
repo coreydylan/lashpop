@@ -3,6 +3,7 @@ import { test } from 'node:test'
 
 import {
   buildTeamPresentationUpdates,
+  MAX_PUBLICATION_REASON_LENGTH,
   parseTeamPresentationUpdates,
 } from './team-presentation'
 
@@ -67,4 +68,26 @@ test('duplicate ids are rejected', () => {
   })
   assert.equal(parsed.ok, false)
   assert.match(parsed.ok ? '' : parsed.error, /duplicate/)
+})
+
+test('an optional publication reason is carried through and normalized', () => {
+  const updates = buildTeamPresentationUpdates(members)
+
+  const withReason = parseTeamPresentationUpdates({ updates, reason: '  offboarding  ' })
+  assert.equal(withReason.ok && withReason.reason, 'offboarding')
+
+  const blank = parseTeamPresentationUpdates({ updates, reason: '   ' })
+  assert.equal(blank.ok && blank.reason, null)
+
+  const absent = parseTeamPresentationUpdates({ updates })
+  assert.equal(absent.ok && absent.reason, null)
+
+  const tooLong = parseTeamPresentationUpdates({
+    updates,
+    reason: 'x'.repeat(MAX_PUBLICATION_REASON_LENGTH + 1),
+  })
+  assert.equal(tooLong.ok, false)
+
+  const wrongType = parseTeamPresentationUpdates({ updates, reason: 12 })
+  assert.equal(wrongType.ok, false)
 })
