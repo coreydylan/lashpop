@@ -262,6 +262,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       {/* Mini Header - transparent at top, frosted glass on scroll */}
       {isVisible && (
         <header
+          data-site-header
           className="fixed top-0 left-0 right-0 z-50 md:hidden transition-[background-color] duration-300"
           style={{
             paddingTop: 'env(safe-area-inset-top, 0px)',

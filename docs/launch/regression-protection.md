@@ -16,6 +16,26 @@ A material visual change requires all of the following:
 - Reviewed Playwright snapshot updates.
 - Passing launch checks and approval from the code owner.
 
+## Working on the baselines
+
+Two traps, both cost real time on 2026-08-23:
+
+- `--update-snapshots` only rewrites a baseline when the diff exceeds
+  `maxDiffPixelRatio` (0.003 here). A change you can plainly see - a floating
+  header band across a tall section, for instance - can score under it, so the
+  run passes, the PNG is never rewritten, and you keep inspecting a stale
+  image. If you expect a baseline to change and the bytes do not move, delete
+  the file and re-run: a missing snapshot is always written.
+- Fixed and sticky elements land wherever the scroll happened to be when the
+  shot fired. The team screenshot hides `[data-site-header]` for that reason.
+  If a new overlay shows up in a section baseline, it is a flake source, not a
+  cosmetic detail.
+
+The team section is a special case: the roster inside the cards is masked, and
+who is published is asserted in `tests/browser/roster.spec.ts` against the
+seeded fixture instead of being pixel-diffed. Do not "fix" a roster change by
+regenerating that baseline; fix the data or the fixture.
+
 Do not regenerate screenshots simply because a test failed. First establish whether the change is intended. An unexplained screenshot difference is a release blocker.
 
 ## Enforced repository settings

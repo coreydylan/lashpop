@@ -46,6 +46,16 @@ export default defineConfig({
       use: { ...devices['iPhone 13'], browserName: 'chromium' },
     },
     {
+      name: 'roster-desktop',
+      testMatch: /roster\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
+    },
+    {
+      name: 'roster-mobile',
+      testMatch: /roster\.spec\.ts/,
+      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+    },
+    {
       name: 'accessibility',
       testMatch: /accessibility\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },

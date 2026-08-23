@@ -77,7 +77,35 @@ for (const section of [
       : target.locator('img')
     await decodeImages(images)
     await page.waitForTimeout(300)
-    await expect(target).toHaveScreenshot(`${section.name}.png`)
+    // Roster content is masked in the team section: who is on the team is a
+    // content decision, and pixel-diffing it made every hire and departure a
+    // red build, which trains people to rubber-stamp red. The roster itself is
+    // asserted in roster.spec.ts.
+    //
+    // The masks are deliberately narrow - the photo itself, the two lines of
+    // text, the chip labels, the handle link - so the card chrome stays under
+    // the diff: rounded frame and border, the arched photo well and its
+    // padding, the reserved two-line role height, the divider above the handle
+    // row and that row's background, plus grid geometry and page chrome.
+    if (section.name === 'team') {
+      // The fixed header floats over whatever is under it, so where it lands in
+      // a section screenshot depends on scroll position at capture time. It sits
+      // right across the first row of cards, which is the region this test is
+      // for. Hide it here; the header has its own coverage in the hero shot.
+      await page.addStyleTag({ content: '[data-site-header] { display: none !important; }' })
+      await page.waitForTimeout(100)
+    }
+
+    const mask = section.name === 'team'
+      ? [
+          target.locator('[data-roster-photo] img'),
+          target.locator('[data-roster-identity] h3'),
+          target.locator('[data-roster-identity] p'),
+          target.locator('[data-roster-chips] span'),
+          target.locator('[data-roster-social] a'),
+        ]
+      : []
+    await expect(target).toHaveScreenshot(`${section.name}.png`, { mask })
   })
 }
 
