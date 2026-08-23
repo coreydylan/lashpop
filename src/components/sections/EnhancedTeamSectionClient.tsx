@@ -173,6 +173,7 @@ function DraggableChipRow({ categories }: { categories: string[] }) {
     >
       <div
         ref={scrollRef}
+        data-roster-chips
         className={`overflow-x-auto scrollbar-hide ${isOverflowing ? 'cursor-grab active:cursor-grabbing' : ''}`}
         tabIndex={isOverflowing ? 0 : undefined}
         aria-label="Stylist service filters"
@@ -786,6 +787,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                     >
                       {/* Arch Card Container */}
                       <div
+                        data-team-card
+                        data-member-id={member.id}
+                        data-member-name={member.name}
+                        data-member-photo={cardImage}
+                        data-member-chip-count={memberCategories.length}
                         className="relative flex flex-col h-full bg-ivory rounded-[20px] overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 active:scale-[0.98] border border-terracotta/10"
                         style={isLastOrphan ? { width: 'calc(50% - 0.375rem)' } : undefined}
                       onTouchStart={(e) => {
@@ -855,6 +861,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         <div className="absolute top-2 left-0 right-0 max-w-full overflow-hidden px-3 z-20">
                           <div
                             data-tags-scroll
+                            data-roster-chips
                             className="max-w-full overflow-x-auto scrollbar-hide"
                             tabIndex={0}
                             aria-label={`${member.name} services`}
@@ -875,7 +882,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                       {/* Arch Image Container */}
                       <div className="relative px-3 pt-6">
-                        <div className="relative h-48 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
+                        <div data-roster-photo className="relative h-48 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
                           <Image
                             src={cardImage}
                             alt={member.name}
@@ -911,7 +918,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       </div>
 
                       {/* Content Below Image */}
-                      <div className="px-4 py-3 text-center">
+                      <div data-roster-identity className="px-4 py-3 text-center">
                         {/* Name */}
                         <h3 className="text-lg font-serif font-light text-gray-900 mb-0.5 truncate">
                           {displayName}
@@ -933,7 +940,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         if (handles.length === 0) return null
                         const isMulti = handles.length > 1
                         return (
-                          <div className="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 px-2 flex items-center justify-center gap-1.5">
+                          <div data-roster-social className="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-9 px-2 flex items-center justify-center gap-1.5">
                             {handles.map(({ handle, url }, i) => (
                               <React.Fragment key={handle}>
                                 {i > 0 && <span className="text-dusty-rose/50 text-[11px] leading-none">·</span>}
@@ -1018,6 +1025,11 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                       onMouseLeave={() => setHoveredId(null)}
                     >
                       <motion.div
+                        data-team-card
+                        data-member-id={member.id}
+                        data-member-name={member.name}
+                        data-member-photo={member.image}
+                        data-member-chip-count={memberCategories.length}
                         className={`relative flex flex-col h-full bg-ivory rounded-[20px] overflow-hidden shadow-md transition-all duration-300 border border-terracotta/10 ${
                           isSelected ? 'ring-2 ring-dusty-rose ring-offset-2 ring-offset-cream' : ''
                         }`}
@@ -1030,7 +1042,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         )}
 
                         <div className="relative px-4 pt-8">
-                          <div className="relative h-72 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
+                          <div data-roster-photo className="relative h-72 overflow-hidden rounded-t-full rounded-b-lg bg-stone-100">
                             <Image
                               src={member.image}
                               alt={member.name}
@@ -1049,7 +1061,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           </div>
                         </div>
 
-                        <div className="px-6 py-5 text-center">
+                        <div data-roster-identity className="px-6 py-5 text-center">
                           <h3 className="text-2xl font-serif font-light text-gray-900 mb-1 truncate">
                             {member.name}
                           </h3>
@@ -1068,7 +1080,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           if (handles.length === 0) return null
                           const isMulti = handles.length > 1
                           return (
-                            <div className="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 px-3 flex items-center justify-center gap-2 hover:bg-white/50 transition-colors">
+                            <div data-roster-social className="mt-auto w-full border-t border-warm-sand/40 bg-white/30 h-11 px-3 flex items-center justify-center gap-2 hover:bg-white/50 transition-colors">
                               {handles.map(({ handle, url }, i) => (
                                 <React.Fragment key={handle}>
                                   {i > 0 && <span className="text-dusty-rose/50 text-sm leading-none">·</span>}

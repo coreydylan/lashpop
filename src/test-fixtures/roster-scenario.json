@@ -1,5 +1,6 @@
 {
-  "teamMembers": [
+  "note": "Seeded synthetic roster for the browser suite. Not derived from production. Edit this file, then run npm run fixtures:team:build to regenerate src/test-fixtures/homepage-team.json. Two members are deliberately unpublished: Nova Kestrel (active but hidden, the client-approved departure case) and Sable Finch (deactivated, editorial flag cleared).",
+  "members": [
     {
       "id": "fixture-01-dana-sparks",
       "name": "Dana Sparks",
@@ -35,7 +36,9 @@
       "cropCloseUpCircleUrl": null,
       "cropMediumCircleUrl": null,
       "cropFullVerticalUrl": null,
-      "credentials": []
+      "credentials": [],
+      "isActive": true,
+      "showOnWebsite": true
     },
     {
       "id": "fixture-02-mira-vale",
@@ -71,7 +74,9 @@
       "cropCloseUpCircleUrl": null,
       "cropMediumCircleUrl": null,
       "cropFullVerticalUrl": null,
-      "credentials": []
+      "credentials": [],
+      "isActive": true,
+      "showOnWebsite": true
     },
     {
       "id": "fixture-03-june-okafor",
@@ -106,7 +111,9 @@
       "cropCloseUpCircleUrl": null,
       "cropMediumCircleUrl": null,
       "cropFullVerticalUrl": null,
-      "credentials": []
+      "credentials": [],
+      "isActive": true,
+      "showOnWebsite": true
     },
     {
       "id": "fixture-04-priya-raman",
@@ -145,7 +152,9 @@
       "cropCloseUpCircleUrl": null,
       "cropMediumCircleUrl": null,
       "cropFullVerticalUrl": null,
-      "credentials": []
+      "credentials": [],
+      "isActive": true,
+      "showOnWebsite": true
     },
     {
       "id": "fixture-05-tessa-bloom",
@@ -186,7 +195,9 @@
       "cropCloseUpCircleUrl": null,
       "cropMediumCircleUrl": null,
       "cropFullVerticalUrl": null,
-      "credentials": []
+      "credentials": [],
+      "isActive": true,
+      "showOnWebsite": true
     },
     {
       "id": "fixture-06-wren-halloway",
@@ -224,7 +235,94 @@
       "cropCloseUpCircleUrl": null,
       "cropMediumCircleUrl": null,
       "cropFullVerticalUrl": null,
-      "credentials": []
+      "credentials": [],
+      "isActive": true,
+      "showOnWebsite": true
+    },
+    {
+      "id": "fixture-07-nova-kestrel",
+      "name": "Nova Kestrel",
+      "role": "Lash Artist",
+      "type": "employee",
+      "businessName": null,
+      "imageUrl": "/lashpop-images/team/ava-mata.jpeg",
+      "vagaroPhotoUrl": null,
+      "phone": "",
+      "bio": "Nova is a seeded test stylist. This roster is synthetic so the browser suite never depends on who actually works at the studio.",
+      "vagaroBio": null,
+      "quote": "Synthetic quote for Nova.",
+      "availability": null,
+      "instagram": "novakestrel",
+      "instagramUrl": "https://www.instagram.com/novakestrel/",
+      "bookingUrl": "https://example.test/book/nova-kestrel",
+      "usesLashpopBooking": true,
+      "favoriteServices": [
+        "Dermaplane and hydrafacial combination",
+        "Lash extensions",
+        "Brow laminations"
+      ],
+      "funFact": "Nova exists only in src/test-fixtures/roster-scenario.json.",
+      "serviceCategories": [
+        "Lashes",
+        "Lash Lifts",
+        "Brows",
+        "Skin Care"
+      ],
+      "quickFacts": [
+        {
+          "label": "Fixture",
+          "value": "synthetic"
+        }
+      ],
+      "cropSquareUrl": null,
+      "cropCloseUpCircleUrl": null,
+      "cropMediumCircleUrl": null,
+      "cropFullVerticalUrl": null,
+      "credentials": [],
+      "isActive": true,
+      "showOnWebsite": false
+    },
+    {
+      "id": "fixture-08-sable-finch",
+      "name": "Sable Finch",
+      "role": "Lash Artist",
+      "type": "employee",
+      "businessName": null,
+      "imageUrl": "/lashpop-images/team/emily-rogers.jpeg",
+      "vagaroPhotoUrl": null,
+      "phone": "",
+      "bio": "Sable is a seeded test stylist. This roster is synthetic so the browser suite never depends on who actually works at the studio.",
+      "vagaroBio": null,
+      "quote": "Synthetic quote for Sable.",
+      "availability": null,
+      "instagram": "sablefinch",
+      "instagramUrl": "https://www.instagram.com/sablefinch/",
+      "bookingUrl": "https://example.test/book/sable-finch",
+      "usesLashpopBooking": true,
+      "favoriteServices": [
+        "Eyelash extensions",
+        "Brow services"
+      ],
+      "funFact": "Sable exists only in src/test-fixtures/roster-scenario.json.",
+      "serviceCategories": [
+        "Fine Line Tattoos",
+        "Lashes",
+        "Brows",
+        "Waxing"
+      ],
+      "quickFacts": [
+        {
+          "label": "Fixture",
+          "value": "synthetic"
+        }
+      ],
+      "cropSquareUrl": null,
+      "cropCloseUpCircleUrl": null,
+      "cropMediumCircleUrl": null,
+      "cropFullVerticalUrl": null,
+      "credentials": [],
+      "isActive": false,
+      "showOnWebsite": false
     }
   ]
 }

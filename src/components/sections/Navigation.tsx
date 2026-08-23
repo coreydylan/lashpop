@@ -121,6 +121,7 @@ export function Navigation() {
         initial={hasAnimated ? false : { y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: hasAnimated ? 0 : 0.6, ease: [0.22, 1, 0.36, 1] }}
+        data-site-header
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 hidden md:block glass backdrop-blur-md shadow-lg ${
           isScrolled ? 'py-4' : 'py-6'
         }`}
