@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/db'
+import { randomUUID } from 'crypto'
+import { executeDatabaseBatch, getDb } from '@/db'
 import { teamMembers } from '@/db/schema/team_members'
 import { teamMemberServicesVagaro } from '@/db/schema/team_member_services_vagaro'
 import { vagaroServiceCategories } from '@/db/schema/vagaro_service_categories'
 import { eq, asc, inArray } from 'drizzle-orm'
 import { requireAdminApi } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { parseTeamPresentationUpdates } from '@/lib/admin/team-presentation'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,55 +112,70 @@ export async function GET() {
 
 // PUT - Update admin-owned website publication and order. isActive remains
 // source/sync-owned and must never be used as the editorial visibility toggle.
+//
+// The whole payload is validated before anything is written, and the row
+// updates plus the audit row commit together in one D1 batch. A rejected
+// payload changes nothing; an accepted one can't half-land.
 export async function PUT(request: NextRequest) {
   const auth = await requireAdminApi(['owner', 'publisher'])
   if (auth instanceof NextResponse) return auth
 
   try {
     const db = getDb()
-    const { updates } = await request.json()
+    const parsed = parseTeamPresentationUpdates(await request.json())
 
-    if (!Array.isArray(updates)) {
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 })
+    }
+
+    const { updates } = parsed
+    if (updates.length === 0) {
+      return NextResponse.json({ success: true, updated: 0 })
+    }
+
+    const updateIds = updates.map(update => update.id)
+    const before = await db.select().from(teamMembers).where(inArray(teamMembers.id, updateIds))
+
+    const knownIds = new Set(before.map(row => row.id))
+    const missing = updateIds.filter(id => !knownIds.has(id))
+    if (missing.length > 0) {
       return NextResponse.json(
-        { error: 'Invalid request body' },
-        { status: 400 }
+        { error: `Unknown team member id(s): ${missing.join(', ')}` },
+        { status: 404 }
       )
     }
 
-    const updateIds = updates
-      .map((update: { id?: unknown }) => update.id)
-      .filter((id: unknown): id is string => typeof id === 'string')
-    const before = updateIds.length > 0
-      ? await db.select().from(teamMembers).where(inArray(teamMembers.id, updateIds))
-      : []
-
-    // Update each member's publication flag and display order.
-    for (const update of updates) {
-      if (!update.id) continue
-
-      if (typeof update.showOnWebsite !== 'boolean' || !Number.isInteger(update.displayOrder)) {
-        return NextResponse.json({ error: 'Each update requires a boolean showOnWebsite and integer displayOrder' }, { status: 400 })
-      }
-
-      await db
-        .update(teamMembers)
-        .set({
-          showOnWebsite: update.showOnWebsite,
-          displayOrder: update.displayOrder,
-          updatedAt: new Date()
-        })
-        .where(eq(teamMembers.id, update.id))
-    }
-
-    const after = updateIds.length > 0
-      ? await db.select().from(teamMembers).where(inArray(teamMembers.id, updateIds))
-      : []
-    await recordAdminAction({
-      action: 'team.presentation.bulk-update', targetType: 'team_members', targetId: 'bulk',
-      actorUserId: auth.userId, diff: { before, after },
+    const now = Date.now()
+    const after = before.map(row => {
+      const update = updates.find(candidate => candidate.id === row.id)!
+      return { ...row, showOnWebsite: update.showOnWebsite, displayOrder: String(update.displayOrder) }
     })
 
-    return NextResponse.json({ success: true })
+    await executeDatabaseBatch([
+      ...updates.map(update => ({
+        sql: 'UPDATE team_members SET show_on_website = ?, display_order = ?, updated_at = ? WHERE id = ?',
+        params: [update.showOnWebsite, String(update.displayOrder), now, update.id],
+        method: 'run' as const,
+      })),
+      {
+        sql: `INSERT INTO admin_audit_log
+              (id, actor_user_id, surface, action, target_type, target_id, diff, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        params: [
+          randomUUID(),
+          auth.userId,
+          'admin',
+          'team.presentation.bulk-update',
+          'team_members',
+          'bulk',
+          JSON.stringify({ before, after }),
+          now,
+        ],
+        method: 'run' as const,
+      },
+    ])
+
+    return NextResponse.json({ success: true, updated: updates.length })
   } catch (error) {
     console.error('Error updating team members:', error)
     return NextResponse.json(

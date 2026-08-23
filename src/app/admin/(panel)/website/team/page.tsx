@@ -33,6 +33,7 @@ import { QuickFactsEditor } from '@/components/team/QuickFactsEditor'
 import { CredentialsEditor } from '@/components/team/CredentialsEditor'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
+import { buildTeamPresentationUpdates } from '@/lib/admin/team-presentation'
 
 interface QuickFact {
   id: string
@@ -305,11 +306,7 @@ export default function TeamManagerPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const updates = teamMembers.map((member, index) => ({
-        id: member.id,
-        showOnWebsite: member.showOnWebsite,
-        displayOrder: index.toString()
-      }))
+      const updates = buildTeamPresentationUpdates(teamMembers)
 
       const response = await fetch('/api/admin/website/team', {
         method: 'PUT',
