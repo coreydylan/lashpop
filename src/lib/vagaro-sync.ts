@@ -10,6 +10,7 @@ import { teamMembers } from '@/db/schema/team_members'
 import { getVagaroClient } from './vagaro-client'
 import { fetchPublicServicePhotos, serviceTitleKey } from './vagaro-public-services'
 import { eq, isNotNull } from 'drizzle-orm'
+import { recordAdminAction } from './admin/audit'
 
 /**
  * Sync a single service from Vagaro to local DB.
@@ -202,7 +203,9 @@ export async function syncTeamMember(vagaroEmployee: any) {
     .limit(1)
 
   if (existing) {
-    // Update existing team member - preserve local enrichments
+    // Update existing team member - preserve local enrichments.
+    // showOnWebsite is admin-owned and is deliberately absent from this set:
+    // a Vagaro update must never publish or unpublish anyone.
     await db
       .update(teamMembers)
       .set({
@@ -218,7 +221,14 @@ export async function syncTeamMember(vagaroEmployee: any) {
     console.log(`✓ Updated team member: ${name}`)
     return existing.id
   } else {
-    // Insert new team member - set defaults for local enrichments
+    // Insert new team member - set defaults for local enrichments.
+    //
+    // PUBLICATION POLICY: a provider that arrives from Vagaro is never
+    // published automatically. This matches the canonical worker
+    // (workers/vagaro-sync/src/sync.ts, syncPublicStaff) which also creates
+    // rows with showOnWebsite: false. Passing it explicitly matters: the D1
+    // column default is 1, so omitting it would put a stranger straight on
+    // the public site the moment Vagaro fires an employee webhook.
     const [newMember] = await db
       .insert(teamMembers)
       .values({
@@ -234,11 +244,22 @@ export async function syncTeamMember(vagaroEmployee: any) {
         imageUrl: '/placeholder-team.svg', // Branded "photo coming soon" placeholder
         displayOrder: '0',
         isActive: true,
+        showOnWebsite: false,
         lastSyncedAt: new Date()
       })
       .returning({ id: teamMembers.id})
 
-    console.log(`✓ Created team member: ${name}`)
+    await recordAdminAction({
+      action: 'team.member.webhook-create',
+      surface: 'system',
+      targetType: 'team_members',
+      targetId: newMember.id,
+      actorUserId: null,
+      diff: { after: { name, vagaroEmployeeId: employeeId, isActive: true, showOnWebsite: false } },
+      notes: 'Created from a Vagaro employee webhook. Hidden until someone publishes it in the admin panel.',
+    })
+
+    console.log(`✓ Created team member (hidden pending review): ${name}`)
     return newMember.id
   }
 }
