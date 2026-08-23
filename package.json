@@ -73,7 +73,6 @@
     "plaiceholder": "^3.0.0",
     "postcss": "^8.5.26",
     "postgres": "^3.4.7",
-    "puppeteer": "^24.43.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-photo-view": "^1.2.7",
