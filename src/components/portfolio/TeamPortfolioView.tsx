@@ -244,6 +244,7 @@ export function TeamPortfolioView({}: TeamPortfolioViewProps) {
                           src={photos[currentPhotoIndex].url}
                           alt={photos[currentPhotoIndex].caption || 'Portfolio photo'}
                           fill
+                          sizes="100vw"
                           className="object-cover"
                           style={{
                             objectPosition: photos[currentPhotoIndex].cropData

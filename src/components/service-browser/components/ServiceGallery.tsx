@@ -18,6 +18,16 @@ interface ServiceGalleryProps {
 
 export function ServiceGallery({ images, isLoading }: ServiceGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(() => new Set())
+
+  const markLoaded = (key: string) => {
+    setLoadedImages((current) => {
+      if (current.has(key)) return current
+      const next = new Set(current)
+      next.add(key)
+      return next
+    })
+  }
 
   const openLightbox = (index: number) => setLightboxIndex(index)
   const closeLightbox = () => setLightboxIndex(null)
@@ -63,14 +73,17 @@ export function ServiceGallery({ images, isLoading }: ServiceGalleryProps) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.03 }}
             onClick={() => openLightbox(index)}
-            className="relative w-32 h-32 md:w-auto md:h-auto md:aspect-square shrink-0 rounded-xl overflow-hidden group"
+            className="relative w-32 h-32 md:w-auto md:h-auto md:aspect-square shrink-0 rounded-xl overflow-hidden bg-warm-sand/20 group"
           >
             <Image
               src={image.url}
               alt={image.alt || 'Service photo'}
               fill
-              className="object-cover group-hover:scale-110 transition-transform duration-300"
+              className={`object-cover group-hover:scale-110 transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none ${
+                loadedImages.has(`thumb:${image.url}`) ? 'opacity-100' : 'opacity-0'
+              }`}
               sizes="(max-width: 768px) 128px, 25vw"
+              onLoad={() => markLoaded(`thumb:${image.url}`)}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
           </motion.button>
@@ -114,15 +127,18 @@ export function ServiceGallery({ images, isLoading }: ServiceGalleryProps) {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.2 }}
-              className="relative w-[90vw] h-[80vh] md:w-[70vw] md:h-[80vh]"
+              className="relative w-[90vw] h-[80vh] md:w-[70vw] md:h-[80vh] bg-white/5"
               onClick={(e) => e.stopPropagation()}
             >
               <Image
                 src={images[lightboxIndex].url}
                 alt={images[lightboxIndex].alt || 'Service photo'}
                 fill
-                className="object-contain"
+                className={`object-contain transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+                  loadedImages.has(`lightbox:${images[lightboxIndex].url}`) ? 'opacity-100' : 'opacity-0'
+                }`}
                 sizes="90vw"
+                onLoad={() => markLoaded(`lightbox:${images[lightboxIndex].url}`)}
                 priority
               />
             </motion.div>

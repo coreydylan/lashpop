@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { Suspense, useState, useEffect, useRef, useCallback, type ComponentProps } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DevModeProvider } from '@/contexts/DevModeContext'
@@ -111,6 +111,37 @@ interface PathFormData {
 
 // Custom easing curve
 const smoothEase = [0.23, 1, 0.32, 1] as const
+
+function FadeInPhoto({
+  className = '',
+  onLoad,
+  src,
+  alt,
+  ...props
+}: ComponentProps<typeof Image>) {
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
+  const sourceKey = typeof src === 'string'
+    ? src
+    : 'src' in src
+      ? src.src
+      : src.default.src
+  const isLoaded = loadedSrc === sourceKey
+
+  return (
+    <Image
+      {...props}
+      src={src}
+      alt={alt}
+      className={`${className} transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none ${
+        isLoaded ? 'opacity-100' : 'opacity-0'
+      }`}
+      onLoad={(event) => {
+        setLoadedSrc(sourceKey)
+        onLoad?.(event)
+      }}
+    />
+  )
+}
 
 // Employee Benefits Data
 const employeeBenefits = [
@@ -746,12 +777,13 @@ export default function WorkWithUsPage() {
                   }`}
                 >
                   {/* Card Image */}
-                  <div className="relative h-32 md:h-40 overflow-hidden">
-                    <Image
+                  <div className="relative h-32 md:h-40 overflow-hidden bg-warm-sand/20">
+                    <FadeInPhoto
                       src={card.image}
                       alt={card.title}
                       fill
-                      className={`object-cover transition-transform duration-500 group-hover:scale-105 ${card.id === 'employee' ? 'object-top' : card.id === 'booth' ? 'object-top' : ''}`}
+                      sizes="(max-width: 767px) calc(100vw - 40px), 360px"
+                      className={`object-cover group-hover:scale-105 ${card.id === 'employee' ? 'object-top' : card.id === 'booth' ? 'object-top' : ''}`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/40 to-transparent" />
 
@@ -1048,11 +1080,12 @@ export default function WorkWithUsPage() {
                   </div>
 
                   {/* Image - Desktop */}
-                  <div className="hidden lg:block relative rounded-2xl overflow-hidden h-64">
-                    <Image
+                  <div className="hidden lg:block relative rounded-2xl overflow-hidden h-64 bg-warm-sand/20">
+                    <FadeInPhoto
                       src="/lashpop-images/culture/team-front-desk.jpeg"
                       alt="LashPop team"
                       fill
+                      sizes="480px"
                       className="object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
@@ -1229,11 +1262,12 @@ export default function WorkWithUsPage() {
                   </div>
 
                   {/* Image */}
-                  <div className="relative rounded-2xl overflow-hidden h-48">
-                    <Image
+                  <div className="relative rounded-2xl overflow-hidden h-48 bg-warm-sand/20">
+                    <FadeInPhoto
                       src="/lashpop-images/culture/training.webp"
                       alt="LashPop training"
                       fill
+                      sizes="(max-width: 767px) calc(100vw - 40px), 480px"
                       className="object-cover"
                     />
                     <div className="absolute inset-0 bg-gradient-to-r from-charcoal/60 to-transparent" />
@@ -1260,7 +1294,9 @@ export default function WorkWithUsPage() {
       </AnimatePresence>
 
       {/* Team Photo Carousel */}
-      <TeamCarousel />
+      <Suspense fallback={<div aria-hidden className="h-[272px] md:h-[320px]" />}>
+        <TeamCarousel />
+      </Suspense>
 
       {/* WHY LASHPOP SECTION - The LashPop Way */}
       <section className="py-14 md:py-24 bg-gradient-to-b from-ivory to-cream/30">
@@ -1387,11 +1423,12 @@ export default function WorkWithUsPage() {
             viewport={{ once: true }}
           >
             {/* Background Image */}
-            <div className="absolute inset-0">
-              <Image
+            <div className="absolute inset-0 bg-warm-sand/20">
+              <FadeInPhoto
                 src="/lashpop-images/culture/team-lounge.jpg"
                 alt="LashPop studio"
                 fill
+                sizes="(max-width: 767px) calc(100vw - 40px), 896px"
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-charcoal/70" />
