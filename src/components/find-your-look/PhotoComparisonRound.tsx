@@ -84,6 +84,7 @@ export function PhotoComparisonRound({
           whileTap={isLocked ? {} : { scale: 0.97 }}
           onClick={() => handleSelect("left", pair.leftStyle)}
           disabled={isLocked}
+          aria-pressed={feedbackSide === "left"}
           className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <QuizBlurFadeImage
@@ -96,7 +97,16 @@ export function PhotoComparisonRound({
           {/* Selection overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/0 via-transparent to-dusty-rose/0 group-hover:from-dusty-rose/15 group-hover:to-dusty-rose/5 transition-all duration-300" />
           {/* Border glow on hover */}
-          <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-dusty-rose/40 transition-colors duration-300" />
+          <div
+            className={`absolute inset-0 rounded-2xl border-2 transition-colors duration-200 ${
+              feedbackSide === "left"
+                ? "border-dusty-rose/80"
+                : "border-transparent group-hover:border-dusty-rose/40"
+            }`}
+          />
+          <AnimatePresence>
+            {feedbackSide === "left" && <PhotoSelectedIndicator key="left-selected" />}
+          </AnimatePresence>
         </motion.button>
 
         {/* Right Photo */}
@@ -114,6 +124,7 @@ export function PhotoComparisonRound({
           whileTap={isLocked ? {} : { scale: 0.97 }}
           onClick={() => handleSelect("right", pair.rightStyle)}
           disabled={isLocked}
+          aria-pressed={feedbackSide === "right"}
           className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <QuizBlurFadeImage
@@ -126,7 +137,16 @@ export function PhotoComparisonRound({
           {/* Selection overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/0 via-transparent to-dusty-rose/0 group-hover:from-dusty-rose/15 group-hover:to-dusty-rose/5 transition-all duration-300" />
           {/* Border glow on hover */}
-          <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-dusty-rose/40 transition-colors duration-300" />
+          <div
+            className={`absolute inset-0 rounded-2xl border-2 transition-colors duration-200 ${
+              feedbackSide === "right"
+                ? "border-dusty-rose/80"
+                : "border-transparent group-hover:border-dusty-rose/40"
+            }`}
+          />
+          <AnimatePresence>
+            {feedbackSide === "right" && <PhotoSelectedIndicator key="right-selected" />}
+          </AnimatePresence>
         </motion.button>
       </div>
 
@@ -142,80 +162,46 @@ export function PhotoComparisonRound({
         Neither of these
       </motion.button>
 
-      <AnimatePresence>
-        {feedbackSide && (
-          <PhotoSelectionFeedback
-            key={`feedback-${feedbackSide}`}
-            selectedSide={feedbackSide}
-            onComplete={() => {}}
-          />
-        )}
-      </AnimatePresence>
     </div>
   )
 }
 
-// Animation variant for selection feedback
-export function PhotoSelectionFeedback({
-  selectedSide,
-  onComplete,
-}: {
-  selectedSide: "left" | "right"
-  onComplete: () => void
-}) {
+function PhotoSelectedIndicator() {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      onAnimationComplete={onComplete}
-      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+      transition={{ duration: 0.16 }}
+      className="pointer-events-none absolute inset-0 flex items-start justify-end bg-charcoal/10 p-3"
     >
-      {/* Ripple effect */}
       <motion.div
-        initial={{ scale: 0.5, opacity: 0.8 }}
-        animate={{ scale: 3, opacity: 0 }}
+        initial={{ scale: 0.85, y: -4 }}
+        animate={{ scale: 1, y: 0 }}
         transition={{
-          duration: 0.6,
-          ease: "easeOut"
-        }}
-        className={`absolute w-24 h-24 rounded-full bg-dusty-rose/30 ${
-          selectedSide === "left" ? "left-[25%]" : "right-[25%]"
-        }`}
-        style={{
-          top: "50%",
-          transform: "translateY(-50%)"
-        }}
-      />
-
-      {/* Check icon */}
-      <motion.div
-        initial={{ scale: 0.5, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{
-          duration: 0.3,
+          duration: 0.22,
           type: "spring",
-          stiffness: 200,
-          damping: 15
+          stiffness: 260,
+          damping: 20,
         }}
-        className={`w-16 h-16 rounded-full bg-gradient-to-br from-dusty-rose to-terracotta flex items-center justify-center shadow-xl ${
-          selectedSide === "left" ? "ml-[-25%]" : "mr-[-25%]"
-        }`}
+        data-quiz-selection-indicator
+        className="flex h-9 w-9 items-center justify-center rounded-lg border border-dusty-rose/70 bg-cream text-terracotta shadow-md"
       >
         <motion.svg
           viewBox="0 0 24 24"
           fill="none"
-          stroke="white"
-          strokeWidth="3"
+          stroke="currentColor"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="w-8 h-8"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          className="h-5 w-5"
         >
-          <motion.path d="M5 12l5 5L20 7" />
+          <motion.path
+            d="M5 12l5 5L20 7"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.2, delay: 0.05 }}
+          />
         </motion.svg>
       </motion.div>
     </motion.div>

@@ -101,6 +101,34 @@ test('quiz reaches one stable result image when every comparison is skipped', as
   await expect(resultImage).toHaveAttribute('src', stableSource ?? '')
 })
 
+test('quiz keeps its selection confirmation inside the chosen photo', async ({ page }) => {
+  await preparePublicHome(page)
+
+  await page.getByRole('button', { name: 'Take Our Lash Quiz' }).first().click()
+  const quiz = page.locator('[role="dialog"]').first()
+  await expect(quiz).toBeVisible()
+  await quiz.getByRole('button', { name: 'Start Quiz' }).click()
+  await quiz.getByRole('button', { name: /Sunscreen, lip balm/ }).click()
+  await quiz.getByRole('button', { name: /Barely there/ }).click()
+
+  const selectedPhoto = quiz.getByRole('button', { name: 'Left option' })
+  await expect(selectedPhoto).toBeVisible()
+  await selectedPhoto.click()
+  await expect(selectedPhoto).toHaveAttribute('aria-pressed', 'true')
+
+  const indicator = selectedPhoto.locator('[data-quiz-selection-indicator]')
+  await expect(indicator).toBeVisible()
+
+  const photoBox = await selectedPhoto.boundingBox()
+  const indicatorBox = await indicator.boundingBox()
+  expect(photoBox).not.toBeNull()
+  expect(indicatorBox).not.toBeNull()
+  expect(indicatorBox!.x).toBeGreaterThanOrEqual(photoBox!.x)
+  expect(indicatorBox!.y).toBeGreaterThanOrEqual(photoBox!.y)
+  expect(indicatorBox!.x + indicatorBox!.width).toBeLessThanOrEqual(photoBox!.x + photoBox!.width)
+  expect(indicatorBox!.y + indicatorBox!.height).toBeLessThanOrEqual(photoBox!.y + photoBox!.height)
+})
+
 test('booth rental benefits include the approved maternity leave term', async ({ page }) => {
   await page.goto('/work-with-us', { waitUntil: 'domcontentloaded' })
   await page.getByRole('button', { name: 'Booth Rental - expand' }).click()
