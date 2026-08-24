@@ -20,10 +20,10 @@
 //  - Cache key is format-aware and responses carry `Vary: Accept`, so an AVIF
 //    payload is never served to a WebP-only client (or vice versa).
 //
-// Cache-busting note: transformed variants are edge-cached immutable for a
-// year, keyed by URL+params. If a /public image ever changes content under
-// the same filename, bump a `v` query param at the call site (the loader
-// passes unknown params through to the cache key).
+// Successful transformed variants are edge-cached immutable for a year. The
+// internal cache version is deliberately part of every key so a pipeline fix
+// cannot keep serving responses written by an older Worker implementation.
+// Failed transforms are never cached and never masquerade as optimized files.
 
 // 3840 covers a 2x-retina ~1920-CSS-px hero without browser upscale — a 2400
 // cap forced 1.5-1.7x upscaling on large Mac displays, which read as blurry.
@@ -32,6 +32,7 @@ const MAX_HEIGHT = 4096
 // 90, not 82: faces dominate this site and AVIF/WebP at 82 visibly smooths
 // skin texture vs the originals. Bytes are still 10-20x under the raw files.
 const DEFAULT_QUALITY = 90
+const CACHE_VERSION = 'stream-input-v2'
 const SITE_ORIGIN = 'https://lashpop.vercel.app'
 // Only proxy site paths under this prefix — everything image-like in /public
 // lives here, and it keeps the worker from becoming an open proxy to the app.
@@ -57,9 +58,9 @@ function negotiateFormat(request, override) {
   return 'jpeg'
 }
 
-// Resolve the source bytes for a request. Returns { body: ArrayBuffer,
-// contentType } or an error Response. Buffering (vs streaming) lets the
-// transform-failure fallback reuse the same bytes without a second fetch.
+// Resolve the source bytes for a request. The Images binding accepts a
+// ReadableStream; passing an ArrayBuffer throws before transformation begins.
+// Keep every source streaming so large originals do not consume Worker memory.
 async function getSource(url, key, env) {
   if (key === 'ext') {
     const target = url.searchParams.get('url') || ''
@@ -74,7 +75,8 @@ async function getSource(url, key, env) {
     }
     const resp = await fetch(ext.toString(), { cf: { cacheTtl: 86400, cacheEverything: true } })
     if (!resp.ok) return new Response('Upstream fetch failed', { status: 502 })
-    return { body: await resp.arrayBuffer(), contentType: resp.headers.get('content-type') || 'image/jpeg' }
+    if (!resp.body) return new Response('Upstream response had no body', { status: 502 })
+    return { body: resp.body, contentType: resp.headers.get('content-type') || 'image/jpeg' }
   }
 
   if (key.startsWith('site/')) {
@@ -84,12 +86,18 @@ async function getSource(url, key, env) {
     }
     const resp = await fetch(`${SITE_ORIGIN}/${path}`, { cf: { cacheTtl: 86400, cacheEverything: true } })
     if (!resp.ok) return new Response('Not found', { status: resp.status === 404 ? 404 : 502 })
-    return { body: await resp.arrayBuffer(), contentType: resp.headers.get('content-type') || 'image/jpeg' }
+    if (!resp.body) return new Response('Upstream response had no body', { status: 502 })
+    return { body: resp.body, contentType: resp.headers.get('content-type') || 'image/jpeg' }
   }
 
   const obj = await env.BUCKET.get(key)
   if (!obj) return new Response('Not found', { status: 404 })
-  return { body: await obj.arrayBuffer(), contentType: obj.httpMetadata?.contentType || 'image/jpeg' }
+  if (!obj.body) return new Response('Object had no body', { status: 502 })
+  return { body: obj.body, contentType: obj.httpMetadata?.contentType || 'image/jpeg' }
+}
+
+function messageFromError(error) {
+  return error instanceof Error ? error.message : String(error)
 }
 
 const lashpopImageWorker = {
@@ -143,10 +151,15 @@ const lashpopImageWorker = {
     const cacheUrl = new URL(request.url)
     cacheUrl.searchParams.set('fmt', format)
     cacheUrl.searchParams.set('dpr', String(dpr))
+    cacheUrl.searchParams.set('lpv', CACHE_VERSION)
     const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' })
     const cache = caches.default
     const hit = await cache.match(cacheKey)
-    if (hit) return hit
+    if (hit) {
+      return request.method === 'HEAD'
+        ? new Response(null, { status: hit.status, headers: hit.headers })
+        : hit
+    }
 
     const src = await getSource(url, key, env)
     if (src instanceof Response) return src
@@ -179,9 +192,26 @@ const lashpopImageWorker = {
           .transform(transform)
           .output({ format: OUTPUT[format], quality })
         resp = out.response()
-      } catch (e) {
-        // Transform failed (unsupported/corrupt input) -> serve original bytes.
-        resp = new Response(src.body, { headers: { 'content-type': src.contentType } })
+        if (!resp.ok) {
+          throw new Error(`Images binding returned HTTP ${resp.status}`)
+        }
+      } catch (error) {
+        console.error(JSON.stringify({
+          message: 'image transformation failed',
+          error: messageFromError(error),
+          key,
+          width: renderWidth,
+          height: renderHeight || undefined,
+          format,
+        }))
+        return new Response('Image transformation failed', {
+          status: 502,
+          headers: {
+            'cache-control': 'private, no-store',
+            'content-type': 'text/plain; charset=utf-8',
+            'x-lp-img-error': 'transform-failed',
+          },
+        })
       }
     }
 
@@ -192,8 +222,19 @@ const lashpopImageWorker = {
     headers.set('x-lp-img-format', format)
     if (renderHeight) headers.set('x-lp-img-crop', `${renderWidth}x${renderHeight}`)
     const final = new Response(resp.body, { status: resp.status, headers })
-    ctx.waitUntil(cache.put(cacheKey, final.clone()))
-    return final
+    ctx.waitUntil(
+      cache.put(cacheKey, final.clone()).catch((error) => {
+        console.warn(JSON.stringify({
+          message: 'image cache write failed',
+          error: messageFromError(error),
+          key,
+          format,
+        }))
+      }),
+    )
+    return request.method === 'HEAD'
+      ? new Response(null, { status: final.status, headers: final.headers })
+      : final
   },
 }
 

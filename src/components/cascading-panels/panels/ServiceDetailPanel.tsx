@@ -200,6 +200,7 @@ export function ServiceDetailPanel({ panel }: ServiceDetailPanelProps) {
                       src={asset.filePath}
                       alt={asset.fileName}
                       fill
+                      sizes="(max-width: 767px) calc(50vw - 22px), 96px"
                       className="object-cover transition-transform group-hover:scale-110"
                     />
                   </motion.div>

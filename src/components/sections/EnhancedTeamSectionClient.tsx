@@ -1365,6 +1365,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                           alt=""
                                           aria-hidden
                                           fill
+                                          sizes="100vw"
                                           priority
                                           className="object-cover scale-110 blur-2xl opacity-60"
                                         />
@@ -1373,6 +1374,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                                         src={drawerSrc}
                                         alt={selectedMember.name}
                                         fill
+                                        sizes="100vw"
                                         className={
                                           isPlaceholder
                                             ? "object-contain p-8"

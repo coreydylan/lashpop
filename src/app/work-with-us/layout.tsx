@@ -1,5 +1,10 @@
+import type { ReactNode } from 'react'
 import type { Metadata } from 'next'
 import { getPageSEO } from '@/actions/seo'
+import type { CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
+import { WorkWithUsPhotosProvider } from '@/components/work-with-us/WorkWithUsPhotosProvider'
+
+export const dynamic = 'force-dynamic'
 
 // The work-with-us page itself is a client component, so its metadata lives
 // here in a server layout. Reads the admin-configured "Work With Us" SEO
@@ -42,6 +47,32 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function WorkWithUsLayout({ children }: { children: React.ReactNode }) {
-  return children
+async function loadCarouselPhotos(): Promise<CarouselDisplayPhoto[]> {
+  try {
+    // Defer the action module because it initializes the Cloudflare DB client
+    // at module evaluation. Build workers intentionally do not receive runtime
+    // database credentials; the live request does.
+    const { getEnabledCarouselPhotos } = await import('@/actions/work-with-us-carousel')
+    return await getEnabledCarouselPhotos()
+  } catch (error) {
+    console.error(JSON.stringify({
+      message: 'failed to load Work With Us carousel photos',
+      error: error instanceof Error ? error.message : String(error),
+    }))
+    return []
+  }
+}
+
+export default function WorkWithUsLayout({ children }: { children: ReactNode }) {
+  // Start the database request with the route, but let the page stream while
+  // only the carousel waits inside its Suspense boundary.
+  const photosPromise = process.env.PLAYWRIGHT_FIXTURES === '1'
+    ? Promise.resolve([])
+    : loadCarouselPhotos()
+
+  return (
+    <WorkWithUsPhotosProvider photosPromise={photosPromise}>
+      {children}
+    </WorkWithUsPhotosProvider>
+  )
 }

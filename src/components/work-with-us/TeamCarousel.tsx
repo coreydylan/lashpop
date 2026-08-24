@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { use, useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import { AnimatePresence, motion } from 'framer-motion'
 import useEmblaCarousel from 'embla-carousel-react'
@@ -8,27 +8,89 @@ import AutoScroll from 'embla-carousel-auto-scroll'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { getEnabledCarouselPhotos, type CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
+import { useWorkWithUsPhotos } from './WorkWithUsPhotosProvider'
 
 interface TeamCarouselProps {
   photos?: CarouselDisplayPhoto[]
 }
 
+function TeamLightboxPhoto({
+  photo,
+  src,
+  alt,
+}: {
+  photo: CarouselDisplayPhoto
+  src: string
+  alt: string
+}) {
+  const [loaded, setLoaded] = useState(false)
+  const hasDimensions = Boolean(photo.width && photo.height)
+  const ratio = hasDimensions ? photo.width! / photo.height! : 1
+  const frameStyle = hasDimensions
+    ? {
+        aspectRatio: `${photo.width} / ${photo.height}`,
+        width: `min(1200px, 92vw, calc(82vh * ${ratio}))`,
+      }
+    : { width: 'min(600px, 92vw)', aspectRatio: '1 / 1' }
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-2xl bg-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.4)]"
+      style={frameStyle}
+    >
+      {photo.blurDataUrl && (
+        <span
+          aria-hidden
+          className={`absolute -inset-5 scale-110 bg-cover bg-center blur-2xl transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+            loaded ? 'opacity-0' : 'opacity-100'
+          }`}
+          style={{ backgroundImage: `url("${photo.blurDataUrl}")` }}
+        />
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element -- The image-worker URL is already optimized and the stored dimensions reserve an exact lightbox frame. */}
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        onLoad={() => setLoaded(true)}
+        className={`absolute inset-0 h-full w-full object-contain select-none pointer-events-none transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+    </div>
+  )
+}
+
 export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
   const ref = useRef(null)
+  const providedPhotosPromise = useWorkWithUsPhotos()
+  const providedPhotos = providedPhotosPromise ? use(providedPhotosPromise) : undefined
+  const resolvedInitialPhotos = initialPhotos ?? providedPhotos
   // Index into the (un-duplicated) source list, or null when the lightbox is closed
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-  const [photos, setPhotos] = useState<CarouselDisplayPhoto[]>(initialPhotos || [])
-  const [loading, setLoading] = useState(!initialPhotos)
+  const [fetchedPhotos, setFetchedPhotos] = useState<CarouselDisplayPhoto[] | null>(null)
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(() => new Set())
+  const photos = useMemo(
+    () => resolvedInitialPhotos ?? fetchedPhotos ?? [],
+    [fetchedPhotos, resolvedInitialPhotos],
+  )
+  const loading = resolvedInitialPhotos === undefined && fetchedPhotos === null
 
-  // Fetch photos on mount if not provided via props
+  // The route layout supplies photos during server rendering so the carousel
+  // can reserve its space immediately. Keep the action fallback for isolated
+  // component usage outside that layout.
   useEffect(() => {
-    if (!initialPhotos) {
-      getEnabledCarouselPhotos().then((data) => {
-        setPhotos(data)
-        setLoading(false)
-      })
-    }
-  }, [initialPhotos])
+    if (resolvedInitialPhotos !== undefined) return
+
+    let active = true
+    getEnabledCarouselPhotos().then((data) => {
+      if (active) setFetchedPhotos(data)
+    }).catch((error) => {
+      console.error('[work-with-us] failed to load carousel photos', error)
+      if (active) setFetchedPhotos([])
+    })
+    return () => { active = false }
+  }, [resolvedInitialPhotos])
 
   // Initialize Embla with AutoScroll
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -78,57 +140,25 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
     return src
   }, [])
 
-  // Warm the lightbox-sized variant of every team photo into the browser
-  // cache as soon as photos arrive — without this the first tap waits on a
-  // cold CF Image fetch (~250-600 ms). We kick off via requestIdleCallback
-  // so the prefetch never competes with hydration or layout. No
-  // window.load gate here because the Work With Us page is a route
-  // navigation: photos come from a client fetch that resolves AFTER
-  // first paint, so by definition the network is in its post-load
-  // quiet phase. Waiting for window.load on top of that just adds lag
-  // before the first idle tick.
+  // Once a visitor opens the lightbox, warm only the neighboring frames. This
+  // matches the homepage gallery and avoids downloading every 1600px image on
+  // visitors who never open the carousel.
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (photos.length === 0) return
+    if (lightboxIndex === null || total <= 1) return
 
-    let cancelled = false
-    let i = 0
+    const adjacentIndexes = new Set([
+      (lightboxIndex - 1 + total) % total,
+      (lightboxIndex + 1) % total,
+    ])
 
-    type IdleCb = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void
-    const idle: (cb: IdleCb, opts?: { timeout: number }) => number =
-      (window as { requestIdleCallback?: typeof idle }).requestIdleCallback ??
-      ((cb) => window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), 16))
-
-    // STRICTLY serialized, low-priority prefetch. The previous version fired
-    // 3 requests immediately + one per idle tick at default priority — on a
-    // cold edge cache each lightbox variant is a ~1s worker transform, so
-    // ~20 of them saturated the connection pool and the VISIBLE carousel
-    // thumbnails queued behind them (the "15s blur-in" complaint). Now each
-    // prefetch waits for the previous to finish, carries fetchPriority=low,
-    // and doesn't start until the visible images have had 3s of runway.
-    const prefetch = (idx: number, done: () => void) => {
-      if (cancelled || idx >= photos.length) return
-      const url = lightboxSrc(photos[idx].filePath)
-      const img = new globalThis.Image()
-      img.decoding = 'async'
-      img.referrerPolicy = 'no-referrer'
-      ;(img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
-      img.onload = img.onerror = () => done()
-      img.src = url
-    }
-
-    const tick = () => {
-      if (cancelled || i >= photos.length) return
-      prefetch(i++, () => idle(tick, { timeout: 2000 }))
-    }
-
-    const startTimer = window.setTimeout(() => idle(tick, { timeout: 2000 }), 3000)
-
-    return () => {
-      cancelled = true
-      window.clearTimeout(startTimer)
-    }
-  }, [photos, lightboxSrc])
+    adjacentIndexes.forEach((index) => {
+      const image = new globalThis.Image()
+      image.decoding = 'async'
+      image.referrerPolicy = 'no-referrer'
+      ;(image as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
+      image.src = lightboxSrc(photos[index].filePath)
+    })
+  }, [lightboxIndex, lightboxSrc, photos, total])
 
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
   const goPrev = useCallback(
@@ -177,15 +207,29 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
                   onClick={() => setLightboxIndex(index % total)}
                 >
                   <div className="relative w-full h-full overflow-hidden rounded-2xl bg-warm-sand/20 transform transition-transform duration-300 group-hover:scale-[1.02]">
+                    {item.blurDataUrl && (
+                      <span
+                        aria-hidden
+                        className={`absolute -inset-4 scale-110 bg-cover bg-center blur-xl transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+                          loadedImages.has(item.filePath) ? 'opacity-0' : 'opacity-100'
+                        }`}
+                        style={{ backgroundImage: `url("${item.blurDataUrl}")` }}
+                      />
+                    )}
                     <Image
                       src={item.filePath}
                       alt={`Team photo ${(index % total) + 1}`}
                       fill
                       sizes="(max-width: 768px) 224px, 256px"
-                      className="object-cover"
+                      className="object-cover transition-opacity duration-300 ease-out motion-reduce:transition-none"
+                      style={{ opacity: loadedImages.has(item.filePath) ? 1 : 0 }}
                       draggable={false}
-                      placeholder={item.blurDataUrl ? 'blur' : 'empty'}
-                      blurDataURL={item.blurDataUrl ?? undefined}
+                      onLoad={() => setLoadedImages((current) => {
+                        if (current.has(item.filePath)) return current
+                        const next = new Set(current)
+                        next.add(item.filePath)
+                        return next
+                      })}
                     />
 
                     {/* Clean hover - no dark overlay or icon */}
@@ -294,18 +338,10 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 280, damping: 30 }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- Natural dimensions keep the lightbox frame tight; the image-worker URL is already optimized. */}
-              <img
+              <TeamLightboxPhoto
+                photo={activePhoto}
                 src={lightboxSrc(activePhoto.filePath)}
                 alt={`Team photo ${lightboxIndex! + 1}`}
-                draggable={false}
-                className="block rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.4)] select-none pointer-events-none"
-                style={{
-                  maxWidth: 'min(1200px, 92vw)',
-                  maxHeight: '82vh',
-                  width: 'auto',
-                  height: 'auto',
-                }}
               />
 
               {/* Footer: counter only — Work With Us photos aren't IG posts

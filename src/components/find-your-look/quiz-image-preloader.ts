@@ -19,10 +19,16 @@ export interface QuizImageLoadPlan {
   background: QuizImageCandidate[]
 }
 
+interface CachedQuizImage {
+  image: HTMLImageElement
+  promise: Promise<void>
+}
+
 // Retain the detached image elements for the lifetime of the page. Besides
 // preventing duplicate requests when the quiz is reopened, this lets the
 // browser keep the decoded image data warm between comparison rounds.
-const preloadCache = new Map<string, HTMLImageElement>()
+const preloadCache = new Map<string, CachedQuizImage>()
+let backgroundGeneration = 0
 
 export function getQuizPhotoUrl(photo: QuizPhoto): string {
   return photo.cropUrl || photo.filePath
@@ -90,24 +96,61 @@ export function getQuizImageSrcSet(candidate: QuizImageCandidate): string {
     .join(', ')
 }
 
-function requestQuizImage(candidate: QuizImageCandidate, priority: 'high' | 'low') {
-  if (typeof window === 'undefined') return
+function requestQuizImage(
+  candidate: QuizImageCandidate,
+  priority: 'high' | 'low',
+): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve()
 
   const cacheKey = `${candidate.src}|${candidate.sizes}`
-  if (preloadCache.has(cacheKey)) return
+  const cached = preloadCache.get(cacheKey)
+  if (cached) return cached.promise
 
   const image = new window.Image()
   image.decoding = 'async'
   image.fetchPriority = priority
   image.sizes = candidate.sizes
+
+  const promise = new Promise<void>((resolve) => {
+    image.onload = () => {
+      void image.decode().catch(() => undefined).finally(resolve)
+    }
+    image.onerror = () => {
+      preloadCache.delete(cacheKey)
+      resolve()
+    }
+  })
+
+  preloadCache.set(cacheKey, { image, promise })
   image.srcset = getQuizImageSrcSet(candidate)
   image.src = cfImageLoader({
     src: candidate.src,
     width: candidate.widths[candidate.widths.length - 1],
     quality: 90,
   })
-  image.onerror = () => preloadCache.delete(cacheKey)
-  preloadCache.set(cacheKey, image)
+  return promise
+}
+
+function isConstrainedConnection(): boolean {
+  const connection = (navigator as Navigator & {
+    connection?: { saveData?: boolean; effectiveType?: string }
+  }).connection
+
+  return Boolean(
+    connection?.saveData ||
+    connection?.effectiveType === 'slow-2g' ||
+    connection?.effectiveType === '2g',
+  )
+}
+
+function scheduleIdle(callback: () => void): number {
+  const idle = (window as Window & {
+    requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
+  }).requestIdleCallback
+
+  return idle
+    ? idle(callback, { timeout: 1500 })
+    : window.setTimeout(callback, 150)
 }
 
 export function preloadQuizImages(
@@ -118,13 +161,27 @@ export function preloadQuizImages(
 
   if (typeof window === 'undefined') return plan
 
-  plan.priority.forEach((candidate) => requestQuizImage(candidate, 'high'))
+  const generation = ++backgroundGeneration
+  const foreground = plan.priority.map((candidate) => requestQuizImage(candidate, 'high'))
 
-  // Let the two high-priority requests enter the browser queue first, then
-  // enqueue the rest in the very next microtask without waiting for them.
-  window.queueMicrotask(() => {
-    plan.background.forEach((candidate) => requestQuizImage(candidate, 'low'))
-  })
+  // The first comparison pair is the only immediate work. Once it has loaded,
+  // warm the remaining candidates one at a time during idle periods. Respect
+  // Save-Data and constrained connections instead of turning one quiz open
+  // into a background download of the entire photo library.
+  if (!isConstrainedConnection()) {
+    void Promise.allSettled(foreground).then(() => {
+      if (generation !== backgroundGeneration) return
+
+      let index = 0
+      const loadNext = () => {
+        if (generation !== backgroundGeneration || index >= plan.background.length) return
+        const candidate = plan.background[index++]
+        void requestQuizImage(candidate, 'low').then(() => scheduleIdle(loadNext))
+      }
+
+      scheduleIdle(loadNext)
+    })
+  }
 
   return plan
 }

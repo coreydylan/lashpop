@@ -36,6 +36,7 @@ const VAGARO_BASE_BOOKING_URL = 'https://www.vagaro.com/lashpop32';
 
 export function ServiceDetailClient({ service, gallery }: ServiceDetailClientProps) {
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(() => new Set());
 
   const priceDisplay = `$${(service.priceStarting / 100).toFixed(0)}+`;
   const visiblePhotos = showAllPhotos ? gallery : gallery.slice(0, 8);
@@ -48,6 +49,15 @@ export function ServiceDetailClient({ service, gallery }: ServiceDetailClientPro
     window.open(VAGARO_BASE_BOOKING_URL, '_blank', 'noopener,noreferrer');
   };
 
+  const markImageLoaded = (src: string) => {
+    setLoadedImages((current) => {
+      if (current.has(src)) return current;
+      const next = new Set(current);
+      next.add(src);
+      return next;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-ivory">
       {/* Hero Section */}
@@ -57,7 +67,11 @@ export function ServiceDetailClient({ service, gallery }: ServiceDetailClientPro
             src={service.imageUrl}
             alt={service.name}
             fill
-            className="object-cover"
+            sizes="100vw"
+            className={`object-cover transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+              loadedImages.has(service.imageUrl) ? 'opacity-100' : 'opacity-0'
+            }`}
+            onLoad={() => markImageLoaded(service.imageUrl!)}
             priority
           />
         ) : (
@@ -136,13 +150,17 @@ export function ServiceDetailClient({ service, gallery }: ServiceDetailClientPro
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.03 }}
-                      className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer"
+                      className="relative aspect-square rounded-xl overflow-hidden bg-warm-sand/20 group cursor-pointer"
                     >
                       <Image
                         src={asset.filePath}
                         alt={asset.fileName}
                         fill
-                        className="object-cover transition-transform group-hover:scale-110"
+                        sizes="(max-width: 767px) calc(50vw - 22px), 168px"
+                        className={`object-cover transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none group-hover:scale-110 ${
+                          loadedImages.has(asset.filePath) ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        onLoad={() => markImageLoaded(asset.filePath)}
                       />
                     </motion.div>
                   ))}
