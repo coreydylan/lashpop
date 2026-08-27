@@ -19,6 +19,24 @@
       "database_id": "5ff90fd7-2a8d-4c0e-baaa-341f33f8aa87"
     }
   ],
+  "env": {
+    "admin_preview": {
+      "name": "lashpop-vagaro-sync-admin-preview",
+      "triggers": {
+        "crons": []
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "lashpop-admin-preview",
+          "database_id": "41c05e0a-8094-4703-a6dd-b2efd003e91f"
+        }
+      ],
+      "vars": {
+        "VAGARO_PUBLIC_BUSINESS_ID": "32173928"
+      }
+    }
+  },
   "observability": {
     "enabled": true
   }

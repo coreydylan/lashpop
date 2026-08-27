@@ -277,21 +277,18 @@ export default function InstagramCarouselEditor() {
 
               {/* Toggle Options */}
               <div className="space-y-3 pt-2">
-                <label className="flex items-center justify-between cursor-pointer group">
-                  <span className="text-sm text-dune/70 group-hover:text-dune transition-colors">
-                    Auto-scroll
-                  </span>
-                  <div 
-                    onClick={() => updateSetting('autoScroll', !settings.autoScroll)}
-                    className={`w-12 h-7 rounded-full transition-colors relative cursor-pointer ${
-                      settings.autoScroll ? 'bg-terracotta' : 'bg-sage/30'
-                    }`}
-                  >
-                    <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
-                      settings.autoScroll ? 'left-6' : 'left-1'
-                    }`} />
-                  </div>
-                </label>
+                <SettingToggle
+                  label="Auto-scroll"
+                  description="Move the gallery automatically until a visitor interacts with it."
+                  checked={settings.autoScroll}
+                  onChange={(checked) => updateSetting('autoScroll', checked)}
+                />
+                <SettingToggle
+                  label="Show captions"
+                  description="Show Instagram captions on gallery cards and in the photo viewer."
+                  checked={settings.showCaptions}
+                  onChange={(checked) => updateSetting('showCaptions', checked)}
+                />
               </div>
             </div>
           </div>
@@ -370,6 +367,39 @@ export default function InstagramCarouselEditor() {
           </div>
         </motion.div>
       </div>
+    </div>
+  )
+}
+
+function SettingToggle({
+  label,
+  description,
+  checked,
+  onChange,
+}: {
+  label: string
+  description: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-sage/15 bg-white/40 p-3">
+      <div>
+        <p className="text-sm font-medium text-dune/75">{label}</p>
+        <p className="mt-1 text-xs leading-5 text-dune/50">{description}</p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dusty-rose/50 ${
+          checked ? 'bg-terracotta' : 'bg-sage/30'
+        }`}
+      >
+        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${checked ? 'left-6' : 'left-1'}`} />
+      </button>
     </div>
   )
 }

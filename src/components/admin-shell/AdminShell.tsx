@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { ExternalLink, Menu, X } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { ExternalLink, LogOut, Menu, X } from 'lucide-react'
 import { ADMIN_AREAS, findAreaByPath, findSectionByPath, type ContentOwner } from './sections'
 import { AdminWorkspaceProvider, useAdminWorkspace } from './AdminWorkspaceContext'
 import { AdminActionBar } from './AdminActionBar'
@@ -180,6 +180,24 @@ function AdminNav({ pathname }: { pathname: string | null }) {
 }
 
 function UserFooter({ user }: { user: AdminShellProps['user'] }) {
+  const router = useRouter()
+  const [signingOut, setSigningOut] = useState(false)
+  const [signOutError, setSignOutError] = useState('')
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    setSignOutError('')
+    try {
+      const response = await fetch('/api/dam/auth/logout', { method: 'POST' })
+      if (!response.ok) throw new Error('Sign out failed')
+      router.push('/admin/login')
+      router.refresh()
+    } catch {
+      setSignOutError('Could not sign out. Please try again.')
+      setSigningOut(false)
+    }
+  }
+
   return (
     <div className="border-t border-white/10 px-5 py-4">
       <div className="flex items-center justify-between gap-3">
@@ -189,6 +207,16 @@ function UserFooter({ user }: { user: AdminShellProps['user'] }) {
         </div>
         <GuardedLink href="/" className="rounded-md px-2 py-1 text-xs text-white/50 hover:bg-white/5 hover:text-white">Site</GuardedLink>
       </div>
+      <button
+        type="button"
+        onClick={() => void handleSignOut()}
+        disabled={signingOut}
+        className="mt-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-semibold text-white/65 hover:border-white/20 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] disabled:cursor-wait disabled:opacity-50"
+      >
+        <LogOut className="size-3.5" aria-hidden="true" />
+        {signingOut ? 'Signing out…' : 'Sign out'}
+      </button>
+      <p className="mt-2 min-h-4 text-center text-[10px] text-[#e38a69]" role="status" aria-live="polite">{signOutError}</p>
     </div>
   )
 }

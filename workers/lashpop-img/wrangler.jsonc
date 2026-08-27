@@ -6,5 +6,12 @@
   "account_id": "4f7293208a9aa982963007fffd966b56",
   "compatibility_date": "2026-06-01",
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-dam" }],
-  "images": { "binding": "IMAGES" }
+  "images": { "binding": "IMAGES" },
+  "env": {
+    "admin_preview": {
+      "name": "lashpop-img-admin-preview",
+      "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-admin-preview" }],
+      "images": { "binding": "IMAGES" }
+    }
+  }
 }

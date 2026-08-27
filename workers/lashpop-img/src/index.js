@@ -43,6 +43,8 @@ const EXT_HOST_RE = /\.rackcdn\.com$/i
 // R2 contains operational objects in addition to public DAM media. Never let
 // an image URL become a generic object-download endpoint for private prefixes.
 const PRIVATE_KEY_PREFIXES = ['backups/', '.backups/']
+const STORAGE_PATH_PREFIX = '/__storage/'
+const encoder = new TextEncoder()
 
 const OUTPUT = {
   avif: 'image/avif',
@@ -100,12 +102,68 @@ function messageFromError(error) {
   return error instanceof Error ? error.message : String(error)
 }
 
+async function verifyBearer(request, expected) {
+  const authorization = request.headers.get('authorization') || ''
+  const provided = authorization.startsWith('Bearer ')
+    ? authorization.slice('Bearer '.length)
+    : ''
+  const [providedHash, expectedHash] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(provided)),
+    crypto.subtle.digest('SHA-256', encoder.encode(expected || '')),
+  ])
+  return crypto.subtle.timingSafeEqual(providedHash, expectedHash)
+}
+
+async function handleStorageRequest(request, env, url) {
+  if (!env.STORAGE_PROXY_TOKEN || !(await verifyBearer(request, env.STORAGE_PROXY_TOKEN))) {
+    return new Response('Unauthorized', {
+      status: 401,
+      headers: { 'cache-control': 'private, no-store' },
+    })
+  }
+
+  const key = decodeURIComponent(url.pathname.slice(STORAGE_PATH_PREFIX.length))
+  if (!key || key.includes('\0')) {
+    return new Response('Invalid object key', { status: 400 })
+  }
+
+  if (request.method === 'PUT') {
+    if (!request.body) return new Response('Request body required', { status: 400 })
+    await env.BUCKET.put(key, request.body, {
+      httpMetadata: {
+        contentType: request.headers.get('content-type') || 'application/octet-stream',
+        cacheControl: request.headers.get('cache-control') || undefined,
+      },
+    })
+    return new Response(null, { status: 204 })
+  }
+
+  if (request.method === 'GET') {
+    const object = await env.BUCKET.get(key)
+    if (!object) return new Response('Not found', { status: 404 })
+    const headers = new Headers({ 'cache-control': 'private, no-store' })
+    object.writeHttpMetadata(headers)
+    return new Response(object.body, { headers })
+  }
+
+  if (request.method === 'DELETE') {
+    await env.BUCKET.delete(key)
+    return new Response(null, { status: 204 })
+  }
+
+  return new Response('Method not allowed', { status: 405 })
+}
+
 const lashpopImageWorker = {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url)
+    if (url.pathname.startsWith(STORAGE_PATH_PREFIX)) {
+      return handleStorageRequest(request, env, url)
+    }
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response('Method not allowed', { status: 405 })
     }
-    const url = new URL(request.url)
     const key = decodeURIComponent(url.pathname.replace(/^\/+/, ''))
     if (!key) return new Response('lashpop-img ok', { status: 200 })
     const normalizedKey = key.toLowerCase()

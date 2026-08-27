@@ -1,0 +1,261 @@
+{
+  "$schema": "./capabilities.schema.json",
+  "version": 1,
+  "updated": "2026-08-27",
+  "title": "LashPop admin owner capability contract",
+  "purpose": "The release-critical list of plain-English jobs a LashPop owner must be able to complete without editing code.",
+  "outsideAdmin": [
+    "Vagaro owns service prices, durations, appointment availability, booking destinations, and synced stylist facts.",
+    "The frozen public visual system, navigation structure, and legal page structure require a reviewed code change.",
+    "Work With Us benefits, pricing logic, forms, and policy rules remain system-owned; the admin owns the page introduction, path summaries, and photography."
+  ],
+  "capabilities": [
+    {
+      "id": "access-sign-in",
+      "area": "Access",
+      "route": "/admin/login",
+      "questions": ["How do I sign in with my phone number?", "How do I sign out when I am finished?"],
+      "verificationMode": "safe-live",
+      "evidence": [
+        { "file": "src/app/admin/login/page.tsx", "contains": ["phone", "verification"] },
+        { "file": "src/components/admin-shell/AdminShell.tsx", "contains": ["Sign out"] }
+      ]
+    },
+    {
+      "id": "today-overview",
+      "area": "Today",
+      "route": "/admin/overview",
+      "questions": ["Where do I see what needs attention today?"],
+      "verificationMode": "safe-live",
+      "evidence": [{ "file": "src/app/admin/(panel)/overview/page.tsx", "contains": ["Subscribers", "Sync"] }]
+    },
+    {
+      "id": "website-overview",
+      "area": "Website",
+      "route": "/admin/website",
+      "questions": ["Where do I see which system owns each part of the website?"],
+      "verificationMode": "safe-live",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/page.tsx", "contains": ["Publishing ownership"] }]
+    },
+    {
+      "id": "service-launch",
+      "area": "Website",
+      "route": "/admin/workflows/service-launch",
+      "questions": ["How do I check that a new or updated service is ready to publish?"],
+      "verificationMode": "safe-live",
+      "evidence": [{ "file": "src/app/admin/(panel)/workflows/service-launch/page.tsx", "contains": ["Launch or update a service", "launch checks ready"] }]
+    },
+    {
+      "id": "studio-info",
+      "area": "Website",
+      "route": "/admin/content/studio-info",
+      "questions": ["How do I update the studio address, phone number, email, hours, booking link, map location, or social links?"],
+      "verificationMode": "no-op-publish",
+      "evidence": [{ "file": "src/app/admin/(panel)/content/studio-info/StudioInfoEditor.tsx", "contains": ["Phone", "Hours", "Social"] }]
+    },
+    {
+      "id": "homepage-hero",
+      "area": "Website",
+      "route": "/admin/website/hero",
+      "questions": ["How do I change the homepage headline or button labels?", "How do I choose the homepage hero photos and control the desktop and phone slideshow?"],
+      "verificationMode": "no-op-publish",
+      "evidence": [
+        { "file": "src/app/admin/(panel)/website/hero/HeroContentEditor.tsx", "contains": ["Headline", "Publish"] },
+        { "file": "src/app/admin/(panel)/website/hero/page.tsx", "contains": ["Desktop", "Mobile", "slideshow"] }
+      ]
+    },
+    {
+      "id": "services-booking",
+      "area": "Website",
+      "route": "/admin/website/services",
+      "questions": ["How do I review synced services, choose service images, organize service groups, and confirm booking readiness?"],
+      "verificationMode": "inspect-external-owner",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/services/page.tsx", "contains": ["Vagaro", "Save Changes", "Assign to subcategory"] }]
+    },
+    {
+      "id": "homepage-service-cards",
+      "area": "Website",
+      "route": "/admin/website/homepage-services",
+      "questions": ["How do I add, edit, reorder, show, or hide a service card on the homepage?"],
+      "verificationMode": "no-op-publish",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/homepage-services/page.tsx", "contains": ["Homepage Service Cards", "Move up", "Save Changes"] }]
+    },
+    {
+      "id": "team-stylists",
+      "area": "Website",
+      "route": "/admin/website/team",
+      "questions": ["How do I update a staff member?", "How do I sync a stylist from Vagaro?", "How do I show, hide, or reorder staff on the website?", "How do I update an external stylist's photo, bio, service tags, portfolio, quick facts, or credentials?"],
+      "verificationMode": "inspect-external-owner",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/team/page.tsx", "contains": ["Sync from Vagaro", "Hide from website", "Portfolio Album", "QuickFactsEditor", "CredentialsEditor"] }]
+    },
+    {
+      "id": "founder-letter",
+      "area": "Website",
+      "route": "/admin/content/founder-letter",
+      "questions": ["How do I update the founder letter?"],
+      "verificationMode": "no-op-publish",
+      "evidence": [{ "file": "src/app/admin/(panel)/content/founder-letter/FounderLetterEditor.tsx", "contains": ["Paragraph", "Save"] }]
+    },
+    {
+      "id": "founder-letter-redirect",
+      "area": "Website",
+      "route": "/admin/website/founder-letter",
+      "questions": ["Where does the old founder-letter admin link take me?"],
+      "verificationMode": "safe-live",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/founder-letter/page.tsx", "contains": ["redirect"] }]
+    },
+    {
+      "id": "instagram",
+      "area": "Website",
+      "route": "/admin/website/instagram",
+      "questions": ["How do I control how many Instagram posts appear, whether captions show, and how the carousel moves?", "How do I refresh the Instagram posts already available in the media library?"],
+      "verificationMode": "no-op-publish",
+      "evidence": [
+        { "file": "src/app/admin/(panel)/website/instagram/page.tsx", "contains": ["Number of Posts", "Show captions", "Sync Posts"] },
+        { "file": "src/components/landing-v2/sections/InstagramCarousel.tsx", "contains": ["showCaptions", "item.caption"] }
+      ]
+    },
+    {
+      "id": "faq",
+      "area": "Website",
+      "route": "/admin/website/faq",
+      "questions": ["How do I add or change an FAQ?", "How do I organize FAQs into categories and choose which ones are visible or featured?"],
+      "verificationMode": "temporary-record",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/faq/page.tsx", "contains": ["Add FAQ", "Featured", "Delete this FAQ"] }]
+    },
+    {
+      "id": "quiz",
+      "area": "Website",
+      "route": "/admin/website/quiz",
+      "questions": ["How do I add, crop, enable, or remove quiz comparison photos?", "How do I choose the photo and wording shown for each quiz result?"],
+      "verificationMode": "inspect-high-impact",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/quiz/page.tsx", "contains": ["Manage quiz photos and result page content", "Quiz Photo Tips"] }]
+    },
+    {
+      "id": "work-with-us",
+      "area": "Website",
+      "route": "/admin/website/work-with-us",
+      "questions": ["How do I update the Work With Us introduction and its employee, booth, and training summaries?", "How do I add, show, hide, or remove Work With Us photos?"],
+      "verificationMode": "no-op-publish",
+      "evidence": [
+        { "file": "src/app/admin/(panel)/website/work-with-us/WorkWithUsContentEditor.tsx", "contains": ["Page introduction", "Benefits, pricing logic, forms, and photography remain system-owned"] },
+        { "file": "src/app/admin/(panel)/website/work-with-us/page.tsx", "contains": ["Add Photo", "carousel"] }
+      ]
+    },
+    {
+      "id": "search-sharing",
+      "area": "Website",
+      "route": "/admin/website/seo",
+      "questions": ["How do I update the words and images people see in Google results and social shares?"],
+      "verificationMode": "no-op-publish",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/seo/page.tsx", "contains": ["Meta", "OpenGraph", "Twitter"] }]
+    },
+    {
+      "id": "reviews",
+      "area": "Reviews",
+      "route": "/admin/website/reviews",
+      "questions": ["How do I choose and reorder the reviews shown on the homepage?", "How do I correct a review's website visibility, stylist, score, or editor notes without automation overwriting it?"],
+      "verificationMode": "inspect-high-impact",
+      "evidence": [
+        { "file": "src/app/admin/(panel)/website/reviews/page.tsx", "contains": ["Remove from homepage", "Save"] },
+        { "file": "src/app/admin/(panel)/website/reviews/ReviewEditDrawer.tsx", "contains": ["Save & lock", "Visible on website"] }
+      ]
+    },
+    {
+      "id": "review-automation",
+      "area": "Reviews",
+      "route": "/admin/website/review-settings",
+      "questions": ["How do I change the rules that score and rotate reviews?"],
+      "verificationMode": "no-op-publish",
+      "evidence": [{ "file": "src/app/admin/(panel)/website/review-settings/page.tsx", "contains": ["Save", "Version"] }]
+    },
+    {
+      "id": "media-library",
+      "area": "Media",
+      "route": "/admin/assets",
+      "questions": ["How do I upload photos or videos?", "How do I search, filter, tag, describe, group, or assign media for reuse around the website?"],
+      "verificationMode": "temporary-asset",
+      "evidence": [
+        { "file": "src/components/admin-media/MediaWorkspaceHeader.tsx", "contains": ["Upload files", "Media library"] },
+        { "file": "src/components/dam/AssetMetadataEditor.tsx", "contains": ["Alt text", "Caption or notes", "Save details"] },
+        { "file": "src/app/api/dam/assets/[assetId]/route.ts", "contains": ["dam.asset.metadata.update", "altText", "caption"] },
+        { "file": "src/app/admin/(panel)/assets/page.tsx", "contains": ["Collection"] }
+      ]
+    },
+    {
+      "id": "team-photography",
+      "area": "Media",
+      "route": "/admin/assets/team",
+      "questions": ["How do I upload, crop, choose the primary photo, or manage the photo album for a team member?"],
+      "verificationMode": "temporary-asset",
+      "evidence": [{ "file": "src/app/admin/(panel)/assets/team/page.tsx", "contains": ["Upload photos", "PhotoCropEditor", "primary"] }]
+    },
+    {
+      "id": "inbox-overview",
+      "area": "Inbox",
+      "route": "/admin/inbox",
+      "questions": ["Where do I see new newsletter signups and Work With Us applications?"],
+      "verificationMode": "safe-live",
+      "evidence": [{ "file": "src/app/admin/(panel)/inbox/page.tsx", "contains": ["Newsletter", "Applications"] }]
+    },
+    {
+      "id": "newsletter",
+      "area": "Inbox",
+      "route": "/admin/inbox/newsletter",
+      "questions": ["How do I find a newsletter subscriber and understand their consent status?", "How do I copy or export only active subscribers?", "How do I mark a subscriber active, unsubscribed, or suppressed without erasing history?"],
+      "verificationMode": "inspect-sensitive-records",
+      "evidence": [{ "file": "src/app/admin/(panel)/inbox/newsletter/SubscriberDirectory.tsx", "contains": ["Active", "Unsubscribed", "Suppressed"] }]
+    },
+    {
+      "id": "applications",
+      "area": "Inbox",
+      "route": "/admin/inbox/work-with-us",
+      "questions": ["How do I read the details and contact information from a Work With Us application?"],
+      "verificationMode": "inspect-sensitive-records",
+      "evidence": [{ "file": "src/app/admin/(panel)/inbox/work-with-us/page.tsx", "contains": ["Work With Us Applications", "Experience"] }]
+    },
+    {
+      "id": "settings-overview",
+      "area": "Settings",
+      "route": "/admin/settings",
+      "questions": ["Where do I check my access level and the latest Vagaro sync?"],
+      "verificationMode": "safe-live",
+      "evidence": [{ "file": "src/app/admin/(panel)/settings/page.tsx", "contains": ["Access", "Vagaro"] }]
+    },
+    {
+      "id": "admin-access",
+      "area": "Settings",
+      "route": "/admin/dam-users",
+      "questions": ["How do I give someone owner, publisher, viewer, or no admin access?"],
+      "verificationMode": "inspect-permissions",
+      "evidence": [{ "file": "src/app/admin/(panel)/dam-users/page.tsx", "contains": ["Owner", "Publisher", "Viewer", "No admin access"] }]
+    },
+    {
+      "id": "vagaro-sync",
+      "area": "Settings",
+      "route": "/admin/system/syncs",
+      "questions": ["How do I see whether Vagaro data and booking mappings are healthy?", "How do I run a Vagaro sync now?"],
+      "verificationMode": "inspect-external-owner",
+      "evidence": [
+        { "file": "src/app/admin/(panel)/system/syncs/page.tsx", "contains": ["Booking mappings", "Team members"] },
+        { "file": "src/app/admin/(panel)/system/syncs/SyncNowButton.tsx", "contains": ["Sync from Vagaro now"] }
+      ]
+    },
+    {
+      "id": "activity-history",
+      "area": "Settings",
+      "route": "/admin/system/audit-log",
+      "questions": ["How do I see who changed something in the admin panel?"],
+      "verificationMode": "safe-live",
+      "evidence": [{ "file": "src/app/admin/(panel)/system/audit-log/page.tsx", "contains": ["Activity"] }]
+    },
+    {
+      "id": "website-history",
+      "area": "Settings",
+      "route": "/admin/system/website-history",
+      "questions": ["How do I find an older saved website version and restore it without erasing history?"],
+      "verificationMode": "inspect-high-impact",
+      "evidence": [{ "file": "src/app/admin/(panel)/system/website-history/page.tsx", "contains": ["Website version history", "Restore"] }]
+    }
+  ]
+}
