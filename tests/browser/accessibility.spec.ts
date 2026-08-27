@@ -9,6 +9,7 @@ type QuizPath = {
   q2Button: RegExp
   resultStyle: 'classic' | 'volume'
   resultHeading: string
+  configuredResultImage: string
 }
 
 async function walkQuizPath(page: Page, path: QuizPath) {
@@ -21,7 +22,6 @@ async function walkQuizPath(page: Page, path: QuizPath) {
   await quiz.getByRole('button', { name: path.q1Button }).click()
   await quiz.getByRole('button', { name: path.q2Button }).click()
 
-  let lastSelectedPhoto: string | null = null
   for (let round = 0; round < 6; round += 1) {
     const result = quiz.locator('[data-quiz-result-style]')
     if (await result.isVisible().catch(() => false)) break
@@ -32,7 +32,6 @@ async function walkQuizPath(page: Page, path: QuizPath) {
     const targetPhoto = comparison.locator(`[data-lash-style="${path.resultStyle}"]`)
 
     if (await targetPhoto.isVisible().catch(() => false)) {
-      lastSelectedPhoto = await targetPhoto.getAttribute('data-quiz-photo-src')
       await targetPhoto.click()
     } else {
       await quiz.getByRole('button', { name: 'Neither of these' }).click()
@@ -47,12 +46,14 @@ async function walkQuizPath(page: Page, path: QuizPath) {
     }).not.toBe('waiting')
   }
 
-  expect(lastSelectedPhoto).not.toBeNull()
   const result = quiz.locator(`[data-quiz-result-style="${path.resultStyle}"]`)
   await expect(result).toBeVisible()
   await expect(result.getByRole('heading', { name: path.resultHeading })).toBeVisible()
   const resultImageFrame = result.locator('[data-quiz-result-image-src]')
-  await expect(resultImageFrame).toHaveAttribute('data-quiz-result-image-src', lastSelectedPhoto ?? '')
+  await expect(resultImageFrame).toHaveAttribute(
+    'data-quiz-result-image-src',
+    path.configuredResultImage,
+  )
   const resultImage = resultImageFrame.locator('img')
   await expect(resultImage).toBeVisible()
   await expect.poll(
@@ -194,6 +195,7 @@ for (const path of [
     q2Button: /Barely there/,
     resultStyle: 'classic',
     resultHeading: 'Classic Lashes',
+    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/1768945194159-ku60w5-IMG_4302.webp',
   },
   {
     name: 'Volume choices',
@@ -201,9 +203,10 @@ for (const path of [
     q2Button: /Bold and dramatic/,
     resultStyle: 'volume',
     resultHeading: 'Volume Lashes',
+    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/1768945198617-7qha6t-IMG_9329.webp',
   },
 ] satisfies QuizPath[]) {
-  test(`quiz ${path.name} produce a matching result and exact chosen photo`, async ({ page }) => {
+  test(`quiz ${path.name} produces its matching result and admin-configured photo`, async ({ page }) => {
     await walkQuizPath(page, path)
   })
 }
