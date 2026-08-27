@@ -356,13 +356,14 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
             {step === 4 && quiz.result && (() => {
               const display = buildResultDisplay(quiz.result, resultSettings);
               const activeServices = servicesLoadedFor === quiz.result ? resultServices : null;
-              const imageCandidates = getQuizResultImageCandidates(
-                quiz.result,
-                quiz.resultPhoto,
+              const imageCandidates = getQuizResultImageCandidates({
+                style: quiz.result,
+                configuredImage: resultSettings?.[quiz.result]?.resultImage,
+                selectedPhoto: quiz.resultPhoto,
                 photosByStyle,
-                display.resultImage,
-                activeServices?.bookingImage,
-              );
+                bookingImage: activeServices?.bookingImage,
+                legacyFallbackImage: display.resultImage,
+              });
               return (
                 <ResultScreen
                   key="result"
@@ -735,13 +736,14 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
                     {step === 4 && quiz.result && (() => {
                       const display = buildResultDisplay(quiz.result, resultSettings);
                       const activeServices = servicesLoadedFor === quiz.result ? resultServices : null;
-                      const imageCandidates = getQuizResultImageCandidates(
-                        quiz.result,
-                        quiz.resultPhoto,
+                      const imageCandidates = getQuizResultImageCandidates({
+                        style: quiz.result,
+                        configuredImage: resultSettings?.[quiz.result]?.resultImage,
+                        selectedPhoto: quiz.resultPhoto,
                         photosByStyle,
-                        display.resultImage,
-                        activeServices?.bookingImage,
-                      );
+                        bookingImage: activeServices?.bookingImage,
+                        legacyFallbackImage: display.resultImage,
+                      });
                       return (
                         <ResultScreen
                           key="result"

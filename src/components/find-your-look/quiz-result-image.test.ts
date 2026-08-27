@@ -24,7 +24,7 @@ test('keeps the canonical result first and removes empty or duplicate fallbacks'
   )
 })
 
-test('keeps the exact selected photo first, ahead of current and legacy fallbacks', () => {
+test('keeps the admin-configured result crop first, ahead of every fallback', () => {
   const photos = {
     classic: [photo('classic', 'disabled', false), photo('classic', 'classic-enabled')],
     wetAngel: [],
@@ -33,13 +33,41 @@ test('keeps the exact selected photo first, ahead of current and legacy fallback
   }
 
   assert.deepEqual(
-    getQuizResultImageCandidates(
-      'classic',
-      photo('classic', 'classic-selected'),
-      photos,
-      'https://example.com/legacy-placeholder.jpg',
+    getQuizResultImageCandidates({
+      style: 'classic',
+      configuredImage: 'https://example.com/admin-result-crop.jpg',
+      selectedPhoto: photo('classic', 'classic-selected'),
+      photosByStyle: photos,
+      bookingImage: 'https://example.com/booking.jpg',
+      legacyFallbackImage: 'https://example.com/legacy-placeholder.jpg',
+    }),
+    [
+      'https://example.com/admin-result-crop.jpg',
+      'https://example.com/classic-selected.jpg',
+      'https://example.com/classic-enabled.jpg',
       'https://example.com/booking.jpg',
-    ),
+      'https://example.com/legacy-placeholder.jpg',
+    ],
+  )
+})
+
+test('uses current same-style photos before the legacy placeholder when admin has no result image', () => {
+  const photos = {
+    classic: [photo('classic', 'classic-enabled')],
+    wetAngel: [],
+    hybrid: [],
+    volume: [],
+  }
+
+  assert.deepEqual(
+    getQuizResultImageCandidates({
+      style: 'classic',
+      configuredImage: null,
+      selectedPhoto: photo('classic', 'classic-selected'),
+      photosByStyle: photos,
+      bookingImage: 'https://example.com/booking.jpg',
+      legacyFallbackImage: 'https://example.com/legacy-placeholder.jpg',
+    }),
     [
       'https://example.com/classic-selected.jpg',
       'https://example.com/classic-enabled.jpg',
