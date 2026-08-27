@@ -38,7 +38,8 @@ const MAX_HEIGHT = 4096
 // 90, not 82: faces dominate this site and AVIF/WebP at 82 visibly smooths
 // skin texture vs the originals. Bytes are still 10-20x under the raw files.
 const DEFAULT_QUALITY = 90
-const CACHE_VERSION = 'hosted-source-v7-final'
+const CACHE_VERSION = 'hosted-source-v12-public-url-reference'
+const HOSTED_BLOB_CACHE_VERSION = 'hosted-blob-v1'
 const SITE_ORIGIN = 'https://lashpop.vercel.app'
 // Only proxy site paths under this prefix — everything image-like in /public
 // lives here, and it keeps the worker from becoming an open proxy to the app.
@@ -56,6 +57,12 @@ const PRIVATE_KEY_PREFIXES = ['backups/', '.backups/']
 const PRECOMPUTED_SOURCE_IDS = new Set([
   'lp/65812e87532b1be2944eacad12bcc22df48e4a06912601e06dc880bbf0548bb3',
   'lp/23ee938fcb1970fc68363207a1ffb1c714963111f6729d499b37f7a3ee72fa6d',
+])
+// The production legacy decoder returns 502 for this retired placeholder.
+// Preserve that observable before-state instead of reviving an unused asset as
+// part of the storage cutover.
+const LEGACY_ONLY_SOURCE_IDS = new Set([
+  'lp/9c79376ce6ff916a825f4811dc634f8092e22d3ebccba4c81a1e224682c56254',
 ])
 
 const OUTPUT = {
@@ -157,17 +164,73 @@ async function getHostedSource(env, descriptor) {
   }
 }
 
-async function getHostedBlob(env, imageId) {
-  const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/images/v1/${encodeURIComponent(imageId)}/blob`,
-    { headers: { authorization: `Bearer ${env.CLOUDFLARE_IMAGES_API_TOKEN}` } },
-  )
+const hostedBlobRequests = new Map()
 
-  if (!response.ok || !response.body) {
-    response.body?.cancel().catch(() => {})
-    return { response: null, failure: `hosted-http-${response.status}` }
+async function fetchHostedBlob(env, imageId) {
+  const cache = caches.default
+  const cacheKey = new Request(
+    `https://lashpop-hosted-blob-cache.invalid/${encodeURIComponent(imageId)}?v=${HOSTED_BLOB_CACHE_VERSION}`,
+  )
+  const cached = await cache.match(cacheKey)
+  if (cached) {
+    return {
+      bytes: await cached.arrayBuffer(),
+      contentType: cached.headers.get('content-type') || 'application/octet-stream',
+      failure: null,
+    }
   }
-  return { response, failure: null }
+
+  let lastFailure = 'hosted-fetch-failed'
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const response = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/images/v1/${encodeURIComponent(imageId)}/blob`,
+      { headers: { authorization: `Bearer ${env.CLOUDFLARE_IMAGES_API_TOKEN}` } },
+    )
+
+    if (response.ok && response.body) {
+      const bytes = await response.arrayBuffer()
+      const contentType = response.headers.get('content-type') || 'application/octet-stream'
+      const cacheable = new Response(bytes, {
+        status: 200,
+        headers: {
+          'cache-control': 'public, max-age=31536000, immutable',
+          'content-type': contentType,
+        },
+      })
+      await cache.put(cacheKey, cacheable).catch((error) => {
+        console.warn(JSON.stringify({
+          message: 'hosted blob cache write failed',
+          error: messageFromError(error),
+          imageId,
+        }))
+      })
+      return { bytes, contentType, failure: null }
+    }
+
+    lastFailure = `hosted-http-${response.status}`
+    response.body?.cancel().catch(() => {})
+    if (response.status !== 429 && response.status < 500) break
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 50 * (2 ** attempt)))
+  }
+  return { response: null, failure: lastFailure }
+}
+
+async function getHostedBlob(env, imageId) {
+  let pending = hostedBlobRequests.get(imageId)
+  if (!pending) {
+    pending = fetchHostedBlob(env, imageId).finally(() => hostedBlobRequests.delete(imageId))
+    hostedBlobRequests.set(imageId, pending)
+  }
+  const result = await pending
+  return result.bytes
+    ? {
+        response: new Response(result.bytes.slice(0), {
+          status: 200,
+          headers: { 'content-type': result.contentType },
+        }),
+        failure: null,
+      }
+    : result
 }
 
 async function unwrapExactVariant(response) {
@@ -243,6 +306,15 @@ async function sourceForBackend(url, key, env, backend, transformRequest) {
 
   try {
     const imageId = await hostedImageId(descriptor)
+    if (LEGACY_ONLY_SOURCE_IDS.has(imageId)) {
+      return {
+        source: await getSource(url, key, env),
+        response: null,
+        backend: 'legacy-pinned',
+        fallback: 'production-legacy-unavailable',
+        imageId,
+      }
+    }
     if (transformRequest.format === 'avif' || PRECOMPUTED_SOURCE_IDS.has(imageId)) {
       const variantId = await hostedVariantId(imageId, transformRequest)
       const variant = await getHostedBlob(env, variantId)

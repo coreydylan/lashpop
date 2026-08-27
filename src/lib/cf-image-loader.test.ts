@@ -2,9 +2,9 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { cfPortraitImageLoader, getImageWorkerBase } from './cf-image-loader'
 
-test('feature preview points all optimized images at the isolated hosted worker', async () => {
+test('feature preview trims environment whitespace and points images at the hosted worker', async () => {
   const previousBase = process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE
-  process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE = 'https://lashpop-img-preview.experial.workers.dev/'
+  process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE = 'https://lashpop-img-preview.experial.workers.dev/\n'
 
   try {
     const { default: cfImageLoader } = await import('./cf-image-loader')

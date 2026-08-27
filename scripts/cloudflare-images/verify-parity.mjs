@@ -15,6 +15,8 @@ loadEnvironment()
 
 const workerArg = process.argv.find((arg) => arg.startsWith('--worker='))
 const workerBase = workerArg ? workerArg.split('=', 2)[1] : process.env.LASHPOP_IMAGE_WORKER || DEFAULT_LEGACY_WORKER
+const legacyWorkerArg = process.argv.find((arg) => arg.startsWith('--legacy-worker='))
+const legacyWorkerBase = legacyWorkerArg ? legacyWorkerArg.split('=', 2)[1] : DEFAULT_LEGACY_WORKER
 const widthsArg = process.argv.find((arg) => arg.startsWith('--widths='))
 const widths = (widthsArg ? widthsArg.split('=', 2)[1] : '320,600,1600')
   .split(',')
@@ -43,13 +45,18 @@ async function decoded(response) {
 
 async function compare(item, width, format) {
   const options = { w: width, q: width >= 3200 ? 78 : width >= 1800 ? 85 : 90, f: format, s: 1 }
-  const legacyUrl = legacyWorkerUrl(item.descriptor, { ...options, backend: 'legacy' }, workerBase)
+  const legacyUrl = legacyWorkerUrl(item.descriptor, { ...options, backend: 'legacy' }, legacyWorkerBase)
   const hostedUrl = legacyWorkerUrl(item.descriptor, { ...options, backend: 'hosted' }, workerBase)
   const accept = `image/${format}`
-  const [legacyResponse, hostedResponse] = await Promise.all([
-    fetch(legacyUrl, { headers: { accept } }),
-    fetch(hostedUrl, { headers: { accept } }),
-  ])
+  const legacyPromise = fetch(legacyUrl, { headers: { accept } })
+  let hostedResponse
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    hostedResponse = await fetch(hostedUrl, { headers: { accept } })
+    if (!hostedResponse.ok || hostedResponse.headers.get('x-lp-img-backend') === 'hosted' || attempt === 4) break
+    hostedResponse.body?.cancel().catch(() => {})
+    await new Promise((resolve) => setTimeout(resolve, 100 * (2 ** attempt)))
+  }
+  const legacyResponse = await legacyPromise
 
   if (!legacyResponse.ok || !hostedResponse.ok) {
     const statusParity = legacyResponse.status === hostedResponse.status
@@ -60,6 +67,7 @@ async function compare(item, width, format) {
       legacyStatus: legacyResponse.status,
       hostedStatus: hostedResponse.status,
       hostedBackend: hostedResponse.headers.get('x-lp-img-backend'),
+      hostedFallback: hostedResponse.headers.get('x-lp-img-fallback'),
       statusParity,
       dimensionParity: statusParity,
       exactPixels: statusParity,
@@ -89,6 +97,7 @@ async function compare(item, width, format) {
     legacyStatus: legacyResponse.status,
     hostedStatus: hostedResponse.status,
     hostedBackend: hostedResponse.headers.get('x-lp-img-backend'),
+    hostedFallback: hostedResponse.headers.get('x-lp-img-fallback'),
     statusParity: true,
     dimensionParity,
     exactPixels: dimensionParity && differentBytes === 0,
@@ -135,6 +144,7 @@ const results = await runPool(tasks)
 const availableResults = results.filter((result) => result.legacyStatus === 200)
 const summary = {
   workerBase,
+  legacyWorkerBase,
   images: inventory.length,
   widths,
   formats,

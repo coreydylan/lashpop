@@ -44,6 +44,10 @@ const AUXILIARY_RUNTIME_IMAGE_SQL = [
    FROM quiz_photos WHERE crop_url IS NOT NULL`,
   `SELECT result_image_crop_url AS url, 'quiz-result-crop' AS source_kind, id AS source_id
    FROM quiz_result_settings WHERE result_image_crop_url IS NOT NULL`,
+  `SELECT assets.file_path AS url, 'quiz-result-image' AS source_kind, quiz_result_settings.lash_style AS source_id
+   FROM quiz_result_settings
+   INNER JOIN assets ON assets.id = quiz_result_settings.result_image_asset_id
+   WHERE assets.file_path IS NOT NULL`,
   `SELECT client_image AS url, 'testimonial' AS source_kind, id AS source_id
    FROM testimonials WHERE client_image IS NOT NULL`,
   `SELECT background_image AS url, 'scrollytelling-surface' AS source_kind, id AS source_id
@@ -91,6 +95,7 @@ export function hostedImageId(descriptor) {
 
 export function canonicalTransform({ width, height, fit, gravity, quality, format, sharpen }) {
   return [
+    'exactVersion=production-v3-public-url',
     `width=${width}`,
     `height=${height || 0}`,
     `fit=${fit}`,

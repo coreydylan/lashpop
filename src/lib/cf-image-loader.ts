@@ -10,7 +10,7 @@ const CDN_BASE = "https://cdn.lashpopstudios.com"
 const DEFAULT_IMG_WORKER_BASE = "https://lashpop-img.experial.workers.dev"
 
 export function getImageWorkerBase(): string {
-  return (process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE || DEFAULT_IMG_WORKER_BASE).replace(/\/$/, "")
+  return (process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE || DEFAULT_IMG_WORKER_BASE).trim().replace(/\/$/, "")
 }
 
 type Props = { src: string; width: number; quality?: number }

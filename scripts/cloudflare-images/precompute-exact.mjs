@@ -17,7 +17,7 @@ const apply = process.argv.includes('--apply')
 const workerArg = process.argv.find((arg) => arg.startsWith('--worker='))
 const workerBase = workerArg
   ? workerArg.split('=', 2)[1]
-  : process.env.LASHPOP_IMAGE_WORKER || 'https://lashpop-img-preview.experial.workers.dev'
+  : process.env.LASHPOP_LEGACY_IMAGE_WORKER || 'https://lashpop-img.experial.workers.dev'
 const concurrencyArg = process.argv.find((arg) => arg.startsWith('--concurrency='))
 const concurrency = Math.max(1, Math.min(8, concurrencyArg ? Number(concurrencyArg.split('=', 2)[1]) : 4))
 const artifactsDir = path.join(PROJECT_ROOT, '.artifacts', 'cloudflare-images')
@@ -28,6 +28,7 @@ const OVERSIZED_SOURCE_IDS = new Set([
 ])
 const KNOWN_UNAVAILABLE_SOURCE_IDS = new Set([
   'lp/ccdde141564bc8cbf9c5d4f5a11d9eae5b2f23c1061f05c7da43312bbbdb07fa',
+  'lp/9c79376ce6ff916a825f4811dc634f8092e22d3ebccba4c81a1e224682c56254',
 ])
 const WIDTHS = [64, 128, 256, 320, 384, 600, 900, 1200, 1440, 1600, 1800, 2400, 2880, 3200, 3840]
 const FORMATS = ['avif', 'webp', 'jpeg']
@@ -56,7 +57,6 @@ async function uploadVariant(task) {
     f: task.transform.format,
     s: task.transform.sharpen,
     backend: 'legacy',
-    precompute: 'exact-v1',
   }, workerBase))
   if (!response.ok) throw new Error(`Legacy variant fetch failed (${response.status})`)
   const bytes = Buffer.from(await response.arrayBuffer())

@@ -195,7 +195,7 @@ for (const path of [
     q2Button: /Barely there/,
     resultStyle: 'classic',
     resultHeading: 'Classic Lashes',
-    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/1768945194159-ku60w5-IMG_4302.webp',
+    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/classic-full-set-approved.jpg',
   },
   {
     name: 'Volume choices',
@@ -203,7 +203,7 @@ for (const path of [
     q2Button: /Bold and dramatic/,
     resultStyle: 'volume',
     resultHeading: 'Volume Lashes',
-    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/1768945198617-7qha6t-IMG_9329.webp',
+    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/volume-full-set-approved.jpg',
   },
 ] satisfies QuizPath[]) {
   test(`quiz ${path.name} produces its matching result and admin-configured photo`, async ({ page }) => {

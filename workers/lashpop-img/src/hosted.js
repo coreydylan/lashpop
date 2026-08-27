@@ -26,6 +26,7 @@ export async function hostedImageId(descriptor) {
 
 export function canonicalTransform({ width, height, fit, gravity, quality, format, sharpen }) {
   return [
+    'exactVersion=production-v3-public-url',
     `width=${width}`,
     `height=${height || 0}`,
     `fit=${fit}`,

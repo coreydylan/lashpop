@@ -102,7 +102,7 @@ test('streams R2 bytes through the Images binding and versions the cache key', a
   assert.equal(cacheUrl.searchParams.get('fmt'), 'avif')
   assert.equal(cacheUrl.searchParams.get('dpr'), '1')
   assert.equal(cacheUrl.searchParams.get('lp-backend'), 'legacy')
-  assert.equal(cacheUrl.searchParams.get('lpv'), 'hosted-source-v7-final')
+  assert.equal(cacheUrl.searchParams.get('lpv'), 'hosted-source-v12-public-url-reference')
 })
 
 test('streams the deterministic Hosted Images original through the identical transform binding', async () => {
@@ -159,8 +159,53 @@ test('streams the deterministic Hosted Images original through the identical tra
     assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [10, 11])
 
     await Promise.all(deferred)
-    assert.equal(writes.length, 1)
-    assert.equal(new URL(writes[0].request.url).searchParams.get('lp-backend'), 'hosted')
+    assert.equal(writes.length, 2)
+    const finalWrite = writes.find(({ request }) => new URL(request.url).searchParams.get('lp-backend') === 'hosted')
+    assert.ok(finalWrite)
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('materializes hosted bytes once for concurrent responsive variants', async () => {
+  installCache()
+  const previousFetch = globalThis.fetch
+  let hostedFetches = 0
+  globalThis.fetch = async () => {
+    hostedFetches += 1
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    return new Response(imageStream([1, 2, 3]), {
+      headers: { 'content-type': 'image/jpeg' },
+    })
+  }
+
+  const transformer = {
+    transform() { return this },
+    async output() {
+      return { response: () => new Response(Uint8Array.from([15])) }
+    },
+  }
+  const env = {
+    IMAGE_BACKEND: 'hosted',
+    CLOUDFLARE_ACCOUNT_ID: 'account-id',
+    CLOUDFLARE_IMAGES_API_TOKEN: 'images-token',
+    BUCKET: { get: () => assert.fail('hosted hit should not read R2') },
+    IMAGES: { input: () => transformer },
+  }
+
+  try {
+    const responses = await Promise.all([320, 600].map((width) => lashpopImageWorker.fetch(
+      new Request(`https://images.example/uploads/concurrent.jpg?w=${width}&f=jpeg`),
+      env,
+      { waitUntil: () => {} },
+    )))
+
+    assert.equal(hostedFetches, 1)
+    assert.deepEqual(responses.map((response) => response.headers.get('x-lp-img-backend')), ['hosted', 'hosted'])
+    assert.deepEqual(
+      await Promise.all(responses.map(async (response) => [...new Uint8Array(await response.arrayBuffer())])),
+      [[15], [15]],
+    )
   } finally {
     globalThis.fetch = previousFetch
   }

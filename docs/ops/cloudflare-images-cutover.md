@@ -66,11 +66,15 @@ source ingestion can otherwise produce small decoded-pixel differences even
 when the same Images binding and transform parameters are used. Two 16-bit PNG
 originals cannot fit under Hosted Images' 10 MB upload limit without changing
 their decoded pixels, so all of their known production variants are pinned as
-well. Generate both sets under deterministic IDs:
+well. Exact variants must be generated from the production legacy Worker using
+the same public URL and query string guests receive; adding a cache-busting
+parameter creates a separate AVIF encode and is not valid parity evidence.
+Generate both sets under versioned deterministic IDs:
 
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
-  npm run images:precompute-exact -- --apply
+  npm run images:precompute-exact -- --apply \
+  --worker=https://lashpop-img.experial.workers.dev
 ```
 
 AVIF variants are stored as lossless SVG metadata wrappers because Hosted
@@ -86,6 +90,7 @@ Run against the preview Worker:
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
   npm run images:verify-parity -- \
+  --legacy-worker=https://lashpop-img.experial.workers.dev \
   --worker=https://lashpop-img-preview.experial.workers.dev \
   --widths=320,600,1600 \
   --formats=avif,webp,jpeg \
@@ -103,19 +108,23 @@ Known unavailable legacy sources must return the same failure status on both
 paths. The public visual snapshots and `npm run test:launch` remain separate,
 mandatory page-level gates.
 
-The current backfill evidence is 501 available originals plus 1,587 exact
-variants. The strict parity run covers all 502 discovered sources at 320, 600,
-and 1600 pixels in AVIF, WebP, and JPEG. Record the final comparison count in
-the pull request; the single known unavailable source must match across all
-nine width/format combinations.
+The current combined backfill evidence is 523 available originals, including
+the 18 approved quiz comparison crops and four approved result photos. The
+production-referenced exact set contains 1,650 variants. The strict parity run
+covers all 524 discovered sources at 320, 600, and 1600 pixels in AVIF, WebP,
+and JPEG. Two retired/unavailable sources preserve their current production
+failure status across all nine width/format combinations.
 
-Current preview evidence is 4,518/4,518 status and dimension matches and
-4,509/4,509 available responses served from Hosted Images. JPEG and WebP are
-decoded-pixel exact. The strict gate remains blocked because 375 AVIF
-comparisons differ after independent legacy encoding (maximum mean absolute
-channel error 2.23/255). Do not describe that as 100% exact parity and do not
-flip production until the AVIF path is made exact or the owner explicitly
-approves a different acceptance standard.
+Current preview evidence is 4,716/4,716 status matches, 4,698/4,698 available
+responses served from Hosted Images, 4,716/4,716 dimension matches, and
+4,716/4,716 byte-for-byte decoded RGBA pixel matches. Maximum mean absolute
+channel error is 0.
+
+The preview and production environments must use the live R2 public base
+`https://pub-b6624c485ec245d68de72be196a72d75.r2.dev`. The feature preview also
+sets `NEXT_PUBLIC_IMAGE_WORKER_BASE` to the isolated hosted Worker without
+trailing whitespace. The application loader trims environment whitespace as a
+defense against configuration formatting errors.
 
 ## Production cutover
 
