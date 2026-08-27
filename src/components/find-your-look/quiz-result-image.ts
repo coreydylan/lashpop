@@ -10,15 +10,32 @@ export function uniqueImageCandidates(
   )
 }
 
-export function getQuizResultFallbackImages(
-  style: LashStyle,
-  photosByStyle: Record<LashStyle, QuizPhoto[]>,
-  bookingImage?: string | null,
-): string[] {
+interface QuizResultImageCandidatesInput {
+  style: LashStyle
+  configuredImage?: string | null
+  selectedPhoto: QuizPhoto | null
+  photosByStyle: Record<LashStyle, QuizPhoto[]>
+  bookingImage?: string | null
+  legacyFallbackImage?: string | null
+}
+
+export function getQuizResultImageCandidates({
+  style,
+  configuredImage,
+  selectedPhoto,
+  photosByStyle,
+  bookingImage,
+  legacyFallbackImage,
+}: QuizResultImageCandidatesInput): string[] {
   const sameStylePhoto = photosByStyle[style]?.find((photo) => photo.isEnabled !== false)
 
-  return uniqueImageCandidates('', [
+  // The admin-selected image (including its generated crop URL) is the public
+  // result contract. Current same-style assets only protect against a missing
+  // or failed configuration; the static result image is the final legacy fallback.
+  return uniqueImageCandidates(configuredImage || '', [
+    selectedPhoto ? getQuizPhotoUrl(selectedPhoto) : null,
     sameStylePhoto ? getQuizPhotoUrl(sameStylePhoto) : null,
     bookingImage,
+    legacyFallbackImage,
   ])
 }

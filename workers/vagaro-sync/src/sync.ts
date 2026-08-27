@@ -20,6 +20,8 @@ import {
   type PublicServiceRecord,
 } from './public-services'
 
+type ImageMirror = (sourceUrl: string) => Promise<void>
+
 export interface CategorySyncStats {
   fetched: number
   created: number
@@ -315,6 +317,7 @@ async function syncService(
   // share a title (see the guard comment in the lookup block).
   runServiceIds: Set<string>,
   categoryIdByVagaroId: Map<string, string>,
+  imageMirror?: ImageMirror,
 ): Promise<SyncedService> {
   const serviceId = publicRecord.serviceId
   // Prefer v2's title when available (it's the authenticated, canonical name);
@@ -470,6 +473,9 @@ async function syncService(
         updatedAt: new Date(),
       })
       .where(eq(services.id, existing[0].id))
+    if (photosAvailable && photoUrl && existing[0].vagaroImageUrl !== photoUrl) {
+      await imageMirror?.(photoUrl)
+    }
     return {
       id: existing[0].id,
       isActive: existing[0].isActive,
@@ -531,6 +537,7 @@ async function syncService(
       mainCategory: parentTitle || 'Other Services',
       lastSyncedAt: new Date(),
     }).returning({ id: services.id })
+    if (photoUrl) await imageMirror?.(photoUrl)
     return {
       id: inserted[0]?.id ?? null,
       isActive: false,
@@ -544,6 +551,7 @@ export async function syncAllServices(
   client: VagaroClient,
   numericBusinessId: string,
   suppliedPayload?: PublicServicesPayload,
+  imageMirror?: ImageMirror,
 ): Promise<SyncStats> {
   // PUBLIC COMPOSITE is the canonical source of the service LIST. Vagaro's
   // authenticated v2 /api/v2/services endpoint caps at 10 rows regardless of
@@ -636,6 +644,7 @@ export async function syncAllServices(
         i,
         runServiceIds,
         categoryIdByVagaroId,
+        imageMirror,
       )
       if (syncedService.id) touchedServiceIds.add(syncedService.id)
       if (!syncedService.bookingReady) {
@@ -736,7 +745,8 @@ export async function syncAllServices(
  */
 export async function syncPublicStaff(
   db: Db,
-  numericBusinessId: string
+  numericBusinessId: string,
+  imageMirror?: ImageMirror,
 ): Promise<PublicStaffStats> {
   const stats: PublicStaffStats = {
     fetched: 0,
@@ -769,6 +779,7 @@ export async function syncPublicStaff(
       name: teamMembers.name,
       isActive: teamMembers.isActive,
       vagaroPublicProviderId: teamMembers.vagaroPublicProviderId,
+      vagaroPhotoUrl: teamMembers.vagaroPhotoUrl,
       usesLashpopBooking: teamMembers.usesLashpopBooking,
     })
     .from(teamMembers)
@@ -863,6 +874,9 @@ export async function syncPublicStaff(
             updatedAt: new Date(),
           })
           .where(eq(teamMembers.id, matchByName.id))
+        if (photoUrl && matchByName.vagaroPhotoUrl !== photoUrl) {
+          await imageMirror?.(photoUrl)
+        }
         stats.matched++
         stats.updated++
       } else {
@@ -896,6 +910,7 @@ export async function syncPublicStaff(
           showOnWebsiteChangedAt: new Date(),
           lastSyncedAt: new Date(),
         })
+        if (photoUrl) await imageMirror?.(photoUrl)
         stats.created++
         stats.unmatchedInVagaro.push(fullName)
       }

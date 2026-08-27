@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import lashpopImageWorker from './index.js'
+import { hostedImageId } from './hosted.js'
 
 function imageStream(bytes = [1, 2, 3]) {
   return new ReadableStream({
@@ -91,6 +92,7 @@ test('streams R2 bytes through the Images binding and versions the cache key', a
   assert.deepEqual(receivedOutput, { format: 'image/avif', quality: 90 })
   assert.equal(response.status, 200)
   assert.equal(response.headers.get('content-type'), 'image/avif')
+  assert.equal(response.headers.get('x-lp-img-backend'), 'legacy')
   assert.equal(response.headers.get('x-lp-img-format'), 'avif')
   assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [8, 9])
 
@@ -99,7 +101,321 @@ test('streams R2 bytes through the Images binding and versions the cache key', a
   const cacheUrl = new URL(writes[0].request.url)
   assert.equal(cacheUrl.searchParams.get('fmt'), 'avif')
   assert.equal(cacheUrl.searchParams.get('dpr'), '1')
-  assert.equal(cacheUrl.searchParams.get('lpv'), 'stream-input-v2')
+  assert.equal(cacheUrl.searchParams.get('lp-backend'), 'legacy')
+  assert.equal(cacheUrl.searchParams.get('lpv'), 'hosted-source-v12-public-url-reference')
+})
+
+test('streams the deterministic Hosted Images original through the identical transform binding', async () => {
+  const writes = installCache()
+  const deferred = []
+  const previousFetch = globalThis.fetch
+  let deliveryUrl
+
+  globalThis.fetch = async (input) => {
+    deliveryUrl = String(input)
+    return new Response(imageStream([1, 2, 3]), {
+      headers: { 'content-type': 'image/jpeg' },
+    })
+  }
+
+  let hostedInput
+  const transformer = {
+    transform() { return this },
+    async output() {
+      return {
+        response: () => new Response(Uint8Array.from([10, 11]), {
+          headers: { 'content-type': 'image/avif' },
+        }),
+      }
+    },
+  }
+
+  try {
+    const response = await lashpopImageWorker.fetch(
+      new Request('https://images.example/uploads/team.jpg?w=600&q=90&f=jpeg', {
+        headers: { accept: 'image/jpeg' },
+      }),
+      {
+        IMAGE_BACKEND: 'hosted',
+        CLOUDFLARE_ACCOUNT_ID: 'account-id',
+        CLOUDFLARE_IMAGES_API_TOKEN: 'images-token',
+        BUCKET: { get: () => assert.fail('hosted hit should not read R2') },
+        IMAGES: {
+          input(stream) {
+            hostedInput = stream
+            return transformer
+          },
+        },
+      },
+      { waitUntil: (promise) => deferred.push(promise) },
+    )
+
+    const imageId = await hostedImageId({ kind: 'r2', locator: 'uploads/team.jpg' })
+    assert.match(deliveryUrl, new RegExp(`/accounts/account-id/images/v1/${encodeURIComponent(imageId)}/blob$`))
+    assert.ok(hostedInput instanceof ReadableStream)
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('x-lp-img-backend'), 'hosted')
+    assert.equal(response.headers.get('x-lp-img-id'), imageId)
+    assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [10, 11])
+
+    await Promise.all(deferred)
+    assert.equal(writes.length, 2)
+    const finalWrite = writes.find(({ request }) => new URL(request.url).searchParams.get('lp-backend') === 'hosted')
+    assert.ok(finalWrite)
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('materializes hosted bytes once for concurrent responsive variants', async () => {
+  installCache()
+  const previousFetch = globalThis.fetch
+  let hostedFetches = 0
+  globalThis.fetch = async () => {
+    hostedFetches += 1
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    return new Response(imageStream([1, 2, 3]), {
+      headers: { 'content-type': 'image/jpeg' },
+    })
+  }
+
+  const transformer = {
+    transform() { return this },
+    async output() {
+      return { response: () => new Response(Uint8Array.from([15])) }
+    },
+  }
+  const env = {
+    IMAGE_BACKEND: 'hosted',
+    CLOUDFLARE_ACCOUNT_ID: 'account-id',
+    CLOUDFLARE_IMAGES_API_TOKEN: 'images-token',
+    BUCKET: { get: () => assert.fail('hosted hit should not read R2') },
+    IMAGES: { input: () => transformer },
+  }
+
+  try {
+    const responses = await Promise.all([320, 600].map((width) => lashpopImageWorker.fetch(
+      new Request(`https://images.example/uploads/concurrent.jpg?w=${width}&f=jpeg`),
+      env,
+      { waitUntil: () => {} },
+    )))
+
+    assert.equal(hostedFetches, 1)
+    assert.deepEqual(responses.map((response) => response.headers.get('x-lp-img-backend')), ['hosted', 'hosted'])
+    assert.deepEqual(
+      await Promise.all(responses.map(async (response) => [...new Uint8Array(await response.arrayBuffer())])),
+      [[15], [15]],
+    )
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('falls through to legacy transformation without caching when Hosted Images misses', async () => {
+  const writes = installCache()
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response('missing', { status: 404 })
+
+  const transformer = {
+    transform() {
+      return this
+    },
+    async output() {
+      return {
+        response() {
+          return new Response(Uint8Array.from([12]), {
+            headers: { 'content-type': 'image/webp' },
+          })
+        },
+      }
+    },
+  }
+
+  try {
+    const response = await lashpopImageWorker.fetch(
+      new Request('https://images.example/uploads/team.jpg?w=320', {
+        headers: { accept: 'image/webp,*/*' },
+      }),
+      {
+        IMAGE_BACKEND: 'hosted',
+        CLOUDFLARE_ACCOUNT_ID: 'account-id',
+        CLOUDFLARE_IMAGES_API_TOKEN: 'images-token',
+        BUCKET: {
+          async get() {
+            return {
+              body: imageStream(),
+              httpMetadata: { contentType: 'image/jpeg' },
+            }
+          },
+        },
+        IMAGES: { input: () => transformer },
+      },
+      { waitUntil: () => assert.fail('fallback must not be pinned in cache') },
+    )
+
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('x-lp-img-backend'), 'legacy')
+    assert.equal(response.headers.get('x-lp-img-fallback'), 'hosted-http-404')
+    assert.equal(response.headers.get('cache-control'), 'public, max-age=300, stale-while-revalidate=60')
+    assert.equal(writes.length, 0)
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('request override can force legacy during a hosted rollout', async () => {
+  installCache()
+  const previousFetch = globalThis.fetch
+  globalThis.fetch = () => assert.fail('legacy override should not fetch Hosted Images')
+
+  try {
+    const response = await lashpopImageWorker.fetch(
+      new Request('https://images.example/uploads/team.jpg?w=320&backend=legacy'),
+      {
+        IMAGE_BACKEND: 'hosted',
+        CLOUDFLARE_ACCOUNT_ID: 'account-id',
+        CLOUDFLARE_IMAGES_API_TOKEN: 'images-token',
+        BUCKET: {
+          async get() {
+            return {
+              body: imageStream(),
+              httpMetadata: { contentType: 'image/jpeg' },
+            }
+          },
+        },
+        IMAGES: {
+          input() {
+            return {
+              transform() { return this },
+              async output() {
+                return { response: () => new Response(Uint8Array.from([13])) }
+              },
+            }
+          },
+        },
+      },
+      { waitUntil: () => {} },
+    )
+
+    assert.equal(response.headers.get('x-lp-img-backend'), 'legacy')
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('repairs a legacy decode failure from the normalized hosted original', async () => {
+  installCache()
+  const previousFetch = globalThis.fetch
+  let transformAttempt = 0
+  globalThis.fetch = async () => new Response(imageStream([9]), {
+    headers: { 'content-type': 'image/png' },
+  })
+
+  try {
+    const response = await lashpopImageWorker.fetch(
+      new Request('https://images.example/uploads/mislabeled.webp?w=600&backend=legacy'),
+      {
+        IMAGE_BACKEND: 'legacy',
+        CLOUDFLARE_ACCOUNT_ID: 'account-id',
+        CLOUDFLARE_IMAGES_API_TOKEN: 'images-token',
+        BUCKET: {
+          async get() {
+            return {
+              body: imageStream([1]),
+              httpMetadata: { contentType: 'image/webp' },
+            }
+          },
+        },
+        IMAGES: {
+          input() {
+            transformAttempt += 1
+            return {
+              transform() { return this },
+              async output() {
+                if (transformAttempt === 1) throw new Error('legacy decode failed')
+                return { response: () => new Response(Uint8Array.from([14])) }
+              },
+            }
+          },
+        },
+      },
+      { waitUntil: () => {} },
+    )
+
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('x-lp-img-backend'), 'hosted-repair')
+    assert.equal(transformAttempt, 2)
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('unwraps a precomputed AVIF variant for an oversized exact-parity source', async () => {
+  installCache()
+  const previousFetch = globalThis.fetch
+  const payload = Buffer.from([1, 2, 3]).toString('base64')
+  globalThis.fetch = async () => new Response(
+    `<svg xmlns="http://www.w3.org/2000/svg"><metadata id="lp-exact" data-mime="image/avif">${payload}</metadata></svg>`,
+    { headers: { 'content-type': 'image/svg+xml' } },
+  )
+
+  try {
+    const response = await lashpopImageWorker.fetch(
+      new Request('https://images.example/uploads/1768945183062-9aaqx-IMG_1858.webp?w=600&q=90&backend=hosted', {
+        headers: { accept: 'image/avif,image/webp,*/*' },
+      }),
+      {
+        IMAGE_BACKEND: 'hosted',
+        CLOUDFLARE_ACCOUNT_ID: 'account-id',
+        CLOUDFLARE_IMAGES_API_TOKEN: 'images-token',
+        BUCKET: { get: () => assert.fail('precomputed hit should not read R2') },
+        IMAGES: { input: () => assert.fail('precomputed hit should not transform again') },
+      },
+      { waitUntil: () => {} },
+    )
+
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('content-type'), 'image/avif')
+    assert.equal(response.headers.get('x-lp-img-backend'), 'hosted')
+    assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [1, 2, 3])
+  } finally {
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('serves a pinned AVIF variant for a normal hosted source', async () => {
+  installCache()
+  const env = {
+    IMAGE_BACKEND: 'hosted',
+    CLOUDFLARE_ACCOUNT_ID: 'account-id',
+    CLOUDFLARE_IMAGES_API_TOKEN: 'images-token',
+    BUCKET: { get: () => assert.fail('pinned hit should not read R2') },
+    IMAGES: { input: () => assert.fail('pinned hit should not transform again') },
+  }
+  const variantBytes = Uint8Array.from([0, 0, 0, 28, 102, 116, 121, 112, 97, 118, 105, 102])
+  const wrapper = `<svg xmlns="http://www.w3.org/2000/svg"><metadata id="lp-exact" data-mime="image/avif">${Buffer.from(variantBytes).toString('base64')}</metadata></svg>`
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (input) => {
+    const url = String(input)
+    assert.match(url, /\/images\/v1\/lpv%2F/)
+    return new Response(wrapper, { headers: { 'content-type': 'image/svg+xml' } })
+  }
+
+  try {
+    const response = await lashpopImageWorker.fetch(
+      new Request('https://images.example/uploads/team.jpg?w=600&f=avif', {
+        headers: { accept: 'image/avif' },
+      }),
+      env,
+      { waitUntil: () => {} },
+    )
+    assert.equal(response.status, 200)
+    assert.equal(response.headers.get('x-lp-img-backend'), 'hosted')
+    assert.equal(response.headers.get('content-type'), 'image/avif')
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), variantBytes)
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('returns an uncached 502 instead of disguising a transform failure as an optimized image', async () => {

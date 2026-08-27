@@ -10,6 +10,7 @@ import { DesignModeGate } from '@/components/dev/DesignModeGate'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { MarketingAnalytics } from '@/components/analytics/MarketingAnalytics'
+import { getImageWorkerBase } from '@/lib/cf-image-loader'
 
 // Force dynamic rendering for all pages - root layout fetches SEO settings from database
 export const dynamic = 'force-dynamic'
@@ -102,13 +103,14 @@ export default async function RootLayout({
 }) {
   // Fetch SEO settings for Schema components
   const settings = await getSEOSettings()
+  const imageWorkerBase = getImageWorkerBase()
 
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
         {/* The above-the-fold hero is delivered by the Cloudflare image worker. */}
-        <link rel="preconnect" href="https://lashpop-img.experial.workers.dev" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://lashpop-img.experial.workers.dev" />
+        <link rel="preconnect" href={imageWorkerBase} crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href={imageWorkerBase} />
 
         {/* llms.txt discovery for AI assistants */}
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Information" />

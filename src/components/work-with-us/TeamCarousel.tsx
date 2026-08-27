@@ -7,6 +7,7 @@ import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
+import cfImageLoader from '@/lib/cf-image-loader'
 import { getEnabledCarouselPhotos, type CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
 import { useWorkWithUsPhotos } from './WorkWithUsPhotosProvider'
 
@@ -130,14 +131,10 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
 
   // URL builder shared between the lightbox <img> and the post-load preloader
   // so prefetched bytes hit the same cache key the lightbox eventually
-  // requests. R2 sources go through the lashpop-img worker so the lightbox
-  // gets a width-capped webp variant.
+  // requests. Supported R2, site, and Rackspace sources go through the shared
+  // image Worker so the lightbox gets the same width-capped variant contract.
   const lightboxSrc = useCallback((src: string) => {
-    const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
-    if (r2) {
-      return `https://lashpop-img.experial.workers.dev/${r2[1]}?w=1600&q=90`
-    }
-    return src
+    return cfImageLoader({ src, width: 1600, quality: 90 })
   }, [])
 
   // Once a visitor opens the lightbox, warm only the neighboring frames. This
