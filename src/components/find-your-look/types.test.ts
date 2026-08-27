@@ -8,6 +8,7 @@ import {
   checkWinCondition,
   createEmptyScores,
   getPairKey,
+  getQuestionnaireScores,
   getUnusedStylePairs,
   pickQuizPhoto,
   type QuizPhoto,
@@ -21,6 +22,33 @@ test("questionnaire answers are immediately reflected in quiz scores", () => {
     classic: 2,
     hybrid: 0,
     wetAngel: 2,
+    volume: 0,
+  })
+})
+
+test('every questionnaire button pair maps to exactly its current answers', () => {
+  const answers = ['A', 'B', 'C', 'D'] as const
+
+  for (const q1 of answers) {
+    for (const q2 of answers) {
+      const expected = applyScoreChanges(
+        applyScoreChanges(createEmptyScores(), Q1_SCORES[q1]),
+        Q2_SCORES[q2],
+      )
+      assert.deepEqual(getQuestionnaireScores(q1, q2), expected)
+    }
+  }
+
+  assert.deepEqual(getQuestionnaireScores('C', 'D'), {
+    classic: 0,
+    hybrid: 0,
+    wetAngel: 0,
+    volume: 4,
+  })
+  assert.deepEqual(getQuestionnaireScores('A', 'A'), {
+    classic: 4,
+    hybrid: 0,
+    wetAngel: 0,
     volume: 0,
   })
 })
