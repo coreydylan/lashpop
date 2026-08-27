@@ -32,10 +32,11 @@ It defaults to `IMAGE_BACKEND=hosted`. A Vercel feature deployment uses:
 NEXT_PUBLIC_IMAGE_WORKER_BASE=https://lashpop-img-preview.experial.workers.dev
 ```
 
-Production keeps its current Worker and legacy default until approval. Public
-requests cannot opt themselves into the hosted backend; `IMAGE_BACKEND` is the
-only production cutover control. A `backend=legacy` request override remains
-available for targeted rollback diagnosis.
+The deployed production Worker stays on its current legacy version until the
+approved branch is merged and deployed. The branch sets `IMAGE_BACKEND=hosted`
+for that cutover. Public requests cannot opt themselves into the hosted backend;
+`IMAGE_BACKEND` is the only production cutover control. A `backend=legacy`
+request override remains available for targeted rollback diagnosis.
 
 ## Backfill
 
@@ -133,8 +134,8 @@ checks pass and the preview has owner approval.
 
 1. Ensure the production `lashpop-img` Worker has the
    `CLOUDFLARE_IMAGES_API_TOKEN` secret.
-2. Change only `IMAGE_BACKEND` in `workers/lashpop-img/wrangler.jsonc` from
-   `legacy` to `hosted`.
+2. Confirm the approved branch sets `IMAGE_BACKEND=hosted` in
+   `workers/lashpop-img/wrangler.jsonc`.
 3. Deploy the Worker. Worker versions activate atomically, so requests remain
    served throughout the change.
 4. Verify representative responses report `x-lp-img-backend: hosted` and no

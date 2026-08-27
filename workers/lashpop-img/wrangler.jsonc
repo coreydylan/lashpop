@@ -7,11 +7,11 @@
   "compatibility_date": "2026-06-01",
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-dam" }],
   "images": { "binding": "IMAGES" },
-  // Production remains on the current transform path until the parity gate is
-  // accepted. Flipping only IMAGE_BACKEND to "hosted" is the atomic cutover;
-  // hosted misses automatically fall back to the legacy source.
+  // Owner-approved production cutover. Flipping only IMAGE_BACKEND is atomic;
+  // hosted misses automatically fall back to the legacy source, and rollback
+  // is the inverse one-line change.
   "vars": {
-    "IMAGE_BACKEND": "legacy",
+    "IMAGE_BACKEND": "hosted",
     "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
   },
   "env": {
