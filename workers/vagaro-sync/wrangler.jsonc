@@ -19,6 +19,9 @@
       "database_id": "5ff90fd7-2a8d-4c0e-baaa-341f33f8aa87"
     }
   ],
+  "vars": {
+    "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
+  },
   "observability": {
     "enabled": true
   }
@@ -28,4 +31,5 @@
   //   VAGARO_CLIENT_SECRET
   //   VAGARO_API_BASE_URL
   //   VAGARO_BUSINESS_ID
+  //   CLOUDFLARE_IMAGES_API_TOKEN — Images Read/Write token for photo mirroring
 }

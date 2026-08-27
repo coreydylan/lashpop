@@ -1,4 +1,5 @@
 import { downloadImage, fetchRecentPosts } from './ig'
+import { mirrorR2Image } from './cloudflare-images'
 
 interface Env {
   BUCKET: R2Bucket
@@ -9,6 +10,8 @@ interface Env {
   NEXT_PUBLIC_R2_BUCKET_URL: string
   SYNC_SCHEDULED: string
   MANUAL_TRIGGER_SECRET?: string
+  CLOUDFLARE_ACCOUNT_ID: string
+  CLOUDFLARE_IMAGES_API_TOKEN?: string
 }
 
 interface RunResult {
@@ -90,6 +93,14 @@ async function run(env: Env, limit = 24): Promise<RunResult> {
             },
           })
           result.imagesUploaded++
+
+          try {
+            await mirrorR2Image(env, key, buf, 'image/jpeg')
+          } catch (error) {
+            // R2 remains the zero-downtime fallback. Report the mirror failure
+            // without throwing away a successful Instagram import.
+            console.error(`  [${post.shortcode}#${img.index}] Hosted Images mirror failed:`, error)
+          }
 
           const r2Url = `${env.NEXT_PUBLIC_R2_BUCKET_URL.replace(/\/$/, '')}/${key}`
           const externalId = `${post.shortcode}_${img.index}`

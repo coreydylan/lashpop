@@ -130,7 +130,7 @@ export default function TeamPhotographyPage() {
           })
 
           if (!presignedResponse.ok) throw new Error("Failed to prepare upload.")
-          const { presignedUrl, url } = await presignedResponse.json()
+          const { presignedUrl, key, url } = await presignedResponse.json()
 
           const uploadResponse = await fetch(presignedUrl, {
             method: "PUT",
@@ -146,6 +146,7 @@ export default function TeamPhotographyPage() {
               teamMemberId: selectedMember.id,
               fileName: file.name,
               filePath: url,
+              storageKey: key,
             }),
           })
           if (!metadataResponse.ok) throw new Error("Photo metadata could not be saved.")
