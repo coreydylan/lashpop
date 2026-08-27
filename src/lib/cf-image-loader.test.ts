@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { cfPortraitImageLoader } from './cf-image-loader'
+import { cfPortraitImageLoader, getImageWorkerBase } from './cf-image-loader'
 
 test('feature preview points all optimized images at the isolated hosted worker', async () => {
   const previousBase = process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE
@@ -33,7 +33,7 @@ test('mobile hero requests an oversampled full frame without baking in a crop', 
   })
   const url = new URL(result)
 
-  assert.equal(url.hostname, 'lashpop-img.experial.workers.dev')
+  assert.equal(url.hostname, new URL(getImageWorkerBase()).hostname)
   assert.equal(url.pathname, '/hero-facetune.jpg')
   assert.equal(url.searchParams.get('w'), '3840')
   assert.equal(url.searchParams.get('h'), null)

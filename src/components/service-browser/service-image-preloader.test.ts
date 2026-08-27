@@ -5,6 +5,7 @@ import {
   getServiceImageLoadPlan,
   getServiceImageSrcSet,
 } from './service-image-preloader'
+import { getImageWorkerBase } from '@/lib/cf-image-loader'
 
 const r2Base = 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads'
 
@@ -31,6 +32,6 @@ test('preloads the same compact responsive variants rendered by each card', () =
   const srcSet = getServiceImageSrcSet(image)
 
   assert.equal(image.sizes, SERVICE_CARD_SIZES)
-  assert.match(srcSet, /lashpop-img\.experial\.workers\.dev\/uploads\/classic\.jpg\?w=320&q=90 320w/)
-  assert.match(srcSet, /lashpop-img\.experial\.workers\.dev\/uploads\/classic\.jpg\?w=600&q=90 600w/)
+  assert.ok(srcSet.includes(`${getImageWorkerBase()}/uploads/classic.jpg?w=320&q=90 320w`))
+  assert.ok(srcSet.includes(`${getImageWorkerBase()}/uploads/classic.jpg?w=600&q=90 600w`))
 })
