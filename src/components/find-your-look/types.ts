@@ -170,6 +170,16 @@ export function applyScoreChanges(
   return next
 }
 
+export function getQuestionnaireScores(
+  q1Answer: Q1Answer | null,
+  q2Answer: Q2Answer | null,
+): StyleScores {
+  let scores = createEmptyScores()
+  if (q1Answer) scores = applyScoreChanges(scores, Q1_SCORES[q1Answer])
+  if (q2Answer) scores = applyScoreChanges(scores, Q2_SCORES[q2Answer])
+  return scores
+}
+
 // "Neither" means the comparison supplied no preference signal. Advancing
 // must preserve the questionnaire and prior photo-selection scores exactly;
 // subtracting from both displayed styles can otherwise manufacture a winner.

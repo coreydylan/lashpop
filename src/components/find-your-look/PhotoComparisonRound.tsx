@@ -68,7 +68,10 @@ export function PhotoComparisonRound({
       </div>
 
       {/* Photo Comparison */}
-      <div className="flex-1 grid grid-cols-2 gap-3 md:gap-4 min-h-0">
+      <div
+        className="grid flex-none grid-cols-2 gap-3 min-h-0 md:flex-1 md:gap-4"
+        data-quiz-photo-grid
+      >
         {/* Left Photo */}
         <motion.button
           initial={{ opacity: 0, x: -20, scale: 0.9 }}
@@ -85,6 +88,8 @@ export function PhotoComparisonRound({
           onClick={() => handleSelect("left", pair.leftStyle)}
           disabled={isLocked}
           aria-pressed={feedbackSide === "left"}
+          data-lash-style={pair.leftStyle}
+          data-quiz-photo-src={getQuizPhotoUrl(pair.left)}
           className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <QuizBlurFadeImage
@@ -125,6 +130,8 @@ export function PhotoComparisonRound({
           onClick={() => handleSelect("right", pair.rightStyle)}
           disabled={isLocked}
           aria-pressed={feedbackSide === "right"}
+          data-lash-style={pair.rightStyle}
+          data-quiz-photo-src={getQuizPhotoUrl(pair.right)}
           className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <QuizBlurFadeImage
