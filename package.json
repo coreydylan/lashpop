@@ -28,7 +28,7 @@
     "images:precompute-exact": "node scripts/cloudflare-images/precompute-exact.mjs",
     "images:verify-parity": "node scripts/cloudflare-images/verify-parity.mjs",
     "test:fixtures": "node scripts/check-browser-fixtures.mjs",
-    "test:staff": "tsx --test src/lib/team-publication-contract.test.ts src/lib/admin/team-presentation.test.ts src/lib/admin/vagaro-owner-workflows.test.ts src/db/migrations-cascade.test.ts",
+    "test:staff": "tsx --test src/lib/team-publication-contract.test.ts src/lib/admin/team-presentation.test.ts src/lib/team-portrait.test.ts src/lib/admin/vagaro-owner-workflows.test.ts src/db/migrations-cascade.test.ts",
     "test:vagaro": "npm run test:vagaro-widget && npm run test:vagaro-embed && npm run test:vagaro-health && npm run test:vagaro-manifest && npm run test:vagaro-readiness && npm run test:roster-reconcile",
     "fixtures:browser:refresh": "DOTENV_CONFIG_PATH=.env.production.local tsx -r dotenv/config scripts/export-browser-fixture.ts --write",
     "vagaro:widgets:audit": "tsx scripts/vagaro-widget-admin.ts audit",

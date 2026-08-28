@@ -30,10 +30,11 @@ interface TeamMember {
   id: string
   name: string
   imageUrl: string
-  cropSquare?: CropData | null
-  cropCloseUpCircle?: CropData | null
-  cropSquareUrl?: string | null
-  cropCloseUpCircleUrl?: string | null
+  effectiveImageUrl: string
+  effectiveImageSource: "vagaro" | "local" | "placeholder"
+  hasLocalPrimary: boolean
+  hasRequiredLocalCrops: boolean
+  localPrimaryIsLive: boolean
 }
 
 interface TeamMemberPhoto {
@@ -85,7 +86,7 @@ export default function TeamPhotographyPage() {
     setIsLoadingPhotos(true)
     setErrorMessage(null)
     try {
-      const response = await fetch(`/api/dam/team/${memberId}/photos`)
+      const response = await fetch(`/api/dam/team/${memberId}/photos?includePrimary=1`)
       if (!response.ok) throw new Error("Team photos could not be loaded.")
       const data = await response.json()
       setMemberPhotos(data.photos || [])
@@ -178,7 +179,11 @@ export default function TeamPhotographyPage() {
       })
       if (!response.ok) throw new Error("Primary photo could not be changed.")
       await Promise.all([fetchMemberPhotos(selectedMember.id), fetchTeamMembers()])
-      setNotice("Primary profile photo updated.")
+      setNotice(
+        selectedMember.effectiveImageSource === "vagaro"
+          ? "Local primary updated. The live website portrait remains synced from Vagaro."
+          : "Primary profile photo updated.",
+      )
     } catch (error) {
       console.error("Failed to set primary:", error)
       setErrorMessage("The primary photo could not be changed. Try again.")
@@ -233,9 +238,9 @@ export default function TeamPhotographyPage() {
             <p className="mt-3 max-w-2xl text-sm leading-6 text-black/55">Keep source photos, primary selections, and website-ready crops together so profiles stay consistent across every surface.</p>
           </div>
           <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">Crop coverage</p>
-            <p className="mt-1 font-serif text-2xl">{teamMembers.filter(hasRequiredCrops).length} / {teamMembers.length}</p>
-            <p className="mt-1 text-xs text-black/45">team profiles ready</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">Website portrait parity</p>
+            <p className="mt-1 font-serif text-2xl">{teamMembers.filter(hasLivePortrait).length} / {teamMembers.length}</p>
+            <p className="mt-1 text-xs text-black/45">website portraits visible</p>
           </div>
         </header>
 
@@ -313,29 +318,29 @@ function TeamRoster({ teamMembers, onSelect }: { teamMembers: TeamMember[]; onSe
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <h2 id="team-roster-heading" className="font-serif text-2xl">Choose a team member</h2>
-          <p className="mt-1 text-xs text-black/45">Profiles needing crop setup are listed first.</p>
+          <p className="mt-1 text-xs text-black/45">Every preview below matches the portrait currently shown on the website.</p>
         </div>
         <p className="text-xs font-semibold text-black/40">{teamMembers.length} profiles</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {[...teamMembers].sort((a, b) => Number(hasRequiredCrops(a)) - Number(hasRequiredCrops(b)) || a.name.localeCompare(b.name)).map((member) => {
-          const ready = hasRequiredCrops(member)
+        {[...teamMembers].sort((a, b) => Number(hasLivePortrait(a)) - Number(hasLivePortrait(b)) || a.name.localeCompare(b.name)).map((member) => {
+          const live = hasLivePortrait(member)
           return (
             <button
               key={member.id}
               type="button"
               onClick={() => onSelect(member)}
               className="group grid min-h-32 grid-cols-[5.5rem_1fr] overflow-hidden rounded-xl border border-black/10 bg-white text-left hover:border-[#c96f50]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
-              aria-label={`Manage photography for ${member.name}${ready ? ", crops ready" : ", crops needed"}`}
+              aria-label={`Manage photography for ${member.name}, ${liveSourceLabel(member)}`}
             >
               <span className="relative h-full min-h-32 overflow-hidden bg-[#eadfd5]">
-                <img src={member.cropSquareUrl || member.imageUrl} alt="" width={320} height={320} loading="lazy" className="absolute inset-0 size-full object-cover" style={member.cropSquareUrl ? undefined : cropStyle(member.cropSquare)} />
+                <img src={member.effectiveImageUrl} alt="" width={320} height={320} loading="lazy" className={`absolute inset-0 size-full ${member.effectiveImageSource === "placeholder" ? "object-contain p-4" : "object-cover object-top"}`} />
               </span>
               <span className="flex min-w-0 flex-col justify-between p-4">
                 <span className="font-serif text-xl leading-tight">{member.name}</span>
-                <span className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold ${ready ? "border-emerald-800/15 bg-emerald-50 text-emerald-800" : "border-amber-800/15 bg-amber-50 text-amber-900"}`}>
-                  {ready ? <CheckCircle2 className="size-3" aria-hidden="true" /> : <Crop className="size-3" aria-hidden="true" />}
-                  {ready ? "Crops ready" : "Needs crops"}
+                <span className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold ${live ? "border-emerald-800/15 bg-emerald-50 text-emerald-800" : "border-amber-800/15 bg-amber-50 text-amber-900"}`}>
+                  {live ? <CheckCircle2 className="size-3" aria-hidden="true" /> : <AlertCircle className="size-3" aria-hidden="true" />}
+                  {liveSourceLabel(member)}
                 </span>
               </span>
             </button>
@@ -376,13 +381,51 @@ function MemberPhotoLibrary({
             All team members
           </button>
           <h2 id="member-photos-heading" className="mt-2 font-serif text-3xl">{member.name}</h2>
-          <p className="mt-1 text-sm text-black/50">{photos.length} {photos.length === 1 ? "source photo" : "source photos"} · choose one primary and prepare its crops.</p>
+          <p className="mt-1 text-sm text-black/50">{photos.length} local {photos.length === 1 ? "source photo" : "source photos"} · the live website portrait is shown below.</p>
         </div>
         <label className={`inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-within:ring-2 focus-within:ring-[#c96f50] ${isUploading ? "pointer-events-none opacity-60" : ""}`}>
           {isUploading ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Upload className="size-4" aria-hidden="true" />}
           {isUploading ? "Uploading…" : "Upload photos"}
           <input name="team-photos" type="file" accept="image/*" multiple onChange={onUpload} className="sr-only" disabled={isUploading} />
         </label>
+      </div>
+
+      <div className="mb-6 grid overflow-hidden rounded-xl border border-black/10 bg-white sm:grid-cols-[10rem_1fr]">
+        <div className="relative aspect-square overflow-hidden bg-[#eadfd5] sm:aspect-auto sm:min-h-40">
+          <img
+            src={member.effectiveImageUrl}
+            alt={`${member.name} as currently shown on the website`}
+            width={480}
+            height={480}
+            className={`absolute inset-0 size-full ${member.effectiveImageSource === "placeholder" ? "object-contain p-5" : "object-cover object-top"}`}
+          />
+        </div>
+        <div className="flex flex-col justify-center p-5 sm:p-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9f4c33]">Live website portrait</p>
+          <p className="mt-2 font-serif text-2xl">{liveSourceLabel(member)}</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-black/50">
+            {member.effectiveImageSource === "vagaro"
+              ? "This is the exact Vagaro portrait the public team section currently uses. Local sources and crops below do not replace it."
+              : member.effectiveImageSource === "local"
+                ? "This local primary is the exact portrait the public team section currently uses."
+                : "The public team section currently has no portrait for this profile."}
+          </p>
+          {member.effectiveImageSource === "vagaro" && !member.hasLocalPrimary && (
+            <p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-amber-900">
+              <AlertCircle className="size-3.5" aria-hidden="true" /> No local primary selected; Vagaro remains live.
+            </p>
+          )}
+          {member.hasLocalPrimary && !member.localPrimaryIsLive && (
+            <p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-black/45">
+              <Crop className="size-3.5" aria-hidden="true" /> A local primary is prepared but is not the live website source.
+            </p>
+          )}
+          {member.hasLocalPrimary && !member.hasRequiredLocalCrops && (
+            <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-amber-900">
+              <AlertCircle className="size-3.5" aria-hidden="true" /> The local primary still needs its approved crop set.
+            </p>
+          )}
+        </div>
       </div>
 
       {isLoading ? (
@@ -400,7 +443,7 @@ function MemberPhotoLibrary({
             return (
               <article key={photo.id} className="group overflow-hidden rounded-xl border border-black/10 bg-white">
                 <div className="relative aspect-square overflow-hidden bg-[#eadfd5]">
-                  <img src={photo.filePath} alt={photo.fileName} width={640} height={640} loading="lazy" className="size-full object-cover" />
+                  <SourcePhotoPreview photo={photo} />
                   <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
                     <button
                       type="button"
@@ -412,7 +455,7 @@ function MemberPhotoLibrary({
                       <Trash2 className="size-4" aria-hidden="true" />
                     </button>
                     <span className="flex flex-wrap justify-end gap-1.5">
-                      {photo.isPrimary && <span className="rounded-full bg-[#292a27] px-2.5 py-1 text-[10px] font-semibold text-white">Primary</span>}
+                      {photo.isPrimary && <span className="rounded-full bg-[#292a27] px-2.5 py-1 text-[10px] font-semibold text-white">Local primary</span>}
                       {hasCrops && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800"><CheckCircle2 className="size-3" aria-hidden="true" /> Cropped</span>}
                     </span>
                   </div>
@@ -425,7 +468,7 @@ function MemberPhotoLibrary({
                       {hasCrops ? "Edit crops" : "Set crops"}
                     </button>
                     <button type="button" onClick={() => onSetPrimary(photo.id)} disabled={photo.isPrimary} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#f4dfd5] px-2 text-xs font-semibold text-[#87442f] hover:bg-[#ecd0c3] disabled:cursor-default disabled:bg-black/[0.04] disabled:text-black/35">
-                      {photo.isPrimary ? "In use" : "Make primary"}
+                      {photo.isPrimary ? "Local primary" : "Make primary"}
                     </button>
                   </div>
                 </div>
@@ -446,14 +489,37 @@ function LoadingState({ label }: { label: string }) {
   )
 }
 
-function hasRequiredCrops(member: TeamMember): boolean {
-  return Boolean(member.cropSquare && member.cropCloseUpCircle)
+function SourcePhotoPreview({ photo }: { photo: TeamMemberPhoto }) {
+  const [failed, setFailed] = useState(false)
+
+  if (failed) {
+    return (
+      <div className="flex size-full flex-col items-center justify-center gap-2 bg-amber-50 px-4 text-center text-amber-900" role="status">
+        <AlertCircle className="size-5" aria-hidden="true" />
+        <span className="text-xs font-semibold">Source file unavailable</span>
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={photo.filePath}
+      alt={photo.fileName}
+      width={640}
+      height={640}
+      loading="lazy"
+      className="size-full object-cover"
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
-function cropStyle(crop?: CropData | null): React.CSSProperties {
-  if (!crop) return { objectPosition: "center 34%" }
-  return {
-    objectPosition: `${crop.x}% ${crop.y}%`,
-    transform: `scale(${crop.scale})`,
-  }
+function hasLivePortrait(member: TeamMember): boolean {
+  return member.effectiveImageSource !== "placeholder"
+}
+
+function liveSourceLabel(member: TeamMember): string {
+  if (member.effectiveImageSource === "vagaro") return "Live from Vagaro"
+  if (member.effectiveImageSource === "local") return "Live from local portrait"
+  return "No live portrait"
 }

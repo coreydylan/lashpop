@@ -11,6 +11,7 @@ import { getFounderLetter } from "@/actions/founder-letter"
 import { getHomepageServices } from "@/actions/homepage-services"
 import { getHeroContent } from "@/actions/hero-content"
 import { ReviewSchema } from "@/components/seo"
+import { resolveTeamPhotoParity } from "@/lib/team-portrait"
 import LandingPageV2Client from "./LandingPageV2Client"
 import type { CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
 
@@ -181,8 +182,9 @@ export default async function HomePage() {
     role: member.role,
     type: member.type as 'employee' | 'independent',
     businessName: member.businessName || undefined,
-    // Vagaro is source of truth for staff photos; fall back to local imageUrl, then nothing.
-    image: member.vagaroPhotoUrl || member.imageUrl,
+    // Shared with Admin Team Photography so the control surface always shows
+    // the exact portrait selected by the public website.
+    image: resolveTeamPhotoParity(member).effectiveImageUrl,
     phone: member.phone,
     // Component types still carry a `specialties` field for legacy mock data
     // and orchestrator handoff; the live DB column is gone. Pass the same
