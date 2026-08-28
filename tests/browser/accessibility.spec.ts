@@ -12,6 +12,11 @@ type QuizPath = {
   resultStyle: 'classic' | 'wetAngel' | 'hybrid' | 'volume'
   resultHeading: string
   configuredResultImage: string
+  expectedPairKeys: string[]
+}
+
+function pairKey(styles: string[]) {
+  return [...styles].sort().join('-')
 }
 
 async function walkQuizPath(page: Page, path: QuizPath) {
@@ -24,12 +29,16 @@ async function walkQuizPath(page: Page, path: QuizPath) {
   await quiz.getByRole('button', { name: path.q1Button }).click()
   await quiz.getByRole('button', { name: path.q2Button }).click()
 
+  const roundHistory: string[] = []
   for (let round = 0; round < 6; round += 1) {
     const result = quiz.locator('[data-quiz-result-style]')
     if (await result.isVisible().catch(() => false)) break
 
     const comparison = quiz.locator('[data-photo-pair]')
     await expect(comparison).toBeVisible()
+    roundHistory.push(pairKey(await comparison.locator('[data-lash-style]').evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute('data-lash-style') ?? ''),
+    )))
     const previousPair = await comparison.getAttribute('data-photo-pair')
     const targetPhoto = comparison.locator(`[data-lash-style="${path.resultStyle}"]`)
 
@@ -51,6 +60,7 @@ async function walkQuizPath(page: Page, path: QuizPath) {
     }).not.toBe('waiting')
   }
 
+  expect(roundHistory).toEqual(path.expectedPairKeys)
   const result = quiz.locator(`[data-quiz-result-style="${path.resultStyle}"]`)
   await expect(result).toBeVisible()
   await expect(result.getByRole('heading', { name: path.resultHeading })).toBeVisible()
@@ -152,12 +162,16 @@ test('quiz reaches one stable result image when every comparison is skipped', as
   await quiz.getByRole('button', { name: /Sunscreen, lip balm/ }).click()
   await quiz.getByRole('button', { name: /Barely there/ }).click()
 
+  const roundHistory: string[] = []
   for (let round = 0; round < 6; round += 1) {
     const resultHeading = quiz.getByText('Your Perfect Match')
     if (await resultHeading.isVisible().catch(() => false)) break
     const skip = quiz.getByRole('button', { name: 'Neither of these' })
     const comparison = quiz.locator('[data-photo-pair]')
     await expect(skip).toBeVisible()
+    roundHistory.push(pairKey(await comparison.locator('[data-lash-style]').evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute('data-lash-style') ?? ''),
+    )))
     const previousPair = await comparison.getAttribute('data-photo-pair')
     await skip.click()
     await expect.poll(async () => {
@@ -168,6 +182,14 @@ test('quiz reaches one stable result image when every comparison is skipped', as
     }).not.toBe('waiting')
   }
 
+  expect(roundHistory).toEqual([
+    'classic-volume',
+    'classic-wetAngel',
+    'classic-hybrid',
+    'hybrid-wetAngel',
+    'volume-wetAngel',
+    'hybrid-volume',
+  ])
   await expect(quiz.getByText('Your Perfect Match')).toBeVisible()
   const resultImage = quiz.locator('img[alt$="Lashes"]').first()
   await expect(resultImage).toBeVisible()
@@ -215,6 +237,7 @@ for (const path of [
     resultStyle: 'classic',
     resultHeading: 'Classic Lashes',
     configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/classic-full-set-approved.jpg',
+    expectedPairKeys: ['classic-volume', 'classic-wetAngel', 'classic-hybrid'],
   },
   {
     name: 'Volume choices',
@@ -223,6 +246,7 @@ for (const path of [
     resultStyle: 'volume',
     resultHeading: 'Volume Lashes',
     configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/volume-full-set-approved.jpg',
+    expectedPairKeys: ['classic-volume', 'volume-wetAngel', 'hybrid-volume'],
   },
   {
     name: 'Hybrid photo choices against a Classic questionnaire',
@@ -231,6 +255,12 @@ for (const path of [
     resultStyle: 'hybrid',
     resultHeading: 'Hybrid Lashes',
     configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/hybrid-full-set-approved.jpg',
+    expectedPairKeys: [
+      'classic-volume',
+      'classic-wetAngel',
+      'classic-hybrid',
+      'hybrid-wetAngel',
+    ],
   },
   {
     name: 'Wet Angel photo choices against a Classic questionnaire',
@@ -239,6 +269,12 @@ for (const path of [
     resultStyle: 'wetAngel',
     resultHeading: 'Wet / Angel Lashes',
     configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/wetAngel-full-set-approved.jpg',
+    expectedPairKeys: [
+      'classic-volume',
+      'classic-wetAngel',
+      'classic-hybrid',
+      'hybrid-wetAngel',
+    ],
   },
 ] satisfies QuizPath[]) {
   test(`quiz ${path.name} produces its matching result and admin-configured photo`, async ({ page }) => {

@@ -115,13 +115,24 @@ test('questionnaire supplies the result when every photo comparison is skipped',
   )
 })
 
-test('the quiz never finishes before all six labeled style pairings are shown', () => {
-  const photoScores = { classic: 3, wetAngel: 0, hybrid: 0, volume: 0 }
-  const baseline = getQuestionnaireScores('A', 'A')
+test('each decisive photo leader can finish after three completed comparisons', () => {
+  const baseline = createEmptyScores()
 
-  assert.equal(checkWinCondition(photoScores, 4, 'classic', baseline), null)
-  assert.equal(checkWinCondition(photoScores, 5, 'classic', baseline), null)
-  assert.equal(checkWinCondition(photoScores, 6, 'classic', baseline), 'classic')
+  for (const style of ['classic', 'wetAngel', 'hybrid', 'volume'] as const) {
+    const photoScores = { ...createEmptyScores(), [style]: 2 }
+
+    assert.equal(checkWinCondition(photoScores, 2, style, baseline), null)
+    assert.equal(checkWinCondition(photoScores, 3, style, baseline), style)
+  }
+})
+
+test('an ambiguous path keeps all six comparisons before the questionnaire tie-break', () => {
+  const photoScores = { classic: 1, wetAngel: 1, hybrid: 1, volume: 1 }
+  const volumeQuestionnaire = getQuestionnaireScores('C', 'D')
+
+  assert.equal(checkWinCondition(photoScores, 3, undefined, volumeQuestionnaire), null)
+  assert.equal(checkWinCondition(photoScores, 5, undefined, volumeQuestionnaire), null)
+  assert.equal(checkWinCondition(photoScores, 6, undefined, volumeQuestionnaire), 'volume')
 })
 
 test("questionnaire preference resolves a skipped final tie", () => {
