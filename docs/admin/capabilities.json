@@ -1,7 +1,7 @@
 {
   "$schema": "./capabilities.schema.json",
-  "version": 1,
-  "updated": "2026-08-27",
+  "version": 2,
+  "updated": "2026-08-28",
   "title": "LashPop admin owner capability contract",
   "purpose": "The release-critical list of plain-English owner jobs, including the exact outside-system or technical handoff when a safe result cannot be completed inside the admin panel alone.",
   "outsideAdmin": [
@@ -231,6 +231,17 @@
       "questions": ["Where do I check my access level and the latest Vagaro sync?"],
       "verificationMode": "safe-live",
       "evidence": [{ "file": "src/app/admin/(panel)/settings/page.tsx", "contains": ["Access", "Vagaro"] }]
+    },
+    {
+      "id": "owner-guide",
+      "area": "Settings",
+      "route": "/admin/owner-guide",
+      "questions": ["How do I find help in the admin panel?"],
+      "verificationMode": "safe-live",
+      "evidence": [
+        { "file": "src/app/admin/(panel)/owner-guide/page.tsx", "contains": ["AdminOwnerGuide"] },
+        { "file": "src/components/admin-guide/AdminOwnerGuide.tsx", "contains": ["What do you want to do?", "Search the Owner guide", "Check your work"] }
+      ]
     },
     {
       "id": "admin-access",

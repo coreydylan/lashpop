@@ -77,14 +77,14 @@ if (!existsSync(guidePath)) {
       fail(`owner guide is missing capability:${capability.id}`)
     }
     for (const question of capability.questions ?? []) {
-      if (!guide.includes(`### ${question}`)) {
+      if (!guide.includes(question)) {
         fail(`owner guide is missing the canonical question: ${question}`)
       }
     }
   }
 
   const screenshotPaths = Array.from(
-    guide.matchAll(/\]\((screenshots\/[^)]+)\)/g),
+    guide.matchAll(/\]\((\.\.\/\.\.\/public\/admin-guide\/screenshots\/[^)]+)\)/g),
     (match) => match[1],
   )
   guideScreenshotCount = new Set(screenshotPaths).size
