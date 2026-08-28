@@ -1,6 +1,7 @@
 import {
   Activity,
   BriefcaseBusiness,
+  BookOpen,
   Building2,
   FileText,
   FolderOpen,
@@ -136,6 +137,7 @@ export const ADMIN_AREAS: AdminArea[] = [
     description: 'Access, integrations, sync health, and accountability.',
     sections: [
       { id: 'settings-home', label: 'Settings overview', href: '/admin/settings', icon: Settings, description: 'Access and system health', owner: 'System' },
+      { id: 'owner-guide', label: 'Owner guide', href: '/admin/owner-guide', icon: BookOpen, description: 'Searchable step-by-step help', owner: 'LashPop' },
       { id: 'users', label: 'Admin access', href: '/admin/dam-users', icon: Users, description: 'Roles and permissions', owner: 'System' },
       { id: 'syncs', label: 'Vagaro sync', href: '/admin/system/syncs', icon: RefreshCw, description: 'Freshness, runs, and manual sync', owner: 'Vagaro' },
       { id: 'audit-log', label: 'Activity history', href: '/admin/system/audit-log', icon: Activity, description: 'Persistent admin changes', owner: 'System' },
