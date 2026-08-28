@@ -7,7 +7,7 @@ import { ChevronLeft, X, ArrowRight, AlertCircle } from 'lucide-react';
 import { useQuizAlgorithm } from './useQuizAlgorithm';
 import { PhotoComparisonRound } from './PhotoComparisonRound';
 import { QuizBlurFadeImage } from './QuizBlurFadeImage';
-import { preloadQuizImages } from './quiz-image-preloader';
+import { preloadQuizExperience } from './quiz-image-preloader';
 import { getQuizResultImageCandidates } from './quiz-result-image';
 import {
   type LashStyle,
@@ -19,8 +19,6 @@ import {
   QUIZ_CONFIG,
 } from './types';
 import {
-  getQuizPhotosForQuiz,
-  getResultSettingsForQuiz,
   getQuizResultServices,
   type QuizResultForDisplay,
   type QuizResultService,
@@ -139,16 +137,8 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
         setPhotosLoading(true);
         setPhotosError(null);
         try {
-          const [photos, settings] = await Promise.all([
-            getQuizPhotosForQuiz(),
-            getResultSettingsForQuiz(),
-          ]);
-          const typedPhotos = photos as Record<LashStyle, QuizPhoto[]>;
-          const resultImages = Object.values(settings)
-            .map((setting) => setting.resultImage)
-            .filter((src): src is string => Boolean(src));
-          preloadQuizImages(typedPhotos, resultImages);
-          setPhotosByStyle(typedPhotos);
+          const { photos, settings } = await preloadQuizExperience();
+          setPhotosByStyle(photos);
           setResultSettings(settings);
         } catch (error) {
           console.error('Error loading quiz data:', error);
@@ -424,16 +414,8 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
       const load = async () => {
         setPhotosLoading(true);
         try {
-          const [photos, settings] = await Promise.all([
-            getQuizPhotosForQuiz(),
-            getResultSettingsForQuiz(),
-          ]);
-          const typedPhotos = photos as Record<LashStyle, QuizPhoto[]>;
-          const resultImages = Object.values(settings)
-            .map((setting) => setting.resultImage)
-            .filter((src): src is string => Boolean(src));
-          preloadQuizImages(typedPhotos, resultImages);
-          setPhotosByStyle(typedPhotos);
+          const { photos, settings } = await preloadQuizExperience();
+          setPhotosByStyle(photos);
           setResultSettings(settings);
         } catch (error) {
           console.error('Error loading quiz data:', error);

@@ -1,7 +1,9 @@
 'use client'
 
 import { useRef, useCallback } from 'react'
+import Link from 'next/link'
 import { useServiceBrowser } from '@/components/service-browser'
+import { preloadQuizExperience } from '@/components/find-your-look/quiz-image-preloader'
 import { smoothScrollToElement } from '@/lib/smoothScroll'
 import { GoogleLogoCompact, YelpLogoCompact, VagaroLogoCompact } from '@/components/icons/ReviewLogos'
 import WeatherLocationBadge from './WeatherLocationBadge'
@@ -155,6 +157,8 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
               {/* Find Your Look - Frosted glass secondary button */}
               <button
                 onClick={handleFindYourLook}
+                onPointerEnter={() => { void preloadQuizExperience() }}
+                onFocus={() => { void preloadQuizExperience() }}
                 className="relative group w-full"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
@@ -164,15 +168,16 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
               </button>
 
               {/* Work With Us - Frosted glass secondary button */}
-              <a
+              <Link
                 href="/work-with-us"
+                prefetch
                 className="relative group w-full block"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />
                 <div className="relative py-3.5 px-6 rounded-full bg-white/50 backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_1px_3px_rgba(0,0,0,0.1)] active:scale-[0.98] text-center" style={{ borderWidth: '1.5px', borderStyle: 'solid', borderColor: 'rgba(204, 148, 127, 0.35)' }}>
                   <span className="font-sans font-medium text-base text-dune">{content.careersCta}</span>
                 </div>
-              </a>
+              </Link>
 
               {/* Reviews chip - Frosted glass style matching other chips */}
               {totalReviews > 0 && (
@@ -335,6 +340,8 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
               </button>
               <button
                 onClick={handleFindYourLook}
+                onPointerEnter={() => { void preloadQuizExperience() }}
+                onFocus={() => { void preloadQuizExperience() }}
                 className="relative group"
               >
                 <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-50" />

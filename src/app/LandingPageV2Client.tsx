@@ -32,6 +32,8 @@ import { TeamPortfolioView } from '@/components/portfolio/TeamPortfolioView';
 import { PanelRenderer } from '@/components/panels/PanelRenderer';
 import { ServiceBrowserProvider, ServiceBrowserModal, useServiceBrowser } from '@/components/service-browser';
 import { MotionConfig } from 'framer-motion';
+import { ExperienceImagePreloader } from '@/components/preload/ExperienceImagePreloader';
+import type { CarouselDisplayPhoto } from '@/actions/work-with-us-carousel';
 
 // Import global styles to ensure all the beautiful v1 styles are available
 import '@/app/globals.css';
@@ -168,6 +170,8 @@ interface HeroConfig {
 }
 
 interface LandingPageV2ClientProps {
+  disableExperiencePreload?: boolean;
+  workWithUsPhotos?: CarouselDisplayPhoto[];
   services: Service[];
   teamMembers: TeamMember[];
   reviews: Review[];
@@ -324,7 +328,7 @@ function ServiceQueryDeepLink() {
   return null;
 }
 
-export default function LandingPageV2Client({ services, teamMembers, reviews, reviewStats = [], instagramPosts = [], instagramSettings, serviceCategories = [], homepageServices, faqData, founderLetterContent, heroConfig, heroContent, studio }: LandingPageV2ClientProps) {
+export default function LandingPageV2Client({ disableExperiencePreload = false, workWithUsPhotos = [], services, teamMembers, reviews, reviewStats = [], instagramPosts = [], instagramSettings, serviceCategories = [], homepageServices, faqData, founderLetterContent, heroConfig, heroContent, studio }: LandingPageV2ClientProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [currentSection, setCurrentSection] = useState<string>('');
 
@@ -357,6 +361,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
                 paint ivory over the fixed arch background — that was part of the
                 hero flash on phones. */}
             <div className="min-h-screen relative theme-v2 md:bg-ivory">
+              <ExperienceImagePreloader disabled={disableExperiencePreload} workWithUsPhotos={workWithUsPhotos} />
               <a
                 href="#main-content"
                 className="sr-only fixed left-4 top-4 z-[10000] rounded-full bg-ivory px-5 py-3 font-sans font-semibold text-[rgb(var(--terracotta-ink))] shadow-lg focus:not-sr-only"
@@ -465,7 +470,7 @@ export default function LandingPageV2Client({ services, teamMembers, reviews, re
 
                     {/* Instagram Carousel */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
-                      <InstagramCarousel posts={instagramPosts} autoScroll={instagramSettings?.autoScroll} scrollSpeed={instagramSettings?.scrollSpeed} />
+                      <InstagramCarousel posts={instagramPosts} autoScroll={instagramSettings?.autoScroll} scrollSpeed={instagramSettings?.scrollSpeed} disablePreload={disableExperiencePreload} />
                     </div>
 
                     {/* FAQ Section */}
