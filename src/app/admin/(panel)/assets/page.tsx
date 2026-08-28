@@ -18,6 +18,7 @@ import { FilterSelector } from "@/components/dam/FilterSelector"
 import { GroupBySelector } from "@/components/dam/GroupBySelector"
 import { TagSelector } from "@/components/dam/TagSelector"
 import { PhotoLightbox } from "@/components/dam/PhotoLightbox"
+import { AssetMetadataEditor } from "@/components/dam/AssetMetadataEditor"
 import { OmniBar } from "@/components/dam/OmniBar"
 import { OmniChip } from "@/components/dam/OmniChip"
 import { CollectionSelector } from "@/components/dam/CollectionSelector"
@@ -48,6 +49,8 @@ interface Asset {
   fileType: "image" | "video"
   uploadedAt: Date
   teamMemberId?: string
+  altText?: string | null
+  caption?: string | null
   tags?: Array<{
     id: string
     name: string
@@ -608,7 +611,8 @@ export default function DAMPage() {
         // Only update if the asset data actually changed (avoid infinite loops)
         const tagsChanged = JSON.stringify(updatedAsset.tags) !== JSON.stringify(activeLightboxAsset.tags)
         const teamMemberChanged = updatedAsset.teamMemberId !== activeLightboxAsset.teamMemberId
-        if (tagsChanged || teamMemberChanged) {
+        const metadataChanged = updatedAsset.altText !== activeLightboxAsset.altText || updatedAsset.caption !== activeLightboxAsset.caption
+        if (tagsChanged || teamMemberChanged || metadataChanged) {
           setActiveLightboxAsset(updatedAsset)
         }
       }
@@ -2084,6 +2088,16 @@ export default function DAMPage() {
         setActiveLightboxAsset(asset)
         setActiveLightboxIndex(index)
       }}
+      detailsSlot={(asset) => (
+        <AssetMetadataEditor
+          key={asset.id}
+          asset={asset}
+          onSaved={(updated) => {
+            setAllAssets((current) => current.map((item) => item.id === updated.id ? { ...item, ...updated } : item))
+            setActiveLightboxAsset((current) => current?.id === updated.id ? { ...current, ...updated } : current)
+          }}
+        />
+      )}
     >
       <div className="min-h-screen bg-[#f5f0e9] text-[#292a27] no-horizontal-scroll">
         <MediaWorkspaceHeader

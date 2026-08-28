@@ -22,6 +22,24 @@
   "vars": {
     "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
   },
+  "env": {
+    "admin_preview": {
+      "name": "lashpop-vagaro-sync-admin-preview",
+      "triggers": {
+        "crons": []
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "lashpop-admin-preview",
+          "database_id": "41c05e0a-8094-4703-a6dd-b2efd003e91f"
+        }
+      ],
+      "vars": {
+        "VAGARO_PUBLIC_BUSINESS_ID": "32173928"
+      }
+    }
+  },
   "observability": {
     "enabled": true
   }

@@ -17,6 +17,8 @@ interface Asset {
   fileType: "image" | "video"
   uploadedAt: Date
   teamMemberId?: string
+  altText?: string | null
+  caption?: string | null
   tags?: Array<{
     id: string
     name: string
@@ -41,6 +43,7 @@ interface PhotoLightboxProps {
   isMobile?: boolean
   onVisibilityChange?: (visible: boolean) => void
   isModalOpen?: boolean // Disable PhotoProvider interactions when a modal is open
+  detailsSlot?: (asset: Asset) => ReactNode
 }
 
 export function PhotoLightbox({
@@ -53,7 +56,8 @@ export function PhotoLightbox({
   onOpenCommandPalette,
   isMobile = false,
   onVisibilityChange,
-  isModalOpen = false
+  isModalOpen = false,
+  detailsSlot,
 }: PhotoLightboxProps) {
   const thumbnailStripRef = useRef<HTMLDivElement | null>(null)
   const currentIndexRef = useRef(0)
@@ -206,6 +210,11 @@ export function PhotoLightbox({
                   <Sparkles className={clsx(isMobile ? "w-6 h-6 text-cream" : "w-4 h-4 text-dusty-rose")} />
                   {!isMobile && <span className="text-sm font-semibold text-cream">Action palette</span>}
                 </button>
+              </div>
+            )}
+            {detailsSlot && (
+              <div className="absolute left-5 top-24 z-50 pointer-events-auto">
+                {detailsSlot(asset)}
               </div>
             )}
             {omniBarProps && (

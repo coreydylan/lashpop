@@ -177,7 +177,7 @@ interface LandingPageV2ClientProps {
   reviews: Review[];
   reviewStats?: ReviewStat[];
   instagramPosts?: any[]; // Using any[] for now to avoid circular type dependency, or define strict type
-  instagramSettings?: { autoScroll?: boolean; scrollSpeed?: number };
+  instagramSettings?: { autoScroll?: boolean; scrollSpeed?: number; showCaptions?: boolean };
   serviceCategories?: ServiceCategory[];
   // Curated homepage "Choose a Service" marketing cards (editable in admin).
   homepageServices?: HomepageServiceCard[];
@@ -470,7 +470,13 @@ export default function LandingPageV2Client({ disableExperiencePreload = false, 
 
                     {/* Instagram Carousel */}
                     <div className={isMobile ? "mobile-section" : ""} data-section-id="instagram">
-                      <InstagramCarousel posts={instagramPosts} autoScroll={instagramSettings?.autoScroll} scrollSpeed={instagramSettings?.scrollSpeed} disablePreload={disableExperiencePreload} />
+                      <InstagramCarousel
+                        posts={instagramPosts}
+                        autoScroll={instagramSettings?.autoScroll}
+                        scrollSpeed={instagramSettings?.scrollSpeed}
+                        showCaptions={instagramSettings?.showCaptions}
+                        disablePreload={disableExperiencePreload}
+                      />
                     </div>
 
                     {/* FAQ Section */}

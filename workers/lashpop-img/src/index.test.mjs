@@ -15,6 +15,7 @@ function imageStream(bytes = [1, 2, 3]) {
 
 function installCache({ hit = null } = {}) {
   const writes = []
+  const deletes = []
   Object.defineProperty(globalThis, 'caches', {
     configurable: true,
     value: {
@@ -23,9 +24,14 @@ function installCache({ hit = null } = {}) {
         put: async (request, response) => {
           writes.push({ request, response })
         },
+        delete: async (request) => {
+          deletes.push(request)
+          return true
+        },
       },
     },
   })
+  writes.deletes = deletes
   return writes
 }
 
@@ -472,7 +478,7 @@ test('returns an uncached 502 instead of disguising a transform failure as an op
   }
 })
 
-test('serves cached variants without touching source bindings', async () => {
+test('serves production cached variants without touching source bindings', async () => {
   const cached = new Response(Uint8Array.from([7]), {
     headers: {
       'content-type': 'image/webp',
@@ -486,7 +492,10 @@ test('serves cached variants without touching source bindings', async () => {
       headers: { accept: 'image/webp,*/*' },
     }),
     {
-      BUCKET: { get: () => assert.fail('cache hit should not read R2') },
+      BUCKET: {
+        head: () => assert.fail('production cache hit should not read R2 metadata'),
+        get: () => assert.fail('production cache hit should not download R2 bytes'),
+      },
       IMAGES: { input: () => assert.fail('cache hit should not transform') },
     },
     { waitUntil: () => assert.fail('cache hit should not write cache') },
@@ -494,4 +503,65 @@ test('serves cached variants without touching source bindings', async () => {
 
   assert.equal(response.headers.get('content-type'), 'image/webp')
   assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [7])
+})
+
+test('serves isolated-preview cached variants after confirming the R2 source still exists', async () => {
+  const cached = new Response(Uint8Array.from([7]), {
+    headers: {
+      'content-type': 'image/webp',
+      'x-lp-img-format': 'webp',
+    },
+  })
+  installCache({ hit: cached })
+  let headCalls = 0
+
+  const response = await lashpopImageWorker.fetch(
+    new Request('https://images.example/uploads/team.jpg?w=320', {
+      headers: { accept: 'image/webp,*/*' },
+    }),
+    {
+      VERIFY_SOURCE_ON_CACHE_HIT: 'true',
+      BUCKET: {
+        head: async () => {
+          headCalls += 1
+          return { etag: 'still-present' }
+        },
+        get: () => assert.fail('cache hit should not download R2 bytes'),
+      },
+      IMAGES: { input: () => assert.fail('cache hit should not transform') },
+    },
+    { waitUntil: () => assert.fail('cache hit should not write cache') },
+  )
+
+  assert.equal(headCalls, 1)
+  assert.equal(response.headers.get('content-type'), 'image/webp')
+  assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [7])
+})
+
+test('evicts a cached transform and returns 404 after its R2 source is deleted', async () => {
+  const cached = new Response(Uint8Array.from([7]), {
+    headers: { 'content-type': 'image/webp' },
+  })
+  const cacheActivity = installCache({ hit: cached })
+  const deferred = []
+
+  const response = await lashpopImageWorker.fetch(
+    new Request('https://images.example/uploads/deleted.jpg?w=320', {
+      headers: { accept: 'image/webp,*/*' },
+    }),
+    {
+      VERIFY_SOURCE_ON_CACHE_HIT: 'true',
+      BUCKET: {
+        head: async () => null,
+        get: () => assert.fail('a deleted source should not be downloaded'),
+      },
+      IMAGES: { input: () => assert.fail('a deleted source should not be transformed') },
+    },
+    { waitUntil: (promise) => deferred.push(promise) },
+  )
+
+  assert.equal(response.status, 404)
+  assert.equal(response.headers.get('cache-control'), 'private, no-store')
+  await Promise.all(deferred)
+  assert.equal(cacheActivity.deletes.length, 1)
 })

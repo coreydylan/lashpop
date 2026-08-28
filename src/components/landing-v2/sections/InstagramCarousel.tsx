@@ -43,9 +43,11 @@ interface InstagramCarouselProps {
   posts?: InstagramPost[]
   disablePreload?: boolean
   // Admin (instagram_carousel) settings. autoScroll toggles the marquee;
-  // scrollSpeed is the admin's 10–40 value, mapped to an Embla speed.
+  // scrollSpeed is the admin's 10–40 value, mapped to an Embla speed;
+  // showCaptions reveals source captions without changing the default layout.
   autoScroll?: boolean
   scrollSpeed?: number
+  showCaptions?: boolean
 }
 
 interface GalleryItem {
@@ -54,7 +56,13 @@ interface GalleryItem {
   caption: string | null
 }
 
-export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed = 20, disablePreload = false }: InstagramCarouselProps) {
+export function InstagramCarousel({
+  posts = [],
+  autoScroll = true,
+  scrollSpeed = 20,
+  showCaptions = false,
+  disablePreload = false,
+}: InstagramCarouselProps) {
   const ref = useRef(null)
   const prefersReducedMotion = useReducedMotion()
   // Index into the (un-duplicated) source list, or null when the lightbox is closed
@@ -222,7 +230,11 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
                       })}
                     />
 
-                    {/* Clean hover - no dark overlay or icon */}
+                    {showCaptions && item.caption && (
+                      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/45 to-transparent px-4 pb-4 pt-12 text-left text-xs leading-5 text-white">
+                        <span className="line-clamp-3">{item.caption}</span>
+                      </span>
+                    )}
                   </div>
                 </button>
               ))}
@@ -383,6 +395,9 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
                   </a>
                 )}
               </div>
+              {showCaptions && activeItem.caption && (
+                <p className="mt-3 max-w-xl text-center text-sm leading-6 text-white/85">{activeItem.caption}</p>
+              )}
             </motion.div>
           </motion.div>
         )}

@@ -114,50 +114,23 @@ export default function TeamPhotographyPage() {
     setNotice(null)
 
     try {
-      const uploadedPhotos: TeamMemberPhoto[] = []
-      const failedFiles: string[] = []
-
+      const formData = new FormData()
+      formData.append("teamMemberId", selectedMember.id)
       for (const file of files) {
-        try {
-          const presignedResponse = await fetch("/api/dam/presigned-url", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              fileName: file.name,
-              contentType: file.type,
-              teamMemberId: selectedMember.id,
-            }),
-          })
-
-          if (!presignedResponse.ok) throw new Error("Failed to prepare upload.")
-          const { presignedUrl, key, url } = await presignedResponse.json()
-
-          const uploadResponse = await fetch(presignedUrl, {
-            method: "PUT",
-            body: file,
-            headers: { "Content-Type": file.type },
-          })
-          if (!uploadResponse.ok) throw new Error("File upload failed.")
-
-          const metadataResponse = await fetch("/api/dam/team-members/photos", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              teamMemberId: selectedMember.id,
-              fileName: file.name,
-              filePath: url,
-              storageKey: key,
-            }),
-          })
-          if (!metadataResponse.ok) throw new Error("Photo metadata could not be saved.")
-
-          const { photo } = await metadataResponse.json()
-          uploadedPhotos.push(photo)
-        } catch (error) {
-          console.error(`Upload failed for ${file.name}:`, error)
-          failedFiles.push(file.name)
-        }
+        formData.append("files", file)
       }
+
+      const response = await fetch("/api/dam/team/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || "Photo upload failed.")
+      }
+
+      const uploadedPhotos = (result.photos || []) as TeamMemberPhoto[]
+      const failedFiles = (result.errors || []).map((item: { fileName: string }) => item.fileName)
 
       if (uploadedPhotos.length > 0) {
         setMemberPhotos((current) => [...current, ...uploadedPhotos])
@@ -168,6 +141,9 @@ export default function TeamPhotographyPage() {
       if (failedFiles.length > 0) {
         setErrorMessage(`${failedFiles.length} ${failedFiles.length === 1 ? "file" : "files"} could not be uploaded: ${failedFiles.join(", ")}`)
       }
+    } catch (error) {
+      console.error("Photo upload failed:", error)
+      setErrorMessage(error instanceof Error ? error.message : "Photo upload failed.")
     } finally {
       setIsUploading(false)
       event.target.value = ""

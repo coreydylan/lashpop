@@ -32,6 +32,7 @@ import {
 import { QuickFactsEditor } from '@/components/team/QuickFactsEditor'
 import { CredentialsEditor } from '@/components/team/CredentialsEditor'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
+import { VagaroFirstWorkflow } from '@/components/admin/VagaroFirstWorkflow'
 import type { TeamMemberCredential } from '@/db/schema/team_members'
 import { buildTeamPresentationUpdates, MAX_PUBLICATION_REASON_LENGTH } from '@/lib/admin/team-presentation'
 
@@ -477,6 +478,8 @@ export default function TeamManagerPage() {
           </div>
         </div>
       </motion.div>
+
+      <VagaroFirstWorkflow kind="team-member" onSyncComplete={fetchTeamMembers} />
 
       {/* Quick Stats */}
       <motion.div

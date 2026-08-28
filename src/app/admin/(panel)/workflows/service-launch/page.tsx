@@ -8,6 +8,7 @@ import { teamMemberServicesVagaro } from '@/db/schema/team_member_services_vagar
 import { getHomepageServices } from '@/actions/homepage-services'
 import { getAllServiceCategoriesAdmin, getAllServicesAdmin, getVagaroSyncRunsAdmin, getVagaroTaxonomyAdmin } from '@/actions/services'
 import { getTeamMembersWithServices } from '@/actions/team'
+import { VagaroFirstWorkflow } from '@/components/admin/VagaroFirstWorkflow'
 
 export const dynamic = 'force-dynamic'
 
@@ -125,6 +126,8 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
           <button type="submit" className="min-h-11 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">Check service</button>
         </form>
       </header>
+
+      <VagaroFirstWorkflow kind="service" defaultOpen />
 
       <section className="grid gap-4 lg:grid-cols-[1fr_18rem]">
         <div className={`rounded-2xl border p-6 ${readyCount === checks.length ? 'border-emerald-700/20 bg-emerald-50' : 'border-amber-700/20 bg-amber-50'}`}>

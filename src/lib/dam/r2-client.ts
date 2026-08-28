@@ -15,29 +15,60 @@ const requireEnv = (name: string, fallback?: string) => {
   return cleaned
 }
 
-interface R2Config {
+interface BaseStorageConfig {
   bucketName: string
   bucketUrl: string
+}
+
+interface ProxyStorageConfig extends BaseStorageConfig {
+  kind: "proxy"
+  proxyUrl: string
+  proxyToken: string
+}
+
+interface R2Config extends BaseStorageConfig {
+  kind: "r2"
   endpoint: string
   client: AwsClient
 }
 
-let cachedConfig: R2Config | undefined
+type StorageConfig = ProxyStorageConfig | R2Config
 
-function getR2Config(): R2Config {
+let cachedConfig: StorageConfig | undefined
+
+function getStorageConfig(): StorageConfig {
   if (cachedConfig) return cachedConfig
+
+  const bucketName = requireEnv("R2_BUCKET_NAME", "lashpop-dam")
+  const proxyUrl = sanitizeEnvValue(process.env.R2_PROXY_URL)?.replace(/\/+$/, "")
+  const proxyToken = sanitizeEnvValue(process.env.R2_PROXY_TOKEN)
+  const bucketUrl =
+    sanitizeEnvValue(process.env.NEXT_PUBLIC_R2_BUCKET_URL) ||
+    (proxyUrl ? proxyUrl : undefined)
+
+  if (proxyUrl || proxyToken) {
+    if (!proxyUrl || !proxyToken) {
+      throw new Error("R2_PROXY_URL and R2_PROXY_TOKEN must be configured together")
+    }
+
+    cachedConfig = {
+      kind: "proxy",
+      bucketName,
+      bucketUrl: bucketUrl || proxyUrl,
+      proxyUrl,
+      proxyToken,
+    }
+    return cachedConfig
+  }
 
   const accountId = requireEnv("R2_ACCOUNT_ID")
   const accessKeyId = requireEnv("R2_ACCESS_KEY_ID")
   const secretAccessKey = requireEnv("R2_SECRET_ACCESS_KEY")
-  const bucketName = requireEnv("R2_BUCKET_NAME", "lashpop-dam")
-  const bucketUrl =
-    sanitizeEnvValue(process.env.NEXT_PUBLIC_R2_BUCKET_URL) ||
-    `https://${bucketName}.${accountId}.r2.dev`
 
   cachedConfig = {
+    kind: "r2",
     bucketName,
-    bucketUrl,
+    bucketUrl: bucketUrl || `https://${bucketName}.${accountId}.r2.dev`,
     endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
     client: new AwsClient({
       accessKeyId,
@@ -48,6 +79,20 @@ function getR2Config(): R2Config {
   }
 
   return cachedConfig
+}
+
+function proxyObjectUrl(config: ProxyStorageConfig, key: string): string {
+  return `${config.proxyUrl}/__storage/${key.split("/").map(encodeURIComponent).join("/")}`
+}
+
+async function proxyFetch(
+  config: ProxyStorageConfig,
+  key: string,
+  init: RequestInit,
+): Promise<Response> {
+  const headers = new Headers(init.headers)
+  headers.set("Authorization", `Bearer ${config.proxyToken}`)
+  return fetch(proxyObjectUrl(config, key), { ...init, headers })
 }
 
 export interface UploadParams {
@@ -76,23 +121,36 @@ async function mirrorBestEffort(params: {
   }
 }
 
+async function mirrorForStorage(
+  config: StorageConfig,
+  params: Parameters<typeof mirrorBestEffort>[0],
+) {
+  if (config.kind === "proxy") return { status: "skipped" as const }
+  return mirrorBestEffort(params)
+}
+
 export async function uploadFile(params: UploadParams) {
   const { file, key, contentType } = params
   const body = new Uint8Array(await file.arrayBuffer())
-  const { endpoint, bucketName, bucketUrl, client } = getR2Config()
+  const config = getStorageConfig()
 
-  const url = `${endpoint}/${bucketName}/${key}`
-  const res = await client.fetch(url, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body,
-  })
+  const res = config.kind === "proxy"
+    ? await proxyFetch(config, key, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body,
+      })
+    : await config.client.fetch(`${config.endpoint}/${config.bucketName}/${key}`, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body,
+      })
 
   if (!res.ok) {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
-  const mirror = await mirrorBestEffort({
+  const mirror = await mirrorForStorage(config, {
     body,
     key,
     contentType,
@@ -100,7 +158,7 @@ export async function uploadFile(params: UploadParams) {
   })
 
   return {
-    url: `${bucketUrl}/${key}`,
+    url: `${config.bucketUrl}/${key}`,
     key,
     mirror,
   }
@@ -108,20 +166,26 @@ export async function uploadFile(params: UploadParams) {
 
 export async function uploadBuffer(params: UploadBufferParams) {
   const { buffer, key, contentType } = params
-  const { endpoint, bucketName, bucketUrl, client } = getR2Config()
+  const config = getStorageConfig()
 
-  const url = `${endpoint}/${bucketName}/${key}`
-  const res = await client.fetch(url, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: new Uint8Array(buffer),
-  })
+  const body = new Uint8Array(buffer)
+  const res = config.kind === "proxy"
+    ? await proxyFetch(config, key, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body,
+      })
+    : await config.client.fetch(`${config.endpoint}/${config.bucketName}/${key}`, {
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body,
+      })
 
   if (!res.ok) {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
-  const mirror = await mirrorBestEffort({
+  const mirror = await mirrorForStorage(config, {
     body: new Uint8Array(buffer),
     key,
     contentType,
@@ -129,32 +193,36 @@ export async function uploadBuffer(params: UploadBufferParams) {
   })
 
   return {
-    url: `${bucketUrl}/${key}`,
+    url: `${config.bucketUrl}/${key}`,
     key,
     mirror,
   }
 }
 
 export async function deleteObject(key: string) {
-  const { endpoint, bucketName, client } = getR2Config()
-  const url = `${endpoint}/${bucketName}/${key}`
-  const res = await client.fetch(url, { method: "DELETE" })
+  const config = getStorageConfig()
+  const res = config.kind === "proxy"
+    ? await proxyFetch(config, key, { method: "DELETE" })
+    : await config.client.fetch(`${config.endpoint}/${config.bucketName}/${key}`, { method: "DELETE" })
 
   if (!res.ok && res.status !== 404) {
     throw new Error(`R2 delete failed: ${res.status} ${await res.text()}`)
   }
 
-  try {
-    await deleteMirroredR2Image(key)
-  } catch (error) {
-    console.error("Cloudflare Images delete failed; cleanup can be retried:", error)
+  if (config.kind === "r2") {
+    try {
+      await deleteMirroredR2Image(key)
+    } catch (error) {
+      console.error("Cloudflare Images delete failed; cleanup can be retried:", error)
+    }
   }
 }
 
 export async function downloadBuffer(key: string): Promise<Buffer> {
-  const { endpoint, bucketName, client } = getR2Config()
-  const url = `${endpoint}/${bucketName}/${key}`
-  const res = await client.fetch(url, { method: "GET" })
+  const config = getStorageConfig()
+  const res = config.kind === "proxy"
+    ? await proxyFetch(config, key, { method: "GET" })
+    : await config.client.fetch(`${config.endpoint}/${config.bucketName}/${key}`, { method: "GET" })
 
   if (!res.ok) {
     throw new Error(`R2 download failed: ${res.status} ${await res.text()}`)
@@ -165,11 +233,15 @@ export async function downloadBuffer(key: string): Promise<Buffer> {
 }
 
 export async function getPresignedUploadUrl(key: string, contentType: string, expiresIn: number = 3600) {
-  const { endpoint, bucketName, client } = getR2Config()
-  const url = new URL(`${endpoint}/${bucketName}/${key}`)
+  const config = getStorageConfig()
+  if (config.kind === "proxy") {
+    throw new Error("Presigned browser uploads are disabled for isolated storage")
+  }
+
+  const url = new URL(`${config.endpoint}/${config.bucketName}/${key}`)
   url.searchParams.set("X-Amz-Expires", String(expiresIn))
 
-  const signed = await client.sign(url.toString(), {
+  const signed = await config.client.sign(url.toString(), {
     method: "PUT",
     headers: { "Content-Type": contentType },
     aws: { signQuery: true },
@@ -185,23 +257,25 @@ export async function uploadBufferWithOptions(params: {
   cacheControl?: string
 }) {
   const { buffer, key, contentType, cacheControl } = params
-  const { endpoint, bucketName, bucketUrl, client } = getR2Config()
+  const config = getStorageConfig()
 
-  const url = `${endpoint}/${bucketName}/${key}`
   const headers: Record<string, string> = { "Content-Type": contentType }
   if (cacheControl) headers["Cache-Control"] = cacheControl
 
-  const res = await client.fetch(url, {
-    method: "PUT",
-    headers,
-    body: new Uint8Array(buffer),
-  })
+  const body = new Uint8Array(buffer)
+  const res = config.kind === "proxy"
+    ? await proxyFetch(config, key, { method: "PUT", headers, body })
+    : await config.client.fetch(`${config.endpoint}/${config.bucketName}/${key}`, {
+        method: "PUT",
+        headers,
+        body,
+      })
 
   if (!res.ok) {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
-  const mirror = await mirrorBestEffort({
+  const mirror = await mirrorForStorage(config, {
     body: new Uint8Array(buffer),
     key,
     contentType,
@@ -209,14 +283,14 @@ export async function uploadBufferWithOptions(params: {
   })
 
   return {
-    url: `${bucketUrl}/${key}`,
+    url: `${config.bucketUrl}/${key}`,
     key,
     mirror,
   }
 }
 
 export function getStorageBucketUrl(): string {
-  return getR2Config().bucketUrl
+  return getStorageConfig().bucketUrl
 }
 
 export function generateAssetKey(fileName: string, teamMemberId?: string): string {

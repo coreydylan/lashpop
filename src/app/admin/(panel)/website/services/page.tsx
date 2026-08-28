@@ -842,14 +842,19 @@ export default function ServicesAdminPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="btn btn-secondary"
-          >
-            <RefreshCw className={clsx("w-4 h-4", loading && "animate-spin")} />
-            Refresh
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <NextLink href="/admin/workflows/service-launch" className="btn btn-primary">
+              Add or update a service
+            </NextLink>
+            <button
+              onClick={fetchData}
+              disabled={loading}
+              className="btn btn-secondary"
+            >
+              <RefreshCw className={clsx("w-4 h-4", loading && "animate-spin")} />
+              Refresh
+            </button>
+          </div>
         </div>
       </motion.div>
 

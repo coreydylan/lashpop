@@ -23,6 +23,15 @@
         "IMAGE_BACKEND": "hosted",
         "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
       }
+    },
+    "admin_preview": {
+      "name": "lashpop-img-admin-preview",
+      "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-admin-preview" }],
+      "images": { "binding": "IMAGES" },
+      "vars": {
+        "IMAGE_BACKEND": "legacy",
+        "VERIFY_SOURCE_ON_CACHE_HIT": "true"
+      }
     }
   }
 }

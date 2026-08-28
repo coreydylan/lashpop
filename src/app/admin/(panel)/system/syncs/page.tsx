@@ -12,9 +12,12 @@ import { SyncNowButton } from './SyncNowButton'
 
 export const dynamic = 'force-dynamic'
 
-function timeAgo(value: Date | string | null): string {
+function timeAgo(value: Date | string | number | null): string {
   if (!value) return 'never'
-  const d = typeof value === 'string' ? new Date(value) : value
+  const d = value instanceof Date
+    ? value
+    : new Date(typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value)
+  if (Number.isNaN(d.getTime())) return 'unknown'
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
@@ -105,7 +108,7 @@ export default async function SyncsPage() {
         <Clock className="w-4 h-4 text-ocean-mist" />
         <div>
           <p className="font-medium text-dune">Automatic three times daily</p>
-          <p className="mt-0.5 text-dune/60">Runs start at 6:00, 14:00, and 22:00 UTC. Use the manual trigger after a Vagaro edit when you do not want to wait.</p>
+          <p className="mt-0.5 text-dune/60">Runs start at 06:00, 14:00, and 22:00 UTC—currently 11:00 p.m., 7:00 a.m., and 3:00 p.m. Pacific during daylight time. Use the manual trigger after a Vagaro edit when you do not want to wait.</p>
         </div>
       </div>
 
@@ -144,6 +147,11 @@ export default async function SyncsPage() {
             <p className="mt-1 text-sm leading-6 text-dune/65">
               The public catalog sync discovers services automatically. A new service stays hidden until its static, service-filtered Vagaro widget is generated and verified.
             </p>
+            {(pendingServices.length > 0 || bookingIssues.length > 0) && (
+              <p className="mt-2 text-xs leading-5 text-dune/55">
+                Owner next step: confirm the service setup and assigned providers in Vagaro, then send the exact service name and category to the website operator for the authenticated widget refresh or mapping repair and reviewed branch release.
+              </p>
+            )}
 
             {(bookingIssues.length > 0 || pendingServices.length > 0) && (
               <ul className="mt-3 grid gap-2 text-sm text-dune/75">
