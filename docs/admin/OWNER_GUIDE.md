@@ -121,6 +121,8 @@ Start in **Website → Service launch**. The guide deliberately locks its sync b
 
 Vagaro’s current instructions are [Add a Custom Service](https://support.vagaro.com/hc/en-us/articles/22642423565211-Add-a-Custom-Service) and [Add the Booking Widget to Your Site](https://support.vagaro.com/hc/en-us/articles/204347860-Add-the-Booking-Widget-to-Your-Site).
 
+![The enforced Vagaro-first service setup and sync acknowledgement](screenshots/04a-add-service-workflow.png)
+
 ### What comes from Vagaro, what can I edit in LashPop, and why can a new service stay hidden?
 
 - **Vagaro owns:** service identity, name, category, price, duration, booking availability, source photo, order, active lifecycle, and which providers perform it.
@@ -128,6 +130,8 @@ Vagaro’s current instructions are [Add a Custom Service](https://support.vagar
 - **The technical release owns:** the exact static service-filtered widget mapping. Never copy another service’s URL or construct one from a numeric ID.
 - **Existing services:** sync updates Vagaro-owned fields while preserving LashPop-owned presentation.
 - **New services:** sync imports them inactive and pending so customers can never be sent to the wrong booking screen.
+
+![The service publication handoff and launch-readiness checks](screenshots/04b-service-review-handoff.png)
 
 ### How do I review synced services, choose service images, organize service groups, and confirm booking readiness?
 
@@ -169,6 +173,8 @@ Open **Website → Team & stylists**, choose **Add a team member**, and follow t
 11. Open the public team section and test the person’s booking path.
 
 The sync can activate or deactivate a Vagaro provider, but it never publishes or unpublishes them on the LashPop website. Publication always requires the eye control and **Save Changes**. Vagaro’s current instructions are [Add an Employee Profile](https://support.vagaro.com/hc/en-us/articles/18977275440795-Add-an-Employee-Profile) and [Edit an Employee Profile](https://support.vagaro.com/hc/en-us/articles/360009585354-Edit-an-Employee-Profile).
+
+![The enforced Vagaro-first team-member setup and locked sync control](screenshots/09a-add-team-member-workflow.png)
 
 ### How do I update a staff member?
 
@@ -365,7 +371,7 @@ Open **Settings → Settings overview**. Confirm your role and the latest sync s
 <!-- capability:vagaro-sync -->
 ### How do I see whether Vagaro data and booking mappings are healthy?
 
-Open **Settings → Vagaro sync**. Review booking categories, services, verified booking mappings, team members, and stylist mappings. A new service with no verified booking mapping must remain hidden.
+Open **Settings → Vagaro sync**. Review booking categories, services, verified booking mappings, team members, and stylist mappings. A new service with no verified booking mapping must remain hidden. An active service showing identity drift or a URL mismatch also needs the website operator to repair and publish its mapping before the booking path is trusted.
 
 ### How do I run a Vagaro sync now?
 

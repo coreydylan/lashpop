@@ -12,9 +12,12 @@ import { SyncNowButton } from './SyncNowButton'
 
 export const dynamic = 'force-dynamic'
 
-function timeAgo(value: Date | string | null): string {
+function timeAgo(value: Date | string | number | null): string {
   if (!value) return 'never'
-  const d = typeof value === 'string' ? new Date(value) : value
+  const d = value instanceof Date
+    ? value
+    : new Date(typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value)
+  if (Number.isNaN(d.getTime())) return 'unknown'
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
@@ -144,9 +147,9 @@ export default async function SyncsPage() {
             <p className="mt-1 text-sm leading-6 text-dune/65">
               The public catalog sync discovers services automatically. A new service stays hidden until its static, service-filtered Vagaro widget is generated and verified.
             </p>
-            {pendingServices.length > 0 && (
+            {(pendingServices.length > 0 || bookingIssues.length > 0) && (
               <p className="mt-2 text-xs leading-5 text-dune/55">
-                Owner next step: confirm the service setup and assigned providers in Vagaro, then send the exact service name and category to the website operator for the authenticated widget refresh and reviewed branch release.
+                Owner next step: confirm the service setup and assigned providers in Vagaro, then send the exact service name and category to the website operator for the authenticated widget refresh or mapping repair and reviewed branch release.
               </p>
             )}
 

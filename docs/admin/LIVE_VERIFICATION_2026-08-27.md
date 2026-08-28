@@ -37,11 +37,11 @@ The database and storage proxies both returned `401` without their dedicated pre
 | Phone sign-in | Pass | Chrome sent the real code to the authorized owner number. The SMS body was stored in Apple's serialized `attributedBody`; it was decoded read-only from `chat.db`, verified through Twilio, and opened the preview **Today** page. |
 | Sign out | Pass | The logout route returned `200`; reusing the invalidated session redirected to sign-in. |
 | Vagaro manual sync | Partial, safely contained | The preview worker ran and wrote only preview D1. Vagaro's public category and staff endpoints returned empty collections, so fail-closed guards refused destructive reconciliation. Stylist mapping and roster reconciliation completed; no production data changed. |
-| Vagaro-first owner workflows | Pending refreshed browser proof | Code and guide now cover the exact team/service source steps, sync cadence, hidden-until-reviewed behavior, and new-service technical handoff. Capture refreshed branch screenshots after the updated preview deploys. |
+| Vagaro-first owner workflows | Pass after UI follow-up | Chrome verified both guides start expanded or clearly labeled, keep the sync button disabled until the owner acknowledges the Vagaro setup, enable it after acknowledgement, and explain hidden-until-reviewed team publication plus the service mapping handoff. The walkthrough also exposed raw epoch timestamps and missing operator guidance for active identity drift on Vagaro Sync; both are fixed in the follow-up commit. |
 
 ## Chrome visual record
 
-Chrome opened every canonical owner route on the branch preview. The knowledge-base guide contains **27 privacy-reviewed screenshots** covering sign-in, Today, ownership, service readiness, each website editor, reviews, media, inbox, settings, sync, access, activity, and version history. The Admin access image is deliberately cropped before the owner row so no private phone number is stored in the repository.
+Chrome opened every canonical owner route on the branch preview. The knowledge-base guide contains **30 privacy-reviewed screenshots** covering sign-in, Today, ownership, the enforced team/service setup workflows, service readiness, each website editor, reviews, media, inbox, settings, sync, access, activity, and version history. The Admin access image is deliberately cropped before the owner row so no private phone number is stored in the repository.
 
 The final `npm run test:launch` gate passed: design lock, dependency audit, lint, TypeScript, Vagaro contracts, quiz contracts, image and storage tests, fixture validation, staff-publication safety, build, 11 visual checks with 3 intentional project skips, and 6 accessibility/interaction checks.
 

@@ -70,4 +70,3 @@ export const VAGARO_OWNER_WORKFLOWS = {
     ],
   },
 } as const
-

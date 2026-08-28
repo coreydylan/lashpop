@@ -56,7 +56,7 @@ The four product gaps are fixed on `docs/admin-owner-kb`. The new Vagaro-first w
 
 ## Automated proof completed
 
-- `npm run check:admin-capabilities` — 28 jobs cover 26 navigation routes and all 27 owner-guide screenshots exist.
+- `npm run check:admin-capabilities` — 28 jobs cover 26 navigation routes and all 30 owner-guide screenshots exist.
 - `npm run test:admin-live` — 28 authenticated preview routes and 19 authenticated read APIs passed.
 - `npm run check:design` — frozen token and protected-file contract passes.
 - `npm run lint` — passes with zero warnings.
@@ -64,7 +64,7 @@ The four product gaps are fixed on `docs/admin-owner-kb`. The new Vagaro-first w
 - `npm run build` — passes; all admin pages and the new asset metadata route are present in the route manifest.
 - `npm run test:visual` with CI's public fixtures — 11 passed, 3 expected skips.
 - `npm run test:a11y` with CI's public fixtures — 6 passed.
-- `npm run test:launch` — complete release gate passes. The command builds and runs browser suites with the canonical fixture, Mapbox test environment, and an unreachable localhost database placeholder, so the gate does not need production credentials, attempt a live database connection, or bake an empty map token into its test build.
+- `npm run test:launch` — complete release gate passes. The command builds and runs browser suites with the canonical fixture, Mapbox test environment, and an unreachable localhost database placeholder, so the gate does not need production credentials, attempt a live database connection, or bake an empty map token into its test build. One deterministic runner owns a single isolated Next server for both browser suites and always shuts it down.
 
 ## Remaining proof
 

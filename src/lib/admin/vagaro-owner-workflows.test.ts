@@ -23,4 +23,3 @@ test('service workflow exposes the technical widget boundary', () => {
   assert.ok(service.afterSyncSteps.some((step) => /website operator/.test(step)))
   assert.ok(service.afterSyncSteps.some((step) => /desktop and phone/.test(step)))
 })
-
