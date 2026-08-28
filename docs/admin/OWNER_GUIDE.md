@@ -4,6 +4,8 @@ This is the canonical, plain-English guide to the LashPop admin panel. Its task 
 
 Admin: <https://lashpop.vercel.app/admin>
 
+For release testing, use the protected future-branch preview named in the latest `LIVE_VERIFICATION_*.md` record. Never perform write acceptance against the production admin before the branch is approved and merged.
+
 ## Before you change anything
 
 - Use **LashPop** fields for website wording, photos, visibility, and presentation.
@@ -38,10 +40,14 @@ This guide and `docs/admin/capabilities.json` are now the final owner-facing con
 
 To sign out, open the account control in the admin shell and choose **Sign out**. Sign out when using a shared computer.
 
+![The LashPop admin sign-in screen with an empty phone-number field](screenshots/01-sign-in.png)
+
 <!-- capability:today-overview -->
 ### Where do I see what needs attention today?
 
 Open **Today → Operations overview**. Use the cards to check subscriber count, applications, recent activity, and the latest Vagaro sync. A warning here is a reason to investigate before publishing.
+
+![The Today overview with health, work queue, and recent changes](screenshots/02-today-overview.png)
 
 <!-- capability:website-overview -->
 ### Where do I see which system owns each part of the website?
@@ -53,6 +59,8 @@ Open **Website → Website overview**. Every section is labeled with an owner:
 - **Automation** means a scheduled system maintains it.
 - **Mixed** means Vagaro supplies facts while LashPop controls presentation.
 - **System** means it is informational or protected.
+
+![The website overview showing publishing ownership for each section](screenshots/03-website-overview.png)
 
 ## Website
 
@@ -66,6 +74,8 @@ Open **Website → Website overview**. Every section is labeled with an owner:
 
 This page is a readiness checklist. Make core booking changes in Vagaro and presentation changes in the linked admin pages.
 
+![The service-launch checklist with individual readiness checks](screenshots/04-service-launch.png)
+
 <!-- capability:studio-info -->
 ### How do I update the studio address, phone number, email, hours, booking link, map location, or social links?
 
@@ -74,6 +84,8 @@ This page is a readiness checklist. Make core booking changes in Vagaro and pres
 3. Double-check phone links, map coordinates, and complete `https://` social or booking URLs.
 4. Choose **Save**.
 5. Verify the footer, map, contact links, booking links, search data, and legal-page contact information.
+
+![The studio information editor](screenshots/05-studio-information.png)
 
 <!-- capability:homepage-hero -->
 ### How do I change the homepage headline or button labels?
@@ -88,6 +100,8 @@ Open **Website → Homepage hero**, edit the headline, subheading, or button lab
 4. Save the preset and assignments.
 5. Verify a desktop and phone cold load before considering the change complete.
 
+![The homepage hero editor with content and slideshow controls](screenshots/06-homepage-hero.png)
+
 <!-- capability:services-booking -->
 ### How do I review synced services, choose service images, organize service groups, and confirm booking readiness?
 
@@ -98,6 +112,8 @@ Open **Website → Homepage hero**, edit the headline, subheading, or button lab
 5. Use a DAM image only for local website presentation. It cannot change media inside Vagaro's hosted booking screens.
 6. Never guess or construct a Vagaro booking URL; an unverified new service must remain hidden.
 
+![The services manager with booking-readiness information](screenshots/07-services-booking.png)
+
 <!-- capability:homepage-service-cards -->
 ### How do I add, edit, reorder, show, or hide a service card on the homepage?
 
@@ -106,6 +122,8 @@ Open **Website → Homepage hero**, edit the headline, subheading, or button lab
 3. Use the arrows to change order and the eye control to show or hide a card.
 4. Use **Add card** only when its destination already exists and has been tested.
 5. Choose **Save Changes**, then click every changed card on the public homepage.
+
+![The homepage service-card editor](screenshots/08-homepage-service-cards.png)
 
 <!-- capability:team-stylists -->
 ### How do I update a staff member?
@@ -131,6 +149,8 @@ Open **Website → Team & stylists** and choose **Sync from Vagaro**. Review eve
 
 Expand the person's card. Use **Select from DAM** for the profile photo, **Add Photos** for the portfolio, the tag controls for services, and the Quick Facts, Credentials, and Bio editors below. Synced fields show a lock and must be changed in Vagaro.
 
+![The team and stylists manager](screenshots/09-team-and-stylists.png)
+
 <!-- capability:founder-letter -->
 ### How do I update the founder letter?
 
@@ -138,6 +158,8 @@ Expand the person's card. Use **Select from DAM** for the profile photo, **Add P
 2. Edit the heading, greeting, body paragraphs, sign-off, or signature.
 3. Use the preview to read the full letter in order.
 4. Choose **Save** and verify the homepage on desktop and phone.
+
+![The founder-letter editor and preview](screenshots/10-founder-letter.png)
 
 <!-- capability:founder-letter-redirect -->
 ### Where does the old founder-letter admin link take me?
@@ -153,6 +175,8 @@ Open **Website → Instagram**, set the number of posts, caption visibility, aut
 
 Choose **Sync Posts** to reload posts tagged `source:instagram` from the media library. This button does not repair or reauthorize the outside Instagram import; integration health remains a system task.
 
+![Instagram carousel settings and the media-library post preview](screenshots/11-instagram.png)
+
 <!-- capability:faq -->
 ### How do I add or change an FAQ?
 
@@ -166,6 +190,8 @@ Choose **Sync Posts** to reload posts tagged `source:instagram` from the media l
 
 Use **Add category** or edit an existing category. The eye controls show or hide categories and questions. The star controls whether a question appears in **Top FAQs**. Deleting a category also deletes its questions, so hiding is normally safer.
 
+![The FAQ manager with categories, questions, visibility, and featured controls](screenshots/12-faq.png)
+
 <!-- capability:quiz -->
 ### How do I add, crop, enable, or remove quiz comparison photos?
 
@@ -174,6 +200,8 @@ Open **Website → Find Your Look**. Add an approved media-library image, assign
 ### How do I choose the photo and wording shown for each quiz result?
 
 Edit each result style in the same page. The admin-selected result image and generated crop are authoritative; same-style comparison and booking images are fallbacks. Keep one approved canonical result photo per style and test Classic, Wet/Angel, Hybrid, and Volume.
+
+![The Find Your Look quiz image and result manager](screenshots/13-find-your-look.png)
 
 <!-- capability:work-with-us -->
 ### How do I update the Work With Us introduction and its employee, booth, and training summaries?
@@ -184,6 +212,8 @@ Open **Website → Work With Us**, edit **Careers page content**, and choose **P
 
 Use the carousel manager lower on the page. Add from the media library, toggle visibility, or remove an unused carousel item. Confirm the public page after changing photo order or composition.
 
+![The Work With Us content and carousel manager](screenshots/14-work-with-us.png)
+
 <!-- capability:search-sharing -->
 ### How do I update the words and images people see in Google results and social shares?
 
@@ -192,6 +222,8 @@ Use the carousel manager lower on the page. Add from the media library, toggle v
 3. Edit the page title, description, preferred address, search visibility, and share images.
 4. Choose **Save**.
 5. Verify the page source or a preview tool; search engines and social networks may cache older information.
+
+![The search and social-sharing settings](screenshots/15-search-sharing.png)
 
 ## Reviews and reputation
 
@@ -204,10 +236,14 @@ Open **Reviews & reputation → Review library**. Add or remove reviews from the
 
 Open the review drawer, make the correction, and choose **Save & lock**. Locked fields preserve the owner's decision against the next automated editor run. Reviewer text and rating remain source-owned.
 
+![The review library and homepage curation controls](screenshots/16-review-library.png)
+
 <!-- capability:review-automation -->
 ### How do I change the rules that score and rotate reviews?
 
 Open **Reviews & reputation → Automation**. Read the existing thresholds before changing them, save the settings, and monitor the next automated run. This is a high-impact control; small changes can affect many reviews.
+
+![Review scoring and rotation settings](screenshots/17-review-automation.png)
 
 ## Media
 
@@ -223,10 +259,14 @@ Open **Reviews & reputation → Automation**. Read the existing thresholds befor
 
 Use search and filters to find assets. Select an item to edit its descriptive text, tags, collections, service assignment, or team assignment. Upload once and reuse the same approved asset rather than creating duplicates.
 
+![The searchable media library after its first-use tour is dismissed](screenshots/18-media-library.png)
+
 <!-- capability:team-photography -->
 ### How do I upload, crop, choose the primary photo, or manage the photo album for a team member?
 
 Open **Media → Team photography**, choose the person, then upload or open a photo. Set the primary portrait only after checking its crop. Use the crop editor for the required shapes and keep approved portfolio images in the person's album.
+
+![The team-photography workspace and approved portrait system](screenshots/19-team-photography.png)
 
 ## Inbox
 
@@ -234,6 +274,8 @@ Open **Media → Team photography**, choose the person, then upload or open a ph
 ### Where do I see new newsletter signups and Work With Us applications?
 
 Open **Inbox → Inbox overview**. Newsletter consent records and applications are deliberately kept separate.
+
+![The inbox overview with synthetic preview counts](screenshots/20-inbox-overview.png)
 
 <!-- capability:newsletter -->
 ### How do I find a newsletter subscriber and understand their consent status?
@@ -248,10 +290,14 @@ Choose **Copy active** or **Export active CSV**. These actions intentionally inc
 
 Open the subscriber's details, choose the correct status, add a useful note when needed, and save. Never reactivate someone who opted out without fresh consent.
 
+![The subscriber directory with consent filters and active-only export controls](screenshots/21-newsletter.png)
+
 <!-- capability:applications -->
 ### How do I read the details and contact information from a Work With Us application?
 
 Open **Inbox → Applications**. Each card shows the applicant's path, date, contact information, experience, specialties, desired start details, and message. Contacting the applicant happens outside this admin.
+
+![The Work With Us application inbox using synthetic preview records](screenshots/22-applications.png)
 
 ## Settings, access, and recovery
 
@@ -260,6 +306,8 @@ Open **Inbox → Applications**. Each card shows the applicant's path, date, con
 
 Open **Settings → Settings overview**. Confirm your role and the latest sync state before troubleshooting an editor that appears read-only or stale.
 
+![The settings overview with access and system health](screenshots/23-settings-overview.png)
+
 <!-- capability:admin-access -->
 ### How do I give someone owner, publisher, viewer, or no admin access?
 
@@ -267,6 +315,8 @@ Open **Settings → Settings overview**. Confirm your role and the latest sync s
 2. Choose the smallest role they need: Viewer, Publisher, Owner, or No admin access.
 3. Owners control roles and infrastructure; publishers edit content; viewers verify without publishing.
 4. Never demote the only owner account.
+
+![The privacy-safe top of Admin access explaining owner, publisher, and viewer roles](screenshots/27-admin-access.png)
 
 <!-- capability:vagaro-sync -->
 ### How do I see whether Vagaro data and booking mappings are healthy?
@@ -277,10 +327,14 @@ Open **Settings → Vagaro sync**. Review booking categories, services, verified
 
 Choose **Sync from Vagaro now**, wait for completion, and review the new run. Then verify the affected services and staff on the public website.
 
+![The Vagaro sync health and booking-mapping page](screenshots/24-vagaro-sync.png)
+
 <!-- capability:activity-history -->
 ### How do I see who changed something in the admin panel?
 
 Open **Settings → Activity history**. Filter or scan the feed for the section, action, person, and time. Use this before assuming an automated system overwrote a change.
+
+![The activity-history audit feed](screenshots/25-activity-history.png)
 
 <!-- capability:website-history -->
 ### How do I find an older saved website version and restore it without erasing history?
@@ -291,6 +345,8 @@ Open **Settings → Activity history**. Filter or scan the feed for the section,
 4. Read the confirmation, then confirm only when you intend to publish it.
 5. A restore creates a new current version; it does not erase the versions between.
 
+![The immutable website-version history and restore controls](screenshots/26-website-history.png)
+
 ## Release acceptance
 
 The machine-readable contract lives in `docs/admin/capabilities.json`. Run:
@@ -300,3 +356,22 @@ npm run check:admin-capabilities
 ```
 
 The check proves that every current admin navigation route is represented here and that the expected source files and key controls still exist. The live walkthrough record adds the browser evidence that code inspection alone cannot provide.
+
+Before publishing an admin branch:
+
+1. Create or refresh a dedicated preview database and media bucket. Never point a write test at production.
+2. Run `npm run check:admin-capabilities` and the full `npm run test:launch` gate.
+3. Run the authenticated, read-only route/API probe against the isolated preview:
+
+   ```bash
+   ADMIN_ACCEPTANCE_BASE_URL=https://your-branch-preview.example \
+   ADMIN_ACCEPTANCE_AUTH_TOKEN=temporary-preview-session \
+   VERCEL_AUTOMATION_BYPASS_SECRET=temporary-preview-bypass \
+   npm run test:admin-live
+   ```
+
+4. Open every route in the capability contract in Chrome.
+5. Exercise temporary FAQ, media, team-photo, permission, subscriber, review, and version-history round trips only with clearly synthetic preview records.
+6. Restore or delete every temporary change, then confirm the activity feed shows both the action and cleanup.
+7. Record results, unresolved external-source warnings, screenshots, branch, deployment URL, and resource names in a dated `LIVE_VERIFICATION_*.md` file.
+8. After the walkthrough, delete the temporary login session and revoke the temporary deployment-protection bypass.

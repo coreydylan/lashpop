@@ -214,6 +214,20 @@ const lashpopImageWorker = {
     const cache = caches.default
     const hit = await cache.match(cacheKey)
     if (hit) {
+      // A transformed variant can outlive its source object because variants
+      // are cached for a year. Confirm R2-backed sources still exist before
+      // serving a hit so an owner deletion takes effect immediately. External
+      // and site-proxied sources keep their upstream cache behavior.
+      if (key !== 'ext' && !key.startsWith('site/')) {
+        const sourceStillExists = await env.BUCKET.head(key)
+        if (!sourceStillExists) {
+          ctx.waitUntil(cache.delete(cacheKey))
+          return new Response('Not found', {
+            status: 404,
+            headers: { 'cache-control': 'private, no-store' },
+          })
+        }
+      }
       return request.method === 'HEAD'
         ? new Response(null, { status: hit.status, headers: hit.headers })
         : hit

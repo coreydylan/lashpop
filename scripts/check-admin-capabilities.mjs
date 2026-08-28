@@ -21,6 +21,7 @@ const schemaPath = resolve(root, 'docs/admin', contract.$schema ?? '')
 const capabilities = Array.isArray(contract.capabilities) ? contract.capabilities : []
 const ids = new Set()
 const coveredRoutes = new Set()
+let guideScreenshotCount = 0
 
 if (!Number.isInteger(contract.version) || contract.version < 1) fail('version must be a positive integer')
 if (!contract.$schema || !existsSync(schemaPath)) fail('the referenced JSON schema is missing')
@@ -76,8 +77,22 @@ if (!existsSync(guidePath)) {
       fail(`owner guide is missing capability:${capability.id}`)
     }
   }
+
+  const screenshotPaths = Array.from(
+    guide.matchAll(/\]\((screenshots\/[^)]+)\)/g),
+    (match) => match[1],
+  )
+  guideScreenshotCount = new Set(screenshotPaths).size
+  if (guideScreenshotCount < 20) {
+    fail(`owner guide must keep visual coverage; found only ${guideScreenshotCount} screenshots`)
+  }
+  for (const screenshotPath of screenshotPaths) {
+    if (!existsSync(resolve(root, 'docs/admin', screenshotPath))) {
+      fail(`owner guide screenshot is missing: ${screenshotPath}`)
+    }
+  }
 }
 
 if (!process.exitCode) {
-  console.log(`Admin capability contract passed: ${capabilities.length} owner jobs cover ${navRoutes.size} navigation routes.`)
+  console.log(`Admin capability contract passed: ${capabilities.length} owner jobs cover ${navRoutes.size} navigation routes with ${guideScreenshotCount} guide screenshots.`)
 }
