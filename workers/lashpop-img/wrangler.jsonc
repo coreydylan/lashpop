@@ -7,11 +7,31 @@
   "compatibility_date": "2026-06-01",
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-dam" }],
   "images": { "binding": "IMAGES" },
+  // Owner-approved production cutover. Flipping only IMAGE_BACKEND is atomic;
+  // hosted misses automatically fall back to the legacy source, and rollback
+  // is the inverse one-line change.
+  "vars": {
+    "IMAGE_BACKEND": "hosted",
+    "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
+  },
   "env": {
+    "preview": {
+      "name": "lashpop-img-preview",
+      "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-dam" }],
+      "images": { "binding": "IMAGES" },
+      "vars": {
+        "IMAGE_BACKEND": "hosted",
+        "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
+      }
+    },
     "admin_preview": {
       "name": "lashpop-img-admin-preview",
       "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-admin-preview" }],
-      "images": { "binding": "IMAGES" }
+      "images": { "binding": "IMAGES" },
+      "vars": {
+        "IMAGE_BACKEND": "legacy",
+        "VERIFY_SOURCE_ON_CACHE_HIT": "true"
+      }
     }
   }
 }

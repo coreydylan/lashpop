@@ -7,7 +7,11 @@ const CDN_BASE = "https://cdn.lashpopstudios.com"
 // web format. Lives on workers.dev because the lashpopstudios.com zone
 // hasn't moved accounts yet — swap to cdn.lashpopstudios.com once the NS
 // flip lands.
-const IMG_WORKER_BASE = "https://lashpop-img.experial.workers.dev"
+const DEFAULT_IMG_WORKER_BASE = "https://lashpop-img.experial.workers.dev"
+
+export function getImageWorkerBase(): string {
+  return (process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE || DEFAULT_IMG_WORKER_BASE).trim().replace(/\/$/, "")
+}
 
 type Props = { src: string; width: number; quality?: number }
 
@@ -17,6 +21,12 @@ type PortraitProps = Props & {
 
 const MAX_WORKER_WIDTH = 3840
 const PORTRAIT_SOURCE_ASPECT_CEILING = 2
+
+function workerUrl(path: string, params: Record<string, string | number>): string {
+  const url = new URL(path, `${getImageWorkerBase()}/`)
+  Object.entries(params).forEach(([name, value]) => url.searchParams.set(name, String(value)))
+  return url.toString()
+}
 
 export default function cfImageLoader({ src, width, quality }: Props): string {
   // Quality scales inversely with width. Small variants render near 1:1 on
@@ -37,19 +47,19 @@ export default function cfImageLoader({ src, width, quality }: Props): string {
 
   const r2Match = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
   if (r2Match) {
-    return `${IMG_WORKER_BASE}/${r2Match[1]}?w=${width}&q=${q}`
+    return workerUrl(r2Match[1], { w: width, q })
   }
 
   // Site /public images — the worker proxies them from the deployed origin,
   // so in local dev (where the origin may be ahead of prod) serve directly.
   if (src.startsWith("/lashpop-images/")) {
     if (process.env.NODE_ENV === "development") return src
-    return `${IMG_WORKER_BASE}/site${src}?w=${width}&q=${q}`
+    return workerUrl(`site${src}`, { w: width, q })
   }
 
   // Vagaro staff photos are multi-MB "/Original/" JPEGs on Rackspace CDN.
   if (/^https:\/\/[^/]+\.rackcdn\.com\//i.test(src)) {
-    return `${IMG_WORKER_BASE}/ext?url=${encodeURIComponent(src)}&w=${width}&q=${q}`
+    return workerUrl('ext', { url: src, w: width, q })
   }
 
   return src
@@ -70,7 +80,11 @@ export function cfPortraitImageLoader({
   aspectRatio,
 }: PortraitProps): string {
   const optimized = cfImageLoader({ src, width, quality })
-  if (!optimized.startsWith(IMG_WORKER_BASE) || !Number.isFinite(aspectRatio) || aspectRatio <= 0) {
+  if (
+    !optimized.startsWith(`${getImageWorkerBase()}/`) ||
+    !Number.isFinite(aspectRatio) ||
+    aspectRatio <= 0
+  ) {
     return optimized
   }
 

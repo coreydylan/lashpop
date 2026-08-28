@@ -7,6 +7,12 @@ import AutoScroll from 'embla-carousel-auto-scroll'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
 import { useEdgeHoverScroll } from '@/hooks/useEdgeHoverScroll'
+import cfImageLoader from '@/lib/cf-image-loader'
+import {
+  isGalleryThumbnailReady,
+  preloadGalleryExperience,
+  promoteGalleryImage,
+} from '@/lib/experience-image-preloader'
 import { SectionRule } from '../SectionRule'
 
 // Stub data using gallery images for now
@@ -35,6 +41,7 @@ interface InstagramPost {
 
 interface InstagramCarouselProps {
   posts?: InstagramPost[]
+  disablePreload?: boolean
   // Admin (instagram_carousel) settings. autoScroll toggles the marquee;
   // scrollSpeed is the admin's 10–40 value, mapped to an Embla speed;
   // showCaptions reveals source captions without changing the default layout.
@@ -49,7 +56,13 @@ interface GalleryItem {
   caption: string | null
 }
 
-export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed = 20, showCaptions = false }: InstagramCarouselProps) {
+export function InstagramCarousel({
+  posts = [],
+  autoScroll = true,
+  scrollSpeed = 20,
+  showCaptions = false,
+  disablePreload = false,
+}: InstagramCarouselProps) {
   const ref = useRef(null)
   const prefersReducedMotion = useReducedMotion()
   // Index into the (un-duplicated) source list, or null when the lightbox is closed
@@ -98,41 +111,42 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
   // Triple the items to ensure absolutely seamless infinite scroll on large screens
   const displayItems = useMemo(() => [...rawItems, ...rawItems, ...rawItems], [rawItems])
 
+  useEffect(() => {
+    if (disablePreload) return
+    let active = true
+
+    const warmGallery = () => {
+      void preloadGalleryExperience(rawItems).then(() => {
+        if (active) setLoadedImages(new Set(rawItems.map((item) => item.mediaUrl)))
+      })
+    }
+
+    if (document.readyState === 'complete') {
+      const timer = window.setTimeout(warmGallery, 0)
+      return () => {
+        active = false
+        window.clearTimeout(timer)
+      }
+    }
+
+    window.addEventListener('load', warmGallery, { once: true })
+    return () => {
+      active = false
+      window.removeEventListener('load', warmGallery)
+    }
+  }, [disablePreload, rawItems])
+
   // URL builder shared between the lightbox <img> and the post-load preloader
   // so prefetched bytes hit the same cache key the lightbox eventually
-  // requests. R2 sources go through the lashpop-img worker so the lightbox
-  // gets a width-capped webp variant.
+  // requests. Supported R2, site, and Rackspace sources go through the shared
+  // image Worker so the lightbox gets the same width-capped variant contract.
   const lightboxSrc = useCallback((src: string) => {
-    const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
-    if (r2) {
-      return `https://lashpop-img.experial.workers.dev/${r2[1]}?w=1600&q=90`
-    }
-    return src
+    return cfImageLoader({ src, width: 1600, quality: 90 })
   }, [])
 
   const total = rawItems.length
   const isOpen = lightboxIndex !== null
   const activeItem = isOpen ? rawItems[lightboxIndex] : null
-
-  // Once the visitor opens the gallery, warm only the 2 neighboring images.
-  // This keeps next/previous feeling instant without spending mobile bandwidth
-  // on every full-size lightbox asset during the initial page load.
-  useEffect(() => {
-    if (lightboxIndex === null || total <= 1) return
-
-    const adjacentIndexes = new Set([
-      (lightboxIndex - 1 + total) % total,
-      (lightboxIndex + 1) % total,
-    ])
-
-    adjacentIndexes.forEach((index) => {
-      const image = new globalThis.Image()
-      image.decoding = 'async'
-      image.referrerPolicy = 'no-referrer'
-      ;(image as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
-      image.src = lightboxSrc(rawItems[index].mediaUrl)
-    })
-  }, [lightboxIndex, lightboxSrc, rawItems, total])
 
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
   const goPrev = useCallback(
@@ -189,7 +203,12 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
                   type="button"
                   key={`${index}-${item.mediaUrl}`}
                   className="flex-[0_0_auto] w-80 h-80 min-w-0 cursor-pointer group relative rounded-2xl"
-                  onClick={() => setLightboxIndex(index % total)}
+                  onPointerEnter={() => promoteGalleryImage(item.mediaUrl)}
+                  onFocus={() => promoteGalleryImage(item.mediaUrl)}
+                  onClick={() => {
+                    promoteGalleryImage(item.mediaUrl)
+                    setLightboxIndex(index % total)
+                  }}
                   aria-label={item.caption ? `Open Gallery Image: ${item.caption}` : `Open Gallery Image ${(index % total) + 1}`}
                   aria-hidden={index >= total ? 'true' : undefined}
                   tabIndex={index >= total ? -1 : undefined}
@@ -201,7 +220,7 @@ export function InstagramCarousel({ posts = [], autoScroll = true, scrollSpeed =
                       fill
                       sizes="(max-width: 768px) 100vw, 320px"
                       className="object-cover transition-opacity duration-300 ease-out"
-                      style={{ opacity: loadedImages.has(item.mediaUrl) ? 1 : 0 }}
+                      style={{ opacity: loadedImages.has(item.mediaUrl) || isGalleryThumbnailReady(item.mediaUrl) ? 1 : 0 }}
                       draggable={false}
                       onLoad={() => setLoadedImages((prev) => {
                         if (prev.has(item.mediaUrl)) return prev

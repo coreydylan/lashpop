@@ -5,20 +5,21 @@
 import { useEffect, useMemo, useRef, useState, useId } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ZoomIn, ZoomOut, Save, RotateCcw } from "lucide-react"
-
-interface CropData {
-  x: number // 0-100 percentage (center point)
-  y: number // 0-100 percentage (center point)
-  scale: number // zoom multiplier (higher = tighter crop / smaller box)
-}
+import {
+  type QuizCropData,
+  clampQuizCropToBounds,
+  clampQuizCropValue,
+  getQuizCropPercentBox,
+} from "@/components/find-your-look/quiz-crop"
 
 interface QuizPhotoCropEditorProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (cropData: CropData) => void
+  onSave: (cropData: QuizCropData) => void
   imageUrl: string
-  initialCrop?: CropData
+  initialCrop?: QuizCropData
   photoName?: string
+  cropAspect?: number
 }
 
 const SCALE_LIMITS = {
@@ -26,44 +27,10 @@ const SCALE_LIMITS = {
   max: 2.5
 }
 
-// Base width of the square crop box as percentage of container width
-const BASE_WIDTH_PERCENT = 70
-
-const DEFAULT_CROP: CropData = {
+const DEFAULT_CROP: QuizCropData = {
   x: 50,
   y: 50,
   scale: 1.0
-}
-
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-
-// Calculate crop box dimensions based on scale and image aspect ratio
-const getCropBox = (crop: CropData, imageAspect: number) => {
-  // The crop box is a square, so aspect ratio is 1:1
-  // widthPercent is the percentage of the image width the square covers
-  const widthPercent = clamp(BASE_WIDTH_PERCENT / crop.scale, 15, 95)
-  // For a square, heightPercent = widthPercent * imageAspect (to maintain square in image coordinates)
-  const heightPercent = widthPercent * imageAspect
-
-  return {
-    widthPercent,
-    heightPercent
-  }
-}
-
-// Clamp crop position to keep crop box within image bounds
-const clampCropToBounds = (crop: CropData, imageAspect: number): CropData => {
-  const normalizedScale = clamp(crop.scale, SCALE_LIMITS.min, SCALE_LIMITS.max)
-  const { widthPercent, heightPercent } = getCropBox({ ...crop, scale: normalizedScale }, imageAspect)
-
-  const halfWidth = widthPercent / 2
-  const halfHeight = heightPercent / 2
-
-  return {
-    x: clamp(crop.x, halfWidth, 100 - halfWidth),
-    y: clamp(crop.y, halfHeight, 100 - halfHeight),
-    scale: normalizedScale
-  }
 }
 
 export function QuizPhotoCropEditor({
@@ -72,9 +39,10 @@ export function QuizPhotoCropEditor({
   onSave,
   imageUrl,
   initialCrop,
-  photoName
+  photoName,
+  cropAspect = 1,
 }: QuizPhotoCropEditorProps) {
-  const [crop, setCrop] = useState<CropData>(initialCrop || DEFAULT_CROP)
+  const [crop, setCrop] = useState<QuizCropData>(initialCrop || DEFAULT_CROP)
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   const [imageAspect, setImageAspect] = useState(1)
@@ -84,6 +52,7 @@ export function QuizPhotoCropEditor({
   const maskId = useId().replace(/:/g, "")
 
   const safeAspect = useMemo(() => (imageAspect > 0 ? imageAspect : 1), [imageAspect])
+  const safeCropAspect = useMemo(() => (cropAspect > 0 ? cropAspect : 1), [cropAspect])
 
   // Reset crop when modal opens with new image
   useEffect(() => {
@@ -96,14 +65,14 @@ export function QuizPhotoCropEditor({
   // Clamp crop when aspect ratio changes
   useEffect(() => {
     setCrop(prev => {
-      const clamped = clampCropToBounds(prev, safeAspect)
+      const clamped = clampQuizCropToBounds(prev, safeAspect, safeCropAspect, SCALE_LIMITS)
       // Only update if values actually changed to prevent infinite loops
       if (clamped.x === prev.x && clamped.y === prev.y && clamped.scale === prev.scale) {
         return prev
       }
       return clamped
     })
-  }, [safeAspect])
+  }, [safeAspect, safeCropAspect])
 
   // Track container size
   useEffect(() => {
@@ -139,13 +108,18 @@ export function QuizPhotoCropEditor({
     const x = ((clientX - rect.left) / rect.width) * 100
     const y = ((clientY - rect.top) / rect.height) * 100
     return {
-      x: clamp(x, 0, 100),
-      y: clamp(y, 0, 100)
+      x: clampQuizCropValue(x, 0, 100),
+      y: clampQuizCropValue(y, 0, 100)
     }
   }
 
-  const updateCrop = (updater: (prev: CropData) => CropData) => {
-    setCrop(prev => clampCropToBounds(updater(prev), safeAspect))
+  const updateCrop = (updater: (prev: QuizCropData) => QuizCropData) => {
+    setCrop(prev => clampQuizCropToBounds(
+      updater(prev),
+      safeAspect,
+      safeCropAspect,
+      SCALE_LIMITS,
+    ))
   }
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -171,11 +145,19 @@ export function QuizPhotoCropEditor({
   }
 
   const handleZoomChange = (scale: number) => {
-    updateCrop(prev => ({ ...prev, scale: clamp(scale, SCALE_LIMITS.min, SCALE_LIMITS.max) }))
+    updateCrop(prev => ({
+      ...prev,
+      scale: clampQuizCropValue(scale, SCALE_LIMITS.min, SCALE_LIMITS.max),
+    }))
   }
 
   const handleReset = () => {
-    setCrop(clampCropToBounds(initialCrop || DEFAULT_CROP, safeAspect))
+    setCrop(clampQuizCropToBounds(
+      initialCrop || DEFAULT_CROP,
+      safeAspect,
+      safeCropAspect,
+      SCALE_LIMITS,
+    ))
   }
 
   const handleSave = () => {
@@ -183,25 +165,27 @@ export function QuizPhotoCropEditor({
   }
 
   // Calculate the crop box overlay for display
-  const cropBox = useMemo(() => getCropBox(crop, safeAspect), [crop, safeAspect])
+  const cropBox = useMemo(
+    () => getQuizCropPercentBox(crop, safeAspect, safeCropAspect),
+    [crop, safeAspect, safeCropAspect],
+  )
 
   const cropOverlay = useMemo(() => {
     if (!containerSize.width || !containerSize.height) return null
 
-    // Calculate box size - force square by using smaller dimension
     const widthPx = (cropBox.widthPercent / 100) * containerSize.width
     const heightPx = (cropBox.heightPercent / 100) * containerSize.height
-    const boxSize = Math.min(widthPx, heightPx)
 
     const centerX = (crop.x / 100) * containerSize.width
     const centerY = (crop.y / 100) * containerSize.height
 
     return {
-      size: boxSize,
+      width: widthPx,
+      height: heightPx,
       centerX,
       centerY,
-      left: centerX - boxSize / 2,
-      top: centerY - boxSize / 2
+      left: centerX - widthPx / 2,
+      top: centerY - heightPx / 2
     }
   }, [containerSize, cropBox, crop])
 
@@ -249,7 +233,7 @@ export function QuizPhotoCropEditor({
             <div className="p-4 overflow-y-auto flex-1">
               <div className="bg-dune/5 rounded-2xl p-3 mb-3">
                 <p className="text-xs text-dune/60 text-center mb-3">
-                  Click or drag to position the crop. The square shows the cropped area.
+                  Click or drag to position the crop. The frame shows the exact saved area.
                 </p>
 
                 <div
@@ -285,8 +269,8 @@ export function QuizPhotoCropEditor({
                           <rect
                             x={cropOverlay.left}
                             y={cropOverlay.top}
-                            width={cropOverlay.size}
-                            height={cropOverlay.size}
+                            width={cropOverlay.width}
+                            height={cropOverlay.height}
                             rx={12}
                             ry={12}
                             fill="black"
@@ -304,8 +288,8 @@ export function QuizPhotoCropEditor({
                       <rect
                         x={cropOverlay.left}
                         y={cropOverlay.top}
-                        width={cropOverlay.size}
-                        height={cropOverlay.size}
+                        width={cropOverlay.width}
+                        height={cropOverlay.height}
                         rx={12}
                         ry={12}
                         fill="none"

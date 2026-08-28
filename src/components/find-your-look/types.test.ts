@@ -8,6 +8,8 @@ import {
   checkWinCondition,
   createEmptyScores,
   getPairKey,
+  getQuestionnaireScores,
+  getResultRankedStyles,
   getUnusedStylePairs,
   pickQuizPhoto,
   type QuizPhoto,
@@ -21,6 +23,33 @@ test("questionnaire answers are immediately reflected in quiz scores", () => {
     classic: 2,
     hybrid: 0,
     wetAngel: 2,
+    volume: 0,
+  })
+})
+
+test('every questionnaire button pair maps to exactly its current answers', () => {
+  const answers = ['A', 'B', 'C', 'D'] as const
+
+  for (const q1 of answers) {
+    for (const q2 of answers) {
+      const expected = applyScoreChanges(
+        applyScoreChanges(createEmptyScores(), Q1_SCORES[q1]),
+        Q2_SCORES[q2],
+      )
+      assert.deepEqual(getQuestionnaireScores(q1, q2), expected)
+    }
+  }
+
+  assert.deepEqual(getQuestionnaireScores('C', 'D'), {
+    classic: 0,
+    hybrid: 0,
+    wetAngel: 0,
+    volume: 4,
+  })
+  assert.deepEqual(getQuestionnaireScores('A', 'A'), {
+    classic: 4,
+    hybrid: 0,
+    wetAngel: 0,
     volume: 0,
   })
 })
@@ -54,6 +83,56 @@ test("the final selected style wins a tied final score", () => {
   }
 
   assert.equal(checkWinCondition(scores, 6, "wetAngel"), "wetAngel")
+})
+
+test('labeled photo choices outrank a contradictory questionnaire result', () => {
+  const classicQuestionnaire = getQuestionnaireScores('A', 'A')
+
+  assert.equal(
+    getResultRankedStyles(
+      { classic: 0, wetAngel: 0, hybrid: 3, volume: 0 },
+      classicQuestionnaire,
+      'hybrid',
+    )[0],
+    'hybrid',
+  )
+  assert.equal(
+    getResultRankedStyles(
+      { classic: 0, wetAngel: 3, hybrid: 0, volume: 0 },
+      classicQuestionnaire,
+      'wetAngel',
+    )[0],
+    'wetAngel',
+  )
+})
+
+test('questionnaire supplies the result when every photo comparison is skipped', () => {
+  const volumeQuestionnaire = getQuestionnaireScores('C', 'D')
+
+  assert.equal(
+    getResultRankedStyles(createEmptyScores(), volumeQuestionnaire)[0],
+    'volume',
+  )
+})
+
+test('each decisive photo leader can finish after three completed comparisons', () => {
+  const baseline = createEmptyScores()
+
+  for (const style of ['classic', 'wetAngel', 'hybrid', 'volume'] as const) {
+    const photoScores = { ...createEmptyScores(), [style]: 2 }
+
+    assert.equal(checkWinCondition(photoScores, 2, style, baseline), null)
+    assert.equal(checkWinCondition(photoScores, 3, style, baseline), style)
+  }
+})
+
+test('an ambiguous path keeps all six comparisons before the questionnaire tie-break', () => {
+  const photoScores = { classic: 1, wetAngel: 1, hybrid: 1, volume: 1 }
+  const volumeQuestionnaire = getQuestionnaireScores('C', 'D')
+
+  assert.equal(checkWinCondition(photoScores, 3, undefined, volumeQuestionnaire), null)
+  assert.equal(checkWinCondition(photoScores, 5, undefined, volumeQuestionnaire), null)
+  assert.equal(checkWinCondition(photoScores, 6, undefined, volumeQuestionnaire), 'volume')
 })
 
 test("questionnaire preference resolves a skipped final tie", () => {

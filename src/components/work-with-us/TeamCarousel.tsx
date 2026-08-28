@@ -7,6 +7,13 @@ import useEmblaCarousel from 'embla-carousel-react'
 import AutoScroll from 'embla-carousel-auto-scroll'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCarouselWheelScroll } from '@/hooks/useCarouselWheelScroll'
+import cfImageLoader from '@/lib/cf-image-loader'
+import {
+  isLightboxImageReady,
+  isTeamThumbnailReady,
+  preloadWorkWithUsPhotos,
+  promoteTeamImage,
+} from '@/lib/experience-image-preloader'
 import { getEnabledCarouselPhotos, type CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
 import { useWorkWithUsPhotos } from './WorkWithUsPhotosProvider'
 
@@ -23,7 +30,7 @@ function TeamLightboxPhoto({
   src: string
   alt: string
 }) {
-  const [loaded, setLoaded] = useState(false)
+  const [loaded, setLoaded] = useState(() => isLightboxImageReady(photo.filePath))
   const hasDimensions = Boolean(photo.width && photo.height)
   const ratio = hasDimensions ? photo.width! / photo.height! : 1
   const frameStyle = hasDimensions
@@ -75,6 +82,15 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
     [fetchedPhotos, resolvedInitialPhotos],
   )
   const loading = resolvedInitialPhotos === undefined && fetchedPhotos === null
+
+  useEffect(() => {
+    if (photos.length === 0) return
+    let active = true
+    void preloadWorkWithUsPhotos(photos).then(() => {
+      if (active) setLoadedImages(new Set(photos.map((photo) => photo.filePath)))
+    })
+    return () => { active = false }
+  }, [photos])
 
   // The route layout supplies photos during server rendering so the carousel
   // can reserve its space immediately. Keep the action fallback for isolated
@@ -130,35 +146,11 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
 
   // URL builder shared between the lightbox <img> and the post-load preloader
   // so prefetched bytes hit the same cache key the lightbox eventually
-  // requests. R2 sources go through the lashpop-img worker so the lightbox
-  // gets a width-capped webp variant.
+  // requests. Supported R2, site, and Rackspace sources go through the shared
+  // image Worker so the lightbox gets the same width-capped variant contract.
   const lightboxSrc = useCallback((src: string) => {
-    const r2 = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)
-    if (r2) {
-      return `https://lashpop-img.experial.workers.dev/${r2[1]}?w=1600&q=90`
-    }
-    return src
+    return cfImageLoader({ src, width: 1600, quality: 90 })
   }, [])
-
-  // Once a visitor opens the lightbox, warm only the neighboring frames. This
-  // matches the homepage gallery and avoids downloading every 1600px image on
-  // visitors who never open the carousel.
-  useEffect(() => {
-    if (lightboxIndex === null || total <= 1) return
-
-    const adjacentIndexes = new Set([
-      (lightboxIndex - 1 + total) % total,
-      (lightboxIndex + 1) % total,
-    ])
-
-    adjacentIndexes.forEach((index) => {
-      const image = new globalThis.Image()
-      image.decoding = 'async'
-      image.referrerPolicy = 'no-referrer'
-      ;(image as HTMLImageElement & { fetchPriority?: string }).fetchPriority = 'low'
-      image.src = lightboxSrc(photos[index].filePath)
-    })
-  }, [lightboxIndex, lightboxSrc, photos, total])
 
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
   const goPrev = useCallback(
@@ -204,14 +196,19 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
                 <div
                   key={`${index}-${item.filePath}`}
                   className="flex-[0_0_auto] w-56 h-56 md:w-64 md:h-64 min-w-0 cursor-grab active:cursor-grabbing group relative"
-                  onClick={() => setLightboxIndex(index % total)}
+                  onPointerEnter={() => promoteTeamImage(item.filePath)}
+                  onFocus={() => promoteTeamImage(item.filePath)}
+                  onClick={() => {
+                    promoteTeamImage(item.filePath)
+                    setLightboxIndex(index % total)
+                  }}
                 >
                   <div className="relative w-full h-full overflow-hidden rounded-2xl bg-warm-sand/20 transform transition-transform duration-300 group-hover:scale-[1.02]">
                     {item.blurDataUrl && (
                       <span
                         aria-hidden
                         className={`absolute -inset-4 scale-110 bg-cover bg-center blur-xl transition-opacity duration-300 ease-out motion-reduce:transition-none ${
-                          loadedImages.has(item.filePath) ? 'opacity-0' : 'opacity-100'
+                          loadedImages.has(item.filePath) || isTeamThumbnailReady(item.filePath) ? 'opacity-0' : 'opacity-100'
                         }`}
                         style={{ backgroundImage: `url("${item.blurDataUrl}")` }}
                       />
@@ -222,7 +219,7 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
                       fill
                       sizes="(max-width: 768px) 224px, 256px"
                       className="object-cover transition-opacity duration-300 ease-out motion-reduce:transition-none"
-                      style={{ opacity: loadedImages.has(item.filePath) ? 1 : 0 }}
+                      style={{ opacity: loadedImages.has(item.filePath) || isTeamThumbnailReady(item.filePath) ? 1 : 0 }}
                       draggable={false}
                       onLoad={() => setLoadedImages((current) => {
                         if (current.has(item.filePath)) return current

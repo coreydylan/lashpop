@@ -6,15 +6,13 @@ import {
   type PhotoPair,
   type Q1Answer,
   type Q2Answer,
-  Q1_SCORES,
-  Q2_SCORES,
   createEmptyScores,
   getPairKey,
-  getRankedStyles,
+  getResultRankedStyles,
   getUnusedStylePairs,
   checkWinCondition,
-  applyScoreChanges,
   applySkippedPair,
+  getQuestionnaireScores,
   pickQuizPhoto,
 } from "./types"
 
@@ -26,6 +24,7 @@ interface UseQuizAlgorithmReturn {
   scores: StyleScores
   roundNumber: number
   result: LashStyle | null
+  resultPhoto: QuizPhoto | null
   currentPair: PhotoPair | null
   isLoading: boolean
   applyQ1Answer: (answer: Q1Answer) => void
@@ -44,6 +43,7 @@ export function useQuizAlgorithm({
   const [scores, setScores] = useState<StyleScores>(emptyScores)
   const [roundNumber, setRoundNumber] = useState(0)
   const [result, setResult] = useState<LashStyle | null>(null)
+  const [resultPhoto, setResultPhoto] = useState<QuizPhoto | null>(null)
   const [currentPair, setCurrentPair] = useState<PhotoPair | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -51,11 +51,15 @@ export function useQuizAlgorithm({
   // phase in the same tick. Refs keep those calculations synchronous while the
   // mirrored React state drives rendering.
   const scoresRef = useRef<StyleScores>(emptyScores)
+  const photoScoresRef = useRef<StyleScores>(emptyScores)
   const baselineScoresRef = useRef<StyleScores>(emptyScores)
+  const q1AnswerRef = useRef<Q1Answer | null>(null)
+  const q2AnswerRef = useRef<Q2Answer | null>(null)
   const roundNumberRef = useRef(0)
   const currentPairRef = useRef<PhotoPair | null>(null)
   const usedPairsRef = useRef<Set<string>>(new Set())
   const usedAssetIdsRef = useRef<Set<string>>(new Set())
+  const selectedPhotosByStyleRef = useRef<Partial<Record<LashStyle, QuizPhoto>>>({})
 
   const canStartQuiz = useMemo(() => {
     return Object.values(photosByStyle).every((photos) => {
@@ -72,11 +76,15 @@ export function useQuizAlgorithm({
   }, [])
 
   const applyQ1Answer = useCallback((answer: Q1Answer) => {
-    commitScores(applyScoreChanges(scoresRef.current, Q1_SCORES[answer]))
+    q1AnswerRef.current = answer
+    const next = getQuestionnaireScores(answer, q2AnswerRef.current)
+    baselineScoresRef.current = { ...next }
+    commitScores(next)
   }, [commitScores])
 
   const applyQ2Answer = useCallback((answer: Q2Answer) => {
-    const next = applyScoreChanges(scoresRef.current, Q2_SCORES[answer])
+    q2AnswerRef.current = answer
+    const next = getQuestionnaireScores(q1AnswerRef.current, answer)
     baselineScoresRef.current = { ...next }
     commitScores(next)
   }, [commitScores])
@@ -145,25 +153,42 @@ export function useQuizAlgorithm({
   }, [])
 
   const finish = useCallback((
-    currentScores: StyleScores,
+    currentPhotoScores: StyleScores,
     tieBreakStyle?: LashStyle,
   ) => {
-    const winner = getRankedStyles(
-      currentScores,
-      tieBreakStyle,
+    const winner = getResultRankedStyles(
+      currentPhotoScores,
       baselineScoresRef.current,
+      tieBreakStyle,
     )[0]
     currentPairRef.current = null
     setCurrentPair(null)
+    setResultPhoto(selectedPhotosByStyleRef.current[winner] ?? null)
     setResult(winner)
   }, [])
 
   const startPhotoComparison = useCallback((): PhotoPair | null => {
-    baselineScoresRef.current = { ...scoresRef.current }
-    const pair = createPhotoPair(scoresRef.current, 0)
+    const questionnaireScores = getQuestionnaireScores(
+      q1AnswerRef.current,
+      q2AnswerRef.current,
+    )
+    baselineScoresRef.current = { ...questionnaireScores }
+    roundNumberRef.current = 0
+    currentPairRef.current = null
+    usedPairsRef.current = new Set()
+    usedAssetIdsRef.current = new Set()
+    selectedPhotosByStyleRef.current = {}
+    photoScoresRef.current = createEmptyScores()
+    setRoundNumber(0)
+    setCurrentPair(null)
+    setResult(null)
+    setResultPhoto(null)
+    commitScores(questionnaireScores)
+
+    const pair = createPhotoPair(questionnaireScores, 0)
 
     if (!pair) {
-      finish(scoresRef.current)
+      finish(photoScoresRef.current)
       return null
     }
 
@@ -171,15 +196,16 @@ export function useQuizAlgorithm({
     setRoundNumber(1)
     commitPair(pair)
     return pair
-  }, [commitPair, createPhotoPair, finish])
+  }, [commitPair, commitScores, createPhotoPair, finish])
 
   const advanceAfterRound = useCallback((
-    nextScores: StyleScores,
+    nextCombinedScores: StyleScores,
+    nextPhotoScores: StyleScores,
     tieBreakStyle?: LashStyle,
   ) => {
     const completedRounds = roundNumberRef.current
     const winner = checkWinCondition(
-      nextScores,
+      nextPhotoScores,
       completedRounds,
       tieBreakStyle,
       baselineScoresRef.current,
@@ -188,13 +214,14 @@ export function useQuizAlgorithm({
     if (winner) {
       currentPairRef.current = null
       setCurrentPair(null)
+      setResultPhoto(selectedPhotosByStyleRef.current[winner] ?? null)
       setResult(winner)
       return
     }
 
-    const nextPair = createPhotoPair(nextScores, completedRounds)
+    const nextPair = createPhotoPair(nextCombinedScores, completedRounds)
     if (!nextPair) {
-      finish(nextScores, tieBreakStyle)
+      finish(nextPhotoScores, tieBreakStyle)
       return
     }
 
@@ -205,12 +232,25 @@ export function useQuizAlgorithm({
   }, [commitPair, createPhotoPair, finish])
 
   const selectPhoto = useCallback((selectedStyle: LashStyle) => {
+    const pair = currentPairRef.current
+    if (!pair) return
+
+    const selectedPhoto = pair.leftStyle === selectedStyle ? pair.left : pair.right
+    selectedPhotosByStyleRef.current = {
+      ...selectedPhotosByStyleRef.current,
+      [selectedStyle]: selectedPhoto,
+    }
     const nextScores = {
       ...scoresRef.current,
       [selectedStyle]: scoresRef.current[selectedStyle] + 1,
     }
+    const nextPhotoScores = {
+      ...photoScoresRef.current,
+      [selectedStyle]: photoScoresRef.current[selectedStyle] + 1,
+    }
+    photoScoresRef.current = nextPhotoScores
     commitScores(nextScores)
-    advanceAfterRound(nextScores, selectedStyle)
+    advanceAfterRound(nextScores, nextPhotoScores, selectedStyle)
   }, [advanceAfterRound, commitScores])
 
   const skipPair = useCallback(() => {
@@ -219,21 +259,26 @@ export function useQuizAlgorithm({
 
     const nextScores = applySkippedPair(scoresRef.current)
     commitScores(nextScores)
-    advanceAfterRound(nextScores)
+    advanceAfterRound(nextScores, photoScoresRef.current)
   }, [advanceAfterRound, commitScores])
 
   const reset = useCallback(() => {
     const nextScores = createEmptyScores()
     scoresRef.current = nextScores
+    photoScoresRef.current = nextScores
     baselineScoresRef.current = nextScores
+    q1AnswerRef.current = null
+    q2AnswerRef.current = null
     roundNumberRef.current = 0
     currentPairRef.current = null
     usedPairsRef.current = new Set()
     usedAssetIdsRef.current = new Set()
+    selectedPhotosByStyleRef.current = {}
 
     setScores(nextScores)
     setRoundNumber(0)
     setResult(null)
+    setResultPhoto(null)
     setCurrentPair(null)
     setIsLoading(false)
   }, [])
@@ -242,6 +287,7 @@ export function useQuizAlgorithm({
     scores,
     roundNumber,
     result,
+    resultPhoto,
     currentPair,
     isLoading,
     applyQ1Answer,

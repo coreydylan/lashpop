@@ -1,10 +1,24 @@
 import cfImageLoader from '@/lib/cf-image-loader'
+import {
+  getQuizPhotosForQuiz,
+  getResultSettingsForQuiz,
+  type QuizResultForDisplay,
+} from '@/actions/quiz-photos'
+import {
+  isConstrainedImageConnection,
+  isBackgroundImagePreloadingDisabled,
+  isResponsiveImageReady,
+  preloadResponsiveImage,
+  preloadResponsiveImages,
+} from '@/lib/responsive-image-preloader'
 import type { LashStyle, QuizPhoto } from './types'
 
 const COMPARISON_SIZES = '(max-width: 768px) 45vw, 200px'
 const RESULT_SIZES = '(max-width: 768px) 100vw, 400px'
-const COMPARISON_WIDTHS = [384, 600] as const
-const RESULT_WIDTHS = [600, 900] as const
+const COMPARISON_WIDTHS = [384, 600, 900, 1200] as const
+const RESULT_WIDTHS = [600, 900, 1200] as const
+const COMPARISON_FALLBACK_WIDTHS = [256] as const
+const RESULT_FALLBACK_WIDTHS = [384] as const
 const FIRST_PAIR_STYLES: LashStyle[] = ['classic', 'volume']
 const ALL_STYLES: LashStyle[] = ['classic', 'wetAngel', 'hybrid', 'volume']
 
@@ -19,26 +33,32 @@ export interface QuizImageLoadPlan {
   background: QuizImageCandidate[]
 }
 
-interface CachedQuizImage {
-  image: HTMLImageElement
-  promise: Promise<void>
+export function isLegacySquareQuizCrop(url: string | null | undefined): boolean {
+  return Boolean(url && /-square-(?:\d|canonical)/.test(url))
 }
 
-// Retain the detached image elements for the lifetime of the page. Besides
-// preventing duplicate requests when the quiz is reopened, this lets the
-// browser keep the decoded image data warm between comparison rounds.
-const preloadCache = new Map<string, CachedQuizImage>()
-let backgroundGeneration = 0
+export interface QuizExperienceData {
+  photos: Record<LashStyle, QuizPhoto[]>
+  settings: Record<LashStyle, QuizResultForDisplay>
+}
+
+let quizExperiencePromise: Promise<QuizExperienceData> | null = null
 
 export function getQuizPhotoUrl(photo: QuizPhoto): string {
-  return photo.cropUrl || photo.filePath
+  if (photo.cropUrl && !isLegacySquareQuizCrop(photo.cropUrl)) return photo.cropUrl
+  return photo.filePath
+}
+
+export function getQuizPhotoObjectPosition(photo: QuizPhoto): string | undefined {
+  if (!isLegacySquareQuizCrop(photo.cropUrl) || !photo.cropData) return undefined
+  return `${photo.cropData.x}% ${photo.cropData.y}%`
 }
 
 function firstEnabledPhoto(photos: QuizPhoto[] | undefined): QuizPhoto | null {
   return photos?.find((photo) => photo.isEnabled !== false) ?? null
 }
 
-function comparisonCandidate(photo: QuizPhoto): QuizImageCandidate {
+export function comparisonCandidate(photo: QuizPhoto): QuizImageCandidate {
   return {
     src: getQuizPhotoUrl(photo),
     sizes: COMPARISON_SIZES,
@@ -46,7 +66,7 @@ function comparisonCandidate(photo: QuizPhoto): QuizImageCandidate {
   }
 }
 
-function resultCandidate(src: string): QuizImageCandidate {
+export function resultCandidate(src: string): QuizImageCandidate {
   return {
     src,
     sizes: RESULT_SIZES,
@@ -96,61 +116,11 @@ export function getQuizImageSrcSet(candidate: QuizImageCandidate): string {
     .join(', ')
 }
 
-function requestQuizImage(
-  candidate: QuizImageCandidate,
-  priority: 'high' | 'low',
-): Promise<void> {
-  if (typeof window === 'undefined') return Promise.resolve()
-
-  const cacheKey = `${candidate.src}|${candidate.sizes}`
-  const cached = preloadCache.get(cacheKey)
-  if (cached) return cached.promise
-
-  const image = new window.Image()
-  image.decoding = 'async'
-  image.fetchPriority = priority
-  image.sizes = candidate.sizes
-
-  const promise = new Promise<void>((resolve) => {
-    image.onload = () => {
-      void image.decode().catch(() => undefined).finally(resolve)
-    }
-    image.onerror = () => {
-      preloadCache.delete(cacheKey)
-      resolve()
-    }
-  })
-
-  preloadCache.set(cacheKey, { image, promise })
-  image.srcset = getQuizImageSrcSet(candidate)
-  image.src = cfImageLoader({
-    src: candidate.src,
-    width: candidate.widths[candidate.widths.length - 1],
-    quality: 90,
-  })
-  return promise
-}
-
-function isConstrainedConnection(): boolean {
-  const connection = (navigator as Navigator & {
-    connection?: { saveData?: boolean; effectiveType?: string }
-  }).connection
-
-  return Boolean(
-    connection?.saveData ||
-    connection?.effectiveType === 'slow-2g' ||
-    connection?.effectiveType === '2g',
-  )
-}
-
-function scheduleIdle(callback: () => void): number {
-  const idle = (window as Window & {
-    requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number
-  }).requestIdleCallback
-
-  return idle
-    ? idle(callback, { timeout: 1500 })
-    : window.setTimeout(callback, 150)
+export function isQuizImageReady(src: string, sizes: string): boolean {
+  const candidate = sizes === COMPARISON_SIZES
+    ? { src, sizes, widths: COMPARISON_WIDTHS, quality: 90 }
+    : { src, sizes, widths: RESULT_WIDTHS, quality: 90 }
+  return isResponsiveImageReady(candidate)
 }
 
 export function preloadQuizImages(
@@ -161,27 +131,92 @@ export function preloadQuizImages(
 
   if (typeof window === 'undefined') return plan
 
-  const generation = ++backgroundGeneration
-  const foreground = plan.priority.map((candidate) => requestQuizImage(candidate, 'high'))
+  plan.priority.forEach((candidate) => {
+    void preloadResponsiveImage({ ...candidate, quality: 90 }, 'high')
+  })
 
-  // The first comparison pair is the only immediate work. Once it has loaded,
-  // warm the remaining candidates one at a time during idle periods. Respect
-  // Save-Data and constrained connections instead of turning one quiz open
-  // into a background download of the entire photo library.
-  if (!isConstrainedConnection()) {
-    void Promise.allSettled(foreground).then(() => {
-      if (generation !== backgroundGeneration) return
-
-      let index = 0
-      const loadNext = () => {
-        if (generation !== backgroundGeneration || index >= plan.background.length) return
-        const candidate = plan.background[index++]
-        void requestQuizImage(candidate, 'low').then(() => scheduleIdle(loadNext))
-      }
-
-      scheduleIdle(loadNext)
-    })
+  // The quiz is a short, bounded experience. Decode every remaining comparison
+  // and result image in parallel once the opening pair is in flight so moving
+  // between rounds never discovers a new asset. Save-Data/2G remains respected.
+  if (!isConstrainedImageConnection() && !isBackgroundImagePreloadingDisabled()) {
+    const allCandidates = [...plan.priority, ...plan.background]
+    // Next/Image's client-mounted fill image exposes a conservative `src`
+    // before responsive `srcset` selection settles. Warm that exact fallback
+    // URL too, otherwise the preload scanner can start one late request even
+    // though the browser already has the final responsive candidate decoded.
+    void preloadResponsiveImages(
+      [
+        ...plan.background.map((candidate) => ({ ...candidate, quality: 90 })),
+        ...getQuizFallbackCandidates(allCandidates),
+      ],
+      { priority: 'low', concurrency: 6 },
+    )
   }
 
   return plan
+}
+
+function getQuizFallbackCandidates(
+  candidates: readonly QuizImageCandidate[],
+) {
+  return candidates.map((candidate) => ({
+    src: candidate.src,
+    sizes: candidate.sizes === COMPARISON_SIZES ? '256px' : '384px',
+    widths: candidate.sizes === COMPARISON_SIZES
+      ? COMPARISON_FALLBACK_WIDTHS
+      : RESULT_FALLBACK_WIDTHS,
+    quality: 90,
+  }))
+}
+
+export function getQuizExperienceData(): Promise<QuizExperienceData> {
+  if (!quizExperiencePromise) {
+    quizExperiencePromise = Promise.all([
+      getQuizPhotosForQuiz(),
+      getResultSettingsForQuiz(),
+    ]).then(([photos, settings]) => ({
+      photos: photos as Record<LashStyle, QuizPhoto[]>,
+      settings,
+    })).catch((error) => {
+      quizExperiencePromise = null
+      throw error
+    })
+  }
+
+  return quizExperiencePromise
+}
+
+export async function preloadQuizExperience(): Promise<QuizExperienceData> {
+  const data = await getQuizExperienceData()
+  const resultImages = Object.values(data.settings)
+    .map((setting) => setting.resultImage)
+    .filter((src): src is string => Boolean(src))
+  preloadQuizImages(data.photos, resultImages)
+  return data
+}
+
+export async function preloadQuizExperienceFully(): Promise<QuizExperienceData> {
+  const data = await preloadQuizExperience()
+  const resultImages = Object.values(data.settings)
+    .map((setting) => setting.resultImage)
+    .filter((src): src is string => Boolean(src))
+  const plan = getQuizImageLoadPlan(data.photos, resultImages)
+
+  await Promise.all([
+    preloadResponsiveImages(
+      plan.priority.map((candidate) => ({ ...candidate, quality: 90 })),
+      { priority: 'high', concurrency: 2 },
+    ),
+    isConstrainedImageConnection()
+      ? Promise.resolve()
+      : preloadResponsiveImages(
+          [
+            ...plan.background.map((candidate) => ({ ...candidate, quality: 90 })),
+            ...getQuizFallbackCandidates([...plan.priority, ...plan.background]),
+          ],
+          { priority: 'low', concurrency: 6 },
+        ),
+  ])
+
+  return data
 }

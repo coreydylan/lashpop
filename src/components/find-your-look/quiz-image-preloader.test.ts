@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { LashStyle, QuizPhoto } from './types'
-import { getQuizImageLoadPlan, getQuizImageSrcSet } from './quiz-image-preloader'
+import {
+  getQuizImageLoadPlan,
+  getQuizImageSrcSet,
+  getQuizPhotoObjectPosition,
+  getQuizPhotoUrl,
+} from './quiz-image-preloader'
+import { getImageWorkerBase } from '@/lib/cf-image-loader'
 
 function photo(style: LashStyle, assetId: string, enabled = true): QuizPhoto {
   return {
@@ -46,6 +52,23 @@ test('preloads the same optimized responsive variants used by the comparison car
   const [candidate] = getQuizImageLoadPlan(photos).priority
   const srcSet = getQuizImageSrcSet(candidate)
 
-  assert.match(srcSet, /lashpop-img\.experial\.workers\.dev\/uploads\/classic-first\.jpg\?w=384&q=90 384w/)
-  assert.match(srcSet, /lashpop-img\.experial\.workers\.dev\/uploads\/classic-first\.jpg\?w=600&q=90 600w/)
+  assert.ok(srcSet.includes(`${getImageWorkerBase()}/uploads/classic-first.jpg?w=384&q=90 384w`))
+  assert.ok(srcSet.includes(`${getImageWorkerBase()}/uploads/classic-first.jpg?w=600&q=90 600w`))
+})
+
+test('legacy square crops fall back to the real source instead of being cropped twice', () => {
+  const comparison = photo('classic', 'classic-first')
+  comparison.cropData = { x: 62, y: 48, scale: 1.2 }
+  comparison.cropUrl = 'https://example.com/IMG_6439-square-20260827-canonical-v1.jpg'
+
+  assert.equal(getQuizPhotoUrl(comparison), comparison.filePath)
+  assert.equal(getQuizPhotoObjectPosition(comparison), '62% 48%')
+})
+
+test('new portrait-safe admin crops are used directly by the comparison card', () => {
+  const comparison = photo('classic', 'classic-first')
+  comparison.cropUrl = 'https://example.com/IMG_6439-portrait-safe-20260827.jpg'
+
+  assert.equal(getQuizPhotoUrl(comparison), comparison.cropUrl)
+  assert.equal(getQuizPhotoObjectPosition(comparison), undefined)
 })

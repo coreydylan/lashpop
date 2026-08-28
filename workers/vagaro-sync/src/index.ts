@@ -15,10 +15,13 @@ import { fetchPublicServicesFull, type PublicServicesPayload } from './public-se
 import { vagaroSyncRuns } from './schema'
 import { eq } from 'drizzle-orm'
 import { VagaroClient, type VagaroEnv, type VagaroMeteredUsage } from './vagaro-client'
+import { createExternalImageMirror } from './cloudflare-images'
 
 interface Env extends VagaroEnv {
   DB: D1Database
   VAGARO_PUBLIC_BUSINESS_ID: string // numeric business ID for the public staff endpoint
+  CLOUDFLARE_ACCOUNT_ID: string
+  CLOUDFLARE_IMAGES_API_TOKEN?: string
 }
 
 interface Result {
@@ -42,6 +45,16 @@ async function runSync(
 ): Promise<{ result: RecordedResult; allOk: boolean; runId: string }> {
   const db = openDb(env.DB)
   const vagaro = new VagaroClient(env)
+  const rawImageMirror = createExternalImageMirror(env)
+  const imageMirror = async (sourceUrl: string) => {
+    try {
+      await rawImageMirror(sourceUrl)
+    } catch (error) {
+      // A sync write remains valid because the legacy URL is still usable.
+      // The edge router falls back until a later sync or backfill repairs it.
+      console.error('Hosted Images mirror failed; retaining legacy photo URL:', error)
+    }
+  }
 
   const result: Result = {
     categories: { success: false },
@@ -76,6 +89,7 @@ async function runSync(
         vagaro,
         env.VAGARO_PUBLIC_BUSINESS_ID,
         publicPayload,
+        imageMirror,
       )
       const serviceHealthError = serviceSyncHealthError(result.services.stats)
       result.services.success = serviceHealthError === null
@@ -93,7 +107,7 @@ async function runSync(
   // v2 pass refetched every employee individually after this stage, adding 15
   // metered calls per run without supplying any field the website consumes.
   try {
-    result.publicStaff.stats = await syncPublicStaff(db, env.VAGARO_PUBLIC_BUSINESS_ID)
+    result.publicStaff.stats = await syncPublicStaff(db, env.VAGARO_PUBLIC_BUSINESS_ID, imageMirror)
     result.publicStaff.success = result.publicStaff.stats.errors.length === 0
     if (!result.publicStaff.success) {
       result.publicStaff.error = result.publicStaff.stats.errors.join('; ')

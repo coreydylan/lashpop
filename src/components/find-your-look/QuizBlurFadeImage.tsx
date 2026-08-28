@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { uniqueImageCandidates } from './quiz-result-image'
+import { isQuizImageReady } from './quiz-image-preloader'
 
 interface QuizBlurFadeImageProps {
   src: string
@@ -10,6 +11,7 @@ interface QuizBlurFadeImageProps {
   sizes: string
   priority?: boolean
   className?: string
+  objectPosition?: string
   fallbackSrcs?: Array<string | null | undefined>
 }
 
@@ -19,13 +21,16 @@ export function QuizBlurFadeImage({
   sizes,
   priority = false,
   className = '',
+  objectPosition,
   fallbackSrcs = [],
 }: QuizBlurFadeImageProps) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
   const [failedSrcs, setFailedSrcs] = useState<Set<string>>(() => new Set())
   const candidates = uniqueImageCandidates(src, fallbackSrcs)
   const activeSrc = candidates.find((candidate) => !failedSrcs.has(candidate)) ?? null
-  const isLoaded = loadedSrc === activeSrc
+  const isLoaded = activeSrc !== null && (
+    loadedSrc === activeSrc || isQuizImageReady(activeSrc, sizes)
+  )
 
   return (
     <>
@@ -48,6 +53,7 @@ export function QuizBlurFadeImage({
           sizes={sizes}
           priority={priority}
           quality={90}
+          style={objectPosition ? { objectPosition } : undefined}
           onLoad={() => setLoadedSrc(activeSrc)}
           onError={() => {
             setFailedSrcs((current) => new Set(current).add(activeSrc))

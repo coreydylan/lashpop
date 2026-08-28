@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { PhotoPair, LashStyle } from "./types"
 import { QuizBlurFadeImage } from "./QuizBlurFadeImage"
-import { getQuizPhotoUrl } from "./quiz-image-preloader"
+import { getQuizPhotoObjectPosition, getQuizPhotoUrl } from "./quiz-image-preloader"
 
 // Lash/Eye icon for tap indicator
 const LashIcon = () => (
@@ -68,7 +68,10 @@ export function PhotoComparisonRound({
       </div>
 
       {/* Photo Comparison */}
-      <div className="flex-1 grid grid-cols-2 gap-3 md:gap-4 min-h-0">
+      <div
+        className="grid flex-none grid-cols-2 gap-3 min-h-0 md:flex-1 md:gap-4"
+        data-quiz-photo-grid
+      >
         {/* Left Photo */}
         <motion.button
           initial={{ opacity: 0, x: -20, scale: 0.9 }}
@@ -85,6 +88,8 @@ export function PhotoComparisonRound({
           onClick={() => handleSelect("left", pair.leftStyle)}
           disabled={isLocked}
           aria-pressed={feedbackSide === "left"}
+          data-lash-style={pair.leftStyle}
+          data-quiz-photo-src={getQuizPhotoUrl(pair.left)}
           className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <QuizBlurFadeImage
@@ -92,7 +97,7 @@ export function PhotoComparisonRound({
             alt="Left option"
             priority
             sizes="(max-width: 768px) 45vw, 200px"
-            className="group-hover:scale-105"
+            objectPosition={getQuizPhotoObjectPosition(pair.left)}
           />
           {/* Selection overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/0 via-transparent to-dusty-rose/0 group-hover:from-dusty-rose/15 group-hover:to-dusty-rose/5 transition-all duration-300" />
@@ -125,6 +130,8 @@ export function PhotoComparisonRound({
           onClick={() => handleSelect("right", pair.rightStyle)}
           disabled={isLocked}
           aria-pressed={feedbackSide === "right"}
+          data-lash-style={pair.rightStyle}
+          data-quiz-photo-src={getQuizPhotoUrl(pair.right)}
           className="relative aspect-[3/4] rounded-2xl overflow-hidden group shadow-md disabled:cursor-not-allowed transition-shadow hover:shadow-xl bg-cream"
         >
           <QuizBlurFadeImage
@@ -132,7 +139,7 @@ export function PhotoComparisonRound({
             alt="Right option"
             priority
             sizes="(max-width: 768px) 45vw, 200px"
-            className="group-hover:scale-105"
+            objectPosition={getQuizPhotoObjectPosition(pair.right)}
           />
           {/* Selection overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/0 via-transparent to-dusty-rose/0 group-hover:from-dusty-rose/15 group-hover:to-dusty-rose/5 transition-all duration-300" />

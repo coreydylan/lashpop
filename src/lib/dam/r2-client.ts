@@ -1,4 +1,5 @@
 import { AwsClient } from "aws4fetch"
+import { deleteMirroredR2Image, mirrorR2Image } from "./cloudflare-images"
 
 const sanitizeEnvValue = (value?: string | null) => {
   if (typeof value !== "string") return undefined
@@ -106,6 +107,28 @@ export interface UploadBufferParams {
   contentType: string
 }
 
+async function mirrorBestEffort(params: {
+  body: Uint8Array
+  key: string
+  contentType: string
+  fileName: string
+}) {
+  try {
+    return await mirrorR2Image(params)
+  } catch (error) {
+    console.error("Cloudflare Images mirror failed; R2 remains available:", error)
+    return { status: "failed" as const }
+  }
+}
+
+async function mirrorForStorage(
+  config: StorageConfig,
+  params: Parameters<typeof mirrorBestEffort>[0],
+) {
+  if (config.kind === "proxy") return { status: "skipped" as const }
+  return mirrorBestEffort(params)
+}
+
 export async function uploadFile(params: UploadParams) {
   const { file, key, contentType } = params
   const body = new Uint8Array(await file.arrayBuffer())
@@ -118,18 +141,26 @@ export async function uploadFile(params: UploadParams) {
         body,
       })
     : await config.client.fetch(`${config.endpoint}/${config.bucketName}/${key}`, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body,
-  })
+        method: "PUT",
+        headers: { "Content-Type": contentType },
+        body,
+      })
 
   if (!res.ok) {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
+  const mirror = await mirrorForStorage(config, {
+    body,
+    key,
+    contentType,
+    fileName: file.name,
+  })
+
   return {
     url: `${config.bucketUrl}/${key}`,
-    key
+    key,
+    mirror,
   }
 }
 
@@ -154,9 +185,17 @@ export async function uploadBuffer(params: UploadBufferParams) {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
+  const mirror = await mirrorForStorage(config, {
+    body: new Uint8Array(buffer),
+    key,
+    contentType,
+    fileName: key.split("/").pop() || "image",
+  })
+
   return {
     url: `${config.bucketUrl}/${key}`,
-    key
+    key,
+    mirror,
   }
 }
 
@@ -168,6 +207,14 @@ export async function deleteObject(key: string) {
 
   if (!res.ok && res.status !== 404) {
     throw new Error(`R2 delete failed: ${res.status} ${await res.text()}`)
+  }
+
+  if (config.kind === "r2") {
+    try {
+      await deleteMirroredR2Image(key)
+    } catch (error) {
+      console.error("Cloudflare Images delete failed; cleanup can be retried:", error)
+    }
   }
 }
 
@@ -228,9 +275,17 @@ export async function uploadBufferWithOptions(params: {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
+  const mirror = await mirrorForStorage(config, {
+    body: new Uint8Array(buffer),
+    key,
+    contentType,
+    fileName: key.split("/").pop() || "image",
+  })
+
   return {
     url: `${config.bucketUrl}/${key}`,
-    key
+    key,
+    mirror,
   }
 }
 

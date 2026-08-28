@@ -290,7 +290,7 @@ async function seed(dbUrl: string) {
           'independent',
           'Evie Ells Aesthetics',
           '949-866-2206',
-          NULL,
+          'thedarlinspot',
           'https://www.vagaro.com/lashpop32',
           true,
           '/lashpop-images/team/evie-ells.jpg',

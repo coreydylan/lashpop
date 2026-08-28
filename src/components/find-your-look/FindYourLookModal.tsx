@@ -7,8 +7,8 @@ import { ChevronLeft, X, ArrowRight, AlertCircle } from 'lucide-react';
 import { useQuizAlgorithm } from './useQuizAlgorithm';
 import { PhotoComparisonRound } from './PhotoComparisonRound';
 import { QuizBlurFadeImage } from './QuizBlurFadeImage';
-import { preloadQuizImages } from './quiz-image-preloader';
-import { getQuizResultFallbackImages } from './quiz-result-image';
+import { preloadQuizExperience } from './quiz-image-preloader';
+import { getQuizResultImageCandidates } from './quiz-result-image';
 import {
   type LashStyle,
   type QuizPhoto,
@@ -19,8 +19,6 @@ import {
   QUIZ_CONFIG,
 } from './types';
 import {
-  getQuizPhotosForQuiz,
-  getResultSettingsForQuiz,
   getQuizResultServices,
   type QuizResultForDisplay,
   type QuizResultService,
@@ -139,16 +137,8 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
         setPhotosLoading(true);
         setPhotosError(null);
         try {
-          const [photos, settings] = await Promise.all([
-            getQuizPhotosForQuiz(),
-            getResultSettingsForQuiz(),
-          ]);
-          const typedPhotos = photos as Record<LashStyle, QuizPhoto[]>;
-          const resultImages = Object.values(settings)
-            .map((setting) => setting.resultImage)
-            .filter((src): src is string => Boolean(src));
-          preloadQuizImages(typedPhotos, resultImages);
-          setPhotosByStyle(typedPhotos);
+          const { photos, settings } = await preloadQuizExperience();
+          setPhotosByStyle(photos);
           setResultSettings(settings);
         } catch (error) {
           console.error('Error loading quiz data:', error);
@@ -163,15 +153,12 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
 
     const handleBack = useCallback(() => {
       if (step === 4) {
-        // From results, go back to last photo comparison
+        // Restart the comparison phase from the saved questionnaire answers.
+        // The prior comparison pairs and photo votes must not leak into the retry.
+        quiz.startPhotoComparison();
         setStep(3);
-        quiz.reset();
       } else if (step > 0) {
         setStep((s) => (s - 1) as QuizStep);
-        if (step === 3) {
-          // Reset quiz algorithm when going back from photo comparison
-          quiz.reset();
-        }
       }
     }, [step, quiz]);
 
@@ -359,17 +346,21 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
             {step === 4 && quiz.result && (() => {
               const display = buildResultDisplay(quiz.result, resultSettings);
               const activeServices = servicesLoadedFor === quiz.result ? resultServices : null;
-              const fallbackImages = getQuizResultFallbackImages(
-                quiz.result,
+              const imageCandidates = getQuizResultImageCandidates({
+                style: quiz.result,
+                configuredImage: resultSettings?.[quiz.result]?.resultImage,
+                selectedPhoto: quiz.resultPhoto,
                 photosByStyle,
-                activeServices?.bookingImage,
-              );
+                bookingImage: activeServices?.bookingImage,
+                legacyFallbackImage: display.resultImage,
+              });
               return (
                 <ResultScreen
                   key="result"
+                  resultStyle={quiz.result}
                   result={display}
-                  resultImage={display.resultImage}
-                  resultImageFallbacks={fallbackImages}
+                  resultImage={imageCandidates[0] || display.resultImage}
+                  resultImageFallbacks={imageCandidates.slice(1)}
                   services={activeServices?.services ?? []}
                   servicesLoading={servicesLoadedFor !== quiz.result}
                   onBookService={handleBookService}
@@ -423,16 +414,8 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
       const load = async () => {
         setPhotosLoading(true);
         try {
-          const [photos, settings] = await Promise.all([
-            getQuizPhotosForQuiz(),
-            getResultSettingsForQuiz(),
-          ]);
-          const typedPhotos = photos as Record<LashStyle, QuizPhoto[]>;
-          const resultImages = Object.values(settings)
-            .map((setting) => setting.resultImage)
-            .filter((src): src is string => Boolean(src));
-          preloadQuizImages(typedPhotos, resultImages);
-          setPhotosByStyle(typedPhotos);
+          const { photos, settings } = await preloadQuizExperience();
+          setPhotosByStyle(photos);
           setResultSettings(settings);
         } catch (error) {
           console.error('Error loading quiz data:', error);
@@ -466,11 +449,10 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
 
   const handleBack = useCallback(() => {
     if (step === 4) {
+      quiz.startPhotoComparison();
       setStep(3);
-      // Don't reset quiz - keep scores, but need to restart photo comparison
     } else if (step === 3) {
       setStep(2);
-      quiz.reset();
     } else if (step > 0) {
       setStep((s) => (s - 1) as QuizStep);
     }
@@ -736,17 +718,21 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
                     {step === 4 && quiz.result && (() => {
                       const display = buildResultDisplay(quiz.result, resultSettings);
                       const activeServices = servicesLoadedFor === quiz.result ? resultServices : null;
-                      const fallbackImages = getQuizResultFallbackImages(
-                        quiz.result,
+                      const imageCandidates = getQuizResultImageCandidates({
+                        style: quiz.result,
+                        configuredImage: resultSettings?.[quiz.result]?.resultImage,
+                        selectedPhoto: quiz.resultPhoto,
                         photosByStyle,
-                        activeServices?.bookingImage,
-                      );
+                        bookingImage: activeServices?.bookingImage,
+                        legacyFallbackImage: display.resultImage,
+                      });
                       return (
                         <ResultScreen
                           key="result"
+                          resultStyle={quiz.result}
                           result={display}
-                          resultImage={display.resultImage}
-                          resultImageFallbacks={fallbackImages}
+                          resultImage={imageCandidates[0] || display.resultImage}
+                          resultImageFallbacks={imageCandidates.slice(1)}
                           services={activeServices?.services ?? []}
                           servicesLoading={servicesLoadedFor !== quiz.result}
                           onBookService={handleBookService}
@@ -920,6 +906,7 @@ function Q2LashLookFeel({ onAnswer }: { onAnswer: (answer: Q2Answer) => void }) 
 
 // Result Screen
 interface ResultScreenProps {
+  resultStyle: LashStyle;
   result: Pick<QuizResultForDisplay, 'displayName' | 'description' | 'bestFor'>;
   resultImage: string;
   resultImageFallbacks: string[];
@@ -930,6 +917,7 @@ interface ResultScreenProps {
 }
 
 function ResultScreen({
+  resultStyle,
   result,
   resultImage,
   resultImageFallbacks,
@@ -945,6 +933,7 @@ function ResultScreen({
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
       className="flex-1 min-h-0 flex flex-col"
+      data-quiz-result-style={resultStyle}
     >
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0 overflow-y-auto">
@@ -957,7 +946,10 @@ function ResultScreen({
         </div>
 
         {/* Result Image */}
-        <div className="relative w-full h-36 md:h-48 rounded-xl overflow-hidden mb-3 md:mb-4 shrink-0">
+        <div
+          className="relative w-full h-36 md:h-48 rounded-xl overflow-hidden mb-3 md:mb-4 shrink-0"
+          data-quiz-result-image-src={resultImage}
+        >
           <QuizBlurFadeImage
             src={resultImage}
             fallbackSrcs={resultImageFallbacks}

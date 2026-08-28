@@ -54,10 +54,21 @@ assert(services.some((service) => service.slug === "classic-fill"), "Service fix
 
 const quizPhotos = fixtures["homepage-quiz.json"].quizPhotos
 for (const style of ["classic", "hybrid", "wetAngel", "volume"]) {
+  const enabledPhotos = quizPhotos[style]?.filter((photo) => photo.isEnabled) ?? []
   assert(
-    quizPhotos[style]?.filter((photo) => photo.isEnabled).length >= 2,
+    enabledPhotos.length >= 2,
     `Quiz fixture needs at least two enabled ${style} photos`,
   )
+  assert(
+    enabledPhotos.every((photo) => photo.cropData && photo.cropUrl),
+    `Every enabled ${style} quiz photo must preserve its approved crop`,
+  )
+}
+
+const quizResultSettings = fixtures["homepage-quiz.json"].quizResultSettings
+for (const style of ["classic", "hybrid", "wetAngel", "volume"]) {
+  const resultImage = quizResultSettings[style]?.resultImage ?? ""
+  assert(resultImage && !resultImage.includes("placeholder"), `${style} must have an approved result image`)
 }
 
 console.log(`Browser fixtures verified: ${names.length} public-only snapshots.`)

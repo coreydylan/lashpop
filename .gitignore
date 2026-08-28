@@ -118,6 +118,7 @@ scripts/instagram-import/launchd-*.log
 /*.jpg
 /*.jpeg
 /tmp/
+/.artifacts/
 /.claude/
 s3-recovery/
 

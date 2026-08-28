@@ -136,11 +136,12 @@ export const RESULT_IMAGES: Record<LashStyle, string> = {
 
 // Quiz configuration
 export const QUIZ_CONFIG = {
-  MIN_ROUNDS: 4,
-  // Four styles have exactly six unique head-to-head pairings. Stopping at
-  // six guarantees the quiz never has to recycle a comparison.
+  // The client-approved flow returns a result as soon as three completed
+  // comparisons produce a decisive two-vote lead. All six unique pairings
+  // remain available only when the photo choices are still ambiguous.
+  MIN_ROUNDS: 3,
   MAX_ROUNDS: 6,
-  WIN_MARGIN: 2, // Points ahead to win early
+  WIN_MARGIN: 2,
 }
 
 // Helper: create empty scores object
@@ -168,6 +169,16 @@ export function applyScoreChanges(
     if (points) next[style as LashStyle] += points
   })
   return next
+}
+
+export function getQuestionnaireScores(
+  q1Answer: Q1Answer | null,
+  q2Answer: Q2Answer | null,
+): StyleScores {
+  let scores = createEmptyScores()
+  if (q1Answer) scores = applyScoreChanges(scores, Q1_SCORES[q1Answer])
+  if (q2Answer) scores = applyScoreChanges(scores, Q2_SCORES[q2Answer])
+  return scores
 }
 
 // "Neither" means the comparison supplied no preference signal. Advancing
@@ -205,6 +216,28 @@ export function getRankedStyles(
 
     const baselineDifference = (baselineScores?.[b] ?? 0) - (baselineScores?.[a] ?? 0)
     if (baselineDifference !== 0) return baselineDifference
+
+    return LASH_STYLE_SPECTRUM.indexOf(a) - LASH_STYLE_SPECTRUM.indexOf(b)
+  })
+}
+
+// Photo comparisons are the client's labeled, visual source of truth. Keep
+// questionnaire answers as a useful tie-breaker, but never let their larger
+// point totals override a clear preference expressed through the photos.
+export function getResultRankedStyles(
+  photoScores: StyleScores,
+  baselineScores: StyleScores,
+  tieBreakStyle?: LashStyle,
+): LashStyle[] {
+  return [...LASH_STYLE_SPECTRUM].sort((a, b) => {
+    const photoDifference = photoScores[b] - photoScores[a]
+    if (photoDifference !== 0) return photoDifference
+
+    const baselineDifference = baselineScores[b] - baselineScores[a]
+    if (baselineDifference !== 0) return baselineDifference
+
+    if (tieBreakStyle === a) return -1
+    if (tieBreakStyle === b) return 1
 
     return LASH_STYLE_SPECTRUM.indexOf(a) - LASH_STYLE_SPECTRUM.indexOf(b)
   })
@@ -254,24 +287,27 @@ export function getUnusedStylePairs(
 
 // Helper: check win condition
 export function checkWinCondition(
-  scores: StyleScores,
+  photoScores: StyleScores,
   completedRounds: number,
   tieBreakStyle?: LashStyle,
   baselineScores?: StyleScores,
 ): LashStyle | null {
-  const sorted = getRankedStyles(scores, tieBreakStyle, baselineScores)
-  const [first, second] = sorted
-  const margin = scores[first] - scores[second]
+  const ranked = getResultRankedStyles(
+    photoScores,
+    baselineScores ?? createEmptyScores(),
+    tieBreakStyle,
+  )
+  const [first, second] = ranked
+  const photoMargin = photoScores[first] - photoScores[second]
 
-  // Early win: leader has 2+ point margin after minimum rounds
-  if (completedRounds >= QUIZ_CONFIG.MIN_ROUNDS && margin >= QUIZ_CONFIG.WIN_MARGIN) {
+  if (
+    completedRounds >= QUIZ_CONFIG.MIN_ROUNDS
+    && photoMargin >= QUIZ_CONFIG.WIN_MARGIN
+  ) {
     return first
   }
 
-  // Max rounds reached: highest score wins
-  if (completedRounds >= QUIZ_CONFIG.MAX_ROUNDS) {
-    return first
-  }
+  if (completedRounds < QUIZ_CONFIG.MAX_ROUNDS) return null
 
-  return null
+  return first
 }
