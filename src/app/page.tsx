@@ -12,6 +12,7 @@ import { getHomepageServices } from "@/actions/homepage-services"
 import { getHeroContent } from "@/actions/hero-content"
 import { ReviewSchema } from "@/components/seo"
 import LandingPageV2Client from "./LandingPageV2Client"
+import type { CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
 
 type HomePageData = {
   services: Awaited<ReturnType<typeof getAllServices>>
@@ -28,6 +29,7 @@ type HomePageData = {
   homepageServices: Awaited<ReturnType<typeof getHomepageServices>>
   instagramSettings: Awaited<ReturnType<typeof getInstagramSettings>>
   heroContent: Awaited<ReturnType<typeof getHeroContent>>
+  workWithUsPhotos: CarouselDisplayPhoto[]
 }
 
 async function getHomePageData(): Promise<HomePageData> {
@@ -56,6 +58,7 @@ async function getHomePageData(): Promise<HomePageData> {
       ...teamFixture.default,
       ...contentFixture.default,
       ...socialData,
+      workWithUsPhotos: [],
     } as unknown as HomePageData
   }
 
@@ -74,6 +77,7 @@ async function getHomePageData(): Promise<HomePageData> {
     homepageServices,
     instagramSettings,
     heroContent,
+    workWithUsPhotos,
   ] = await Promise.all([
     getAllServices(),
     getTeamMembersWithServices(),
@@ -89,6 +93,7 @@ async function getHomePageData(): Promise<HomePageData> {
     getHomepageServices(),
     getInstagramSettings(),
     getHeroContent(),
+    import('@/actions/work-with-us-carousel').then(({ getEnabledCarouselPhotos }) => getEnabledCarouselPhotos()),
   ])
 
   return {
@@ -106,6 +111,7 @@ async function getHomePageData(): Promise<HomePageData> {
     homepageServices,
     instagramSettings,
     heroContent,
+    workWithUsPhotos,
   }
 }
 
@@ -130,6 +136,7 @@ export default async function HomePage() {
     homepageServices,
     instagramSettings,
     heroContent,
+    workWithUsPhotos,
   } = await getHomePageData()
 
   // Homepage "Choose a Service" marketing cards (editable in admin). Only the
@@ -212,6 +219,8 @@ export default async function HomePage() {
 
   return <>
     <LandingPageV2Client
+      disableExperiencePreload={process.env.PLAYWRIGHT_FIXTURES === "1"}
+      workWithUsPhotos={workWithUsPhotos}
       services={formattedServices}
       teamMembers={formattedTeamMembers}
       reviews={reviews}

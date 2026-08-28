@@ -7,8 +7,6 @@ import { requireAdminRole } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
 import { eq, asc, and, inArray, isNull } from 'drizzle-orm'
 
-const db = getDb()
-
 export type CarouselPhotoWithAsset = {
   id: string
   assetId: string
@@ -22,6 +20,7 @@ export type CarouselPhotoWithAsset = {
  * Get all carousel photos with asset data
  */
 export async function getAllCarouselPhotos(): Promise<CarouselPhotoWithAsset[]> {
+  const db = getDb()
   await requireAdminRole('owner', 'publisher', 'viewer')
   const results = await db
     .select({
@@ -53,6 +52,7 @@ export type CarouselDisplayPhoto = {
  * carousel can reserve space and blur-up like the rest of the site.
  */
 export async function getEnabledCarouselPhotos(): Promise<CarouselDisplayPhoto[]> {
+  const db = getDb()
   const results = await db
     .select({
       filePath: assets.filePath,
@@ -77,6 +77,7 @@ export async function getEnabledCarouselPhotos(): Promise<CarouselDisplayPhoto[]
  * Add a photo to the carousel
  */
 export async function addCarouselPhoto(assetId: string): Promise<CarouselPhotoWithAsset> {
+  const db = getDb()
   const auth = await requireAdminRole('owner', 'publisher')
 
   const [asset] = await db
@@ -132,6 +133,7 @@ export async function addCarouselPhoto(assetId: string): Promise<CarouselPhotoWi
  * Toggle a photo's enabled status
  */
 export async function toggleCarouselPhotoEnabled(photoId: string): Promise<{ isEnabled: boolean }> {
+  const db = getDb()
   const auth = await requireAdminRole('owner', 'publisher')
   const [photo] = await db
     .select({
@@ -170,6 +172,7 @@ export async function toggleCarouselPhotoEnabled(photoId: string): Promise<{ isE
  * Delete a photo from the carousel
  */
 export async function deleteCarouselPhoto(photoId: string): Promise<void> {
+  const db = getDb()
   const auth = await requireAdminRole('owner', 'publisher')
   const [before] = await db
     .select({
@@ -199,6 +202,7 @@ export async function deleteCarouselPhoto(photoId: string): Promise<void> {
  * Reorder carousel photos
  */
 export async function reorderCarouselPhotos(photoIds: string[]): Promise<void> {
+  const db = getDb()
   const auth = await requireAdminRole('owner', 'publisher')
   if (photoIds.length === 0) return
 

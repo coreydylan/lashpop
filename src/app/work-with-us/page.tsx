@@ -12,6 +12,10 @@ import { getWorkWithUsContent } from '@/actions/work-with-us-content'
 import { DEFAULT_WORK_WITH_US_CONTENT, type WorkWithUsContent } from '@/types/work-with-us-content'
 import { TeamCarousel } from '@/components/work-with-us/TeamCarousel'
 import {
+  isWorkWithUsImageReady,
+  preloadWorkWithUsImage,
+} from '@/lib/experience-image-preloader'
+import {
   CheckCircle2,
   Sparkles,
   Heart,
@@ -125,7 +129,16 @@ function FadeInPhoto({
     : 'src' in src
       ? src.src
       : src.default.src
-  const isLoaded = loadedSrc === sourceKey
+  const renderedSizes = typeof props.sizes === 'string' ? props.sizes : '100vw'
+  const isLoaded = loadedSrc === sourceKey || isWorkWithUsImageReady(sourceKey, renderedSizes)
+
+  useEffect(() => {
+    let active = true
+    void preloadWorkWithUsImage(sourceKey, renderedSizes).then(() => {
+      if (active) setLoadedSrc(sourceKey)
+    })
+    return () => { active = false }
+  }, [renderedSizes, sourceKey])
 
   return (
     <Image
