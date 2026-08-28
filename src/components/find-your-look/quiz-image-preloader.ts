@@ -19,6 +19,10 @@ export interface QuizImageLoadPlan {
   background: QuizImageCandidate[]
 }
 
+export function isLegacySquareQuizCrop(url: string | null | undefined): boolean {
+  return Boolean(url && /-square-(?:\d|canonical)/.test(url))
+}
+
 interface CachedQuizImage {
   image: HTMLImageElement
   promise: Promise<void>
@@ -31,7 +35,13 @@ const preloadCache = new Map<string, CachedQuizImage>()
 let backgroundGeneration = 0
 
 export function getQuizPhotoUrl(photo: QuizPhoto): string {
-  return photo.cropUrl || photo.filePath
+  if (photo.cropUrl && !isLegacySquareQuizCrop(photo.cropUrl)) return photo.cropUrl
+  return photo.filePath
+}
+
+export function getQuizPhotoObjectPosition(photo: QuizPhoto): string | undefined {
+  if (!isLegacySquareQuizCrop(photo.cropUrl) || !photo.cropData) return undefined
+  return `${photo.cropData.x}% ${photo.cropData.y}%`
 }
 
 function firstEnabledPhoto(photos: QuizPhoto[] | undefined): QuizPhoto | null {

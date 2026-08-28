@@ -9,6 +9,7 @@ import {
   createEmptyScores,
   getPairKey,
   getQuestionnaireScores,
+  getResultRankedStyles,
   getUnusedStylePairs,
   pickQuizPhoto,
   type QuizPhoto,
@@ -82,6 +83,45 @@ test("the final selected style wins a tied final score", () => {
   }
 
   assert.equal(checkWinCondition(scores, 6, "wetAngel"), "wetAngel")
+})
+
+test('labeled photo choices outrank a contradictory questionnaire result', () => {
+  const classicQuestionnaire = getQuestionnaireScores('A', 'A')
+
+  assert.equal(
+    getResultRankedStyles(
+      { classic: 0, wetAngel: 0, hybrid: 3, volume: 0 },
+      classicQuestionnaire,
+      'hybrid',
+    )[0],
+    'hybrid',
+  )
+  assert.equal(
+    getResultRankedStyles(
+      { classic: 0, wetAngel: 3, hybrid: 0, volume: 0 },
+      classicQuestionnaire,
+      'wetAngel',
+    )[0],
+    'wetAngel',
+  )
+})
+
+test('questionnaire supplies the result when every photo comparison is skipped', () => {
+  const volumeQuestionnaire = getQuestionnaireScores('C', 'D')
+
+  assert.equal(
+    getResultRankedStyles(createEmptyScores(), volumeQuestionnaire)[0],
+    'volume',
+  )
+})
+
+test('the quiz never finishes before all six labeled style pairings are shown', () => {
+  const photoScores = { classic: 3, wetAngel: 0, hybrid: 0, volume: 0 }
+  const baseline = getQuestionnaireScores('A', 'A')
+
+  assert.equal(checkWinCondition(photoScores, 4, 'classic', baseline), null)
+  assert.equal(checkWinCondition(photoScores, 5, 'classic', baseline), null)
+  assert.equal(checkWinCondition(photoScores, 6, 'classic', baseline), 'classic')
 })
 
 test("questionnaire preference resolves a skipped final tie", () => {

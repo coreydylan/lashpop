@@ -36,6 +36,8 @@ import {
   type LashStyle
 } from '@/actions/quiz-photos'
 import { QuizPhotoCropEditor } from '@/components/admin/QuizPhotoCropEditor'
+import { QUIZ_COMPARISON_CROP_ASPECT } from '@/components/find-your-look/quiz-crop'
+import { isLegacySquareQuizCrop } from '@/components/find-your-look/quiz-image-preloader'
 
 type AdminTab = 'photos' | 'results'
 
@@ -610,7 +612,7 @@ export default function QuizAdminPage() {
                             <div
                               key={photo.id}
                               className={clsx(
-                                "relative aspect-square rounded-xl overflow-hidden border-2 group",
+                                "relative aspect-[3/4] rounded-xl overflow-hidden border-2 group",
                                 photo.isEnabled
                                   ? "border-ocean-mist/30"
                                   : "border-sage/20 opacity-60"
@@ -618,8 +620,8 @@ export default function QuizAdminPage() {
                             >
                               {/* Photo - key forces re-render when cropUrl changes */}
                               <Image
-                                key={photo.cropUrl || photo.id}
-                                src={photo.cropUrl || photo.filePath}
+                                key={isLegacySquareQuizCrop(photo.cropUrl) ? photo.filePath : (photo.cropUrl || photo.id)}
+                                src={isLegacySquareQuizCrop(photo.cropUrl) ? photo.filePath : (photo.cropUrl || photo.filePath)}
                                 alt={photo.fileName}
                                 fill
                                 className="object-cover"
@@ -678,6 +680,11 @@ export default function QuizAdminPage() {
                                 {!photo.cropData && !photo.cropUrl && (
                                   <span className="px-1.5 py-0.5 rounded bg-golden/80 text-white text-[10px]">
                                     No crop
+                                  </span>
+                                )}
+                                {isLegacySquareQuizCrop(photo.cropUrl) && (
+                                  <span className="px-1.5 py-0.5 rounded bg-golden/80 text-white text-[10px]">
+                                    Needs safe crop
                                   </span>
                                 )}
                               </div>
@@ -972,8 +979,15 @@ export default function QuizAdminPage() {
           onClose={() => setCropEditor(null)}
           onSave={handleCropSave}
           imageUrl={cropEditor.photo.filePath}
-          initialCrop={cropEditor.photo.cropData || undefined}
+          initialCrop={isLegacySquareQuizCrop(cropEditor.photo.cropUrl)
+            ? {
+                x: cropEditor.photo.cropData?.x ?? 50,
+                y: cropEditor.photo.cropData?.y ?? 50,
+                scale: 0.5,
+              }
+            : cropEditor.photo.cropData || undefined}
           photoName={cropEditor.photo.fileName}
+          cropAspect={QUIZ_COMPARISON_CROP_ASPECT}
         />
       )}
 

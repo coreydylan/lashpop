@@ -326,7 +326,7 @@ async function seed(dbUrl: string) {
           'Evie offers the perfect combination of lash and brow services, ensuring your eye area looks cohesive and beautiful. Her balanced approach creates harmony in facial features.',
           'It is all about balance and proportion.',
           '949-866-2206',
-          '@evieellsaesthetics',
+          'thedarlinspot',
           'https://www.vagaro.com/lashpop32',
           '/lashpop-images/team/evie-ells.jpg',
           '["Lash Extensions", "Brow Services", "Combination Treatments"]'::jsonb,
