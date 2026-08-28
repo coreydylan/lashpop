@@ -99,7 +99,7 @@ const allTeamMembers = [
     type: "independent" as const,
     phone: "949-866-2206",
     email: "",
-    instagram: "@evieellsaesthetics",
+    instagram: "thedarlinspot",
     businessName: "Evie Ells Aesthetics",
     bio: `4.5 years in the beauty industry. Specializes in eyelash extensions and brows. Enjoys the creative and artistic aspect of lashing but loves seeing clients' faces light up when they see their results. It's amazing to help people feel more confident and beautiful, even in a subtle way. Days off start at hot yoga with husband, then anything outside in the sun, ending with Bravo TV, cats, and good red wine! Fun fact: She's a triplet! Favorite movie: How to Lose a Guy in 10 Days (really any Rom-Com with Matthew McConaughey). Go-to coffee: Extra Hot Triple americano splash of almond milk.`,
     specialties: ["Eyelash extensions", "Brow services"],

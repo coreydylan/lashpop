@@ -3,11 +3,13 @@ import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
 import { preparePublicHome } from './helpers'
 
+const QUIZ_EVIDENCE_DIR = process.env.LASHPOP_QUIZ_EVIDENCE_DIR ?? '/tmp/registry'
+
 type QuizPath = {
   name: string
   q1Button: RegExp
   q2Button: RegExp
-  resultStyle: 'classic' | 'volume'
+  resultStyle: 'classic' | 'wetAngel' | 'hybrid' | 'volume'
   resultHeading: string
   configuredResultImage: string
 }
@@ -43,6 +45,9 @@ async function walkQuizPath(page: Page, path: QuizPath) {
       return (await comparison.getAttribute('data-photo-pair')) !== previousPair
         ? 'next-pair'
         : 'waiting'
+    }, {
+      timeout: 25_000,
+      intervals: [100, 200, 500],
     }).not.toBe('waiting')
   }
 
@@ -59,6 +64,12 @@ async function walkQuizPath(page: Page, path: QuizPath) {
   await expect.poll(
     () => resultImage.evaluate((image) => (image as HTMLImageElement).naturalWidth),
   ).toBeGreaterThan(0)
+
+  if (process.env.LASHPOP_QUIZ_EVIDENCE === '1') {
+    await quiz.screenshot({
+      path: `${QUIZ_EVIDENCE_DIR}/lashquiz_result_${path.resultStyle}.png`,
+    })
+  }
 }
 
 test('public homepage has no serious or critical accessibility regressions', async ({ page }) => {
@@ -82,6 +93,14 @@ test('public homepage has no serious or critical accessibility regressions', asy
 
   const structuredData = await page.locator('script[type="application/ld+json"]').allTextContents()
   expect(structuredData.join('\n')).not.toContain('Ava Zeutenhorst')
+})
+
+test("Evie's team profile uses her client-approved Instagram handle", async ({ page }) => {
+  await preparePublicHome(page)
+
+  const instagram = page.locator('a[href="https://instagram.com/thedarlinspot"]')
+  await expect(instagram.first()).toBeAttached()
+  await expect(instagram.first()).toContainText('thedarlinspot')
 })
 
 test('Classic Fill reaches the exact booking handoff', async ({ page }) => {
@@ -205,6 +224,22 @@ for (const path of [
     resultHeading: 'Volume Lashes',
     configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/volume-full-set-approved.jpg',
   },
+  {
+    name: 'Hybrid photo choices against a Classic questionnaire',
+    q1Button: /Sunscreen, lip balm/,
+    q2Button: /Barely there/,
+    resultStyle: 'hybrid',
+    resultHeading: 'Hybrid Lashes',
+    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/hybrid-full-set-approved.jpg',
+  },
+  {
+    name: 'Wet Angel photo choices against a Classic questionnaire',
+    q1Button: /Sunscreen, lip balm/,
+    q2Button: /Barely there/,
+    resultStyle: 'wetAngel',
+    resultHeading: 'Wet / Angel Lashes',
+    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/wetAngel-full-set-approved.jpg',
+  },
 ] satisfies QuizPath[]) {
   test(`quiz ${path.name} produces its matching result and admin-configured photo`, async ({ page }) => {
     await walkQuizPath(page, path)
@@ -214,6 +249,9 @@ for (const path of [
 test('mobile quiz keeps Neither of these adjacent to its photo pair', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await preparePublicHome(page)
+  if (process.env.LASHPOP_QUIZ_EVIDENCE === '1') {
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+  }
 
   await page.getByRole('button', { name: 'Take Our Lash Quiz' }).first().click()
   const quiz = page.locator('[role="dialog"]').first()
@@ -225,6 +263,12 @@ test('mobile quiz keeps Neither of these adjacent to its photo pair', async ({ p
   const skip = quiz.getByRole('button', { name: 'Neither of these' })
   await expect(photoGrid).toBeVisible()
   await expect(skip).toBeVisible()
+  await expect.poll(async () =>
+    photoGrid.locator('img').evaluateAll((images) =>
+      images.length === 2
+      && images.every((image) => (image as HTMLImageElement).naturalWidth > 0),
+    ),
+  ).toBe(true)
 
   const photoGridBox = await photoGrid.boundingBox()
   const skipBox = await skip.boundingBox()
@@ -232,6 +276,60 @@ test('mobile quiz keeps Neither of these adjacent to its photo pair', async ({ p
   expect(skipBox).not.toBeNull()
   expect(skipBox!.y - (photoGridBox!.y + photoGridBox!.height)).toBeGreaterThanOrEqual(0)
   expect(skipBox!.y - (photoGridBox!.y + photoGridBox!.height)).toBeLessThanOrEqual(20)
+
+  if (process.env.LASHPOP_QUIZ_EVIDENCE === '1') {
+    await page.waitForTimeout(750)
+    await page.screenshot({ path: `${QUIZ_EVIDENCE_DIR}/lashquiz_mobile_390.png` })
+  }
+})
+
+test('quiz comparison cards stay filled without reusing legacy square crop masters', async ({ page }) => {
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 1440, height: 1000 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await preparePublicHome(page)
+    if (process.env.LASHPOP_QUIZ_EVIDENCE === '1') {
+      await page.emulateMedia({ reducedMotion: 'no-preference' })
+    }
+
+    await page.getByRole('button', { name: 'Take Our Lash Quiz' }).first().click()
+    const quiz = page.locator('[role="dialog"]').first()
+    await quiz.getByRole('button', { name: 'Start Quiz' }).click()
+    await quiz.getByRole('button', { name: /Sunscreen, lip balm/ }).click()
+    await quiz.getByRole('button', { name: /Barely there/ }).click()
+
+    const photoGrid = quiz.locator('[data-quiz-photo-grid]')
+    const cards = photoGrid.locator('button[data-lash-style]')
+    const images = photoGrid.locator('img')
+    await expect(cards).toHaveCount(2)
+    await expect(images).toHaveCount(2)
+    await expect.poll(async () =>
+      images.evaluateAll((elements) =>
+        elements.every((image) => (image as HTMLImageElement).naturalWidth > 0),
+      ),
+    ).toBe(true)
+
+    for (const card of await cards.all()) {
+      const box = await card.boundingBox()
+      expect(box).not.toBeNull()
+      expect(Math.abs((box!.width / box!.height) - 0.75)).toBeLessThanOrEqual(0.01)
+      await expect(card).toHaveAttribute('data-quiz-photo-src', /\/uploads\//)
+      await expect(card).not.toHaveAttribute('data-quiz-photo-src', /-square-/)
+    }
+
+    expect(
+      await images.evaluateAll((elements) =>
+        elements.map((image) => window.getComputedStyle(image).objectFit),
+      ),
+    ).toEqual(['cover', 'cover'])
+
+    if (process.env.LASHPOP_QUIZ_EVIDENCE === '1' && viewport.width === 1440) {
+      await page.waitForTimeout(750)
+      await page.screenshot({ path: `${QUIZ_EVIDENCE_DIR}/lashquiz_desktop_1440.png` })
+    }
+  }
 })
 
 test('quiz back navigation replaces the edited answer without losing the first answer', async ({ page }) => {

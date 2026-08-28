@@ -4,7 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { PhotoPair, LashStyle } from "./types"
 import { QuizBlurFadeImage } from "./QuizBlurFadeImage"
-import { getQuizPhotoUrl } from "./quiz-image-preloader"
+import { getQuizPhotoObjectPosition, getQuizPhotoUrl } from "./quiz-image-preloader"
 
 // Lash/Eye icon for tap indicator
 const LashIcon = () => (
@@ -97,7 +97,7 @@ export function PhotoComparisonRound({
             alt="Left option"
             priority
             sizes="(max-width: 768px) 45vw, 200px"
-            className="group-hover:scale-105"
+            objectPosition={getQuizPhotoObjectPosition(pair.left)}
           />
           {/* Selection overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/0 via-transparent to-dusty-rose/0 group-hover:from-dusty-rose/15 group-hover:to-dusty-rose/5 transition-all duration-300" />
@@ -139,7 +139,7 @@ export function PhotoComparisonRound({
             alt="Right option"
             priority
             sizes="(max-width: 768px) 45vw, 200px"
-            className="group-hover:scale-105"
+            objectPosition={getQuizPhotoObjectPosition(pair.right)}
           />
           {/* Selection overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-dusty-rose/0 via-transparent to-dusty-rose/0 group-hover:from-dusty-rose/15 group-hover:to-dusty-rose/5 transition-all duration-300" />

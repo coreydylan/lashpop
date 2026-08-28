@@ -13,6 +13,11 @@ import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
 import { requireAdminRole } from "@/lib/admin/auth"
 import { recordAdminAction } from "@/lib/admin/audit"
 import { hasVerifiedVagaroBooking } from "@/lib/vagaro-booking-readiness"
+import {
+  QUIZ_COMPARISON_CROP_ASPECT,
+  QUIZ_RESULT_CROP_ASPECT,
+  getQuizCropPercentBox,
+} from "@/components/find-your-look/quiz-crop"
 
 // Lash style → lash_type tag name used by import-quiz-photos.ts
 const LASH_STYLE_TO_TAG_NAME: Record<LashStyle, string> = {
@@ -193,17 +198,21 @@ export async function updateQuizPhotoCrop(
     const arrayBuffer = await response.arrayBuffer()
     const originalBuffer = Buffer.from(arrayBuffer)
 
-    // Generate square crop (800x800 for quiz display)
-    const targetSize = 800
-    const processedBuffer = await generateSquareCrop(
+    // Comparison cards are 3:4 at every viewport. Generate one matching safe
+    // master so the public card can stay fully filled without applying a
+    // second, hidden crop to a square export.
+    const targetWidth = 900
+    const targetHeight = targetWidth / QUIZ_COMPARISON_CROP_ASPECT
+    const processedBuffer = await generateAspectCrop(
       originalBuffer,
       cropData,
-      targetSize
+      targetWidth,
+      targetHeight,
     )
 
     // Upload to R2
     const fileName = photo.fileName.replace(/\.[^/.]+$/, "")
-    const key = `quiz-crops/${photoId}/${fileName}-square-${Date.now()}.jpg`
+    const key = `quiz-crops/${photoId}/${fileName}-portrait-safe-${Date.now()}.jpg`
 
     const result = await uploadBufferWithOptions({
       buffer: processedBuffer,
@@ -384,14 +393,12 @@ function quizPhotoAuditSnapshot(photo: typeof quizPhotos.$inferSelect) {
   }
 }
 
-// Base width percent used in the crop editor (must match QuizPhotoCropEditor)
-const BASE_WIDTH_PERCENT = 70
-
-// Helper: Generate square crop
-async function generateSquareCrop(
+// Generate the exact crop aspect previewed by the admin editor.
+async function generateAspectCrop(
   originalBuffer: Buffer,
   data: QuizPhotoCropData,
-  targetSize: number
+  targetWidth: number,
+  targetHeight: number,
 ): Promise<Buffer> {
   const { x, y, scale } = data
 
@@ -400,33 +407,35 @@ async function generateSquareCrop(
   const originalWidth = metadata.width || 1000
   const originalHeight = metadata.height || 1000
 
-  // Calculate crop box size as percentage (matching the editor logic)
-  const widthPercent = Math.min(95, Math.max(15, BASE_WIDTH_PERCENT / scale))
-
-  // Calculate crop size based on width percentage
-  let cropSize = Math.round((widthPercent / 100) * originalWidth)
-
-  // For a square crop, ensure it fits within both dimensions
-  // The crop box must fit within the image bounds
-  cropSize = Math.min(cropSize, originalWidth, originalHeight)
+  const imageAspect = originalWidth / originalHeight
+  const cropAspect = targetWidth / targetHeight
+  const { widthPercent, heightPercent } = getQuizCropPercentBox(
+    { x, y, scale },
+    imageAspect,
+    cropAspect,
+  )
+  const cropWidth = Math.max(1, Math.round((widthPercent / 100) * originalWidth))
+  const cropHeight = Math.max(1, Math.round((heightPercent / 100) * originalHeight))
 
   // Center of the crop box in pixels
   const centerX = Math.round((x / 100) * originalWidth)
   const centerY = Math.round((y / 100) * originalHeight)
 
   // Calculate extraction region (top-left corner)
-  let extractLeft = centerX - Math.floor(cropSize / 2)
-  let extractTop = centerY - Math.floor(cropSize / 2)
+  let extractLeft = centerX - Math.floor(cropWidth / 2)
+  let extractTop = centerY - Math.floor(cropHeight / 2)
 
   // Clamp to image bounds
-  extractLeft = Math.max(0, Math.min(extractLeft, originalWidth - cropSize))
-  extractTop = Math.max(0, Math.min(extractTop, originalHeight - cropSize))
+  extractLeft = Math.max(0, Math.min(extractLeft, originalWidth - cropWidth))
+  extractTop = Math.max(0, Math.min(extractTop, originalHeight - cropHeight))
 
   console.log('Crop params:', {
     originalWidth,
     originalHeight,
     widthPercent,
-    cropSize,
+    cropAspect,
+    cropWidth,
+    cropHeight,
     centerX,
     centerY,
     extractLeft,
@@ -437,12 +446,12 @@ async function generateSquareCrop(
     .extract({
       left: extractLeft,
       top: extractTop,
-      width: cropSize,
-      height: cropSize,
+      width: cropWidth,
+      height: cropHeight,
     })
     .resize({
-      width: targetSize,
-      height: targetSize,
+      width: targetWidth,
+      height: targetHeight,
       fit: "fill",
     })
     .jpeg({ quality: 90 })
@@ -846,7 +855,12 @@ export async function updateResultImageCrop(
     const originalBuffer = Buffer.from(arrayBuffer)
 
     const targetSize = 800
-    const processedBuffer = await generateSquareCrop(originalBuffer, cropData, targetSize)
+    const processedBuffer = await generateAspectCrop(
+      originalBuffer,
+      cropData,
+      targetSize,
+      targetSize / QUIZ_RESULT_CROP_ASPECT,
+    )
 
     const fileName = settings.fileName?.replace(/\.[^/.]+$/, "") || "result"
     const key = `quiz-results/${lashStyle}/${fileName}-result-${Date.now()}.jpg`

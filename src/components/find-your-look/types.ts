@@ -136,11 +136,10 @@ export const RESULT_IMAGES: Record<LashStyle, string> = {
 
 // Quiz configuration
 export const QUIZ_CONFIG = {
-  MIN_ROUNDS: 4,
   // Four styles have exactly six unique head-to-head pairings. Stopping at
-  // six guarantees the quiz never has to recycle a comparison.
+  // six guarantees every labeled style pairing is considered once and the
+  // quiz never has to recycle a comparison.
   MAX_ROUNDS: 6,
-  WIN_MARGIN: 2, // Points ahead to win early
 }
 
 // Helper: create empty scores object
@@ -220,6 +219,28 @@ export function getRankedStyles(
   })
 }
 
+// Photo comparisons are the client's labeled, visual source of truth. Keep
+// questionnaire answers as a useful tie-breaker, but never let their larger
+// point totals override a clear preference expressed through the photos.
+export function getResultRankedStyles(
+  photoScores: StyleScores,
+  baselineScores: StyleScores,
+  tieBreakStyle?: LashStyle,
+): LashStyle[] {
+  return [...LASH_STYLE_SPECTRUM].sort((a, b) => {
+    const photoDifference = photoScores[b] - photoScores[a]
+    if (photoDifference !== 0) return photoDifference
+
+    const baselineDifference = baselineScores[b] - baselineScores[a]
+    if (baselineDifference !== 0) return baselineDifference
+
+    if (tieBreakStyle === a) return -1
+    if (tieBreakStyle === b) return 1
+
+    return LASH_STYLE_SPECTRUM.indexOf(a) - LASH_STYLE_SPECTRUM.indexOf(b)
+  })
+}
+
 // Helper: get top 2 scoring styles
 export function getTopTwoStyles(scores: StyleScores): [LashStyle, LashStyle] {
   const sorted = getRankedStyles(scores)
@@ -264,24 +285,16 @@ export function getUnusedStylePairs(
 
 // Helper: check win condition
 export function checkWinCondition(
-  scores: StyleScores,
+  photoScores: StyleScores,
   completedRounds: number,
   tieBreakStyle?: LashStyle,
   baselineScores?: StyleScores,
 ): LashStyle | null {
-  const sorted = getRankedStyles(scores, tieBreakStyle, baselineScores)
-  const [first, second] = sorted
-  const margin = scores[first] - scores[second]
+  if (completedRounds < QUIZ_CONFIG.MAX_ROUNDS) return null
 
-  // Early win: leader has 2+ point margin after minimum rounds
-  if (completedRounds >= QUIZ_CONFIG.MIN_ROUNDS && margin >= QUIZ_CONFIG.WIN_MARGIN) {
-    return first
-  }
-
-  // Max rounds reached: highest score wins
-  if (completedRounds >= QUIZ_CONFIG.MAX_ROUNDS) {
-    return first
-  }
-
-  return null
+  return getResultRankedStyles(
+    photoScores,
+    baselineScores ?? createEmptyScores(),
+    tieBreakStyle,
+  )[0]
 }

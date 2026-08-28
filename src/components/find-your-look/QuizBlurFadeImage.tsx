@@ -10,6 +10,7 @@ interface QuizBlurFadeImageProps {
   sizes: string
   priority?: boolean
   className?: string
+  objectPosition?: string
   fallbackSrcs?: Array<string | null | undefined>
 }
 
@@ -19,6 +20,7 @@ export function QuizBlurFadeImage({
   sizes,
   priority = false,
   className = '',
+  objectPosition,
   fallbackSrcs = [],
 }: QuizBlurFadeImageProps) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
@@ -48,6 +50,7 @@ export function QuizBlurFadeImage({
           sizes={sizes}
           priority={priority}
           quality={90}
+          style={objectPosition ? { objectPosition } : undefined}
           onLoad={() => setLoadedSrc(activeSrc)}
           onError={() => {
             setFailedSrcs((current) => new Set(current).add(activeSrc))

@@ -4,7 +4,7 @@ import { assets } from "./assets"
 // Lash styles for the quiz (excluding lashLift which was removed)
 export const quizLashStyle = pgEnum("quiz_lash_style", ["classic", "hybrid", "wetAngel", "volume"])
 
-// Crop data structure for square crops
+// Center/zoom data interpreted against the crop aspect for each quiz surface.
 export interface QuizPhotoCropData {
   x: number      // 0-100 percentage (center point)
   y: number      // 0-100 percentage (center point)
@@ -22,7 +22,7 @@ export const quizPhotos = pgTable("quiz_photos", {
   // Lash style this photo represents
   lashStyle: quizLashStyle("lash_style").notNull(),
 
-  // Square crop data for quiz display
+  // 3:4 comparison-card crop data
   cropData: jsonb("crop_data").$type<QuizPhotoCropData>(),
 
   // Pre-generated cropped image URL (optional, for performance)
@@ -53,7 +53,7 @@ export const quizResultSettings = pgTable("quiz_result_settings", {
   resultImageAssetId: uuid("result_image_asset_id")
     .references(() => assets.id, { onDelete: "set null" }),
 
-  // Square crop data for result image
+  // Result-image crop data
   resultImageCropData: jsonb("result_image_crop_data").$type<QuizPhotoCropData>(),
 
   // Pre-generated cropped result image URL
