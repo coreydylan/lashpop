@@ -136,10 +136,12 @@ export const RESULT_IMAGES: Record<LashStyle, string> = {
 
 // Quiz configuration
 export const QUIZ_CONFIG = {
-  // Four styles have exactly six unique head-to-head pairings. Stopping at
-  // six guarantees every labeled style pairing is considered once and the
-  // quiz never has to recycle a comparison.
+  // The client-approved flow returns a result as soon as three completed
+  // comparisons produce a decisive two-vote lead. All six unique pairings
+  // remain available only when the photo choices are still ambiguous.
+  MIN_ROUNDS: 3,
   MAX_ROUNDS: 6,
+  WIN_MARGIN: 2,
 }
 
 // Helper: create empty scores object
@@ -290,11 +292,22 @@ export function checkWinCondition(
   tieBreakStyle?: LashStyle,
   baselineScores?: StyleScores,
 ): LashStyle | null {
-  if (completedRounds < QUIZ_CONFIG.MAX_ROUNDS) return null
-
-  return getResultRankedStyles(
+  const ranked = getResultRankedStyles(
     photoScores,
     baselineScores ?? createEmptyScores(),
     tieBreakStyle,
-  )[0]
+  )
+  const [first, second] = ranked
+  const photoMargin = photoScores[first] - photoScores[second]
+
+  if (
+    completedRounds >= QUIZ_CONFIG.MIN_ROUNDS
+    && photoMargin >= QUIZ_CONFIG.WIN_MARGIN
+  ) {
+    return first
+  }
+
+  if (completedRounds < QUIZ_CONFIG.MAX_ROUNDS) return null
+
+  return first
 }
