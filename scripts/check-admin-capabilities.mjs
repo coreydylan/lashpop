@@ -76,6 +76,11 @@ if (!existsSync(guidePath)) {
     if (!guide.includes(`<!-- capability:${capability.id} -->`)) {
       fail(`owner guide is missing capability:${capability.id}`)
     }
+    for (const question of capability.questions ?? []) {
+      if (!guide.includes(`### ${question}`)) {
+        fail(`owner guide is missing the canonical question: ${question}`)
+      }
+    }
   }
 
   const screenshotPaths = Array.from(

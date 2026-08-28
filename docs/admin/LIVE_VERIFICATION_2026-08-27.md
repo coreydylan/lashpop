@@ -37,6 +37,7 @@ The database and storage proxies both returned `401` without their dedicated pre
 | Phone sign-in | Pass | Chrome sent the real code to the authorized owner number. The SMS body was stored in Apple's serialized `attributedBody`; it was decoded read-only from `chat.db`, verified through Twilio, and opened the preview **Today** page. |
 | Sign out | Pass | The logout route returned `200`; reusing the invalidated session redirected to sign-in. |
 | Vagaro manual sync | Partial, safely contained | The preview worker ran and wrote only preview D1. Vagaro's public category and staff endpoints returned empty collections, so fail-closed guards refused destructive reconciliation. Stylist mapping and roster reconciliation completed; no production data changed. |
+| Vagaro-first owner workflows | Pending refreshed browser proof | Code and guide now cover the exact team/service source steps, sync cadence, hidden-until-reviewed behavior, and new-service technical handoff. Capture refreshed branch screenshots after the updated preview deploys. |
 
 ## Chrome visual record
 

@@ -38,7 +38,9 @@ This guide and `docs/admin/capabilities.json` are now the final owner-facing con
 4. Enter the verification code from the text message.
 5. After verification, the admin opens to **Today**.
 
-To sign out, open the account control in the admin shell and choose **Sign out**. Sign out when using a shared computer.
+### How do I sign out when I am finished?
+
+Open the account control in the admin shell and choose **Sign out**. Sign out when using a shared computer.
 
 ![The LashPop admin sign-in screen with an empty phone-number field](screenshots/01-sign-in.png)
 
@@ -103,6 +105,30 @@ Open **Website → Homepage hero**, edit the headline, subheading, or button lab
 ![The homepage hero editor with content and slideshow controls](screenshots/06-homepage-hero.png)
 
 <!-- capability:services-booking -->
+### How do I add or update a service in Vagaro, sync it, and know what still needs technical publication?
+
+Start in **Website → Service launch**. The guide deliberately locks its sync button until you confirm the Vagaro work is complete.
+
+1. In Vagaro on a computer, open **Settings → Service/Class Menu**. On **Services**, choose **Add → Service → Custom Service**.
+2. Enter the service name, description, category, and photo. Turn on **Show Service Online**.
+3. Under **Performed By**, turn on every provider who offers the service. Confirm the price and duration for each person.
+4. Save the service, put it in the correct category and order, and confirm every assigned provider accepts online bookings.
+5. Return to LashPop, check the acknowledgement, and run the full Vagaro sync.
+6. Open **Settings → Vagaro sync**. All four stages—categories, services, public staff, and stylist mappings—must complete.
+7. A brand-new service should appear **inactive and pending**. This is the safe result, not an error.
+8. Send the exact service name and category to the website operator. They must run the authenticated full-catalog widget refresh and publish a reviewed branch. Vagaro's opaque service-specific widget cannot be obtained safely from the normal sync APIs.
+9. After that release, return to **Service launch** and complete every readiness check, then test the public booking path on desktop and phone.
+
+Vagaro’s current instructions are [Add a Custom Service](https://support.vagaro.com/hc/en-us/articles/22642423565211-Add-a-Custom-Service) and [Add the Booking Widget to Your Site](https://support.vagaro.com/hc/en-us/articles/204347860-Add-the-Booking-Widget-to-Your-Site).
+
+### What comes from Vagaro, what can I edit in LashPop, and why can a new service stay hidden?
+
+- **Vagaro owns:** service identity, name, category, price, duration, booking availability, source photo, order, active lifecycle, and which providers perform it.
+- **LashPop owns:** customer-facing override copy, local category presentation, homepage card, local media choices where supported, and the public website presentation.
+- **The technical release owns:** the exact static service-filtered widget mapping. Never copy another service’s URL or construct one from a numeric ID.
+- **Existing services:** sync updates Vagaro-owned fields while preserving LashPop-owned presentation.
+- **New services:** sync imports them inactive and pending so customers can never be sent to the wrong booking screen.
+
 ### How do I review synced services, choose service images, organize service groups, and confirm booking readiness?
 
 1. Change price, duration, availability, names, and booking setup in Vagaro.
@@ -126,6 +152,24 @@ Open **Website → Homepage hero**, edit the headline, subheading, or button lab
 ![The homepage service-card editor](screenshots/08-homepage-service-cards.png)
 
 <!-- capability:team-stylists -->
+### How do I add a new team member in Vagaro and publish them safely?
+
+Open **Website → Team & stylists**, choose **Add a team member**, and follow the enforced guide.
+
+1. In Vagaro on a computer, open **Settings → Employee Profiles → Add Employee**.
+2. Enter the required name and email. Add the customer-facing profile photo, bio, phone, and email you want LashPop to receive.
+3. Choose **Service Provider** as the employee type, set the correct access level, and save.
+4. From the employee row, choose **Action → Services**. Turn on every service they perform and confirm each price and duration.
+5. From the employee row, choose **Enable Online Booking**.
+6. Confirm the employee appears correctly on Vagaro’s public listing and can be booked.
+7. Return to LashPop, check the acknowledgement, and run the full sync.
+8. Find the new profile. It must be active but hidden, with a Vagaro badge. Review its photo, bio, contact details, order, and locked service chips.
+9. Add LashPop-only quick facts, credentials, and portfolio photos if needed.
+10. Turn on the eye control, enter a short publication reason, and choose **Save Changes**.
+11. Open the public team section and test the person’s booking path.
+
+The sync can activate or deactivate a Vagaro provider, but it never publishes or unpublishes them on the LashPop website. Publication always requires the eye control and **Save Changes**. Vagaro’s current instructions are [Add an Employee Profile](https://support.vagaro.com/hc/en-us/articles/18977275440795-Add-an-Employee-Profile) and [Edit an Employee Profile](https://support.vagaro.com/hc/en-us/articles/360009585354-Edit-an-Employee-Profile).
+
 ### How do I update a staff member?
 
 First identify the banner on the person's expanded card:
@@ -326,6 +370,19 @@ Open **Settings → Vagaro sync**. Review booking categories, services, verified
 ### How do I run a Vagaro sync now?
 
 Choose **Sync from Vagaro now**, wait for completion, and review the new run. Then verify the affected services and staff on the public website.
+
+### How often does Vagaro sync, what does it update, and when should I run it manually?
+
+The production worker runs three times daily at **06:00, 14:00, and 22:00 UTC**. That is currently **11:00 p.m., 7:00 a.m., and 3:00 p.m. Pacific** during daylight saving time, or **10:00 p.m., 6:00 a.m., and 2:00 p.m. Pacific** during standard time.
+
+Each run follows the same order:
+
+1. Categories and their source order.
+2. Services, prices, durations, source descriptions, photos, source order, and active lifecycle.
+3. Public staff profiles, including photo, bio, contact details, order, and active lifecycle.
+4. Each active Vagaro stylist’s service assignments, which become the locked service chips on the website.
+
+Run it manually after a Vagaro change only when you do not want to wait for the next scheduled run. A partial or failed stage does not mean “try random edits”: read the stage result first. Safety guards refuse suspiciously empty staff/category payloads and large unexpected removals.
 
 ![The Vagaro sync health and booking-mapping page](screenshots/24-vagaro-sync.png)
 
