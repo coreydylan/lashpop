@@ -11,8 +11,14 @@ type TeamPhotosRouteContext = {
   params: Promise<{ memberId: string }>
 }
 
-export async function GET(_request: NextRequest, context: TeamPhotosRouteContext) {
+export async function GET(request: NextRequest, context: TeamPhotosRouteContext) {
   try {
+    const includePrimary = request.nextUrl.searchParams.get("includePrimary") === "1"
+    if (includePrimary) {
+      const auth = await requireAdminApi()
+      if (auth instanceof NextResponse) return auth
+    }
+
     const memberId = await getRouteParam(context, "memberId")
     if (!memberId) {
       return NextResponse.json(
@@ -54,9 +60,11 @@ export async function GET(_request: NextRequest, context: TeamPhotosRouteContext
         .orderBy(desc(assets.uploadedAt)),
     ])
 
-    // Drop the primary headshot — it's already shown as the avatar.
+    // Public portfolio requests drop the primary headshot because it already
+    // renders as the profile portrait. The authenticated Team Photography
+    // surface requests includePrimary=1 so owners can audit and repair it.
     const portfolioAlbum = albumPhotos
-      .filter((p) => !p.isPrimary)
+      .filter((p) => includePrimary || !p.isPrimary)
       .map((p) => ({ ...p, source: "album" as const }))
 
     // Dedupe DAM-tagged assets against album entries by filePath.

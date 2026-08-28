@@ -3,6 +3,7 @@ import { getDb } from "@/db"
 import { teamMembers } from "@/db/schema/team_members"
 import { teamMemberPhotos } from "@/db/schema/team_member_photos"
 import { eq, and } from "drizzle-orm"
+import { resolveTeamPhotoParity } from "@/lib/team-portrait"
 
 export async function GET() {
   try {
@@ -14,6 +15,9 @@ export async function GET() {
         id: teamMembers.id,
         name: teamMembers.name,
         imageUrl: teamMembers.imageUrl,
+        vagaroPhotoUrl: teamMembers.vagaroPhotoUrl,
+        primaryPhotoId: teamMemberPhotos.id,
+        primaryPhotoPath: teamMemberPhotos.filePath,
         cropCloseUpCircle: teamMemberPhotos.cropCloseUpCircle,
         cropSquare: teamMemberPhotos.cropSquare,
         cropMediumCircle: teamMemberPhotos.cropMediumCircle,
@@ -34,7 +38,12 @@ export async function GET() {
       .where(eq(teamMembers.isActive, true))
       .orderBy(teamMembers.displayOrder)
 
-    return NextResponse.json({ teamMembers: members }, {
+    const teamPhotography = members.map((member) => ({
+      ...member,
+      ...resolveTeamPhotoParity(member),
+    }))
+
+    return NextResponse.json({ teamMembers: teamPhotography }, {
       headers: {
         'Cache-Control': 's-maxage=30, stale-while-revalidate=60'
       }
