@@ -68,3 +68,21 @@ test('fails closed when a different valid-looking loader is stored', () => {
     'url-mismatch',
   )
 })
+
+test('accepts the current Tiny Tattoos identity for the verified service', () => {
+  const tinyTattoos = widgetManifest.mappings.find(
+    mapping => mapping.vagaroServiceId === '35729654',
+  )
+
+  assert.ok(tinyTattoos)
+  assert.equal(
+    getVagaroBookingStatus({
+      vagaroServiceId: tinyTattoos.vagaroServiceId,
+      name: 'Tiny Tattoos',
+      category: 'Tiny Tattoos',
+      widgetUrl: tinyTattoos.widgetUrl,
+      isActive: true,
+    }),
+    'ready',
+  )
+})
