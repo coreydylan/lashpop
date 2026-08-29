@@ -50,8 +50,8 @@ test('rejects identity drift for an otherwise verified loader', () => {
     hasBookingConfiguration({
       vagaroServiceId: known,
       vagaroWidgetUrl: verifiedUrl,
-      serviceName: 'Fine Line Tattoos',
-      serviceCategory: 'Fine Line Tattoos',
+      serviceName: 'Tiny Tattoos',
+      serviceCategory: 'Tiny Tattoos',
     }),
     true,
   )
@@ -59,7 +59,7 @@ test('rejects identity drift for an otherwise verified loader', () => {
     hasBookingConfiguration({
       vagaroServiceId: known,
       vagaroWidgetUrl: verifiedUrl,
-      serviceName: 'Fine Line Tattoos',
+      serviceName: 'Tiny Tattoos',
       serviceCategory: 'Moved Category',
     }),
     false,

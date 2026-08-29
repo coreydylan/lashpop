@@ -79,3 +79,22 @@ test('a valid loader assigned to the wrong service fails closed', () => {
     false,
   )
 })
+
+test('keeps the renamed Tiny Tattoos service on its verified loader', () => {
+  const tinyTattoos = manifest.mappings.find(
+    mapping => mapping.vagaroServiceId === '35729654',
+  )
+
+  assert.ok(tinyTattoos)
+  assert.equal(tinyTattoos.name, 'Tiny Tattoos')
+  assert.equal(tinyTattoos.category, 'Tiny Tattoos')
+  assert.equal(
+    hasBookingConfiguration({
+      vagaroServiceId: tinyTattoos.vagaroServiceId,
+      vagaroWidgetUrl: tinyTattoos.widgetUrl,
+      serviceName: 'Tiny Tattoos',
+      serviceCategory: 'Tiny Tattoos',
+    }),
+    true,
+  )
+})
