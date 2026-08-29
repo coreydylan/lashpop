@@ -7,6 +7,7 @@ import { tagCategories } from "@/db/schema/tag_categories"
 import { eq, desc } from "drizzle-orm"
 import { requireAdminApi } from "@/lib/admin/auth"
 import { recordAdminAction } from "@/lib/admin/audit"
+import { finalizePresignedImage, storageKeyFromPublicUrl } from "@/lib/dam/r2-client"
 
 type AssetTagSummary = {
   id: string
@@ -124,6 +125,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let deliveryUrl: string | null = null
+    if (typeof mimeType === "string" && mimeType.startsWith("image/")) {
+      const storageKey = storageKeyFromPublicUrl(filePath)
+      if (!storageKey) {
+        return NextResponse.json(
+          { error: "Image path is not an approved storage object" },
+          { status: 400 },
+        )
+      }
+      const mirror = await finalizePresignedImage({ key: storageKey, sourceUrl: filePath })
+      deliveryUrl = mirror.deliveryUrl
+    }
+
     const db = getDb()
 
     // Insert asset metadata
@@ -159,7 +173,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ asset })
+    return NextResponse.json({ asset, deliveryUrl })
   } catch (error) {
     console.error("Error saving asset metadata:", error)
     return NextResponse.json(

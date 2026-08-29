@@ -6,6 +6,7 @@ import { assets } from '@/db/schema/assets'
 import { requireAdminRole } from '@/lib/admin/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
 import { eq, asc, and, inArray, isNull } from 'drizzle-orm'
+import { resolvePublicImages } from '@/lib/public-image-delivery.server'
 
 export type CarouselPhotoWithAsset = {
   id: string
@@ -70,7 +71,7 @@ export async function getEnabledCarouselPhotos(): Promise<CarouselDisplayPhoto[]
     )
     .orderBy(asc(workWithUsCarouselPhotos.sortOrder))
 
-  return results.filter(r => r.filePath !== null) as CarouselDisplayPhoto[]
+  return resolvePublicImages(results.filter(r => r.filePath !== null) as CarouselDisplayPhoto[])
 }
 
 /**

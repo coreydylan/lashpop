@@ -8,6 +8,7 @@ import { assetTags } from "@/db/schema/asset_tags";
 import { tags } from "@/db/schema/tags";
 import { tagCategories } from "@/db/schema/tag_categories";
 import { eq, desc, inArray } from "drizzle-orm";
+import { resolvePublicImages } from "@/lib/public-image-delivery.server";
 
 export interface AssetWithTags {
   id: string;
@@ -125,7 +126,7 @@ export async function getAssetsByServiceSlug(serviceSlug: string): Promise<Asset
       tags: assetTagsMap.get(asset.id) || [],
     }));
 
-    return assetsWithTags;
+    return resolvePublicImages(assetsWithTags);
   } catch (error) {
     console.error("Error fetching assets by service:", error);
     return [];
@@ -187,7 +188,7 @@ export async function getAssetsByTeamMemberId(teamMemberId: string): Promise<Ass
       tags: assetTagsMap.get(asset.id) || [],
     }));
 
-    return assetsWithTags;
+    return resolvePublicImages(assetsWithTags);
   } catch (error) {
     console.error("Error fetching assets by team member:", error);
     return [];
@@ -311,7 +312,7 @@ export async function getAssetsByTagNames(tagNames: string[]): Promise<Record<st
       result[tagName] = assetsForTag;
     });
 
-    return result;
+    return resolvePublicImages(result);
   } catch (error) {
     console.error("Error fetching assets by tag names:", error);
     return {};
@@ -378,10 +379,10 @@ export async function getRandomLashAssets(limit: number = 8): Promise<AssetWithT
       });
     });
 
-    return shuffled.map((asset) => ({
+    return resolvePublicImages(shuffled.map((asset) => ({
       ...asset,
       tags: assetTagsMap.get(asset.id) || [],
-    }));
+    })));
   } catch (error) {
     console.error("Error fetching random lash assets:", error);
     return [];

@@ -133,7 +133,7 @@ async function runtimeLocalReferences() {
     for (const file of files) {
       if (!/\.(?:css|js|jsx|ts|tsx)$/.test(file)) continue
       const contents = await readFile(file, 'utf8')
-      for (const match of contents.matchAll(/["'`](\/lashpop-images\/[^"'`\s)]+)/g)) {
+      for (const match of contents.matchAll(/(\/lashpop-images\/[A-Za-z0-9_./@%+\-]+)/g)) {
         const imagePath = match[1].split(/[?#]/, 1)[0]
         if (RASTER_RE.test(imagePath)) references.add(imagePath)
       }

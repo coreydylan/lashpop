@@ -316,8 +316,8 @@ export function TeamCarousel({ photos: initialPhotos }: TeamCarouselProps) {
             {/* Image stage — swipeable. Plain <img> with max-w / max-h so
                 the wrapper shrinks to the photo's natural aspect ratio — no
                 dark gutters around portrait crops, the rounded card hugs
-                the image. We route R2 URLs through the lashpop-img worker
-                /cdn-cgi/image manually since Next.js Image fill requires a
+                the image. We build a direct Cloudflare Images variant URL
+                manually since Next.js Image fill requires a
                 pre-sized parent (which would re-introduce the letterbox). */}
             <motion.div
               key={lightboxIndex}

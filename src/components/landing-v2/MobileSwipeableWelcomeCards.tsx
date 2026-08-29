@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import { Check, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { useSwipeTutorial } from '@/hooks/useSwipeTutorial'
+import { requiredStaticCloudflareImageUrl } from '@/lib/cloudflare-image-delivery'
+
+const LP_LOGO = requiredStaticCloudflareImageUrl('/lashpop-images/lp-logo.png')
 
 // Styled text components for creative typography
 const Emphasis = ({ children }: { children: ReactNode }) => (
@@ -275,11 +278,11 @@ export function MobileSwipeableWelcomeCards({
           <div
             className="h-20 w-48 flex-shrink-0"
             style={{
-              maskImage: 'url(/lashpop-images/lp-logo.png)',
+              maskImage: `url(${LP_LOGO})`,
               maskSize: 'contain',
               maskRepeat: 'no-repeat',
               maskPosition: 'center',
-              WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
+              WebkitMaskImage: `url(${LP_LOGO})`,
               WebkitMaskSize: 'contain',
               WebkitMaskRepeat: 'no-repeat',
               WebkitMaskPosition: 'center',

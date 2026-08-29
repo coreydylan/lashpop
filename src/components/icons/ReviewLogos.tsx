@@ -1,4 +1,8 @@
 import Image from 'next/image'
+import { requiredStaticCloudflareImageUrl } from '@/lib/cloudflare-image-delivery'
+
+const YELP_LOGO = requiredStaticCloudflareImageUrl('/lashpop-images/168812.png')
+const VAGARO_LOGO = requiredStaticCloudflareImageUrl('/lashpop-images/Vagaro_Logo.png')
 
 // Standard size logos for consistent display
 export const YelpLogo = () => (
@@ -70,11 +74,11 @@ export const YelpLogoCompact = ({ className = "", monochrome = false }: { classN
         className={`relative h-4 bg-current ${className}`} 
         style={{ 
           width: '16px',
-          maskImage: 'url(/lashpop-images/168812.png)',
+          maskImage: `url(${YELP_LOGO})`,
           maskSize: 'contain',
           maskRepeat: 'no-repeat',
           maskPosition: 'center',
-          WebkitMaskImage: 'url(/lashpop-images/168812.png)',
+          WebkitMaskImage: `url(${YELP_LOGO})`,
           WebkitMaskSize: 'contain',
           WebkitMaskRepeat: 'no-repeat',
           WebkitMaskPosition: 'center'
@@ -102,11 +106,11 @@ export const VagaroLogoCompact = ({ className = "", monochrome = false }: { clas
         className={`relative h-4 bg-current ${className}`} 
         style={{ 
           width: '20px',
-          maskImage: 'url(/lashpop-images/Vagaro_Logo.png)',
+          maskImage: `url(${VAGARO_LOGO})`,
           maskSize: 'contain',
           maskRepeat: 'no-repeat',
           maskPosition: 'center',
-          WebkitMaskImage: 'url(/lashpop-images/Vagaro_Logo.png)',
+          WebkitMaskImage: `url(${VAGARO_LOGO})`,
           WebkitMaskSize: 'contain',
           WebkitMaskRepeat: 'no-repeat',
           WebkitMaskPosition: 'center'

@@ -89,6 +89,25 @@ export async function DELETE(_request: NextRequest, context: PhotoRouteContext) 
       }
     }
 
+    if (storageDeleteFailures.length > 0) {
+      await recordAdminAction({
+        action: "dam.team.photo.delete.blocked",
+        surface: "dam",
+        targetType: "team_member_photo",
+        targetId: photoId,
+        actorUserId: auth.userId,
+        diff: {
+          teamMemberId: photo.teamMemberId,
+          storageDeleteFailures: storageDeleteFailures.map(safeStoragePath),
+          outcome: "metadata-preserved-for-retry",
+        },
+      })
+      return NextResponse.json(
+        { error: "Photo storage deletion is incomplete; metadata was preserved for retry" },
+        { status: 502 },
+      )
+    }
+
     // Delete from database
     await db
       .delete(teamMemberPhotos)

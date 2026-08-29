@@ -20,7 +20,8 @@
     }
   ],
   "vars": {
-    "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
+    "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56",
+    "CLOUDFLARE_IMAGES_ACCOUNT_HASH": "zXebLwufc8AGAQU5E9oXHw"
   },
   "env": {
     "admin_preview": {
@@ -36,7 +37,9 @@
         }
       ],
       "vars": {
-        "VAGARO_PUBLIC_BUSINESS_ID": "32173928"
+        "VAGARO_PUBLIC_BUSINESS_ID": "32173928",
+        "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56",
+        "CLOUDFLARE_IMAGES_ACCOUNT_HASH": "zXebLwufc8AGAQU5E9oXHw"
       }
     }
   },

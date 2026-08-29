@@ -22,6 +22,8 @@ const apply = process.argv.includes('--apply')
 const replaceManagedMasters = process.argv.includes('--replace-managed-masters')
 const limitArg = process.argv.find((arg) => arg.startsWith('--limit='))
 const limit = limitArg ? Number(limitArg.split('=', 2)[1]) : Number.POSITIVE_INFINITY
+const canonicalArg = process.argv.find((arg) => arg.startsWith('--canonical='))
+const canonicalFilter = canonicalArg ? canonicalArg.split('=', 2)[1] : null
 const concurrencyArg = process.argv.find((arg) => arg.startsWith('--concurrency='))
 const concurrency = Math.max(1, Math.min(10, concurrencyArg ? Number(concurrencyArg.split('=', 2)[1]) : 4))
 const siteOrigin = process.env.LASHPOP_SITE_ORIGIN || 'https://lashpop.vercel.app'
@@ -205,9 +207,11 @@ const completeInventory = await buildRuntimeInventory()
 const externalInventory = completeInventory.filter((item) => item.descriptor.kind === 'ext')
 const inventory = completeInventory
   .filter((item) => item.descriptor.kind !== 'ext')
+  .filter((item) => !canonicalFilter || item.canonical === canonicalFilter)
   .slice(0, limit)
 const summary = {
   mode: apply ? 'apply' : 'dry-run',
+  canonicalFilter,
   inventory: inventory.length,
   externalOwnedExcluded: externalInventory.length,
   byKind: inventory.reduce((counts, item) => {

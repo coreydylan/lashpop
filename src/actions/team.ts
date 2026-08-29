@@ -8,9 +8,14 @@ import { teamMemberServicesVagaro } from "@/db/schema/team_member_services_vagar
 import { vagaroServiceCategories } from "@/db/schema/vagaro_service_categories"
 import { services } from "@/db/schema/services"
 import { and, eq, inArray, isNotNull, asc, sql } from "drizzle-orm"
+import { resolvePublicImages } from "@/lib/public-image-delivery.server"
 
 function sortServiceTags(tags: string[], rank: Map<string, number>): string[] {
   return [...tags].sort((a, b) => (rank.get(a) ?? 9999) - (rank.get(b) ?? 9999) || a.localeCompare(b))
+}
+
+function withoutPrivateImageSource(member: typeof teamMembers.$inferSelect) {
+  return { ...member, vagaroPhotoSourceUrl: null }
 }
 
 export async function getTeamMembers() {
@@ -25,7 +30,7 @@ export async function getTeamMembers() {
     ))
     .orderBy(teamMembers.displayOrder)
 
-  return members
+  return resolvePublicImages(members.map(withoutPrivateImageSource))
 }
 
 /**
@@ -209,7 +214,7 @@ export async function getTeamMembersWithServices() {
     const photoCrops = photoCropsByMember[member.id] || {}
 
     return {
-      ...member,
+      ...withoutPrivateImageSource(member),
       serviceCategories: categories,
       quickFacts: quickFactsByMember[member.id] || [], // Add quick facts
       // Photo crop URLs for different formats
@@ -220,7 +225,7 @@ export async function getTeamMembersWithServices() {
     }
   })
 
-  return membersWithServices
+  return resolvePublicImages(membersWithServices)
 }
 
 export async function getTeamMembersByType(type: 'employee' | 'independent') {
@@ -238,7 +243,7 @@ export async function getTeamMembersByType(type: 'employee' | 'independent') {
     )
     .orderBy(teamMembers.displayOrder)
 
-  return members
+  return resolvePublicImages(members.map(withoutPrivateImageSource))
 }
 
 /**
@@ -271,5 +276,5 @@ export async function getTeamMembersByServiceId(serviceId: string) {
     )
     .orderBy(teamMembers.displayOrder)
 
-  return members
+  return resolvePublicImages(members.map(withoutPrivateImageSource))
 }

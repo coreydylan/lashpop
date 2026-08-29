@@ -48,6 +48,7 @@ import { quizPhotos, quizLashStyle, quizResultSettings } from "./schema/quiz_pho
 import { workWithUsCarouselPhotos } from "./schema/work_with_us_carousel"
 import { newsletterSubscriptions } from "./schema/newsletter_subscriptions"
 import { workWithUsSubmissions } from "./schema/work_with_us_submissions"
+import { publicImageSources } from "./schema/public_image_sources"
 
 // Scrollytelling CMS schemas
 import {
@@ -130,6 +131,7 @@ const dbSchema = {
   workWithUsCarouselPhotos,
   newsletterSubscriptions,
   workWithUsSubmissions,
+  publicImageSources,
 
   // Scrollytelling CMS tables
   compositions,
@@ -287,6 +289,7 @@ export {
   workWithUsCarouselPhotos,
   newsletterSubscriptions,
   workWithUsSubmissions,
+  publicImageSources,
   // Scrollytelling CMS
   compositions,
   layers,

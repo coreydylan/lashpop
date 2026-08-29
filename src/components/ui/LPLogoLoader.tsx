@@ -1,6 +1,9 @@
 'use client';
 
 import React from 'react';
+import { requiredStaticCloudflareImageUrl } from '@/lib/cloudflare-image-delivery';
+
+const VAGARO_LOGO = requiredStaticCloudflareImageUrl('/lashpop-images/Vagaro_Logo.png');
 
 interface LPLogoLoaderProps {
   /** Optional message to display below the logos */
@@ -78,11 +81,11 @@ export function LPLogoLoader({ message, size = 40 }: LPLogoLoaderProps) {
           style={{
             width: vagaroSize,
             height: vagaroSize,
-            maskImage: 'url(/lashpop-images/Vagaro_Logo.png)',
+            maskImage: `url(${VAGARO_LOGO})`,
             maskSize: 'contain',
             maskRepeat: 'no-repeat',
             maskPosition: 'center',
-            WebkitMaskImage: 'url(/lashpop-images/Vagaro_Logo.png)',
+            WebkitMaskImage: `url(${VAGARO_LOGO})`,
             WebkitMaskSize: 'contain',
             WebkitMaskRepeat: 'no-repeat',
             WebkitMaskPosition: 'center',

@@ -4,6 +4,10 @@ import type React from 'react'
 import Image from 'next/image'
 import { DEFAULT_FOUNDER_LETTER, type FounderLetterContent } from '@/types/founder-letter'
 import { getPublicImageBlur } from '@/lib/image-blur'
+import { requiredStaticCloudflareImageUrl } from '@/lib/cloudflare-image-delivery'
+
+const SIGNATURE_WEBP = requiredStaticCloudflareImageUrl('/lashpop-images/emily-signature-2.webp')
+const SIGNATURE_PNG = requiredStaticCloudflareImageUrl('/lashpop-images/emily-signature-2.png')
 
 interface FounderLetterSectionProps {
   content?: FounderLetterContent
@@ -57,9 +61,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
                   ))}
 
                   <picture>
-                    <source srcSet="/lashpop-images/emily-signature-2.webp" type="image/webp" />
+                    <source srcSet={SIGNATURE_WEBP} type="image/webp" />
                     <img
-                      src="/lashpop-images/emily-signature-2.png"
+                      src={SIGNATURE_PNG}
                       alt="Xo, Emily"
                       width={88}
                       height={64}
@@ -130,9 +134,9 @@ export function FounderLetterSection({ content }: FounderLetterSectionProps) {
               ))}
 
               <picture>
-                <source srcSet="/lashpop-images/emily-signature-2.webp" type="image/webp" />
+                <source srcSet={SIGNATURE_WEBP} type="image/webp" />
                 <img
-                  src="/lashpop-images/emily-signature-2.png"
+                  src={SIGNATURE_PNG}
                   alt="Xo, Emily"
                   width={77}
                   height={56}

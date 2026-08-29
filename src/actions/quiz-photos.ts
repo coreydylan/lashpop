@@ -13,6 +13,7 @@ import { uploadBufferWithOptions } from "@/lib/dam/r2-client"
 import { requireAdminRole } from "@/lib/admin/auth"
 import { recordAdminAction } from "@/lib/admin/audit"
 import { hasVerifiedVagaroBooking } from "@/lib/vagaro-booking-readiness"
+import { resolvePublicImages } from "@/lib/public-image-delivery.server"
 import {
   QUIZ_COMPARISON_CROP_ASPECT,
   QUIZ_RESULT_CROP_ASPECT,
@@ -76,7 +77,7 @@ export async function getAllQuizPhotos(): Promise<QuizPhotoWithAsset[]> {
 export async function getQuizPhotosForQuiz(): Promise<Record<LashStyle, QuizPhotoWithAsset[]>> {
   if (process.env.PLAYWRIGHT_FIXTURES === "1") {
     const fixture = (await import("@/test-fixtures/homepage-quiz.json")).default
-    return fixture.quizPhotos as unknown as Record<LashStyle, QuizPhotoWithAsset[]>
+    return resolvePublicImages(fixture.quizPhotos as unknown as Record<LashStyle, QuizPhotoWithAsset[]>)
   }
 
   const db = getDb()
@@ -112,7 +113,7 @@ export async function getQuizPhotosForQuiz(): Promise<Record<LashStyle, QuizPhot
     grouped[photo.lashStyle as LashStyle].push(photo as QuizPhotoWithAsset)
   }
 
-  return grouped
+  return resolvePublicImages(grouped)
 }
 
 // Add a new quiz photo
@@ -924,7 +925,7 @@ export interface QuizResultForDisplay {
 export async function getResultSettingsForQuiz(): Promise<Record<LashStyle, QuizResultForDisplay>> {
   if (process.env.PLAYWRIGHT_FIXTURES === "1") {
     const fixture = (await import("@/test-fixtures/homepage-quiz.json")).default
-    return fixture.quizResultSettings as Record<LashStyle, QuizResultForDisplay>
+    return resolvePublicImages(fixture.quizResultSettings as Record<LashStyle, QuizResultForDisplay>)
   }
 
   const rows = await getAllResultSettings()
@@ -947,7 +948,7 @@ export async function getResultSettingsForQuiz(): Promise<Record<LashStyle, Quiz
     }
   }
 
-  return out
+  return resolvePublicImages(out)
 }
 
 function emptyResultDisplay(style: LashStyle): QuizResultForDisplay {
@@ -1019,7 +1020,7 @@ export async function getQuizResultServices(
 ): Promise<QuizResultServices | null> {
   if (process.env.PLAYWRIGHT_FIXTURES === "1") {
     const fixture = (await import("@/test-fixtures/homepage-quiz.json")).default
-    return fixture.quizResultServices[lashStyle] as QuizResultServices | null
+    return resolvePublicImages(fixture.quizResultServices[lashStyle] as QuizResultServices | null)
   }
 
   const subcategorySlug = LASH_STYLE_TO_SUBCATEGORY_SLUG[lashStyle]
@@ -1058,12 +1059,12 @@ export async function getQuizResultServices(
     .orderBy(asc(services.displayOrder))
 
   if (rows.length === 0) {
-    return {
+    return resolvePublicImages({
       subcategorySlug,
       subcategoryName: null,
       services: [],
       bookingImage: null,
-    }
+    })
   }
 
   // Prefer the explicit Full Set slug; fall back to the first row (which is
@@ -1073,7 +1074,7 @@ export async function getQuizResultServices(
     rows.find((r) => r.bookingImageUrl) ??
     null
 
-  return {
+  return resolvePublicImages({
     subcategorySlug,
     subcategoryName: rows[0].subcategoryName,
     services: rows.map((r) => {
@@ -1098,7 +1099,7 @@ export async function getQuizResultServices(
       }
     }),
     bookingImage: fullSetRow?.bookingImageUrl ?? null,
-  }
+  })
 }
 
 // Remove result image

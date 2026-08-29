@@ -25,7 +25,10 @@ export const teamMembers = pgTable("team_members", {
 
   // Public Vagaro staff page (vagaro.com/lashpop32/staff) — source of truth for photo + bio + order
   vagaroPublicProviderId: integer("vagaro_public_provider_id").unique(), // Numeric ID from public composite-staff endpoint
-  vagaroPhotoUrl: text("vagaro_photo_url"), // Original-resolution photo URL from Vagaro CDN
+  vagaroPhotoUrl: text("vagaro_photo_url"), // Public Cloudflare Images delivery URL
+  // Provider source is refresh-only; vagaroPhotoUrl is the direct public
+  // Cloudflare Images delivery URL once ingestion succeeds.
+  vagaroPhotoSourceUrl: text("vagaro_photo_source_url"),
   vagaroBio: text("vagaro_bio"), // BusinessSummary from Vagaro public profile
   bioOverride: boolean("bio_override").default(false).notNull(),
   imageOverride: boolean("image_override").default(false).notNull(),

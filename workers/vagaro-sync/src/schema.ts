@@ -60,6 +60,27 @@ export const vagaroSyncRuns = sqliteTable('vagaro_sync_runs', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+export const publicImageSources = sqliteTable('public_image_sources', {
+  sourceKey: text('source_key').primaryKey(),
+  sourceKind: text('source_kind').notNull(),
+  sourceUrl: text('source_url').notNull(),
+  cloudflareImageId: text('cloudflare_image_id').notNull(),
+  deliveryUrl: text('delivery_url').notNull(),
+  previousCloudflareImageId: text('previous_cloudflare_image_id'),
+  sourceEtag: text('source_etag'),
+  sourceLastModified: text('source_last_modified'),
+  sourceContentLength: integer('source_content_length'),
+  sourceContentHash: text('source_content_hash'),
+  status: text('status').default('ready').notNull(),
+  failureCount: integer('failure_count').default(0).notNull(),
+  lastError: text('last_error'),
+  checkedAt: timestamp('checked_at').notNull(),
+  ingestedAt: timestamp('ingested_at').notNull(),
+  refreshedAt: timestamp('refreshed_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
 // Minimal mirror of src/db/schema/services.ts — only the fields this worker writes.
 export const services = sqliteTable('services', {
   id: uuid('id').$defaultFn(() => crypto.randomUUID()).primaryKey(),
@@ -71,6 +92,7 @@ export const services = sqliteTable('services', {
   vagaroServiceCode: text('vagaro_service_code'),
   vagaroData: json<unknown>('vagaro_data'),
   vagaroImageUrl: text('vagaro_image_url'),
+  vagaroImageSourceUrl: text('vagaro_image_source_url'),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   subtitle: text('subtitle'),
@@ -100,6 +122,7 @@ export const teamMembers = sqliteTable('team_members', {
   // Public Vagaro staff page fields
   vagaroPublicProviderId: integer('vagaro_public_provider_id').unique(),
   vagaroPhotoUrl: text('vagaro_photo_url'),
+  vagaroPhotoSourceUrl: text('vagaro_photo_source_url'),
   vagaroBio: text('vagaro_bio'),
   // Core
   name: text('name').notNull(),

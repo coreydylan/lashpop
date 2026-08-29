@@ -1,8 +1,4 @@
 /** @type {import('next').NextConfig} */
-const imageWorkerBase = (process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE || 'https://lashpop-img.experial.workers.dev')
-  .trim()
-  .replace(/\/$/, '')
-
 const nextConfig = {
   reactStrictMode: false,
   outputFileTracingRoot: __dirname,
@@ -13,7 +9,9 @@ const nextConfig = {
     deviceSizes: [320, 600, 900, 1200, 1440, 1800, 2400, 2880, 3200],
     imageSizes: [64, 128, 256, 384],
     remotePatterns: [
-      { protocol: 'https', hostname: 'cdn.lashpopstudios.com', pathname: '/**' },
+      { protocol: 'https', hostname: 'imagedelivery.net', pathname: '/**' },
+      // Authenticated admin source previews remain separate from public
+      // delivery. Browser gates prohibit these origins on public routes.
       { protocol: 'https', hostname: '*.r2.dev', pathname: '/**' },
       { protocol: 'https', hostname: 'dam.lashpopstudios.com', pathname: '/**' },
       { protocol: 'https', hostname: '**.ssl.cf2.rackcdn.com', pathname: '/**' },
@@ -39,23 +37,6 @@ const nextConfig = {
     ],
   },
   // Note: Body size limits are configured in vercel.json for Vercel deployments
-  // Raw public raster references (CSS masks, <picture>, metadata images) do not
-  // invoke the custom next/image loader. Route those through the same hosted
-  // source path in deployed environments so first-party raster delivery has no
-  // second origin. Local development keeps reading the working-tree files.
-  async rewrites() {
-    if (process.env.NODE_ENV === 'development') return []
-    return {
-      beforeFiles: [
-        {
-          source: '/lashpop-images/:path*.:ext(avif|gif|heic|heif|jpeg|jpg|png|tif|tiff|webp)',
-          destination: `${imageWorkerBase}/site/lashpop-images/:path*.:ext`,
-        },
-      ],
-      afterFiles: [],
-      fallback: [],
-    }
-  },
   // Launch-safe browser headers. A blocking CSP is intentionally omitted until
   // every third-party script, image, booking, and analytics origin is inventoried.
   async headers() {

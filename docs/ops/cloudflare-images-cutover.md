@@ -1,126 +1,139 @@
-# Cloudflare Images canonical-source operations
+# Direct Cloudflare Images operations
 
 ## Production contract
 
-`lashpop-img` is the sole deployed raster-delivery boundary.
+Every public LashPop raster is delivered from `https://imagedelivery.net`.
+The public application does not call `lashpop-img`, R2 public URLs, or Vagaro's
+Rackspace CDN.
 
-- First-party R2 and site-public raster sources use deterministic `lp/<sha256>`
-  originals in Cloudflare Images.
-- The Worker reads those originals with the native Images binding, then asks
-  Cloudflare for the requested width, crop, quality, and AVIF/WebP/JPEG output.
-- A missing or unreadable managed original fails closed. There is no automatic
-  source fallback and a public query parameter cannot select a legacy source.
-- Externally owned booking-provider images are intentionally separate. Only
-  HTTPS `*.rackcdn.com` URLs are accepted, and responses are labeled
-  `x-lp-img-backend: external` and `x-lp-img-source: vagaro-rackcdn`.
-- External final variants use a one-day cache instead of the immutable
-  first-party policy so an upstream photo replacement can become visible.
-- Successful final variants are format- and backend-keyed and cached
-  immutably. Transform failures and managed-source misses are not cached.
-- The private R2 prefixes `backups/` and `.backups/` remain unreachable.
+- Site-public and DAM sources retain deterministic `lp/<sha256>` Cloudflare
+  Images IDs. A generated manifest maps repository image paths to those IDs.
+- Vagaro service and staff sources are fetched only by `workers/vagaro-sync`
+  from allow-listed HTTPS `*.rackcdn.com` hosts. The Worker imports the bytes,
+  records source identity and refresh metadata in `public_image_sources`, and
+  publishes only the direct Cloudflare Images delivery URL.
+- A Vagaro entity's changed content gets an immutable
+  `lp/vagaro/<entity-hash>/<content-hash>` ID. The prior ID is retained for
+  rollback. A failed refresh preserves the last ready direct image; a first
+  ingestion failure fails closed.
+- The first refresh adopts already-hosted transition images without uploading
+  them again. Conditional requests and content hashes make later refreshes
+  idempotent.
+- The Next.js custom loader changes only the Cloudflare Images flexible variant
+  (`w`, `q`, `fit=scale-down`, `metadata=none`). Cloudflare negotiates the
+  response format from `Accept`.
+- Authenticated admin storage remains separate. R2 is the editable source store,
+  but a new raster upload is not committed to public metadata until its
+  Cloudflare Images object is ready. Deletion removes both objects.
 
-Raw `/lashpop-images/*` raster references in deployed Next.js builds are
-rewritten to `/site/lashpop-images/*` on the same Worker. SVGs remain static.
-Local development reads working-tree public files directly.
+`workers/lashpop-img` is transition and rollback infrastructure only. Its
+currently deployed version must be recorded, but it is not a dependency of the
+direct release and is not promoted as part of this runbook.
 
-## Source inventory
+## Inventory and manifest
 
-Audit without changing provider state:
+Use the Field-managed environment file without printing its values:
 
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
-  CLOUDFLARE_ACCOUNT_ID=<account-id> \
   npm run images:audit-sources
 ```
 
-The audit reports first-party and externally owned sources separately. A
-first-party source counts as ready only if its source is reachable and its
-deterministic Cloudflare Images original exists and is not a draft.
-
-Dry-run the first-party backfill:
+Backfill is idempotent. Narrow a repair to one canonical source when possible:
 
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
-  CLOUDFLARE_ACCOUNT_ID=<account-id> \
-  npm run images:backfill
+  node scripts/cloudflare-images/backfill.mjs \
+  --apply --canonical=site:lashpop-images/example.png
 ```
 
-Apply idempotently:
+Then regenerate the committed repository manifest. Generation fails if any
+referenced site raster lacks a ready Cloudflare Images object:
 
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
-  CLOUDFLARE_ACCOUNT_ID=<account-id> \
-  npm run images:backfill -- --apply
+  npm run images:generate-manifest
 ```
 
-Externally owned booking-provider URLs are excluded from first-party backfill.
-Oversized PNG sources are converted to full-frame, non-resized sRGB PNG
-masters under the same deterministic ID. The two approved 16-bit sources may
-be deliberately regenerated with:
+The conservative inventory may retain a historical deleted R2 source. Do not
+manufacture a replacement. Confirm it is not an effective public image and
+record it as an exception.
+
+## Database migration and Vagaro refresh
+
+The database schema must be migrated before either the direct-data migration or
+the new Vagaro sync Worker is deployed:
+
+1. create `public_image_sources`;
+2. add `services.vagaro_image_source_url`;
+3. add `team_members.vagaro_photo_source_url`.
+
+Preview the data migration without writes:
 
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
-  CLOUDFLARE_ACCOUNT_ID=<account-id> \
-  npm run images:backfill -- \
-  --apply --replace-managed-masters --concurrency=1
+  npm run images:migrate-direct
 ```
 
-That command preserves dimensions and composition. It changes only storage
-encoding and color depth needed to fit Cloudflare Images' source-ingest limit.
-
-## Hosted delivery gate
-
-Deploy the isolated preview Worker:
-
-```bash
-npx wrangler deploy --env preview
-```
-
-Verify dynamic output from the exact preview Worker:
+The plan must report zero `missingExternalSources`. After an exact D1 backup and
+integrity check, apply only with the explicit confirmation:
 
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
-  npm run images:verify-hosted -- \
-  --worker=https://lashpop-img-preview.experial.workers.dev \
-  --widths=320,600,1152,1440,1600,1728 \
+  npm run images:migrate-direct -- --apply --confirm=direct-cloudflare-images
+```
+
+The migration stores original provider URLs only in source-only fields and the
+registry. Public `vagaro_*_url` fields become direct Cloudflare Images URLs.
+`CLOUDFLARE_IMAGES_API_TOKEN` is a secret binding on `workers/vagaro-sync`; it
+must never be a public Next.js variable or appear in logs.
+
+## Exact-candidate gate
+
+Before merge or deployment:
+
+```bash
+npm run test:launch
+
+LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
+  npm run images:verify-direct -- \
+  --widths=64,128,256,320,384,600,900,1152,1200,1440,1600,1728,1800,2400,2880,3200,3840 \
   --formats=avif,webp,jpeg
 ```
 
-The gate requires every reachable first-party source to report the hosted
-backend and Cloudflare Images source, a deterministic original ID, a valid
-image payload and dimensions, an accurate content type, and no fallback/error
-header. Cloudflare may return WebP or JPEG when an AVIF output is unsupported;
-the Worker records requested and actual formats separately.
+The direct verifier requires a valid image payload, correct negotiated format,
+valid dimensions, and an `imagedelivery.net` URL for every ready source. Browser
+acceptance at desktop, 390px, and 320px must fully scroll lazy content and show:
 
-Meaningful visual parity is reviewed on phone and desktop at the page level.
-Decoded-pixel equality is not an acceptance criterion, and visual regression
-baselines are never changed to force acceptance.
+- no broken public images or horizontal overflow;
+- stable hero, gallery, team, service browser, quiz, booking, map, and forms;
+- no public requests to `workers.dev`, `r2.dev`, or `rackcdn.com` for images;
+- unchanged approved visual baselines and brand contract.
 
-## Production deployment and rollback
+Decoded-pixel equality is not an acceptance requirement. Composition, clarity,
+responsive behavior, and the approved visual contract are.
 
-Production deployment requires the exact merged candidate, a green
-`npm run test:launch`, green GitHub `quality` and `browser-regression` checks,
-and a green Vercel deployment.
+## Deployment order and rollback
 
-```bash
-npx wrangler deploy
-```
+Deploy only the exact reviewed commit after GitHub `quality` and
+`browser-regression` and Vercel checks are green:
 
-Post-deploy probes must show:
+1. take and verify a D1 backup;
+2. apply the D1 schema migration;
+3. run the guarded direct-data migration;
+4. install the Field-managed Vagaro Images secret and deploy
+   `workers/vagaro-sync`;
+5. deploy the exact Vercel candidate and promote it to `lashpop.vercel.app`;
+6. run the source matrix, browser/network checks, D1 integrity checks, logs,
+   booking, SEO/redirect, and rollback probes.
 
-- first-party: `x-lp-img-backend: hosted`,
-  `x-lp-img-source: cloudflare-images`, and no fallback header;
-- external provider: `x-lp-img-backend: external` and
-  `x-lp-img-source: vagaro-rackcdn`;
-- correct status, content type, dimensions, focal composition, and responsive
-  behavior at observed runtime widths.
+Rollback is explicit and recoverable:
 
-Rollback is an explicit version operation, not a hidden per-request path:
+1. restore the recorded prior Vercel deployment;
+2. restore the previous public Vagaro URL values from the D1 backup or registry;
+3. deploy the recorded prior Vagaro sync Worker version;
+4. keep the transition `lashpop-img` Worker available only if that prior app
+   deployment requires it;
+5. re-run image, booking, privacy, and D1 checks.
 
-1. restore the recorded prior `lashpop-img` Worker version;
-2. if the candidate added the raw-public raster rewrite, restore the recorded
-   prior Vercel deployment at the same time;
-3. re-run first-party/external probes and the smoke checklist.
-
-Public DNS is independent of this image deployment and is not changed by any
-command in this runbook.
+No command in this runbook changes public DNS.
