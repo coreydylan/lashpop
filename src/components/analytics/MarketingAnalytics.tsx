@@ -3,6 +3,7 @@
 import Script from 'next/script'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
+import { isMarketingTrackingEnabled } from '@/lib/analytics-events'
 
 declare global {
   interface Window {
@@ -16,17 +17,21 @@ const GTM_ID_RE = /^GTM-[A-Z0-9]+$/
 const META_PIXEL_ID_RE = /^\d+$/
 
 /**
- * Preserves the tracking identities from the Squarespace site without putting
- * either vendor in the critical rendering path. IDs are deployment config,
- * and invalid values are ignored rather than interpolated into inline script.
+ * Preserves the dormant Squarespace tracking identities for a future approved
+ * advertising program. Vercel Web Analytics is the launch measurement layer;
+ * GTM and Meta remain off unless an explicit deployment flag is enabled after
+ * the owner has approved the related consent and privacy behavior.
  */
 export function MarketingAnalytics() {
   const pathname = usePathname()
   const initialPageTracked = useRef(false)
+  const marketingTrackingEnabled = isMarketingTrackingEnabled(
+    process.env.NEXT_PUBLIC_MARKETING_TRACKING_ENABLED
+  )
   const rawGtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim() || ''
   const rawMetaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() || ''
-  const gtmId = GTM_ID_RE.test(rawGtmId) ? rawGtmId : null
-  const metaPixelId = META_PIXEL_ID_RE.test(rawMetaPixelId) ? rawMetaPixelId : null
+  const gtmId = marketingTrackingEnabled && GTM_ID_RE.test(rawGtmId) ? rawGtmId : null
+  const metaPixelId = marketingTrackingEnabled && META_PIXEL_ID_RE.test(rawMetaPixelId) ? rawMetaPixelId : null
 
   useEffect(() => {
     // Both bootstrap snippets record the initial document view. Only emit

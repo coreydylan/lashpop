@@ -6,6 +6,8 @@ import { newsletterSubscriptions } from '@/db/schema/newsletter_subscriptions'
 import { requireAdmin } from '@/lib/admin/auth'
 import { headers } from 'next/headers'
 import { consumeRateLimit, requestIp } from '@/lib/request-rate-limit'
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events'
+import { trackServerEvent } from '@/lib/analytics-server'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -60,6 +62,10 @@ export async function subscribeToNewsletter(email: string) {
             updatedAt: now,
           })
           .where(eq(newsletterSubscriptions.id, existing.id))
+        await trackServerEvent(ANALYTICS_EVENTS.newsletterSignupCompleted, {
+          source: 'footer_form',
+          status: 'reactivated',
+        })
         return { success: true, message: 'Welcome back — you’re on the list!' }
       }
 
@@ -73,6 +79,10 @@ export async function subscribeToNewsletter(email: string) {
       status: 'active',
       subscribedAt: now,
       updatedAt: now,
+    })
+    await trackServerEvent(ANALYTICS_EVENTS.newsletterSignupCompleted, {
+      source: 'footer_form',
+      status: 'new',
     })
     return { success: true, message: 'Thank you — see you in your inbox!' }
   } catch (err: unknown) {
