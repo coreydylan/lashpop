@@ -28,11 +28,17 @@ not authorize or perform launch. Public DNS still serves Squarespace.
   308 redirect to the canonical apex `lashpopstudios.com`.
 - Production environment-variable names cover the live database, R2, Vagaro,
   auth, SMS, mail, Mapbox, GTM, and Meta integrations. Values were not exposed.
-- Cloudflare Hosted Images is live on production Worker version
-  `ed4ddbf7-1fc4-4aad-8b5e-891454978e12`. The merged strict gate records
+- Production Worker version `ed4ddbf7-1fc4-4aad-8b5e-891454978e12` is
+  configured for Cloudflare Hosted Images. The merged strict gate records
   4,716/4,716 status, Hosted Images provenance, dimension, and decoded-RGBA
-  pixel matches. Fresh AVIF and WebP requests returned
-  `x-lp-img-backend: hosted` with no fallback.
+  pixel matches for its 320/600/1600 px matrix. Fresh production checks found
+  WebP and those three AVIF widths served from `x-lp-img-backend: hosted`, but
+  actually emitted 1152/1440/1728 px hero AVIF requests returned
+  `x-lp-img-backend: legacy-pinned` with
+  `x-lp-img-fallback: hosted-http-404`. Do not represent the Hosted Images
+  cutover as fully live or parity-complete until every emitted runtime width is
+  enumerated, its exact variant is present, and the strict decoded-pixel gate
+  passes across that complete set.
 - Image rollback version: `6bc0a10d-061f-404e-a5df-e355fa9f3da1` (the last
   pre-cutover legacy deployment). Command syntax was verified with
   `wrangler rollback --help`; do not run it unless rollback is authorized.
@@ -102,11 +108,14 @@ health, Vercel logs, and the production-domain SEO migration. Roll back the web
 batch if TLS, mail, booking, or another critical flow cannot be corrected
 promptly.
 
-## External authorization blockers
+## Remaining technical and authorization blockers
 
 Technical release and DNS preparation do not satisfy these owner/client gates:
 
-- `docs/launch/website-acceptance-signoff.md` has 72 unchecked decisions and
+- The Hosted Images exact-parity gate does not yet cover every production-
+  emitted width. Populate the missing exact AVIF variants and rerun the strict
+  gate before declaring the image cutover complete.
+- `docs/launch/website-acceptance-signoff.md` has 74 unchecked decisions and
   approvals, including final GO LIVE authorization, incident-response owner,
   client visual/content/quiz/device acceptance, observation owner/window, and
   rollback authority.
@@ -124,4 +133,5 @@ Technical release and DNS preparation do not satisfy these owner/client gates:
   first post-switch gates.
 
 Until those items are completed or explicitly accepted by an authorized owner,
-the release remains **NO-GO** even though the technical DNS switch is prepared.
+the release remains **NO-GO**. The guarded DNS batch is prepared, but applying
+that batch is not yet the only remaining launch gate.
