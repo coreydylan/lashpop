@@ -24,6 +24,19 @@ test('feature preview trims environment whitespace and points images at the host
   }
 })
 
+test('legacy first-party CDN URLs cannot bypass the hosted Worker', async () => {
+  const { default: cfImageLoader } = await import('./cf-image-loader')
+  const result = cfImageLoader({
+    src: 'https://cdn.lashpopstudios.com/uploads/classic.jpg',
+    width: 600,
+  })
+  const url = new URL(result)
+
+  assert.equal(url.hostname, new URL(getImageWorkerBase()).hostname)
+  assert.equal(url.pathname, '/uploads/classic.jpg')
+  assert.equal(url.searchParams.get('w'), '600')
+})
+
 test('mobile hero requests an oversampled full frame without baking in a crop', () => {
   const result = cfPortraitImageLoader({
     src: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/hero-facetune.jpg',

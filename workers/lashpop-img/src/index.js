@@ -1,6 +1,5 @@
 import {
   hostedImageId,
-  hostedVariantId,
   sourceDescriptor,
 } from './hosted.js'
 
@@ -38,8 +37,7 @@ const MAX_HEIGHT = 4096
 // 90, not 82: faces dominate this site and AVIF/WebP at 82 visibly smooths
 // skin texture vs the originals. Bytes are still 10-20x under the raw files.
 const DEFAULT_QUALITY = 90
-const CACHE_VERSION = 'hosted-source-v12-public-url-reference'
-const HOSTED_BLOB_CACHE_VERSION = 'hosted-blob-v1'
+const CACHE_VERSION = 'hosted-source-v13-native-binding'
 const SITE_ORIGIN = 'https://lashpop.vercel.app'
 // Only proxy site paths under this prefix — everything image-like in /public
 // lives here, and it keeps the worker from becoming an open proxy to the app.
@@ -52,20 +50,6 @@ const EXT_HOST_RE = /\.rackcdn\.com$/i
 const PRIVATE_KEY_PREFIXES = ['backups/', '.backups/']
 const STORAGE_PATH_PREFIX = '/__storage/'
 const encoder = new TextEncoder()
-// These two active DAM originals are 16-bit PNGs larger than Hosted Images'
-// 10 MB source limit. Exact legacy outputs are precomputed into Hosted Images
-// for every Next.js width/format. Unknown transforms stay on legacy rather
-// than silently changing pixels.
-const PRECOMPUTED_SOURCE_IDS = new Set([
-  'lp/65812e87532b1be2944eacad12bcc22df48e4a06912601e06dc880bbf0548bb3',
-  'lp/23ee938fcb1970fc68363207a1ffb1c714963111f6729d499b37f7a3ee72fa6d',
-])
-// The production legacy decoder returns 502 for this retired placeholder.
-// Preserve that observable before-state instead of reviving an unused asset as
-// part of the storage cutover.
-const LEGACY_ONLY_SOURCE_IDS = new Set([
-  'lp/9c79376ce6ff916a825f4811dc634f8092e22d3ebccba4c81a1e224682c56254',
-])
 
 const OUTPUT = {
   avif: 'image/avif',
@@ -176,131 +160,75 @@ async function handleStorageRequest(request, env, url) {
   return new Response('Method not allowed', { status: 405 })
 }
 
-function requestedBackend(url, env) {
-  const override = (url.searchParams.get('backend') || '').toLowerCase()
-  // A request may force the safe rollback path for diagnostics, but it cannot
-  // opt production into Hosted Images. IMAGE_BACKEND remains the one cutover
-  // control; the preview Worker sets that environment value to "hosted".
-  if (override === 'legacy') return override
+function requestedBackend(key, env) {
+  // Booking-provider photos remain externally owned and are always refreshed
+  // from the allow-listed upstream. First-party images have exactly one
+  // production source: Cloudflare Images. Rollback is a Worker version/env
+  // change, never a public query-string escape hatch or automatic fallback.
+  if (key === 'ext') return 'external'
   return env.IMAGE_BACKEND === 'hosted' ? 'hosted' : 'legacy'
 }
 
-function responseHeaders(response, { backend, format, renderWidth, renderHeight, fallback }) {
+function actualFormat(response, requestedFormat) {
+  const contentType = (response.headers.get('content-type') || '').split(';', 1)[0].toLowerCase()
+  if (contentType === 'image/avif') return 'avif'
+  if (contentType === 'image/webp') return 'webp'
+  if (contentType === 'image/jpeg') return 'jpeg'
+  if (contentType === 'image/png') return 'png'
+  if (contentType === 'image/gif') return 'gif'
+  return requestedFormat
+}
+
+function responseHeaders(response, { backend, requestedFormat, renderWidth, renderHeight }) {
   const headers = new Headers(response.headers)
-  headers.set('cache-control', fallback
-    ? 'public, max-age=300, stale-while-revalidate=60'
+  const format = actualFormat(response, requestedFormat)
+  headers.set('cache-control', backend === 'external'
+    ? 'public, max-age=86400, stale-while-revalidate=3600'
     : 'public, max-age=31536000, immutable')
   headers.set('access-control-allow-origin', '*')
   headers.set('vary', 'Accept')
   headers.set('x-lp-img-backend', backend)
+  headers.set('x-lp-img-source', backend === 'hosted'
+    ? 'cloudflare-images'
+    : backend === 'external'
+      ? 'vagaro-rackcdn'
+      : 'legacy-origin')
   headers.set('x-lp-img-format', format)
-  if (fallback) headers.set('x-lp-img-fallback', fallback)
+  if (format !== requestedFormat) headers.set('x-lp-img-requested-format', requestedFormat)
   if (renderHeight) headers.set('x-lp-img-crop', `${renderWidth}x${renderHeight}`)
   return headers
 }
 
 async function getHostedSource(env, descriptor) {
-  if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_IMAGES_API_TOKEN) {
-    return { source: null, failure: 'missing-hosted-credentials' }
-  }
-
   const imageId = await hostedImageId(descriptor)
-  const blob = await getHostedBlob(env, imageId)
-  if (!blob.response) return { source: null, failure: blob.failure, imageId }
+  if (!env.IMAGES?.hosted) {
+    return { source: null, failure: 'hosted-binding-unavailable', imageId }
+  }
 
-  return {
-    source: {
-      body: blob.response.body,
-      contentType: blob.response.headers.get('content-type') || 'image/jpeg',
-    },
-    failure: null,
-    imageId,
+  try {
+    const body = await env.IMAGES.hosted.image(imageId).bytes()
+    return { source: { body, contentType: 'image/hosted' }, failure: null, imageId }
+  } catch (error) {
+    const message = messageFromError(error)
+    const failure = error?.status === 404 || /(?:404|not found)/i.test(message)
+      ? 'hosted-not-found'
+      : 'hosted-source-failed'
+    return { source: null, failure, imageId }
   }
 }
 
-const hostedBlobRequests = new Map()
-
-async function fetchHostedBlob(env, imageId) {
-  const cache = caches.default
-  const cacheKey = new Request(
-    `https://lashpop-hosted-blob-cache.invalid/${encodeURIComponent(imageId)}?v=${HOSTED_BLOB_CACHE_VERSION}`,
-  )
-  const cached = await cache.match(cacheKey)
-  if (cached) {
-    return {
-      bytes: await cached.arrayBuffer(),
-      contentType: cached.headers.get('content-type') || 'application/octet-stream',
-      failure: null,
-    }
+async function hostedSourceStatus(env, descriptor) {
+  if (!env.IMAGES?.hosted) return 'unknown'
+  const imageId = await hostedImageId(descriptor)
+  try {
+    await env.IMAGES.hosted.image(imageId).details()
+    return 'present'
+  } catch (error) {
+    const message = messageFromError(error)
+    return error?.status === 404 || /(?:404|not found)/i.test(message)
+      ? 'missing'
+      : 'unknown'
   }
-
-  let lastFailure = 'hosted-fetch-failed'
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/images/v1/${encodeURIComponent(imageId)}/blob`,
-      { headers: { authorization: `Bearer ${env.CLOUDFLARE_IMAGES_API_TOKEN}` } },
-    )
-
-    if (response.ok && response.body) {
-      const bytes = await response.arrayBuffer()
-      const contentType = response.headers.get('content-type') || 'application/octet-stream'
-      const cacheable = new Response(bytes, {
-        status: 200,
-        headers: {
-          'cache-control': 'public, max-age=31536000, immutable',
-          'content-type': contentType,
-        },
-      })
-      await cache.put(cacheKey, cacheable).catch((error) => {
-        console.warn(JSON.stringify({
-          message: 'hosted blob cache write failed',
-          error: messageFromError(error),
-          imageId,
-        }))
-      })
-      return { bytes, contentType, failure: null }
-    }
-
-    lastFailure = `hosted-http-${response.status}`
-    response.body?.cancel().catch(() => {})
-    if (response.status !== 429 && response.status < 500) break
-    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 50 * (2 ** attempt)))
-  }
-  return { response: null, failure: lastFailure }
-}
-
-async function getHostedBlob(env, imageId) {
-  let pending = hostedBlobRequests.get(imageId)
-  if (!pending) {
-    pending = fetchHostedBlob(env, imageId).finally(() => hostedBlobRequests.delete(imageId))
-    hostedBlobRequests.set(imageId, pending)
-  }
-  const result = await pending
-  return result.bytes
-    ? {
-        response: new Response(result.bytes.slice(0), {
-          status: 200,
-          headers: { 'content-type': result.contentType },
-        }),
-        failure: null,
-      }
-    : result
-}
-
-async function unwrapExactVariant(response) {
-  if (!/image\/svg\+xml/i.test(response.headers.get('content-type') || '')) return response
-  const text = await response.text()
-  const match = text.match(/<metadata id="lp-exact" data-mime="(image\/(?:avif|webp|jpeg))">([A-Za-z0-9+/=]+)<\/metadata>/)
-  if (!match) {
-    return new Response(text, { status: response.status, headers: response.headers })
-  }
-  const binary = atob(match[2])
-  const bytes = new Uint8Array(binary.length)
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
-  return new Response(bytes, {
-    status: response.status,
-    headers: { 'content-type': match[1] },
-  })
 }
 
 async function transformSource(src, env, { fit, renderWidth, renderHeight, gravity, sharpen, format, quality }) {
@@ -346,78 +274,40 @@ function svgResponse(src, key) {
     : null
 }
 
-async function sourceForBackend(url, key, env, backend, transformRequest) {
+async function sourceForBackend(url, key, env, backend) {
+  if (backend === 'external') {
+    return { source: await getSource(url, key, env), backend: 'external', imageId: null }
+  }
   if (backend !== 'hosted') {
-    return { source: await getSource(url, key, env), backend: 'legacy', fallback: null, imageId: null }
+    return { source: await getSource(url, key, env), backend: 'legacy', imageId: null }
   }
 
   let descriptor
   try {
     descriptor = sourceDescriptor(url, key)
   } catch {
-    return { source: new Response('Bad url param', { status: 400 }), backend: 'hosted', fallback: null, imageId: null }
+    return { source: new Response('Bad url param', { status: 400 }), backend: 'hosted', imageId: null }
   }
 
-  try {
-    const imageId = await hostedImageId(descriptor)
-    if (LEGACY_ONLY_SOURCE_IDS.has(imageId)) {
-      return {
-        source: await getSource(url, key, env),
-        response: null,
-        backend: 'legacy-pinned',
-        fallback: 'production-legacy-unavailable',
-        imageId,
-      }
-    }
-    if (transformRequest.format === 'avif' || PRECOMPUTED_SOURCE_IDS.has(imageId)) {
-      const variantId = await hostedVariantId(imageId, transformRequest)
-      const variant = await getHostedBlob(env, variantId)
-      if (variant.response) {
-        const exactResponse = await unwrapExactVariant(variant.response)
-        return {
-          source: null,
-          response: exactResponse,
-          backend: 'hosted',
-          fallback: null,
-          imageId: variantId,
-        }
-      }
-      // AVIF derivatives are pinned because Hosted Images source ingestion can
-      // alter their decoded pixels even when JPEG/WebP remain exact. A new or
-      // uncommon width stays on legacy until the next exact-variant backfill.
-      return {
-        source: await getSource(url, key, env),
-        response: null,
-        backend: 'legacy-pinned',
-        fallback: variant.failure,
-        imageId: variantId,
-      }
-    }
-
-    const hosted = await getHostedSource(env, descriptor)
-    if (hosted.source) {
-      return { source: hosted.source, response: null, backend: 'hosted', fallback: null, imageId: hosted.imageId }
-    }
-    return {
-      source: await getSource(url, key, env),
-      response: null,
-      backend: 'legacy',
-      fallback: hosted.failure,
-      imageId: hosted.imageId,
-    }
-  } catch (error) {
-    console.warn(JSON.stringify({
-      message: 'hosted image source failed; using legacy source',
-      error: messageFromError(error),
-      key,
-    }))
-    return {
-      source: await getSource(url, key, env),
-      response: null,
-      backend: 'legacy',
-      fallback: 'hosted-fetch-failed',
-      imageId: null,
-    }
+  const hosted = await getHostedSource(env, descriptor)
+  if (hosted.source) {
+    return { source: hosted.source, backend: 'hosted', imageId: hosted.imageId }
+  }
+  const status = hosted.failure === 'hosted-not-found' ? 404 : 502
+  return {
+    source: new Response(status === 404 ? 'Not found' : 'Hosted image source unavailable', {
+      status,
+      headers: {
+        'cache-control': 'private, no-store',
+        'content-type': 'text/plain; charset=utf-8',
+        'x-lp-img-backend': 'hosted',
+        'x-lp-img-error': hosted.failure,
+        'x-lp-img-id': hosted.imageId,
+        'x-lp-img-source': 'cloudflare-images',
+      },
+    }),
+    backend: 'hosted',
+    imageId: hosted.imageId,
   }
 }
 
@@ -476,7 +366,7 @@ const lashpopImageWorker = {
     // upscaling past the source, so dpr only ever helps when the source is big.
     const renderWidth = width ? width * dpr : MAX_WIDTH * dpr
     const renderHeight = height ? height * dpr : 0
-    const backend = requestedBackend(url, env)
+    const backend = requestedBackend(key, env)
 
     // Format- and backend-aware cache key. A production flag flip must never
     // inherit a year-long cached response from the other delivery service.
@@ -489,17 +379,20 @@ const lashpopImageWorker = {
     const cache = caches.default
     const hit = await cache.match(cacheKey)
     if (hit) {
-      // A transformed variant can outlive its source object because variants
-      // are cached for a year. Confirm R2-backed sources still exist before
-      // serving a hit so an owner deletion takes effect immediately. External
-      // and site-proxied sources keep their upstream cache behavior.
-      if (
-        env.VERIFY_SOURCE_ON_CACHE_HIT === 'true'
-        && key !== 'ext'
-        && !key.startsWith('site/')
-      ) {
-        const sourceStillExists = await env.BUCKET.head(key)
-        if (!sourceStillExists) {
+      // Isolated verification environments re-check the selected source of
+      // truth before serving a year-lived transform so deletions take effect.
+      if (env.VERIFY_SOURCE_ON_CACHE_HIT === 'true') {
+        let sourceStatus = 'present'
+        if (backend === 'hosted') {
+          try {
+            sourceStatus = await hostedSourceStatus(env, sourceDescriptor(url, key))
+          } catch {
+            sourceStatus = 'missing'
+          }
+        } else if (backend === 'legacy' && !key.startsWith('site/')) {
+          sourceStatus = await env.BUCKET.head(key) ? 'present' : 'missing'
+        }
+        if (sourceStatus === 'missing') {
           ctx.waitUntil(cache.delete(cacheKey))
           return new Response('Not found', {
             status: 404,
@@ -512,38 +405,7 @@ const lashpopImageWorker = {
         : hit
     }
 
-    const transformRequest = {
-      fit,
-      width: renderWidth,
-      height: renderHeight,
-      gravity,
-      quality,
-      format,
-      sharpen,
-    }
-    const selected = await sourceForBackend(url, key, env, backend, transformRequest)
-    if (selected.response) {
-      const headers = responseHeaders(selected.response, {
-        backend: selected.backend,
-        format,
-        renderWidth,
-        renderHeight,
-        fallback: selected.fallback,
-      })
-      headers.set('x-lp-img-id', selected.imageId)
-      const final = new Response(selected.response.body, { status: selected.response.status, headers })
-      if (request.method === 'GET') {
-        await cacheFinalResponse(cache, cacheKey, final, ctx, {
-          key,
-          format,
-          backend: selected.backend,
-          precomputed: true,
-        })
-      }
-      return request.method === 'HEAD'
-        ? new Response(null, { status: final.status, headers: final.headers })
-        : final
-    }
+    const selected = await sourceForBackend(url, key, env, backend)
     const src = selected.source
     if (src instanceof Response) return src
     const unsupported = unsupportedSource(src)
@@ -566,61 +428,34 @@ const lashpopImageWorker = {
       try {
         resp = await transformSource(src, env, bindingTransformRequest)
       } catch (error) {
-        // A small number of recovered objects have stale MIME metadata or an
-        // unsupported original encoding. If the legacy decoder fails, retry
-        // from the normalized Hosted Images copy before returning an error.
-        if (backend === 'legacy' && selected.backend === 'legacy' && !selected.fallback) {
-          try {
-            const descriptor = sourceDescriptor(url, key)
-            const hosted = await getHostedSource(env, descriptor)
-            if (hosted.source) {
-              resp = await transformSource(hosted.source, env, bindingTransformRequest)
-              selected.backend = 'hosted-repair'
-              selected.imageId = hosted.imageId
-            }
-          } catch (repairError) {
-            console.warn(JSON.stringify({
-              message: 'hosted repair source also failed',
-              error: messageFromError(repairError),
-              key,
-              format,
-            }))
-          }
-        }
-        if (!resp) {
-          console.error(JSON.stringify({
-            message: 'image transformation failed',
-            error: messageFromError(error),
-            key,
-            width: renderWidth,
-            height: renderHeight || undefined,
-            format,
-          }))
-          return new Response('Image transformation failed', {
-            status: 502,
-            headers: {
-              'cache-control': 'private, no-store',
-              'content-type': 'text/plain; charset=utf-8',
-              'x-lp-img-error': 'transform-failed',
-            },
-          })
-        }
+        console.error(JSON.stringify({
+          message: 'image transformation failed',
+          error: messageFromError(error),
+          key,
+          width: renderWidth,
+          height: renderHeight || undefined,
+          format,
+        }))
+        return new Response('Image transformation failed', {
+          status: 502,
+          headers: {
+            'cache-control': 'private, no-store',
+            'content-type': 'text/plain; charset=utf-8',
+            'x-lp-img-error': 'transform-failed',
+          },
+        })
       }
     }
 
     const headers = responseHeaders(resp, {
       backend: selected.backend,
-      format,
+      requestedFormat: format,
       renderWidth,
       renderHeight,
-      fallback: selected.fallback,
     })
     if (selected.imageId) headers.set('x-lp-img-id', selected.imageId)
     const final = new Response(resp.body, { status: resp.status, headers })
-    // Do not pin a legacy fallback under the hosted cache namespace. The short
-    // browser/CDN TTL keeps the site available while a missing hosted object is
-    // repaired, then the very next edge miss can use Hosted Images.
-    if (!selected.fallback && request.method === 'GET') {
+    if (request.method === 'GET') {
       await cacheFinalResponse(cache, cacheKey, final, ctx, { key, format, backend: selected.backend })
     }
     return request.method === 'HEAD'

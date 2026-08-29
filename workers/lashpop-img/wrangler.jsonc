@@ -7,12 +7,12 @@
   "compatibility_date": "2026-06-01",
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-dam" }],
   "images": { "binding": "IMAGES" },
-  // Owner-approved production cutover. Flipping only IMAGE_BACKEND is atomic;
-  // hosted misses automatically fall back to the legacy source, and rollback
-  // is the inverse one-line change.
+  // Production serves first-party originals from Cloudflare Images through the
+  // native binding. A managed-source miss fails closed. Externally owned
+  // booking-provider photos remain a separately labeled allow-listed source.
+  // Rollback is an explicit Worker version change, never an automatic fallback.
   "vars": {
-    "IMAGE_BACKEND": "hosted",
-    "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
+    "IMAGE_BACKEND": "hosted"
   },
   "env": {
     "preview": {
@@ -20,8 +20,7 @@
       "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lashpop-dam" }],
       "images": { "binding": "IMAGES" },
       "vars": {
-        "IMAGE_BACKEND": "hosted",
-        "CLOUDFLARE_ACCOUNT_ID": "4f7293208a9aa982963007fffd966b56"
+        "IMAGE_BACKEND": "hosted"
       }
     },
     "admin_preview": {

@@ -137,12 +137,9 @@ Client initials acknowledging receipt and the recorded decision: __________
 
 ## 10. Third-party services and remaining integrations
 
-Vagaro, Mapbox, Instagram, Google, Meta, Vercel, and other outside services can change, expire a login, or have an outage. The site can be tested against them, but LashPop and Experial cannot guarantee that an outside service will always be available.
+Vagaro, Mapbox, Google, Meta, Vercel, and other outside services can change, expire a login, or have an outage. The site can be tested against them, but LashPop and Experial cannot guarantee that an outside service will always be available.
 
 - [ ] **Required before launch — Vagaro verification:** The production webhook verification secret is configured, and a real Vagaro delivery has been tested successfully.
-- [ ] **Required decision — Instagram:** The current Instagram sync requires a valid session and can expire or be challenged. Check one:
-  - [ ] Instagram sync is configured, healthy, and approved for launch.
-  - [ ] Instagram sync remains disabled and LashPop accepts that limitation for launch. Client initials: __________
 - [ ] **Third-party limitation understood:** I understand that a later outage or change inside an outside service may require separate troubleshooting and is not, by itself, a defect in the signed website release.
 
 ## 11. Browser and device acceptance
@@ -176,18 +173,18 @@ Technical approver initials: __________
 
 ## 13. DNS, email, and the go-live change
 
-Going live changes the domain's authoritative nameservers. This affects more than the website: incorrect DNS can also interrupt email, verification, and other services. The replacement zone must preserve all required mail and non-web records.
+Going live changes only the guarded web records inside the existing authoritative Cloudflare zone. Incorrect DNS can still interrupt the website, so the plan must prove that every mail and non-web record remains untouched.
 
-- [ ] **Required before launch — Domain access:** The authorized person has access to the registrar and approves the nameserver change.
-- [ ] **Required before launch — DNS parity:** The replacement DNS zone preserves every required email-delivery and email-authentication record (including MX, SPF, DKIM, and DMARC), plus mail setup, payment, domain connection, and ownership-verification records.
+- [ ] **Required before launch — Domain access:** The authorized person has access to the active Cloudflare zone and approves the guarded web-record change.
+- [ ] **Required before launch — DNS parity:** The plan-only guard proves that every required email-delivery and email-authentication record (including MX, SPF, DKIM, and DMARC), plus mail setup, payment, domain connection, and ownership-verification records, remains unchanged.
 - [ ] **Required before launch — Website records:** The apex domain and `www` point to the approved Vercel project, and both custom hostnames are attached to the signed deployment.
 - [ ] **Required before launch — Search baseline:** Existing Google Search Console and Bing access/history have been preserved where available. The new sitemap is ready for submission after cutover.
 - [ ] **Required before launch — Observation team:** A person is assigned to watch DNS, HTTPS, website behavior, booking, forms, admin access, error logs, and incoming/outgoing email during propagation.
-- [ ] **Required before launch — Rollback authority:** The launch owner is authorized to restore the previous nameservers if a critical website, certificate, or email problem cannot be corrected promptly.
+- [ ] **Required before launch — Rollback authority:** The launch owner is authorized to restore the previous Squarespace web records if a critical website or certificate problem cannot be corrected promptly.
 
 Launch owner: __________________________ Observation window: _______________
 
-Rollback nameservers or reference: ________________________________________
+Rollback DNS plan or reference: __________________________________________
 
 ## 14. Open items and accepted exceptions
 
@@ -198,7 +195,6 @@ List every incomplete, disputed, or deferred item. Mark **Blocks launch** as “
 | Approved color contrast exception | Some text or controls may be hard for some visitors to see; the site is not represented as fully WCAG conformant. | No — explicitly accepted above | LashPop | Revisit date: ______ | ______ |
 | Microblading photos inside Vagaro | Visitors may not see the expected example photos after entering Vagaro. | ______ | ______ | ______ | ______ |
 | Client quiz result examples | Without client-approved examples, technical tests cannot prove that recommendations match LashPop's consultation rules. | ______ | ______ | ______ | ______ |
-| Instagram sync/session | The Instagram-driven content may remain unavailable or stop updating. | ______ | ______ | ______ | ______ |
 | Other: __________________________ | __________________________ | ______ | ______ | ______ | ______ |
 
 ## 15. Final authorization
@@ -223,7 +219,7 @@ Check one decision only.
 
 ### Launch record — complete after the change
 
-- Nameservers changed at: ________________________________________
+- Web records changed at: ________________________________________
 - New site first verified at apex and `www`: ______________________
 - HTTPS verified: ________________________________________________
 - Booking and forms verified: ____________________________________
