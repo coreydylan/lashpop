@@ -5,6 +5,7 @@ import {
   hostedImageDetails,
   loadEnvironment,
 } from './lib.mjs'
+import { acceptedOutputFormat } from './format-policy.mjs'
 
 loadEnvironment()
 
@@ -18,12 +19,6 @@ const concurrencyArg = process.argv.find((arg) => arg.startsWith('--concurrency=
 const concurrency = Math.max(1, Math.min(8, Number(concurrencyArg?.split('=', 2)[1] || 6)))
 const limitArg = process.argv.find((arg) => arg.startsWith('--limit='))
 const limit = limitArg ? Number(limitArg.split('=', 2)[1]) : Number.POSITIVE_INFINITY
-
-function accepted(requested, actual) {
-  if (requested === 'avif') return ['avif', 'webp', 'jpeg'].includes(actual)
-  if (requested === 'webp') return ['webp', 'jpeg'].includes(actual)
-  return actual === 'jpeg'
-}
 
 function acceptHeader(format) {
   if (format === 'avif') return 'image/avif,image/webp,image/*,*/*'
@@ -77,7 +72,7 @@ async function verify(task) {
       status: response.status,
       valid: response.ok
         && new URL(url).hostname === 'imagedelivery.net'
-        && accepted(task.format, actual)
+        && acceptedOutputFormat(task.format, actual)
         && Number(metadata.width) > 0
         && Number(metadata.width) <= task.width
         && Number(metadata.height) > 0,

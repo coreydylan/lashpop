@@ -25,7 +25,7 @@
     "test:vagaro-manifest": "tsx --test workers/vagaro-sync/src/vagaro-widget-manifest.test.ts",
     "test:vagaro-readiness": "tsx --test src/lib/vagaro-booking-readiness.test.ts",
     "test:quiz": "tsx --test src/components/find-your-look/*.test.ts",
-    "test:images": "tsx --test src/lib/cf-image-loader.test.ts src/components/service-browser/service-image-preloader.test.ts workers/lashpop-img/src/index.test.mjs",
+    "test:images": "tsx --test src/lib/cf-image-loader.test.ts src/components/service-browser/service-image-preloader.test.ts workers/lashpop-img/src/index.test.mjs scripts/cloudflare-images/format-policy.test.mjs",
     "test:storage": "tsx --test src/lib/dam/r2-client.test.ts src/lib/dam/cloudflare-images.test.ts",
     "images:audit-sources": "node scripts/cloudflare-images/audit-sources.mjs",
     "images:backfill": "node scripts/cloudflare-images/backfill.mjs",
