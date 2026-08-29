@@ -9,6 +9,8 @@ import { subscribeToVagaroEvent } from '@/lib/vagaro-events'
 import type { BookingCompletedData } from '@/lib/vagaro-events'
 import { resolveVagaroServiceWidgetUrl } from '@/lib/vagaro-widget'
 import { BookingConfirmation } from '@/components/booking/BookingConfirmation'
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events'
+import { trackPublicEvent } from '@/lib/analytics-client'
 import { useServiceBrowser } from '../ServiceBrowserContext'
 import type { Service } from '../ServiceBrowserContext'
 
@@ -50,6 +52,10 @@ export function BookingView({ service }: BookingViewProps) {
   useEffect(() => {
     const unsubscribeCompleted = subscribeToVagaroEvent('BookingCompleted', (event) => {
       console.log('[BookingView] BookingCompleted event received')
+      trackPublicEvent(ANALYTICS_EVENTS.bookingCompleted, {
+        service_slug: service.slug,
+        source: 'vagaro',
+      })
       const data = event.data as BookingCompletedData | null
       setCardOnFile(Boolean(data?.cardOnFile))
       setIsConfirmed(true)
@@ -66,7 +72,7 @@ export function BookingView({ service }: BookingViewProps) {
     return () => {
       unsubscribeCompleted()
     }
-  }, [])
+  }, [service.slug])
 
   // Defensive navigation guard while the branded confirmation is showing.
   // Vagaro's iframe will attempt a top-level redirect to the merchant-admin

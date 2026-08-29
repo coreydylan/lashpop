@@ -6,6 +6,8 @@ import { workWithUsSubmissions } from "@/db/schema/work_with_us_submissions";
 import { requireAdmin } from "@/lib/admin/auth";
 import { headers } from "next/headers";
 import { consumeRateLimit, requestIp } from "@/lib/request-rate-limit";
+import { ANALYTICS_EVENTS } from "@/lib/analytics-events";
+import { trackServerEvent } from "@/lib/analytics-server";
 
 // Types matching the form data
 export type CareerPath = "employee" | "booth" | "training";
@@ -285,6 +287,8 @@ export async function submitWorkWithUsForm(
     console.error("Failed to persist work-with-us submission", dbError instanceof Error ? dbError.name : "UnknownError");
     return { success: false, error: "We couldn’t save your application. Please try again." };
   }
+
+  await trackServerEvent(ANALYTICS_EVENTS.workWithUsSubmitted, { path });
 
   try {
     const subjectName = normalized.name.replace(/[\r\n]+/g, " ");

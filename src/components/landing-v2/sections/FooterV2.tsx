@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation'
 import { subscribeToNewsletter } from '@/app/actions/newsletter'
 import { useServiceBrowserOptional } from '@/components/service-browser'
 import { DEFAULT_STUDIO_SETTINGS, type StudioSettings } from '@/types/studio'
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events'
+import { trackPublicEvent } from '@/lib/analytics-client'
 
 // Footer service links — label + the deeplink params used to open the
 // service browser modal (categorySlug + subcategorySlug). These mirror
@@ -50,6 +52,10 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
 
   const handleServiceClick = useCallback((service: FooterService) => {
     if (service.externalUrl) {
+      trackPublicEvent(ANALYTICS_EVENTS.bookingStarted, {
+        service_slug: service.slug ?? 'botox',
+        destination: 'naturtox',
+      })
       window.open(service.externalUrl, '_blank', 'noopener,noreferrer')
       return
     }

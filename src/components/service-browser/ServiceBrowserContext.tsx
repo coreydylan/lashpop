@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react'
 import { hasSeenLashQuizPrompt } from './LashQuizPrompt'
 import { preloadServiceCardImages } from './service-image-preloader'
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events'
+import { trackPublicEvent } from '@/lib/analytics-client'
 
 export interface Service {
   id: string
@@ -155,6 +157,10 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
   // gone. Card UI is the new source of truth for that information.
   const selectService = useCallback((service: Service) => {
     if (service.categorySlug === 'injectables' || /\bbotox\b/i.test(service.name)) {
+      trackPublicEvent(ANALYTICS_EVENTS.bookingStarted, {
+        service_slug: service.slug,
+        destination: 'naturtox',
+      })
       window.open('https://www.naturtox.com/', '_blank', 'noopener,noreferrer')
       return
     }
@@ -167,6 +173,10 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
     // Microblading/Brow Shaping mappings crossed wires. Missing configuration
     // must fail closed in BookingView.
     // See docs/VAGARO_BOOKING_CONTRACT.md.
+    trackPublicEvent(ANALYTICS_EVENTS.bookingStarted, {
+      service_slug: service.slug,
+      source: 'service_browser',
+    })
     setState(prev => ({
       ...prev,
       view: 'booking',
@@ -231,6 +241,7 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
 
   // Open the Find Your Look quiz - now opens as embedded morphing modal
   const openFindYourLookQuiz = useCallback(() => {
+    trackPublicEvent(ANALYTICS_EVENTS.quizStarted, { source: 'lash_prompt' })
     setState(prev => ({
       ...prev,
       showLashQuizPrompt: false,
@@ -249,6 +260,7 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
 
   // Handle quiz result - trigger morph animation to services modal
   const handleQuizResult = useCallback((lashStyle: string) => {
+    trackPublicEvent(ANALYTICS_EVENTS.quizCompleted, { result: lashStyle })
     // Map quiz result to subcategory slug
     const styleToSubcategory: Record<string, string> = {
       'lashLift': 'lash-lifts-tints', // Lash lift is in Lifts & Tints
@@ -285,6 +297,10 @@ export function ServiceBrowserProvider({ children, services, categories = [] }: 
       console.warn(`[ServiceBrowser] bookServiceFromQuiz: no service found for id "${serviceId}"`)
       return
     }
+    trackPublicEvent(ANALYTICS_EVENTS.bookingStarted, {
+      service_slug: service.slug,
+      source: 'quiz',
+    })
     setState(prev => ({
       ...prev,
       isOpen: true,
