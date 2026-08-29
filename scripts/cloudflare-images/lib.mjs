@@ -93,24 +93,6 @@ export function hostedImageId(descriptor) {
   return `lp/${sha256(canonicalSource(descriptor))}`
 }
 
-export function canonicalTransform({ width, height, fit, gravity, quality, format, sharpen }) {
-  return [
-    'exactVersion=production-v3-public-url',
-    `width=${width}`,
-    `height=${height || 0}`,
-    `fit=${fit}`,
-    `gravity=${gravity.x}x${gravity.y}`,
-    `quality=${quality}`,
-    `format=${format}`,
-    `sharpen=${sharpen || 0}`,
-  ].join('&')
-}
-
-export function hostedVariantId(sourceImageId, transform) {
-  const sourceHash = sourceImageId.replace(/^lp\//, '')
-  return `lpv/${sourceHash}/${sha256(canonicalTransform(transform))}`
-}
-
 export function legacyWorkerUrl(descriptor, options = {}, workerBase = DEFAULT_LEGACY_WORKER) {
   const url = descriptor.kind === 'ext'
     ? new URL('/ext', workerBase)

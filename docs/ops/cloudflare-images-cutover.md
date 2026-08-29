@@ -1,145 +1,126 @@
-# Cloudflare Hosted Images zero-downtime cutover
+# Cloudflare Images canonical-source operations
 
-## Contract
+## Production contract
 
-The public image URL contract does not change. `lashpop-img` remains the edge
-router and selects the source service:
+`lashpop-img` is the sole deployed raster-delivery boundary.
 
-- `IMAGE_BACKEND=legacy` reads R2, the deployed site's static assets, or the
-  allow-listed Rackspace origin.
-- `IMAGE_BACKEND=hosted` reads the byte-identical original from Cloudflare
-  Hosted Images.
-- Both paths use the same Images binding transform, format negotiation,
-  quality curve, crop math, and cache policy.
-- A hosted lookup failure immediately falls back to the legacy source and is
-  returned with `x-lp-img-fallback`. Fallbacks are never pinned in the
-  year-long hosted cache namespace.
+- First-party R2 and site-public raster sources use deterministic `lp/<sha256>`
+  originals in Cloudflare Images.
+- The Worker reads those originals with the native Images binding, then asks
+  Cloudflare for the requested width, crop, quality, and AVIF/WebP/JPEG output.
+- A missing or unreadable managed original fails closed. There is no automatic
+  source fallback and a public query parameter cannot select a legacy source.
+- Externally owned booking-provider images are intentionally separate. Only
+  HTTPS `*.rackcdn.com` URLs are accepted, and responses are labeled
+  `x-lp-img-backend: external` and `x-lp-img-source: vagaro-rackcdn`.
+- External final variants use a one-day cache instead of the immutable
+  first-party policy so an upstream photo replacement can become visible.
+- Successful final variants are format- and backend-keyed and cached
+  immutably. Transform failures and managed-source misses are not cached.
+- The private R2 prefixes `backups/` and `.backups/` remain unreachable.
 
-The backend name is included in every edge cache key. A flag flip cannot serve
-a response cached under the other service.
+Raw `/lashpop-images/*` raster references in deployed Next.js builds are
+rewritten to `/site/lashpop-images/*` on the same Worker. SVGs remain static.
+Local development reads working-tree public files directly.
 
-## Feature preview
+## Source inventory
 
-The isolated preview Worker is:
-
-```text
-https://lashpop-img-preview.experial.workers.dev
-```
-
-It defaults to `IMAGE_BACKEND=hosted`. A Vercel feature deployment uses:
-
-```text
-NEXT_PUBLIC_IMAGE_WORKER_BASE=https://lashpop-img-preview.experial.workers.dev
-```
-
-The deployed production Worker stays on its current legacy version until the
-approved branch is merged and deployed. The branch sets `IMAGE_BACKEND=hosted`
-for that cutover. Public requests cannot opt themselves into the hosted backend;
-`IMAGE_BACKEND` is the only production cutover control. A `backend=legacy`
-request override remains available for targeted rollback diagnosis.
-
-## Backfill
-
-Dry-run first:
+Audit without changing provider state:
 
 ```bash
-LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local npm run images:backfill
+LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
+  CLOUDFLARE_ACCOUNT_ID=<account-id> \
+  npm run images:audit-sources
+```
+
+The audit reports first-party and externally owned sources separately. A
+first-party source counts as ready only if its source is reachable and its
+deterministic Cloudflare Images original exists and is not a draft.
+
+Dry-run the first-party backfill:
+
+```bash
+LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
+  CLOUDFLARE_ACCOUNT_ID=<account-id> \
+  npm run images:backfill
 ```
 
 Apply idempotently:
 
 ```bash
-LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local npm run images:backfill -- --apply
+LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
+  CLOUDFLARE_ACCOUNT_ID=<account-id> \
+  npm run images:backfill -- --apply
 ```
 
-Hosted IDs are deterministic SHA-256 paths derived from the canonical source:
-
-- `r2:<object-key>`
-- `site:<public-path>`
-- `ext:<normalized-url>`
-
-Re-running checks each ID before upload. Oversized or mislabeled sources are
-normalized through the existing decoder without changing their deterministic
-ID. Reports are written under ignored `.artifacts/cloudflare-images/`.
-
-AVIF output is also pinned at the acceptance widths because Hosted Images
-source ingestion can otherwise produce small decoded-pixel differences even
-when the same Images binding and transform parameters are used. Two 16-bit PNG
-originals cannot fit under Hosted Images' 10 MB upload limit without changing
-their decoded pixels, so all of their known production variants are pinned as
-well. Exact variants must be generated from the production legacy Worker using
-the same public URL and query string guests receive; adding a cache-busting
-parameter creates a separate AVIF encode and is not valid parity evidence.
-Generate both sets under versioned deterministic IDs:
+Externally owned booking-provider URLs are excluded from first-party backfill.
+Oversized PNG sources are converted to full-frame, non-resized sRGB PNG
+masters under the same deterministic ID. The two approved 16-bit sources may
+be deliberately regenerated with:
 
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
-  npm run images:precompute-exact -- --apply \
-  --worker=https://lashpop-img.experial.workers.dev
+  CLOUDFLARE_ACCOUNT_ID=<account-id> \
+  npm run images:backfill -- \
+  --apply --replace-managed-masters --concurrency=1
 ```
 
-AVIF variants are stored as lossless SVG metadata wrappers because Hosted
-Images does not accept AVIF uploads; the Worker unwraps the original bytes
-before responding. Any missing precomputed AVIF combination, or any missing
-variant for the two oversized sources, falls back to the legacy source instead
-of returning a visually different image.
+That command preserves dimensions and composition. It changes only storage
+encoding and color depth needed to fit Cloudflare Images' source-ingest limit.
 
-## Exact parity gate
+## Hosted delivery gate
 
-Run against the preview Worker:
+Deploy the isolated preview Worker:
+
+```bash
+npx wrangler deploy --env preview
+```
+
+Verify dynamic output from the exact preview Worker:
 
 ```bash
 LASHPOP_ENV_FILE=/absolute/path/to/.env.production.local \
-  npm run images:verify-parity -- \
-  --legacy-worker=https://lashpop-img.experial.workers.dev \
+  npm run images:verify-hosted -- \
   --worker=https://lashpop-img-preview.experial.workers.dev \
-  --widths=320,600,1600 \
-  --formats=avif,webp,jpeg \
-  --require-exact-pixels
+  --widths=320,600,1152,1440,1600,1728 \
+  --formats=avif,webp,jpeg
 ```
 
-The command fails unless every available source:
+The gate requires every reachable first-party source to report the hosted
+backend and Cloudflare Images source, a deterministic original ID, a valid
+image payload and dimensions, an accurate content type, and no fallback/error
+header. Cloudflare may return WebP or JPEG when an AVIF output is unsupported;
+the Worker records requested and actual formats separately.
 
-1. returns the same HTTP status,
-2. is actually served from `x-lp-img-backend: hosted`,
-3. decodes to the exact same dimensions, and
-4. has byte-for-byte identical decoded RGBA pixels.
+Meaningful visual parity is reviewed on phone and desktop at the page level.
+Decoded-pixel equality is not an acceptance criterion, and visual regression
+baselines are never changed to force acceptance.
 
-Known unavailable legacy sources must return the same failure status on both
-paths. The public visual snapshots and `npm run test:launch` remain separate,
-mandatory page-level gates.
+## Production deployment and rollback
 
-The current combined backfill evidence is 523 available originals, including
-the 18 approved quiz comparison crops and four approved result photos. The
-production-referenced exact set contains 1,650 variants. The strict parity run
-covers all 524 discovered sources at 320, 600, and 1600 pixels in AVIF, WebP,
-and JPEG. Two retired/unavailable sources preserve their current production
-failure status across all nine width/format combinations.
+Production deployment requires the exact merged candidate, a green
+`npm run test:launch`, green GitHub `quality` and `browser-regression` checks,
+and a green Vercel deployment.
 
-Current preview evidence is 4,716/4,716 status matches, 4,698/4,698 available
-responses served from Hosted Images, 4,716/4,716 dimension matches, and
-4,716/4,716 byte-for-byte decoded RGBA pixel matches. Maximum mean absolute
-channel error is 0.
+```bash
+npx wrangler deploy
+```
 
-The preview and production environments must use the live R2 public base
-`https://pub-b6624c485ec245d68de72be196a72d75.r2.dev`. The feature preview also
-sets `NEXT_PUBLIC_IMAGE_WORKER_BASE` to the isolated hosted Worker without
-trailing whitespace. The application loader trims environment whitespace as a
-defense against configuration formatting errors.
+Post-deploy probes must show:
 
-## Production cutover
+- first-party: `x-lp-img-backend: hosted`,
+  `x-lp-img-source: cloudflare-images`, and no fallback header;
+- external provider: `x-lp-img-backend: external` and
+  `x-lp-img-source: vagaro-rackcdn`;
+- correct status, content type, dimensions, focal composition, and responsive
+  behavior at observed runtime widths.
 
-Do not cut over until the pull request's `quality` and `browser-regression`
-checks pass and the preview has owner approval.
+Rollback is an explicit version operation, not a hidden per-request path:
 
-1. Ensure the production `lashpop-img` Worker has the
-   `CLOUDFLARE_IMAGES_API_TOKEN` secret.
-2. Confirm the approved branch sets `IMAGE_BACKEND=hosted` in
-   `workers/lashpop-img/wrangler.jsonc`.
-3. Deploy the Worker. Worker versions activate atomically, so requests remain
-   served throughout the change.
-4. Verify representative responses report `x-lp-img-backend: hosted` and no
-   `x-lp-img-fallback`.
+1. restore the recorded prior `lashpop-img` Worker version;
+2. if the candidate added the raw-public raster rewrite, restore the recorded
+   prior Vercel deployment at the same time;
+3. re-run first-party/external probes and the smoke checklist.
 
-Rollback is the inverse single-flag change: set `IMAGE_BACKEND=legacy` and
-deploy. R2 and external source URLs remain untouched throughout the soak.
+Public DNS is independent of this image deployment and is not changed by any
+command in this runbook.

@@ -1,12 +1,7 @@
-const CDN_BASE = "https://cdn.lashpopstudios.com"
 // On-the-fly resizer on the experialstudio account (workers/lashpop-img):
-// reads from the lashpop-dam R2 bucket (bare keys), the site's /public
-// assets (/site/<path>), and allow-listed external hosts (/ext?url=), and
-// returns a width-scaled image whose format is negotiated per-request from
-// the Accept header (AVIF > WebP > JPEG), transcoding HEIC originals to a
-// web format. Lives on workers.dev because the lashpopstudios.com zone
-// hasn't moved accounts yet — swap to cdn.lashpopstudios.com once the NS
-// flip lands.
+// reads first-party canonical masters from Cloudflare Images and reads only
+// externally owned booking-provider photos from the allow-listed upstream.
+// It returns dynamic widths with per-request AVIF/WebP/JPEG negotiation.
 const DEFAULT_IMG_WORKER_BASE = "https://lashpop-img.experial.workers.dev"
 
 export function getImageWorkerBase(): string {
@@ -39,10 +34,9 @@ export default function cfImageLoader({ src, width, quality }: Props): string {
   // Vector/animated formats gain nothing from the resizer.
   if (/\.(svg|gif)(\?|$)/i.test(src)) return src
 
-  if (src.startsWith(CDN_BASE)) {
-    const opts = `width=${width},quality=${q},format=auto,fit=scale-down`
-    const path = src.slice(CDN_BASE.length).replace(/^\//, "")
-    return `${CDN_BASE}/cdn-cgi/image/${opts}/${path}`
+  const legacyCdnMatch = src.match(/^https:\/\/cdn\.lashpopstudios\.com\/(.+)$/)
+  if (legacyCdnMatch) {
+    return workerUrl(legacyCdnMatch[1], { w: width, q })
   }
 
   const r2Match = src.match(/^https?:\/\/pub-[a-f0-9]+\.r2\.dev\/(.+)$/)

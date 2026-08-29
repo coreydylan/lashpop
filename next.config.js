@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+const imageWorkerBase = (process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE || 'https://lashpop-img.experial.workers.dev')
+  .trim()
+  .replace(/\/$/, '')
+
 const nextConfig = {
   reactStrictMode: false,
   outputFileTracingRoot: __dirname,
@@ -35,6 +39,23 @@ const nextConfig = {
     ],
   },
   // Note: Body size limits are configured in vercel.json for Vercel deployments
+  // Raw public raster references (CSS masks, <picture>, metadata images) do not
+  // invoke the custom next/image loader. Route those through the same hosted
+  // source path in deployed environments so first-party raster delivery has no
+  // second origin. Local development keeps reading the working-tree files.
+  async rewrites() {
+    if (process.env.NODE_ENV === 'development') return []
+    return {
+      beforeFiles: [
+        {
+          source: '/lashpop-images/:path*.:ext(avif|gif|heic|heif|jpeg|jpg|png|tif|tiff|webp)',
+          destination: `${imageWorkerBase}/site/lashpop-images/:path*.:ext`,
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    }
+  },
   // Launch-safe browser headers. A blocking CSP is intentionally omitted until
   // every third-party script, image, booking, and analytics origin is inventoried.
   async headers() {
