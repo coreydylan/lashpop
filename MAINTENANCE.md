@@ -187,7 +187,7 @@ Review the fixture diff before committing it. The exporter intentionally omits r
 
 The approved screenshot contract has separate macOS and Linux images because Chromium rasterizes font edges differently on those platforms. Layout, content, imagery, spacing, and brand colors must match before a platform-specific image is accepted. GitHub retains the actual and diff images from a failed browser run for seven days so the change can be reviewed; do not weaken the pixel threshold or replace a baseline merely to make CI green.
 
-When hero delivery changes, verify the live mobile request receives an oversampled full-frame derivative without fixed `h`, `fit`, `gx`, or `gy` crop parameters, then confirm the approved mobile baseline still passes. Deploy `workers/lashpop-img` first only when its transformation behavior changes. When staff sync ownership changes, deploy `workers/vagaro-sync` before testing publication behavior.
+When hero delivery changes, verify the live mobile request receives an oversampled direct Cloudflare Images derivative without a baked crop, then confirm the approved mobile baseline still passes. The public application must not depend on `workers/lashpop-img`; it remains transition/rollback infrastructure only. When Vagaro image ingestion changes, deploy `workers/vagaro-sync` only after its exact app candidate and database migration are green.
 
 ## DNS cutover workflow
 

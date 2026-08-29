@@ -1,9 +1,5 @@
 import cfImageLoader from '@/lib/cf-image-loader'
-import {
-  getQuizPhotosForQuiz,
-  getResultSettingsForQuiz,
-  type QuizResultForDisplay,
-} from '@/actions/quiz-photos'
+import type { QuizResultForDisplay } from '@/actions/quiz-photos'
 import {
   isConstrainedImageConnection,
   isBackgroundImagePreloadingDisabled,
@@ -171,10 +167,13 @@ function getQuizFallbackCandidates(
 
 export function getQuizExperienceData(): Promise<QuizExperienceData> {
   if (!quizExperiencePromise) {
-    quizExperiencePromise = Promise.all([
+    quizExperiencePromise = import('@/actions/quiz-photos').then(({
+      getQuizPhotosForQuiz,
+      getResultSettingsForQuiz,
+    }) => Promise.all([
       getQuizPhotosForQuiz(),
       getResultSettingsForQuiz(),
-    ]).then(([photos, settings]) => ({
+    ])).then(([photos, settings]) => ({
       photos: photos as Record<LashStyle, QuizPhoto[]>,
       settings,
     })).catch((error) => {

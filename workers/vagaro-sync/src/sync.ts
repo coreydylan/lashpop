@@ -11,6 +11,7 @@ import {
 import type { VagaroClient } from './vagaro-client'
 import { hasBookingConfiguration } from './booking-health'
 import { computeEffectiveCategoryOrder } from './category-order'
+import type { VagaroImageRequest, VagaroImageResult } from './cloudflare-images'
 import { fetchPublicStaff, nameKey, originalPhotoUrl } from './public-staff'
 import {
   fetchPublicServicesForProvider,
@@ -20,7 +21,7 @@ import {
   type PublicServiceRecord,
 } from './public-services'
 
-type ImageMirror = (sourceUrl: string) => Promise<void>
+type ImageIngestor = (request: VagaroImageRequest) => Promise<VagaroImageResult>
 
 export interface CategorySyncStats {
   fetched: number
@@ -317,7 +318,7 @@ async function syncService(
   // share a title (see the guard comment in the lookup block).
   runServiceIds: Set<string>,
   categoryIdByVagaroId: Map<string, string>,
-  imageMirror?: ImageMirror,
+  imageIngestor?: ImageIngestor,
 ): Promise<SyncedService> {
   const serviceId = publicRecord.serviceId
   // Prefer v2's title when available (it's the authenticated, canonical name);
@@ -355,6 +356,13 @@ async function syncService(
   const photoById = photosByServiceId.get(serviceId) ?? null
   const photoByTitle = photosByTitle.get(serviceTitleKey(title)) ?? null
   const photoUrl = photoById ?? photoByTitle
+  const ingestedPhoto = photosAvailable && photoUrl && imageIngestor
+    ? await imageIngestor({
+        sourceKey: `vagaro:service:${serviceId}`,
+        sourceKind: 'vagaro-service',
+        sourceUrl: photoUrl,
+      })
+    : null
   if (!photoById && photoByTitle) {
     console.log(`photo match for "${title}" was by title only, not serviceId — verify mapping`)
   }
@@ -464,7 +472,10 @@ async function syncService(
         // Vagaro categories; previously only the FK changed on existing rows.
         mainCategory: parentTitle || 'Other Services',
         ...vagaroDataPatch,
-        ...(photosAvailable ? { vagaroImageUrl: photoUrl } : {}),
+        ...(photosAvailable && photoUrl && ingestedPhoto ? {
+          vagaroImageSourceUrl: photoUrl,
+          vagaroImageUrl: ingestedPhoto.deliveryUrl,
+        } : {}),
         ...(categoryId ? { categoryId } : {}),
         // Mirror Vagaro's own order on the booking page so the frontend's
         // `ORDER BY display_order` shows services in the same order Vagaro does.
@@ -473,9 +484,6 @@ async function syncService(
         updatedAt: new Date(),
       })
       .where(eq(services.id, existing[0].id))
-    if (photosAvailable && photoUrl && existing[0].vagaroImageUrl !== photoUrl) {
-      await imageMirror?.(photoUrl)
-    }
     return {
       id: existing[0].id,
       isActive: existing[0].isActive,
@@ -514,7 +522,8 @@ async function syncService(
       vagaroServiceId: serviceId,
       vagaroParentServiceId: parentServiceId,
       ...vagaroDataPatch,
-      vagaroImageUrl: photoUrl,
+      vagaroImageSourceUrl: photoUrl,
+      vagaroImageUrl: ingestedPhoto?.deliveryUrl ?? null,
       categoryId,
       name: title,
       slug: insertSlug,
@@ -537,7 +546,6 @@ async function syncService(
       mainCategory: parentTitle || 'Other Services',
       lastSyncedAt: new Date(),
     }).returning({ id: services.id })
-    if (photoUrl) await imageMirror?.(photoUrl)
     return {
       id: inserted[0]?.id ?? null,
       isActive: false,
@@ -551,7 +559,7 @@ export async function syncAllServices(
   client: VagaroClient,
   numericBusinessId: string,
   suppliedPayload?: PublicServicesPayload,
-  imageMirror?: ImageMirror,
+  imageIngestor?: ImageIngestor,
 ): Promise<SyncStats> {
   // PUBLIC COMPOSITE is the canonical source of the service LIST. Vagaro's
   // authenticated v2 /api/v2/services endpoint caps at 10 rows regardless of
@@ -644,7 +652,7 @@ export async function syncAllServices(
         i,
         runServiceIds,
         categoryIdByVagaroId,
-        imageMirror,
+        imageIngestor,
       )
       if (syncedService.id) touchedServiceIds.add(syncedService.id)
       if (!syncedService.bookingReady) {
@@ -746,7 +754,7 @@ export async function syncAllServices(
 export async function syncPublicStaff(
   db: Db,
   numericBusinessId: string,
-  imageMirror?: ImageMirror,
+  imageIngestor?: ImageIngestor,
 ): Promise<PublicStaffStats> {
   const stats: PublicStaffStats = {
     fetched: 0,
@@ -780,6 +788,7 @@ export async function syncPublicStaff(
       isActive: teamMembers.isActive,
       vagaroPublicProviderId: teamMembers.vagaroPublicProviderId,
       vagaroPhotoUrl: teamMembers.vagaroPhotoUrl,
+      vagaroPhotoSourceUrl: teamMembers.vagaroPhotoSourceUrl,
       usesLashpopBooking: teamMembers.usesLashpopBooking,
     })
     .from(teamMembers)
@@ -832,6 +841,13 @@ export async function syncPublicStaff(
         }
       }
       const photoUrl = originalPhotoUrl(p)
+      const ingestedPhoto = photoUrl && imageIngestor
+        ? await imageIngestor({
+            sourceKey: `vagaro:staff:${p.ServiceProviderID}`,
+            sourceKind: 'vagaro-staff',
+            sourceUrl: photoUrl,
+          })
+        : null
       const phone = (p.Cell || p.DayPhone || '').trim()
       const email = (p.EmailId || '').trim()
       const sortOrder = p.EmployeeSortOrder != null ? String(p.EmployeeSortOrder) : '0'
@@ -862,7 +878,13 @@ export async function syncPublicStaff(
             // photoUrl is null when Vagaro returns a generic silhouette placeholder
             // (see originalPhotoUrl). Writing null lets the local imageUrl win on the
             // frontend until a real photo is uploaded in Vagaro.
-            vagaroPhotoUrl: photoUrl,
+            ...(photoUrl && ingestedPhoto ? {
+              vagaroPhotoSourceUrl: photoUrl,
+              vagaroPhotoUrl: ingestedPhoto.deliveryUrl,
+            } : photoUrl === null ? {
+              vagaroPhotoSourceUrl: null,
+              vagaroPhotoUrl: null,
+            } : {}),
             vagaroBio: cleanBio,
             displayOrder: sortOrder,
             // Re-activate if Vagaro is showing them again
@@ -874,9 +896,6 @@ export async function syncPublicStaff(
             updatedAt: new Date(),
           })
           .where(eq(teamMembers.id, matchByName.id))
-        if (photoUrl && matchByName.vagaroPhotoUrl !== photoUrl) {
-          await imageMirror?.(photoUrl)
-        }
         stats.matched++
         stats.updated++
       } else {
@@ -890,7 +909,8 @@ export async function syncPublicStaff(
         const PLACEHOLDER = '/placeholder-team.svg'
         await db.insert(teamMembers).values({
           vagaroPublicProviderId: p.ServiceProviderID,
-          vagaroPhotoUrl: photoUrl, // null when only a Vagaro placeholder is available
+          vagaroPhotoSourceUrl: photoUrl,
+          vagaroPhotoUrl: ingestedPhoto?.deliveryUrl ?? null,
           vagaroBio: p.BusinessSummary?.trim() || null,
           name: fullName || `Provider ${p.ServiceProviderID}`,
           phone: phone || '',
@@ -899,7 +919,7 @@ export async function syncPublicStaff(
           type: 'employee',
           bookingUrl: 'https://www.vagaro.com/lashpop32',
           usesLashpopBooking: true,
-          imageUrl: photoUrl ?? PLACEHOLDER, // notNull — seed local with vagaro photo or branded placeholder
+          imageUrl: ingestedPhoto?.deliveryUrl ?? PLACEHOLDER,
           displayOrder: sortOrder,
           isActive: true,
           // Newly discovered providers must be reviewed before publication.
@@ -910,7 +930,6 @@ export async function syncPublicStaff(
           showOnWebsiteChangedAt: new Date(),
           lastSyncedAt: new Date(),
         })
-        if (photoUrl) await imageMirror?.(photoUrl)
         stats.created++
         stats.unmatchedInVagaro.push(fullName)
       }

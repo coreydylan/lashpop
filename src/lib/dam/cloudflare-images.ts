@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 
 const HOSTED_UPLOAD_LIMIT = 10 * 1024 * 1024
+const DEFAULT_ACCOUNT_HASH = "zXebLwufc8AGAQU5E9oXHw"
 
 const sanitizeEnvValue = (value?: string | null) => {
   if (typeof value !== "string") return undefined
@@ -12,6 +13,13 @@ function config() {
   const accountId = sanitizeEnvValue(process.env.CLOUDFLARE_ACCOUNT_ID)
   const apiToken = sanitizeEnvValue(process.env.CLOUDFLARE_API_TOKEN)
   return accountId && apiToken ? { accountId, apiToken } : null
+}
+
+function deliveryUrl(imageId: string) {
+  const accountHash = sanitizeEnvValue(process.env.CLOUDFLARE_IMAGES_ACCOUNT_HASH)
+    || sanitizeEnvValue(process.env.NEXT_PUBLIC_CLOUDFLARE_IMAGES_ACCOUNT_HASH)
+    || DEFAULT_ACCOUNT_HASH
+  return `https://imagedelivery.net/${accountHash}/${imageId}/public`
 }
 
 function hostedImageIdForR2Key(key: string) {
@@ -48,7 +56,7 @@ export async function mirrorR2Image(params: {
 
   const imageId = hostedImageIdForR2Key(params.key)
   const existing = await imageDetails(imageId)
-  if (existing && !existing.draft) return { status: "existing" as const, imageId }
+  if (existing && !existing.draft) return { status: "existing" as const, imageId, deliveryUrl: deliveryUrl(imageId) }
 
   const form = new FormData()
   form.set("id", imageId)
@@ -78,7 +86,7 @@ export async function mirrorR2Image(params: {
     const detail = payload.errors?.map((error) => error.message).filter(Boolean).join("; ")
     throw new Error(`Cloudflare Images upload failed (${response.status})${detail ? `: ${detail}` : ""}`)
   }
-  return { status: "uploaded" as const, imageId }
+  return { status: "uploaded" as const, imageId, deliveryUrl: deliveryUrl(imageId) }
 }
 
 export async function mirrorR2ImageFromUrl(params: {
@@ -90,7 +98,7 @@ export async function mirrorR2ImageFromUrl(params: {
 
   const imageId = hostedImageIdForR2Key(params.key)
   const existing = await imageDetails(imageId)
-  if (existing && !existing.draft) return { status: "existing" as const, imageId }
+  if (existing && !existing.draft) return { status: "existing" as const, imageId, deliveryUrl: deliveryUrl(imageId) }
 
   const form = new FormData()
   form.set("id", imageId)
@@ -118,7 +126,7 @@ export async function mirrorR2ImageFromUrl(params: {
     const detail = payload.errors?.map((error) => error.message).filter(Boolean).join("; ")
     throw new Error(`Cloudflare Images URL import failed (${response.status})${detail ? `: ${detail}` : ""}`)
   }
-  return { status: "uploaded" as const, imageId }
+  return { status: "uploaded" as const, imageId, deliveryUrl: deliveryUrl(imageId) }
 }
 
 export async function deleteMirroredR2Image(key: string) {
@@ -139,5 +147,6 @@ export async function deleteMirroredR2Image(key: string) {
 
 export const cloudflareImagesInternals = {
   HOSTED_UPLOAD_LIMIT,
+  deliveryUrl,
   hostedImageIdForR2Key,
 }

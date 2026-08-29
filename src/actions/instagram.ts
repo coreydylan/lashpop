@@ -2,6 +2,7 @@
 
 import { getDb, assets, assetTags, tags, websiteSettings } from "@/db"
 import { desc, eq } from "drizzle-orm"
+import { resolvePublicImageUrl } from "@/lib/public-image-delivery.server"
 
 /**
  * Get Instagram carousel settings from admin panel
@@ -79,7 +80,7 @@ export async function getInstagramPosts(limit?: number) {
     // 3. Map to expected format
     return posts.map(post => ({
       id: post.id || '',
-      mediaUrl: post.mediaUrl,
+      mediaUrl: resolvePublicImageUrl(post.mediaUrl),
       permalink: (post.permalink as any)?.permalink || '',
       caption: post.caption,
     }))

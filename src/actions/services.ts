@@ -17,6 +17,7 @@ import {
 } from "@/lib/vagaro-booking-readiness"
 import { and, eq, asc, desc, inArray, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/sqlite-core"
+import { resolvePublicImages } from "@/lib/public-image-delivery.server"
 
 export async function getServices() {
   const db = getDb()
@@ -43,7 +44,7 @@ export async function getServices() {
     .where(eq(services.isActive, true))
     .orderBy(services.displayOrder)
 
-  return allServices
+  return resolvePublicImages(allServices)
 }
 
 export async function getServiceBySlug(slug: string) {
@@ -91,12 +92,12 @@ export async function getServiceBySlug(slug: string) {
       widgetUrl: service.vagaroWidgetUrl,
     })
 
-  return {
+  return resolvePublicImages({
     ...publicService,
     // Fail closed on a stale/swapped mapping. The service page can still
     // render, but it cannot send a customer into the wrong Vagaro flow.
     vagaroWidgetUrl: bookingReady ? service.vagaroWidgetUrl : null,
-  }
+  })
 }
 
 export async function getServicesByCategory(categorySlug: string) {
@@ -123,7 +124,10 @@ export async function getServicesByCategory(categorySlug: string) {
     )
     .orderBy(services.displayOrder)
 
-  return categoryServices
+  return resolvePublicImages(categoryServices.map((service) => ({
+    ...service,
+    vagaroImageSourceUrl: null,
+  })))
 }
 
 export async function getAllServices() {
@@ -174,7 +178,7 @@ export async function getAllServices() {
     .where(eq(services.isActive, true))
     .orderBy(asc(services.displayOrder))
 
-  return allServices.map((service) => {
+  return resolvePublicImages(allServices.map((service) => {
     const { bookingCategory, ...publicService } = service
     const bookingReady =
       !service.vagaroServiceId ||
@@ -191,7 +195,7 @@ export async function getAllServices() {
       // the generated manifest by numeric ID, title, category, and full URL.
       vagaroWidgetUrl: bookingReady ? service.vagaroWidgetUrl : null,
     }
-  })
+  }))
 }
 
 // Get all services including inactive ones (for admin)

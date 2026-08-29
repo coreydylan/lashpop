@@ -7,8 +7,10 @@ import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import { MobileSwipeableWelcomeCards } from '../MobileSwipeableWelcomeCards'
 import { getPublicImageBlur } from '@/lib/image-blur'
+import { requiredStaticCloudflareImageUrl } from '@/lib/cloudflare-image-delivery'
 
 const FRONTDESK_SRC = '/lashpop-images/frontdeskeditwgradientedit2.webp'
+const LP_LOGO = requiredStaticCloudflareImageUrl('/lashpop-images/lp-logo.png')
 
 // Dynamically import ParallaxImage to avoid SSR issues with Three.js
 const ParallaxImage = dynamic(() => import('@/components/three/ParallaxImage'), {
@@ -130,11 +132,11 @@ export function WelcomeSection({ isMobile: propIsMobile }: WelcomeSectionProps) 
               <div
                 className="h-32 w-full mx-auto"
                 style={{
-                  maskImage: 'url(/lashpop-images/lp-logo.png)',
+                  maskImage: `url(${LP_LOGO})`,
                   maskSize: 'contain',
                   maskRepeat: 'no-repeat',
                   maskPosition: 'center',
-                  WebkitMaskImage: 'url(/lashpop-images/lp-logo.png)',
+                  WebkitMaskImage: `url(${LP_LOGO})`,
                   WebkitMaskSize: 'contain',
                   WebkitMaskRepeat: 'no-repeat',
                   WebkitMaskPosition: 'center',

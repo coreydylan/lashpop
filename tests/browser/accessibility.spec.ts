@@ -1,9 +1,18 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
+import { createHash } from 'node:crypto'
 import { preparePublicHome } from './helpers'
 
 const QUIZ_EVIDENCE_DIR = process.env.LASHPOP_QUIZ_EVIDENCE_DIR ?? '/tmp/registry'
+const CLOUDFLARE_IMAGES_ACCOUNT_HASH = 'zXebLwufc8AGAQU5E9oXHw'
+
+function directR2(source: string) {
+  const url = new URL(source)
+  const key = decodeURIComponent(url.pathname.replace(/^\/+/, ''))
+  const imageId = `lp/${createHash('sha256').update(`r2:${key}`).digest('hex')}`
+  return `https://imagedelivery.net/${CLOUDFLARE_IMAGES_ACCOUNT_HASH}/${imageId}/public`
+}
 
 type QuizPath = {
   name: string
@@ -113,6 +122,65 @@ test("Evie's team profile uses her client-approved Instagram handle", async ({ p
   await expect(instagram.first()).toContainText('thedarlinspot')
 })
 
+test('public LashPop rasters use Cloudflare Images directly with no Worker or provider origin', async ({ page }) => {
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: width >= 1000 ? 1000 : 844 })
+    await preparePublicHome(page)
+
+    await page.locator('img').evaluateAll(async (images) => {
+      await Promise.all(images.map(async (image) => {
+        const element = image as HTMLImageElement
+        element.loading = 'eager'
+        await element.decode().catch(() => undefined)
+      }))
+    })
+    const main = page.locator('#main-content')
+    await main.evaluate((element) => { element.scrollTop = element.scrollHeight })
+    await page.waitForTimeout(500)
+
+    const evidence = await page.evaluate(() => {
+      const values = new Set<string>()
+      for (const image of Array.from(document.images)) {
+        if (image.currentSrc) values.add(image.currentSrc)
+        if (image.src) values.add(image.src)
+        for (const candidate of image.srcset.split(',')) {
+          const url = candidate.trim().split(/\s+/, 1)[0]
+          if (url) values.add(url)
+        }
+      }
+      for (const entry of performance.getEntriesByType('resource')) values.add(entry.name)
+      return {
+        values: Array.from(values),
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        brokenImages: Array.from(document.images)
+          .filter((image) => image.complete && image.naturalWidth === 0)
+          .map((image) => image.currentSrc || image.src),
+      }
+    })
+
+    const forbidden = evidence.values.filter((value) =>
+      /lashpop-img(?:-preview)?\.experial\.workers\.dev|\.r2\.dev|\.rackcdn\.com/i.test(value),
+    )
+    const localPublicRasters = evidence.values.filter((value) => {
+      try {
+        const url = new URL(value)
+        return url.origin === new URL(page.url()).origin
+          && /\/lashpop-images\/.*\.(?:avif|heic|heif|jpe?g|png|tiff?|webp)(?:$|[?#])/i.test(url.href)
+      } catch {
+        return false
+      }
+    })
+    const direct = evidence.values.filter((value) => value.startsWith('https://imagedelivery.net/'))
+
+    expect(forbidden, `forbidden image origin at ${width}px`).toEqual([])
+    expect(localPublicRasters, `local public raster at ${width}px`).toEqual([])
+    expect(evidence.brokenImages, `broken images at ${width}px`).toEqual([])
+    expect(evidence.documentWidth, `horizontal overflow at ${width}px`).toBeLessThanOrEqual(evidence.viewportWidth + 1)
+    expect(direct.length, `direct image evidence at ${width}px`).toBeGreaterThan(20)
+  }
+})
+
 test('Classic Fill reaches the exact booking handoff', async ({ page }) => {
   await preparePublicHome(page)
 
@@ -147,7 +215,7 @@ test('service browser prioritizes and smoothly resolves visible card photos', as
   ).toBeGreaterThan(0)
 
   const currentSource = await firstPhoto.evaluate((image) => (image as HTMLImageElement).currentSrc)
-  expect(currentSource).toMatch(/[?&]w=(320|600)(?:&|$)/)
+  expect(currentSource).toMatch(/\/w=(320|600),q=\d+,fit=scale-down,metadata=none$/)
 })
 
 test('quiz reaches one stable result image when every comparison is skipped', async ({ page }) => {
@@ -236,7 +304,7 @@ for (const path of [
     q2Button: /Barely there/,
     resultStyle: 'classic',
     resultHeading: 'Classic Lashes',
-    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/classic-full-set-approved.jpg',
+    configuredResultImage: directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/classic-full-set-approved.jpg'),
     expectedPairKeys: ['classic-volume', 'classic-wetAngel', 'classic-hybrid'],
   },
   {
@@ -245,7 +313,7 @@ for (const path of [
     q2Button: /Bold and dramatic/,
     resultStyle: 'volume',
     resultHeading: 'Volume Lashes',
-    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/volume-full-set-approved.jpg',
+    configuredResultImage: directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/volume-full-set-approved.jpg'),
     expectedPairKeys: ['classic-volume', 'volume-wetAngel', 'hybrid-volume'],
   },
   {
@@ -254,7 +322,7 @@ for (const path of [
     q2Button: /Barely there/,
     resultStyle: 'hybrid',
     resultHeading: 'Hybrid Lashes',
-    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/hybrid-full-set-approved.jpg',
+    configuredResultImage: directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/hybrid-full-set-approved.jpg'),
     expectedPairKeys: [
       'classic-volume',
       'classic-wetAngel',
@@ -268,7 +336,7 @@ for (const path of [
     q2Button: /Barely there/,
     resultStyle: 'wetAngel',
     resultHeading: 'Wet / Angel Lashes',
-    configuredResultImage: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/wetAngel-full-set-approved.jpg',
+    configuredResultImage: directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/wetAngel-full-set-approved.jpg'),
     expectedPairKeys: [
       'classic-volume',
       'classic-wetAngel',
@@ -351,7 +419,8 @@ test('quiz comparison cards stay filled without reusing legacy square crop maste
       const box = await card.boundingBox()
       expect(box).not.toBeNull()
       expect(Math.abs((box!.width / box!.height) - 0.75)).toBeLessThanOrEqual(0.01)
-      await expect(card).toHaveAttribute('data-quiz-photo-src', /\/uploads\//)
+      await expect(card).toHaveAttribute('data-quiz-photo-src', /^https:\/\/imagedelivery\.net\//)
+      await expect(card).not.toHaveAttribute('data-quiz-photo-src', /(?:workers\.dev|r2\.dev|rackcdn\.com)/)
       await expect(card).not.toHaveAttribute('data-quiz-photo-src', /-square-/)
     }
 

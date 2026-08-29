@@ -18,7 +18,10 @@ export const services = pgTable("services", {
   // cannot be generated from this field, and runtime booking must never use it.
   vagaroServiceCode: text("vagaro_service_code"),
   vagaroData: jsonb("vagaro_data").$type<any>(), // Store full Vagaro response for reference
-  vagaroImageUrl: text("vagaro_image_url"), // Original image from Vagaro sync
+  vagaroImageUrl: text("vagaro_image_url"), // Public Cloudflare Images delivery URL
+  // Original provider URL is retained only for authenticated refresh work.
+  // vagaroImageUrl becomes the public Cloudflare Images delivery URL.
+  vagaroImageSourceUrl: text("vagaro_image_source_url"),
 
   // Local enrichment fields (not in Vagaro)
   categoryId: uuid("category_id")

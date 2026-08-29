@@ -1,5 +1,9 @@
 import { AwsClient } from "aws4fetch"
-import { deleteMirroredR2Image, mirrorR2Image } from "./cloudflare-images"
+import {
+  deleteMirroredR2Image,
+  mirrorR2Image,
+  mirrorR2ImageFromUrl,
+} from "./cloudflare-images"
 
 const sanitizeEnvValue = (value?: string | null) => {
   if (typeof value !== "string") return undefined
@@ -107,26 +111,53 @@ export interface UploadBufferParams {
   contentType: string
 }
 
-async function mirrorBestEffort(params: {
+async function mirrorRequired(params: {
   body: Uint8Array
   key: string
   contentType: string
   fileName: string
 }) {
-  try {
-    return await mirrorR2Image(params)
-  } catch (error) {
-    console.error("Cloudflare Images mirror failed; R2 remains available:", error)
-    return { status: "failed" as const }
-  }
+  return mirrorR2Image(params)
 }
 
 async function mirrorForStorage(
   config: StorageConfig,
-  params: Parameters<typeof mirrorBestEffort>[0],
+  params: Parameters<typeof mirrorRequired>[0],
 ) {
   if (config.kind === "proxy") return { status: "skipped" as const }
-  return mirrorBestEffort(params)
+  return mirrorRequired(params)
+}
+
+function mirrorIsReady(mirror: { status: string }): boolean {
+  return mirror.status === "uploaded"
+    || mirror.status === "existing"
+    || mirror.status === "skipped"
+    || mirror.status === "not-image"
+}
+
+async function removeFailedUpload(config: R2Config, key: string) {
+  const response = await config.client.fetch(`${config.endpoint}/${config.bucketName}/${key}`, { method: "DELETE" })
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`R2 cleanup after Cloudflare Images failure returned ${response.status}`)
+  }
+}
+
+async function mirrorOrRemove(
+  config: StorageConfig,
+  params: Parameters<typeof mirrorRequired>[0],
+) {
+  try {
+    const mirror = await mirrorForStorage(config, params)
+    if (!mirrorIsReady(mirror)) {
+      throw new Error(`Cloudflare Images ingestion returned ${mirror.status}`)
+    }
+    return mirror
+  } catch (error) {
+    if (config.kind === "r2" && params.contentType.startsWith("image/")) {
+      await removeFailedUpload(config, params.key)
+    }
+    throw error
+  }
 }
 
 export async function uploadFile(params: UploadParams) {
@@ -150,7 +181,7 @@ export async function uploadFile(params: UploadParams) {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
-  const mirror = await mirrorForStorage(config, {
+  const mirror = await mirrorOrRemove(config, {
     body,
     key,
     contentType,
@@ -185,7 +216,7 @@ export async function uploadBuffer(params: UploadBufferParams) {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
-  const mirror = await mirrorForStorage(config, {
+  const mirror = await mirrorOrRemove(config, {
     body: new Uint8Array(buffer),
     key,
     contentType,
@@ -201,6 +232,14 @@ export async function uploadBuffer(params: UploadBufferParams) {
 
 export async function deleteObject(key: string) {
   const config = getStorageConfig()
+
+  if (config.kind === "r2") {
+    const mirror = await deleteMirroredR2Image(key)
+    if (mirror.status !== "deleted" && mirror.status !== "missing") {
+      throw new Error(`Cloudflare Images delete returned ${mirror.status}`)
+    }
+  }
+
   const res = config.kind === "proxy"
     ? await proxyFetch(config, key, { method: "DELETE" })
     : await config.client.fetch(`${config.endpoint}/${config.bucketName}/${key}`, { method: "DELETE" })
@@ -209,13 +248,6 @@ export async function deleteObject(key: string) {
     throw new Error(`R2 delete failed: ${res.status} ${await res.text()}`)
   }
 
-  if (config.kind === "r2") {
-    try {
-      await deleteMirroredR2Image(key)
-    } catch (error) {
-      console.error("Cloudflare Images delete failed; cleanup can be retried:", error)
-    }
-  }
 }
 
 export async function downloadBuffer(key: string): Promise<Buffer> {
@@ -250,6 +282,41 @@ export async function getPresignedUploadUrl(key: string, contentType: string, ex
   return signed.url
 }
 
+export function storageKeyFromPublicUrl(value: string): string | null {
+  const config = getStorageConfig()
+  try {
+    const expected = new URL(config.bucketUrl)
+    const actual = new URL(value)
+    if (actual.origin !== expected.origin) return null
+    const prefix = expected.pathname.replace(/\/+$/, "")
+    if (prefix && !actual.pathname.startsWith(`${prefix}/`)) return null
+    return decodeURIComponent(actual.pathname.slice(prefix.length).replace(/^\/+/, "")) || null
+  } catch {
+    return null
+  }
+}
+
+export async function finalizePresignedImage(params: {
+  key: string
+  sourceUrl: string
+}) {
+  const expectedKey = storageKeyFromPublicUrl(params.sourceUrl)
+  if (!expectedKey || expectedKey !== params.key) {
+    throw new Error("Presigned upload source does not match its storage key")
+  }
+
+  try {
+    const mirror = await mirrorR2ImageFromUrl(params)
+    if (mirror.status !== "uploaded" && mirror.status !== "existing") {
+      throw new Error(`Cloudflare Images ingestion returned ${mirror.status}`)
+    }
+    return mirror
+  } catch (error) {
+    await deleteObject(params.key)
+    throw error
+  }
+}
+
 export async function uploadBufferWithOptions(params: {
   buffer: Buffer
   key: string
@@ -275,7 +342,7 @@ export async function uploadBufferWithOptions(params: {
     throw new Error(`R2 upload failed: ${res.status} ${await res.text()}`)
   }
 
-  const mirror = await mirrorForStorage(config, {
+  const mirror = await mirrorOrRemove(config, {
     body: new Uint8Array(buffer),
     key,
     contentType,

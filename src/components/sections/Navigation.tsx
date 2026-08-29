@@ -6,6 +6,10 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollTo, smoothScrollToElement, getScroller } from '@/lib/smoothScroll'
+import { requiredStaticCloudflareImageUrl } from '@/lib/cloudflare-image-delivery'
+
+const LOGO_WEBP = requiredStaticCloudflareImageUrl('/lashpop-images/branding/logo-terracotta.webp')
+const LOGO_PNG = requiredStaticCloudflareImageUrl('/lashpop-images/branding/logo-terracotta.png')
 
 const navItems = [
   { label: 'Services', href: '#services' },
@@ -138,9 +142,9 @@ export function Navigation() {
                 className="flex items-center gap-2"
               >
                 <picture>
-                  <source srcSet="/lashpop-images/branding/logo-terracotta.webp" type="image/webp" />
+                  <source srcSet={LOGO_WEBP} type="image/webp" />
                   <img
-                    src="/lashpop-images/branding/logo-terracotta.png"
+                    src={LOGO_PNG}
                     alt="LashPop Studios"
                     width={120}
                     height={42}

@@ -12,6 +12,7 @@ import { getHomepageServices } from "@/actions/homepage-services"
 import { getHeroContent } from "@/actions/hero-content"
 import { ReviewSchema } from "@/components/seo"
 import { resolveTeamPhotoParity } from "@/lib/team-portrait"
+import { resolvePublicImages } from "@/lib/public-image-delivery.server"
 import LandingPageV2Client from "./LandingPageV2Client"
 import type { CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
 
@@ -54,13 +55,13 @@ async function getHomePageData(): Promise<HomePageData> {
       })),
     }
 
-    return {
+    return resolvePublicImages({
       ...servicesFixture.default,
       ...teamFixture.default,
       ...contentFixture.default,
       ...socialData,
       workWithUsPhotos: [],
-    } as unknown as HomePageData
+    } as unknown as HomePageData)
   }
 
   const [
@@ -97,7 +98,7 @@ async function getHomePageData(): Promise<HomePageData> {
     import('@/actions/work-with-us-carousel').then(({ getEnabledCarouselPhotos }) => getEnabledCarouselPhotos()),
   ])
 
-  return {
+  return resolvePublicImages({
     services,
     teamMembers,
     reviews,
@@ -113,7 +114,7 @@ async function getHomePageData(): Promise<HomePageData> {
     instagramSettings,
     heroContent,
     workWithUsPhotos,
-  }
+  })
 }
 
 // Ensure fresh data on each request (for admin-managed content)

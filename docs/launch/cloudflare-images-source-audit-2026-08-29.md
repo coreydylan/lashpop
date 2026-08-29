@@ -3,17 +3,24 @@
 ## Scope and ownership
 
 Production D1 references plus raster references in `src/` and `workers/` yield
-524 unique candidate sources:
+525 unique candidate sources after the direct-delivery audit added one
+previously untracked CSS-mask logo:
 
 | Source class | Count | Ownership | Delivery contract |
 | --- | ---: | --- | --- |
 | R2 DAM | 408 | First party | Deterministic Cloudflare Images original |
-| Site-public raster | 48 | First party | Deterministic Cloudflare Images original |
-| Rackspace booking-provider | 68 | External | Allow-listed upstream, transformed and labeled separately |
+| Site-public raster | 49 | First party | Direct Cloudflare Images delivery |
+| Rackspace booking-provider | 68 | External source custody | Ingested to Cloudflare Images; no public provider request |
 
-Of 456 first-party candidates, 455 reachable sources have ready, non-draft
-Cloudflare Images originals. All 68 external sources are reachable. No active
+Of 457 first-party candidates, 456 reachable sources have ready, non-draft
+Cloudflare Images originals. All 68 external sources are reachable and their
+transition Cloudflare Images objects are ready. No active
 production database field uses the historical first-party CDN hostname.
+
+The CSS-mask logo at `site:lashpop-images/lp-logo.png` was uploaded under its
+deterministic ID after the scanner was corrected to detect `url(...)` syntax.
+That targeted backfill uploaded exactly one object and did not repeat the 455
+previously completed first-party uploads.
 
 One historical local-primary team-photo row points to a deleted R2 object. It
 is not the effective public portrait: the public portrait resolver selects the
@@ -45,15 +52,14 @@ or specifically exercised intermediate widths include 1152, 1440, 1600, and
 portrait/manual widths, with special attention to 1152, 1440, and 1728 that
 were absent from the retired precomputed-variant list.
 
-The Worker negotiates AVIF, then WebP, then JPEG. Explicit `f=` requests are
-supported for verification. When Cloudflare cannot encode the requested
-format, response metadata records both requested and actual formats; the
-payload and `Content-Type` must agree.
+Direct Cloudflare Images flexible variants negotiate AVIF, WebP, or JPEG from
+the request `Accept` header. The payload and `Content-Type` must agree.
 
 ## Acceptance rule
 
-First-party delivery passes only when it uses the deterministic hosted
-original, contains no legacy-source fallback, returns a valid negotiated image,
-and preserves meaningful visible composition and clarity on representative
-phone and desktop surfaces. Pixel-for-pixel decoded equality is intentionally
-not used. Existing page visual baselines remain authoritative and unchanged.
+Public delivery passes only when it uses a direct Cloudflare Images URL,
+contains no image-Worker, R2, or provider-CDN request, returns a valid negotiated
+image, and preserves meaningful visible composition and clarity on
+representative phone and desktop surfaces. Pixel-for-pixel decoded equality is
+intentionally not used. Existing page visual baselines remain authoritative and
+unchanged.

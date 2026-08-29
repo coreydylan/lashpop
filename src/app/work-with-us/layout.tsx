@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { getPageSEO } from '@/actions/seo'
 import type { CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
 import { WorkWithUsPhotosProvider } from '@/components/work-with-us/WorkWithUsPhotosProvider'
+import { resolvePublicImages } from '@/lib/public-image-delivery.server'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic'
 // here in a server layout. Reads the admin-configured "Work With Us" SEO
 // (/admin/website/seo → Work With Us tab) with fallback to site defaults.
 export async function generateMetadata(): Promise<Metadata> {
-  const { site, page } = await getPageSEO('workWithUs')
+  const { site, page } = resolvePublicImages(await getPageSEO('workWithUs'))
 
   const title = page.title || `Careers at ${site.siteName} | Join Our Team`
   const description = page.metaDescription || site.businessDescription

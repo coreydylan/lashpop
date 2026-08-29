@@ -300,13 +300,6 @@ const PLACEHOLDER_IMAGE = "/placeholder-team.svg"
 function isPlaceholderImage(src: string) {
   return src.endsWith('.svg') || src.includes('placeholder')
 }
-// Vagaro CDN photos are served via Rackspace as multi-MB "/Original/" JPEGs.
-// They now route through the lashpop-img worker (cf-image-loader handles
-// *.rackcdn.com), so they get resized + AVIF like everything else.
-function isVagaroPhoto(src: string | undefined | null) {
-  return !!src && src.includes('ssl.cf2.rackcdn.com')
-}
-
 interface PortfolioImage {
   id: string
   url: string

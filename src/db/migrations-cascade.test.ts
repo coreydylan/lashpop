@@ -132,9 +132,10 @@ test("Evie's Instagram migration updates only the verified team row and records 
   db.exec('PRAGMA foreign_keys = ON');
 
   const files = migrationFiles();
-  const last = files[files.length - 1];
-  assert.equal(last, '0011_update_evie_instagram.sql');
-  for (const file of files.slice(0, -1)) apply(db, file);
+  const migration = '0011_update_evie_instagram.sql';
+  const migrationIndex = files.indexOf(migration);
+  assert.notEqual(migrationIndex, -1, `${migration} must remain in the migration chain`);
+  for (const file of files.slice(0, migrationIndex)) apply(db, file);
 
   const evieId = '50317859-e156-467c-9380-bfbc8b0babd2';
   insertRow(db, 'team_members', {
@@ -149,7 +150,7 @@ test("Evie's Instagram migration updates only the verified team row and records 
     instagram: 'keep-this-handle',
   });
 
-  apply(db, last);
+  apply(db, migration);
 
   const evie = db.prepare(
     'SELECT instagram, instagram_url FROM team_members WHERE id = ?',

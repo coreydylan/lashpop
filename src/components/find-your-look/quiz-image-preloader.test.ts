@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import test from 'node:test'
 import type { LashStyle, QuizPhoto } from './types'
 import {
@@ -7,7 +8,12 @@ import {
   getQuizPhotoObjectPosition,
   getQuizPhotoUrl,
 } from './quiz-image-preloader'
-import { getImageWorkerBase } from '@/lib/cf-image-loader'
+
+function directR2(source: string) {
+  const key = decodeURIComponent(new URL(source).pathname.replace(/^\/+/, ''))
+  const imageId = `lp/${createHash('sha256').update(`r2:${key}`).digest('hex')}`
+  return `https://imagedelivery.net/zXebLwufc8AGAQU5E9oXHw/${imageId}/public`
+}
 
 function photo(style: LashStyle, assetId: string, enabled = true): QuizPhoto {
   return {
@@ -18,7 +24,7 @@ function photo(style: LashStyle, assetId: string, enabled = true): QuizPhoto {
     cropUrl: null,
     isEnabled: enabled,
     sortOrder: 0,
-    filePath: `https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/${assetId}.jpg`,
+    filePath: directR2(`https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/${assetId}.jpg`),
     fileName: `${assetId}.jpg`,
   }
 }
@@ -52,8 +58,9 @@ test('preloads the same optimized responsive variants used by the comparison car
   const [candidate] = getQuizImageLoadPlan(photos).priority
   const srcSet = getQuizImageSrcSet(candidate)
 
-  assert.ok(srcSet.includes(`${getImageWorkerBase()}/uploads/classic-first.jpg?w=384&q=90 384w`))
-  assert.ok(srcSet.includes(`${getImageWorkerBase()}/uploads/classic-first.jpg?w=600&q=90 600w`))
+  assert.ok(srcSet.includes('/w=384,q=90,fit=scale-down,metadata=none 384w'))
+  assert.ok(srcSet.includes('/w=600,q=90,fit=scale-down,metadata=none 600w'))
+  assert.equal(srcSet.includes('workers.dev'), false)
 })
 
 test('legacy square crops fall back to the real source instead of being cropped twice', () => {

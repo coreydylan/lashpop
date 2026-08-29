@@ -5,6 +5,10 @@ import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useDevMode } from '@/contexts/DevModeContext'
 import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
+import { requiredStaticCloudflareImageUrl } from '@/lib/cloudflare-image-delivery'
+
+const LOGO_WEBP = requiredStaticCloudflareImageUrl('/lashpop-images/branding/logo-terracotta.webp')
+const LOGO_PNG = requiredStaticCloudflareImageUrl('/lashpop-images/branding/logo-terracotta.png')
 
 // Section mapping for display names and navigation
 const SECTIONS = [
@@ -284,9 +288,9 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
               aria-label="Scroll to top"
             >
               <picture>
-                <source srcSet="/lashpop-images/branding/logo-terracotta.webp" type="image/webp" />
+                <source srcSet={LOGO_WEBP} type="image/webp" />
                 <img
-                  src="/lashpop-images/branding/logo-terracotta.png"
+                  src={LOGO_PNG}
                   alt="LashPop Studios"
                   width={68}
                   height={24}

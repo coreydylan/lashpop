@@ -6,6 +6,26 @@ Every item marked **Required before launch** must be checked. If an item is not 
 
 This document records decisions and authorization. It does not waive anyone's legal rights, remove accessibility or privacy obligations, or replace advice from qualified legal counsel.
 
+## Technical preflight record — direct Cloudflare Images candidate (unsigned)
+
+This engineering record does not check or replace any client, legal, billing, launch-owner, observation-owner, rollback-owner, or GO LIVE approval below.
+
+| Gate | Evidence as of 2026-08-29 | Status |
+| --- | --- | --- |
+| Candidate | Branch `codex/direct-cloudflare-images-2026-08-29`, based on merged main `05727d0`; exact commit and PR are recorded after the final launch test | In progress |
+| Architecture | Public Next.js paths use `imagedelivery.net` directly. `lashpop-img` is transition/rollback infrastructure only; no app loader, rewrite, or public raster path depends on it | Verified in code and browser network evidence |
+| Inventory | 525 conservative sources: 456 reachable first-party sources with ready Cloudflare Images objects, 68 reachable provider sources with ready transition objects, and one deleted historical R2 row that is not the effective public portrait | Verified |
+| Targeted repair | The corrected CSS-mask scanner found `lp-logo.png`; exactly one deterministic Cloudflare Images object was uploaded and the committed site manifest now contains 49 entries | Verified; no repeated completed upload |
+| Direct data plan | Plan-only result: 456 first-party registry rows; 71 Vagaro row updates (55 services, 16 staff); zero missing provider sources; `publicDnsChanged: false` | Verified; no database write performed |
+| Refresh behavior | Allow-listed source fetch, conditional refresh, content-hash idempotency, adoption of transition images without re-upload, immutable changed-content IDs, retained prior ID, preserved last-ready image on refresh failure, and fail-closed first ingestion | Unit tests pass |
+| Width/format delivery | 612/612 direct requests passed across 17 widths (64–3840) and AVIF/WebP/JPEG negotiation. A new 7,860-request full-source run was stopped at its ten-minute ceiling before a summary; the earlier hosted-source matrix remains 8,190/8,190 | Representative direct gate verified; new full matrix not claimed complete |
+| Browser/network | Production-mode fixture gate passes unchanged hero/services/team/footer baselines and all accessibility/booking/quiz checks. Real production data passes direct-origin, no-broken-image, and no-overflow checks at 1440, 390, and 320 on home and Work With Us; `/services/classic` passes at 390 | Verified locally; exact Vercel candidate still required |
+| Admin/privacy | Public action results replace source URLs with direct delivery URLs; source-only Vagaro fields are nulled at the public boundary. `/admin` redirects to login and unauthenticated DAM API returns 401. New raster storage writes fail closed unless Cloudflare Images ingestion succeeds; deletion covers source and delivery objects | Verified locally |
+| Map | The Field local environment file contains a stale Mapbox token and returns 401; the current `lashpop.vercel.app` production surface loads Mapbox with no Mapbox error. Candidate Vercel check must re-prove this using its managed environment | Local-secret issue documented; not an app-code defect |
+| Deployment and DNS | Direct app/database/Vagaro Worker candidate is not deployed or merged. Existing `lashpop-img` remains available for transition rollback. Public apex and `www` DNS were not changed | Preserved |
+
+Human-only decisions still required: legal/privacy notice details and signatures; billing authorization; owner/client visual, content, booking, quiz, admin, and device acceptance; named launch, observation, and rollback owners; a real signed Vagaro delivery; and final written GO LIVE authorization.
+
 ## 1. Identify the exact version being approved
 
 This prevents a different version from being launched after the review.

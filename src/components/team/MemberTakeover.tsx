@@ -745,9 +745,8 @@ function PortfolioBlock({
 function LightboxPhoto({ photo }: { photo: PortfolioImage }) {
   const [loaded, setLoaded] = useState(false)
 
-  // Route every source class (R2, Vagaro rackcdn, /public) through the
-  // lashpop-img worker instead of only R2 — a raw Vagaro original is
-  // multi-MB and made the loading state linger.
+  // Public data is resolved to Cloudflare Images before it reaches this
+  // client. The custom loader selects a direct responsive variant.
   const src = cfImageLoader({ src: photo.url, width: 1600, quality: 85 })
 
   // Reserve the photo's final box BEFORE it loads. A plain auto-sized <img>

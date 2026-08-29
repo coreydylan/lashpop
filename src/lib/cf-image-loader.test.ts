@@ -1,67 +1,84 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import test from 'node:test'
-import { cfPortraitImageLoader, getImageWorkerBase } from './cf-image-loader'
 
-test('feature preview trims environment whitespace and points images at the hosted worker', async () => {
-  const previousBase = process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE
-  process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE = 'https://lashpop-img-preview.experial.workers.dev/\n'
+import cfImageLoader, { cfPortraitImageLoader } from './cf-image-loader'
 
-  try {
-    const { default: cfImageLoader } = await import('./cf-image-loader')
-    const result = cfImageLoader({
-      src: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/classic.jpg',
-      width: 600,
-    })
-    const url = new URL(result)
+const DIRECT_ORIGIN = 'imagedelivery.net'
 
-    assert.equal(url.hostname, 'lashpop-img-preview.experial.workers.dev')
-    assert.equal(url.searchParams.get('backend'), null)
-    assert.equal(url.searchParams.get('w'), '600')
-    assert.equal(url.searchParams.get('q'), '90')
-  } finally {
-    if (previousBase === undefined) delete process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE
-    else process.env.NEXT_PUBLIC_IMAGE_WORKER_BASE = previousBase
-  }
-})
+function directFor(canonical: string) {
+  const imageId = `lp/${createHash('sha256').update(canonical).digest('hex')}`
+  return `https://imagedelivery.net/zXebLwufc8AGAQU5E9oXHw/${imageId}/public`
+}
 
-test('legacy first-party CDN URLs cannot bypass the hosted Worker', async () => {
-  const { default: cfImageLoader } = await import('./cf-image-loader')
+test('repository rasters use direct Cloudflare Images flexible variants', () => {
   const result = cfImageLoader({
-    src: 'https://cdn.lashpopstudios.com/uploads/classic.jpg',
+    src: '/lashpop-images/studio/hero-facetune.jpg',
     width: 600,
   })
   const url = new URL(result)
 
-  assert.equal(url.hostname, new URL(getImageWorkerBase()).hostname)
-  assert.equal(url.pathname, '/uploads/classic.jpg')
-  assert.equal(url.searchParams.get('w'), '600')
+  assert.equal(url.hostname, DIRECT_ORIGIN)
+  assert.match(url.pathname, /\/lp\/[a-f0-9]{64}\/w=600,q=90,fit=scale-down,metadata=none$/)
 })
 
-test('mobile hero requests an oversampled full frame without baking in a crop', () => {
+test('already-direct delivery URLs preserve their image id and replace only the variant', () => {
+  const result = cfImageLoader({
+    src: 'https://imagedelivery.net/zXebLwufc8AGAQU5E9oXHw/lp/abc/public',
+    width: 1440,
+    quality: 85,
+  })
+  const url = new URL(result)
+
+  assert.equal(url.hostname, DIRECT_ORIGIN)
+  assert.equal(url.pathname, '/zXebLwufc8AGAQU5E9oXHw/lp/abc/w=1440,q=85,fit=scale-down,metadata=none')
+})
+
+test('direct R2 and Vagaro delivery URLs never use the image Worker', () => {
+  for (const source of [
+    directFor('r2:uploads/classic.jpg'),
+    directFor('ext:https://example.ssl.cf2.rackcdn.com/Original/staff.jpg'),
+  ]) {
+    const url = new URL(cfImageLoader({ src: source, width: 600 }))
+    assert.equal(url.hostname, DIRECT_ORIGIN)
+    assert.match(url.pathname, /\/lp\/[a-f0-9]{64}\/w=600,q=90,fit=scale-down,metadata=none$/)
+  }
+})
+
+test('mobile hero requests an oversampled direct full frame without baking in a crop', () => {
   const result = cfPortraitImageLoader({
-    src: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/hero-facetune.jpg',
+    src: '/lashpop-images/studio/hero-facetune.jpg',
     width: 1200,
     quality: 90,
     aspectRatio: 4 / 9,
   })
   const url = new URL(result)
 
-  assert.equal(url.hostname, new URL(getImageWorkerBase()).hostname)
-  assert.equal(url.pathname, '/hero-facetune.jpg')
-  assert.equal(url.searchParams.get('w'), '3840')
-  assert.equal(url.searchParams.get('h'), null)
-  assert.equal(url.searchParams.get('fit'), null)
-  assert.equal(url.searchParams.get('gx'), null)
-  assert.equal(url.searchParams.get('gy'), null)
+  assert.equal(url.hostname, DIRECT_ORIGIN)
+  assert.match(url.pathname, /\/w=3840,q=90,fit=scale-down,metadata=none$/)
+  assert.equal(url.search, '')
 })
 
 test('smaller portrait candidates scale enough for common landscape sources', () => {
   const result = cfPortraitImageLoader({
-    src: 'https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/hero.jpg',
+    src: '/lashpop-images/studio/hero-facetune.jpg',
     width: 256,
     aspectRatio: 4 / 9,
   })
-  const url = new URL(result)
 
-  assert.equal(url.searchParams.get('w'), '1152')
+  assert.match(new URL(result).pathname, /\/w=1152,q=90,fit=scale-down,metadata=none$/)
+})
+
+test('vectors stay local and never require a hosted raster mapping', () => {
+  assert.equal(
+    cfImageLoader({ src: '/lashpop-images/services/thin/lashes-icon.svg', width: 256 }),
+    '/lashpop-images/services/thin/lashes-icon.svg',
+  )
+})
+
+test('an unregistered site raster fails closed instead of falling back to the app origin', () => {
+  assert.throws(
+    () => cfImageLoader({ src: '/lashpop-images/missing-public-raster.png', width: 320 }),
+    /missing from the Cloudflare Images manifest/,
+  )
 })

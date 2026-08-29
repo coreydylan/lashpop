@@ -10,7 +10,8 @@ import { DesignModeGate } from '@/components/dev/DesignModeGate'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { MarketingAnalytics } from '@/components/analytics/MarketingAnalytics'
-import { getImageWorkerBase } from '@/lib/cf-image-loader'
+import { getCloudflareImageDeliveryOrigin } from '@/lib/cloudflare-image-delivery'
+import { resolvePublicImages } from '@/lib/public-image-delivery.server'
 
 // Force dynamic rendering for all pages - root layout fetches SEO settings from database
 export const dynamic = 'force-dynamic'
@@ -38,7 +39,7 @@ export const viewport: Viewport = {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSEOSettings()
+  const settings = resolvePublicImages(await getSEOSettings())
   const { site, pages } = settings
   const homepage = pages.homepage
 
@@ -102,15 +103,15 @@ export default async function RootLayout({
   children: React.ReactNode
 }) {
   // Fetch SEO settings for Schema components
-  const settings = await getSEOSettings()
-  const imageWorkerBase = getImageWorkerBase()
+  const settings = resolvePublicImages(await getSEOSettings())
+  const imageDeliveryOrigin = getCloudflareImageDeliveryOrigin()
 
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <head>
-        {/* The above-the-fold hero is delivered by the Cloudflare image worker. */}
-        <link rel="preconnect" href={imageWorkerBase} crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href={imageWorkerBase} />
+        {/* Public rasters are delivered directly from Cloudflare Images. */}
+        <link rel="preconnect" href={imageDeliveryOrigin} crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href={imageDeliveryOrigin} />
 
         {/* llms.txt discovery for AI assistants */}
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Information" />

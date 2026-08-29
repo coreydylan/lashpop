@@ -3,6 +3,7 @@ import test from "node:test"
 
 import {
   cloudflareImagesInternals,
+  deleteMirroredR2Image,
   mirrorR2Image,
   mirrorR2ImageFromUrl,
 } from "./cloudflare-images"
@@ -37,6 +38,10 @@ test("builds an idempotent hosted image upload without exposing the token", asyn
     })
 
     assert.equal(result.status, "uploaded")
+    assert.equal(
+      result.deliveryUrl,
+      `https://imagedelivery.net/zXebLwufc8AGAQU5E9oXHw/${cloudflareImagesInternals.hostedImageIdForR2Key("uploads/team.jpg")}/public`,
+    )
     assert.equal(requests.length, 2)
     assert.match(requests[0].url, /lp%2F/)
     assert.equal(requests[1].init?.method, "POST")
@@ -51,7 +56,7 @@ test("builds an idempotent hosted image upload without exposing the token", asyn
   }
 })
 
-test("skips oversized images so the legacy R2 copy remains the safe fallback", async () => {
+test("reports oversized images so the storage transaction can fail closed", async () => {
   const previousAccount = process.env.CLOUDFLARE_ACCOUNT_ID
   const previousToken = process.env.CLOUDFLARE_API_TOKEN
   process.env.CLOUDFLARE_ACCOUNT_ID = "account"
@@ -66,6 +71,32 @@ test("skips oversized images so the legacy R2 copy remains the safe fallback", a
     })
     assert.equal(result.status, "oversized")
   } finally {
+    if (previousAccount === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID
+    else process.env.CLOUDFLARE_ACCOUNT_ID = previousAccount
+    if (previousToken === undefined) delete process.env.CLOUDFLARE_API_TOKEN
+    else process.env.CLOUDFLARE_API_TOKEN = previousToken
+  }
+})
+
+test("deletes the matching Cloudflare Images object with the R2 source", async () => {
+  const previousAccount = process.env.CLOUDFLARE_ACCOUNT_ID
+  const previousToken = process.env.CLOUDFLARE_API_TOKEN
+  const previousFetch = globalThis.fetch
+  process.env.CLOUDFLARE_ACCOUNT_ID = "account"
+  process.env.CLOUDFLARE_API_TOKEN = "token"
+  const requests: Array<{ url: string; init?: RequestInit }> = []
+  globalThis.fetch = async (input, init) => {
+    requests.push({ url: String(input), init })
+    return new Response(null, { status: 200 })
+  }
+
+  try {
+    const result = await deleteMirroredR2Image("uploads/team.jpg")
+    assert.equal(result.status, "deleted")
+    assert.equal(requests[0]?.init?.method, "DELETE")
+    assert.match(requests[0]?.url ?? "", /lp%2F/)
+  } finally {
+    globalThis.fetch = previousFetch
     if (previousAccount === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID
     else process.env.CLOUDFLARE_ACCOUNT_ID = previousAccount
     if (previousToken === undefined) delete process.env.CLOUDFLARE_API_TOKEN
