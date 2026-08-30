@@ -66,6 +66,14 @@ export const ADMIN_AREAS: AdminArea[] = [
         description: 'Tasks, health, and recent changes',
         owner: 'System',
       },
+      {
+        id: 'analytics',
+        label: 'Website performance',
+        href: '/admin/analytics',
+        icon: Activity,
+        description: 'Traffic, discovery, and conversion signals',
+        owner: 'System',
+      },
     ],
   },
   {

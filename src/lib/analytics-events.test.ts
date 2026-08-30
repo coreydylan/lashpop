@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 import {
   ANALYTICS_EVENTS,
@@ -41,5 +42,17 @@ describe('public analytics contract', () => {
     assert.equal(isMarketingTrackingEnabled(undefined), false)
     assert.equal(isMarketingTrackingEnabled('false'), false)
     assert.equal(isMarketingTrackingEnabled('TRUE'), true)
+  })
+
+  it('records quiz completion from both live result transitions', () => {
+    const quizSource = readFileSync(
+      new URL('../components/find-your-look/FindYourLookModal.tsx', import.meta.url),
+      'utf8'
+    )
+
+    assert.equal(
+      quizSource.match(/trackPublicEvent\(ANALYTICS_EVENTS\.quizCompleted/g)?.length,
+      2
+    )
   })
 })

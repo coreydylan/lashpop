@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useCallback, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, X, ArrowRight, AlertCircle } from 'lucide-react';
 
@@ -24,6 +24,8 @@ import {
   type QuizResultService,
   type QuizResultServices,
 } from '@/actions/quiz-photos';
+import { ANALYTICS_EVENTS } from '@/lib/analytics-events';
+import { trackPublicEvent } from '@/lib/analytics-client';
 
 const EMPTY_RESULT_SETTINGS: Record<LashStyle, QuizResultForDisplay> | null = null;
 
@@ -127,6 +129,7 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
     const [servicesLoadedFor, setServicesLoadedFor] = useState<LashStyle | null>(null);
     const [photosLoading, setPhotosLoading] = useState(false);
     const [photosError, setPhotosError] = useState<string | null>(null);
+    const trackedResultRef = useRef<LashStyle | null>(null);
 
     // Quiz algorithm hook
     const quiz = useQuizAlgorithm({ photosByStyle });
@@ -229,7 +232,13 @@ export const FindYourLookContent = forwardRef<FindYourLookContentRef, FindYourLo
     // Watch for quiz result
     useEffect(() => {
       if (quiz.result && step === 3) {
+        if (trackedResultRef.current !== quiz.result) {
+          trackPublicEvent(ANALYTICS_EVENTS.quizCompleted, { result: quiz.result });
+          trackedResultRef.current = quiz.result;
+        }
         setStep(4);
+      } else if (!quiz.result) {
+        trackedResultRef.current = null;
       }
     }, [quiz.result, step]);
 
@@ -397,6 +406,7 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
   const [photosLoading, setPhotosLoading] = useState(false);
   const [photosError, setPhotosError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const trackedResultRef = useRef<LashStyle | null>(null);
 
   // Quiz algorithm hook
   const quiz = useQuizAlgorithm({ photosByStyle });
@@ -507,7 +517,13 @@ export function FindYourLookModal({ isOpen, onClose, onBookService }: FindYourLo
   // Watch for quiz result
   useEffect(() => {
     if (quiz.result && step === 3) {
+      if (trackedResultRef.current !== quiz.result) {
+        trackPublicEvent(ANALYTICS_EVENTS.quizCompleted, { result: quiz.result });
+        trackedResultRef.current = quiz.result;
+      }
       setStep(4);
+    } else if (!quiz.result) {
+      trackedResultRef.current = null;
     }
   }, [quiz.result, step]);
 
