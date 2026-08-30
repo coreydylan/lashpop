@@ -6,13 +6,18 @@ import {
   type AnalyticsEventName,
   type AnalyticsProperties,
 } from '@/lib/analytics-events'
+import { INTERACTION_ANALYTICS_PUBLIC_EVENT } from '@/lib/interaction-analytics'
 
 export function trackPublicEvent(
   event: AnalyticsEventName,
   properties: AnalyticsProperties = {}
 ): void {
   try {
-    track(event, safeAnalyticsProperties(properties))
+    const safeProperties = safeAnalyticsProperties(properties)
+    track(event, safeProperties)
+    window.dispatchEvent(new CustomEvent(INTERACTION_ANALYTICS_PUBLIC_EVENT, {
+      detail: { event, properties: safeProperties },
+    }))
   } catch (error) {
     console.warn(
       `[Analytics] Could not record ${event}`,

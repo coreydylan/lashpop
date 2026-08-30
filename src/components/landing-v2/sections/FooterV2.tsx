@@ -290,7 +290,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
             <p className="caption text-charcoal mb-4">
               Subscribe for exclusive offers and beauty tips
             </p>
-            <form onSubmit={handleSubscribe} className="space-y-3">
+            <form onSubmit={handleSubscribe} className="space-y-3" data-session-replay-block>
               <label htmlFor="footer-newsletter-email" className="sr-only">Email Address</label>
               <input
                 id="footer-newsletter-email"
