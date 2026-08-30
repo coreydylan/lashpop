@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
 
           <h3>B. Information collected automatically</h3>
           <ul>
-            <li>Device and usage data (such as IP address, browser type, pages viewed, time spent, referring URLs, clicks, taps, and scrolling) via cookies and similar technologies used by websites.</li>
+            <li>Device and usage statistics (such as browser and viewport category, pages viewed, time-range buckets, coarse tap locations, swipe direction, scroll depth, and referring URLs) through privacy-minimized analytics tools.</li>
             <li>Approximate location derived from your IP address.</li>
           </ul>
 
@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
           <p>We share information with vendors that help us operate, such as:</p>
           <ul>
             <li>Scheduling/booking providers (e.g., Vagaro)</li>
-            <li>Website hosting, product analytics, session replay, email marketing tools, and payment processors (as applicable)</li>
+            <li>Website hosting, aggregate product analytics, email marketing tools, and payment processors (as applicable)</li>
           </ul>
           <p>These providers are permitted to use personal information only to perform services for us.</p>
 
@@ -108,15 +108,12 @@ export default function PrivacyPolicyPage() {
           </ul>
           <p>You can control cookies through your browser settings. Disabling cookies may affect site functionality.</p>
 
-          <h3>Optional experience analytics</h3>
+          <h3>Aggregate interaction statistics</h3>
           <p>
-            If this feature is enabled and you give permission, we may use PostHog session replay to reconstruct interactions on selected public pages, such as taps, clicks, scrolling, navigation, viewport details, and changes to the page. A replay is a reconstruction of website activity, not a video of your device or anything outside our website.
+            We may use PostHog in cookieless mode to collect aggregate statistics about how public pages are used, including coarse tap regions, swipe direction and distance buckets, scroll-depth milestones, viewport category, and whether important website actions were completed. This helps us identify confusing interactions and improve the site.
           </p>
           <p>
-            We configure replay to mask form inputs and exclude sensitive areas, including account, administration, application, confirmation, and third-party booking screens. We do not intentionally use replay to collect what you type, payment information, or activity inside the Vagaro booking form.
-          </p>
-          <p>
-            You can accept or decline optional experience analytics when asked and change that selection later through the &ldquo;Privacy Choices&rdquo; link in the website footer. If your browser sends a Global Privacy Control signal, optional session replay remains off.
+            This configuration does not create session recordings or screenshots, capture page text or form values, record activity inside the Vagaro booking form, store analytics cookies or local-storage identifiers, or create PostHog person profiles. Query strings and one-time tokens are not included in the events we intentionally collect.
           </p>
 
           <h2>7) Email and Marketing Preferences</h2>

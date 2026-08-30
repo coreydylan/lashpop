@@ -280,7 +280,6 @@ export function BookingView({ service }: BookingViewProps) {
         {/* Vagaro Widget Container */}
         <div
           ref={widgetContainerRef}
-          data-session-replay-block
           className={`booking-view-widget w-full h-full transition-opacity duration-300 ${
             isVisible ? 'opacity-100' : 'opacity-0'
           }`}

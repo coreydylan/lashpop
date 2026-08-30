@@ -15,7 +15,7 @@ function freePort() {
       const port = typeof address === 'object' && address ? address.port : null
       server.close((error) => {
         if (error) reject(error)
-        else if (!port) reject(new Error('Could not reserve a replay-gate port'))
+        else if (!port) reject(new Error('Could not reserve an interaction-analytics test port'))
         else resolvePort(port)
       })
     })
@@ -24,11 +24,7 @@ function freePort() {
 
 function run(command, args, env) {
   return new Promise((resolveRun, reject) => {
-    const child = spawn(command, args, {
-      cwd: root,
-      env,
-      stdio: 'inherit',
-    })
+    const child = spawn(command, args, { cwd: root, env, stdio: 'inherit' })
     child.once('error', reject)
     child.once('exit', (code, signal) => {
       if (code === 0) resolveRun()
@@ -41,7 +37,7 @@ async function waitForServer(url, child) {
   const deadline = Date.now() + 120_000
   while (Date.now() < deadline) {
     if (child.exitCode !== null) {
-      throw new Error(`Next server exited before replay verification (${child.exitCode})`)
+      throw new Error(`Next server exited before analytics verification (${child.exitCode})`)
     }
     try {
       const response = await fetch(url, { redirect: 'manual' })
@@ -51,7 +47,7 @@ async function waitForServer(url, child) {
     }
     await new Promise((resolveWait) => setTimeout(resolveWait, 250))
   }
-  throw new Error(`Replay verification server did not start within 120 seconds: ${url}`)
+  throw new Error(`Analytics verification server did not start within 120 seconds: ${url}`)
 }
 
 async function stopServer(child) {
@@ -71,8 +67,8 @@ async function main() {
     ...process.env,
     PLAYWRIGHT_BASE_URL: baseUrl,
     PLAYWRIGHT_FIXTURES: '1',
-    SESSION_REPLAY_ENABLED: 'true',
-    POSTHOG_PROJECT_TOKEN: 'phc_fixture_replay_token_12345',
+    INTERACTION_ANALYTICS_ENABLED: 'true',
+    POSTHOG_PROJECT_TOKEN: 'phc_fixture_aggregate_token_12345',
     POSTHOG_HOST: 'https://us.i.posthog.com',
   }
   const server = spawn(nextBin, ['start', '-H', '127.0.0.1', '-p', String(port)], {
@@ -83,7 +79,7 @@ async function main() {
 
   try {
     await waitForServer(baseUrl, server)
-    await run(playwrightBin, ['test', '--project=privacy-analytics'], env)
+    await run(playwrightBin, ['test', '--project=interaction-analytics'], env)
   } finally {
     await stopServer(server)
   }

@@ -6,7 +6,7 @@ import {
   type AnalyticsEventName,
   type AnalyticsProperties,
 } from '@/lib/analytics-events'
-import { SESSION_REPLAY_PUBLIC_EVENT } from '@/lib/session-replay'
+import { INTERACTION_ANALYTICS_PUBLIC_EVENT } from '@/lib/interaction-analytics'
 
 export function trackPublicEvent(
   event: AnalyticsEventName,
@@ -15,11 +15,7 @@ export function trackPublicEvent(
   try {
     const safeProperties = safeAnalyticsProperties(properties)
     track(event, safeProperties)
-
-    // The replay integration listens only after the visitor has opted in.
-    // Dispatching a local browser event keeps PostHog out of the critical
-    // path and preserves this module's existing no-PII event contract.
-    window.dispatchEvent(new CustomEvent(SESSION_REPLAY_PUBLIC_EVENT, {
+    window.dispatchEvent(new CustomEvent(INTERACTION_ANALYTICS_PUBLIC_EVENT, {
       detail: { event, properties: safeProperties },
     }))
   } catch (error) {
