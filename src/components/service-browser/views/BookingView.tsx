@@ -235,6 +235,7 @@ export function BookingView({ service }: BookingViewProps) {
 
       {/* Widget Container - full height with proper touch handling */}
       <div
+        data-booking-visual-boundary
         className="relative flex-1 min-h-0"
         style={{
           // Ensure this container fills the space and handles overflow

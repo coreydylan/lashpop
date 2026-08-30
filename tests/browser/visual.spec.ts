@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
-import type { Locator } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { preparePublicHome } from './helpers'
+import { HOME_VISUAL_SURFACES } from './visual-coverage'
 
 const contract = JSON.parse(
   readFileSync(resolve(process.cwd(), 'docs/design/brand-contract.json'), 'utf8')
@@ -21,6 +22,50 @@ async function decodeImages(images: Locator) {
       }
     }))
   })
+}
+
+async function assertVisualIntegrity(page: Page, target: Locator, isolateMobileHeader: boolean) {
+  const pageGeometry = await page.evaluate(() => ({
+    viewportWidth: window.innerWidth,
+    documentWidth: document.documentElement.scrollWidth,
+  }))
+  expect(pageGeometry.documentWidth).toBeLessThanOrEqual(pageGeometry.viewportWidth + 1)
+
+  const brokenImages = await target.locator('img').evaluateAll((images) =>
+    images
+      .filter((image) => (image as HTMLImageElement).complete && (image as HTMLImageElement).naturalWidth === 0)
+      .map((image) => (image as HTMLImageElement).currentSrc || (image as HTMLImageElement).src),
+  )
+  expect(brokenImages).toEqual([])
+
+  const header = page.locator('[data-mobile-site-header]:visible')
+  if (!isolateMobileHeader || await header.count() === 0) return
+
+  await expect(header).toHaveCSS('background-color', 'rgb(250, 246, 242)')
+  const geometry = await header.evaluate((element) => {
+    const headerRect = element.getBoundingClientRect()
+    const controls = Array.from(element.querySelectorAll('button'))
+      .filter((button) => button.getClientRects().length > 0)
+      .map((button) => button.getBoundingClientRect())
+    return {
+      header: { top: headerRect.top, right: headerRect.right, bottom: headerRect.bottom, left: headerRect.left },
+      controls: controls.map((rect) => ({
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left,
+      })),
+    }
+  })
+  for (const control of geometry.controls) {
+    expect(control.left).toBeGreaterThanOrEqual(geometry.header.left)
+    expect(control.right).toBeLessThanOrEqual(geometry.header.right)
+    expect(control.top).toBeGreaterThanOrEqual(geometry.header.top)
+    expect(control.bottom).toBeLessThanOrEqual(geometry.header.bottom)
+  }
+  for (let index = 1; index < geometry.controls.length; index += 1) {
+    expect(geometry.controls[index - 1].right).toBeLessThanOrEqual(geometry.controls[index].left)
+  }
 }
 
 test.beforeEach(async ({ page }) => {
@@ -63,21 +108,20 @@ test('runtime styles resolve to the canonical contract', async ({ page }, testIn
   expect(actual.loadedFontResourceCount).toBe(2)
 })
 
-for (const section of [
-  { name: 'hero', selector: 'section[data-section-id="hero"]:visible' },
-  { name: 'services', selector: 'section[data-section-id="services"]' },
-  { name: 'team', selector: 'section[data-section-id="team"]' },
-  { name: 'footer', selector: 'footer[data-section-id="footer"]' },
-]) {
-  test(`${section.name} matches the approved launch baseline`, async ({ page }) => {
+for (const section of HOME_VISUAL_SURFACES) {
+  test(`${section.id} matches the approved launch baseline`, async ({ page }) => {
     const target = page.locator(section.selector)
     await target.scrollIntoViewIfNeeded()
-    const images = section.name === 'hero'
+    const images = section.id === 'hero'
       ? page.locator('img[alt="LashPop Studio Interior"]:visible')
       : target.locator('img')
     await decodeImages(images)
     await page.waitForTimeout(300)
-    await expect(target).toHaveScreenshot(`${section.name}.png`)
+    await assertVisualIntegrity(page, target, section.id !== 'hero')
+    const mask = 'maskSelector' in section
+      ? [target.locator(section.maskSelector)]
+      : undefined
+    await expect(target).toHaveScreenshot(`${section.id}.png`, { mask })
   })
 }
 

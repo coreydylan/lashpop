@@ -79,7 +79,12 @@ async function main() {
 
   try {
     await waitForServer(baseUrl, server)
-    await run(playwrightBin, ['test', '--project=visual-desktop', '--project=visual-mobile'], env)
+    await run(playwrightBin, [
+      'test',
+      '--project=visual-desktop',
+      '--project=visual-mobile',
+      '--project=visual-narrow',
+    ], env)
     await run(playwrightBin, ['test', '--project=accessibility'], env)
   } finally {
     await stopServer(server)

@@ -48,6 +48,17 @@ export async function getServices() {
 }
 
 export async function getServiceBySlug(slug: string) {
+  if (process.env.PLAYWRIGHT_FIXTURES === "1") {
+    const fixture = (await import("@/test-fixtures/homepage-services.json")).default
+    const service = fixture.services.find((candidate) => candidate.slug === slug)
+    return service ? resolvePublicImages({
+      ...service,
+      categoryId: null,
+      subcategoryId: null,
+      vagaroServiceId: null,
+    }) : null
+  }
+
   const db = getDb()
 
   const result = await db
@@ -131,6 +142,11 @@ export async function getServicesByCategory(categorySlug: string) {
 }
 
 export async function getAllServices() {
+  if (process.env.PLAYWRIGHT_FIXTURES === "1") {
+    const fixture = (await import("@/test-fixtures/homepage-services.json")).default
+    return resolvePublicImages(fixture.services)
+  }
+
   const db = getDb()
 
   // Create aliases for assets table to join twice
@@ -826,6 +842,11 @@ export async function getVagaroSyncRunsAdmin(limit = 10) {
 
 // Get service categories for the landing page (public, with taglines and descriptions)
 export async function getServiceCategoriesForLanding() {
+  if (process.env.PLAYWRIGHT_FIXTURES === "1") {
+    const fixture = (await import("@/test-fixtures/homepage-services.json")).default
+    return fixture.serviceCategories
+  }
+
   const db = getDb()
 
   const categories = await db

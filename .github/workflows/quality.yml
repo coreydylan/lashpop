@@ -52,6 +52,6 @@ jobs:
           path: |
             test-results/
             playwright-report/
-            tests/browser/visual.spec.ts-snapshots/*-linux.png
+            tests/browser/*-snapshots/*-linux.png
           if-no-files-found: ignore
           retention-days: 7
