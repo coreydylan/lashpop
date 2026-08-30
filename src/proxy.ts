@@ -4,6 +4,16 @@ import { features } from "@/config/features"
 
 type AdminAccess = "owner" | "publisher" | "viewer" | "forbidden" | "unauthenticated" | "unavailable"
 
+const PRIVATE_API_HEADERS = {
+  "Cache-Control": "private, no-store, max-age=0",
+  Pragma: "no-cache",
+  "X-Content-Type-Options": "nosniff",
+}
+
+function privateApiError(error: string, status: number) {
+  return NextResponse.json({ error }, { status, headers: PRIVATE_API_HEADERS })
+}
+
 async function getAdminAccess(sessionToken: string): Promise<AdminAccess> {
   const databaseUrl = process.env.CLOUDFLARE_DB_URL
   const databaseToken = process.env.CLOUDFLARE_DB_TOKEN
@@ -119,24 +129,24 @@ export default async function proxy(req: NextRequest, ev: NextFetchEvent) {
   if (isProtectedApi) {
     const sessionToken = req.cookies.get("auth_token")?.value
     if (!sessionToken) {
-      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+      return privateApiError("Unauthenticated", 401)
     }
 
     const access = await getAdminAccess(sessionToken)
     if (access === "unauthenticated") {
-      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+      return privateApiError("Unauthenticated", 401)
     }
     if (access === "forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+      return privateApiError("Forbidden", 403)
     }
     if (access === "unavailable") {
-      return NextResponse.json({ error: "Authentication service unavailable" }, { status: 503 })
+      return privateApiError("Authentication service unavailable", 503)
     }
     if (access === "viewer" && req.method !== "GET" && req.method !== "HEAD") {
-      return NextResponse.json({ error: "Viewer access is read-only" }, { status: 403 })
+      return privateApiError("Viewer access is read-only", 403)
     }
     if (pathname === "/api/admin/dam-users" && req.method !== "GET" && access !== "owner") {
-      return NextResponse.json({ error: "Only owners can manage admin access" }, { status: 403 })
+      return privateApiError("Only owners can manage admin access", 403)
     }
   }
 

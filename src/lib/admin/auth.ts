@@ -26,6 +26,11 @@ export function isAdminRole(value: unknown): value is AdminRole {
 }
 
 const LOGIN_REDIRECT = '/admin/login'
+const PRIVATE_API_HEADERS = {
+  'Cache-Control': 'private, no-store, max-age=0',
+  Pragma: 'no-cache',
+  'X-Content-Type-Options': 'nosniff',
+}
 
 async function readSession(): Promise<AdminSession | null> {
   const cookieStore = await cookies()
@@ -114,13 +119,17 @@ export async function requireAdminRole(...roles: AdminRole[]): Promise<AdminSess
 export async function requireAdminApi(roles?: AdminRole[]): Promise<AdminSession | NextResponse> {
   const sess = await readSession()
   if (!sess) {
-    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
+    return adminApiError('Unauthenticated', 401)
   }
   if (!sess.isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return adminApiError('Forbidden', 403)
   }
   if (roles && (!sess.role || !roles.includes(sess.role))) {
-    return NextResponse.json({ error: 'This role cannot perform that action' }, { status: 403 })
+    return adminApiError('This role cannot perform that action', 403)
   }
   return sess
+}
+
+function adminApiError(error: string, status: number) {
+  return NextResponse.json({ error }, { status, headers: PRIVATE_API_HEADERS })
 }

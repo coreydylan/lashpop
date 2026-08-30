@@ -16,7 +16,7 @@
     "test:visual": "playwright test --project=visual-desktop --project=visual-mobile",
     "test:a11y": "playwright test --project=accessibility",
     "test:browser-gates": "node scripts/run-browser-gates.mjs",
-    "test:analytics": "tsx --test src/lib/analytics-events.test.ts",
+    "test:analytics": "NODE_OPTIONS='--conditions=react-server' tsx --test src/lib/analytics-events.test.ts src/lib/admin-analytics.test.ts src/lib/admin-analytics-boundary.test.ts",
     "test:launch": "npm run check:admin-capabilities && npm run check:owner-guide && npm run check:design && npm run audit && npm run lint && npm run types && npm run test:analytics && npm run test:vagaro && npm run test:quiz && npm run test:images && npm run test:storage && npm run test:fixtures && npm run test:staff && PLAYWRIGHT_FIXTURES=1 NEXT_PUBLIC_MAPBOX_TOKEN=pk.ci-fixture CLOUDFLARE_DB_URL=http://127.0.0.1:65534 CLOUDFLARE_DB_TOKEN=fixture npm run build && PLAYWRIGHT_FIXTURES=1 NEXT_PUBLIC_MAPBOX_TOKEN=pk.ci-fixture CLOUDFLARE_DB_URL=http://127.0.0.1:65534 CLOUDFLARE_DB_TOKEN=fixture npm run test:browser-gates",
     "types": "tsc --noEmit",
     "test:vagaro-widget": "tsx --test src/lib/vagaro-widget.test.ts",

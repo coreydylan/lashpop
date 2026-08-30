@@ -80,6 +80,34 @@ Start here to see new enquiries, recent changes and whether the Vagaro update is
 
 ![The Today page showing health, inbox totals and recent changes.](../../public/admin-guide/screenshots/02-today-overview.png)
 
+<!-- capability:website-performance -->
+### Read website performance
+
+See how people find the site, what they view and which important actions are recorded.
+
+**Open:** Today → Website performance
+
+**Questions this guide answers**
+
+- How do I see which website traffic and booking signals need attention?
+
+> **Before you continue:** Booking completion is a website signal. Use Vagaro when you need the final appointment record.
+
+#### Steps
+
+1. **Open Website performance.** Select Today, then Website performance.
+2. **Choose a time period.** Use 7, 30 or 90 days. Every comparison uses the same number of earlier days.
+3. **Start with Overview.** Read the traffic and booking cards, then check the plain-language operator note.
+4. **Open the focused views.** Use Discovery, Actions and Pages to understand where people came from, what they did and what they viewed.
+5. **Confirm important activity.** Use Vagaro for final appointments and the Admin Inbox for saved forms. Website totals are directional signals.
+
+#### Check your work
+
+- The selected period matches the question you are asking.
+- You know which source, action or page deserves attention next.
+
+![The Website performance page with traffic, discovery, action and page views.](../../public/admin-guide/screenshots/02a-website-performance.png)
+
 <!-- capability:owner-guide -->
 ### Find help in LashPop Admin
 

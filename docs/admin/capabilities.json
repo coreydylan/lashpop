@@ -1,7 +1,7 @@
 {
   "$schema": "./capabilities.schema.json",
-  "version": 2,
-  "updated": "2026-08-28",
+  "version": 3,
+  "updated": "2026-08-29",
   "title": "LashPop admin owner capability contract",
   "purpose": "The release-critical list of plain-English owner jobs, including the exact outside-system or technical handoff when a safe result cannot be completed inside the admin panel alone.",
   "outsideAdmin": [
@@ -29,6 +29,17 @@
       "questions": ["Where do I see what needs attention today?"],
       "verificationMode": "safe-live",
       "evidence": [{ "file": "src/app/admin/(panel)/overview/page.tsx", "contains": ["Subscribers", "Sync"] }]
+    },
+    {
+      "id": "website-performance",
+      "area": "Today",
+      "route": "/admin/analytics",
+      "questions": ["How do I see which website traffic and booking signals need attention?"],
+      "verificationMode": "safe-live",
+      "evidence": [
+        { "file": "src/app/admin/(panel)/analytics/page.tsx", "contains": ["Website performance", "AnalyticsBoard"] },
+        { "file": "src/app/api/admin/analytics/route.ts", "contains": ["requireAdminApi", "getAdminAnalytics"] }
+      ]
     },
     {
       "id": "website-overview",

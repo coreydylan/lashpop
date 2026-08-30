@@ -38,6 +38,7 @@ const routeExpectations = new Map(
 )
 
 const readApis = [
+  '/api/admin/analytics?range=30d',
   '/api/admin/dam-users',
   '/api/admin/history',
   '/api/admin/website/faqs',
