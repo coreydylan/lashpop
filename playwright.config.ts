@@ -31,19 +31,35 @@ export default defineConfig({
   webServer: usesExternalServer ? undefined : {
     command: 'npm run start',
     url: baseURL,
+    env: {
+      ...process.env,
+      PLAYWRIGHT_FIXTURES: process.env.PLAYWRIGHT_FIXTURES ?? '1',
+      NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? 'pk.ci-fixture',
+      CLOUDFLARE_DB_URL: process.env.CLOUDFLARE_DB_URL ?? 'http://127.0.0.1:65534',
+      CLOUDFLARE_DB_TOKEN: process.env.CLOUDFLARE_DB_TOKEN ?? 'fixture',
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
   projects: [
     {
       name: 'visual-desktop',
-      testMatch: /visual\.spec\.ts/,
+      testMatch: /visual(?:-matrix)?\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
     },
     {
       name: 'visual-mobile',
-      testMatch: /visual\.spec\.ts/,
+      testMatch: /visual(?:-matrix)?\.spec\.ts/,
       use: { ...devices['iPhone 13'], browserName: 'chromium' },
+    },
+    {
+      name: 'visual-narrow',
+      testMatch: /visual(?:-matrix)?\.spec\.ts/,
+      use: {
+        ...devices['iPhone 13'],
+        browserName: 'chromium',
+        viewport: { width: 320, height: 720 },
+      },
     },
     {
       name: 'accessibility',
