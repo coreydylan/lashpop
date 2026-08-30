@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useRef, useCallback, type ComponentProps } from 'react'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { DevModeProvider } from '@/contexts/DevModeContext'
 import { Navigation } from '@/components/sections/Navigation'
 import { MobileHeader } from '@/components/landing-v2/MobileHeader'
@@ -514,6 +514,7 @@ const sliderStyles = `
 `
 
 export default function WorkWithUsPage() {
+  const prefersReducedMotion = useReducedMotion()
   const [content, setContent] = useState<WorkWithUsContent>(DEFAULT_WORK_WITH_US_CONTENT)
   const [activeSection, setActiveSection] = useState<CareerPath | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -1341,17 +1342,19 @@ export default function WorkWithUsPage() {
         </div>
 
         {/* Core Values Grid */}
-        <div className="container max-w-6xl px-5 md:px-8 mb-14 md:mb-20">
-          <motion.div
-            className="text-center mb-8 md:mb-10"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+        <motion.div
+          data-core-values-reveal
+          className="container max-w-6xl px-5 md:px-8 mb-14 md:mb-20"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.16 }}
+          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.5, ease: smoothEase }}
+        >
+          <div className="text-center mb-8 md:mb-10">
             <h2 className="font-display text-xl md:text-2xl font-medium" style={{ color: '#3d3632' }}>
               Our Core Values
             </h2>
-          </motion.div>
+          </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {[
@@ -1400,14 +1403,11 @@ export default function WorkWithUsPage() {
                 desc: 'Embrace the balance between hustle and relaxation.',
                 icon: Clock
               }
-            ].map((value, i) => (
-              <motion.div
+            ].map((value) => (
+              <div
                 key={value.title}
-                className="group p-4 md:p-5 rounded-2xl bg-white/60 hover:bg-white transition-all duration-300 hover:shadow-lg"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.03 }}
+                data-core-value-card
+                className="group p-4 md:p-5 rounded-2xl bg-white/60 hover:bg-white transition-[background-color,box-shadow] duration-300 hover:shadow-lg"
               >
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-dusty-rose/15 flex items-center justify-center flex-shrink-0 group-hover:bg-dusty-rose/25 transition-colors">
@@ -1422,10 +1422,10 @@ export default function WorkWithUsPage() {
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* The Experience Promise */}
         <div className="container max-w-4xl px-5 md:px-8">

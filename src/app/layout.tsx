@@ -18,6 +18,8 @@ import { resolvePublicImages } from '@/lib/public-image-delivery.server'
 // Force dynamic rendering for all pages - root layout fetches SEO settings from database
 export const dynamic = 'force-dynamic'
 
+const INITIAL_SHELL_COLOR = '#faf6f2'
+
 const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
@@ -35,7 +37,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover', // iOS safe area support
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#faf6f2' }, // ivory color
+    { media: '(prefers-color-scheme: light)', color: INITIAL_SHELL_COLOR }, // ivory color
     { media: '(prefers-color-scheme: dark)', color: '#1C1917' }, // stone-900
   ],
 }
@@ -114,7 +116,11 @@ export default async function RootLayout({
   })
 
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${playfair.variable}`}
+      style={{ backgroundColor: INITIAL_SHELL_COLOR }}
+    >
       <head>
         {/* Public rasters are delivered directly from Cloudflare Images. */}
         <link rel="preconnect" href={imageDeliveryOrigin} crossOrigin="anonymous" />
@@ -132,7 +138,10 @@ export default async function RootLayout({
         <FAQSchema />
         <ServicesSchema siteSettings={settings.site} />
       </head>
-      <body className={`${inter.className} antialiased bg-ivory text-gray-800`}>
+      <body
+        className={`${inter.className} antialiased bg-ivory text-gray-800`}
+        style={{ backgroundColor: INITIAL_SHELL_COLOR }}
+      >
         <AuthProvider>
           <UserKnowledgeProvider>
             <FindYourLookProvider>

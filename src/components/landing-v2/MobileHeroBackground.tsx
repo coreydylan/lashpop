@@ -162,6 +162,7 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
               preset={heroConfig.preset}
               className="w-full h-full"
               portraitAspectRatio={4 / 9}
+              preloadMedia="(max-width: 767px)"
             />
           ) : (
             <>
@@ -175,6 +176,7 @@ export function MobileHeroBackground({ heroConfig }: MobileHeroBackgroundProps) 
                 sizes="80vw"
                 quality={90}
                 portraitAspectRatio={4 / 9}
+                preloadMedia="(max-width: 767px)"
               />
             </>
           )}

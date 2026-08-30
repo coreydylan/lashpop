@@ -22,6 +22,7 @@ interface HeroArchSlideshowProps {
   containerStyle?: React.CSSProperties
   /** Optional server-side crop used by the tall mobile arch. */
   portraitAspectRatio?: number
+  preloadMedia?: string
 }
 
 /**
@@ -33,6 +34,7 @@ export function HeroArchSlideshow({
   className = '',
   containerStyle,
   portraitAspectRatio,
+  preloadMedia,
 }: HeroArchSlideshowProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const currentImageRef = useRef<HTMLDivElement>(null)
@@ -316,6 +318,7 @@ export function HeroArchSlideshow({
           sizes="80vw"
           quality={90}
           portraitAspectRatio={portraitAspectRatio}
+          preloadMedia={preloadMedia}
         />
       </div>
     )
@@ -367,6 +370,7 @@ export function HeroArchSlideshow({
             sizes="80vw"
             quality={90}
             portraitAspectRatio={portraitAspectRatio}
+            preloadMedia={preloadMedia}
           />
         )}
       </div>
