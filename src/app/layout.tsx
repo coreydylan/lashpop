@@ -10,8 +10,10 @@ import { DesignModeGate } from '@/components/dev/DesignModeGate'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { MarketingAnalytics } from '@/components/analytics/MarketingAnalytics'
+import { PrivacyAnalytics } from '@/components/analytics/PrivacyAnalytics'
 import { getCloudflareImageDeliveryOrigin } from '@/lib/cloudflare-image-delivery'
 import { resolvePublicImages } from '@/lib/public-image-delivery.server'
+import { resolveSessionReplayConfig } from '@/lib/session-replay'
 
 // Force dynamic rendering for all pages - root layout fetches SEO settings from database
 export const dynamic = 'force-dynamic'
@@ -105,9 +107,18 @@ export default async function RootLayout({
   // Fetch SEO settings for Schema components
   const settings = resolvePublicImages(await getSEOSettings())
   const imageDeliveryOrigin = getCloudflareImageDeliveryOrigin()
+  const sessionReplayConfig = resolveSessionReplayConfig({
+    enabled: process.env.SESSION_REPLAY_ENABLED,
+    projectToken: process.env.POSTHOG_PROJECT_TOKEN,
+    apiHost: process.env.POSTHOG_HOST,
+  })
 
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${playfair.variable}`}
+      data-session-replay-enabled={sessionReplayConfig.enabled ? 'true' : undefined}
+    >
       <head>
         {/* Public rasters are delivered directly from Cloudflare Images. */}
         <link rel="preconnect" href={imageDeliveryOrigin} crossOrigin="anonymous" />
@@ -137,6 +148,7 @@ export default async function RootLayout({
         <Analytics />
         <SpeedInsights />
         <MarketingAnalytics />
+        <PrivacyAnalytics config={sessionReplayConfig} />
       </body>
     </html>
   )

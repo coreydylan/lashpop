@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-3xl md:text-4xl font-display font-semibold text-charcoal mb-2">
           Privacy Policy
         </h1>
-        <p className="text-sm text-charcoal/60 mb-10">Effective Date: February 7, 2026</p>
+        <p className="text-sm text-charcoal/60 mb-10">Effective Date: August 29, 2026</p>
 
         <div className="prose prose-sm max-w-none text-charcoal/90 space-y-6 [&_h2]:text-xl [&_h2]:font-display [&_h2]:font-medium [&_h2]:text-charcoal [&_h2]:mt-10 [&_h2]:mb-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-charcoal [&_h3]:mt-6 [&_h3]:mb-2 [&_p]:leading-relaxed [&_ul]:space-y-1 [&_li]:leading-relaxed">
           <p>
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
 
           <h3>B. Information collected automatically</h3>
           <ul>
-            <li>Device and usage data (such as IP address, browser type, pages viewed, time spent, referring URLs) via cookies and similar technologies used by websites.</li>
+            <li>Device and usage data (such as IP address, browser type, pages viewed, time spent, referring URLs, clicks, taps, and scrolling) via cookies and similar technologies used by websites.</li>
             <li>Approximate location derived from your IP address.</li>
           </ul>
 
@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
           <p>We share information with vendors that help us operate, such as:</p>
           <ul>
             <li>Scheduling/booking providers (e.g., Vagaro)</li>
-            <li>Website hosting, email marketing tools, and payment processors (as applicable)</li>
+            <li>Website hosting, product analytics, session replay, email marketing tools, and payment processors (as applicable)</li>
           </ul>
           <p>These providers are permitted to use personal information only to perform services for us.</p>
 
@@ -107,6 +107,17 @@ export default function PrivacyPolicyPage() {
             <li>Analyze traffic and improve performance</li>
           </ul>
           <p>You can control cookies through your browser settings. Disabling cookies may affect site functionality.</p>
+
+          <h3>Optional experience analytics</h3>
+          <p>
+            If this feature is enabled and you give permission, we may use PostHog session replay to reconstruct interactions on selected public pages, such as taps, clicks, scrolling, navigation, viewport details, and changes to the page. A replay is a reconstruction of website activity, not a video of your device or anything outside our website.
+          </p>
+          <p>
+            We configure replay to mask form inputs and exclude sensitive areas, including account, administration, application, confirmation, and third-party booking screens. We do not intentionally use replay to collect what you type, payment information, or activity inside the Vagaro booking form.
+          </p>
+          <p>
+            You can accept or decline optional experience analytics when asked and change that selection later through the &ldquo;Privacy Choices&rdquo; link in the website footer. If your browser sends a Global Privacy Control signal, optional session replay remains off.
+          </p>
 
           <h2>7) Email and Marketing Preferences</h2>
           <p>

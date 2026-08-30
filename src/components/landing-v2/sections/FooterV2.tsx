@@ -9,6 +9,7 @@ import { useServiceBrowserOptional } from '@/components/service-browser'
 import { DEFAULT_STUDIO_SETTINGS, type StudioSettings } from '@/types/studio'
 import { ANALYTICS_EVENTS } from '@/lib/analytics-events'
 import { trackPublicEvent } from '@/lib/analytics-client'
+import { PrivacyChoicesButton } from '@/components/analytics/PrivacyChoicesButton'
 
 // Footer service links — label + the deeplink params used to open the
 // service browser modal (categorySlug + subcategorySlug). These mirror
@@ -290,7 +291,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
             <p className="caption text-charcoal mb-4">
               Subscribe for exclusive offers and beauty tips
             </p>
-            <form onSubmit={handleSubscribe} className="space-y-3">
+            <form onSubmit={handleSubscribe} className="space-y-3" data-session-replay-block>
               <label htmlFor="footer-newsletter-email" className="sr-only">Email Address</label>
               <input
                 id="footer-newsletter-email"
@@ -331,6 +332,7 @@ export function FooterV2({ studio = DEFAULT_STUDIO_SETTINGS }: FooterV2Props) {
               <Link href="/privacy" className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
                 Privacy Policy
               </Link>
+              <PrivacyChoicesButton />
               <Link href="/terms" className="caption text-charcoal hover:text-terracotta transition-colors min-h-0 min-w-0">
                 Terms of Service
               </Link>

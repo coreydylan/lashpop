@@ -50,5 +50,10 @@ export default defineConfig({
       testMatch: /accessibility\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
     },
+    {
+      name: 'privacy-analytics',
+      testMatch: /session-replay\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
+    },
   ],
 })
