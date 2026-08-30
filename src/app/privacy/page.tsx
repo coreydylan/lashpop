@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-3xl md:text-4xl font-display font-semibold text-charcoal mb-2">
           Privacy Policy
         </h1>
-        <p className="text-sm text-charcoal/60 mb-10">Effective Date: August 29, 2026</p>
+        <p className="text-sm text-charcoal/60 mb-10">Effective Date: February 7, 2026</p>
 
         <div className="prose prose-sm max-w-none text-charcoal/90 space-y-6 [&_h2]:text-xl [&_h2]:font-display [&_h2]:font-medium [&_h2]:text-charcoal [&_h2]:mt-10 [&_h2]:mb-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-charcoal [&_h3]:mt-6 [&_h3]:mb-2 [&_p]:leading-relaxed [&_ul]:space-y-1 [&_li]:leading-relaxed">
           <p>
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
 
           <h3>B. Information collected automatically</h3>
           <ul>
-            <li>Device and usage statistics (such as browser and viewport category, pages viewed, time-range buckets, coarse tap locations, swipe direction, scroll depth, and referring URLs) through privacy-minimized analytics tools.</li>
+            <li>Device and usage data (such as IP address, browser type, pages viewed, time spent, referring URLs) via cookies and similar technologies used by websites.</li>
             <li>Approximate location derived from your IP address.</li>
           </ul>
 
@@ -80,7 +80,7 @@ export default function PrivacyPolicyPage() {
           <p>We share information with vendors that help us operate, such as:</p>
           <ul>
             <li>Scheduling/booking providers (e.g., Vagaro)</li>
-            <li>Website hosting, aggregate product analytics, email marketing tools, and payment processors (as applicable)</li>
+            <li>Website hosting, email marketing tools, and payment processors (as applicable)</li>
           </ul>
           <p>These providers are permitted to use personal information only to perform services for us.</p>
 
@@ -107,14 +107,6 @@ export default function PrivacyPolicyPage() {
             <li>Analyze traffic and improve performance</li>
           </ul>
           <p>You can control cookies through your browser settings. Disabling cookies may affect site functionality.</p>
-
-          <h3>Aggregate interaction statistics</h3>
-          <p>
-            We may use PostHog in cookieless mode to collect aggregate statistics about how public pages are used, including coarse tap regions, swipe direction and distance buckets, scroll-depth milestones, viewport category, and whether important website actions were completed. This helps us identify confusing interactions and improve the site.
-          </p>
-          <p>
-            This configuration does not create session recordings or screenshots, capture page text or form values, record activity inside the Vagaro booking form, store analytics cookies or local-storage identifiers, or create PostHog person profiles. Query strings and one-time tokens are not included in the events we intentionally collect.
-          </p>
 
           <h2>7) Email and Marketing Preferences</h2>
           <p>

@@ -7,6 +7,7 @@ import type { AnalyticsEventName, AnalyticsProperties } from '@/lib/analytics-ev
 import {
   INTERACTION_ANALYTICS_CAPTURED_EVENT,
   INTERACTION_ANALYTICS_PUBLIC_EVENT,
+  INTERACTION_ANALYTICS_ROUTE_BLOCK_EVENT,
   isInteractionAnalyticsAllowedPath,
   redactAnalyticsUrl,
   scrollMilestones,
@@ -78,6 +79,31 @@ function scrollState(target: EventTarget | null) {
   return { element, depth: Math.max(0, Math.min(100, depth)), section }
 }
 
+function observeReplayStart(posthog: PostHog): () => void {
+  const deadline = Date.now() + 10_000
+  const check = () => {
+    if (posthog.sessionRecordingStarted()) {
+      document.documentElement.dataset.sessionReplay = 'active'
+      return true
+    }
+    return Date.now() >= deadline
+  }
+
+  if (check()) {
+    return () => {
+      delete document.documentElement.dataset.sessionReplay
+    }
+  }
+  const interval = window.setInterval(() => {
+    if (check()) window.clearInterval(interval)
+  }, 50)
+
+  return () => {
+    window.clearInterval(interval)
+    delete document.documentElement.dataset.sessionReplay
+  }
+}
+
 export function InteractionAnalytics({ config }: InteractionAnalyticsProps) {
   const pathname = usePathname()
   const posthogRef = useRef<PostHog | null>(null)
@@ -106,14 +132,18 @@ export function InteractionAnalytics({ config }: InteractionAnalyticsProps) {
     if (!config.enabled || !allowedPath) return
 
     if (posthogRef.current) {
+      posthogRef.current.startSessionRecording()
+      const stopReplayProbe = observeReplayStart(posthogRef.current)
       document.documentElement.dataset.interactionAnalytics = 'active'
       setReady(true)
       return () => {
+        stopReplayProbe()
         delete document.documentElement.dataset.interactionAnalytics
       }
     }
 
     let cancelled = false
+    let stopReplayProbe: (() => void) | undefined
 
     async function initialize() {
       const { default: posthog } = await import('posthog-js')
@@ -122,23 +152,34 @@ export function InteractionAnalytics({ config }: InteractionAnalyticsProps) {
       posthog.init(config.projectToken, {
         api_host: config.apiHost,
         defaults: '2026-05-30',
-        autocapture: false,
+        autocapture: true,
         capture_pageview: false,
         capture_pageleave: false,
-        capture_heatmaps: false,
-        capture_dead_clicks: false,
+        capture_heatmaps: true,
+        capture_dead_clicks: true,
         capture_exceptions: false,
         capture_performance: false,
-        cookieless_mode: 'always',
-        disable_persistence: true,
-        disable_session_recording: true,
+        cross_subdomain_cookie: false,
+        disable_persistence: false,
+        disable_session_recording: false,
         disable_surveys: true,
         disable_web_experiments: true,
         advanced_disable_feature_flags: true,
         advanced_disable_feature_flags_on_first_load: true,
         internal_or_test_user_hostname: null,
         person_profiles: 'never',
+        persistence: 'memory',
         respect_dnt: false,
+        secure_cookie: true,
+        session_recording: {
+          blockSelector: '[data-session-replay-block]',
+          maskAllInputs: true,
+          maskCapturedNetworkRequestFn: (request) => {
+            if (request.name) request.name = redactAnalyticsUrl(request.name)
+            return request
+          },
+          recordCrossOriginIframes: false,
+        },
         rate_limiting: {
           events_per_second: 6,
           events_burst_limit: 60,
@@ -166,6 +207,8 @@ export function InteractionAnalytics({ config }: InteractionAnalyticsProps) {
       })
 
       posthogRef.current = posthog
+      posthog.startSessionRecording()
+      stopReplayProbe = observeReplayStart(posthog)
       document.documentElement.dataset.interactionAnalytics = 'active'
       setReady(true)
     }
@@ -179,9 +222,22 @@ export function InteractionAnalytics({ config }: InteractionAnalyticsProps) {
 
     return () => {
       cancelled = true
+      stopReplayProbe?.()
       delete document.documentElement.dataset.interactionAnalytics
     }
   }, [allowedPath, config.apiHost, config.enabled, config.projectToken])
+
+  useEffect(() => {
+    if (!config.enabled) return
+
+    const blockExcludedRoute = () => {
+      posthogRef.current?.stopSessionRecording()
+      delete document.documentElement.dataset.interactionAnalytics
+      delete document.documentElement.dataset.sessionReplay
+    }
+    window.addEventListener(INTERACTION_ANALYTICS_ROUTE_BLOCK_EVENT, blockExcludedRoute)
+    return () => window.removeEventListener(INTERACTION_ANALYTICS_ROUTE_BLOCK_EVENT, blockExcludedRoute)
+  }, [config.enabled])
 
   useEffect(() => {
     if (!ready || !allowedPath) return

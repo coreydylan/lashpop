@@ -1,5 +1,6 @@
 export const INTERACTION_ANALYTICS_PUBLIC_EVENT = 'lashpop:public-analytics-event'
 export const INTERACTION_ANALYTICS_CAPTURED_EVENT = 'lashpop:interaction-stat-captured'
+export const INTERACTION_ANALYTICS_ROUTE_BLOCK_EVENT = 'lashpop:block-experience-analytics-route'
 
 export interface InteractionAnalyticsConfig {
   enabled: boolean

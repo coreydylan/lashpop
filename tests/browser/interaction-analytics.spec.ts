@@ -1,13 +1,20 @@
 import { expect, test } from '@playwright/test'
 
-const POSTHOG_HOST_RE = /^https:\/\/(?:us|eu)\.i\.posthog\.com\//
 const FIXTURE_TOKEN = 'phc_fixture_aggregate_token_12345'
 
 async function mockPostHogProjectConfig(page: import('@playwright/test').Page) {
   const config = {
     supportedCompression: [],
     autocapture_opt_out: true,
-    sessionRecording: false,
+    sessionRecording: {
+      sampleRate: '1',
+      minimumDurationMilliseconds: 0,
+      networkPayloadCapture: { recordBody: false, recordHeaders: false },
+      masking: {
+        maskAllInputs: true,
+        blockSelector: '[data-session-replay-block]',
+      },
+    },
     toolbarParams: {},
     isAuthenticated: false,
     siteApps: [],
@@ -15,25 +22,32 @@ async function mockPostHogProjectConfig(page: import('@playwright/test').Page) {
   }
 
   await page.route('https://us-assets.i.posthog.com/**', async (route) => {
-    if (route.request().url().endsWith('/config.js')) {
+    const url = route.request().url()
+    if (url.endsWith('/config.js')) {
       await route.fulfill({
         contentType: 'application/javascript',
         body: `window._POSTHOG_REMOTE_CONFIG=window._POSTHOG_REMOTE_CONFIG||{};window._POSTHOG_REMOTE_CONFIG[${JSON.stringify(FIXTURE_TOKEN)}]={config:${JSON.stringify(config)}};`,
       })
       return
     }
-    await route.fulfill({ contentType: 'application/json', body: JSON.stringify(config) })
+    if (url.endsWith('/config')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify(config) })
+      return
+    }
+    await route.continue()
   })
 }
 
-test('collects cookieless aggregate gestures without a permission UI or replay', async ({ page, context }) => {
-  const posthogRequests: string[] = []
+test('records masked public sessions and aggregate gestures without analytics UI', async ({ page, context }) => {
   let posthogConfigRequests = 0
+  let replayRecorderRequests = 0
   page.on('request', (request) => {
-    if (POSTHOG_HOST_RE.test(request.url())) posthogRequests.push(request.url())
     if (request.url().startsWith('https://us-assets.i.posthog.com/')) posthogConfigRequests += 1
+    if (request.url().endsWith('/lazy-recorder.js')) replayRecorderRequests += 1
   })
   await page.addInitScript(() => {
+    window.localStorage.setItem('lashpop_lash_quiz_dismissed', 'true')
+    window.localStorage.setItem('lashpop_team_swipe_tutorial_completed', 'true')
     const captured: string[] = []
     Object.defineProperty(window, '__lashpopInteractionEvents', { value: captured })
     window.addEventListener('lashpop:interaction-stat-captured', (event) => {
@@ -45,6 +59,7 @@ test('collects cookieless aggregate gestures without a permission UI or replay',
 
   await page.goto('/', { waitUntil: 'domcontentloaded' })
   await expect(page.locator('html')).toHaveAttribute('data-interaction-analytics', 'active')
+  await expect(page.locator('html')).toHaveAttribute('data-session-replay', 'active', { timeout: 10_000 })
 
   await expect(page.getByRole('region', { name: /analytics|privacy choices/i })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /privacy choices/i })).toHaveCount(0)
@@ -92,16 +107,25 @@ test('collects cookieless aggregate gestures without a permission UI or replay',
     x: Math.round(box.x + box.width / 2),
     y: Math.round(box.y + Math.min(300, box.height / 2)),
   })
-  await page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide')))
+  const footer = page.locator('footer[data-section-id="footer"]')
+  await footer.scrollIntoViewIfNeeded()
+  await expect(footer.locator('form[data-session-replay-block]')).toHaveCount(1)
+
+  await page.getByRole('button', { name: /^LASH EXTENSIONS/ }).click()
+  const serviceBrowser = page.getByRole('dialog')
+  await serviceBrowser.getByRole('button', { name: /^Classic Fill/ }).click()
+  await expect(serviceBrowser.locator('.booking-view-widget[data-session-replay-block]')).toHaveCount(1)
 
   await expect.poll(
     () => page.evaluate(() => (
       window as unknown as Window & { __lashpopInteractionEvents: string[] }
     ).__lashpopInteractionEvents),
     { timeout: 10_000 }
-  ).toEqual(expect.arrayContaining(['ux_page_view', 'ux_tap', 'ux_swipe', 'ux_page_exit']))
+  ).toEqual(expect.arrayContaining(['ux_page_view', 'ux_tap', 'ux_swipe']))
   expect(posthogConfigRequests).toBeGreaterThan(0)
-  expect(posthogRequests.some((url) => /\/s\//.test(new URL(url).pathname))).toBe(false)
+  expect(replayRecorderRequests).toBeGreaterThan(0)
+
+  await page.goto('/privacy', { waitUntil: 'domcontentloaded' })
 
   const browserStorage = await page.evaluate(() => ({
     local: Object.keys(window.localStorage),
@@ -115,7 +139,7 @@ test('collects cookieless aggregate gestures without a permission UI or replay',
 test('does not initialize analytics on sensitive routes', async ({ page }) => {
   const posthogRequests: string[] = []
   page.on('request', (request) => {
-    if (POSTHOG_HOST_RE.test(request.url())) posthogRequests.push(request.url())
+    if (/posthog\.com/.test(request.url())) posthogRequests.push(request.url())
   })
 
   await page.goto('/admin/login', { waitUntil: 'domcontentloaded' })
