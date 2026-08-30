@@ -107,4 +107,4 @@ npm run build
 npm run test:interaction-analytics
 ```
 
-The browser gate verifies that the integration produces aggregate event requests, shows no permission UI, creates no PostHog cookies or browser-storage keys, sends no replay endpoint requests, and does not initialize on sensitive routes.
+The browser gate verifies SDK initialization, local emission of the aggregate tap/swipe/page statistics, no permission UI, no PostHog cookies or browser-storage keys, no replay endpoint requests, and no initialization on sensitive routes. A controlled visit against the real cookieless-enabled PostHog project must separately prove production ingestion and the final event schemas before the analytics environment switch is considered live.
