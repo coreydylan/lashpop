@@ -14,6 +14,8 @@ async function waitForVisualReady(page: Page) {
 async function assertRenderedState(page: Page) {
   const state = await page.evaluate(() => {
     const brokenImages = Array.from(document.images)
+      .filter((image) => image.getClientRects().length > 0)
+      .filter((image) => !image.closest('[data-session-replay-block]'))
       .filter((image) => image.complete && image.naturalWidth === 0)
       .map((image) => image.currentSrc || image.src)
     const criticalControls = Array.from(
@@ -103,7 +105,11 @@ for (const surface of INTERACTION_VISUAL_SURFACES) {
       if (surface.id === 'booking-classic-fill') {
         await dialog.getByRole('button', { name: /^Classic Fill/ }).click()
         await expect(dialog.getByRole('heading', { name: 'Book Classic Fill' })).toBeVisible()
-        mask = [page.locator('.booking-view-widget iframe')]
+        await expect(page.locator('.booking-view-widget[data-session-replay-block]')).toBeVisible()
+        // The provider can still be on LashPop's branded loading state or may
+        // already have injected its iframe. Mask that privacy boundary so the
+        // public shell, modal geometry, title, and controls are deterministic.
+        mask = [page.locator('[data-booking-visual-boundary]')]
       }
     }
 
