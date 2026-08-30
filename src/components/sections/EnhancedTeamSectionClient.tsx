@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue, useReducedMotion, useTransform } from 'framer-motion'
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
@@ -100,9 +100,13 @@ function parseInstagramHandles(
 }
 
 // Swipe Tutorial Hint Component - subtle wiggling icon in center
-function SwipeHint() {
+function SwipeHint({ memberId, memberName }: { memberId: number; memberName: string }) {
+  const prefersReducedMotion = useReducedMotion()
+
   return (
     <motion.div
+      role="status"
+      data-team-tag-scroll-hint={memberId}
       className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -111,11 +115,12 @@ function SwipeHint() {
     >
       <motion.div
         className="bg-white/30 backdrop-blur-sm rounded-full p-2"
-        animate={{ x: [0, 4, 0, -4, 0] }}
-        transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+        animate={prefersReducedMotion ? undefined : { x: [0, 4, 0, -4, 0] }}
+        transition={prefersReducedMotion ? undefined : { duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <Hand className="w-4 h-4 text-white/80 rotate-90" />
+        <Hand aria-hidden className="w-4 h-4 text-white/80 rotate-90" />
       </motion.div>
+      <span className="sr-only">Swipe horizontally to view more services for {memberName}.</span>
     </motion.div>
   )
 }
@@ -348,6 +353,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isLoadingPortfolio, setIsLoadingPortfolio] = useState(false)
   const [mobileChromeOpaque, setMobileChromeOpaque] = useState(true)
+  const [overflowHintMemberId, setOverflowHintMemberId] = useState<number | null>(null)
 
   // Reset chrome fade whenever the active member changes or the modal opens
   // so the dots are visible again on the new stylist's intro.
@@ -356,7 +362,6 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
   }, [selectedMemberIndex, showModal])
   const sectionRef = useRef<HTMLElement>(null)
   const autoAdvanceRef = useRef<NodeJS.Timeout | null>(null)
-  const firstCardRef = useRef<HTMLDivElement>(null)
 
   // Cache for preloaded portfolio photos (keyed by member UUID)
   const preloadedPhotosCache = useRef<Map<string, PortfolioImage[]>>(new Map())
@@ -379,9 +384,48 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
     resetSwipeDistance
   } = useSwipeTutorial()
 
-  // Observe first card - trigger tutorial immediately when visible
+  // Assign the tutorial to the first card in display order whose service rail
+  // actually overflows. Category count is not a proxy for scrollability: at
+  // 390px Emily's two short chips fit, while a later stylist's longer rail is
+  // the first one a visitor can genuinely swipe.
   useEffect(() => {
-    if (!isMobile || hasCompletedTutorial || !firstCardRef.current) return
+    if (!isMobile || !sectionRef.current) {
+      setOverflowHintMemberId(null)
+      return
+    }
+
+    let cancelled = false
+    let frame = 0
+    const section = sectionRef.current
+    const rails = () => Array.from(section.querySelectorAll<HTMLElement>('[data-team-tag-rail]'))
+    const measure = () => {
+      if (frame) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        if (cancelled) return
+        const firstOverflowing = rails().find((rail) => rail.scrollWidth > rail.clientWidth + 2)
+        const nextId = firstOverflowing?.dataset.memberId
+        setOverflowHintMemberId(nextId ? Number(nextId) : null)
+      })
+    }
+
+    const resizeObserver = new ResizeObserver(measure)
+    rails().forEach((rail) => resizeObserver.observe(rail))
+    window.addEventListener('resize', measure)
+    void document.fonts.ready.then(measure)
+    measure()
+
+    return () => {
+      cancelled = true
+      if (frame) cancelAnimationFrame(frame)
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [isMobile, sortedTeamMembers])
+
+  // Observe the measured overflow owner and trigger its tutorial when visible.
+  useEffect(() => {
+    const hintCard = sectionRef.current?.querySelector<HTMLElement>('[data-team-overflow-hint-card]')
+    if (!isMobile || overflowHintMemberId === null || hasCompletedTutorial || !hintCard) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -396,9 +440,9 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       { threshold: 0.1 } // Trigger when just 10% visible
     )
 
-    observer.observe(firstCardRef.current)
+    observer.observe(hintCard)
     return () => observer.disconnect()
-  }, [isMobile, hasCompletedTutorial, triggerTutorial])
+  }, [isMobile, overflowHintMemberId, hasCompletedTutorial, triggerTutorial])
 
   // Navigation functions for swiping between team members
   const goToNextMember = () => {
@@ -731,19 +775,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           <div className="px-4">
             {/* 2-column grid for all mobile sizes */}
             <div className="grid grid-cols-2 gap-3">
-              {(() => {
-                // Find the first card with swipeable tags (2+ categories)
-                let firstSwipeableIndex = -1
-                return sortedTeamMembers.map((member, index) => {
+              {sortedTeamMembers.map((member, index) => {
                   // Use service categories from Vagaro, fallback to derived from specialties
                   const memberCategories = member.serviceCategories?.length
                     ? member.serviceCategories
                     : getTeamMemberCategories(member.specialties)
 
-                  // Track first card with 2+ categories (swipeable)
-                  const hasSwipeableTags = memberCategories.length >= 2
-                  const isFirstSwipeable = hasSwipeableTags && firstSwipeableIndex === -1
-                  if (isFirstSwipeable) firstSwipeableIndex = index
+                  const isOverflowHintOwner = member.id === overflowHintMemberId
 
                   // Last card alone in a 2-col mobile row — center it instead of stranding left
                   const isLastOrphan = index === sortedTeamMembers.length - 1 && sortedTeamMembers.length % 2 === 1
@@ -760,13 +798,12 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                   const lastInitial = nameParts.length > 1 ? `${nameParts[nameParts.length - 1][0]}.` : ''
                   const displayName = `${firstName} ${lastInitial}`.trim()
 
-                  // Show tutorial on first swipeable card
-                  const showTutorialOnThisCard = isFirstSwipeable && showTutorial && !tutorialSuccess
+                  const showTutorialOnThisCard = isOverflowHintOwner && showTutorial && !tutorialSuccess
 
                   return (
                     <motion.div
                       key={member.id}
-                      ref={isFirstSwipeable ? firstCardRef : undefined}
+                      data-team-overflow-hint-card={isOverflowHintOwner ? member.id : undefined}
                       initial={{ opacity: 0, y: 20 }}
                       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                       transition={{
@@ -790,7 +827,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         card.dataset.touchCurrentX = touch.clientX.toString()
                         card.dataset.touchType = 'undecided' // undecided, tap, scroll-tags, scroll-page
                         // Reset swipe distance tracking for tutorial
-                        if (isFirstSwipeable) resetSwipeDistance()
+                        if (isOverflowHintOwner) resetSwipeDistance()
                       }}
                       onTouchMove={(e) => {
                         const card = e.currentTarget
@@ -823,7 +860,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                           if (tagsContainer) {
                             tagsContainer.scrollLeft -= moveDeltaX
                             // Track swipe distance and complete tutorial after meaningful swipe (50px)
-                            if (isFirstSwipeable && showTutorial && !tutorialSuccess) {
+                            if (isOverflowHintOwner && showTutorial && !tutorialSuccess) {
                               const totalDistance = addSwipeDistance(moveDeltaX)
                               if (totalDistance >= 50) {
                                 completeTutorial()
@@ -848,7 +885,10 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                         <div className="absolute top-2 left-0 right-0 max-w-full overflow-hidden px-3 z-20">
                           <div
                             data-tags-scroll
-                            className="max-w-full overflow-x-auto scrollbar-hide"
+                            data-team-tag-rail
+                            data-member-id={member.id}
+                            data-overflow-hint-owner={isOverflowHintOwner ? 'true' : undefined}
+                            className="max-w-full overflow-x-auto scrollbar-hide motion-reduce:scroll-auto"
                             tabIndex={0}
                             aria-label={`${member.name} services`}
                           >
@@ -959,14 +999,13 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
 
                       {/* Swipe Tutorial Hint */}
                       <AnimatePresence>
-                        {showTutorialOnThisCard && <SwipeHint />}
-                        {isFirstSwipeable && tutorialSuccess && <SwipeSuccess />}
+                        {showTutorialOnThisCard && <SwipeHint memberId={member.id} memberName={member.name} />}
+                        {isOverflowHintOwner && tutorialSuccess && <SwipeSuccess />}
                       </AnimatePresence>
                     </div>
                   </motion.div>
                   )
-                })
-              })()}
+                })}
             </div>
           </div>
         ) : (

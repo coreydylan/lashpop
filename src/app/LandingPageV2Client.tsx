@@ -391,7 +391,7 @@ export default function LandingPageV2Client({ disableExperiencePreload = false, 
                 {/* Z-3: Fixed Header Layer */}
                 {/* Desktop: Full Navigation | Mobile: MobileHeader with dock behavior */}
                 <Navigation />
-                {isMobile && <MobileHeader currentSection={currentSection} />}
+                <MobileHeader currentSection={currentSection} />
 
                 {/* Service Browser Modal - New simplified service exploration */}
                 <ServiceBrowserModal />

@@ -102,6 +102,104 @@ test('mobile stylist chips remain contained by the viewport', async ({ page }, t
   }
 })
 
+test('the team scroll hint follows the first genuinely overflowing rail', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'visual-mobile', 'Mobile-only overflow cue')
+
+  for (const viewport of [
+    { width: 320, height: 720 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await page.evaluate(() => localStorage.removeItem('team-swipe-tutorial-completed'))
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    const team = page.locator('section[data-section-id="team"]')
+    await team.scrollIntoViewIfNeeded()
+
+    await expect.poll(async () => team.locator('[data-team-tag-rail]').evaluateAll((rails) => {
+      const firstOverflowing = rails.find((rail) => rail.scrollWidth > rail.clientWidth + 2)
+      return {
+        expected: firstOverflowing?.getAttribute('data-member-id') || null,
+        owner: rails.find((rail) => rail.getAttribute('data-overflow-hint-owner') === 'true')
+          ?.getAttribute('data-member-id') || null,
+      }
+    })).toEqual(expect.objectContaining({
+      expected: expect.any(String),
+      owner: expect.any(String),
+    }))
+
+    const ownership = await team.locator('[data-team-tag-rail]').evaluateAll((rails) => {
+      const firstOverflowing = rails.find((rail) => rail.scrollWidth > rail.clientWidth + 2)
+      const owner = rails.find((rail) => rail.getAttribute('data-overflow-hint-owner') === 'true')
+      return {
+        expected: firstOverflowing?.getAttribute('data-member-id') || null,
+        owner: owner?.getAttribute('data-member-id') || null,
+        ownerActuallyOverflows: owner ? owner.scrollWidth > owner.clientWidth + 2 : false,
+      }
+    })
+    expect(ownership.owner).toBe(ownership.expected)
+    expect(ownership.ownerActuallyOverflows).toBe(true)
+  }
+})
+
+test('hero loading uses media-scoped preloads and no competing sheen', async ({ page }, testInfo) => {
+  const preloads = await page.locator('link[data-lashpop-hero-preload]').evaluateAll((links) =>
+    links.map((link) => ({
+      media: link.getAttribute('media'),
+      fetchPriority: link.getAttribute('fetchpriority'),
+      imageSizes: link.getAttribute('imagesizes'),
+    })),
+  )
+
+  expect(preloads).toEqual(expect.arrayContaining([
+    expect.objectContaining({ media: '(max-width: 767px)', fetchPriority: 'high', imageSizes: '80vw' }),
+    expect.objectContaining({ media: '(min-width: 768px)', fetchPriority: 'high' }),
+  ]))
+  await expect(page.locator('.hero-loading-sheen')).toHaveCount(0)
+
+  const visibleHeroImage = page.locator('img[alt="LashPop Studio Interior"]:visible')
+  await expect.poll(async () => visibleHeroImage.evaluate((image) => ({
+    complete: (image as HTMLImageElement).complete,
+    width: (image as HTMLImageElement).naturalWidth,
+    opacity: getComputedStyle(image).opacity,
+    transform: getComputedStyle(image).transform,
+  }))).toEqual(expect.objectContaining({
+    complete: true,
+    width: expect.any(Number),
+    opacity: '1',
+  }))
+
+  if (testInfo.project.name === 'visual-mobile') {
+    await expect(page.locator('header.md\\:hidden')).toBeVisible()
+    await expect(page.locator('main.mobile-scroll-container')).toBeVisible()
+  }
+})
+
+test('core values enter as one reduced-motion-safe reveal', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/work-with-us', { waitUntil: 'domcontentloaded' })
+  const reveal = page.locator('[data-core-values-reveal]')
+  const cards = reveal.locator('[data-core-value-card]')
+  await expect(cards).toHaveCount(9)
+  expect(await cards.evaluateAll((elements) => elements.every((element) =>
+    !element.getAttribute('style')?.includes('opacity')
+    && !element.getAttribute('style')?.includes('transform'),
+  ))).toBe(true)
+
+  await reveal.scrollIntoViewIfNeeded()
+  await expect(reveal).toHaveCSS('opacity', '1')
+  await expect.poll(async () => reveal.evaluate((element) => getComputedStyle(element).transform)).toBe('none')
+
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await reveal.scrollIntoViewIfNeeded()
+  await expect(reveal).toHaveCSS('opacity', '1')
+
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  const reducedReveal = page.locator('[data-core-values-reveal]')
+  await expect(reducedReveal).toHaveCSS('opacity', '1')
+  await expect(reducedReveal).toHaveCSS('transform', 'none')
+})
+
 test('Mapbox CSS is active before the map is accepted as loaded', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'visual-desktop', 'One browser is sufficient for the load-order contract')
   const mapSection = page.locator('#find-us')

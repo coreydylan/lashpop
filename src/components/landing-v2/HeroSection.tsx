@@ -226,7 +226,11 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
       >
         {hasSlideshow && heroConfig?.preset ? (
           /* Slideshow Mode */
-          <HeroArchSlideshow preset={heroConfig.preset} className="w-full h-full" />
+          <HeroArchSlideshow
+            preset={heroConfig.preset}
+            className="w-full h-full"
+            preloadMedia="(min-width: 768px)"
+          />
         ) : (
           /* Single Image Mode - full bleed */
           <div className="absolute inset-0 overflow-hidden">
@@ -239,6 +243,7 @@ export default function HeroSection({ reviewStats, heroConfig, content = DEFAULT
               fetchPriority="high"
               sizes="100vw"
               quality={90}
+              preloadMedia="(min-width: 768px)"
             />
           </div>
         )}
