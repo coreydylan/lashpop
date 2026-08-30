@@ -260,8 +260,9 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
         {/* Category Sorter - Compact Frosted Glass Chips */}
         <div
           ref={stickyHeaderRef}
-          className="mb-4 md:mb-12 sticky md:static top-[60px] z-40 md:top-0 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
+          className="mb-4 md:mb-12 sticky md:static z-40 md:top-0 md:bg-transparent md:backdrop-blur-none md:pt-0 md:pb-0 md:mt-0"
           style={isMobile ? {
+            top: 'var(--mobile-site-header-height, 60px)',
             backgroundColor: '#f0e0db',
             paddingTop: '16px',
             paddingBottom: '12px',

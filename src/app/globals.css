@@ -7,6 +7,13 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --mobile-site-header-bar-height: 60px;
+    --mobile-site-header-height: calc(
+      var(--mobile-site-header-bar-height) + env(safe-area-inset-top, 0px)
+    );
+  }
+
   * {
     margin: 0;
     padding: 0;

@@ -102,6 +102,65 @@ test('mobile stylist chips remain contained by the viewport', async ({ page }, t
   }
 })
 
+test('mobile header stays isolated from FAQ content after hydration', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'visual-mobile', 'Mobile-only header contract')
+
+  for (const viewport of [
+    { width: 320, height: 720 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+
+    const scroller = page.locator('.mobile-scroll-container')
+    const header = page.locator('[data-mobile-site-header]')
+    const faq = page.locator('#faq')
+    await expect(scroller).toBeVisible()
+    await faq.scrollIntoViewIfNeeded()
+
+    await expect.poll(() => header.evaluate((element) =>
+      getComputedStyle(element).backgroundColor,
+    )).toBe('rgb(250, 246, 242)')
+
+    const geometry = await page.evaluate(() => {
+      const headerElement = document.querySelector('[data-mobile-site-header]')!
+      const controls = Array.from(headerElement.querySelectorAll('button'))
+        .filter((button) => button.getClientRects().length > 0)
+        .map((button) => button.getBoundingClientRect())
+      const faqCategories = document.querySelector('#faq [aria-label="FAQ categories"]')!
+        .parentElement!
+        .getBoundingClientRect()
+      const headerRect = headerElement.getBoundingClientRect()
+      return {
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        header: { top: headerRect.top, bottom: headerRect.bottom },
+        controls: controls.map((rect) => ({
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+        })),
+        faqCategoriesTop: faqCategories.top,
+      }
+    })
+
+    expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth + 1)
+    expect(geometry.faqCategoriesTop).toBeGreaterThanOrEqual(geometry.header.bottom - 1)
+    for (const control of geometry.controls) {
+      expect(control.left).toBeGreaterThanOrEqual(0)
+      expect(control.right).toBeLessThanOrEqual(geometry.viewportWidth)
+      expect(control.top).toBeGreaterThanOrEqual(geometry.header.top)
+      expect(control.bottom).toBeLessThanOrEqual(geometry.header.bottom)
+    }
+    for (let index = 1; index < geometry.controls.length; index += 1) {
+      expect(geometry.controls[index - 1].right).toBeLessThanOrEqual(
+        geometry.controls[index].left,
+      )
+    }
+  }
+})
+
 test('the team scroll hint follows the first genuinely overflowing rail', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'visual-mobile', 'Mobile-only overflow cue')
 
