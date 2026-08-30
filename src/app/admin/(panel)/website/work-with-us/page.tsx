@@ -117,12 +117,12 @@ export default function WorkWithUsCarouselAdminPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-dusty-rose/30 to-terracotta/20 flex items-center justify-center">
+        <div className="grid gap-4 sm:flex sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-dusty-rose/30 to-terracotta/20 sm:flex">
               <Users className="w-6 h-6 text-dusty-rose" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="h2 text-dune">Work With Us Carousel</h1>
               <p className="text-sm text-dune/60">
                 Manage photos displayed in the team carousel
@@ -132,7 +132,7 @@ export default function WorkWithUsCarouselAdminPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="btn btn-secondary"
+            className="btn btn-secondary w-full sm:w-auto"
           >
             <RefreshCw className={clsx("w-4 h-4", loading && "animate-spin")} />
             Refresh
@@ -147,11 +147,11 @@ export default function WorkWithUsCarouselAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 gap-4 mb-8"
+        className="mb-8 grid grid-cols-2 divide-x divide-sage/15 border-y border-sage/20 bg-white"
       >
-        <div className="glass rounded-2xl p-4 border border-sage/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-terracotta/10 flex items-center justify-center">
+        <div className="min-w-0 px-3 py-3 sm:p-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-terracotta/10 sm:flex">
               <ImageIcon className="w-5 h-5 text-terracotta" />
             </div>
             <div>
@@ -160,9 +160,9 @@ export default function WorkWithUsCarouselAdminPage() {
             </div>
           </div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
+        <div className="min-w-0 px-3 py-3 sm:p-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-ocean-mist/10 sm:flex">
               <Eye className="w-5 h-5 text-ocean-mist" />
             </div>
             <div>
@@ -178,14 +178,14 @@ export default function WorkWithUsCarouselAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="glass rounded-2xl border border-sage/10 p-6"
+        className="glass rounded-lg border border-sage/15 p-4 sm:p-6"
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 grid gap-3 sm:flex sm:items-center sm:justify-between">
           <h2 className="font-serif text-lg text-dune">Carousel Photos</h2>
           <button
             onClick={() => setDamPickerOpen(true)}
             disabled={saving === 'adding'}
-            className="btn btn-primary"
+            className="btn btn-primary w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             Add Photo
@@ -193,7 +193,7 @@ export default function WorkWithUsCarouselAdminPage() {
         </div>
 
         {photos.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 md:grid-cols-4">
             {photos.map((photo, index) => (
               <motion.div
                 key={photo.id}
@@ -201,7 +201,7 @@ export default function WorkWithUsCarouselAdminPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
                 className={clsx(
-                  "relative aspect-square rounded-xl overflow-hidden border-2 group",
+                  "group relative aspect-square overflow-hidden rounded-md border sm:rounded-lg",
                   photo.isEnabled
                     ? "border-ocean-mist/30"
                     : "border-sage/20 opacity-60"
@@ -215,18 +215,19 @@ export default function WorkWithUsCarouselAdminPage() {
                 />
 
                 {/* Overlay Actions */}
-                <div className="absolute inset-0 bg-dune/0 group-hover:bg-dune/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                <div className="absolute bottom-1 right-1 flex items-center justify-center gap-1 opacity-100 sm:inset-0 sm:bg-dune/0 sm:opacity-0 sm:transition-[background-color,opacity] sm:group-hover:bg-dune/40 sm:group-hover:opacity-100 sm:group-focus-within:bg-dune/40 sm:group-focus-within:opacity-100">
                   {/* Toggle Enabled */}
                   <button
                     onClick={() => handleToggleEnabled(photo.id)}
                     disabled={saving === photo.id}
                     className={clsx(
-                      "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                      "flex size-11 items-center justify-center rounded-md transition-colors",
                       photo.isEnabled
                         ? "bg-ocean-mist/90 hover:bg-ocean-mist text-white"
                         : "bg-white/90 hover:bg-white text-dune"
                     )}
                     title={photo.isEnabled ? 'Disable' : 'Enable'}
+                    aria-label={`${photo.isEnabled ? 'Disable' : 'Enable'} ${photo.fileName}`}
                   >
                     {saving === photo.id ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -240,8 +241,9 @@ export default function WorkWithUsCarouselAdminPage() {
                   {/* Delete */}
                   <button
                     onClick={() => setDeleteConfirm(photo.id)}
-                    className="w-8 h-8 rounded-full bg-terracotta/90 hover:bg-terracotta flex items-center justify-center text-white transition-colors"
+                    className="flex size-11 items-center justify-center rounded-md bg-terracotta/90 text-white transition-colors hover:bg-terracotta"
                     title="Delete"
+                    aria-label={`Delete ${photo.fileName}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -249,7 +251,7 @@ export default function WorkWithUsCarouselAdminPage() {
 
                 {/* Order Badge */}
                 <div className="absolute top-2 left-2">
-                  <span className="px-2 py-0.5 rounded-full bg-white/80 text-dune text-xs font-medium">
+                  <span className="rounded bg-white/85 px-1.5 py-0.5 text-xs font-medium text-dune">
                     #{index + 1}
                   </span>
                 </div>
@@ -285,7 +287,7 @@ export default function WorkWithUsCarouselAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="mt-8 p-6 bg-cream/60 backdrop-blur-sm rounded-3xl border border-sage/10"
+        className="mt-8 rounded-lg border border-sage/15 bg-cream/60 p-4 sm:p-6"
       >
         <h3 className="font-serif text-lg text-dune mb-3">Tips</h3>
         <ul className="space-y-2 text-sm text-dune/70">
@@ -330,10 +332,10 @@ export default function WorkWithUsCarouselAdminPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6"
+              className="relative w-full max-w-md rounded-lg bg-white p-4 shadow-2xl sm:p-6"
             >
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
+                <div className="hidden size-12 shrink-0 items-center justify-center rounded-lg bg-terracotta/10 sm:flex">
                   <Trash2 className="w-6 h-6 text-terracotta" />
                 </div>
                 <div>
@@ -343,10 +345,10 @@ export default function WorkWithUsCarouselAdminPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex justify-end gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end sm:gap-3">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-dune/60 hover:text-dune hover:bg-sage/10 transition-colors"
+                  className="min-h-11 rounded-md px-4 py-2 text-sm font-medium text-dune/60 transition-colors hover:bg-sage/10 hover:text-dune"
                 >
                   Cancel
                 </button>

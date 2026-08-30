@@ -116,7 +116,11 @@ export function MiniDamExplorer({
 
   // Sync local selection with prop
   useEffect(() => {
-    setLocalSelectedIds(new Set(selectedAssetIds))
+    setLocalSelectedIds((current) => {
+      const next = new Set(selectedAssetIds)
+      const unchanged = current.size === next.size && Array.from(current).every((id) => next.has(id))
+      return unchanged ? current : next
+    })
   }, [selectedAssetIds])
 
   // Fetch DAM data

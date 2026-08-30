@@ -597,12 +597,12 @@ export default function HeroSectionEditor() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-dusty-rose/30 to-terracotta/20 flex items-center justify-center">
+        <div className="flex min-w-0 items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-dusty-rose/30 to-terracotta/20 sm:flex">
               <ImageIcon className="w-6 h-6 text-terracotta" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="h2 text-dune">Hero Section</h1>
               <p className="text-sm text-dune/60">Configure the above-the-fold arch image or slideshow</p>
             </div>
@@ -629,7 +629,7 @@ export default function HeroSectionEditor() {
           animate={{ opacity: 1, y: 0 }}
           role="alert"
           aria-live="assertive"
-          className="mb-6 p-4 rounded-2xl bg-terracotta/10 border border-terracotta/20 flex items-center gap-3"
+          className="mb-6 flex flex-col gap-3 rounded-lg border border-terracotta/20 bg-terracotta/10 p-4 sm:flex-row sm:items-center"
         >
           <AlertCircle className="w-5 h-5 text-terracotta flex-shrink-0" />
           <div className="min-w-0 flex-1">
@@ -646,7 +646,7 @@ export default function HeroSectionEditor() {
             <button
               type="button"
               onClick={reloadPublishedValues}
-              className="shrink-0 rounded-full border border-terracotta/30 bg-cream px-3 py-1.5 text-xs font-medium text-terracotta transition-colors hover:bg-terracotta/10"
+              className="min-h-11 w-full shrink-0 rounded-lg border border-terracotta/30 bg-cream px-3 py-1.5 text-xs font-medium text-terracotta transition-colors hover:bg-terracotta/10 sm:w-auto"
             >
               {hasConflict ? 'Reload published values' : 'Try again'}
             </button>
@@ -661,10 +661,10 @@ export default function HeroSectionEditor() {
         transition={{ delay: 0.05 }}
         className="mb-6"
       >
-        <div className="glass rounded-2xl p-2 inline-flex gap-2">
+        <div className="glass grid w-full grid-cols-2 gap-1 rounded-lg p-1 sm:inline-grid sm:w-auto sm:gap-2 sm:p-2">
           <button
             onClick={() => setEditorMode('single')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors sm:px-4 ${
               editorMode === 'single'
                 ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                 : 'text-dune/60 hover:text-dune hover:bg-cream/50'
@@ -675,7 +675,7 @@ export default function HeroSectionEditor() {
           </button>
           <button
             onClick={() => setEditorMode('slideshow')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors sm:px-4 ${
               editorMode === 'slideshow'
                 ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                 : 'text-dune/60 hover:text-dune hover:bg-cream/50'
@@ -796,12 +796,12 @@ function SingleImageEditor({
       exit={{ opacity: 0, y: -20 }}
     >
       {/* Device Toggle & Save */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="glass rounded-2xl p-2 inline-flex gap-2">
+      <div className="mb-6 grid gap-3 sm:flex sm:items-center sm:justify-between">
+        <div className="grid min-w-0 gap-2 sm:flex sm:items-center sm:gap-4">
+          <div className="glass grid w-full grid-cols-2 gap-1 rounded-lg p-1 sm:inline-grid sm:w-auto sm:gap-2 sm:p-2">
             <button
               onClick={() => setActiveDevice('desktop')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              className={`flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors sm:px-4 ${
                 activeDevice === 'desktop'
                   ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                   : 'text-dune/60 hover:text-dune hover:bg-cream/50'
@@ -812,7 +812,7 @@ function SingleImageEditor({
             </button>
             <button
               onClick={() => setActiveDevice('mobile')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              className={`flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-md px-2 py-2 text-sm font-medium transition-colors sm:px-4 ${
                 activeDevice === 'mobile'
                   ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                   : 'text-dune/60 hover:text-dune hover:bg-cream/50'
@@ -826,7 +826,7 @@ function SingleImageEditor({
           {activeDevice === 'mobile' && desktopImage && (
             <button
               onClick={copyDesktopToMobile}
-              className="text-sm text-dusty-rose hover:text-terracotta transition-colors"
+              className="inline-flex min-h-11 w-full items-center justify-center text-sm font-medium text-dusty-rose transition-colors hover:text-terracotta sm:w-auto"
             >
               Copy from desktop
             </button>
@@ -836,7 +836,7 @@ function SingleImageEditor({
         <button
           onClick={onSave}
           disabled={saving}
-          className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}
+          className={`btn w-full sm:w-auto ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}
         >
           {saving ? (
             <RefreshCw className="w-4 h-4 animate-spin" />
@@ -849,9 +849,9 @@ function SingleImageEditor({
         </button>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2 lg:gap-8">
         {/* Preview Panel */}
-        <div className="glass rounded-3xl p-6 border border-sage/20">
+        <div className="glass min-w-0 rounded-lg border border-sage/20 p-4 sm:p-6">
           <h3 className="font-serif text-lg text-dune mb-4">
             {activeDevice === 'desktop' ? 'Desktop' : 'Mobile'} Arch Preview
           </h3>
@@ -870,7 +870,7 @@ function SingleImageEditor({
                   src={currentImage.url}
                   alt="Hero preview"
                   fill
-                  className="transition-all duration-300"
+                  className="transition-[object-position] duration-300"
                   style={{
                     objectFit: currentImage.objectFit,
                     objectPosition: `${currentImage.position.x}% ${currentImage.position.y}%`
@@ -895,7 +895,7 @@ function SingleImageEditor({
                 <span>Image Position</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <div>
                   <label className="text-xs text-dune/50 uppercase tracking-wider">
                     Horizontal: {currentImage.position.x}%
@@ -927,7 +927,7 @@ function SingleImageEditor({
               <div className="flex gap-2">
                 <button
                   onClick={() => updateObjectFit('cover')}
-                  className={`flex-1 py-2 px-4 rounded-xl text-sm transition-all ${
+                  className={`min-h-11 flex-1 rounded-md px-3 py-2 text-sm transition-colors sm:px-4 ${
                     currentImage.objectFit === 'cover'
                       ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                       : 'bg-cream/50 text-dune/60 border border-sage/20'
@@ -937,7 +937,7 @@ function SingleImageEditor({
                 </button>
                 <button
                   onClick={() => updateObjectFit('contain')}
-                  className={`flex-1 py-2 px-4 rounded-xl text-sm transition-all ${
+                  className={`min-h-11 flex-1 rounded-md px-3 py-2 text-sm transition-colors sm:px-4 ${
                     currentImage.objectFit === 'contain'
                       ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                       : 'bg-cream/50 text-dune/60 border border-sage/20'
@@ -951,14 +951,14 @@ function SingleImageEditor({
         </div>
 
         {/* Image Selection Panel */}
-        <div className="glass rounded-3xl p-6 border border-sage/20">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass min-w-0 rounded-lg border border-sage/20 p-4 sm:p-6">
+          <div className="mb-4 grid gap-3 sm:flex sm:items-center sm:justify-between">
             <h3 className="font-serif text-lg text-dune">
               Select {activeDevice === 'desktop' ? 'Desktop' : 'Mobile'} Image
             </h3>
             <button
               onClick={() => openImagePicker(activeDevice)}
-              className="btn btn-secondary text-sm"
+              className="btn btn-secondary w-full text-sm sm:w-auto"
             >
               <Folder className="w-4 h-4" />
               Browse DAM
@@ -966,7 +966,7 @@ function SingleImageEditor({
           </div>
 
           {availableImages.length === 0 ? (
-            <div className="p-8 bg-golden/10 rounded-2xl border border-golden/20">
+            <div className="rounded-lg border border-golden/20 bg-golden/10 p-5 sm:p-8">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-golden flex-shrink-0 mt-0.5" />
                 <div>
@@ -994,7 +994,7 @@ function SingleImageEditor({
                       }
                       setCurrentImage(newImage)
                     }}
-                    className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all ${
+                    className={`relative aspect-square overflow-hidden rounded-md border-2 transition-[border-color,box-shadow,transform] sm:rounded-lg ${
                       currentImage?.assetId === image.id
                         ? 'border-dusty-rose shadow-lg scale-[1.02]'
                         : 'border-transparent hover:border-sage/30'
@@ -1013,7 +1013,7 @@ function SingleImageEditor({
           )}
 
           {currentImage && (
-            <div className="mt-4 p-3 rounded-xl bg-sage/5 border border-sage/10">
+            <div className="mt-4 rounded-lg border border-sage/10 bg-sage/5 p-3">
               <p className="text-xs text-dune/60 mb-1">Currently selected for {activeDevice}</p>
               <p className="text-sm text-dune font-medium truncate">{currentImage.fileName}</p>
             </div>
@@ -1023,17 +1023,17 @@ function SingleImageEditor({
           <div className="mt-6 pt-4 border-t border-sage/10">
             <p className="text-xs text-dune/50 uppercase tracking-wider mb-3">Image Status</p>
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <Monitor className="w-4 h-4 text-dune/40" />
                 <span className="text-sm text-dune/70">Desktop:</span>
-                <span className={`text-sm ${desktopImage ? 'text-ocean-mist font-medium' : 'text-terracotta/70'}`}>
+                <span className={`min-w-0 truncate text-sm ${desktopImage ? 'text-ocean-mist font-medium' : 'text-terracotta/70'}`}>
                   {desktopImage ? desktopImage.fileName : 'Not set (using default)'}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 items-center gap-2">
                 <Smartphone className="w-4 h-4 text-dune/40" />
                 <span className="text-sm text-dune/70">Mobile:</span>
-                <span className={`text-sm ${mobileImage ? 'text-ocean-mist font-medium' : 'text-terracotta/70'}`}>
+                <span className={`min-w-0 truncate text-sm ${mobileImage ? 'text-ocean-mist font-medium' : 'text-terracotta/70'}`}>
                   {mobileImage ? mobileImage.fileName : 'Not set (using default)'}
                 </span>
               </div>
@@ -1093,11 +1093,11 @@ function SlideshowEditor({
       exit={{ opacity: 0, y: -20 }}
     >
       {/* Tabs */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="glass rounded-2xl p-2 inline-flex gap-2">
+      <div className="mb-6">
+        <div className="glass grid w-full grid-cols-3 gap-1 rounded-lg p-1 sm:inline-grid sm:w-auto sm:gap-2 sm:p-2">
           <button
             onClick={() => setSlideshowTab('presets')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-md px-1 py-2 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm ${
               slideshowTab === 'presets'
                 ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                 : 'text-dune/60 hover:text-dune hover:bg-cream/50'
@@ -1108,7 +1108,7 @@ function SlideshowEditor({
           </button>
           <button
             onClick={() => setSlideshowTab('editor')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-md px-1 py-2 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm ${
               slideshowTab === 'editor'
                 ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                 : 'text-dune/60 hover:text-dune hover:bg-cream/50'
@@ -1119,14 +1119,14 @@ function SlideshowEditor({
           </button>
           <button
             onClick={() => setSlideshowTab('assignments')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+            className={`flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-md px-1 py-2 text-xs font-medium transition-colors sm:gap-2 sm:px-4 sm:text-sm ${
               slideshowTab === 'assignments'
                 ? 'bg-dusty-rose/20 text-dune border border-dusty-rose/30'
                 : 'text-dune/60 hover:text-dune hover:bg-cream/50'
             }`}
           >
             <Monitor className="w-4 h-4" />
-            Assignments
+            <span className="sm:hidden">Assign</span><span className="hidden sm:inline">Assignments</span>
           </button>
         </div>
       </div>
@@ -1188,11 +1188,11 @@ function PresetsList({ presets, onEdit, onDelete, onCreate }: PresetsListProps) 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="glass rounded-3xl p-6 border border-sage/20"
+      className="glass rounded-lg border border-sage/20 p-4 sm:p-6"
     >
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 grid gap-3 sm:flex sm:items-center sm:justify-between">
         <h3 className="font-serif text-lg text-dune">Slideshow Presets</h3>
-        <button onClick={onCreate} className="btn btn-primary text-sm">
+        <button onClick={onCreate} className="btn btn-primary w-full text-sm sm:w-auto">
           <Plus className="w-4 h-4" />
           New Preset
         </button>
@@ -1208,7 +1208,7 @@ function PresetsList({ presets, onEdit, onDelete, onCreate }: PresetsListProps) 
           {presets.map((preset) => (
             <div
               key={preset.id}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-cream/50 border border-sage/10 hover:border-sage/30 transition-colors"
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-lg border border-sage/10 bg-cream/50 p-3 transition-colors hover:border-sage/30 sm:flex sm:gap-4 sm:p-4"
             >
               {/* Preview thumbnails */}
               <div className="flex -space-x-2">
@@ -1234,16 +1234,18 @@ function PresetsList({ presets, onEdit, onDelete, onCreate }: PresetsListProps) 
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="col-span-2 grid grid-cols-2 gap-2 sm:col-span-1 sm:ml-auto sm:flex sm:items-center">
                 <button
                   onClick={() => onEdit(preset)}
-                  className="p-2 rounded-lg hover:bg-sage/10 transition-colors"
+                  className="flex size-11 items-center justify-center rounded-md transition-colors hover:bg-sage/10"
+                  aria-label={`Edit ${preset.name}`}
                 >
                   <Settings className="w-4 h-4 text-dune/60" />
                 </button>
                 <button
                   onClick={() => onDelete(preset.id)}
-                  className="p-2 rounded-lg hover:bg-terracotta/10 transition-colors"
+                  className="flex size-11 items-center justify-center rounded-md transition-colors hover:bg-terracotta/10"
+                  aria-label={`Delete ${preset.name}`}
                 >
                   <Trash2 className="w-4 h-4 text-terracotta/60" />
                 </button>
@@ -1277,7 +1279,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="glass rounded-3xl p-8 border border-sage/20 text-center"
+        className="glass rounded-lg border border-sage/20 p-6 text-center sm:p-8"
       >
         <p className="text-dune/50">Select a preset to edit or create a new one.</p>
       </motion.div>
@@ -1301,22 +1303,24 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
       className="space-y-6"
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <input
-          type="text"
-          value={preset.name}
-          onChange={(e) => updatePreset({ name: e.target.value })}
-          className="text-xl font-serif text-dune bg-transparent border-none focus:outline-none focus:ring-0"
-          placeholder="Preset Name"
-        />
-        <div className="flex gap-2">
-          <button onClick={onCancel} className="btn btn-secondary text-sm">
+      <div className="grid gap-3 sm:flex sm:items-end sm:justify-between">
+        <label className="block min-w-0 flex-1">
+          <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-dune/55">Preset name</span>
+          <input
+            type="text"
+            value={preset.name}
+            onChange={(e) => updatePreset({ name: e.target.value })}
+            className="min-h-11 w-full rounded-lg border border-sage/25 bg-white px-3 font-serif text-lg text-dune focus:outline-none focus:ring-2 focus:ring-dusty-rose/25 sm:text-xl"
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <button onClick={onCancel} className="btn btn-secondary min-w-0 w-full text-sm sm:w-auto">
             Cancel
           </button>
           <button
             onClick={() => onSave(preset)}
             disabled={saving}
-            className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} text-sm`}
+            className={`btn min-w-0 w-full text-sm sm:w-auto ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}
           >
             {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             {saved ? 'Saved!' : 'Save Preset'}
@@ -1326,17 +1330,17 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Images Panel */}
-        <div className="glass rounded-3xl p-6 border border-sage/20">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
+          <div className="mb-4 grid gap-3 sm:flex sm:items-center sm:justify-between">
             <h3 className="font-serif text-lg text-dune">Images</h3>
-            <button onClick={() => openImagePicker()} className="btn btn-secondary text-sm">
+            <button onClick={() => openImagePicker()} className="btn btn-secondary w-full text-sm sm:w-auto">
               <Plus className="w-4 h-4" />
               Add Image
             </button>
           </div>
 
           {preset.images.length === 0 ? (
-            <div className="p-8 text-center text-dune/50 border-2 border-dashed border-sage/20 rounded-2xl">
+            <div className="rounded-lg border border-dashed border-sage/20 p-6 text-center text-dune/50 sm:p-8">
               <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p className="text-sm">Add images to your slideshow</p>
             </div>
@@ -1345,7 +1349,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
               {preset.images.map((img, index) => (
                 <div
                   key={img.id}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-cream/50 border border-sage/10"
+                  className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 rounded-lg border border-sage/10 bg-cream/50 p-3 sm:flex"
                 >
                   <GripVertical className="w-4 h-4 text-dune/30 cursor-grab" />
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-sage/10">
@@ -1357,13 +1361,15 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
                   </div>
                   <button
                     onClick={() => openImagePicker(index)}
-                    className="p-2 rounded-lg hover:bg-sage/10"
+                    className="col-span-1 flex size-11 items-center justify-center rounded-md hover:bg-sage/10 sm:col-span-1"
+                    aria-label={`Change ${img.fileName}`}
                   >
                     <Settings className="w-4 h-4 text-dune/60" />
                   </button>
                   <button
                     onClick={() => removeImage(index)}
-                    className="p-2 rounded-lg hover:bg-terracotta/10"
+                    className="flex size-11 items-center justify-center rounded-md hover:bg-terracotta/10"
+                    aria-label={`Remove ${img.fileName}`}
                   >
                     <Trash2 className="w-4 h-4 text-terracotta/60" />
                   </button>
@@ -1376,7 +1382,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
         {/* Settings Panels */}
         <div className="space-y-6">
           {/* Transition Settings */}
-          <div className="glass rounded-3xl p-6 border border-sage/20">
+          <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
             <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
               <Play className="w-5 h-5" />
               Transition
@@ -1390,7 +1396,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
                   onChange={(e) => updatePreset({
                     transition: { ...preset.transition, type: e.target.value as TransitionType }
                   })}
-                  className="w-full mt-1 px-3 py-2 rounded-xl bg-cream/50 border border-sage/20 text-dune"
+                  className="mt-1 w-full rounded-lg border border-sage/20 bg-cream/50 px-3 py-2 text-dune"
                 >
                   {TRANSITION_OPTIONS.map(opt => (
                     <option key={opt.type} value={opt.type}>{opt.name} - {opt.description}</option>
@@ -1418,7 +1424,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
           </div>
 
           {/* Timing Settings */}
-          <div className="glass rounded-3xl p-6 border border-sage/20">
+          <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
             <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5" />
               Timing
@@ -1471,7 +1477,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
           </div>
 
           {/* Navigation Settings */}
-          <div className="glass rounded-3xl p-6 border border-sage/20">
+          <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
             <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
               <MousePointer className="w-5 h-5" />
               Navigation
@@ -1552,14 +1558,14 @@ function AssignmentsPanel({ presets, assignments, setAssignments, onSave, saving
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="glass rounded-3xl p-6 border border-sage/20"
+      className="glass rounded-lg border border-sage/20 p-4 sm:p-6"
     >
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 grid gap-3 sm:flex sm:items-center sm:justify-between">
         <h3 className="font-serif text-lg text-dune">Device Assignments</h3>
         <button
           onClick={onSave}
           disabled={saving}
-          className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} text-sm`}
+          className={`btn w-full text-sm sm:w-auto ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}
         >
           {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
           {saved ? 'Saved!' : 'Save Assignments'}
@@ -1572,7 +1578,7 @@ function AssignmentsPanel({ presets, assignments, setAssignments, onSave, saving
 
       <div className="space-y-6">
         {/* Desktop Assignment */}
-        <div className="p-4 rounded-2xl bg-cream/50 border border-sage/10">
+        <div className="rounded-lg border border-sage/10 bg-cream/50 p-4">
           <div className="flex items-center gap-3 mb-3">
             <Monitor className="w-5 h-5 text-dune/60" />
             <span className="font-medium text-dune">Desktop</span>
@@ -1583,7 +1589,7 @@ function AssignmentsPanel({ presets, assignments, setAssignments, onSave, saving
               ...assignments,
               desktop: e.target.value || null
             })}
-            className="w-full px-3 py-2 rounded-xl bg-white/50 border border-sage/20 text-dune"
+            className="w-full rounded-lg border border-sage/20 bg-white/50 px-3 py-2 text-dune"
           >
             <option value="">No slideshow (use single image)</option>
             {presets.map(preset => (
@@ -1593,7 +1599,7 @@ function AssignmentsPanel({ presets, assignments, setAssignments, onSave, saving
         </div>
 
         {/* Mobile Assignment */}
-        <div className="p-4 rounded-2xl bg-cream/50 border border-sage/10">
+        <div className="rounded-lg border border-sage/10 bg-cream/50 p-4">
           <div className="flex items-center gap-3 mb-3">
             <Smartphone className="w-5 h-5 text-dune/60" />
             <span className="font-medium text-dune">Mobile</span>
@@ -1619,7 +1625,7 @@ function AssignmentsPanel({ presets, assignments, setAssignments, onSave, saving
                 ...assignments,
                 mobile: e.target.value || null
               })}
-              className="w-full px-3 py-2 rounded-xl bg-white/50 border border-sage/20 text-dune"
+              className="w-full rounded-lg border border-sage/20 bg-white/50 px-3 py-2 text-dune"
             >
               <option value="">No slideshow (use single image)</option>
               {presets.map(preset => (

@@ -116,7 +116,7 @@ export function SubscriberDirectory({ initialSubscribers, canManage }: Subscribe
 
   return (
     <div className="space-y-6">
-      <section aria-label="Subscriber totals" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="Subscriber totals" className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4">
         <MetricCard icon={Users} label="All records" value={subscribers.length} detail="Complete consent ledger" />
         <MetricCard icon={UserRoundCheck} label="Active" value={activeSubscribers.length} detail="Eligible for export" tone="terracotta" />
         <MetricCard icon={Clock3} label="Last 30 days" value={recentCount} detail="New or renewed signups" />
@@ -191,47 +191,82 @@ export function SubscriberDirectory({ initialSubscribers, canManage }: Subscribe
             <p className="mt-1 text-sm text-black/50">Clear the search or change the filters to see the complete ledger.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[48rem] text-left text-sm">
-              <caption className="sr-only">Newsletter subscriber consent records</caption>
-              <thead className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black/45">
-                <tr>
-                  <th className="px-4 py-3 lg:px-5">Subscriber</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Signed up</th>
-                  <th className="px-4 py-3">Source</th>
-                  <th className="px-4 py-3"><span className="sr-only">Open record</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/10">
-                {filteredSubscribers.map((subscriber) => (
-                  <tr key={subscriber.id} className="group hover:bg-[#fcfaf7]">
-                    <td className="px-4 py-3.5 lg:px-5">
-                      <a href={`mailto:${subscriber.email}`} className="font-semibold text-[#292a27] underline-offset-4 hover:text-[#9a4932] hover:underline">
-                        {subscriber.email}
-                      </a>
-                      {subscriber.notes && <p className="mt-1 max-w-md truncate text-xs text-black/45">{subscriber.notes}</p>}
-                    </td>
-                    <td className="px-4 py-3.5"><StatusBadge status={subscriber.status} /></td>
-                    <td className="px-4 py-3.5 text-black/55">
-                      <time dateTime={subscriber.subscribedAt ?? undefined}>{formatDate(subscriber.subscribedAt, true)}</time>
-                    </td>
-                    <td className="px-4 py-3.5 text-black/55">{sourceLabel(subscriber.source)}</td>
-                    <td className="px-4 py-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedId(subscriber.id)}
-                        aria-label={`Open subscriber record for ${subscriber.email}`}
-                        className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-sm font-semibold text-[#9a4932] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
-                      >
-                        Details <ChevronRight className="size-4" aria-hidden="true" />
-                      </button>
-                    </td>
+          <>
+            <ol className="divide-y divide-black/10 sm:hidden" aria-label="Newsletter subscriber consent records">
+              {filteredSubscribers.map((subscriber) => (
+                <li key={subscriber.id} className="px-4 py-3">
+                  <div className="flex items-start gap-2">
+                    <a
+                      href={`mailto:${subscriber.email}`}
+                      className="flex min-h-11 min-w-0 flex-1 items-center break-all text-sm font-semibold text-[#292a27] underline-offset-4 hover:text-[#9a4932] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] focus-visible:ring-offset-2"
+                    >
+                      {subscriber.email}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(subscriber.id)}
+                      className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-[#9a4932] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] focus-visible:ring-offset-2"
+                      aria-label={`Open subscriber record for ${subscriber.email}`}
+                    >
+                      <ChevronRight className="size-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-black/52">
+                    <StatusBadge status={subscriber.status} />
+                    <time dateTime={subscriber.subscribedAt ?? undefined}>Joined {formatDate(subscriber.subscribedAt, true)}</time>
+                    <span>{sourceLabel(subscriber.source)}</span>
+                  </div>
+                  {subscriber.notes && (
+                    <p className="mt-2 overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-5 text-black/45">
+                      {subscriber.notes}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full min-w-[48rem] text-left text-sm">
+                <caption className="sr-only">Newsletter subscriber consent records</caption>
+                <thead className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black/45">
+                  <tr>
+                    <th className="px-4 py-3 lg:px-5">Subscriber</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Signed up</th>
+                    <th className="px-4 py-3">Source</th>
+                    <th className="px-4 py-3"><span className="sr-only">Open record</span></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-black/10">
+                  {filteredSubscribers.map((subscriber) => (
+                    <tr key={subscriber.id} className="group hover:bg-[#fcfaf7]">
+                      <td className="px-4 py-3.5 lg:px-5">
+                        <a href={`mailto:${subscriber.email}`} className="font-semibold text-[#292a27] underline-offset-4 hover:text-[#9a4932] hover:underline">
+                          {subscriber.email}
+                        </a>
+                        {subscriber.notes && <p className="mt-1 max-w-md truncate text-xs text-black/45">{subscriber.notes}</p>}
+                      </td>
+                      <td className="px-4 py-3.5"><StatusBadge status={subscriber.status} /></td>
+                      <td className="px-4 py-3.5 text-black/55">
+                        <time dateTime={subscriber.subscribedAt ?? undefined}>{formatDate(subscriber.subscribedAt, true)}</time>
+                      </td>
+                      <td className="px-4 py-3.5 text-black/55">{sourceLabel(subscriber.source)}</td>
+                      <td className="px-4 py-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(subscriber.id)}
+                          aria-label={`Open subscriber record for ${subscriber.email}`}
+                          className="inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-sm font-semibold text-[#9a4932] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+                        >
+                          Details <ChevronRight className="size-4" aria-hidden="true" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
@@ -255,7 +290,7 @@ function MetricCard({ icon: Icon, label, value, detail, tone = 'neutral' }: {
   tone?: 'neutral' | 'terracotta'
 }) {
   return (
-    <article className="rounded-xl border border-black/10 bg-white p-4">
+    <article className="bg-white p-4 sm:rounded-lg sm:border sm:border-black/10">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/45">{label}</p>

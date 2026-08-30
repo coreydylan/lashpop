@@ -57,18 +57,18 @@ export function AdminOwnerGuide() {
   const commonTasks = COMMON_TASKS.map((id) => findOwnerGuideArticle(id)).filter((article): article is OwnerGuideArticle => Boolean(article))
 
   return (
-    <div className="space-y-10">
-      <header className="overflow-hidden rounded-2xl border border-terracotta/10 bg-white shadow-sm">
-        <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end lg:p-10">
+    <div className="space-y-7 sm:space-y-10">
+      <header className="overflow-hidden border-y border-terracotta/15 bg-white sm:rounded-lg sm:border">
+        <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end lg:p-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-terracotta">Owner guide</p>
-            <h1 className="mt-3 max-w-3xl font-serif text-4xl leading-tight text-charcoal sm:text-5xl">What do you want to do?</h1>
+            <h1 className="mt-2 max-w-3xl text-balance font-serif text-3xl leading-tight text-charcoal sm:mt-3 sm:text-5xl">What do you want to do?</h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-dune">Search for a task or choose a work area. Each guide gives you one action at a time, shows where to look and tells you how to check your work.</p>
           </div>
-          <div className="rounded-xl bg-ivory p-5">
+          <div className="border-l-2 border-terracotta bg-ivory px-4 py-3 sm:rounded-md sm:border-l-0 sm:p-5">
             <p className="text-sm font-semibold text-charcoal">New to LashPop Admin?</p>
             <p className="mt-2 text-sm leading-6 text-dune">Start with Today, then use the Website overview to find where each change belongs.</p>
-            <button type="button" onClick={() => openArticle(findOwnerGuideArticle("today")!)} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg bg-charcoal px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta">
+            <button type="button" onClick={() => openArticle(findOwnerGuideArticle("today")!)} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-md bg-charcoal px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta">
               Start with Today <ChevronRight className="size-4" aria-hidden="true" />
             </button>
           </div>
@@ -83,7 +83,7 @@ export function AdminOwnerGuide() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Try “change a team photo” or “add a service”"
-              className="min-h-14 w-full rounded-xl border border-black/15 bg-white pl-12 pr-4 text-base text-charcoal shadow-sm outline-none placeholder:text-dune/65 focus:border-terracotta focus:ring-2 focus:ring-terracotta/20"
+              className="min-h-12 w-full rounded-md border border-black/15 bg-white pl-12 pr-4 text-base text-charcoal outline-none placeholder:text-dune/65 focus:border-terracotta focus:ring-2 focus:ring-terracotta/20"
               autoComplete="off"
             />
           </div>
@@ -105,7 +105,7 @@ export function AdminOwnerGuide() {
               type="button"
               onClick={() => setArea(option)}
               aria-pressed={area === option}
-              className={`min-h-11 shrink-0 rounded-full border px-4 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta ${area === option ? "border-charcoal bg-charcoal text-white" : "border-black/10 bg-white text-charcoal hover:border-terracotta/40"}`}
+              className={`min-h-11 shrink-0 rounded-md border px-4 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta ${area === option ? "border-charcoal bg-charcoal text-white" : "border-black/10 bg-white text-charcoal hover:border-terracotta/40"}`}
             >
               {option}
             </button>
@@ -129,7 +129,7 @@ export function AdminOwnerGuide() {
             {results.map((article) => <GuideCard key={article.id} article={article} onOpen={() => openArticle(article)} />)}
           </div>
         ) : (
-          <div className="mt-4 rounded-xl border border-dashed border-black/20 bg-white px-6 py-14 text-center">
+          <div className="mt-4 rounded-md border border-dashed border-black/20 bg-white px-6 py-12 text-center">
             <BookOpen className="mx-auto size-7 text-terracotta" aria-hidden="true" />
             <h3 className="mt-4 font-serif text-2xl text-charcoal">No guides match that search</h3>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-dune">Try a shorter phrase, such as “team photo”, “reviews” or “Vagaro”.</p>
@@ -143,15 +143,15 @@ export function AdminOwnerGuide() {
 
 function GuideCard({ article, onOpen, featured = false }: { article: OwnerGuideArticle; onOpen: () => void; featured?: boolean }) {
   return (
-    <button type="button" onClick={onOpen} className={`group overflow-hidden rounded-xl border bg-white text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta ${featured ? "border-terracotta/20" : "border-black/10 hover:border-terracotta/40"}`}>
-      <span className="relative block aspect-[16/9] overflow-hidden bg-cream">
-        <img src={article.screenshot} alt="" className="size-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]" loading="lazy" />
-        <span className="absolute left-3 top-3 rounded-full bg-charcoal px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">{article.area}</span>
+    <button type="button" onClick={onOpen} className={`group grid grid-cols-[6.5rem_minmax(0,1fr)] overflow-hidden rounded-md border bg-white text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta sm:block ${featured ? "border-terracotta/20" : "border-black/10 hover:border-terracotta/40"}`}>
+      <span className="relative block min-h-full overflow-hidden bg-cream sm:aspect-[16/9]">
+        <img src={article.screenshot} alt="" width={1600} height={900} className="size-full object-cover object-top transition-transform duration-300 group-hover:scale-[1.02]" loading="lazy" />
+        <span className="absolute left-2 top-2 rounded-sm bg-charcoal px-2 py-1 text-[9px] font-semibold uppercase tracking-wide text-white sm:left-3 sm:top-3 sm:text-[10px]">{article.area}</span>
       </span>
-      <span className="flex min-h-40 flex-col p-5">
-        <span className="font-serif text-xl leading-tight text-charcoal">{article.title}</span>
-        <span className="mt-2 line-clamp-3 text-sm leading-6 text-dune">{article.summary}</span>
-        <span className="mt-auto inline-flex items-center gap-1.5 pt-4 text-xs font-semibold text-terracotta">Read the steps <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" /></span>
+      <span className="flex min-h-0 flex-col p-4 sm:min-h-40 sm:p-5">
+        <span className="font-serif text-lg leading-tight text-charcoal sm:text-xl">{article.title}</span>
+        <span className="mt-1.5 line-clamp-2 text-xs leading-5 text-dune sm:mt-2 sm:line-clamp-3 sm:text-sm sm:leading-6">{article.summary}</span>
+        <span className="mt-auto inline-flex items-center gap-1.5 pt-3 text-xs font-semibold text-terracotta sm:pt-4">Read the steps <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" /></span>
       </span>
     </button>
   )

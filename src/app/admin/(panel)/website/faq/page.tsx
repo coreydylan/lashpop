@@ -277,19 +277,19 @@ export default function FAQManagerPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sage/30 to-sage/10 flex items-center justify-center">
+        <div className="grid gap-4 sm:flex sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sage/30 to-sage/10 sm:flex">
               <HelpCircle className="w-6 h-6 text-sage" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="h2 text-dune">FAQ Manager</h1>
               <p className="text-sm text-dune/60">
                 {categories.length} categories • {totalActive} active FAQs • {featuredCount} featured
               </p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
             <button
               onClick={fetchFAQs}
               className="btn btn-secondary"
@@ -314,19 +314,19 @@ export default function FAQManagerPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-3 gap-4 mb-6"
+        className="mb-6 grid grid-cols-3 divide-x divide-sage/15 border-y border-sage/20 bg-white"
       >
-        <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
+        <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-dune">{categories.length}</div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Categories</div>
+          <div className="text-[10px] text-dune/55 uppercase tracking-wide sm:text-xs sm:tracking-wider">Categories</div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/30 text-center">
+        <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-sage">{totalActive}</div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Active FAQs</div>
+          <div className="text-[10px] text-dune/55 uppercase tracking-wide sm:text-xs sm:tracking-wider">Active FAQs</div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-golden/30 text-center">
+        <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-golden">{featuredCount}</div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Featured (Top FAQs)</div>
+          <div className="text-[10px] text-dune/55 uppercase tracking-wide sm:text-xs sm:tracking-wider">Featured</div>
         </div>
       </motion.div>
 
@@ -359,7 +359,7 @@ export default function FAQManagerPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-cream rounded-3xl p-6 max-w-md w-full shadow-2xl"
+              className="w-full max-w-md rounded-lg bg-cream p-4 shadow-2xl sm:rounded-2xl sm:p-6"
               onClick={e => e.stopPropagation()}
             >
               <h3 className="font-serif text-lg text-dune mb-4">New Category</h3>
@@ -414,7 +414,7 @@ export default function FAQManagerPage() {
         className="space-y-4"
       >
         {categories.length === 0 ? (
-          <div className="glass rounded-3xl p-12 border border-sage/20 text-center">
+          <div className="glass rounded-lg border border-sage/20 p-8 text-center sm:rounded-2xl sm:p-12">
             <AlertCircle className="w-12 h-12 text-dune/30 mx-auto mb-4" />
             <p className="text-dune/60 mb-4">No FAQ categories yet</p>
             <button
@@ -430,12 +430,12 @@ export default function FAQManagerPage() {
             <motion.div
               key={category.id}
               layout
-              className="glass rounded-3xl border border-sage/20 overflow-hidden"
+              className="glass overflow-hidden rounded-lg border border-sage/20 sm:rounded-2xl"
             >
               {/* Category Header */}
               <div className="p-4 bg-warm-sand/30 border-b border-sage/10">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="grid gap-3 sm:flex sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
                     <button
                       onClick={() => setExpandedCategory(expandedCategory === category.id ? null : category.id)}
                       className="w-8 h-8 rounded-lg bg-white/50 flex items-center justify-center text-dune/60 hover:bg-white transition-colors"
@@ -452,11 +452,11 @@ export default function FAQManagerPage() {
                         type="text"
                         value={editingCategory.displayName}
                         onChange={e => setEditingCategory({ ...editingCategory, displayName: e.target.value })}
-                        className="px-3 py-1 bg-white border border-sage/20 rounded-lg focus:outline-none focus:border-dusty-rose/50"
+                        className="min-w-0 flex-1 rounded-lg border border-sage/20 bg-white px-3 py-1 focus:outline-none focus:border-dusty-rose/50"
                         autoFocus
                       />
                     ) : (
-                      <div>
+                      <div className="min-w-0">
                         <h3 className={`font-medium ${category.isActive ? 'text-dune' : 'text-dune/50'}`}>
                           {category.displayName}
                         </h3>
@@ -467,18 +467,20 @@ export default function FAQManagerPage() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className={`grid w-full gap-2 sm:flex sm:w-auto ${editingCategory?.id === category.id ? 'grid-cols-2' : 'grid-cols-3'}`}>
                     {editingCategory?.id === category.id ? (
                       <>
                         <button
                           onClick={() => updateCategory(editingCategory)}
-                          className="w-8 h-8 rounded-lg bg-ocean-mist/20 text-ocean-mist hover:bg-ocean-mist/30 flex items-center justify-center"
+                          className="flex min-h-11 w-full items-center justify-center rounded-md bg-ocean-mist/20 text-ocean-mist hover:bg-ocean-mist/30 sm:size-11"
+                          aria-label={`Save changes to ${category.displayName}`}
                         >
                           <Check className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setEditingCategory(null)}
-                          className="w-8 h-8 rounded-lg bg-sage/10 text-dune/50 hover:bg-sage/20 flex items-center justify-center"
+                          className="flex min-h-11 w-full items-center justify-center rounded-md bg-sage/10 text-dune/50 hover:bg-sage/20 sm:size-11"
+                          aria-label={`Cancel editing ${category.displayName}`}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -487,24 +489,27 @@ export default function FAQManagerPage() {
                       <>
                         <button
                           onClick={() => toggleCategoryActive(category)}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                          className={`flex min-h-11 w-full items-center justify-center rounded-md transition-all sm:size-11 ${
                             category.isActive
                               ? 'bg-ocean-mist/20 text-ocean-mist hover:bg-ocean-mist/30'
                               : 'bg-sage/10 text-dune/40 hover:bg-sage/20'
                           }`}
                           title={category.isActive ? 'Hide category' : 'Show category'}
+                          aria-label={`${category.isActive ? 'Hide' : 'Show'} ${category.displayName}`}
                         >
                           {category.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </button>
                         <button
                           onClick={() => setEditingCategory(category)}
-                          className="w-8 h-8 rounded-lg bg-sage/10 text-dune/50 hover:bg-sage/20 flex items-center justify-center"
+                          className="flex min-h-11 w-full items-center justify-center rounded-md bg-sage/10 text-dune/50 hover:bg-sage/20 sm:size-11"
+                          aria-label={`Edit ${category.displayName}`}
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => deleteCategory(category.id)}
-                          className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 flex items-center justify-center"
+                          className="flex min-h-11 w-full items-center justify-center rounded-md bg-red-500/10 text-red-500 hover:bg-red-500/20 sm:size-11"
+                          aria-label={`Delete ${category.displayName}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -527,7 +532,7 @@ export default function FAQManagerPage() {
                       {getCategoryItems(category.id).map((item, index) => (
                         <div
                           key={item.id}
-                          className={`p-4 rounded-2xl border transition-all ${
+                          className={`rounded-lg border p-3 transition-all sm:rounded-xl sm:p-4 ${
                             item.isActive 
                               ? 'bg-white/50 border-sage/10' 
                               : 'bg-sage/5 border-sage/5 opacity-60'
@@ -548,7 +553,7 @@ export default function FAQManagerPage() {
                                 placeholder="Enter your answer..."
                                 minHeight={100}
                               />
-                              <div className="flex items-center justify-between">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                   <input
                                     type="checkbox"
@@ -558,7 +563,7 @@ export default function FAQManagerPage() {
                                   />
                                   <span className="text-sm text-dune/70">Featured in Top FAQs</span>
                                 </label>
-                                <div className="flex gap-2">
+                                <div className="grid grid-cols-2 gap-2 sm:flex">
                                   <button
                                     onClick={() => setEditingItem(null)}
                                     className="px-3 py-1.5 text-sm bg-sage/10 text-dune/60 rounded-lg hover:bg-sage/20"
@@ -575,7 +580,7 @@ export default function FAQManagerPage() {
                               </div>
                             </div>
                           ) : (
-                            <div className="flex items-start gap-3">
+                            <div className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 sm:flex">
                               <div className="w-6 h-6 rounded-full bg-sage/20 flex items-center justify-center text-xs text-dune/50 flex-shrink-0 mt-0.5">
                                 {index + 1}
                               </div>
@@ -588,37 +593,41 @@ export default function FAQManagerPage() {
                                 </div>
                                 <p className="text-xs text-dune/60 line-clamp-2">{item.answer}</p>
                               </div>
-                              <div className="flex items-center gap-1 flex-shrink-0">
+                              <div className="col-span-2 grid grid-cols-4 gap-1 sm:col-span-1 sm:ml-auto sm:flex sm:flex-shrink-0">
                                 <button
                                   onClick={() => toggleItemFeatured(item)}
-                                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                                  className={`flex min-h-11 w-full items-center justify-center rounded-md transition-all sm:size-11 ${
                                     item.isFeatured
                                       ? 'bg-golden/20 text-golden'
                                       : 'bg-sage/10 text-dune/30 hover:text-golden'
                                   }`}
                                   title={item.isFeatured ? 'Remove from Top FAQs' : 'Add to Top FAQs'}
+                                  aria-label={`${item.isFeatured ? 'Remove' : 'Add'} ${item.question} ${item.isFeatured ? 'from' : 'to'} Top FAQs`}
                                 >
                                   <Star className={`w-3.5 h-3.5 ${item.isFeatured ? 'fill-golden' : ''}`} />
                                 </button>
                                 <button
                                   onClick={() => toggleItemActive(item)}
-                                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                                  className={`flex min-h-11 w-full items-center justify-center rounded-md transition-all sm:size-11 ${
                                     item.isActive
                                       ? 'bg-ocean-mist/20 text-ocean-mist'
                                       : 'bg-sage/10 text-dune/30'
                                   }`}
+                                  aria-label={`${item.isActive ? 'Hide' : 'Show'} ${item.question}`}
                                 >
                                   {item.isActive ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                 </button>
                                 <button
                                   onClick={() => setEditingItem(item)}
-                                  className="w-7 h-7 rounded-lg bg-sage/10 text-dune/40 hover:bg-sage/20 flex items-center justify-center"
+                                  className="flex min-h-11 w-full items-center justify-center rounded-md bg-sage/10 text-dune/40 hover:bg-sage/20 sm:size-11"
+                                  aria-label={`Edit ${item.question}`}
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => deleteItem(item.id)}
-                                  className="w-7 h-7 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center"
+                                  className="flex min-h-11 w-full items-center justify-center rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 sm:size-11"
+                                  aria-label={`Delete ${item.question}`}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -630,7 +639,7 @@ export default function FAQManagerPage() {
 
                       {/* Add New Item */}
                       {isAddingItem === category.id ? (
-                        <div className="p-4 bg-dusty-rose/5 rounded-2xl border border-dusty-rose/20 space-y-3">
+                        <div className="space-y-3 rounded-lg border border-dusty-rose/20 bg-dusty-rose/5 p-3 sm:rounded-xl sm:p-4">
                           <input
                             type="text"
                             value={newItem.question}
@@ -645,7 +654,7 @@ export default function FAQManagerPage() {
                             placeholder="Enter your answer..."
                             minHeight={80}
                           />
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input
                                 type="checkbox"
@@ -655,7 +664,7 @@ export default function FAQManagerPage() {
                               />
                               <span className="text-sm text-dune/70">Featured in Top FAQs</span>
                             </label>
-                            <div className="flex gap-2">
+                            <div className="grid grid-cols-2 gap-2 sm:flex">
                               <button
                                 onClick={() => {
                                   setIsAddingItem(null)
@@ -678,7 +687,7 @@ export default function FAQManagerPage() {
                       ) : (
                         <button
                           onClick={() => setIsAddingItem(category.id)}
-                          className="w-full p-3 border-2 border-dashed border-sage/20 rounded-xl text-dune/50 hover:border-dusty-rose/30 hover:text-dusty-rose transition-colors flex items-center justify-center gap-2"
+                          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-sage/25 p-3 text-dune/50 transition-colors hover:border-dusty-rose/30 hover:text-dusty-rose"
                         >
                           <Plus className="w-4 h-4" />
                           Add FAQ to this category
@@ -698,7 +707,7 @@ export default function FAQManagerPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="mt-6 p-4 bg-sage/10 rounded-2xl border border-sage/20"
+        className="mt-6 rounded-lg border border-sage/20 bg-sage/10 p-4"
       >
         <p className="text-xs text-dune/70">
           <strong>Tips:</strong> Mark FAQs as &quot;Featured&quot; (⭐) to include them in the &quot;Top FAQs&quot; section. 
@@ -709,4 +718,3 @@ export default function FAQManagerPage() {
     </div>
   )
 }
-

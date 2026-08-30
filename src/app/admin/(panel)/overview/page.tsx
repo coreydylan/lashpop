@@ -62,23 +62,27 @@ export default async function TodayPage() {
   ])
 
   const latestRun = latestRuns[0]
+  const unscoredCount = Number(unscored?.count ?? 0)
+  const pinnedCount = Number(pinned?.count ?? 0)
+  const subscriberCount = Number(subscribers?.count ?? 0)
+  const applicationCount = Number(applications?.count ?? 0)
   const syncAge = latestRun ? Date.now() - new Date(latestRun.startedAt).getTime() : Number.POSITIVE_INFINITY
   const syncHealthy = latestRun?.status === 'success' && syncAge < 45 * 60 * 1000
   const configured = new Set(configuredRows.map((row) => row.section))
   const defaultOnly = EXPECTED_SETTINGS.filter((section) => !configured.has(section))
   const tasks = [
-    unscored.count > 0 ? { label: `Score ${unscored.count} public ${unscored.count === 1 ? 'review' : 'reviews'}`, detail: 'Fresh reviews need the reputation pipeline or a manual pass.', href: '/admin/website/reviews', tone: 'attention' as const } : null,
+    unscoredCount > 0 ? { label: `Score ${unscoredCount} public ${unscoredCount === 1 ? 'review' : 'reviews'}`, detail: 'Fresh reviews need the reputation pipeline or a manual pass.', href: '/admin/website/reviews', tone: 'attention' as const } : null,
     !syncHealthy ? { label: 'Check the Vagaro sync', detail: latestRun ? `Latest run is ${latestRun.status} from ${formatWhen(latestRun.startedAt)}.` : 'No sync run has been recorded.', href: '/admin/system/syncs', tone: 'attention' as const } : null,
     defaultOnly.length > 0 ? { label: `Confirm ${defaultOnly.length} default-backed website ${defaultOnly.length === 1 ? 'section' : 'sections'}`, detail: 'They work today, but no admin-confirmed row has been saved yet.', href: '/admin/website', tone: 'normal' as const } : null,
     { label: 'Verify Fine Line Tattoos end to end', detail: 'Confirm booking order, copy, imagery, and Evie + Kelly Richter’s profile chips.', href: '/admin/workflows/service-launch?category=fine-line-tattoos', tone: 'normal' as const },
   ].filter(Boolean) as Array<{ label: string; detail: string; href: string; tone: 'attention' | 'normal' }>
 
   return (
-    <div className="space-y-8">
-      <header className="grid gap-5 border-b border-black/10 pb-7 lg:grid-cols-[1fr_auto] lg:items-end">
+    <div className="space-y-6 sm:space-y-8">
+      <header className="grid gap-4 border-b border-black/10 pb-5 sm:gap-5 sm:pb-7 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Today</p>
-          <h1 className="mt-2 font-serif text-4xl">Good {dayPart()}, {firstName(session.name)}.</h1>
+          <h1 className="mt-1 text-balance font-serif text-3xl sm:mt-2 sm:text-4xl">Good {dayPart()}, {firstName(session.name)}.</h1>
           <p className="mt-2 text-sm text-black/55">Start with anything that can change what clients see or book.</p>
         </div>
         <div className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 text-sm font-semibold ${syncHealthy ? 'border-emerald-700/20 bg-emerald-50 text-emerald-800' : 'border-amber-700/20 bg-amber-50 text-amber-900'}`}>
@@ -87,11 +91,11 @@ export default async function TodayPage() {
         </div>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Operational summary">
-        <Metric icon={Star} label="Reviews to score" value={unscored.count} href="/admin/website/reviews" />
-        <Metric icon={ClipboardCheck} label="Homepage pins" value={pinned.count} href="/admin/website/reviews" />
-        <Metric icon={Inbox} label="Applications" value={applications.count} href="/admin/inbox/work-with-us" />
-        <Metric icon={RefreshCw} label="Subscribers" value={subscribers.count} href="/admin/inbox/newsletter" />
+      <section className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4" aria-label="Operational summary">
+        <Metric icon={Star} label="Reviews to score" value={unscoredCount} href="/admin/website/reviews" />
+        <Metric icon={ClipboardCheck} label="Homepage pins" value={pinnedCount} href="/admin/website/reviews" />
+        <Metric icon={Inbox} label="Applications" value={applicationCount} href="/admin/inbox/work-with-us" />
+        <Metric icon={RefreshCw} label="Subscribers" value={subscriberCount} href="/admin/inbox/newsletter" />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
@@ -137,7 +141,7 @@ export default async function TodayPage() {
 }
 
 function Metric({ icon: Icon, label, value, href }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; href: string }) {
-  return <Link href={href} className="rounded-xl border border-black/10 bg-white p-5 hover:border-[#c96f50]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"><div className="flex items-center justify-between"><Icon className="size-4 text-[#9f4c33]" /><ArrowRight className="size-3.5 text-black/25" /></div><p className="mt-5 font-serif text-3xl">{value}</p><p className="mt-1 text-xs text-black/50">{label}</p></Link>
+  return <Link href={href} className="bg-white p-4 hover:bg-[#fcfaf7] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] sm:rounded-lg sm:border sm:border-black/10 sm:p-5 sm:hover:border-[#c96f50]/45"><div className="flex items-center justify-between"><Icon className="size-4 text-[#9f4c33]" /><ArrowRight className="size-3.5 text-black/25" /></div><p className="mt-3 font-serif text-3xl tabular-nums sm:mt-5">{value}</p><p className="mt-1 text-xs text-black/50">{label}</p></Link>
 }
 
 function firstName(name: string | null): string {

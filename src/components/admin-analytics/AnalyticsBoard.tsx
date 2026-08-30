@@ -99,16 +99,16 @@ export function AnalyticsBoard() {
   }, [range, retryKey])
 
   return (
-    <section aria-label="Website performance board" className="space-y-5">
-      <div className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-cream/50 p-1" role="group" aria-label="Reporting period">
+    <section aria-label="Website performance board" className="space-y-4 sm:space-y-5">
+      <div className="flex flex-col gap-3 border-y border-black/10 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:rounded-lg sm:border sm:p-4">
+        <div className="grid grid-cols-3 gap-px bg-sage/20 p-px sm:rounded-md" role="group" aria-label="Reporting period">
           {RANGE_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => setRange(option.value)}
               aria-pressed={range === option.value}
-              className={`min-h-11 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta ${
+              className={`min-h-11 rounded-none px-3 text-xs font-semibold transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta sm:rounded-sm ${
                 range === option.value
                   ? 'bg-white text-charcoal shadow-sm'
                   : 'text-black/50 hover:text-charcoal'
@@ -125,7 +125,7 @@ export function AnalyticsBoard() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-black/10 bg-white p-1.5" role="tablist" aria-label="Performance views">
+      <div className="border-y border-black/10 bg-white p-1 sm:rounded-lg sm:border" role="tablist" aria-label="Performance views">
         <div className="grid grid-cols-2 gap-1 sm:flex">
           {VIEWS.map((item) => {
             const Icon = item.icon
@@ -139,7 +139,7 @@ export function AnalyticsBoard() {
                 aria-selected={active}
                 aria-controls={`analytics-panel-${item.value}`}
                 onClick={() => setView(item.value)}
-                className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta sm:w-auto ${
+                className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta sm:w-auto sm:px-4 ${
                   active ? 'bg-charcoal text-white' : 'text-black/50 hover:bg-cream/40 hover:text-charcoal'
                 }`}
               >
@@ -211,7 +211,7 @@ function OverviewView({ data }: { data: AdminAnalyticsDto }) {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Performance summary">
+      <section className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4" aria-label="Performance summary">
         <MetricCard label="Visitors" metric={data.overview.visitors} explanation="Anonymous people who viewed the public site." icon={Users} />
         <MetricCard label="Page views" metric={data.overview.pageviews} explanation="Every public page view, including repeat views." icon={FileText} />
         <MetricCard label="Booking starts" metric={data.overview.bookingStarts} explanation="Times a website booking path was opened." icon={MousePointerClick} />
@@ -360,7 +360,7 @@ function ContentView({ data }: { data: AdminAnalyticsDto }) {
             {data.content.pages.map((page, index) => (
               <li key={page.path} className="grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_7rem_7rem_5rem] md:items-center md:gap-3">
                 <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-cream/55 text-xs font-semibold text-rust">{index + 1}</span>
+                  <span className="w-6 shrink-0 font-mono text-xs font-semibold tabular-nums text-rust">{String(index + 1).padStart(2, '0')}</span>
                   <span className="min-w-0 truncate font-mono text-xs text-charcoal" title={page.path}>{page.path}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-right md:contents">
@@ -379,14 +379,14 @@ function ContentView({ data }: { data: AdminAnalyticsDto }) {
 
 function MetricCard({ label, metric, explanation, icon: Icon }: { label: string; metric: AdminAnalyticsMetric; explanation: string; icon: typeof Users }) {
   return (
-    <article className="rounded-2xl border border-black/10 bg-white p-5">
+    <article className="bg-white p-4 sm:rounded-lg sm:border sm:border-black/10 sm:p-5">
       <div className="flex items-start justify-between gap-3">
-        <span className="flex size-10 items-center justify-center rounded-xl bg-cream/55 text-rust"><Icon className="size-4" aria-hidden="true" /></span>
+        <span className="flex size-8 items-center justify-center rounded-md bg-cream/55 text-rust sm:size-10"><Icon className="size-4" aria-hidden="true" /></span>
         <TrendPill current={metric.current} previous={metric.previous} changePercent={metric.changePercent} />
       </div>
-      <p className="mt-5 font-serif text-4xl text-charcoal">{formatNumber(metric.current)}</p>
+      <p className="mt-3 font-serif text-3xl tabular-nums text-charcoal sm:mt-5 sm:text-4xl">{formatNumber(metric.current)}</p>
       <p className="mt-1 text-sm font-semibold text-charcoal">{label}</p>
-      <p className="mt-2 text-xs leading-5 text-black/45">{explanation}</p>
+      <p className="mt-1.5 text-[11px] leading-4 text-black/50 sm:mt-2 sm:text-xs sm:leading-5">{explanation}</p>
     </article>
   )
 }
@@ -427,7 +427,7 @@ function TrafficChart({ rows }: { rows: AdminAnalyticsDto['dailyTraffic'] }) {
 
 function SignalPair({ title, startedLabel, completedLabel, started, completed, ratio }: { title: string; startedLabel: string; completedLabel: string; started: number; completed: number; ratio: AdminAnalyticsRatio }) {
   return (
-    <article className="overflow-hidden rounded-2xl border border-black/10 bg-white">
+    <article className="overflow-hidden rounded-lg border border-black/10 bg-white">
       <div className="border-b border-black/10 bg-cream/35 px-5 py-4"><p className="text-xs font-semibold uppercase tracking-[0.13em] text-rust">{title}</p></div>
       <div className="grid gap-4 p-5 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
         <SignalValue label={startedLabel} value={started} />
@@ -466,8 +466,8 @@ function AnalyticsLoading() {
   return (
     <div role="status" aria-live="polite" className="space-y-5">
       <span className="sr-only">Loading website performance</span>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((item) => <div key={item} className="h-48 animate-pulse rounded-2xl border border-black/10 bg-white p-5 motion-reduce:animate-none"><div className="size-10 rounded-xl bg-cream/65" /><div className="mt-8 h-10 w-24 rounded bg-cream/65" /><div className="mt-3 h-3 w-32 rounded bg-cream/65" /></div>)}
+      <div className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4">
+        {[0, 1, 2, 3].map((item) => <div key={item} className="h-40 animate-pulse bg-white p-4 motion-reduce:animate-none sm:h-48 sm:rounded-lg sm:border sm:border-black/10 sm:p-5"><div className="size-9 rounded-md bg-cream/65 sm:size-10" /><div className="mt-6 h-9 w-20 rounded bg-cream/65 sm:mt-8" /><div className="mt-3 h-3 w-24 rounded bg-cream/65" /></div>)}
       </div>
       <div className="h-80 animate-pulse rounded-2xl border border-black/10 bg-white p-6 motion-reduce:animate-none"><div className="h-4 w-32 rounded bg-cream/65" /><div className="mt-6 h-56 rounded-xl bg-ivory" /></div>
     </div>
@@ -477,7 +477,7 @@ function AnalyticsLoading() {
 function AnalyticsError({ message, code, onRetry }: { message: string; code?: string; onRetry: () => void }) {
   const configuration = code === 'configuration_required'
   return (
-    <div className="rounded-2xl border border-rust/25 bg-white p-6 sm:p-8" role="alert">
+    <div className="rounded-lg border border-rust/25 bg-white p-6 sm:p-8" role="alert">
       <div className="flex size-11 items-center justify-center rounded-xl bg-cream text-rust"><CircleAlert className="size-5" aria-hidden="true" /></div>
       <h2 className="mt-5 font-serif text-2xl text-charcoal">{configuration ? 'Connection needed' : 'Performance is unavailable'}</h2>
       <p className="mt-2 max-w-xl text-sm leading-6 text-black/55">{message}</p>
@@ -491,7 +491,7 @@ function AnalyticsError({ message, code, onRetry }: { message: string; code?: st
 
 function AnalyticsEmpty({ data }: { data: AdminAnalyticsDto }) {
   return (
-    <div className="rounded-2xl border border-black/10 bg-white p-7 text-center sm:p-10" role="status">
+    <div className="rounded-lg border border-black/10 bg-white p-7 text-center sm:p-10" role="status">
       <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-cream text-rust"><Gauge className="size-5" aria-hidden="true" /></span>
       <h2 className="mt-5 font-serif text-2xl text-charcoal">No activity in this period yet</h2>
       <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-black/50">The connection is working, but no public traffic or action signals matched these {data.range.days} days. Try a longer period.</p>

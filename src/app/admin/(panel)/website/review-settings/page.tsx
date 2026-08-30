@@ -224,8 +224,8 @@ export default function ReviewSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-12 flex items-center gap-3 text-dune/60">
-        <Loader2 className="w-5 h-5 animate-spin" />
+      <div className="flex min-h-64 items-center justify-center gap-3 text-dune/60" role="status" aria-live="polite">
+        <Loader2 className="w-5 h-5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
         Loading settings…
       </div>
     )
@@ -239,15 +239,15 @@ export default function ReviewSettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="mx-auto max-w-3xl px-0 sm:p-6">
       <motion.header
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-start gap-3 mb-8"
+        className="mb-6 flex items-start gap-3 border-b border-sage/20 pb-5 sm:mb-8"
       >
-        <SettingsIcon className="w-8 h-8 text-golden mt-1" />
+        <SettingsIcon className="mt-1 hidden size-7 text-golden sm:block" aria-hidden="true" />
         <div>
-          <h1 className="text-3xl font-semibold text-dune">Review pipeline</h1>
+          <h1 className="font-serif text-3xl text-dune">Review pipeline</h1>
           <p className="text-sm text-dune/60 mt-1 max-w-xl">
             Controls how reviews flow into the homepage carousel and the per-stylist
             highlight reels. Saved values take effect on the next daily Worker tick.
@@ -275,20 +275,22 @@ export default function ReviewSettingsPage() {
         </div>
       )}
 
-      <section className="space-y-6">
+      <section className="border-y border-sage/20 bg-white sm:border-0 sm:bg-transparent">
         {FIELDS.map(f => (
-          <div key={f.key} className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-4 items-start">
+          <div key={f.key} className="grid grid-cols-1 items-start gap-3 border-b border-sage/15 px-4 py-4 last:border-b-0 sm:px-0 md:grid-cols-[1fr_180px] md:gap-4">
             <div>
               <label htmlFor={`field-${f.key}`} className="block text-sm font-medium text-dune">
                 {f.label}
               </label>
               <p className="text-xs text-dune/60 mt-1">{f.description}</p>
             </div>
-            <div className="flex justify-end">
+            <div className="flex justify-start md:justify-end">
               {f.kind === "int" ? (
                 <input
                   id={`field-${f.key}`}
+                  name={`review-pipeline-${f.key}`}
                   type="number"
+                  autoComplete="off"
                   min={f.min}
                   max={f.max}
                   step={f.step ?? 1}
@@ -296,11 +298,12 @@ export default function ReviewSettingsPage() {
                   onChange={e =>
                     setSettings({ ...settings, [f.key]: Number(e.target.value) })
                   }
-                  className="w-32 px-3 py-2 border border-sage/40 rounded-lg text-right focus:outline-none focus:border-golden"
+                  className="min-h-11 w-full rounded-md border border-sage/40 px-3 py-2 text-left text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden md:w-32 md:text-right md:text-sm"
                 />
               ) : (
-                <label className="inline-flex items-center cursor-pointer gap-2">
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-3">
                   <input
+                    name={`review-pipeline-${f.key}`}
                     type="checkbox"
                     checked={settings[f.key] as boolean}
                     onChange={e =>
@@ -316,34 +319,34 @@ export default function ReviewSettingsPage() {
         ))}
       </section>
 
-      <div className="mt-10 flex flex-wrap gap-3 items-center">
+      <div className="mt-6 grid gap-2 sm:mt-10 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
         <button
           onClick={() => void save().catch(() => undefined)}
           disabled={saving || !dirty}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-golden text-white rounded-lg font-medium hover:bg-golden/90 disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-golden px-5 py-2.5 font-medium text-white hover:bg-golden/90 disabled:opacity-60"
         >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Save className="w-4 h-4" aria-hidden="true" />}
           Save settings
         </button>
 
         <button
           onClick={handleTrigger}
           disabled={triggering}
-          className="inline-flex items-center gap-2 px-5 py-2.5 border border-sage/50 text-dune rounded-lg hover:bg-sage/10 disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-sage/50 px-5 py-2.5 text-dune hover:bg-sage/10 disabled:opacity-60"
         >
-          {triggering ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+          {triggering ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Play className="w-4 h-4" aria-hidden="true" />}
           Trigger editor pass now
         </button>
 
         {savedAt && (
-          <span className="inline-flex items-center gap-2 text-sm text-green-700">
-            <CheckCircle2 className="w-4 h-4" />
+          <span className="inline-flex min-h-11 items-center gap-2 text-sm text-green-700" role="status" aria-live="polite">
+            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
             Saved
           </span>
         )}
         {triggerMessage && (
-          <span className="text-sm text-dune/70 flex items-center gap-2">
-            <RotateCw className="w-4 h-4 text-dune/40" />
+          <span className="flex min-h-11 items-center gap-2 text-sm text-dune/70" role="status" aria-live="polite">
+            <RotateCw className="w-4 h-4 text-dune/40" aria-hidden="true" />
             {triggerMessage}
           </span>
         )}

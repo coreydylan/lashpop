@@ -23,11 +23,11 @@ export default function WebsiteOverviewPage() {
   const editors = website.sections.filter((section) => section.id !== 'website-home' && section.id !== 'service-launch')
 
   return (
-    <div className="space-y-8">
-      <header className="grid gap-6 border-b border-black/10 pb-7 lg:grid-cols-[1fr_22rem] lg:items-end">
+    <div className="space-y-6 sm:space-y-8">
+      <header className="grid gap-4 border-b border-black/10 pb-5 sm:gap-6 sm:pb-7 lg:grid-cols-[1fr_22rem] lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Publishing workspace</p>
-          <h1 className="mt-2 max-w-3xl font-serif text-4xl leading-tight text-[#292a27]">Keep every public promise in one coherent story.</h1>
+          <h1 className="mt-1 max-w-3xl text-balance font-serif text-3xl leading-tight text-[#292a27] sm:mt-2 sm:text-4xl">Manage the public LashPop story.</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-black/60">Each editor below names its source of truth. Vagaro owns booking facts; LashPop owns how those facts are explained and presented.</p>
         </div>
         <div className="flex gap-2 lg:justify-end">
@@ -37,9 +37,9 @@ export default function WebsiteOverviewPage() {
         </div>
       </header>
 
-      <section className="rounded-2xl border border-[#c96f50]/25 bg-[#f4dfd5] p-5 sm:p-6">
+      <section className="border-y border-[#c96f50]/25 bg-[#f4dfd5] p-4 sm:rounded-lg sm:border sm:p-6">
         <div className="grid gap-5 md:grid-cols-[auto_1fr_auto] md:items-center">
-          <span className="flex size-12 items-center justify-center rounded-xl bg-[#292a27] text-white"><Workflow className="size-5" /></span>
+          <span className="hidden size-10 items-center justify-center rounded-md bg-[#292a27] text-white sm:flex"><Workflow className="size-5" aria-hidden="true" /></span>
           <div>
             <h2 className="font-serif text-2xl">Launching or changing a service?</h2>
             <p className="mt-1 text-sm leading-6 text-black/60">Use the guided workflow to verify Vagaro sync, booking order, homepage copy, stylist eligibility, imagery, and public presentation together.</p>
@@ -58,18 +58,18 @@ export default function WebsiteOverviewPage() {
           </div>
           <CheckCircle2 className="hidden size-5 text-[#5f8174] sm:block" />
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2 sm:gap-3 md:grid-cols-2 xl:grid-cols-3">
           {editors.map((section) => {
             const Icon = section.icon
             return (
-              <Link key={section.id} href={section.href} className="group flex min-h-44 flex-col rounded-xl border border-black/10 bg-white p-5 hover:border-[#c96f50]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">
-                <div className="flex items-start justify-between gap-4">
-                  <span className="flex size-10 items-center justify-center rounded-lg bg-black/[0.04] text-black/65"><Icon className="size-4" /></span>
-                  <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${OWNER_STYLE[section.owner]}`}>{section.owner}</span>
-                </div>
-                <h3 className="mt-5 text-sm font-semibold">{section.label}</h3>
-                <p className="mt-1 flex-1 text-xs leading-5 text-black/55">{OWNER_COPY[section.owner]}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#9f4c33]">Open editor <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" /></span>
+              <Link key={section.id} href={section.href} className="group grid min-h-24 grid-cols-[2.5rem_minmax(0,1fr)_auto] items-start gap-3 rounded-lg border border-black/10 bg-white p-4 hover:border-[#c96f50]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] sm:min-h-32 sm:p-5">
+                <span className="flex size-10 items-center justify-center rounded-md bg-black/[0.04] text-black/65"><Icon className="size-4" aria-hidden="true" /></span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">{section.label}</span>
+                  <span className="mt-1 line-clamp-2 text-xs leading-5 text-black/55">{OWNER_COPY[section.owner]}</span>
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#9f4c33] sm:mt-3">Open editor <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" /></span>
+                </span>
+                <span className={`rounded-md border px-2 py-1 text-[9px] font-semibold ${OWNER_STYLE[section.owner]}`}>{section.owner}</span>
               </Link>
             )
           })}

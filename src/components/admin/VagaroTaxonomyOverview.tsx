@@ -41,6 +41,7 @@ const sourceLabels: Record<string, string> = {
 
 export function VagaroTaxonomyOverview({ rawCategories, localCategories }: Props) {
   const hasWarning = rawCategories.some(category => !category.isActive || !category.mappedCategoryName)
+  const localBookingCategories = localCategories.filter(category => category.showInBooking)
 
   return (
     <section className="mb-8 overflow-hidden rounded-3xl border border-sage/15 bg-white/65 shadow-sm">
@@ -94,7 +95,93 @@ export function VagaroTaxonomyOverview({ rawCategories, localCategories }: Props
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <ul className="divide-y divide-sage/10 md:hidden" aria-label="Booking taxonomy mappings">
+        {rawCategories.map(category => (
+          <li key={category.id} className="px-4 py-4 text-dune/70 sm:px-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-dune">{category.sourceOrder}. {category.title}</p>
+                <p className="mt-0.5 font-mono text-[10px] text-dune/35">Vagaro #{category.vagaroCategoryId}</p>
+              </div>
+              <span className={`shrink-0 rounded-md px-2.5 py-1 text-[10px] font-semibold ${
+                category.isActive && category.mappedCategoryName
+                  ? 'bg-ocean-mist/10 text-ocean-mist'
+                  : 'bg-golden/10 text-golden'
+              }`}>
+                {category.isActive ? (category.mappedCategoryName ? 'Synced' : 'Unmapped') : 'Removed'}
+              </span>
+            </div>
+
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-dune/45">Services</dt>
+                <dd className="mt-1 text-sm tabular-nums text-dune/75">{category.serviceCount}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-dune/45">Booking position</dt>
+                <dd className="mt-1 text-sm tabular-nums text-dune/75">
+                  {category.mappedCategoryOrder ? `#${category.mappedCategoryOrder}` : '—'}
+                </dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-dune/45">Maps to LashPop</dt>
+                <dd className="mt-1 text-sm text-dune/75">
+                  {category.mappedCategoryName ? (
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span>{category.mappedCategoryName}</span>
+                      {category.mappedCategorySlug === 'lashes' && category.title === 'Lash Lifts' && (
+                        <span className="rounded-md bg-ocean-mist/10 px-2 py-0.5 text-[10px] font-medium text-ocean-mist">Merged</span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="font-medium text-golden">Awaiting automatic mapping</span>
+                  )}
+                </dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-dune/45">Stylist chip</dt>
+                <dd className="mt-1 text-sm text-dune/75">
+                  {category.showOnTeam ? (category.teamLabel || category.title) : <span className="text-dune/35">Hidden</span>}
+                </dd>
+              </div>
+            </dl>
+          </li>
+        ))}
+        {localBookingCategories.map(category => (
+          <li key={category.id} className="bg-dusty-rose/[0.035] px-4 py-4 text-dune/70 sm:px-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-dune">LashPop local</p>
+                <p className="mt-0.5 text-[10px] text-dune/35">Not overwritten by Vagaro</p>
+              </div>
+              <span className="shrink-0 rounded-md bg-dusty-rose/10 px-2.5 py-1 text-[10px] font-semibold text-dusty-rose">
+                {sourceLabels[category.sourceType] || category.sourceType}
+              </span>
+            </div>
+
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-dune/45">Services</dt>
+                <dd className="mt-1 text-sm text-dune/75">—</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-dune/45">Booking position</dt>
+                <dd className="mt-1 text-sm tabular-nums text-dune/75">#{category.displayOrder}</dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-dune/45">Maps to LashPop</dt>
+                <dd className="mt-1 text-sm text-dune/75">{category.name}</dd>
+              </div>
+              <div className="col-span-2">
+                <dt className="text-[10px] font-semibold uppercase tracking-wider text-dune/45">Stylist chip</dt>
+                <dd className="mt-1 text-sm text-dune/75">Local team settings</dd>
+              </div>
+            </dl>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="border-b border-sage/10 bg-cream/45 text-[11px] uppercase tracking-wider text-dune/45">
             <tr>
@@ -143,7 +230,7 @@ export function VagaroTaxonomyOverview({ rawCategories, localCategories }: Props
                 </td>
               </tr>
             ))}
-            {localCategories.filter(category => category.showInBooking).map(category => (
+            {localBookingCategories.map(category => (
               <tr key={category.id} className="bg-dusty-rose/[0.035] text-dune/70">
                 <td className="px-5 py-3.5">
                   <div className="font-medium text-dune">LashPop local</div>

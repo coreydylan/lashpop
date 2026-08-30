@@ -398,12 +398,12 @@ export default function QuizAdminPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-terracotta/30 to-dusty-rose/20 flex items-center justify-center">
+        <div className="grid gap-4 sm:flex sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-terracotta/30 to-dusty-rose/20 sm:flex">
               <Sparkles className="w-6 h-6 text-terracotta" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="h2 text-dune">Find Your Look Quiz</h1>
               <p className="text-sm text-dune/60">
                 Manage quiz photos and result page content
@@ -413,7 +413,7 @@ export default function QuizAdminPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="btn btn-secondary"
+            className="btn btn-secondary w-full sm:w-auto"
           >
             <RefreshCw className={clsx("w-4 h-4", loading && "animate-spin")} />
             Refresh
@@ -426,31 +426,31 @@ export default function QuizAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
-        className="flex gap-2 mb-6"
+        className="mb-6 grid grid-cols-2 gap-2"
       >
         <button
           onClick={() => setActiveTab('photos')}
           className={clsx(
-            "px-4 py-2 rounded-xl font-medium transition-all",
+            "min-w-0 px-2 py-2 rounded-lg font-medium transition-all sm:px-4",
             activeTab === 'photos'
               ? "bg-dusty-rose text-white"
               : "bg-sage/10 text-dune/70 hover:bg-sage/20"
           )}
         >
-          <ImageIcon className="w-4 h-4 inline-block mr-2" />
-          Comparison Photos
+          <ImageIcon className="mr-1 inline-block size-4 sm:mr-2" />
+          <span className="sm:hidden">Photos</span><span className="hidden sm:inline">Comparison Photos</span>
         </button>
         <button
           onClick={() => setActiveTab('results')}
           className={clsx(
-            "px-4 py-2 rounded-xl font-medium transition-all",
+            "min-w-0 px-2 py-2 rounded-lg font-medium transition-all sm:px-4",
             activeTab === 'results'
               ? "bg-dusty-rose text-white"
               : "bg-sage/10 text-dune/70 hover:bg-sage/20"
           )}
         >
-          <Sparkles className="w-4 h-4 inline-block mr-2" />
-          Result Pages
+          <Sparkles className="mr-1 inline-block size-4 sm:mr-2" />
+          <span className="sm:hidden">Results</span><span className="hidden sm:inline">Result Pages</span>
         </button>
       </motion.div>
 
@@ -462,11 +462,11 @@ export default function QuizAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        className="mb-8 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-4"
       >
-        <div className="glass rounded-2xl p-4 border border-sage/10">
+        <div className="glass min-w-0 rounded-lg border border-sage/15 p-3 sm:p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-terracotta/10 flex items-center justify-center">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-terracotta/10 sm:flex">
               <ImageIcon className="w-5 h-5 text-terracotta" />
             </div>
             <div>
@@ -475,9 +475,9 @@ export default function QuizAdminPage() {
             </div>
           </div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/10">
+        <div className="glass min-w-0 rounded-lg border border-sage/15 p-3 sm:p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-ocean-mist/10 sm:flex">
               <Eye className="w-5 h-5 text-ocean-mist" />
             </div>
             <div>
@@ -486,9 +486,9 @@ export default function QuizAdminPage() {
             </div>
           </div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/10">
+        <div className="glass min-w-0 rounded-lg border border-sage/15 p-3 sm:p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-dusty-rose/10 flex items-center justify-center">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-dusty-rose/10 sm:flex">
               <Crop className="w-5 h-5 text-dusty-rose" />
             </div>
             <div>
@@ -497,10 +497,10 @@ export default function QuizAdminPage() {
             </div>
           </div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/10">
+        <div className="glass min-w-0 rounded-lg border border-sage/15 p-3 sm:p-4">
           <div className="flex items-center gap-3">
             <div className={clsx(
-              "w-10 h-10 rounded-xl flex items-center justify-center",
+              "hidden size-10 items-center justify-center rounded-lg sm:flex",
               stats.stylesWithPhotos >= 4 ? "bg-ocean-mist/10" : "bg-golden/10"
             )}>
               <Sparkles className={clsx(
@@ -522,7 +522,7 @@ export default function QuizAdminPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="mb-6 p-4 rounded-2xl bg-golden/10 border border-golden/30 flex items-start gap-3"
+          className="mb-6 flex items-start gap-3 rounded-lg border border-golden/30 bg-golden/10 p-4"
         >
           <AlertCircle className="w-5 h-5 text-golden flex-shrink-0 mt-0.5" />
           <div>
@@ -556,17 +556,17 @@ export default function QuizAdminPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index }}
               className={clsx(
-                "glass rounded-2xl border overflow-hidden",
+                "glass overflow-hidden rounded-lg border sm:rounded-xl",
                 colors.border
               )}
             >
               {/* Style Header */}
               <button
                 onClick={() => toggleStyle(style.id)}
-                className="w-full flex items-center gap-4 p-4 hover:bg-sage/5 transition-colors"
+                className="flex w-full min-w-0 items-center gap-3 p-3 transition-colors hover:bg-sage/5 sm:gap-4 sm:p-4"
               >
                 <div className={clsx(
-                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  "flex size-9 shrink-0 items-center justify-center rounded-md sm:size-10 sm:rounded-lg",
                   colors.bg
                 )}>
                   {isExpanded ? (
@@ -576,8 +576,8 @@ export default function QuizAdminPage() {
                   )}
                 </div>
 
-                <div className="flex-1 text-left">
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <h3 className="font-medium text-dune">{style.label}</h3>
                     <span className={clsx(
                       "px-2 py-0.5 rounded-full text-[10px] font-medium",
@@ -589,7 +589,7 @@ export default function QuizAdminPage() {
                   <p className="text-xs text-dune/60 mt-0.5">{style.description}</p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="hidden items-center gap-2 sm:flex">
                   <span className="text-sm text-dune/40">{stylePhotos.length} photos</span>
                 </div>
               </button>
@@ -607,12 +607,12 @@ export default function QuizAdminPage() {
                     <div className="border-t border-sage/10 p-4">
                       {/* Photo Grid */}
                       {stylePhotos.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 md:grid-cols-4">
                           {stylePhotos.map(photo => (
                             <div
                               key={photo.id}
                               className={clsx(
-                                "relative aspect-[3/4] rounded-xl overflow-hidden border-2 group",
+                                "group relative aspect-[3/4] overflow-hidden rounded-md border sm:rounded-lg",
                                 photo.isEnabled
                                   ? "border-ocean-mist/30"
                                   : "border-sage/20 opacity-60"
@@ -629,12 +629,13 @@ export default function QuizAdminPage() {
                               />
 
                               {/* Overlay Actions */}
-                              <div className="absolute inset-0 bg-dune/0 group-hover:bg-dune/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                              <div className="absolute bottom-1 right-1 flex flex-col items-center justify-center gap-1 opacity-100 sm:inset-0 sm:flex-row sm:bg-dune/0 sm:opacity-0 sm:transition-[background-color,opacity] sm:group-hover:bg-dune/40 sm:group-hover:opacity-100 sm:group-focus-within:bg-dune/40 sm:group-focus-within:opacity-100">
                                 {/* Crop Button */}
                                 <button
                                   onClick={() => setCropEditor({ isOpen: true, photo })}
-                                  className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-colors"
+                                  className="flex size-11 items-center justify-center rounded-md bg-white/90 transition-colors hover:bg-white"
                                   title="Edit crop"
+                                  aria-label={`Edit crop for ${photo.fileName}`}
                                 >
                                   <Crop className="w-4 h-4 text-dune" />
                                 </button>
@@ -644,12 +645,13 @@ export default function QuizAdminPage() {
                                   onClick={() => handleToggleEnabled(photo.id)}
                                   disabled={saving === photo.id}
                                   className={clsx(
-                                    "w-8 h-8 rounded-full flex items-center justify-center transition-colors",
+                                    "flex size-11 items-center justify-center rounded-md transition-colors",
                                     photo.isEnabled
                                       ? "bg-ocean-mist/90 hover:bg-ocean-mist text-white"
                                       : "bg-white/90 hover:bg-white text-dune"
                                   )}
                                   title={photo.isEnabled ? 'Disable' : 'Enable'}
+                                  aria-label={`${photo.isEnabled ? 'Disable' : 'Enable'} ${photo.fileName}`}
                                 >
                                   {saving === photo.id ? (
                                     <RefreshCw className="w-4 h-4 animate-spin" />
@@ -663,8 +665,9 @@ export default function QuizAdminPage() {
                                 {/* Delete */}
                                 <button
                                   onClick={() => setDeleteConfirm(photo.id)}
-                                  className="w-8 h-8 rounded-full bg-terracotta/90 hover:bg-terracotta flex items-center justify-center text-white transition-colors"
+                                  className="flex size-11 items-center justify-center rounded-md bg-terracotta/90 text-white transition-colors hover:bg-terracotta"
                                   title="Delete"
+                                  aria-label={`Delete ${photo.fileName}`}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -703,7 +706,7 @@ export default function QuizAdminPage() {
                         onClick={() => setDamPicker({ isOpen: true, lashStyle: style.id })}
                         disabled={saving === 'adding'}
                         className={clsx(
-                          "w-full py-3 rounded-xl border-2 border-dashed transition-all flex items-center justify-center gap-2",
+                          "flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-dashed py-3 transition-all",
                           "hover:border-dusty-rose/40 hover:bg-dusty-rose/5",
                           "text-dune/60 hover:text-dusty-rose",
                           colors.border
@@ -726,7 +729,7 @@ export default function QuizAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="mt-10 p-6 bg-cream/60 backdrop-blur-sm rounded-3xl border border-sage/10"
+        className="mt-10 rounded-lg border border-sage/15 bg-cream/60 p-4 sm:p-6"
       >
         <h3 className="font-serif text-lg text-dune mb-3">Quiz Photo Tips</h3>
         <ul className="space-y-2 text-sm text-dune/70">
@@ -775,17 +778,17 @@ export default function QuizAdminPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 * index }}
                 className={clsx(
-                  "glass rounded-2xl border overflow-hidden",
+                  "glass overflow-hidden rounded-lg border sm:rounded-xl",
                   colors.border
                 )}
               >
                 {/* Style Header */}
                 <button
                   onClick={() => toggleResultStyle(style.id)}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-sage/5 transition-colors"
+                  className="flex w-full min-w-0 items-center gap-3 p-3 transition-colors hover:bg-sage/5 sm:gap-4 sm:p-4"
                 >
                   <div className={clsx(
-                    "w-10 h-10 rounded-xl flex items-center justify-center",
+                    "flex size-9 shrink-0 items-center justify-center rounded-md sm:size-10 sm:rounded-lg",
                     colors.bg
                   )}>
                     {isExpanded ? (
@@ -795,8 +798,8 @@ export default function QuizAdminPage() {
                     )}
                   </div>
 
-                  <div className="flex-1 text-left">
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
                       <h3 className="font-medium text-dune">{settings?.displayName || style.label}</h3>
                       {hasImage ? (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-ocean-mist/10 text-ocean-mist">
@@ -828,9 +831,9 @@ export default function QuizAdminPage() {
                           <label className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-2 block">
                             Result Image
                           </label>
-                          <div className="flex items-start gap-4">
+                          <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
                             {settings.resultImageFilePath ? (
-                              <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-sage/20 group">
+                              <div className="group relative size-28 shrink-0 overflow-hidden rounded-md border border-sage/20 sm:size-32 sm:rounded-lg">
                                 <Image
                                   key={settings.resultImageCropUrl || settings.resultImageAssetId}
                                   src={settings.resultImageCropUrl || settings.resultImageFilePath}
@@ -839,7 +842,7 @@ export default function QuizAdminPage() {
                                   className="object-cover"
                                   unoptimized={!!settings.resultImageCropUrl}
                                 />
-                                <div className="absolute inset-0 bg-dune/0 group-hover:bg-dune/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                                <div className="absolute bottom-1 right-1 flex items-center justify-center gap-1 opacity-100 sm:inset-0 sm:bg-dune/0 sm:opacity-0 sm:transition-[background-color,opacity] sm:group-hover:bg-dune/40 sm:group-hover:opacity-100 sm:group-focus-within:bg-dune/40 sm:group-focus-within:opacity-100">
                                   <button
                                     onClick={() => setResultCropEditor({
                                       isOpen: true,
@@ -847,15 +850,17 @@ export default function QuizAdminPage() {
                                       imageUrl: settings.resultImageFilePath!,
                                       cropData: settings.resultImageCropData
                                     })}
-                                    className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center hover:bg-white"
+                                    className="flex size-11 items-center justify-center rounded-md bg-white/90 hover:bg-white"
                                     title="Edit crop"
+                                    aria-label={`Edit crop for ${settings.displayName}`}
                                   >
                                     <Crop className="w-4 h-4 text-dune" />
                                   </button>
                                   <button
                                     onClick={() => handleRemoveResultImage(style.id)}
-                                    className="w-8 h-8 rounded-full bg-terracotta/90 hover:bg-terracotta flex items-center justify-center text-white"
+                                    className="flex size-11 items-center justify-center rounded-md bg-terracotta/90 text-white hover:bg-terracotta"
                                     title="Remove image"
+                                    aria-label={`Remove result image for ${settings.displayName}`}
                                   >
                                     <X className="w-4 h-4" />
                                   </button>
@@ -864,13 +869,13 @@ export default function QuizAdminPage() {
                             ) : (
                               <button
                                 onClick={() => setResultDamPicker({ isOpen: true, lashStyle: style.id })}
-                                className="w-32 h-32 rounded-xl border-2 border-dashed border-sage/30 flex flex-col items-center justify-center gap-2 text-dune/40 hover:border-dusty-rose/40 hover:text-dusty-rose transition-colors"
+                                className="flex size-28 shrink-0 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-sage/30 text-dune/40 transition-colors hover:border-dusty-rose/40 hover:text-dusty-rose sm:size-32"
                               >
                                 <Plus className="w-6 h-6" />
                                 <span className="text-xs">Add Image</span>
                               </button>
                             )}
-                            <div className="flex-1 text-xs text-dune/50">
+                            <div className="min-w-0 flex-1 text-xs text-dune/50">
                               <p>This image shows on the result page after the quiz.</p>
                               <p className="mt-1">Recommended: Square crop focused on lashes.</p>
                             </div>
@@ -886,7 +891,7 @@ export default function QuizAdminPage() {
                             type="text"
                             value={settings.displayName}
                             onChange={(e) => handleUpdateResultText(style.id, 'displayName', e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl border border-sage/20 focus:border-dusty-rose/50 focus:ring-2 focus:ring-dusty-rose/20 outline-none text-sm"
+                            className="w-full rounded-lg border border-sage/20 px-3 py-2 text-sm outline-none focus:border-dusty-rose/50 focus:ring-2 focus:ring-dusty-rose/20"
                             placeholder="e.g., Classic Lashes"
                           />
                         </div>
@@ -900,7 +905,7 @@ export default function QuizAdminPage() {
                             value={settings.description}
                             onChange={(e) => handleUpdateResultText(style.id, 'description', e.target.value)}
                             rows={3}
-                            className="w-full px-3 py-2 rounded-xl border border-sage/20 focus:border-dusty-rose/50 focus:ring-2 focus:ring-dusty-rose/20 outline-none text-sm resize-none"
+                            className="w-full resize-none rounded-lg border border-sage/20 px-3 py-2 text-sm outline-none focus:border-dusty-rose/50 focus:ring-2 focus:ring-dusty-rose/20"
                             placeholder="Describe this lash style..."
                           />
                         </div>
@@ -922,14 +927,15 @@ export default function QuizAdminPage() {
                                     newBestFor[i] = e.target.value
                                     handleUpdateBestFor(style.id, newBestFor)
                                   }}
-                                  className="flex-1 px-3 py-1.5 rounded-lg border border-sage/20 focus:border-dusty-rose/50 outline-none text-sm"
+                                  className="min-w-0 flex-1 rounded-lg border border-sage/20 px-3 py-1.5 text-sm outline-none focus:border-dusty-rose/50"
                                 />
                                 <button
                                   onClick={() => {
                                     const newBestFor = settings.bestFor.filter((_, idx) => idx !== i)
                                     handleUpdateBestFor(style.id, newBestFor)
                                   }}
-                                  className="w-6 h-6 rounded-full bg-sage/10 hover:bg-terracotta/10 flex items-center justify-center text-dune/40 hover:text-terracotta transition-colors"
+                                  className="flex size-11 shrink-0 items-center justify-center rounded-md bg-sage/10 text-dune/40 transition-colors hover:bg-terracotta/10 hover:text-terracotta"
+                                  aria-label={`Remove bullet point ${i + 1} from ${settings.displayName}`}
                                 >
                                   <X className="w-3 h-3" />
                                 </button>
@@ -1020,10 +1026,10 @@ export default function QuizAdminPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6"
+              className="relative w-full max-w-md rounded-lg bg-white p-4 shadow-2xl sm:p-6"
             >
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-terracotta/10 flex items-center justify-center flex-shrink-0">
+                <div className="hidden size-12 shrink-0 items-center justify-center rounded-lg bg-terracotta/10 sm:flex">
                   <Trash2 className="w-6 h-6 text-terracotta" />
                 </div>
                 <div>
@@ -1033,10 +1039,10 @@ export default function QuizAdminPage() {
                   </p>
                 </div>
               </div>
-              <div className="flex justify-end gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end sm:gap-3">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2 rounded-xl text-sm font-medium text-dune/60 hover:text-dune hover:bg-sage/10 transition-colors"
+                  className="min-h-11 rounded-md px-4 py-2 text-sm font-medium text-dune/60 transition-colors hover:bg-sage/10 hover:text-dune"
                 >
                   Cancel
                 </button>

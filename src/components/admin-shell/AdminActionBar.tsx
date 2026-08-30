@@ -32,23 +32,24 @@ export function AdminActionBar() {
   return (
     <section
       aria-label="Unsaved admin changes"
-      className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[70] lg:left-[19rem]"
+      aria-busy={busy}
+      className="admin-action-bar fixed z-[70]"
     >
-      <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-[#20211f] text-white shadow-[0_18px_60px_rgba(20,20,18,0.3)]">
-        <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-          <div className="flex min-w-0 items-center gap-3">
+      <div className="mx-auto max-w-3xl overflow-hidden rounded-xl border border-white/10 bg-[#20211f] text-white shadow-[0_18px_60px_rgba(20,20,18,0.3)]">
+        <div className="flex flex-col gap-2.5 p-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-4 sm:py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
             <span
-              className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${errorCount > 0 ? 'bg-[#e38a69]/18 text-[#f4ad91]' : 'bg-white/10 text-white/75'}`}
+              className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${errorCount > 0 ? 'bg-[#e38a69]/18 text-[#f4ad91]' : 'bg-white/10 text-white/75'}`}
               aria-hidden="true"
             >
               {busy
-                ? <Loader2 className="size-4 animate-spin" />
+                ? <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
                 : errorCount > 0
                   ? <AlertCircle className="size-4" />
                   : <Save className="size-4" />}
             </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">{statusText}</p>
+            <div className="min-w-0" aria-live="polite" aria-atomic="true">
+              <p className="truncate text-sm font-semibold">{statusText}</p>
               {!busy && dirtyBlocks.length > 0 && (
                 <p className="mt-0.5 truncate text-xs text-white/50">
                   {dirtyBlocks.map((block) => block.label).join(' · ')}
@@ -57,7 +58,7 @@ export function AdminActionBar() {
             </div>
           </div>
 
-          <div className="flex shrink-0 gap-2">
+          <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
             <button
               type="button"
               disabled={busy || dirtyCount === 0}
@@ -74,7 +75,7 @@ export function AdminActionBar() {
               className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[#c96f50] px-4 text-sm font-semibold text-white hover:bg-[#b75f42] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] focus-visible:ring-offset-2 focus-visible:ring-offset-[#20211f] disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
             >
               {activeOperation === 'saving'
-                ? <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                ? <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                 : <Save className="size-4" aria-hidden="true" />}
               Save all
             </button>
@@ -82,7 +83,7 @@ export function AdminActionBar() {
         </div>
 
         {errors.length > 0 && (
-          <ul aria-label="Changes that could not be completed" className="max-h-32 overflow-y-auto border-t border-white/10 px-4 py-2.5">
+          <ul aria-label="Changes that could not be completed" className="max-h-32 overscroll-contain overflow-y-auto border-t border-white/10 px-3 py-2 sm:px-4 sm:py-2.5">
             {errors.map((block) => (
               <li key={block.id} className="flex gap-2 py-1 text-xs leading-5 text-[#f4c0ad]">
                 <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />

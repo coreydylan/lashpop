@@ -49,18 +49,18 @@ export default async function InboxOverviewPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-7">
-      <header className="border-b border-black/10 pb-6">
-        <div className="flex flex-wrap items-end justify-between gap-5">
+      <header className="border-b border-black/10 pb-5 sm:pb-6">
+        <div className="flex flex-wrap items-end justify-between gap-4 sm:gap-5">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/45">Inbox</p>
-            <h1 className="mt-2 font-serif text-3xl text-[#292a27] sm:text-4xl">People who raised their hand</h1>
+            <h1 className="mt-1 font-serif text-3xl text-[#292a27] sm:mt-2 sm:text-4xl">Inbox</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
               Review newsletter interest and career inquiries without mixing them into website publishing work.
             </p>
           </div>
-          <div className="rounded-lg border border-black/10 bg-[#f8f4ee] px-3 py-2 text-xs leading-5 text-black/55">
+          <p className="border-l-2 border-[#c96f50] pl-3 text-xs leading-5 text-black/55">
             Subscriber consent status and application records are tracked separately
-          </div>
+          </p>
         </div>
       </header>
 
@@ -160,13 +160,13 @@ function InboxSummaryCard({
   children: React.ReactNode
 }) {
   return (
-    <article className="flex min-h-64 flex-col rounded-xl border border-black/10 bg-white p-5 sm:p-6">
+    <article className="flex min-h-0 flex-col rounded-lg border border-black/10 bg-white p-4 sm:min-h-64 sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-black/45">{eyebrow}</p>
           <h2 className="mt-2 font-serif text-3xl text-[#292a27]">{title}</h2>
         </div>
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#c96f50]/10 text-[#a14f35]">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-[#c96f50]/10 text-[#a14f35] sm:size-11">
           <Icon className="size-5" aria-hidden="true" />
         </span>
       </div>

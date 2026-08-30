@@ -12,6 +12,7 @@
     "check:owner-guide": "tsx scripts/generate-admin-owner-guide.ts --check",
     "guide:generate": "tsx scripts/generate-admin-owner-guide.ts",
     "test:admin-live": "node scripts/check-admin-live.mjs",
+    "test:admin-mobile": "node scripts/check-admin-mobile-layout.mjs",
     "audit": "npm audit --audit-level=low",
     "check:visual-coverage": "tsx scripts/check-visual-coverage.ts",
     "test:visual": "npm run check:visual-coverage && playwright test --project=visual-desktop --project=visual-mobile --project=visual-narrow",

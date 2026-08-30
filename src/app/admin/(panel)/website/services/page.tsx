@@ -646,8 +646,8 @@ export default function ServicesAdminPage() {
                 fill
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-dune/0 group-hover:bg-dune/30 transition-colors flex items-center justify-center">
-                <ImageIcon className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-1 right-1 flex size-8 items-center justify-center rounded-md bg-dune/35 transition-colors sm:inset-0 sm:size-auto sm:rounded-none sm:bg-dune/0 sm:group-hover:bg-dune/30">
+                <ImageIcon className="size-4 text-white opacity-100 transition-opacity sm:size-5 sm:opacity-0 sm:group-hover:opacity-100" />
               </div>
             </>
           ) : (
@@ -666,6 +666,7 @@ export default function ServicesAdminPage() {
             disabled={isSaving}
             className="p-1 rounded-md hover:bg-terracotta/10 text-terracotta/60 hover:text-terracotta transition-colors"
             title="Remove image"
+            aria-label={`Remove image from ${itemName}`}
           >
             <X className="w-3 h-3" />
           </button>
@@ -728,8 +729,8 @@ export default function ServicesAdminPage() {
                 fill
                 className="object-cover"
               />
-              <div className="absolute inset-0 bg-dune/0 group-hover:bg-dune/30 transition-colors flex items-center justify-center">
-                <ImageIcon className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-1 right-1 flex size-8 items-center justify-center rounded-md bg-dune/35 transition-colors sm:inset-0 sm:size-auto sm:rounded-none sm:bg-dune/0 sm:group-hover:bg-dune/30">
+                <ImageIcon className="size-4 text-white opacity-100 transition-opacity sm:size-5 sm:opacity-0 sm:group-hover:opacity-100" />
               </div>
             </>
           ) : (
@@ -830,26 +831,26 @@ export default function ServicesAdminPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-mist/30 to-sage/20 flex items-center justify-center">
+        <div className="grid gap-4 sm:flex sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-ocean-mist/30 to-sage/20 sm:flex">
               <Layers className="w-6 h-6 text-ocean-mist" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="h2 text-dune">Services Manager</h1>
               <p className="text-sm text-dune/60">
                 {services.length} services across {categories.length} categories
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <NextLink href="/admin/workflows/service-launch" className="btn btn-primary">
-              Add or update a service
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+            <NextLink href="/admin/workflows/service-launch" className="btn btn-primary w-full sm:w-auto">
+              <span className="sm:hidden">Edit services</span><span className="hidden sm:inline">Add or update a service</span>
             </NextLink>
             <button
               onClick={fetchData}
               disabled={loading}
-              className="btn btn-secondary"
+              className="btn btn-secondary w-full sm:w-auto"
             >
               <RefreshCw className={clsx("w-4 h-4", loading && "animate-spin")} />
               Refresh
@@ -870,45 +871,45 @@ export default function ServicesAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="mb-6 glass rounded-2xl p-4 border border-sage/10"
+        className="glass mb-6 rounded-lg border border-sage/15 p-3 sm:p-4"
       >
         <div className="flex flex-wrap items-center gap-4">
           {/* Search */}
-          <div className="flex-1 min-w-[200px] relative">
+          <div className="relative min-w-0 flex-1 basis-full sm:basis-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dune/40" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search services..."
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-cream border border-sage/20 text-sm text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
+              className="w-full rounded-lg border border-sage/20 bg-cream py-2 pl-10 pr-4 text-sm text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
             />
           </div>
 
           {/* View Mode */}
-          <div className="flex items-center gap-1 bg-cream rounded-xl p-1 border border-sage/20">
+          <div className="grid min-w-0 flex-1 grid-cols-3 items-center gap-1 rounded-lg border border-sage/20 bg-cream p-1 sm:flex sm:flex-none">
             {(['categories', 'services', 'all'] as ViewMode[]).map(mode => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
                 className={clsx(
-                  "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
+                  "min-w-0 px-2 py-1.5 rounded-md text-xs font-medium transition-all sm:px-3",
                   viewMode === mode
                     ? "bg-dusty-rose/20 text-dune"
                     : "text-dune/60 hover:text-dune"
                 )}
               >
-                {mode === 'categories' ? 'By Category' : mode === 'services' ? 'List View' : 'All'}
+                {mode === 'categories' ? <><span className="sm:hidden">Categories</span><span className="hidden sm:inline">By Category</span></> : mode === 'services' ? <><span className="sm:hidden">List</span><span className="hidden sm:inline">List View</span></> : 'All'}
               </button>
             ))}
           </div>
 
           {/* Quick Filters */}
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
               onClick={() => setShowOnlyWithImages(!showOnlyWithImages)}
               className={clsx(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all",
+                "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-all sm:w-auto",
                 showOnlyWithImages
                   ? "bg-ocean-mist/20 text-dune border border-ocean-mist/30"
                   : "text-dune/60 hover:text-dune border border-sage/20"
@@ -926,11 +927,11 @@ export default function ServicesAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        className="mb-8 grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-4"
       >
-        <div className="glass rounded-2xl p-4 border border-sage/10">
+        <div className="glass min-w-0 rounded-lg border border-sage/15 p-3 sm:p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-ocean-mist/10 sm:flex">
               <Layers className="w-5 h-5 text-ocean-mist" />
             </div>
             <div>
@@ -939,9 +940,9 @@ export default function ServicesAdminPage() {
             </div>
           </div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/10">
+        <div className="glass min-w-0 rounded-lg border border-sage/15 p-3 sm:p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-dusty-rose/10 flex items-center justify-center">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-dusty-rose/10 sm:flex">
               <ImageIcon className="w-5 h-5 text-dusty-rose" />
             </div>
             <div>
@@ -952,9 +953,9 @@ export default function ServicesAdminPage() {
             </div>
           </div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/10">
+        <div className="glass min-w-0 rounded-lg border border-sage/15 p-3 sm:p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-ocean-mist/10 sm:flex">
               <ImageIcon className="w-5 h-5 text-ocean-mist" />
             </div>
             <div>
@@ -965,9 +966,9 @@ export default function ServicesAdminPage() {
             </div>
           </div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/10">
+        <div className="glass min-w-0 rounded-lg border border-sage/15 p-3 sm:p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-sage/10 flex items-center justify-center">
+            <div className="hidden size-10 items-center justify-center rounded-lg bg-sage/10 sm:flex">
               <LinkIcon className="w-5 h-5 text-sage" />
             </div>
             <div>
@@ -995,9 +996,9 @@ export default function ServicesAdminPage() {
             const serviceCount = Array.from(subcategories.values()).reduce((sum, sub) => sum + sub.services.length, 0) + uncategorizedServices.length
 
             return (
-              <div key={categoryId} className="glass rounded-2xl border border-sage/10 overflow-hidden">
+              <div key={categoryId} className="glass overflow-hidden rounded-lg border border-sage/15 sm:rounded-xl">
                 {/* Category Header */}
-                <div className="flex items-center gap-4 p-4 hover:bg-sage/5 transition-colors">
+                <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3 p-3 transition-colors hover:bg-sage/5 sm:flex sm:gap-4 sm:p-4">
                   {/* Expand toggle */}
                   <button
                     onClick={() => toggleCategory(categoryId)}
@@ -1015,7 +1016,7 @@ export default function ServicesAdminPage() {
                   {/* Category info - clickable to expand */}
                   <button
                     onClick={() => toggleCategory(categoryId)}
-                    className="flex-1 text-left"
+                    className="min-w-0 flex-1 text-left"
                   >
                     <h3 className="font-medium text-dune">{category.name}</h3>
                     <p className="text-xs text-dune/60">
@@ -1023,7 +1024,7 @@ export default function ServicesAdminPage() {
                     </p>
                   </button>
 
-                  <div className="flex items-center gap-3">
+                  <div className="col-span-3 flex min-w-0 flex-wrap items-center justify-end gap-2 sm:ml-auto sm:gap-3">
                     {/* Reorder Subcategories Button */}
                     {category.subcategories.length > 1 && (
                       <button
@@ -1036,7 +1037,7 @@ export default function ServicesAdminPage() {
                             subcategories: [...category.subcategories].sort((a, b) => a.displayOrder - b.displayOrder)
                           })
                         }}
-                        className="p-2 rounded-lg hover:bg-ocean-mist/10 text-ocean-mist/60 hover:text-ocean-mist transition-colors"
+                        className="flex size-11 items-center justify-center rounded-md text-ocean-mist/60 transition-colors hover:bg-ocean-mist/10 hover:text-ocean-mist"
                         title="Reorder subcategories"
                       >
                         <ArrowUpDown className="w-4 h-4" />
@@ -1056,7 +1057,7 @@ export default function ServicesAdminPage() {
                           icon: category.icon || ''
                         })
                       }}
-                      className="p-2 rounded-lg hover:bg-dusty-rose/10 text-dusty-rose/60 hover:text-dusty-rose transition-colors"
+                      className="flex size-11 items-center justify-center rounded-md text-dusty-rose/60 transition-colors hover:bg-dusty-rose/10 hover:text-dusty-rose"
                       title="Edit category content"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -1091,7 +1092,7 @@ export default function ServicesAdminPage() {
                           return (
                             <div key={subId} className="border-b border-sage/5 last:border-b-0">
                               {/* Subcategory Header */}
-                              <div className="flex items-center gap-4 px-6 py-3 hover:bg-sage/5 transition-colors">
+                              <div className="flex min-w-0 items-center gap-3 px-3 py-3 transition-colors hover:bg-sage/5 sm:gap-4 sm:px-6">
                                 {/* Expand toggle */}
                                 <button
                                   onClick={() => toggleSubcategory(subId)}
@@ -1109,7 +1110,7 @@ export default function ServicesAdminPage() {
                                 {/* Subcategory info - clickable to expand */}
                                 <button
                                   onClick={() => toggleSubcategory(subId)}
-                                  className="flex-1 text-left"
+                                  className="min-w-0 flex-1 text-left"
                                 >
                                   <h4 className="text-sm font-medium text-dune">{subcategory.name}</h4>
                                   <p className="text-[10px] text-dune/50">{subServices.length} services</p>
@@ -1125,11 +1126,11 @@ export default function ServicesAdminPage() {
                                     exit={{ height: 0, opacity: 0 }}
                                     className="overflow-hidden bg-cream/50"
                                   >
-                                    <div className="px-8 py-2 space-y-1">
+                                    <div className="space-y-1 px-3 py-2 sm:px-8">
                                       {subServices.map(service => (
                                         <div
                                           key={service.id}
-                                          className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/50 transition-colors"
+                                          className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-white/50 sm:gap-3 sm:px-3"
                                         >
                                           {renderServiceImageCell(service, 'sm')}
 
@@ -1187,13 +1188,13 @@ export default function ServicesAdminPage() {
 
                         {/* Uncategorized Services */}
                         {uncategorizedServices.length > 0 && (
-                          <div className="px-8 py-3 bg-cream/50">
+                          <div className="bg-cream/50 px-3 py-3 sm:px-8">
                             <p className="text-xs text-dune/40 mb-2">Uncategorized</p>
                             <div className="space-y-1">
                               {uncategorizedServices.map(service => (
                                 <div
                                   key={service.id}
-                                  className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-white/50 transition-colors"
+                                  className="flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-white/50 sm:gap-3 sm:px-3"
                                 >
                                   {renderServiceImageCell(service, 'sm')}
                                   <div className="flex-1 min-w-0">
@@ -1230,8 +1231,8 @@ export default function ServicesAdminPage() {
           })
         ) : (
           // List View
-          <div className="glass rounded-2xl border border-sage/10 overflow-hidden">
-            <table className="w-full">
+          <div className="glass overflow-hidden rounded-lg border border-sage/15 sm:rounded-xl">
+            <table className="w-full table-fixed md:table-auto">
               <thead>
                 <tr className="border-b border-sage/10 bg-cream/50">
                   <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider">Image</th>
@@ -1301,7 +1302,7 @@ export default function ServicesAdminPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="mt-10 p-6 bg-cream/60 backdrop-blur-sm rounded-3xl border border-sage/10"
+        className="mt-10 rounded-lg border border-sage/15 bg-cream/60 p-4 sm:p-6"
       >
         <h3 className="font-serif text-lg text-dune mb-3">Quick Tips</h3>
         <ul className="space-y-2 text-sm text-dune/70">
@@ -1365,10 +1366,10 @@ export default function ServicesAdminPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-2xl overflow-hidden rounded-lg bg-white shadow-2xl sm:rounded-2xl"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-sage/10">
+              <div className="flex items-center justify-between border-b border-sage/10 p-4 sm:p-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-dusty-rose/10 flex items-center justify-center">
                     <FileText className="w-5 h-5 text-dusty-rose" />
@@ -1387,7 +1388,7 @@ export default function ServicesAdminPage() {
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-6">
+              <div className="space-y-6 p-4 sm:p-6">
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-dune mb-2">
                     <Type className="w-4 h-4 text-dusty-rose" />
@@ -1567,10 +1568,10 @@ export default function ServicesAdminPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md overflow-hidden rounded-lg bg-white shadow-2xl sm:rounded-2xl"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-sage/10">
+              <div className="flex items-center justify-between border-b border-sage/10 p-4 sm:p-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
                     <ArrowUpDown className="w-5 h-5 text-ocean-mist" />
@@ -1589,7 +1590,7 @@ export default function ServicesAdminPage() {
               </div>
 
               {/* Content */}
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <p className="text-sm text-dune/60 mb-4">
                   Drag items or use arrows to reorder. This order will be reflected in the service browser tabs.
                 </p>
@@ -1707,10 +1708,10 @@ export default function ServicesAdminPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md overflow-hidden rounded-lg bg-white shadow-2xl sm:rounded-2xl"
             >
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-sage/10">
+              <div className="flex items-center justify-between border-b border-sage/10 p-4 sm:p-6">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-ocean-mist/10 flex items-center justify-center">
                     <FolderOpen className="w-5 h-5 text-ocean-mist" />
@@ -1729,7 +1730,7 @@ export default function ServicesAdminPage() {
               </div>
 
               {/* Content */}
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <p className="text-sm text-dune/60 mb-4">
                   Select which subcategory this service should appear under in the service browser.
                 </p>

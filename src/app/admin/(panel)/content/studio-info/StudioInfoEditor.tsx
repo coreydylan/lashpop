@@ -99,7 +99,7 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
   }
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-5 sm:space-y-8">
       <Header
         isDirty={isDirty}
         status={status}
@@ -109,10 +109,17 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
         onSave={handleSave}
       />
 
+      {status === 'error' && errorMsg ? (
+        <div className="flex items-start gap-2 border-l-2 border-terracotta bg-terracotta/10 px-3 py-2 text-sm text-terracotta" role="alert">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p className="min-w-0">{errorMsg}</p>
+        </div>
+      ) : null}
+
       <Section
         icon={Building2}
         title="Identity"
-        description="Used in the site header, footer, schema.org markup, and llms.txt."
+        description="The business name and tagline shown across the website."
       >
         <Field label="Business name" value={s.name} onChange={v => setS({ ...s, name: v })} />
         <Field
@@ -123,8 +130,8 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
         />
       </Section>
 
-      <Section icon={MapPin} title="Address & Map" description="Drives the footer, map section, and LocalBusiness schema.">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Section icon={MapPin} title="Address & Map" description="The public studio address and map location.">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Street" value={s.address.street} onChange={v => setS({ ...s, address: { ...s.address, street: v } })} />
           <Field label="City" value={s.address.city} onChange={v => setS({ ...s, address: { ...s.address, city: v } })} />
           <Field label="State" value={s.address.state} onChange={v => setS({ ...s, address: { ...s.address, state: v } })} />
@@ -146,20 +153,20 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
         </div>
       </Section>
 
-      <Section icon={Phone} title="Contact" description="Used by every tel:/mailto: link and the contact card in the footer.">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Section icon={Phone} title="Contact" description="The phone numbers and email addresses customers use.">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field
             label="Phone (display)"
             value={s.phone}
             onChange={v => setS({ ...s, phone: v })}
-            help="As shown to the user, e.g. (760) 212-0448"
+            help="As shown to customers, for example (760) 212-0448."
             icon={Phone}
           />
           <Field
             label="Phone (E.164)"
             value={s.phoneE164}
             onChange={v => setS({ ...s, phoneE164: v })}
-            help="For tel:/sms: links, e.g. +17602120448"
+            help="Dialing format, for example +17602120448."
           />
           <Field
             label="Public email"
@@ -173,14 +180,14 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
             label="Inbound email"
             value={s.inboundEmail}
             onChange={v => setS({ ...s, inboundEmail: v })}
-            help="Where work-with-us applications + newsletter signups get forwarded."
+            help="Where applications and newsletter signups are delivered."
             type="email"
             className="sm:col-span-2"
           />
         </div>
       </Section>
 
-      <Section icon={Clock} title="Hours" description="Displayed in the footer and used in LocalBusiness schema.">
+      <Section icon={Clock} title="Hours" description="The short hours summary shown to customers.">
         <Field
           label="Hours (short)"
           value={s.hoursShort}
@@ -189,7 +196,7 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
         />
       </Section>
 
-      <Section icon={Calendar} title="Booking" description="Vagaro booking URL used by every booking CTA on the site.">
+      <Section icon={Calendar} title="Booking" description="The Vagaro destination opened by booking buttons.">
         <Field
           label="Vagaro booking URL"
           value={s.vagaroBookingUrl}
@@ -199,8 +206,8 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
         />
       </Section>
 
-      <Section icon={ExternalLink} title="Social profiles" description="Shown in footer + reviews carousel + LocalBusiness sameAs.">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Section icon={ExternalLink} title="Social profiles" description="Public profile links shown across the website.">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Instagram" value={s.social.instagram ?? ''} onChange={v => setS({ ...s, social: { ...s.social, instagram: v } })} />
           <Field label="Facebook" value={s.social.facebook ?? ''} onChange={v => setS({ ...s, social: { ...s.social, facebook: v } })} />
           <Field label="TikTok" value={s.social.tiktok ?? ''} onChange={v => setS({ ...s, social: { ...s.social, tiktok: v } })} />
@@ -211,7 +218,6 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
         </div>
       </Section>
 
-      <StickySaveBar isDirty={isDirty} status={status} errorMsg={errorMsg} conflict={conflict} onSave={handleSave} />
     </div>
   )
 }
@@ -232,54 +238,22 @@ function Header({
   onSave: () => void
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 flex-wrap">
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dusty-rose to-terracotta flex items-center justify-center shadow-sm">
-            <Building2 className="w-5 h-5 text-cream" />
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+      <div className="min-w-0">
+        <div className="mb-2 flex items-center gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-dusty-rose to-terracotta shadow-sm md:rounded-xl">
+            <Building2 className="size-5 text-cream" aria-hidden="true" />
           </div>
-          <h1 className="font-serif text-2xl text-dune font-semibold">Studio Info</h1>
+          <h1 className="font-serif text-2xl font-semibold text-dune">Studio Info</h1>
         </div>
-        <p className="text-sm text-dune/70 max-w-2xl leading-relaxed">
-          One source of truth for the studio&apos;s identity. Changes here propagate to every
-          place the site renders the name, address, phone, email, hours, social URLs, or
-          Vagaro booking link. Replaces ~30 hardcoded values across the codebase.
+        <p className="max-w-2xl text-sm leading-6 text-dune/70">
+          Update the studio details customers see across the website, booking links, maps, and social profiles.
         </p>
         <p className="mt-1 text-xs text-dune/50">
           {version === 0 ? 'Not published yet' : `Version ${version}`} · Source: {sourceOwner}
         </p>
       </div>
-      <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={onSave} />
-    </div>
-  )
-}
-
-function StickySaveBar({
-  isDirty,
-  status,
-  errorMsg,
-  conflict,
-  onSave,
-}: {
-  isDirty: boolean
-  status: SaveStatus
-  errorMsg: string | null
-  conflict: boolean
-  onSave: () => void
-}) {
-  if (!isDirty && status !== 'saved' && status !== 'error') return null
-  return (
-    <div className="sticky bottom-4 z-30 flex justify-end">
-      <div className="bg-cream/95 backdrop-blur-xl border border-sage/20 rounded-2xl px-4 py-3 shadow-lg flex items-center gap-3">
-        {status === 'error' && (
-          <span className="text-sm text-red-700 flex items-center gap-1">
-            <AlertCircle className="w-4 h-4" />
-            {errorMsg ?? 'Save failed'}
-          </span>
-        )}
-        {isDirty && status !== 'saving' && (
-          <span className="text-xs text-dune/60">Unsaved changes</span>
-        )}
+      <div className="w-full sm:w-auto">
         <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={onSave} />
       </div>
     </div>
@@ -314,17 +288,17 @@ function SaveButton({
       type="button"
       onClick={onSave}
       disabled={disabled}
-      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+      className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2 sm:w-auto md:rounded-xl ${
         status === 'saved'
           ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
           : 'bg-terracotta text-cream hover:bg-terracotta/90 disabled:opacity-40 disabled:cursor-not-allowed'
       }`}
     >
       {status === 'saved'
-        ? <Check className="w-4 h-4" />
+        ? <Check className="size-4" aria-hidden="true" />
         : conflict
-          ? <RefreshCw className="w-4 h-4" />
-          : <Save className="w-4 h-4" />}
+          ? <RefreshCw className="size-4" aria-hidden="true" />
+          : <Save className="size-4" aria-hidden="true" />}
       {label}
     </button>
   )
@@ -344,8 +318,8 @@ interface FieldProps {
 function Field({ label, value, onChange, type = 'text', step, help, icon: Icon, className }: FieldProps) {
   return (
     <label className={`block ${className ?? ''}`}>
-      <span className="text-xs font-medium text-dune/70 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-        {Icon && <Icon className="w-3.5 h-3.5" />}
+      <span className="mb-1.5 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-dune/70">
+        {Icon && <Icon className="size-3.5" aria-hidden="true" />}
         {label}
       </span>
       <input
@@ -353,7 +327,7 @@ function Field({ label, value, onChange, type = 'text', step, help, icon: Icon, 
         step={step}
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2 rounded-xl border border-sage/25 bg-white focus:outline-none focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 text-sm text-dune placeholder:text-dune/40"
+        className="min-h-11 w-full min-w-0 rounded-lg border border-sage/25 bg-white px-3 py-2 text-sm text-dune placeholder:text-dune/40 focus-visible:border-terracotta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta/20 md:rounded-xl"
       />
       {help && <span className="block text-xs text-dune/50 mt-1">{help}</span>}
     </label>
@@ -372,10 +346,10 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section className="bg-white/70 backdrop-blur-sm border border-sage/15 rounded-2xl p-6 shadow-sm">
-      <div className="flex items-start gap-3 mb-5">
+    <section className="rounded-xl border border-sage/15 bg-white/70 p-4 shadow-sm backdrop-blur-sm md:rounded-2xl md:p-6">
+      <div className="mb-4 flex items-start gap-3 md:mb-5">
         <div className="w-8 h-8 rounded-lg bg-dusty-rose/15 flex items-center justify-center flex-shrink-0">
-          <Icon className="w-4 h-4 text-terracotta" />
+          <Icon className="size-4 text-terracotta" aria-hidden="true" />
         </div>
         <div>
           <h2 className="font-serif text-lg text-dune font-medium leading-tight">{title}</h2>

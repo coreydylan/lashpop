@@ -1,26 +1,26 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { motion, Reorder } from 'framer-motion'
 import {
-  Star,
-  Eye,
-  EyeOff,
-  RefreshCw,
-  Save,
-  Check,
   AlertCircle,
-  GripVertical,
+  ArrowDown,
+  ArrowUp,
   Calendar,
-  Quote,
-  Filter,
-  Search,
+  Check,
   ChevronDown,
   ChevronUp,
-  Pencil,
-  Settings,
+  Eye,
+  EyeOff,
+  LoaderCircle,
   Lock,
+  MoreHorizontal,
+  Pencil,
+  RefreshCw,
+  Save,
+  Search,
+  Settings,
+  Star,
 } from 'lucide-react'
 
 import ReviewEditDrawer, { type ReviewRow } from './ReviewEditDrawer'
@@ -36,9 +36,7 @@ interface Review {
   reviewDate: string | null
   isSelected: boolean
   displayOrder: number
-  // Live on the homepage right now via cron auto-promotion (not admin-pinned).
   isLiveAuto?: boolean
-  // Editor pass + admin override fields
   qualityScore?: number | null
   editorNotes?: string | null
   showOnWebsite?: boolean | null
@@ -49,7 +47,24 @@ interface Review {
 
 type FilterSource = 'all' | 'google' | 'yelp' | 'vagaro'
 
-interface TeamOption { id: string; name: string; isActive: boolean }
+interface TeamOption {
+  id: string
+  name: string
+  isActive: boolean
+}
+
+const SOURCE_OPTIONS: Array<{ value: FilterSource; label: string }> = [
+  { value: 'all', label: 'All sources' },
+  { value: 'google', label: 'Google' },
+  { value: 'yelp', label: 'Yelp' },
+  { value: 'vagaro', label: 'Vagaro' },
+]
+
+const reviewDateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+})
 
 export default function ReviewsManagerPage() {
   const [reviews, setReviews] = useState<Review[]>([])
@@ -63,499 +78,517 @@ export default function ReviewsManagerPage() {
   const [teamOptions, setTeamOptions] = useState<TeamOption[]>([])
   const [editing, setEditing] = useState<Review | null>(null)
   const [expandedReview, setExpandedReview] = useState<string | null>(null)
-  const [showSelectedOnly, setShowSelectedOnly] = useState(false)
+  const [openActions, setOpenActions] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchReviews()
-    fetchTeamOptions()
-  }, [])
-
-  const fetchTeamOptions = async () => {
+  const fetchTeamOptions = useCallback(async () => {
     try {
-      const r = await fetch('/api/admin/website/team')
-      if (!r.ok) return
-      const data = await r.json()
+      const response = await fetch('/api/admin/website/team')
+      if (!response.ok) return
+      const data = await response.json()
       const list = (data?.teamMembers ?? data?.members ?? data ?? []) as Array<{
-        id: string; name: string; isActive?: boolean; is_active?: boolean
+        id: string
+        name: string
+        isActive?: boolean
+        is_active?: boolean
       }>
       setTeamOptions(
-        list.map(m => ({ id: m.id, name: m.name, isActive: m.isActive ?? m.is_active ?? true }))
+        list.map((member) => ({
+          id: member.id,
+          name: member.name,
+          isActive: member.isActive ?? member.is_active ?? true,
+        })),
       )
     } catch {
-      // Non-fatal — drawer will work with an empty dropdown.
+      // Team assignment remains optional if this supporting request fails.
     }
-  }
+  }, [])
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
+
     try {
       const response = await fetch('/api/admin/website/reviews')
-      if (response.ok) {
-        const data = await response.json()
-        console.log('Fetched reviews data:', { 
-          totalReviews: data.reviews?.length, 
-          selectedIds: data.selectedIds 
-        })
-        
-        const allReviews = data.reviews || []
-        const selected = data.selectedIds || []
-        
-        // Mark selected reviews and separate them
-        const marked = allReviews.map((r: Review) => ({
-          ...r,
-          isSelected: selected.includes(r.id)
-        }))
-        
-        // Separate selected and unselected
-        const selectedList = marked
-          .filter((r: Review) => r.isSelected)
-          .sort((a: Review, b: Review) => a.displayOrder - b.displayOrder)
-        const unselectedList = marked.filter((r: Review) => !r.isSelected)
-        
-        console.log('Processed reviews:', { 
-          selected: selectedList.length, 
-          unselected: unselectedList.length 
-        })
-        
-        setSelectedReviews(selectedList)
-        setReviews(unselectedList)
-      } else {
-        const errorData = await response.json()
-        console.error('Failed to fetch reviews:', errorData)
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(data?.error || 'Reviews could not be loaded.')
       }
+
+      const allReviews = (data.reviews || []) as Review[]
+      const selectedIds = (data.selectedIds || []) as string[]
+      const marked = allReviews.map((review) => ({
+        ...review,
+        isSelected: selectedIds.includes(review.id),
+      }))
+
+      setSelectedReviews(
+        marked
+          .filter((review) => review.isSelected)
+          .sort((first, second) => first.displayOrder - second.displayOrder),
+      )
+      setReviews(marked.filter((review) => !review.isSelected))
+      setHasChanges(false)
     } catch (error) {
-      console.error('Error fetching reviews:', error)
+      setLoadError(error instanceof Error ? error.message : 'Reviews could not be loaded.')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void fetchReviews()
+    void fetchTeamOptions()
+  }, [fetchReviews, fetchTeamOptions])
+
+  const allReviews = useMemo(() => [...selectedReviews, ...reviews], [reviews, selectedReviews])
+
+  const filteredReviews = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+
+    return reviews.filter((review) => {
+      const matchesSource = filterSource === 'all' || review.source.toLowerCase() === filterSource
+      const matchesSearch =
+        normalizedQuery === '' ||
+        review.reviewerName.toLowerCase().includes(normalizedQuery) ||
+        review.reviewText.toLowerCase().includes(normalizedQuery)
+
+      return matchesSource && matchesSearch
+    })
+  }, [filterSource, reviews, searchQuery])
 
   const toggleSelection = (review: Review) => {
     if (review.isSelected) {
-      // Remove from selected
-      setSelectedReviews(prev => prev.filter(r => r.id !== review.id))
-      setReviews(prev => [...prev, { ...review, isSelected: false }])
+      setSelectedReviews((current) => current.filter((item) => item.id !== review.id))
+      setReviews((current) => [...current, { ...review, isSelected: false }])
     } else {
-      // Add to selected
-      setReviews(prev => prev.filter(r => r.id !== review.id))
-      setSelectedReviews(prev => [...prev, { ...review, isSelected: true, displayOrder: prev.length }])
+      setReviews((current) => current.filter((item) => item.id !== review.id))
+      setSelectedReviews((current) => [
+        ...current,
+        { ...review, isSelected: true, displayOrder: current.length },
+      ])
     }
+
+    setOpenActions(null)
+    setSaveError(null)
     setHasChanges(true)
   }
 
-  const handleReorderSelected = (newOrder: Review[]) => {
-    setSelectedReviews(newOrder.map((r, i) => ({ ...r, displayOrder: i })))
+  const moveSelectedReview = (reviewId: string, direction: -1 | 1) => {
+    setSelectedReviews((current) => {
+      const currentIndex = current.findIndex((review) => review.id === reviewId)
+      const nextIndex = currentIndex + direction
+      if (currentIndex < 0 || nextIndex < 0 || nextIndex >= current.length) return current
+
+      const next = [...current]
+      const [moved] = next.splice(currentIndex, 1)
+      next.splice(nextIndex, 0, moved)
+      return next.map((review, index) => ({ ...review, displayOrder: index }))
+    })
+    setOpenActions(null)
+    setSaveError(null)
     setHasChanges(true)
   }
 
   const handleSave = async () => {
+    if (!hasChanges || saving) return
+
     setSaving(true)
+    setSaved(false)
+    setSaveError(null)
+
     try {
-      const selectedIds = selectedReviews.map((r, index) => ({
-        id: r.id,
-        displayOrder: index
-      }))
-
-      console.log('Saving reviews:', selectedIds)
-
       const response = await fetch('/api/admin/website/reviews', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selectedReviews: selectedIds })
+        body: JSON.stringify({
+          selectedReviews: selectedReviews.map((review, index) => ({
+            id: review.id,
+            displayOrder: index,
+          })),
+        }),
       })
+      const data = await response.json().catch(() => ({}))
 
-      const data = await response.json()
-      console.log('Save response:', data)
-
-      if (response.ok && data.success) {
-        setSaved(true)
-        setHasChanges(false)
-        setTimeout(() => setSaved(false), 2000)
-      } else {
-        console.error('Save failed:', data)
-        alert(`Failed to save: ${data.error || 'Unknown error'}`)
+      if (!response.ok || !data.success) {
+        throw new Error(data?.error || 'Homepage review changes could not be saved.')
       }
+
+      setSaved(true)
+      setHasChanges(false)
+      window.setTimeout(() => setSaved(false), 2000)
     } catch (error) {
-      console.error('Error saving review settings:', error)
-      alert('Failed to save changes')
+      setSaveError(error instanceof Error ? error.message : 'Homepage review changes could not be saved.')
     } finally {
       setSaving(false)
     }
   }
 
-  const filteredReviews = reviews.filter(review => {
-    const matchesSource = filterSource === 'all' || review.source.toLowerCase() === filterSource
-    const matchesSearch = searchQuery === '' || 
-      review.reviewerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      review.reviewText.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSource && matchesSearch
-  })
-
-  const renderStars = (rating: number) => (
-    <div className="flex gap-0.5">
-      {[...Array(5)].map((_, i) => (
-        <Star
-          key={i}
-          className={`w-4 h-4 ${i < rating ? 'text-golden fill-golden' : 'text-sage/30'}`}
-        />
-      ))}
-    </div>
-  )
-
-  const getSourceColor = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'google': return 'bg-blue-500/10 text-blue-600 border-blue-500/20'
-      case 'yelp': return 'bg-red-500/10 text-red-600 border-red-500/20'
-      case 'vagaro': return 'bg-purple-500/10 text-purple-600 border-purple-500/20'
-      default: return 'bg-sage/10 text-dune/60 border-sage/20'
-    }
-  }
-
-  const ReviewCard = ({ review, isInSelected = false }: { review: Review, isInSelected?: boolean }) => (
-    <div className="p-4">
-      <div className="flex items-start gap-3">
-        {/* Drag Handle (only for selected) */}
-        {isInSelected && (
-          <div className="cursor-grab active:cursor-grabbing text-dune/30 hover:text-dune/50 mt-1 touch-none">
-            <GripVertical className="w-5 h-5" />
-          </div>
-        )}
-
-        {/* Order Number (only for selected) */}
-        {isInSelected && (
-          <div className="w-7 h-7 rounded-full bg-golden/20 flex items-center justify-center text-xs text-golden font-semibold flex-shrink-0">
-            {review.displayOrder + 1}
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="font-medium text-dune">{review.reviewerName}</span>
-            <span className={`px-2 py-0.5 text-xs rounded-full border ${getSourceColor(review.source)}`}>
-              {review.source}
-            </span>
-            {/* Live-now badge for cron auto-promoted reviews the curator didn't pin */}
-            {review.isLiveAuto && !review.isSelected && (
-              <span
-                className="px-2 py-0.5 text-xs rounded-full border bg-ocean-mist/15 text-ocean-mist border-ocean-mist/30"
-                title="Currently showing on the homepage (auto-selected by the system to fill capacity). Pin it to lock it in place."
-              >
-                Live now
-              </span>
-            )}
-            {renderStars(review.rating)}
-            {/* Quality score chip */}
-            {typeof review.qualityScore === 'number' && (
-              <span
-                className={`px-2 py-0.5 text-xs rounded-full border ${
-                  review.qualityScore >= 8
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : review.qualityScore >= 5
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-stone-100 text-stone-600 border-stone-300'
-                }`}
-                title={review.editorNotes ?? 'Editor score'}
-              >
-                {review.qualityScore}/10
-              </span>
-            )}
-            {/* Lock indicator */}
-            {(review.adminLockedFields?.length ?? 0) > 0 && (
-              <span
-                className="text-xs text-dune/50 inline-flex items-center gap-1"
-                title={`Admin-locked from editor: ${review.adminLockedFields!.join(', ')}`}
-              >
-                <Lock className="w-3 h-3" />
-              </span>
-            )}
-            {review.showOnWebsite === false && (
-              <span className="px-2 py-0.5 text-xs rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                hidden
-              </span>
-            )}
-          </div>
-
-          <p className={`text-sm text-dune/70 ${expandedReview === review.id ? '' : 'line-clamp-2'}`}>
-            &quot;{review.reviewText}&quot;
-          </p>
-
-          {review.reviewDate && (
-            <div className="flex items-center gap-1 mt-2 text-xs text-dune/40">
-              <Calendar className="w-3 h-3" />
-              {new Date(review.reviewDate).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Edit drawer trigger */}
-          <button
-            type="button"
-            onClick={() => setEditing(review)}
-            aria-label={`Edit review by ${review.reviewerName}`}
-            aria-haspopup="dialog"
-            className="w-8 h-8 rounded-lg bg-sage/10 hover:bg-sage/20 flex items-center justify-center text-dune/60 hover:text-dune transition-colors"
-            title="Edit (quality / stylist / hide / lock)"
-          >
-            <Pencil className="w-4 h-4" aria-hidden="true" />
-          </button>
-
-          {/* Expand/Collapse */}
-          <button
-            onClick={() => setExpandedReview(expandedReview === review.id ? null : review.id)}
-            className="w-8 h-8 rounded-lg bg-sage/10 hover:bg-sage/20 flex items-center justify-center text-dune/50 transition-colors"
-          >
-            {expandedReview === review.id ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
-          </button>
-
-          {/* Selection Toggle */}
-          <button
-            onClick={() => toggleSelection(review)}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-              review.isSelected
-                ? 'bg-golden/20 text-golden hover:bg-golden/30'
-                : 'bg-sage/10 text-dune/40 hover:bg-sage/20 hover:text-dune/60'
-            }`}
-            title={review.isSelected ? 'Remove from homepage' : 'Add to homepage'}
-          >
-            {review.isSelected ? (
-              <Eye className="w-5 h-5" />
-            ) : (
-              <EyeOff className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin w-12 h-12 border-4 border-dusty-rose border-t-transparent rounded-full" />
+      <div className="flex min-h-72 items-center justify-center" role="status" aria-live="polite">
+        <div className="flex items-center gap-3 text-sm font-medium text-dune/70">
+          <LoaderCircle className="size-5 animate-spin text-terracotta motion-reduce:animate-none" aria-hidden="true" />
+          Loading reviews…
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-golden/30 to-golden/10 flex items-center justify-center">
-              <Star className="w-6 h-6 text-golden" />
-            </div>
-            <div>
-              <h1 className="h2 text-dune">Reviews</h1>
-              <p className="text-sm text-dune/60">
-                {selectedReviews.length} reviews selected for homepage
-              </p>
-            </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <header className="border-b border-sage/20 pb-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-terracotta">Reputation</p>
+            <h1 className="mt-1 text-balance font-serif text-3xl leading-tight text-dune">Review library</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-dune/70">
+              Choose which public reviews appear on the homepage and keep their order intentional.
+            </p>
           </div>
-          <div className="flex gap-3">
-            <Link
-              href="/admin/website/review-settings"
-              className="btn btn-secondary inline-flex items-center gap-2"
-            >
-              <Settings className="w-4 h-4" />
+
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+            <Link href="/admin/website/review-settings" className="btn btn-secondary inline-flex items-center justify-center gap-2">
+              <Settings className="size-4" aria-hidden="true" />
               Settings
             </Link>
-            <button
-              onClick={fetchReviews}
-              className="btn btn-secondary"
-              disabled={loading}
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <button type="button" onClick={() => void fetchReviews()} className="btn btn-secondary inline-flex items-center justify-center gap-2">
+              <RefreshCw className="size-4" aria-hidden="true" />
               Refresh
             </button>
             <button
-              onClick={handleSave}
+              type="button"
+              onClick={() => void handleSave()}
               disabled={saving || !hasChanges}
-              className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} ${!hasChanges && !saved ? 'opacity-50' : ''}`}
+              className={`btn col-span-2 inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-40 sm:order-first sm:col-span-1 ${saved ? 'btn-secondary border-ocean-mist/30 bg-ocean-mist/20' : 'btn-primary'}`}
             >
               {saving ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
               ) : saved ? (
-                <Check className="w-4 h-4" />
+                <Check className="size-4" aria-hidden="true" />
               ) : (
-                <Save className="w-4 h-4" />
+                <Save className="size-4" aria-hidden="true" />
               )}
-              {saved ? 'Saved!' : hasChanges ? 'Save Changes' : 'Saved'}
+              {saving ? 'Saving…' : saved ? 'Saved' : 'Save changes'}
             </button>
           </div>
         </div>
-      </motion.div>
 
-      {/* Quick Stats */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-4 gap-4 mb-6"
-      >
-        <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
-          <div className="text-2xl font-serif text-dune">{reviews.length + selectedReviews.length}</div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Total</div>
-        </div>
-        <div className="glass rounded-2xl p-4 border border-golden/30 text-center">
-          <div className="text-2xl font-serif text-golden">{selectedReviews.length}</div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Selected</div>
-        </div>
-        <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
-          <div className="text-2xl font-serif text-dune">
-            {[...reviews, ...selectedReviews].filter(r => r.rating === 5).length}
+        {(saveError || hasChanges || saved) ? (
+          <div className="mt-3 text-sm" role="status" aria-live="polite">
+            {saveError ? <p className="text-terracotta">{saveError} Try again, or refresh to reload the latest reviews.</p> : null}
+            {!saveError && hasChanges ? <p className="text-dune/65">Unsaved homepage changes</p> : null}
+            {!saveError && saved ? <p className="text-ocean-mist">Homepage review order saved.</p> : null}
           </div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">5-Star</div>
-        </div>
-        <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
-          <div className="text-2xl font-serif text-dune">
-            {new Set([...reviews, ...selectedReviews].map(r => r.source)).size}
-          </div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Sources</div>
-        </div>
-      </motion.div>
+        ) : null}
+      </header>
 
-      {/* Selected Reviews - Reorderable */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="mb-6"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-serif text-lg text-dune flex items-center gap-2">
-            <Quote className="w-5 h-5 text-golden" />
-            Homepage Reviews
-          </h2>
-          <span className="text-xs text-dune/50">Drag to reorder</span>
-        </div>
-        
-        <div className="glass rounded-3xl border border-golden/20 overflow-hidden">
-          {selectedReviews.length === 0 ? (
-            <div className="p-8 text-center">
-              <Star className="w-10 h-10 text-dune/20 mx-auto mb-3" />
-              <p className="text-dune/50 text-sm">No reviews selected yet</p>
-              <p className="text-dune/40 text-xs mt-1">Click the eye icon on reviews below to add them</p>
-            </div>
-          ) : (
-            <Reorder.Group 
-              axis="y" 
-              values={selectedReviews} 
-              onReorder={handleReorderSelected}
-              className="divide-y divide-golden/10"
-            >
-              {selectedReviews.map((review) => (
-                <Reorder.Item
-                  key={review.id}
-                  value={review}
-                  className="bg-golden/5 hover:bg-golden/10 transition-colors"
-                >
-                  <ReviewCard review={review} isInSelected />
-                </Reorder.Item>
-              ))}
-            </Reorder.Group>
-          )}
-        </div>
-      </motion.div>
-
-      {/* All Reviews */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
-          <h2 className="font-serif text-lg text-dune">All Reviews</h2>
-          
-          {/* Filters */}
-          <div className="flex items-center gap-2">
-            {/* Search */}
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-dune/40" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 bg-cream/50 border border-sage/20 rounded-xl text-sm focus:outline-none focus:border-dusty-rose/50 w-40"
-              />
-            </div>
-
-            {/* Source Filter */}
-            <div className="flex items-center gap-1 bg-cream/50 border border-sage/20 rounded-xl p-1">
-              <Filter className="w-4 h-4 text-dune/40 ml-2" />
-              {(['all', 'google', 'yelp', 'vagaro'] as FilterSource[]).map((source) => (
-                <button
-                  key={source}
-                  onClick={() => setFilterSource(source)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    filterSource === source
-                      ? 'bg-white shadow-sm text-dune'
-                      : 'text-dune/50 hover:text-dune'
-                  }`}
-                >
-                  {source.charAt(0).toUpperCase() + source.slice(1)}
-                </button>
-              ))}
-            </div>
+      {loadError ? (
+        <div className="flex items-start gap-3 border border-terracotta/25 bg-terracotta/10 p-4 text-sm leading-6 text-terracotta" role="alert">
+          <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="font-semibold">Reviews are unavailable.</p>
+            <p>{loadError} Refresh this page to try again.</p>
           </div>
         </div>
-        
-        <div className="glass rounded-3xl border border-sage/20 overflow-hidden">
-          {filteredReviews.length === 0 ? (
-            <div className="p-8 text-center">
-              <AlertCircle className="w-10 h-10 text-dune/20 mx-auto mb-3" />
-              <p className="text-dune/50 text-sm">No reviews found</p>
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="text-dusty-rose text-xs mt-2 hover:underline"
-                >
-                  Clear search
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="divide-y divide-sage/10">
-              {filteredReviews.map((review) => (
-                <div key={review.id} className="bg-cream/30 hover:bg-cream/50 transition-colors">
-                  <ReviewCard review={review} />
-                </div>
-              ))}
-            </div>
-          )}
+      ) : null}
+
+      <SummaryStrip reviews={allReviews} selectedCount={selectedReviews.length} />
+
+      <section aria-labelledby="homepage-reviews-heading" className="border-y border-golden/25 bg-white">
+        <div className="flex items-start justify-between gap-4 border-b border-golden/20 px-4 py-4 sm:px-5">
+          <div>
+            <h2 id="homepage-reviews-heading" className="font-serif text-xl text-dune">On the homepage</h2>
+            <p className="mt-1 text-xs leading-5 text-dune/60">Use More to change order or remove a review.</p>
+          </div>
+          <span className="shrink-0 text-sm font-semibold tabular-nums text-golden">{selectedReviews.length}</span>
         </div>
 
-        {filteredReviews.length > 0 && (
-          <p className="text-xs text-dune/40 mt-3 text-center">
-            Showing {filteredReviews.length} of {reviews.length} unselected reviews
-          </p>
+        {selectedReviews.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <Star className="mx-auto size-6 text-dune/25" aria-hidden="true" />
+            <p className="mt-3 text-sm font-semibold text-dune">No homepage reviews selected</p>
+            <p className="mt-1 text-xs text-dune/60">Open More on a review below, then choose Add to homepage.</p>
+          </div>
+        ) : (
+          <ol className="divide-y divide-golden/15">
+            {selectedReviews.map((review, index) => (
+              <li key={review.id}>
+                <ReviewListRow
+                  review={review}
+                  order={index + 1}
+                  expanded={expandedReview === review.id}
+                  actionsOpen={openActions === review.id}
+                  canMoveUp={index > 0}
+                  canMoveDown={index < selectedReviews.length - 1}
+                  onToggleActions={() => setOpenActions((current) => (current === review.id ? null : review.id))}
+                  onToggleExpanded={() => setExpandedReview((current) => (current === review.id ? null : review.id))}
+                  onEdit={() => {
+                    setOpenActions(null)
+                    setEditing(review)
+                  }}
+                  onToggleHomepage={() => toggleSelection(review)}
+                  onMoveUp={() => moveSelectedReview(review.id, -1)}
+                  onMoveDown={() => moveSelectedReview(review.id, 1)}
+                />
+              </li>
+            ))}
+          </ol>
         )}
-      </motion.div>
+      </section>
 
-      {editing && (
+      <section aria-labelledby="all-reviews-heading" className="space-y-4">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h2 id="all-reviews-heading" className="font-serif text-xl text-dune">All other reviews</h2>
+            <p className="mt-1 text-xs text-dune/60">Search public review text or narrow by source.</p>
+          </div>
+          <span className="text-sm font-semibold tabular-nums text-dune/55">{filteredReviews.length}</span>
+        </div>
+
+        <div className="grid gap-3 border-y border-sage/20 bg-white p-4 sm:grid-cols-[minmax(0,1fr)_12rem]">
+          <label className="block min-w-0">
+            <span className="mb-1.5 block text-xs font-semibold text-dune/70">Search reviews</span>
+            <span className="relative block">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-dune/45" aria-hidden="true" />
+              <input
+                type="search"
+                name="review-search"
+                autoComplete="off"
+                placeholder="Name or review text…"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="min-h-11 w-full border border-sage/30 bg-cream/35 py-2 pl-10 pr-3 text-base text-dune placeholder:text-dune/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta sm:text-sm"
+              />
+            </span>
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-semibold text-dune/70">Source</span>
+            <select
+              name="review-source"
+              value={filterSource}
+              onChange={(event) => setFilterSource(event.target.value as FilterSource)}
+              className="min-h-11 w-full border border-sage/30 bg-cream/35 px-3 text-base text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta sm:text-sm"
+            >
+              {SOURCE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="border-y border-sage/20 bg-white">
+          {filteredReviews.length === 0 ? (
+            <div className="px-5 py-10 text-center">
+              <AlertCircle className="mx-auto size-6 text-dune/25" aria-hidden="true" />
+              <p className="mt-3 text-sm font-semibold text-dune">No reviews match</p>
+              <p className="mt-1 text-xs text-dune/60">
+                {searchQuery || filterSource !== 'all'
+                  ? 'Clear the search or choose a different source.'
+                  : 'New public reviews will appear here automatically.'}
+              </p>
+              {(searchQuery || filterSource !== 'all') ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('')
+                    setFilterSource('all')
+                  }}
+                  className="mt-4 min-h-11 px-3 text-sm font-semibold text-terracotta hover:text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
+          ) : (
+            <ol className="divide-y divide-sage/15">
+              {filteredReviews.map((review) => (
+                <li key={review.id}>
+                  <ReviewListRow
+                    review={review}
+                    expanded={expandedReview === review.id}
+                    actionsOpen={openActions === review.id}
+                    onToggleActions={() => setOpenActions((current) => (current === review.id ? null : review.id))}
+                    onToggleExpanded={() => setExpandedReview((current) => (current === review.id ? null : review.id))}
+                    onEdit={() => {
+                      setOpenActions(null)
+                      setEditing(review)
+                    }}
+                    onToggleHomepage={() => toggleSelection(review)}
+                  />
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </section>
+
+      {editing ? (
         <ReviewEditDrawer
           review={editing as ReviewRow}
           teamOptions={teamOptions}
+          returnFocusId={`review-actions-trigger-${editing.id}`}
           onClose={() => setEditing(null)}
-          onSaved={() => fetchReviews()}
+          onSaved={() => void fetchReviews()}
         />
-      )}
+      ) : null}
     </div>
+  )
+}
+
+function SummaryStrip({ reviews, selectedCount }: { reviews: Review[]; selectedCount: number }) {
+  const metrics = [
+    { label: 'All reviews', value: reviews.length },
+    { label: 'Homepage', value: selectedCount },
+    { label: '5-star', value: reviews.filter((review) => review.rating === 5).length },
+    { label: 'Sources', value: new Set(reviews.map((review) => review.source)).size },
+  ]
+
+  return (
+    <dl className="grid grid-cols-2 gap-px border-y border-sage/20 bg-sage/20 sm:grid-cols-4">
+      {metrics.map((metric) => (
+        <div key={metric.label} className="bg-white px-4 py-3">
+          <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-dune/55">{metric.label}</dt>
+          <dd className="mt-1 font-serif text-xl tabular-nums text-dune">{metric.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+function ReviewListRow({
+  review,
+  order,
+  expanded,
+  actionsOpen,
+  canMoveUp = false,
+  canMoveDown = false,
+  onToggleActions,
+  onToggleExpanded,
+  onEdit,
+  onToggleHomepage,
+  onMoveUp,
+  onMoveDown,
+}: {
+  review: Review
+  order?: number
+  expanded: boolean
+  actionsOpen: boolean
+  canMoveUp?: boolean
+  canMoveDown?: boolean
+  onToggleActions: () => void
+  onToggleExpanded: () => void
+  onEdit: () => void
+  onToggleHomepage: () => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
+}) {
+  const status = review.showOnWebsite === false
+    ? 'Hidden'
+    : review.isSelected
+      ? 'Homepage'
+      : review.isLiveAuto
+        ? 'Live now'
+        : null
+
+  return (
+    <article className="px-4 py-4 sm:px-5">
+      <div className="flex min-w-0 items-start gap-3">
+        {typeof order === 'number' ? (
+          <span className="mt-0.5 w-6 shrink-0 font-mono text-xs tabular-nums text-golden" aria-label={`Homepage position ${order}`}>
+            {String(order).padStart(2, '0')}
+          </span>
+        ) : null}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <h3 className="min-w-0 truncate text-sm font-semibold text-dune">{review.reviewerName}</h3>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-dune/55">{review.source}</span>
+            {status ? (
+              <span className="border-l border-sage/30 pl-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-terracotta">{status}</span>
+            ) : null}
+          </div>
+
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-dune/60">
+            <span className="inline-flex items-center gap-1" aria-hidden="true">
+              {Array.from({ length: 5 }, (_, index) => (
+                <Star
+                  key={index}
+                  className={`size-3.5 ${index < review.rating ? 'fill-golden text-golden' : 'text-sage/35'}`}
+                  aria-hidden="true"
+                />
+              ))}
+            </span>
+            <span className="sr-only">{review.rating} out of 5 stars</span>
+            {typeof review.qualityScore === 'number' ? <span>Score {review.qualityScore}/10</span> : null}
+            {(review.adminLockedFields?.length ?? 0) > 0 ? (
+              <span className="inline-flex items-center gap-1">
+                <Lock className="size-3" aria-hidden="true" /> Locked
+              </span>
+            ) : null}
+          </div>
+
+          <p className={`mt-2 break-words text-sm leading-6 text-dune/75 ${expanded ? '' : 'line-clamp-2'}`}>
+            “{review.reviewText}”
+          </p>
+
+          {review.reviewDate ? (
+            <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-dune/55">
+              <Calendar className="size-3.5" aria-hidden="true" />
+              <time dateTime={review.reviewDate}>{reviewDateFormatter.format(new Date(review.reviewDate))}</time>
+            </p>
+          ) : null}
+        </div>
+
+        <button
+          id={`review-actions-trigger-${review.id}`}
+          type="button"
+          onClick={onToggleActions}
+          aria-label={`${actionsOpen ? 'Close' : 'Open'} actions for review by ${review.reviewerName}`}
+          aria-expanded={actionsOpen}
+          aria-controls={`review-actions-${review.id}`}
+          className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-sage/25 bg-cream/30 text-dune/65 transition-colors hover:border-sage/45 hover:bg-cream/70 hover:text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta"
+        >
+          <MoreHorizontal className="size-5" aria-hidden="true" />
+        </button>
+      </div>
+
+      {actionsOpen ? (
+        <div id={`review-actions-${review.id}`} className="mt-4 grid grid-cols-2 gap-px border-t border-sage/20 bg-sage/20 pt-px sm:ml-9 sm:grid-cols-3" role="group" aria-label={`Actions for review by ${review.reviewerName}`}>
+          <RowAction onClick={onEdit} icon={Pencil} label="Edit details" />
+          <RowAction onClick={onToggleExpanded} icon={expanded ? ChevronUp : ChevronDown} label={expanded ? 'Show less' : 'Read full review'} />
+          <RowAction onClick={onToggleHomepage} icon={review.isSelected ? EyeOff : Eye} label={review.isSelected ? 'Remove from homepage' : 'Add to homepage'} />
+          {review.isSelected && onMoveUp ? <RowAction onClick={onMoveUp} icon={ArrowUp} label="Move earlier" disabled={!canMoveUp} /> : null}
+          {review.isSelected && onMoveDown ? <RowAction onClick={onMoveDown} icon={ArrowDown} label="Move later" disabled={!canMoveDown} /> : null}
+        </div>
+      ) : null}
+    </article>
+  )
+}
+
+function RowAction({
+  onClick,
+  icon: Icon,
+  label,
+  disabled = false,
+}: {
+  onClick: () => void
+  icon: typeof Pencil
+  label: string
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex min-h-11 min-w-0 items-center gap-2 bg-white px-3 py-2 text-left text-xs font-semibold text-dune transition-colors hover:bg-cream/55 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta disabled:cursor-not-allowed disabled:text-dune/30"
+    >
+      <Icon className="size-4 shrink-0 text-terracotta" aria-hidden="true" />
+      <span className="min-w-0 leading-4">{label}</span>
+    </button>
   )
 }

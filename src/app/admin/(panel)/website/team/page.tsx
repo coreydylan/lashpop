@@ -417,36 +417,36 @@ export default function TeamManagerPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-ocean-mist/30 to-ocean-mist/10 flex items-center justify-center">
+        <div className="grid gap-4 sm:flex sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-ocean-mist/30 to-ocean-mist/10 sm:flex">
               <Users className="w-6 h-6 text-ocean-mist" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1 className="h2 text-dune">Team Members</h1>
               <p className="text-sm text-dune/60">
                 {visibleCount} of {sourceActiveCount} active profiles visible on website
               </p>
             </div>
           </div>
-          <div className="flex gap-3 items-center flex-wrap">
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:max-w-xl sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
             {syncMessage && (
-              <span className={`text-sm ${syncMessage.startsWith('Sync failed') ? 'text-red-600' : 'text-ocean-mist'}`}>
+              <span className={`col-span-2 text-sm sm:w-full sm:text-right ${syncMessage.startsWith('Sync failed') ? 'text-red-600' : 'text-ocean-mist'}`}>
                 {syncMessage}
               </span>
             )}
             <button
               onClick={handleSyncFromVagaro}
-              className="btn btn-secondary"
+              className="btn btn-secondary min-w-0 w-full sm:w-auto"
               disabled={syncing}
               title="Pull the latest photos, bios, and services from Vagaro now"
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing…' : 'Sync from Vagaro'}
+              {syncing ? 'Syncing…' : <><span className="sm:hidden">Sync</span><span className="hidden sm:inline">Sync from Vagaro</span></>}
             </button>
             <button
               onClick={fetchTeamMembers}
-              className="btn btn-secondary"
+              className="btn btn-secondary min-w-0 w-full sm:w-auto"
               disabled={loading}
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -458,13 +458,13 @@ export default function TeamManagerPage() {
               onChange={(event) => setPublicationReason(event.target.value)}
               maxLength={MAX_PUBLICATION_REASON_LENGTH}
               placeholder="Why (optional, saved with the change)"
-              className="w-64 px-3 py-2 text-sm border border-sage/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40"
+              className="col-span-2 min-w-0 w-full rounded-lg border border-sage/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40 sm:w-64"
               aria-label="Reason for this publication change"
             />
             <button
               onClick={handleSave}
               disabled={saving || !hasChanges}
-              className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} ${!hasChanges && !saved ? 'opacity-50' : ''}`}
+              className={`btn min-w-0 w-full sm:w-auto ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} ${!hasChanges && !saved ? 'opacity-50' : ''}`}
             >
               {saving ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -486,21 +486,21 @@ export default function TeamManagerPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-3 gap-4 mb-6"
+        className="mb-6 grid grid-cols-3 divide-x divide-sage/15 border-y border-sage/20 bg-white"
       >
-        <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
+        <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-dune">{teamMembers.length}</div>
           <div className="text-xs text-dune/50 uppercase tracking-wider">Total</div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-ocean-mist/30 text-center">
+        <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-ocean-mist">{visibleCount}</div>
           <div className="text-xs text-dune/50 uppercase tracking-wider">Visible</div>
         </div>
-        <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
+        <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-dune">
             {teamMembers.filter(m => m.vagaroEmployeeId).length}
           </div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Vagaro Linked</div>
+          <div className="text-[10px] text-dune/50 uppercase tracking-wide sm:text-xs sm:tracking-wider">Vagaro Linked</div>
         </div>
       </motion.div>
 
@@ -509,7 +509,7 @@ export default function TeamManagerPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="mb-6 p-4 bg-ocean-mist/10 rounded-2xl border border-ocean-mist/20"
+        className="mb-6 rounded-lg border border-ocean-mist/20 bg-ocean-mist/10 p-4"
       >
         <p className="text-sm text-dune/70">
           <strong>Drag to reorder</strong> team members. The eye controls website publication only;
@@ -523,7 +523,7 @@ export default function TeamManagerPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="glass rounded-3xl border border-sage/20 overflow-hidden"
+        className="glass overflow-hidden rounded-lg border border-sage/20 sm:rounded-2xl"
       >
         {teamMembers.length === 0 ? (
           <div className="p-12 text-center">
@@ -545,19 +545,19 @@ export default function TeamManagerPage() {
               >
                 <div className="p-4">
                   {/* Main Row */}
-                  <div className="flex items-center gap-4">
+                  <div className="grid grid-cols-[auto_auto_auto_minmax(0,1fr)] items-center gap-3 sm:flex sm:gap-4">
                     {/* Drag Handle */}
                     <div className="cursor-grab active:cursor-grabbing text-dune/30 hover:text-dune/50 touch-none">
                       <GripVertical className="w-5 h-5" />
                     </div>
 
                     {/* Order Number */}
-                    <div className="w-8 h-8 rounded-full bg-sage/20 flex items-center justify-center text-sm text-dune/60 font-medium">
+                    <div className="flex w-5 items-center justify-center font-mono text-xs text-dune/55 sm:size-8 sm:rounded-full sm:bg-sage/20 sm:text-sm sm:font-sans sm:font-medium">
                       {index + 1}
                     </div>
 
                     {/* Photo */}
-                    <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-warm-sand">
+                    <div className="relative size-12 shrink-0 overflow-hidden rounded-md bg-warm-sand sm:size-14 sm:rounded-xl">
                       {member.imageUrl && member.imageUrl.length > 0 ? (
                         <Image
                           src={member.imageUrl}
@@ -574,8 +574,8 @@ export default function TeamManagerPage() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className={`font-medium truncate ${member.isActive && member.showOnWebsite ? 'text-dune' : 'text-dune/50'}`}>
+                      <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
+                        <h3 className={`min-w-0 flex-1 truncate font-medium ${member.isActive && member.showOnWebsite ? 'text-dune' : 'text-dune/50'}`}>
                           {member.name}
                         </h3>
                         {member.vagaroEmployeeId && (
@@ -601,34 +601,38 @@ export default function TeamManagerPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2">
+                    <div className="col-span-4 grid grid-cols-2 gap-2 sm:ml-auto sm:flex sm:items-center">
                       {/* Visibility Toggle */}
                       <button
                         onClick={() => toggleVisibility(member.id)}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                        className={`flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold transition-all sm:size-10 sm:px-0 ${
                           member.showOnWebsite
                             ? 'bg-ocean-mist/20 text-ocean-mist hover:bg-ocean-mist/30'
                             : 'bg-sage/10 text-dune/40 hover:bg-sage/20'
                         }`}
                         title={member.showOnWebsite ? 'Hide from website' : 'Show on website'}
+                        aria-label={`${member.showOnWebsite ? 'Hide' : 'Show'} ${member.name} on the website`}
                       >
                         {member.showOnWebsite ? (
                           <Eye className="w-5 h-5" />
                         ) : (
                           <EyeOff className="w-5 h-5" />
                         )}
+                        <span className="sm:sr-only">{member.showOnWebsite ? 'Visible' : 'Hidden'}</span>
                       </button>
 
                       {/* Expand/Collapse */}
                       <button
                         onClick={() => setExpandedMember(expandedMember === member.id ? null : member.id)}
-                        className="w-10 h-10 rounded-xl bg-sage/10 hover:bg-sage/20 flex items-center justify-center text-dune/50 transition-colors"
+                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-sage/10 px-3 text-sm font-semibold text-dune/50 transition-colors hover:bg-sage/20 sm:size-10 sm:px-0"
+                        aria-label={`${expandedMember === member.id ? 'Collapse' : 'Open'} details for ${member.name}`}
                       >
                         {expandedMember === member.id ? (
                           <ChevronUp className="w-5 h-5" />
                         ) : (
                           <ChevronDown className="w-5 h-5" />
                         )}
+                        <span className="sm:sr-only">Details</span>
                       </button>
                     </div>
                   </div>
@@ -643,7 +647,7 @@ export default function TeamManagerPage() {
                     >
                       <div className="grid sm:grid-cols-2 gap-4 text-sm">
                         {/* Dual-mode banner — explains why fields lock/unlock */}
-                        <div className={`sm:col-span-2 p-3 rounded-2xl border text-xs flex items-center gap-2 ${
+                        <div className={`flex items-center gap-2 rounded-lg border p-3 text-xs sm:col-span-2 ${
                           member.usesLashpopBooking
                             ? 'bg-dusty-rose/10 border-dusty-rose/20 text-dusty-rose'
                             : 'bg-golden/10 border-golden/30 text-dune'
@@ -666,8 +670,8 @@ export default function TeamManagerPage() {
                         </div>
 
                         {/* Profile Image */}
-                        <div className="sm:col-span-2 p-4 bg-golden/5 rounded-2xl border border-golden/10">
-                          <div className="flex items-center justify-between mb-3">
+                        <div className="rounded-lg border border-golden/10 bg-golden/5 p-3 sm:col-span-2 sm:p-4">
+                          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium flex items-center gap-2">
                               <Users className="w-3.5 h-3.5" />
                               Profile Image
@@ -680,7 +684,7 @@ export default function TeamManagerPage() {
                             <button
                               onClick={() => openImagePicker(member.id)}
                               disabled={member.usesLashpopBooking}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                              className={`flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors sm:w-auto ${
                                 member.usesLashpopBooking
                                   ? 'bg-sage/10 text-dune/30 cursor-not-allowed'
                                   : 'bg-golden/20 text-golden hover:bg-golden/30'
@@ -722,8 +726,8 @@ export default function TeamManagerPage() {
                         </div>
 
                         {/* Portfolio Album */}
-                        <div className="sm:col-span-2 p-4 bg-dusty-rose/5 rounded-2xl border border-dusty-rose/10">
-                          <div className="flex items-center justify-between mb-3">
+                        <div className="rounded-lg border border-dusty-rose/10 bg-dusty-rose/5 p-3 sm:col-span-2 sm:p-4">
+                          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium flex items-center gap-2">
                               <Images className="w-3.5 h-3.5" />
                               Portfolio Album
@@ -733,7 +737,7 @@ export default function TeamManagerPage() {
                             </h4>
                             <button
                               onClick={() => openAlbumPicker(member.id)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-dusty-rose/20 text-dusty-rose hover:bg-dusty-rose/30 rounded-lg transition-colors"
+                              className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md bg-dusty-rose/20 px-3 py-1.5 text-xs font-medium text-dusty-rose transition-colors hover:bg-dusty-rose/30 sm:w-auto"
                             >
                               <ImagePlus className="w-3.5 h-3.5" />
                               Add Photos
@@ -746,7 +750,7 @@ export default function TeamManagerPage() {
                               <RefreshCw className="w-5 h-5 animate-spin text-dune/40" />
                             </div>
                           ) : albumPhotos[member.id] && albumPhotos[member.id].length > 0 ? (
-                            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                               {albumPhotos[member.id].map((photo) => (
                                 <div key={photo.id} className="relative group aspect-square">
                                   <div className="relative w-full h-full rounded-lg overflow-hidden bg-warm-sand border border-sage/20">
@@ -765,8 +769,9 @@ export default function TeamManagerPage() {
                                   {!photo.isPrimary && (
                                     <button
                                       onClick={() => removePhotoFromAlbum(member.id, photo.id)}
-                                      className="absolute -top-1 -right-1 w-5 h-5 bg-terracotta rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                      className="absolute -right-1 -top-1 flex size-11 items-center justify-center rounded-md bg-terracotta text-white opacity-100 shadow-sm transition-opacity sm:size-8 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                                       title="Remove from album"
+                                      aria-label={`Remove ${photo.fileName} from ${member.name}'s portfolio`}
                                     >
                                       <X className="w-3 h-3 text-white" />
                                     </button>
@@ -846,7 +851,7 @@ export default function TeamManagerPage() {
                         </div>
 
                         {/* Service Tags - Shows on profile card */}
-                        <div className="sm:col-span-2 space-y-3 p-4 bg-sage/5 rounded-2xl border border-sage/10">
+                        <div className="space-y-3 rounded-lg border border-sage/10 bg-sage/5 p-3 sm:col-span-2 sm:p-4">
                           <div className="flex items-center gap-2">
                             <Tag className="w-4 h-4 text-dusty-rose" />
                             <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium">Service Tags</h4>
@@ -886,12 +891,13 @@ export default function TeamManagerPage() {
                                 {(member.externalServiceCategories || []).map((cat, i) => (
                                   <span
                                     key={i}
-                                    className="px-3 py-1.5 bg-ocean-mist/20 text-ocean-mist rounded-full text-xs font-medium flex items-center gap-1 group"
+                                    className="group flex items-center gap-1 rounded-lg bg-ocean-mist/20 px-3 py-1.5 text-xs font-medium text-ocean-mist"
                                   >
                                     {cat}
                                     <button
                                       onClick={() => removeExternalCategory(member.id, cat)}
-                                      className="w-4 h-4 rounded-full hover:bg-ocean-mist/30 flex items-center justify-center opacity-60 hover:opacity-100"
+                                      className="flex size-11 items-center justify-center rounded-md opacity-100 hover:bg-ocean-mist/30 sm:size-6 sm:opacity-60 sm:hover:opacity-100"
+                                      aria-label={`Remove ${cat} from ${member.name}`}
                                     >
                                       <X className="w-3 h-3" />
                                     </button>
@@ -900,11 +906,11 @@ export default function TeamManagerPage() {
 
                                 {/* Add Tag Dropdown */}
                                 <div className="relative group/dropdown">
-                                  <button className="px-3 py-1.5 bg-sage/10 hover:bg-sage/20 text-dune/60 rounded-full text-xs font-medium flex items-center gap-1 transition-colors">
+                                  <button className="flex min-h-11 items-center gap-1 rounded-lg bg-sage/10 px-3 py-1.5 text-xs font-medium text-dune/60 transition-colors hover:bg-sage/20" aria-haspopup="menu">
                                     <Plus className="w-3 h-3" />
                                     Add Tag
                                   </button>
-                                  <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-sage/20 py-2 z-50 hidden group-hover/dropdown:block">
+                                  <div className="absolute left-0 top-full z-50 mt-1 hidden w-48 rounded-lg border border-sage/20 bg-white py-2 shadow-lg group-focus-within/dropdown:block group-hover/dropdown:block">
                                     {CATEGORY_OPTIONS
                                       .filter(cat => !(member.externalServiceCategories || []).includes(cat))
                                       .map((cat) => (
@@ -930,7 +936,7 @@ export default function TeamManagerPage() {
                         </div>
 
                         {/* Quick Facts Editor */}
-                        <div className="sm:col-span-2 p-4 bg-dusty-rose/5 rounded-2xl border border-dusty-rose/10">
+                        <div className="rounded-lg border border-dusty-rose/10 bg-dusty-rose/5 p-3 sm:col-span-2 sm:p-4">
                           <QuickFactsEditor
                             memberId={member.id}
                             memberName={member.name}
@@ -944,7 +950,7 @@ export default function TeamManagerPage() {
                         </div>
 
                         {/* Credentials Editor - For SEO/Schema.org */}
-                        <div className="sm:col-span-2 p-4 bg-ocean-mist/5 rounded-2xl border border-ocean-mist/10">
+                        <div className="rounded-lg border border-ocean-mist/10 bg-ocean-mist/5 p-3 sm:col-span-2 sm:p-4">
                           <CredentialsEditor
                             memberId={member.id}
                             memberName={member.name}
