@@ -746,7 +746,7 @@ export default function WorkWithUsPage() {
       <MobileHeader />
 
       {/* Spacer */}
-      <div className="h-16 md:h-20" />
+      <div className="h-[var(--mobile-site-header-height,60px)] md:h-20" />
 
       {/* HERO + PATH CARDS - ONE COHESIVE SECTION */}
       <section className="relative min-h-[calc(100vh-5rem)] md:min-h-0 bg-gradient-to-b from-cream/50 via-ivory to-ivory">

@@ -203,6 +203,7 @@ const mobileScrollStyles = `
          accidental pull at the top of a service-browser/booking modal
          doesn't trigger pull-to-refresh and kick the user out mid-checkout. */
       overscroll-behavior-y: contain;
+      scroll-padding-top: var(--mobile-site-header-height, 60px);
       background: transparent !important;
     }
 

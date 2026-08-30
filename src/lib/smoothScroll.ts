@@ -13,6 +13,12 @@ export const getScroller = (): Window | Element => {
   return window;
 };
 
+export const getMobileHeaderHeight = (): number => {
+  if (typeof document === 'undefined') return 60;
+  const header = document.querySelector('[data-mobile-site-header]');
+  return header?.getBoundingClientRect().height || 60;
+};
+
 // Cubic easing for a more natural, less "sticky" feel
 const easeInOutCubic = (x: number): number => {
   return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -100,11 +106,8 @@ export const scrollToHomepageSection = (
   if (!href.startsWith('#')) return;
 
   if (isMobile) {
-    // Mobile header is a 60px strip. Every section just needs to clear it —
-    // earlier extra padding on gallery + reviews was over-shooting their
-    // titles, so they use the bare HEADER offset like the rest.
-    const HEADER = 60;
-    smoothScrollToElement(href, HEADER, duration, 'top');
+    // Measure the rendered strip so iOS safe-area padding is included.
+    smoothScrollToElement(href, getMobileHeaderHeight(), duration, 'top');
     return;
   }
 

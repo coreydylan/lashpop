@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useDevMode } from '@/contexts/DevModeContext'
-import { smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
+import { getMobileHeaderHeight, smoothScrollToElement, smoothScrollTo, getScroller } from '@/lib/smoothScroll'
 import { requiredStaticCloudflareImageUrl } from '@/lib/cloudflare-image-delivery'
 
 const LOGO_WEBP = requiredStaticCloudflareImageUrl('/lashpop-images/branding/logo-terracotta.webp')
@@ -68,7 +68,10 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
 
   // Get the scroll container (mobile uses .mobile-scroll-container)
   const getScrollContainer = useCallback(() => {
-    return document.querySelector('.mobile-scroll-container') as HTMLElement | null
+    return (
+      document.querySelector('.mobile-scroll-container')
+      || document.getElementById('main-content')
+    ) as HTMLElement | null
   }, [])
 
   // Track scroll position for transparent/frosted glass transition
@@ -174,8 +177,6 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
   }, [getScrollContainer, registerLogoClick, isHomePage, router])
 
   // Handle menu item click
-  // Header height is 60px - use consistent offsets based on this
-  const HEADER_HEIGHT = 60
   const handleMenuItemClick = useCallback((item: MenuItem) => {
     setIsMenuOpen(false)
 
@@ -194,7 +195,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
     // On home page, smooth scroll. All sections use the bare header height —
     // the previous +20 padding on gallery/reviews was over-shooting their
     // titles. Keep aligned with scrollToHomepageSection in lib/smoothScroll.ts.
-    smoothScrollToElement(item.href, HEADER_HEIGHT, 800, 'top')
+    smoothScrollToElement(item.href, getMobileHeaderHeight(), 800, 'top')
   }, [isHomePage, router])
 
   // Render the dropdown menu (inline, not portal - portal was breaking on mobile)
@@ -266,6 +267,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
       {/* Mini Header - transparent at top, frosted glass on scroll */}
       {isVisible && (
         <header
+          data-mobile-site-header
           className="fixed top-0 left-0 right-0 z-50 md:hidden transition-[background-color] duration-300"
           style={{
             paddingTop: 'env(safe-area-inset-top, 0px)',
@@ -280,7 +282,10 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
             background: isScrolled ? 'rgb(250, 246, 242)' : 'transparent',
           }}
         >
-          <div className="px-5 flex items-center justify-between" style={{ height: '60px' }}>
+          <div
+            className="px-5 flex items-center justify-between"
+            style={{ height: 'var(--mobile-site-header-bar-height, 60px)' }}
+          >
             {/* LashPop Logo - Left */}
             <button
               onClick={handleLogoClick}
@@ -307,7 +312,7 @@ export function MobileHeader({ currentSection = '' }: MobileHeaderProps) {
                   if (!isHomePage) {
                     router.push('/#services')
                   } else {
-                    smoothScrollToElement('#services', 60, 800, 'top')
+                    smoothScrollToElement('#services', getMobileHeaderHeight(), 800, 'top')
                   }
                 }}
                 className="flex-shrink-0 px-3 py-1.5 rounded-full bg-terracotta-light text-white text-[10px] font-sans font-semibold tracking-wide uppercase active:bg-terracotta transition-colors"
