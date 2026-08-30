@@ -10,7 +10,9 @@ import { DesignModeGate } from '@/components/dev/DesignModeGate'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { MarketingAnalytics } from '@/components/analytics/MarketingAnalytics'
+import { InteractionAnalytics } from '@/components/analytics/InteractionAnalytics'
 import { getCloudflareImageDeliveryOrigin } from '@/lib/cloudflare-image-delivery'
+import { resolveInteractionAnalyticsConfig } from '@/lib/interaction-analytics'
 import { resolvePublicImages } from '@/lib/public-image-delivery.server'
 
 // Force dynamic rendering for all pages - root layout fetches SEO settings from database
@@ -105,6 +107,11 @@ export default async function RootLayout({
   // Fetch SEO settings for Schema components
   const settings = resolvePublicImages(await getSEOSettings())
   const imageDeliveryOrigin = getCloudflareImageDeliveryOrigin()
+  const interactionAnalyticsConfig = resolveInteractionAnalyticsConfig({
+    enabled: process.env.INTERACTION_ANALYTICS_ENABLED,
+    projectToken: process.env.POSTHOG_PROJECT_TOKEN,
+    apiHost: process.env.POSTHOG_HOST,
+  })
 
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
@@ -137,6 +144,7 @@ export default async function RootLayout({
         <Analytics />
         <SpeedInsights />
         <MarketingAnalytics />
+        <InteractionAnalytics config={interactionAnalyticsConfig} />
       </body>
     </html>
   )
