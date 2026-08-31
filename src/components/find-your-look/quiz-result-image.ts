@@ -29,11 +29,11 @@ export function getQuizResultImageCandidates({
 }: QuizResultImageCandidatesInput): string[] {
   const sameStylePhoto = photosByStyle[style]?.find((photo) => photo.isEnabled !== false)
 
-  // The admin-selected image (including its generated crop URL) is the public
-  // result contract. Current same-style assets only protect against a missing
-  // or failed configuration; the static result image is the final legacy fallback.
-  return uniqueImageCandidates(configuredImage || '', [
-    selectedPhoto ? getQuizPhotoUrl(selectedPhoto) : null,
+  // When a guest explicitly chose a photo for the winning style, that exact
+  // current photo is the clearest result contract. The admin result image is
+  // retained as the first fallback for all-skipped paths and load failures.
+  return uniqueImageCandidates(selectedPhoto ? getQuizPhotoUrl(selectedPhoto) : '', [
+    configuredImage,
     sameStylePhoto ? getQuizPhotoUrl(sameStylePhoto) : null,
     bookingImage,
     legacyFallbackImage,

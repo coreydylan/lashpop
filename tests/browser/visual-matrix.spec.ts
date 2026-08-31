@@ -81,7 +81,9 @@ for (const surface of INTERACTION_VISUAL_SURFACES) {
     let mask: Locator[] = []
 
     if (surface.id === 'scrolled-navigation') {
-      await page.locator('#faq').scrollIntoViewIfNeeded()
+      await page.locator('#faq').evaluate((element) => {
+        element.scrollIntoView({ block: 'start', behavior: 'auto' })
+      })
       if (testInfo.project.name !== 'visual-desktop') {
         await expect(page.locator('[data-mobile-site-header]')).toHaveCSS(
           'background-color',

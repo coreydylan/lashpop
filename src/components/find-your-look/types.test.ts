@@ -126,6 +126,21 @@ test('each decisive photo leader can finish after three completed comparisons', 
   }
 })
 
+test('every unique two-to-one photo majority finishes after three comparisons', () => {
+  const baseline = createEmptyScores()
+
+  for (const style of ['classic', 'wetAngel', 'hybrid', 'volume'] as const) {
+    const runnerUp = style === 'classic' ? 'volume' : 'classic'
+    const photoScores = {
+      ...createEmptyScores(),
+      [style]: 2,
+      [runnerUp]: 1,
+    }
+
+    assert.equal(checkWinCondition(photoScores, 3, style, baseline), style)
+  }
+})
+
 test('an ambiguous path keeps all six comparisons before the questionnaire tie-break', () => {
   const photoScores = { classic: 1, wetAngel: 1, hybrid: 1, volume: 1 }
   const volumeQuestionnaire = getQuestionnaireScores('C', 'D')

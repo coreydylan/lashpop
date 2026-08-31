@@ -7,7 +7,7 @@ const SITE_URL = 'https://lashpopstudios.com'
 export const metadata: Metadata = {
   title: 'Lash, Brow, Facial & Beauty Services | LashPop Studios',
   description:
-    'Explore eyelash extensions, brows, facials, waxing, permanent makeup, fine line tattoos, and more at LashPop Studios in Oceanside, CA.',
+    'Explore eyelash extensions, brows, facials, waxing, permanent makeup, tiny tattoos, and more at LashPop Studios in Oceanside, CA.',
   alternates: { canonical: `${SITE_URL}/services` },
   openGraph: {
     title: 'Beauty Services at LashPop Studios',

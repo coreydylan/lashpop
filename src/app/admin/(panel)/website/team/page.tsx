@@ -92,7 +92,7 @@ const CATEGORY_OPTIONS = [
   'Skin Care',
   'Permanent Makeup',
   'Permanent Jewelry',
-  'Fine Line Tattoos',
+  'Tiny Tattoos',
   'Injectables',
   'Wellness',
   'Plasma',

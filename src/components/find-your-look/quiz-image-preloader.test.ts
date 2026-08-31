@@ -5,6 +5,7 @@ import type { LashStyle, QuizPhoto } from './types'
 import {
   getQuizImageLoadPlan,
   getQuizImageSrcSet,
+  getQuizPhotoObjectFit,
   getQuizPhotoObjectPosition,
   getQuizPhotoUrl,
 } from './quiz-image-preloader'
@@ -70,6 +71,18 @@ test('legacy square crops fall back to the real source instead of being cropped 
 
   assert.equal(getQuizPhotoUrl(comparison), comparison.filePath)
   assert.equal(getQuizPhotoObjectPosition(comparison), '62% 48%')
+  assert.equal(getQuizPhotoObjectFit(comparison), 'contain')
+})
+
+test('legacy classification survives replacement of the R2 URL with a delivery URL', () => {
+  const comparison = photo('classic', 'classic-first')
+  comparison.cropData = { x: 62, y: 48, scale: 1.2 }
+  comparison.cropUrl = directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/quiz-crops/legacy.jpg')
+  comparison.cropVariant = 'legacy-square'
+
+  assert.equal(getQuizPhotoUrl(comparison), comparison.filePath)
+  assert.equal(getQuizPhotoObjectPosition(comparison), '62% 48%')
+  assert.equal(getQuizPhotoObjectFit(comparison), 'contain')
 })
 
 test('new portrait-safe admin crops are used directly by the comparison card', () => {
@@ -78,4 +91,5 @@ test('new portrait-safe admin crops are used directly by the comparison card', (
 
   assert.equal(getQuizPhotoUrl(comparison), comparison.cropUrl)
   assert.equal(getQuizPhotoObjectPosition(comparison), undefined)
+  assert.equal(getQuizPhotoObjectFit(comparison), 'cover')
 })

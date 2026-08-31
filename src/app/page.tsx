@@ -15,6 +15,10 @@ import { resolveTeamPhotoParity } from "@/lib/team-portrait"
 import { resolvePublicImages } from "@/lib/public-image-delivery.server"
 import LandingPageV2Client from "./LandingPageV2Client"
 import type { CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
+import {
+  publicServiceLabel,
+  publicServiceLabels,
+} from '@/lib/public-service-presentation'
 
 type HomePageData = {
   services: Awaited<ReturnType<typeof getAllServices>>
@@ -148,7 +152,7 @@ export default async function HomePage() {
     .map((card) => ({
       id: card.id,
       slug: card.slug,
-      title: card.title,
+      title: publicServiceLabel(card.title),
       tagline: card.tagline,
       description: card.description,
       icon: card.icon,
@@ -191,8 +195,8 @@ export default async function HomePage() {
     // and orchestrator handoff; the live DB column is gone. Pass the same
     // serviceCategories array so any downstream fallback path sees something
     // sensible instead of an empty placeholder.
-    specialties: member.serviceCategories ?? [],
-    serviceCategories: member.serviceCategories, // From dual-mode router in actions/team.ts
+    specialties: publicServiceLabels(member.serviceCategories ?? []),
+    serviceCategories: publicServiceLabels(member.serviceCategories ?? []), // From dual-mode router in actions/team.ts
     // Vagaro bio (BusinessSummary) wins; fall back to locally-entered bio
     bio: member.vagaroBio || member.bio || undefined,
     quote: member.quote || undefined,

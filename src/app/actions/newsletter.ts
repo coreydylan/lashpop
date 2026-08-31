@@ -8,6 +8,7 @@ import { headers } from 'next/headers'
 import { consumeRateLimit, requestIp } from '@/lib/request-rate-limit'
 import { ANALYTICS_EVENTS } from '@/lib/analytics-events'
 import { trackServerEvent } from '@/lib/analytics-server'
+import { persistNewsletterSubscription } from '@/lib/newsletter-persistence'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -43,15 +44,25 @@ export async function subscribeToNewsletter(email: string) {
     }
 
     const db = getDb()
-    const [existing] = await db
-      .select({ id: newsletterSubscriptions.id, status: newsletterSubscriptions.status })
-      .from(newsletterSubscriptions)
-      .where(eq(newsletterSubscriptions.email, trimmed))
-      .limit(1)
-
-    if (existing) {
-      if (existing.status !== 'active') {
-        const now = new Date()
+    const outcome = await persistNewsletterSubscription({
+      async findByEmail(candidate) {
+        const [existing] = await db
+          .select({ id: newsletterSubscriptions.id, status: newsletterSubscriptions.status })
+          .from(newsletterSubscriptions)
+          .where(eq(newsletterSubscriptions.email, candidate))
+          .limit(1)
+        return existing ?? null
+      },
+      async insertActive(candidate, now) {
+        await db.insert(newsletterSubscriptions).values({
+          email: candidate,
+          source: 'footer_form',
+          status: 'active',
+          subscribedAt: now,
+          updatedAt: now,
+        })
+      },
+      async reactivate(id, now) {
         await db
           .update(newsletterSubscriptions)
           .set({
@@ -61,30 +72,21 @@ export async function subscribeToNewsletter(email: string) {
             unsubscribedAt: null,
             updatedAt: now,
           })
-          .where(eq(newsletterSubscriptions.id, existing.id))
-        await trackServerEvent(ANALYTICS_EVENTS.newsletterSignupCompleted, {
-          source: 'footer_form',
-          status: 'reactivated',
-        })
-        return { success: true, message: 'Welcome back — you’re on the list!' }
-      }
+          .where(eq(newsletterSubscriptions.id, id))
+      },
+    }, trimmed)
 
+    if (outcome === 'existing') {
       return { success: true, message: 'Thank you — you’re already on the list!' }
     }
 
-    const now = new Date()
-    await db.insert(newsletterSubscriptions).values({
-      email: trimmed,
-      source: 'footer_form',
-      status: 'active',
-      subscribedAt: now,
-      updatedAt: now,
-    })
     await trackServerEvent(ANALYTICS_EVENTS.newsletterSignupCompleted, {
       source: 'footer_form',
-      status: 'new',
+      status: outcome,
     })
-    return { success: true, message: 'Thank you — see you in your inbox!' }
+    return outcome === 'reactivated'
+      ? { success: true, message: 'Welcome back — you’re on the list!' }
+      : { success: true, message: 'Thank you — see you in your inbox!' }
   } catch (err: unknown) {
     // A concurrent repeat signup can still race the read. Treat every known
     // uniqueness variant as the same idempotent success.

@@ -8,6 +8,7 @@ import {
   preloadResponsiveImages,
 } from '@/lib/responsive-image-preloader'
 import type { LashStyle, QuizPhoto } from './types'
+import { classifyQuizCropVariant } from '@/lib/quiz-crop-variant'
 
 const COMPARISON_SIZES = '(max-width: 768px) 45vw, 200px'
 const RESULT_SIZES = '(max-width: 768px) 100vw, 400px'
@@ -33,6 +34,10 @@ export function isLegacySquareQuizCrop(url: string | null | undefined): boolean 
   return Boolean(url && /-square-(?:\d|canonical)/.test(url))
 }
 
+function cropVariant(photo: QuizPhoto) {
+  return photo.cropVariant ?? classifyQuizCropVariant(photo.cropUrl)
+}
+
 export interface QuizExperienceData {
   photos: Record<LashStyle, QuizPhoto[]>
   settings: Record<LashStyle, QuizResultForDisplay>
@@ -41,13 +46,17 @@ export interface QuizExperienceData {
 let quizExperiencePromise: Promise<QuizExperienceData> | null = null
 
 export function getQuizPhotoUrl(photo: QuizPhoto): string {
-  if (photo.cropUrl && !isLegacySquareQuizCrop(photo.cropUrl)) return photo.cropUrl
+  if (photo.cropUrl && cropVariant(photo) !== 'legacy-square') return photo.cropUrl
   return photo.filePath
 }
 
 export function getQuizPhotoObjectPosition(photo: QuizPhoto): string | undefined {
-  if (!isLegacySquareQuizCrop(photo.cropUrl) || !photo.cropData) return undefined
+  if (cropVariant(photo) !== 'legacy-square' || !photo.cropData) return undefined
   return `${photo.cropData.x}% ${photo.cropData.y}%`
+}
+
+export function getQuizPhotoObjectFit(photo: QuizPhoto): 'cover' | 'contain' {
+  return cropVariant(photo) === 'legacy-square' ? 'contain' : 'cover'
 }
 
 function firstEnabledPhoto(photos: QuizPhoto[] | undefined): QuizPhoto | null {

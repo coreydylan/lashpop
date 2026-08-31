@@ -4,6 +4,7 @@ import { getDb } from '@/db'
 import { faqCategories, faqItems } from '@/db/schema/faqs'
 import { eq, asc, and } from 'drizzle-orm'
 import { sanitizeFaqHtml } from '@/lib/sanitize-faq-html'
+import { withPendingTinyTattoosFaqCategory } from '@/lib/public-faq-categories'
 
 export interface FAQCategory {
   id: string
@@ -45,7 +46,7 @@ export async function getFAQCategories(): Promise<FAQCategory[]> {
       .where(eq(faqCategories.isActive, true))
       .orderBy(asc(faqCategories.displayOrder))
 
-    return categories
+    return withPendingTinyTattoosFaqCategory(categories) as FAQCategory[]
   } catch (error) {
     console.error('Error fetching FAQ categories:', error)
     return []
@@ -88,6 +89,8 @@ export async function getFAQsGroupedByCategory(): Promise<{
       .where(eq(faqCategories.isActive, true))
       .orderBy(asc(faqCategories.displayOrder))
 
+    const publicCategories = withPendingTinyTattoosFaqCategory(categories)
+
     // Fetch all active items
     const items = await db
       .select()
@@ -97,18 +100,18 @@ export async function getFAQsGroupedByCategory(): Promise<{
 
     // Group items by category
     const itemsByCategory: Record<string, FAQItem[]> = {}
-    for (const category of categories) {
+    for (const category of publicCategories) {
       itemsByCategory[category.id] = items
         .filter(item => item.categoryId === category.id)
         .map(sanitizeFAQItem)
     }
 
     // Get featured items with category info, sorted by category displayOrder then item displayOrder
-    const categoryOrder = new Map(categories.map((c, idx) => [c.id, idx]))
+    const categoryOrder = new Map(publicCategories.map((c, idx) => [c.id, idx]))
     const featuredItems: FAQWithCategory[] = items
       .filter(item => item.isFeatured)
       .map(item => {
-        const category = categories.find(c => c.id === item.categoryId)
+        const category = publicCategories.find(c => c.id === item.categoryId)
         return {
           ...sanitizeFAQItem(item),
           categoryName: category?.name || '',
@@ -124,7 +127,7 @@ export async function getFAQsGroupedByCategory(): Promise<{
       })
 
     return {
-      categories,
+      categories: publicCategories as FAQCategory[],
       itemsByCategory,
       featuredItems
     }

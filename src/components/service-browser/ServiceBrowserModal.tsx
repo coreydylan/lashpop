@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, ChevronLeft } from 'lucide-react'
 import { useServiceBrowser } from './ServiceBrowserContext'
@@ -303,9 +304,25 @@ export function ServiceBrowserModal() {
 
                       {/* Center - Title (only show if we have one) */}
                       {getHeaderTitle() && (
-                        <h2 className="flex-1 text-center text-base font-display font-medium text-charcoal truncate px-2">
-                          {getHeaderTitle()}
-                        </h2>
+                        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 px-2">
+                          {view === 'booking' && selectedService?.imageUrl && (
+                            <span
+                              className="relative h-9 w-12 shrink-0 overflow-hidden rounded-lg bg-cream"
+                              data-booking-service-image
+                            >
+                              <Image
+                                src={selectedService.imageUrl}
+                                alt=""
+                                fill
+                                sizes="48px"
+                                className="object-cover"
+                              />
+                            </span>
+                          )}
+                          <h2 className="truncate text-center text-base font-display font-medium text-charcoal">
+                            {getHeaderTitle()}
+                          </h2>
+                        </div>
                       )}
 
                       {/* Right side - Close button */}
@@ -365,9 +382,25 @@ export function ServiceBrowserModal() {
                           </motion.button>
                         )}
                         {getHeaderTitle() && (
-                          <h2 className="text-xl font-display font-medium text-charcoal truncate">
-                            {getHeaderTitle()}
-                          </h2>
+                          <div className="flex min-w-0 items-center gap-3">
+                            {view === 'booking' && selectedService?.imageUrl && (
+                              <span
+                                className="relative h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-cream"
+                                data-booking-service-image
+                              >
+                                <Image
+                                  src={selectedService.imageUrl}
+                                  alt=""
+                                  fill
+                                  sizes="56px"
+                                  className="object-cover"
+                                />
+                              </span>
+                            )}
+                            <h2 className="truncate text-xl font-display font-medium text-charcoal">
+                              {getHeaderTitle()}
+                            </h2>
+                          </div>
                         )}
                       </div>
                       <button

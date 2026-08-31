@@ -67,6 +67,23 @@ test('duplicate titles in different Vagaro categories have different loaders', (
   }
 })
 
+test('the two Microblading booking rows keep distinct Vagaro identities', () => {
+  const mappings = manifest.mappings.filter(
+    mapping => mapping.name === 'Microblading (1st Appointment)',
+  )
+
+  assert.equal(mappings.length, 2)
+  assert.deepEqual(
+    new Set(mappings.map(mapping => mapping.category)),
+    new Set([
+      'Brows',
+      'Permanent Makeup (Microblading/Nanobrows/Freckles/Lip Blushing)',
+    ]),
+  )
+  assert.equal(new Set(mappings.map(mapping => mapping.vagaroServiceId)).size, 2)
+  assert.equal(new Set(mappings.map(mapping => mapping.widgetUrl)).size, 2)
+})
+
 test('a valid loader assigned to the wrong service fails closed', () => {
   const [first, second] = manifest.mappings
   assert.ok(first)

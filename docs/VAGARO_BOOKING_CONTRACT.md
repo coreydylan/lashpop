@@ -150,6 +150,22 @@ mappings:
 - name-only bulk update scripts; and
 - direct arbitrary widget-URL update helpers.
 
+### Duplicate services and provider-owned photos
+
+Brows and Permanent Makeup currently contain separate Microblading records in
+Vagaro. They must keep their separate numeric IDs, parent categories, and
+generated loaders even though the titles match. Do not copy the Permanent
+Makeup loader onto the Brows row to make its provider card inherit the other
+record's photo.
+
+The LashPop modal header shows the selected service's already-approved public
+image before the cross-origin Vagaro frame. That keeps the booking handoff
+visually grounded when one Vagaro duplicate has no provider-card photo while
+preserving Vagaro's exact booking identity. The missing image inside Vagaro's
+own Brows card remains a Vagaro catalog-content dependency; fix it in Vagaro,
+then let the normal image sync refresh LashPop rather than replacing the
+Vagaro-owned image in code.
+
 ## Historical fixes
 
 These commits document the exact integration behavior:

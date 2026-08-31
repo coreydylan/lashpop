@@ -5,7 +5,10 @@ import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Clock, DollarSign } from 'lucide-react'
 import type { Service } from '../ServiceBrowserContext'
-import { SERVICE_CARD_SIZES } from '../service-image-preloader'
+import {
+  SERVICE_CARD_SIZES,
+  isServiceImageReady,
+} from '../service-image-preloader'
 
 // Mapping of category slug → icon SVG path
 const categoryIconMap: Record<string, string> = {
@@ -30,7 +33,7 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(() => isServiceImageReady(service.imageUrl))
   const [imageFailed, setImageFailed] = useState(false)
   const priceDisplay = service.priceStarting
     ? `$${(service.priceStarting / 100).toFixed(0)}+`
@@ -45,7 +48,7 @@ export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
   const prioritizePhoto = index < 6
 
   useEffect(() => {
-    setImageLoaded(false)
+    setImageLoaded(isServiceImageReady(service.imageUrl))
     setImageFailed(false)
   }, [service.imageUrl])
 
