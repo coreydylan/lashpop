@@ -4,7 +4,6 @@ Captured on 2026-08-31 from the local live-data preview at phone (390 × 844) an
 
 ## Phone
 
-- `mobile-microblading-booking.png` — the distinct Brows / Microblading (1st Appointment) Vagaro booking keeps its own loader and now carries the selected service photo in LashPop's header.
 - `mobile-service-images-restored.png` — returning from booking restores all three Microblading cards as decoded, fully opaque images.
 - `mobile-quiz-comparison.png` — comparison photos use their full source with `object-fit: contain`, avoiding the legacy double-cropped square masters.
 - `mobile-quiz-result.png` — the result uses the selected winning photo, here the exact image chosen for Classic Lashes.

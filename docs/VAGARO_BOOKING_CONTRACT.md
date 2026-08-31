@@ -158,12 +158,10 @@ generated loaders even though the titles match. Do not copy the Permanent
 Makeup loader onto the Brows row to make its provider card inherit the other
 record's photo.
 
-The LashPop modal header shows the selected service's already-approved public
-image before the cross-origin Vagaro frame. That keeps the booking handoff
-visually grounded when one Vagaro duplicate has no provider-card photo while
-preserving Vagaro's exact booking identity. The missing image inside Vagaro's
-own Brows card remains a Vagaro catalog-content dependency; fix it in Vagaro,
-then let the normal image sync refresh LashPop rather than replacing the
+The missing image inside Vagaro's own Brows card is a Vagaro catalog-content
+dependency. Fix the correct Brows service in Vagaro, verify its exact public
+widget, then let the normal image sync refresh LashPop. Do not add an app-owned
+booking-header substitute, copy the Permanent Makeup loader, or replace the
 Vagaro-owned image in code.
 
 ## Historical fixes

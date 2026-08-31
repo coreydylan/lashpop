@@ -182,11 +182,6 @@ test('Classic Fill reaches the exact booking handoff', async ({ page }) => {
   await browser.getByRole('button', { name: /^Classic Fill/ }).click()
 
   await expect(browser.getByRole('heading', { name: 'Book Classic Fill' })).toBeVisible()
-  const bookingPhoto = browser.locator('[data-booking-service-image] img')
-  await expect(bookingPhoto).toBeVisible()
-  await expect.poll(
-    () => bookingPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth),
-  ).toBeGreaterThan(0)
   await expect(browser.getByText('Preparing booking experience')).toBeVisible()
   await expect(page.locator('script[src*="vagaro"]')).toHaveCount(1)
 })
