@@ -81,7 +81,7 @@ export function MiniDamExplorer({
   onClose,
   onSelect,
   selectedAssetId,
-  title = "Select Image",
+  title = "Choose image",
   subtitle = "Choose from your media library",
   filterTags,
   filterCategoryNames,
@@ -116,7 +116,11 @@ export function MiniDamExplorer({
 
   // Sync local selection with prop
   useEffect(() => {
-    setLocalSelectedIds(new Set(selectedAssetIds))
+    setLocalSelectedIds((current) => {
+      const next = new Set(selectedAssetIds)
+      const unchanged = current.size === next.size && Array.from(current).every((id) => next.has(id))
+      return unchanged ? current : next
+    })
   }, [selectedAssetIds])
 
   // Fetch DAM data
@@ -125,7 +129,7 @@ export function MiniDamExplorer({
     setError(null)
     try {
       const response = await fetch('/api/dam/initial-data')
-      if (!response.ok) throw new Error('Failed to fetch DAM data')
+      if (!response.ok) throw new Error('Could not load the media library.')
 
       const data = await response.json()
       setAssets(data.assets || [])
@@ -133,7 +137,7 @@ export function MiniDamExplorer({
       setTeamMembers(data.teamMembers || [])
     } catch (err) {
       console.error('Error fetching DAM data:', err)
-      setError('Failed to load media library')
+      setError('Could not load the media library.')
     } finally {
       setLoading(false)
     }
@@ -311,7 +315,7 @@ export function MiniDamExplorer({
       })
 
       if (!res.ok) {
-        throw new Error(`Upload failed (${res.status})`)
+        throw new Error('Could not upload these files. Try again.')
       }
 
       const data = await res.json()
@@ -333,11 +337,11 @@ export function MiniDamExplorer({
 
       const failCount = data.results?.filter((r: any) => r.status === 'error').length || 0
       if (failCount > 0) {
-        setUploadError(`${data.assets.length} uploaded, ${failCount} failed`)
+        setUploadError(`${data.assets.length} uploaded. ${failCount} could not be uploaded.`)
       }
     } catch (err) {
       console.error('Upload error:', err)
-      setUploadError(err instanceof Error ? err.message : 'Upload failed')
+      setUploadError(err instanceof Error ? err.message : 'Could not upload these files. Try again.')
     } finally {
       setUploading(false)
       setUploadCount(0)
@@ -425,8 +429,8 @@ export function MiniDamExplorer({
               <div className="absolute inset-0 z-[60] bg-dusty-rose/10 backdrop-blur-sm border-4 border-dashed border-dusty-rose/40 rounded-3xl flex items-center justify-center">
                 <div className="text-center bg-cream/90 rounded-2xl px-8 py-6 shadow-xl border border-dusty-rose/20">
                   <Upload className="w-10 h-10 text-dusty-rose mx-auto mb-2" />
-                  <p className="text-dune font-semibold">Drop images here</p>
-                  <p className="text-xs text-dune/60 mt-1">They&apos;ll be uploaded to your media library</p>
+                  <p className="text-dune font-semibold">Drop files here</p>
+                  <p className="text-xs text-dune/60 mt-1">They will be uploaded to your media library.</p>
                 </div>
               </div>
             )}
@@ -458,7 +462,7 @@ export function MiniDamExplorer({
                   ) : (
                     <Upload className="w-4 h-4" />
                   )}
-                  {uploading ? `Uploading ${uploadCount}...` : 'Upload'}
+                  {uploading ? `Uploading ${uploadCount}…` : 'Upload'}
                 </button>
                 {allowMultiple && localSelectedIds.size > 0 && (
                   <button
@@ -488,7 +492,7 @@ export function MiniDamExplorer({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name or tag..."
+                    placeholder="Search by name or tag…"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-cream border border-sage/20 text-sm text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30 focus:border-dusty-rose/40"
                   />
                 </div>
@@ -542,7 +546,7 @@ export function MiniDamExplorer({
                         <div>
                           <div className="flex items-center gap-2 text-xs text-dune/60 uppercase tracking-wider mb-2">
                             <Users className="w-3 h-3" />
-                            <span>Team Members</span>
+                            <span>Team members</span>
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {teamMembers.map(member => (
@@ -650,7 +654,7 @@ export function MiniDamExplorer({
                   <div className="w-16 h-16 rounded-2xl bg-sage/10 flex items-center justify-center mb-4">
                     <ImageIcon className="w-8 h-8 text-sage/40" />
                   </div>
-                  <p className="text-sm text-dune/60">No images found</p>
+                  <p className="text-sm text-dune/60">No images match your search or filters.</p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-dusty-rose hover:bg-dusty-rose/10 border border-dusty-rose/20 transition-colors"
@@ -751,7 +755,7 @@ export function MiniDamExplorer({
                 )}
               </div>
               <span>
-                Press ESC to close
+                Press Escape to close
               </span>
             </div>
           </motion.div>

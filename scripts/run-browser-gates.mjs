@@ -79,13 +79,23 @@ async function main() {
 
   try {
     await waitForServer(baseUrl, server)
+    // Keep fixture-backed production rendering below the point where parallel
+    // RSC streams can starve hydration and create false visual differences.
     await run(playwrightBin, [
       'test',
       '--project=visual-desktop',
       '--project=visual-mobile',
       '--project=visual-narrow',
+      '--workers=1',
     ], env)
-    await run(playwrightBin, ['test', '--project=accessibility'], env)
+    // Quiz result photos are remote hosted assets; one retry covers a cold
+    // image request without accepting a changed accessibility result.
+    await run(playwrightBin, [
+      'test',
+      '--project=accessibility',
+      '--workers=1',
+      '--retries=1',
+    ], env)
   } finally {
     await stopServer(server)
   }

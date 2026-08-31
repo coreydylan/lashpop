@@ -35,7 +35,7 @@ export async function POST(
     .from(reviews)
     .where(eq(reviews.id, id))
     .limit(1)
-  if (!review) return NextResponse.json({ error: 'review not found' }, { status: 404 })
+  if (!review) return NextResponse.json({ error: 'Review not found.' }, { status: 404 })
 
   const staff = await db
     .select({ id: teamMembers.id, name: teamMembers.name })
@@ -68,7 +68,7 @@ export async function POST(
         outcome: { status: 'failed', reason: 'bridge_unreachable', durationMs: Date.now() - startedAt },
       },
     })
-    return NextResponse.json({ error: 'mesh-claude bridge unreachable' }, { status: 502 })
+    return NextResponse.json({ error: 'Stylist suggestions are temporarily unavailable. Try again later.' }, { status: 502 })
   }
   const match = reply.match(/\{[\s\S]*\}/)
   if (!match) {
@@ -83,7 +83,7 @@ export async function POST(
         outcome: { status: 'failed', reason: 'unparseable_reply', durationMs: Date.now() - startedAt },
       },
     })
-    return NextResponse.json({ error: 'unparseable bridge reply', raw: reply.slice(0, 300) }, { status: 502 })
+    return NextResponse.json({ error: 'Stylist suggestions are temporarily unavailable. Try again later.' }, { status: 502 })
   }
   let parsed: { teamMemberId?: string; confidence?: number; reason?: string }
   try {
@@ -100,7 +100,7 @@ export async function POST(
         outcome: { status: 'failed', reason: 'invalid_json', durationMs: Date.now() - startedAt },
       },
     })
-    return NextResponse.json({ error: 'json parse failed', raw: match[0].slice(0, 300) }, { status: 502 })
+    return NextResponse.json({ error: 'Stylist suggestions are temporarily unavailable. Try again later.' }, { status: 502 })
   }
 
   const validIds = new Set(staff.map(s => s.id))

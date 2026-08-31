@@ -51,7 +51,7 @@ export function AssetMetadataEditor({
         onClick={(event) => { event.stopPropagation(); setOpen(true) }}
         className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-black/55 px-4 text-sm font-semibold text-white shadow-lg backdrop-blur hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dusty-rose"
       >
-        <Pencil className="size-4" aria-hidden="true" /> Describe photo
+        <Pencil className="size-4" aria-hidden="true" /> Edit photo details
       </button>
     )
   }
@@ -86,13 +86,13 @@ export function AssetMetadataEditor({
       <p className="mt-1 text-[11px] leading-4 text-white/45">Leave empty only when the image is purely decorative.</p>
 
       <label className="mt-3 block text-xs font-semibold text-white/80">
-        Caption or notes
+        Caption
         <textarea
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
           maxLength={2000}
           rows={3}
-          placeholder="Optional context used by sections that support captions."
+          placeholder="Optional text for website sections that show captions."
           className="mt-1 w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm font-normal text-white outline-none placeholder:text-white/35 focus:border-dusty-rose focus:ring-2 focus:ring-dusty-rose/25"
         />
       </label>

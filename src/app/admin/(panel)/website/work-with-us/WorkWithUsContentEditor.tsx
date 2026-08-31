@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Check, Loader2, Save } from 'lucide-react'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingSourceLabel } from '@/lib/admin/settings-copy'
 import {
   DEFAULT_WORK_WITH_US_CONTENT,
   type WorkWithUsContent,
@@ -61,7 +62,7 @@ export function WorkWithUsContentEditor() {
     setVersion(data.version)
     setSourceOwner(data.sourceOwner)
     setStatus('saved')
-    setMessage('Careers content is live.')
+    setMessage('Work With Us page updated.')
     window.setTimeout(() => setStatus('idle'), 2200)
   }, [content, version])
 
@@ -93,13 +94,13 @@ export function WorkWithUsContentEditor() {
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2">
-            <h2 id="careers-content-title" className="font-serif text-2xl text-[#2d2926]">Careers page content</h2>
+            <h2 id="careers-content-title" className="font-serif text-2xl text-[#2d2926]">Work With Us text</h2>
             <span className="rounded-full border border-[#d9cec7] bg-[#fbf7f4] px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-[#6d625c]">
-              {sourceOwner}
+              {websiteSettingSourceLabel(sourceOwner, version)}
             </span>
           </div>
           <p className="max-w-2xl text-sm text-[#6d625c]">
-            These headings and path summaries publish directly to the Work With Us page. Benefits, pricing logic, forms, and photography remain system-owned.
+            Edit the page heading and summary for each work option. Benefits, prices, and form fields cannot be changed here. Manage photos below.
           </p>
         </div>
         <button
@@ -109,20 +110,20 @@ export function WorkWithUsContentEditor() {
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b5563d] px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
         >
           {status === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : status === 'saved' ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-          {status === 'saving' ? 'Publishing…' : 'Publish content'}
+          {status === 'saving' ? 'Publishing…' : 'Publish changes'}
         </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-4 rounded-xl border border-[#eee5df] bg-[#fbf7f4] p-4 md:col-span-3">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b7d75]">Page introduction</p>
-          <Field label="Eyebrow" value={content.heroEyebrow} onChange={(heroEyebrow) => setContent({ ...content, heroEyebrow })} />
+          <Field label="Short label above heading" value={content.heroEyebrow} onChange={(heroEyebrow) => setContent({ ...content, heroEyebrow })} />
           <Field label="Headline" value={content.heroTitle} onChange={(heroTitle) => setContent({ ...content, heroTitle })} />
           <Field label="Description" multiline value={content.heroDescription} onChange={(heroDescription) => setContent({ ...content, heroDescription })} />
         </div>
         {(['employee', 'booth', 'training'] as const).map((key) => (
           <div key={key} className="space-y-4 rounded-xl border border-[#eee5df] p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b7d75]">{key} path</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8b7d75]">{key === 'employee' ? 'Employee option' : key === 'booth' ? 'Booth rental option' : 'Training option'}</p>
             <Field label="Title" value={content[key].title} onChange={(title) => updateCard(key, { title })} />
             <Field label="Summary" multiline value={content[key].description} onChange={(description) => updateCard(key, { description })} />
           </div>

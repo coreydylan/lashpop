@@ -10,6 +10,7 @@ import { vagaroSyncRuns } from '@/db/schema/vagaro_sync_runs'
 import { workWithUsSubmissions } from '@/db/schema/work_with_us_submissions'
 import { user as userSchema } from '@/db/schema/auth_user'
 import { requireAdmin } from '@/lib/admin/auth'
+import { auditActionLabel, auditTargetReference } from '@/lib/admin/audit-copy'
 
 export const dynamic = 'force-dynamic'
 
@@ -62,42 +63,46 @@ export default async function TodayPage() {
   ])
 
   const latestRun = latestRuns[0]
+  const unscoredCount = Number(unscored?.count ?? 0)
+  const pinnedCount = Number(pinned?.count ?? 0)
+  const subscriberCount = Number(subscribers?.count ?? 0)
+  const applicationCount = Number(applications?.count ?? 0)
   const syncAge = latestRun ? Date.now() - new Date(latestRun.startedAt).getTime() : Number.POSITIVE_INFINITY
-  const syncHealthy = latestRun?.status === 'success' && syncAge < 45 * 60 * 1000
+  const syncHealthy = latestRun?.status === 'success' && syncAge < 9 * 60 * 60 * 1000
   const configured = new Set(configuredRows.map((row) => row.section))
   const defaultOnly = EXPECTED_SETTINGS.filter((section) => !configured.has(section))
   const tasks = [
-    unscored.count > 0 ? { label: `Score ${unscored.count} public ${unscored.count === 1 ? 'review' : 'reviews'}`, detail: 'Fresh reviews need the reputation pipeline or a manual pass.', href: '/admin/website/reviews', tone: 'attention' as const } : null,
-    !syncHealthy ? { label: 'Check the Vagaro sync', detail: latestRun ? `Latest run is ${latestRun.status} from ${formatWhen(latestRun.startedAt)}.` : 'No sync run has been recorded.', href: '/admin/system/syncs', tone: 'attention' as const } : null,
-    defaultOnly.length > 0 ? { label: `Confirm ${defaultOnly.length} default-backed website ${defaultOnly.length === 1 ? 'section' : 'sections'}`, detail: 'They work today, but no admin-confirmed row has been saved yet.', href: '/admin/website', tone: 'normal' as const } : null,
-    { label: 'Verify Fine Line Tattoos end to end', detail: 'Confirm booking order, copy, imagery, and Evie + Kelly Richter’s profile chips.', href: '/admin/workflows/service-launch?category=fine-line-tattoos', tone: 'normal' as const },
+    unscoredCount > 0 ? { label: unscoredCount === 1 ? 'Add a quality score to 1 review' : `Add quality scores to ${unscoredCount} reviews`, detail: 'These reviews are allowed to appear on the website but do not have a quality score.', href: '/admin/website/reviews', tone: 'attention' as const } : null,
+    !syncHealthy ? { label: 'Check the latest Vagaro update', detail: latestRun ? `The latest update ${syncStatusLabel(latestRun.status)} at ${formatWhen(latestRun.startedAt)}.` : 'No Vagaro update has been recorded.', href: '/admin/system/syncs', tone: 'attention' as const } : null,
+    defaultOnly.length > 0 ? { label: `Review ${defaultOnly.length} website ${defaultOnly.length === 1 ? 'section' : 'sections'} using default settings`, detail: 'The website is working, but these settings have not been saved in Admin.', href: '/admin/website', tone: 'normal' as const } : null,
+    { label: 'Check Fine Line Tattoos on the website and in booking', detail: 'Check the service order, text, photos and the services shown for Evie and Kelly Richter.', href: '/admin/workflows/service-launch?category=fine-line-tattoos', tone: 'normal' as const },
   ].filter(Boolean) as Array<{ label: string; detail: string; href: string; tone: 'attention' | 'normal' }>
 
   return (
-    <div className="space-y-8">
-      <header className="grid gap-5 border-b border-black/10 pb-7 lg:grid-cols-[1fr_auto] lg:items-end">
+    <div className="space-y-6 sm:space-y-8">
+      <header className="grid gap-4 border-b border-black/10 pb-5 sm:gap-5 sm:pb-7 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Today</p>
-          <h1 className="mt-2 font-serif text-4xl">Good {dayPart()}, {firstName(session.name)}.</h1>
-          <p className="mt-2 text-sm text-black/55">Start with anything that can change what clients see or book.</p>
+          <h1 className="mt-1 text-balance font-serif text-3xl sm:mt-2 sm:text-4xl">Good {dayPart()}, {firstName(session.name)}.</h1>
+          <p className="mt-2 text-sm text-black/55">Review the tasks that affect what clients see or can book.</p>
         </div>
         <div className={`inline-flex min-h-11 items-center gap-2 rounded-lg border px-4 text-sm font-semibold ${syncHealthy ? 'border-emerald-700/20 bg-emerald-50 text-emerald-800' : 'border-amber-700/20 bg-amber-50 text-amber-900'}`}>
           {syncHealthy ? <CheckCircle2 className="size-4" /> : <AlertTriangle className="size-4" />}
-          Vagaro {syncHealthy ? 'current' : 'needs attention'}
+          {syncHealthy ? 'Latest Vagaro update completed' : 'Check the latest Vagaro update'}
         </div>
       </header>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Operational summary">
-        <Metric icon={Star} label="Reviews to score" value={unscored.count} href="/admin/website/reviews" />
-        <Metric icon={ClipboardCheck} label="Homepage pins" value={pinned.count} href="/admin/website/reviews" />
-        <Metric icon={Inbox} label="Applications" value={applications.count} href="/admin/inbox/work-with-us" />
-        <Metric icon={RefreshCw} label="Subscribers" value={subscribers.count} href="/admin/inbox/newsletter" />
+      <section className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4" aria-label="Admin totals">
+        <Metric icon={Star} label="Reviews allowed on website without scores" value={unscoredCount} href="/admin/website/reviews" />
+        <Metric icon={ClipboardCheck} label="Reviews pinned to homepage" value={pinnedCount} href="/admin/website/reviews" />
+        <Metric icon={Inbox} label="Applications" value={applicationCount} href="/admin/inbox/work-with-us" />
+        <Metric icon={RefreshCw} label="Subscriber records" value={subscriberCount} href="/admin/inbox/newsletter" />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div>
           <div className="mb-3 flex items-end justify-between gap-3">
-            <div><h2 className="font-serif text-2xl">Work queue</h2><p className="mt-1 text-xs text-black/50">Ordered by public impact.</p></div>
+            <div><h2 className="font-serif text-2xl">Tasks</h2><p className="mt-1 text-xs text-black/50">Tasks that affect the public website come first.</p></div>
             <span className="text-xs font-semibold text-black/40">{tasks.length} items</span>
           </div>
           <ol className="overflow-hidden rounded-xl border border-black/10 bg-white divide-y divide-black/10">
@@ -114,14 +119,14 @@ export default async function TodayPage() {
         </div>
 
         <div>
-          <div className="mb-3"><h2 className="font-serif text-2xl">Recent changes</h2><p className="mt-1 text-xs text-black/50">The central log is expanding as editors move to the new foundation.</p></div>
+          <div className="mb-3"><h2 className="font-serif text-2xl">Recent activity</h2><p className="mt-1 text-xs text-black/50">Shows actions recorded in Admin and Media.</p></div>
           <div className="overflow-hidden rounded-xl border border-black/10 bg-white">
-            {activity.length === 0 ? <p className="p-6 text-sm text-black/50">No persistent changes recorded yet.</p> : (
+            {activity.length === 0 ? <p className="p-6 text-sm text-black/50">No recorded activity yet.</p> : (
               <ul className="divide-y divide-black/10">
                 {activity.map((entry) => (
                   <li key={entry.id} className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0"><p className="truncate font-mono text-xs text-[#9f4c33]">{entry.action}</p><p className="mt-1 truncate text-xs text-black/45">{entry.actorName || entry.actorEmail || 'system'}{entry.targetType ? ` · ${entry.targetType}` : ''}{entry.targetId ? `:${entry.targetId}` : ''}</p></div>
+                      <div className="min-w-0"><p className="truncate text-xs font-medium text-[#9f4c33]" title={auditActionLabel(entry.action)}>{auditActionLabel(entry.action)}</p><p className="mt-1 truncate text-xs text-black/45" title={`${entry.actorName || entry.actorEmail || 'Automatic'}${entry.targetType ? ` · ${auditTargetReference(entry.targetType, entry.targetId)}` : ''}`}>{entry.actorName || entry.actorEmail || 'Automatic'}{entry.targetType ? ` · ${auditTargetReference(entry.targetType, entry.targetId)}` : ''}</p></div>
                       <time className="shrink-0 text-[10px] text-black/35">{formatWhen(entry.createdAt)}</time>
                     </div>
                   </li>
@@ -137,7 +142,7 @@ export default async function TodayPage() {
 }
 
 function Metric({ icon: Icon, label, value, href }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number; href: string }) {
-  return <Link href={href} className="rounded-xl border border-black/10 bg-white p-5 hover:border-[#c96f50]/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"><div className="flex items-center justify-between"><Icon className="size-4 text-[#9f4c33]" /><ArrowRight className="size-3.5 text-black/25" /></div><p className="mt-5 font-serif text-3xl">{value}</p><p className="mt-1 text-xs text-black/50">{label}</p></Link>
+  return <Link href={href} className="bg-white p-4 hover:bg-[#fcfaf7] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] sm:rounded-lg sm:border sm:border-black/10 sm:p-5 sm:hover:border-[#c96f50]/45"><div className="flex items-center justify-between"><Icon className="size-4 text-[#9f4c33]" /><ArrowRight className="size-3.5 text-black/25" /></div><p className="mt-3 font-serif text-3xl tabular-nums sm:mt-5">{value}</p><p className="mt-1 text-xs text-black/50">{label}</p></Link>
 }
 
 function firstName(name: string | null): string {
@@ -152,4 +157,12 @@ function dayPart(): string {
 function formatWhen(value: Date | string): string {
   const date = typeof value === 'string' ? new Date(value) : value
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date)
+}
+
+function syncStatusLabel(status: string): string {
+  if (status === 'success') return 'finished successfully'
+  if (status === 'running') return 'started'
+  if (status === 'partial') return 'completed with issues'
+  if (status === 'failed' || status === 'error') return 'failed'
+  return `ended with status “${status}”`
 }

@@ -5,10 +5,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { PostHog } from 'posthog-js'
 import type { AnalyticsEventName, AnalyticsProperties } from '@/lib/analytics-events'
 import {
+  AUTOCAPTURE_IGNORE_SELECTORS,
   INTERACTION_ANALYTICS_CAPTURED_EVENT,
   INTERACTION_ANALYTICS_PUBLIC_EVENT,
   INTERACTION_ANALYTICS_ROUTE_BLOCK_EVENT,
+  PRIVATE_INTERACTION_SELECTOR,
   isInteractionAnalyticsAllowedPath,
+  keepInteractionAnalyticsEvent,
   redactAnalyticsUrl,
   scrollMilestones,
   summarizeGesture,
@@ -152,7 +155,9 @@ export function InteractionAnalytics({ config }: InteractionAnalyticsProps) {
       posthog.init(config.projectToken, {
         api_host: config.apiHost,
         defaults: '2026-05-30',
-        autocapture: true,
+        autocapture: {
+          css_selector_ignorelist: [...AUTOCAPTURE_IGNORE_SELECTORS],
+        },
         capture_pageview: false,
         capture_pageleave: false,
         capture_heatmaps: true,
@@ -172,8 +177,10 @@ export function InteractionAnalytics({ config }: InteractionAnalyticsProps) {
         respect_dnt: false,
         secure_cookie: true,
         session_recording: {
-          blockSelector: '[data-session-replay-block]',
+          blockSelector: PRIVATE_INTERACTION_SELECTOR,
           maskAllInputs: true,
+          recordBody: false,
+          recordHeaders: false,
           maskCapturedNetworkRequestFn: (request) => {
             if (request.name) request.name = redactAnalyticsUrl(request.name)
             return request
@@ -198,11 +205,12 @@ export function InteractionAnalytics({ config }: InteractionAnalyticsProps) {
           '$utm_term',
         ],
         before_send: (event) => {
-          if (!event) return null
-          if (event.properties?.$current_url) {
-            event.properties.$current_url = redactAnalyticsUrl(String(event.properties.$current_url))
+          const publicEvent = keepInteractionAnalyticsEvent(window.location.pathname, event)
+          if (!publicEvent) return null
+          if (publicEvent.properties?.$current_url) {
+            publicEvent.properties.$current_url = redactAnalyticsUrl(String(publicEvent.properties.$current_url))
           }
-          return event
+          return publicEvent
         },
       })
 

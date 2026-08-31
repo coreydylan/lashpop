@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Instagram, RefreshCw, Settings, AlertCircle, ExternalLink, Heart, MessageCircle, Save, Check } from 'lucide-react'
 import Link from 'next/link'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingStatusLabel } from '@/lib/admin/settings-copy'
 
 interface InstagramPost {
   id: string
@@ -63,7 +64,7 @@ export default function InstagramCarouselEditor() {
     try {
       const response = await fetch('/api/admin/website/instagram')
       const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data?.error ?? `Failed to load settings (${response.status})`)
+      if (!response.ok) throw new Error(data?.error ?? 'Could not load the Instagram settings. Refresh the page and try again.')
       if (data.settings) {
         setSettings(data.settings)
         setSavedSettings(data.settings)
@@ -73,7 +74,7 @@ export default function InstagramCarouselEditor() {
       }
     } catch (error) {
       console.error('Error fetching Instagram settings:', error)
-      setError(error instanceof Error ? error.message : 'Failed to load Instagram settings')
+      setError(error instanceof Error ? error.message : 'Could not load the Instagram settings. Refresh the page and try again.')
     }
   }
 
@@ -91,9 +92,9 @@ export default function InstagramCarouselEditor() {
       if (!response.ok) {
         if (response.status === 409 && data?.conflict) {
           setConflict(true)
-          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+          throw new Error('Someone saved a newer version while this page was open. Load the latest version to replace your unsaved changes.')
         }
-        throw new Error(data?.error ?? `Failed to save settings (${response.status})`)
+        throw new Error(data?.error ?? 'Could not save the Instagram settings. Try again.')
       }
       setSettings(data.settings)
       setSavedSettings(data.settings)
@@ -103,7 +104,7 @@ export default function InstagramCarouselEditor() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (error) {
-      const saveError = error instanceof Error ? error : new Error('Failed to save settings')
+      const saveError = error instanceof Error ? error : new Error('Could not save the Instagram settings. Try again.')
       console.error('Error saving settings:', saveError)
       setError(saveError.message)
       throw saveError
@@ -172,31 +173,31 @@ export default function InstagramCarouselEditor() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-terracotta/30 to-dusty-rose/20 flex items-center justify-center">
+        <div className="grid gap-4 sm:flex sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="hidden size-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-terracotta/30 to-dusty-rose/20 sm:flex">
               <Instagram className="w-6 h-6 text-terracotta" />
             </div>
-            <div>
-              <h1 className="h2 text-dune">Instagram Carousel</h1>
-              <p className="text-sm text-dune/60">Social media feed display settings</p>
+            <div className="min-w-0">
+              <h1 className="h2 text-dune">Instagram posts</h1>
+              <p className="text-sm text-dune/60">Choose how imported Instagram posts appear on the homepage.</p>
               <p className="text-xs text-dune/45">
-                {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+                {websiteSettingStatusLabel(sourceOwner, baseVersion)}
               </p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
             <button
               onClick={fetchInstagramPosts}
-              className="btn btn-secondary"
+              className="btn btn-secondary min-w-0 w-full sm:w-auto"
             >
               <RefreshCw className="w-4 h-4" />
-              Sync Posts
+              Refresh posts
             </button>
             <button
               onClick={() => void save().catch(() => undefined)}
               disabled={saving || !dirty}
-              className={`btn ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} ${!dirty && !saved ? 'opacity-50' : ''}`}
+              className={`btn min-w-0 w-full sm:w-auto ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'} ${!dirty && !saved ? 'opacity-50' : ''}`}
             >
               {saving ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -205,14 +206,14 @@ export default function InstagramCarouselEditor() {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              {saved ? 'Saved!' : 'Save Settings'}
+              {saved ? 'Saved' : 'Save changes'}
             </button>
           </div>
         </div>
       </motion.div>
 
       {error && (
-        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-terracotta/25 bg-terracotta/10 p-4 text-sm text-terracotta" role="alert">
+        <div className="mb-6 flex flex-col gap-3 rounded-lg border border-terracotta/25 bg-terracotta/10 p-4 text-sm text-terracotta sm:flex-row sm:items-center" role="alert">
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <p className="min-w-0 flex-1">{error}</p>
           {conflict && (
@@ -232,21 +233,22 @@ export default function InstagramCarouselEditor() {
           transition={{ delay: 0.1 }}
           className="lg:col-span-1"
         >
-          <div className="glass rounded-3xl p-6 border border-sage/20">
+          <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-6">
               <Settings className="w-5 h-5 text-dune/60" />
-              <h3 className="font-serif text-lg text-dune">Display Settings</h3>
+              <h3 className="font-serif text-lg text-dune">Display settings</h3>
             </div>
 
             <div className="space-y-6">
               {/* Max Posts */}
               <div>
-                <label className="text-xs text-dune/50 uppercase tracking-wider mb-2 block">
-                  Number of Posts
+                <label htmlFor="instagram-max-posts" className="text-xs text-dune/50 uppercase tracking-wider mb-2 block">
+                  Posts shown
                 </label>
                 <div className="flex items-center gap-3">
                   <input
                     type="range"
+                    id="instagram-max-posts"
                     min="4"
                     max="24"
                     value={settings.maxPosts}
@@ -259,12 +261,13 @@ export default function InstagramCarouselEditor() {
 
               {/* Scroll Speed */}
               <div>
-                <label className="text-xs text-dune/50 uppercase tracking-wider mb-2 block">
-                  Scroll Speed
+                <label htmlFor="instagram-scroll-speed" className="text-xs text-dune/50 uppercase tracking-wider mb-2 block">
+                  Automatic scroll speed (higher is faster)
                 </label>
                 <div className="flex items-center gap-3">
                   <input
                     type="range"
+                    id="instagram-scroll-speed"
                     min="10"
                     max="40"
                     value={settings.scrollSpeed}
@@ -294,11 +297,9 @@ export default function InstagramCarouselEditor() {
           </div>
 
           {/* Info Box */}
-          <div className="mt-4 p-4 bg-terracotta/10 rounded-2xl border border-terracotta/20">
+          <div className="mt-4 rounded-lg border border-terracotta/20 bg-terracotta/10 p-4">
             <p className="text-xs text-dune/70">
-              <strong>Note:</strong> Instagram posts are synced automatically via the DAM. 
-              Posts tagged with <code className="bg-dune/10 px-1 rounded">Source: Instagram</code> 
-              will appear in this carousel.
+              Instagram posts imported into Media appear here automatically. Refresh this page after an import.
             </p>
           </div>
         </motion.div>
@@ -310,28 +311,28 @@ export default function InstagramCarouselEditor() {
           transition={{ delay: 0.2 }}
           className="lg:col-span-2"
         >
-          <div className="glass rounded-3xl p-6 border border-sage/20">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-serif text-lg text-dune">Instagram Posts</h3>
+          <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
+            <div className="mb-6 grid gap-1 sm:flex sm:items-center sm:justify-between">
+              <h3 className="font-serif text-lg text-dune">Imported posts</h3>
               <span className="text-sm text-dune/50">
                 Showing {Math.min(posts.length, settings.maxPosts)} of {posts.length}
               </span>
             </div>
 
             {posts.length === 0 ? (
-              <div className="p-8 bg-terracotta/10 rounded-2xl border border-terracotta/20 text-center">
+              <div className="rounded-lg border border-terracotta/20 bg-terracotta/10 p-8 text-center">
                 <AlertCircle className="w-10 h-10 text-terracotta mx-auto mb-3 opacity-70" />
                 <p className="text-sm text-dune font-medium">No Instagram posts found</p>
                 <p className="text-xs text-dune/60 mt-1">
-                  Sync your Instagram posts in the DAM to display them here
+                  Import Instagram posts in Media, then refresh this page.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-4">
                 {posts.slice(0, settings.maxPosts).filter(p => p.url && p.url.length > 0).map((post, index) => (
                   <div
                     key={post.id}
-                    className="relative aspect-square rounded-xl overflow-hidden group"
+                    className="group relative aspect-square overflow-hidden rounded-md sm:rounded-lg"
                   >
                     <Image
                       src={post.url}
@@ -341,7 +342,7 @@ export default function InstagramCarouselEditor() {
                     />
                     
                     {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-3 bg-black/55 px-2 py-2 text-white opacity-100 transition-opacity sm:inset-0 sm:gap-4 sm:bg-black/50 sm:opacity-0 sm:group-hover:opacity-100">
                       {post.likes !== undefined && (
                         <div className="flex items-center gap-1 text-white text-sm">
                           <Heart className="w-4 h-4" />
@@ -357,7 +358,7 @@ export default function InstagramCarouselEditor() {
                     </div>
 
                     {/* Index Badge */}
-                    <div className="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">
+                    <div className="absolute left-2 top-2 rounded bg-black/50 px-2 py-0.5 text-xs text-white">
                       #{index + 1}
                     </div>
                   </div>
@@ -383,7 +384,7 @@ function SettingToggle({
   onChange: (checked: boolean) => void
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-xl border border-sage/15 bg-white/40 p-3">
+    <div className="flex items-start justify-between gap-4 rounded-lg border border-sage/15 bg-white/40 p-3">
       <div>
         <p className="text-sm font-medium text-dune/75">{label}</p>
         <p className="mt-1 text-xs leading-5 text-dune/50">{description}</p>
@@ -394,11 +395,11 @@ function SettingToggle({
         aria-checked={checked}
         aria-label={label}
         onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dusty-rose/50 ${
+        className={`relative mt-0.5 h-11 w-14 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dusty-rose/50 ${
           checked ? 'bg-terracotta' : 'bg-sage/30'
         }`}
       >
-        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${checked ? 'left-6' : 'left-1'}`} />
+        <span className={`absolute top-2.5 size-6 rounded-full bg-white shadow-sm transition-transform ${checked ? 'left-7' : 'left-1'}`} />
       </button>
     </div>
   )

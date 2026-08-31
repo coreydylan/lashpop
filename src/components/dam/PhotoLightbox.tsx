@@ -208,7 +208,7 @@ export function PhotoLightbox({
                   } : undefined}
                 >
                   <Sparkles className={clsx(isMobile ? "w-6 h-6 text-cream" : "w-4 h-4 text-dusty-rose")} />
-                  {!isMobile && <span className="text-sm font-semibold text-cream">Action palette</span>}
+                  {!isMobile && <span className="text-sm font-semibold text-cream">Actions</span>}
                 </button>
               </div>
             )}

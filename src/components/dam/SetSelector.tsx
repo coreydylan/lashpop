@@ -53,7 +53,7 @@ export function SetSelector({
       })
 
       if (!response.ok) {
-        throw new Error("Failed to create set")
+        throw new Error("Could not create the photo set")
       }
 
       const data = await response.json()
@@ -82,7 +82,7 @@ export function SetSelector({
         }`}
       >
         <Plus className="w-4 h-4" />
-        <span className="text-sm font-medium">Add Set</span>
+        <span className="text-sm font-medium">Add photo set</span>
       </button>
 
       {/* Team Member Selector for Set Creation */}

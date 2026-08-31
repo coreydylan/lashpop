@@ -45,10 +45,10 @@ export async function POST(
     .where(eq(reviews.id, id))
     .limit(1)
 
-  if (!review) return NextResponse.json({ error: 'review not found' }, { status: 404 })
+  if (!review) return NextResponse.json({ error: 'Review not found.' }, { status: 404 })
   if (review.adminLockedFields?.includes('quality_score')) {
     return NextResponse.json(
-      { error: 'quality_score is admin-locked; unlock first to allow rescoring' },
+      { error: 'This score is fixed. Allow automatic updates, save the review, then try again.' },
       { status: 409 },
     )
   }
@@ -56,20 +56,20 @@ export async function POST(
   const prompt = `source: ${review.source} | rating: ${review.rating} | stylist: ${review.subject ?? 'unknown'}\n\n"${review.reviewText.slice(0, 1500)}"`
   const reply = await askMeshClaude(prompt, { system: SYSTEM, timeoutMs: 25_000 })
   if (!reply) {
-    return NextResponse.json({ error: 'mesh-claude bridge unreachable' }, { status: 502 })
+    return NextResponse.json({ error: 'Review scoring is temporarily unavailable. Try again later.' }, { status: 502 })
   }
   const match = reply.match(/\{[\s\S]*\}/)
   if (!match) {
-    return NextResponse.json({ error: 'unparseable bridge reply', raw: reply.slice(0, 300) }, { status: 502 })
+    return NextResponse.json({ error: 'Review scoring is temporarily unavailable. Try again later.' }, { status: 502 })
   }
   let parsed: { score?: number; notes?: string }
   try {
     parsed = JSON.parse(match[0])
   } catch {
-    return NextResponse.json({ error: 'json parse failed' }, { status: 502 })
+    return NextResponse.json({ error: 'Review scoring is temporarily unavailable. Try again later.' }, { status: 502 })
   }
   if (typeof parsed.score !== 'number') {
-    return NextResponse.json({ error: 'no score in reply' }, { status: 502 })
+    return NextResponse.json({ error: 'Review scoring is temporarily unavailable. Try again later.' }, { status: 502 })
   }
   const clamped = Math.max(1, Math.min(10, Math.round(parsed.score)))
 

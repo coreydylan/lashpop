@@ -106,7 +106,7 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
   }
 
   const handleDelete = (id: string) => {
-    if (confirm("Delete this collection? Assets will keep their other tags.")) {
+    if (confirm("Delete this collection? Files will keep their other tags.")) {
       setEditedCollections(prev => prev.filter(col => col.id !== id))
     }
   }
@@ -185,8 +185,8 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
               <Folder className="w-5 h-5 text-sage" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-dune">Manage Collections</h2>
-              <p className="caption text-sage">Create, rename, and organize collections</p>
+              <h2 className="text-xl font-bold text-dune">Manage collections</h2>
+              <p className="caption text-sage">Create, rename and reorder saved groups of media</p>
             </div>
           </div>
           <button
@@ -319,7 +319,7 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
                       setNewCollectionName("")
                     }
                   }}
-                  placeholder="Collection name..."
+                  placeholder="Collection name…"
                   className="flex-1 px-3 py-1.5 rounded-xl border-2 border-dusty-rose bg-cream text-dune body focus:outline-none placeholder:text-sage/50"
                 />
               </div>
@@ -330,7 +330,7 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
               >
                 <Plus className="w-4 h-4 text-sage group-hover:text-dusty-rose" />
                 <span className="body text-sage group-hover:text-dusty-rose font-medium">
-                  Add Collection
+                  Add collection
                 </span>
               </button>
             )}
@@ -354,7 +354,7 @@ export function CollectionManager({ collections, onSave, onClose }: CollectionMa
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-dune text-cream hover:bg-dune/90 transition-colors body font-semibold"
             >
               <Save className="w-4 h-4" />
-              Save Changes
+              Save changes
             </button>
           </div>
         </div>

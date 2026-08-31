@@ -111,7 +111,7 @@ export function ServiceHeroImagePicker({
         fetch(`/api/dam/service-assets?serviceId=${serviceId}`)
       ])
 
-      if (!damResponse.ok) throw new Error('Failed to fetch DAM data')
+      if (!damResponse.ok) throw new Error('Could not load the media library.')
 
       const damData = await damResponse.json()
       setAllAssets(damData.assets || [])
@@ -125,7 +125,7 @@ export function ServiceHeroImagePicker({
       }
     } catch (err) {
       console.error('Error fetching DAM data:', err)
-      setError('Failed to load media library')
+      setError('Could not load the media library.')
     } finally {
       setLoading(false)
     }
@@ -276,7 +276,7 @@ export function ServiceHeroImagePicker({
                   <ImageIcon className="w-5 h-5 text-terracotta" />
                 </div>
                 <div>
-                  <h2 className="font-serif text-lg text-dune">Select Hero Image</h2>
+                  <h2 className="font-serif text-lg text-dune">Choose service image</h2>
                   <p className="text-xs text-dune/60">for {serviceName}</p>
                 </div>
               </div>
@@ -291,7 +291,7 @@ export function ServiceHeroImagePicker({
                     className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sage/10 hover:bg-sage/20 text-dune/70 hover:text-dune transition-colors text-sm"
                   >
                     <ImageOff className="w-4 h-4" />
-                    <span>No Image</span>
+                    <span>Remove image</span>
                   </button>
                 )}
                 <button
@@ -318,7 +318,7 @@ export function ServiceHeroImagePicker({
                     )}
                   >
                     <Star className="w-4 h-4" />
-                    <span>For This Service</span>
+                    <span>Saved for this service</span>
                     <span className={clsx(
                       "px-1.5 py-0.5 rounded-full text-[10px]",
                       viewMode === 'service' ? "bg-dusty-rose/30 text-dusty-rose" : "bg-sage/20 text-sage"
@@ -336,7 +336,7 @@ export function ServiceHeroImagePicker({
                     )}
                   >
                     <Grid3X3 className="w-4 h-4" />
-                    <span>All Images</span>
+                    <span>All images</span>
                     <span className={clsx(
                       "px-1.5 py-0.5 rounded-full text-[10px]",
                       viewMode === 'all' ? "bg-dusty-rose/30 text-dusty-rose" : "bg-sage/20 text-sage"
@@ -361,9 +361,9 @@ export function ServiceHeroImagePicker({
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-dusty-rose/10 border border-dusty-rose/20 mb-3">
                   <Star className="w-5 h-5 text-dusty-rose flex-shrink-0" />
                   <p className="text-sm text-dune/70">
-                    Showing images tagged for <strong className="text-dune">{serviceName}</strong>.
+                    Showing images saved for <strong className="text-dune">{serviceName}</strong>.
                     {serviceTaggedAssets.length === 0 && (
-                      <span className="text-dune/60"> No images tagged yet — select from &ldquo;All Images&rdquo; to add one.</span>
+                      <span className="text-dune/60"> No images have been saved for this service. Choose one from All images.</span>
                     )}
                   </p>
                 </div>
@@ -375,7 +375,7 @@ export function ServiceHeroImagePicker({
                   <div className="flex items-center gap-3 mb-3 p-3 rounded-xl bg-ocean-mist/10 border border-ocean-mist/20">
                     <Expand className="w-5 h-5 text-ocean-mist flex-shrink-0" />
                     <p className="text-sm text-dune/70">
-                      Selecting from all images will <strong className="text-dune">automatically tag</strong> the image for {serviceName}.
+                      Choosing an image here also saves it for {serviceName} so it is easier to find next time.
                     </p>
                   </div>
 
@@ -387,7 +387,7 @@ export function ServiceHeroImagePicker({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search by name or tag..."
+                        placeholder="Search by name or tag…"
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-cream border border-sage/20 text-sm text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30 focus:border-dusty-rose/40"
                       />
                     </div>
@@ -432,7 +432,7 @@ export function ServiceHeroImagePicker({
                             <div>
                               <div className="flex items-center gap-2 text-xs text-dune/60 uppercase tracking-wider mb-2">
                                 <Users className="w-3 h-3" />
-                                <span>Team Members</span>
+                                <span>Team members</span>
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {teamMembers.map(member => (
@@ -533,7 +533,7 @@ export function ServiceHeroImagePicker({
                   </div>
                   <p className="text-sm text-dune/60">
                     {viewMode === 'service'
-                      ? 'No images tagged for this service yet'
+                      ? 'No images saved for this service'
                       : 'No images found'}
                   </p>
                   {viewMode === 'service' && (
@@ -542,7 +542,7 @@ export function ServiceHeroImagePicker({
                       className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg bg-dusty-rose/10 text-dusty-rose hover:bg-dusty-rose/20 transition-colors text-sm font-medium"
                     >
                       <Grid3X3 className="w-4 h-4" />
-                      Browse All Images
+                      Browse all images
                     </button>
                   )}
                   {viewMode === 'all' && hasActiveFilters && (
@@ -635,17 +635,17 @@ export function ServiceHeroImagePicker({
               <div className="flex items-center gap-4">
                 <span>
                   <Layers className="w-3 h-3 inline mr-1" />
-                  {displayedAssets.length} {viewMode === 'service' ? 'service' : 'total'} images
+                  {displayedAssets.length} {viewMode === 'service' ? 'saved' : 'total'} images
                 </span>
                 {viewMode === 'all' && (
                   <span className="text-dusty-rose flex items-center gap-1">
                     <Star className="w-3 h-3" />
-                    {serviceTaggedAssets.length} tagged for this service
+                    {serviceTaggedAssets.length} saved for this service
                   </span>
                 )}
               </div>
               <span>
-                Press ESC to close
+                Press Escape to close
               </span>
             </div>
           </motion.div>

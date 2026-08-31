@@ -883,7 +883,7 @@ export function AssetGrid({
           ref={sentinelRef}
           className="h-20 flex items-center justify-center text-sage/40 text-sm"
         >
-          Loading more...
+          Loading more files…
         </div>
       )}
     </div>

@@ -15,81 +15,81 @@ interface TutorialStepContent {
 
 const DESKTOP_STEP_CONTENT: Record<DesktopTutorialStep, TutorialStepContent> = {
   'welcome': {
-    title: 'Welcome to LashPop DAM',
-    description: "Let's take a quick tour to help you get started with your digital asset management system. You'll learn how to organize, tag, and find your photos effortlessly.",
+    title: 'Welcome to Media',
+    description: 'This short tutorial shows how to organize, tag and find photos.',
     skipable: true
   },
   'command-palette-intro': {
-    title: 'The Command Palette',
-    description: 'The Command Palette is your control center for everything in the DAM. You can open it anytime by pressing the / key or ⌘K. It gives you instant access to all features, filters, and actions.',
+    title: 'Open Actions',
+    description: 'Press / or ⌘K to open Actions. Use it to add tags, filter files, change the grid and manage Media.',
     highlight: 'command-button',
     skipable: false
   },
   'filtering-demo': {
-    title: 'Filtering Your Assets',
-    description: 'Use the Command Palette to filter your photos by style, team member, or any tag. Simply type what you\'re looking for - like "natural" or "team" - and select from the suggestions that appear.',
+    title: 'Filter files',
+    description: 'Open Actions and search for a tag or team member. Choose a result to show matching files.',
     skipable: false
   },
   'selection-demo': {
-    title: 'Selecting Multiple Assets',
-    description: 'Select multiple photos at once by clicking and dragging across the grid. You can also hold ⌘ (Cmd) to select non-adjacent items, or use Shift to select a range.',
+    title: 'Select several files',
+    description: 'Click and drag across the grid. You can also hold ⌘ to select separate files or hold Shift to select a range.',
     highlight: 'dam-grid',
     skipable: false
   },
   'bulk-tagging-demo': {
-    title: 'Organizing with Groups',
-    description: 'Organize your view by grouping assets. In the Command Palette, type "group" to see grouping options like Team or Style. This creates visual sections in your grid for easier navigation.',
+    title: 'Group files',
+    description: 'Open Actions and search for “group”. Choose a category such as Team or Style to split the grid into labelled groups.',
     skipable: false
   },
   'collections-organization': {
-    title: 'Collections & More',
-    description: 'Collections let you curate specific sets of assets for campaigns or projects. You can create, manage, and switch between collections - all through the Command Palette.',
+    title: 'Use collections',
+    description: 'A collection is a saved group of media files. Create, rename or open collections from Actions.',
     skipable: true
   },
   'completion': {
-    title: "You're All Set! 🎉",
-    description: "You now know the essentials of LashPop DAM. Remember, the Command Palette (/) is your gateway to everything. Explore the Help section there for more tips and keyboard shortcuts.",
+    title: 'Tutorial complete',
+    description: 'You can now find, select, tag and group files. Open Help in Actions to see more instructions and keyboard shortcuts.',
     skipable: false
   }
 }
 
 const MOBILE_STEP_CONTENT: Record<MobileTutorialStep, TutorialStepContent> = {
   'welcome': {
-    title: 'Welcome to LashPop DAM',
-    description: "Let's take a quick tour of the mobile interface. You'll learn how to organize, tag, and find your photos on the go.",
+    title: 'Welcome to Media',
+    description: 'This short tutorial shows how to organize, tag and find photos on a phone.',
     skipable: true
   },
   'action-button-intro': {
-    title: 'The Action Button',
-    description: 'The sparkle button in the bottom right is your gateway to all actions. It\'s context-aware - changing based on what you\'re doing. When nothing is selected, it opens the main menu.',
+    title: 'The Actions button',
+    description: 'The sparkle button is at the bottom right. Its options change when files are selected. With no selection, it opens the main Actions menu.',
     highlight: 'action-button',
     skipable: false
   },
   'command-palette-intro': {
-    title: 'Command Palette on Mobile',
-    description: 'The Command Palette gives you quick access to search, filter, and organize. You\'ll find it at the top of the Action Button menu. It works just like the desktop version.',
+    title: 'Open Actions on a phone',
+    description: 'Choose Actions at the top of the sparkle-button menu to search, filter and organize files.',
     skipable: false
   },
   'command-palette-explore': {
-    title: 'Using the Command Palette',
-    description: 'In the Command Palette, you can search for anything - team members, styles, tags, or actions. Just type what you need and select from the suggestions.',
+    title: 'Search Actions',
+    description: 'Search for a team member, style, tag or task. Choose a matching action from the list.',
     skipable: false
   },
   'selection-demo': {
-    title: 'Selecting Photos',
-    description: 'To select multiple photos, long-press any image to enter selection mode. Then tap additional photos to add them to your selection. The Action Button will show a count of selected items.',
+    title: 'Select photos',
+    description: 'Press and hold a photo, then tap any other photos you want to select. The Actions button shows the number selected.',
     highlight: 'dam-grid',
     skipable: false
   },
   'bulk-actions': {
-    title: 'Bulk Actions',
-    description: 'When you have photos selected, the Action Button transforms to show contextual actions. You can tag multiple photos at once, add them to collections, or clear your selection.',
+    title: 'Change several photos',
+    description: 'After selecting photos, use the Actions button to add tags, add the photos to a collection or clear the selection.',
     highlight: 'action-button',
     skipable: false
   },
   'completion': {
-    title: "You're All Set! 🎉",
-    description: "You now know the mobile basics! Remember: The sparkle Action Button is your main control, and long-press starts selection mode. Enjoy using LashPop DAM!",
+    title: 'Tutorial complete',
+    description: 'You can now find, select and organize photos on a phone. Press and hold a photo to select more than one.',
     skipable: false
   }
 }
@@ -175,11 +175,11 @@ export function TutorialWalkthrough() {
             <div className="flex items-center gap-3 mb-2">
               <Sparkles className="w-6 h-6 text-dusty-rose" />
               <h2 className="text-2xl font-bold text-dune">
-                Welcome to LashPop DAM
+                Media tutorial
               </h2>
             </div>
             <p className="text-sm text-sage">
-              {isMobile ? 'Mobile Version' : 'Desktop Version'}
+              {isMobile ? 'Phone' : 'Computer'}
             </p>
           </div>
 
@@ -187,8 +187,8 @@ export function TutorialWalkthrough() {
           <div className="px-6 py-6">
             <p className="text-base text-sage leading-relaxed mb-4">
               {isMobile
-                ? "Would you like a quick tour of the mobile interface? We'll show you how to use the Action Button, Command Palette, and organize your photos on the go."
-                : "Would you like a quick 2-minute tour? We'll show you how to organize, tag, and find your photos effortlessly."}
+                ? 'Start a short tutorial on selecting, tagging and finding photos on a phone?'
+                : 'Start a short tutorial on selecting, tagging and finding photos on a computer?'}
             </p>
             <div className="bg-warm-sand/30 rounded-2xl p-4 border border-sage/10">
               <ul className="space-y-2 text-sm text-sage">
@@ -196,30 +196,30 @@ export function TutorialWalkthrough() {
                   <>
                     <li className="flex items-start gap-2">
                       <span className="text-dusty-rose font-bold">•</span>
-                      <span>Discover the Action Button & Command Palette</span>
+                      <span>Open the Actions menu</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-dusty-rose font-bold">•</span>
-                      <span>Learn quick access shortcuts</span>
+                      <span>Search for actions</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-dusty-rose font-bold">•</span>
-                      <span>Master mobile selection & tagging</span>
+                      <span>Select and tag several photos</span>
                     </li>
                   </>
                 ) : (
                   <>
                     <li className="flex items-start gap-2">
                       <span className="text-dusty-rose font-bold">•</span>
-                      <span>Learn the command palette shortcuts</span>
+                      <span>Open Actions with the keyboard</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-dusty-rose font-bold">•</span>
-                      <span>Discover filtering and grouping</span>
+                      <span>Filter and group files</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-dusty-rose font-bold">•</span>
-                      <span>Master bulk tagging workflows</span>
+                      <span>Add tags to several files</span>
                     </li>
                   </>
                 )}
@@ -239,7 +239,7 @@ export function TutorialWalkthrough() {
               onClick={acceptPrompt}
               className="flex-1 px-6 py-3 rounded-full bg-dusty-rose text-cream hover:bg-dusty-rose/90 transition-colors font-semibold flex items-center justify-center gap-2"
             >
-              Start Tour
+              Start tutorial
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

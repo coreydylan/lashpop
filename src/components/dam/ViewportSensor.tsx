@@ -99,7 +99,7 @@ export function ViewportSensor({
           className="fixed right-4 z-50 bg-black/80 text-white text-xs p-2 rounded"
           style={{ ...getPositionStyle(), transform: 'translateY(10px)' }}
         >
-          Detecting {detectedAssets.length} assets: {detectedAssets.slice(0, 3).join(', ')}
+          Checking {detectedAssets.length} {detectedAssets.length === 1 ? 'file' : 'files'}: {detectedAssets.slice(0, 3).join(', ')}
           {detectedAssets.length > 3 && '...'}
         </div>
       )}

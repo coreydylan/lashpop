@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Check, Loader2, Save } from 'lucide-react'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingSourceLabel } from '@/lib/admin/settings-copy'
 import { DEFAULT_HERO_CONTENT, type HeroContent } from '@/types/hero-content'
 
 type Status = 'loading' | 'idle' | 'saving' | 'saved' | 'error'
@@ -20,7 +21,7 @@ export function HeroContentEditor() {
     fetch('/api/admin/website/hero-content', { cache: 'no-store' })
       .then(async (response) => {
         const data = await response.json().catch(() => ({}))
-        if (!response.ok) throw new Error(data.error ?? 'Could not load hero content')
+        if (!response.ok) throw new Error(data.error ?? 'Could not load the homepage heading and buttons.')
         if (!active) return
         setContent(data.content)
         setSavedContent(data.content)
@@ -31,7 +32,7 @@ export function HeroContentEditor() {
       .catch((error) => {
         if (!active) return
         setStatus('error')
-        setMessage(error instanceof Error ? error.message : 'Could not load hero content')
+        setMessage(error instanceof Error ? error.message : 'Could not load the homepage heading and buttons.')
       })
     return () => { active = false }
   }, [])
@@ -47,8 +48,8 @@ export function HeroContentEditor() {
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
       const error = response.status === 409
-        ? 'Another admin published hero content after you opened this page. Reload before publishing your draft.'
-        : data.error ?? 'Could not publish hero content'
+        ? 'Someone published newer homepage text while this page was open. Reload before publishing your changes.'
+        : data.error ?? 'Could not publish the homepage heading and buttons.'
       setStatus('error')
       setMessage(error)
       throw new Error(error)
@@ -58,7 +59,7 @@ export function HeroContentEditor() {
     setVersion(data.version)
     setSourceOwner(data.sourceOwner)
     setStatus('saved')
-    setMessage('Hero content is live.')
+    setMessage('Homepage heading and buttons updated.')
     window.setTimeout(() => setStatus('idle'), 2200)
   }, [content, version])
 
@@ -69,19 +70,19 @@ export function HeroContentEditor() {
   }, [savedContent])
 
   const dirty = JSON.stringify(content) !== JSON.stringify(savedContent)
-  useDirtyBlock({ id: 'hero-content', label: 'Hero content', dirty, save, discard })
+  useDirtyBlock({ id: 'hero-content', label: 'Homepage heading and buttons', dirty, save, discard })
 
   if (status === 'loading') {
-    return <div className="mb-8 h-32 animate-pulse rounded-2xl border border-[#ddd1ca] bg-white" aria-label="Loading hero content" />
+    return <div className="mb-8 h-32 animate-pulse rounded-2xl border border-[#ddd1ca] bg-white" aria-label="Loading homepage heading and buttons" />
   }
 
   const fields: Array<{ key: keyof HeroContent; label: string; help: string }> = [
-    { key: 'heading', label: 'Headline', help: 'Primary mobile and desktop heading' },
-    { key: 'subheading', label: 'Subheading', help: 'Outlined line below the headline' },
-    { key: 'primaryCta', label: 'Booking button', help: 'Scrolls to services' },
+    { key: 'heading', label: 'Heading', help: 'Main heading shown on phones and computers' },
+    { key: 'subheading', label: 'Second line', help: 'Outlined text below the main heading' },
+    { key: 'primaryCta', label: 'Booking button', help: 'Takes visitors to the services section' },
     { key: 'quizCta', label: 'Quiz button', help: 'Opens the lash quiz' },
-    { key: 'careersCta', label: 'Careers button', help: 'Mobile link to Work With Us' },
-    { key: 'reviewsLabel', label: 'Reviews label', help: 'Text beside the review count' },
+    { key: 'careersCta', label: 'Work With Us button', help: 'Shown on phones and opens the Work With Us page' },
+    { key: 'reviewsLabel', label: 'Review count label', help: 'Text shown beside the number of reviews' },
   ]
 
   return (
@@ -89,10 +90,10 @@ export function HeroContentEditor() {
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="mb-1 flex items-center gap-2">
-            <h2 id="hero-content-heading" className="font-serif text-2xl text-[#2d2926]">Hero words and actions</h2>
-            <span className="rounded-full border border-[#d9cec7] bg-[#fbf7f4] px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-[#6d625c]">{sourceOwner}</span>
+            <h2 id="hero-content-heading" className="font-serif text-2xl text-[#2d2926]">Homepage heading and buttons</h2>
+            <span className="rounded-full border border-[#d9cec7] bg-[#fbf7f4] px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-[#6d625c]">{websiteSettingSourceLabel(sourceOwner, version)}</span>
           </div>
-          <p className="text-sm text-[#6d625c]">Publishes the above-the-fold copy on mobile and desktop. Image and slideshow controls remain below.</p>
+          <p className="text-sm text-[#6d625c]">Edit the text at the top of the homepage. Image and slideshow settings are below.</p>
         </div>
         <button
           type="button"
@@ -101,7 +102,7 @@ export function HeroContentEditor() {
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b5563d] px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
         >
           {status === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : status === 'saved' ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
-          {status === 'saving' ? 'Publishing…' : 'Publish copy'}
+          {status === 'saving' ? 'Publishing…' : 'Publish text'}
         </button>
       </div>
 

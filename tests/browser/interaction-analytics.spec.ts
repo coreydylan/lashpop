@@ -1,4 +1,9 @@
 import { expect, test } from '@playwright/test'
+import { resolve } from 'node:path'
+import {
+  INTERACTION_ANALYTICS_ROUTE_BLOCK_EVENT,
+  PRIVATE_INTERACTION_SELECTOR,
+} from '../../src/lib/interaction-analytics'
 
 const FIXTURE_TOKEN = 'phc_fixture_aggregate_token_12345'
 
@@ -9,10 +14,11 @@ async function mockPostHogProjectConfig(page: import('@playwright/test').Page) {
     sessionRecording: {
       sampleRate: '1',
       minimumDurationMilliseconds: 0,
-      networkPayloadCapture: { recordBody: false, recordHeaders: false },
+      // Hostile remote values prove the client-side privacy settings win.
+      networkPayloadCapture: { recordBody: true, recordHeaders: true },
       masking: {
-        maskAllInputs: true,
-        blockSelector: '[data-session-replay-block]',
+        maskAllInputs: false,
+        blockSelector: '[data-remote-only]',
       },
     },
     toolbarParams: {},
@@ -127,6 +133,13 @@ test('records masked public sessions and aggregate gestures without analytics UI
 
   await page.goto('/privacy', { waitUntil: 'domcontentloaded' })
 
+  await page.goto('/work-with-us', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: / - expand$/ }).first().click()
+  const applicationForm = page.locator('form:has(input[name="name"])').first()
+  await expect(applicationForm).toBeVisible()
+  await expect(applicationForm).not.toHaveAttribute('data-session-replay-block', /.*/)
+  expect(PRIVATE_INTERACTION_SELECTOR).toContain('form')
+
   const browserStorage = await page.evaluate(() => ({
     local: Object.keys(window.localStorage),
     session: Object.keys(window.sessionStorage),
@@ -134,6 +147,59 @@ test('records masked public sessions and aggregate gestures without analytics UI
   expect(browserStorage.local.filter((key) => /posthog/i.test(key))).toEqual([])
   expect(browserStorage.session.filter((key) => /posthog/i.test(key))).toEqual([])
   expect((await context.cookies()).filter((cookie) => /posthog/i.test(cookie.name))).toEqual([])
+})
+
+test('removes every form-field sentinel from replay snapshots', async ({ page }) => {
+  const privateSentinels = [
+    'LASHPOP_PRIVATE_TEXT_SENTINEL',
+    'LASHPOP_PRIVATE_HIDDEN_SENTINEL',
+    'LASHPOP_PRIVATE_CHECKBOX_SENTINEL',
+    'LASHPOP_PRIVATE_SELECT_SENTINEL',
+    'LASHPOP_PRIVATE_EDITABLE_SENTINEL',
+    'LASHPOP_PRIVATE_BUTTON_SENTINEL',
+  ]
+  await page.setContent(`
+    <p>PUBLIC_REPLAY_SENTINEL</p>
+    <form>
+      <input value="${privateSentinels[0]}">
+      <input type="hidden" value="${privateSentinels[1]}">
+      <input type="checkbox" value="${privateSentinels[2]}" checked>
+      <textarea>${privateSentinels[0]}</textarea>
+      <select><option value="${privateSentinels[3]}">${privateSentinels[3]}</option></select>
+      <button type="button" value="${privateSentinels[5]}">${privateSentinels[5]}</button>
+    </form>
+    <div contenteditable="true">${privateSentinels[4]}</div>
+  `)
+  await page.addScriptTag({
+    path: resolve(process.cwd(), 'node_modules/posthog-js/dist/lazy-recorder.js'),
+  })
+
+  const replay = await page.evaluate(async (blockSelector) => {
+    const extension = (window as unknown as {
+      __PosthogExtensions__?: {
+        rrweb?: {
+          record: (options: {
+            emit: (event: unknown) => void
+            blockSelector: string
+            maskAllInputs: boolean
+          }) => (() => void) | undefined
+        }
+      }
+    }).__PosthogExtensions__?.rrweb
+    if (!extension) throw new Error('Replay recorder did not load')
+    const events: unknown[] = []
+    const stop = extension.record({
+      emit: (event) => events.push(event),
+      blockSelector,
+      maskAllInputs: true,
+    })
+    await new Promise((resolveWait) => window.setTimeout(resolveWait, 100))
+    stop?.()
+    return JSON.stringify(events)
+  }, PRIVATE_INTERACTION_SELECTOR)
+
+  expect(replay).toContain('PUBLIC_REPLAY_SENTINEL')
+  for (const sentinel of privateSentinels) expect(replay).not.toContain(sentinel)
 })
 
 test('does not initialize analytics on sensitive routes', async ({ page }) => {
@@ -147,4 +213,55 @@ test('does not initialize analytics on sensitive routes', async ({ page }) => {
 
   await expect(page.locator('html')).not.toHaveAttribute('data-interaction-analytics', 'active')
   expect(posthogRequests).toEqual([])
+})
+
+test('stops public-page analytics before a client transition paints a private route', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('lashpop_lash_quiz_dismissed', 'true')
+    window.localStorage.setItem('lashpop_team_swipe_tutorial_completed', 'true')
+    const captured: string[] = []
+    Object.defineProperty(window, '__lashpopInteractionEvents', { value: captured })
+    window.addEventListener('lashpop:interaction-stat-captured', (event) => {
+      captured.push((event as CustomEvent<{ event: string }>).detail.event)
+    })
+  })
+  await page.route('https://*.i.posthog.com/**', (route) => route.abort())
+  await mockPostHogProjectConfig(page)
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await expect(page.locator('html')).toHaveAttribute('data-interaction-analytics', 'active')
+  await expect(page.locator('html')).toHaveAttribute('data-session-replay', 'active', { timeout: 10_000 })
+
+  const eventCount = await page.evaluate(() => (
+    window as unknown as Window & { __lashpopInteractionEvents: string[] }
+  ).__lashpopInteractionEvents.length)
+
+  await page.evaluate((routeBlockEvent) => {
+    window.history.pushState({}, '', '/admin/login')
+    window.dispatchEvent(new CustomEvent(routeBlockEvent, { detail: { pathname: '/admin/login' } }))
+
+    document.body.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true,
+      clientX: 20,
+      clientY: 20,
+      isPrimary: true,
+      pointerId: 81,
+      pointerType: 'touch',
+    }))
+    document.body.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true,
+      clientX: 22,
+      clientY: 22,
+      isPrimary: true,
+      pointerId: 81,
+      pointerType: 'touch',
+    }))
+  }, INTERACTION_ANALYTICS_ROUTE_BLOCK_EVENT)
+
+  await expect(page).toHaveURL(/\/admin\/login$/)
+  await expect(page.locator('html')).not.toHaveAttribute('data-interaction-analytics', 'active')
+  await expect(page.locator('html')).not.toHaveAttribute('data-session-replay', 'active')
+  await expect.poll(() => page.evaluate(() => (
+    window as unknown as Window & { __lashpopInteractionEvents: string[] }
+  ).__lashpopInteractionEvents.length)).toBe(eventCount)
 })

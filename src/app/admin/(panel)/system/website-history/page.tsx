@@ -7,7 +7,6 @@ interface HistoryEntry {
   id: string
   section: string
   label: string
-  owner: string
   sourceOwner: string
   version: number
   publisher: { id: string; name: string | null; email: string | null } | null
@@ -78,7 +77,7 @@ export default function WebsiteHistoryPage() {
       return
     }
     setConfirming(null)
-    setMessage(`${confirming.label} version ${confirming.version} was restored as a new version.`)
+    setMessage(`${confirming.label} version ${confirming.version} is now the current version.`)
     await load()
   }
 
@@ -90,7 +89,7 @@ export default function WebsiteHistoryPage() {
           <History className="size-7 text-[#9f4c33]" aria-hidden="true" /> Website version history
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-black/60">
-          Every settings publish creates an immutable snapshot. Restoring never erases history; it publishes the selected snapshot as the newest version.
+          Admin saves a version each time website settings are published. Restoring a saved version makes it current and keeps all existing versions.
         </p>
       </header>
 
@@ -115,9 +114,9 @@ export default function WebsiteHistoryPage() {
       </div>
 
       {!payload && !error ? (
-        <div className="flex min-h-64 items-center justify-center rounded-xl border border-black/10 bg-white"><Loader2 className="size-6 animate-spin text-[#9f4c33]" aria-label="Loading history" /></div>
+        <div className="flex min-h-64 items-center justify-center rounded-xl border border-black/10 bg-white"><Loader2 className="size-6 animate-spin text-[#9f4c33]" aria-label="Loading website versions" /></div>
       ) : visible.length === 0 ? (
-        <div className="rounded-xl border border-black/10 bg-white p-10 text-center text-sm text-black/50">No immutable versions have been recorded for this selection yet.</div>
+        <div className="rounded-xl border border-black/10 bg-white p-10 text-center text-sm text-black/50">No saved versions for this section.</div>
       ) : (
         <ol className="overflow-hidden rounded-xl border border-black/10 bg-white divide-y divide-black/10">
           {visible.map((entry) => {
@@ -128,15 +127,15 @@ export default function WebsiteHistoryPage() {
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="font-semibold text-[#292a27]">{entry.label}</h2>
-                      <span className="rounded-full border border-black/10 bg-black/[0.03] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black/50">v{entry.version}</span>
-                      <span className="rounded-full border border-[#c96f50]/20 bg-[#c96f50]/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#9f4c33]">{entry.sourceOwner}</span>
-                      {!entry.valid && <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-800">Outdated schema</span>}
+                      <span className="rounded-full border border-black/10 bg-black/[0.03] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black/50">Version {entry.version}</span>
+                      <span className="rounded-full border border-[#c96f50]/20 bg-[#c96f50]/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#9f4c33]">{versionSourceLabel(entry.sourceOwner)}</span>
+                      {!entry.valid && <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-800">Cannot restore</span>}
                     </div>
                     <p className="mt-2 text-xs text-black/45">
-                      {formatDate(entry.createdAt)} · {entry.publisher?.name || entry.publisher?.email || 'system'} · {entry.owner}
-                      {currentVersion !== undefined ? ` · current v${currentVersion}` : ''}
+                      {formatDate(entry.createdAt)} · {entry.publisher?.name || entry.publisher?.email || 'System'}
+                      {currentVersion !== undefined ? ` · current version ${currentVersion}` : ''}
                     </p>
-                    {!entry.valid && entry.validationErrors.length > 0 && <p className="mt-2 text-xs text-red-700">{entry.validationErrors[0]}</p>}
+                    {!entry.valid && <p className="mt-2 text-xs text-red-700">This saved version does not match the current settings format.</p>}
                   </div>
                   {canRestore && (
                     <button
@@ -153,10 +152,10 @@ export default function WebsiteHistoryPage() {
                 {confirming?.id === entry.id && (
                   <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4" role="alertdialog" aria-labelledby={`restore-${entry.id}`}>
                     <h3 id={`restore-${entry.id}`} className="font-semibold text-amber-950">Restore {entry.label} version {entry.version}?</h3>
-                    <p className="mt-1 text-sm text-amber-900/75">This publishes its saved configuration as a new current version. The present version remains in history.</p>
+                    <p className="mt-1 text-sm text-amber-900/75">This makes the saved version current. The version in use now stays in history.</p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <button type="button" onClick={() => restore()} disabled={restoring} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#9f4c33] px-4 text-sm font-semibold text-white disabled:opacity-50">
-                        {restoring && <Loader2 className="size-4 animate-spin" />} Confirm restore
+                        {restoring && <Loader2 className="size-4 animate-spin" />} Restore version
                       </button>
                       <button type="button" onClick={() => setConfirming(null)} disabled={restoring} className="min-h-10 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold text-black/65">Cancel</button>
                     </div>
@@ -175,4 +174,12 @@ function formatDate(value: string | number): string {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
   }).format(new Date(value))
+}
+
+function versionSourceLabel(source: string): string {
+  if (source === 'admin') return 'Saved in Admin'
+  if (source === 'history-restore') return 'Restored'
+  if (source === 'migration') return 'Imported'
+  if (source === 'system') return 'Saved automatically'
+  return 'Saved version'
 }

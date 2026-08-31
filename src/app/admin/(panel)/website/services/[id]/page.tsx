@@ -46,12 +46,12 @@ export default async function ServicePresentationPage({ params, searchParams }: 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <header className="border-b border-black/10 pb-6">
-        <Link href="/admin/website/services" className="inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-black/55 hover:text-black"><ArrowLeft className="size-4" /> Services & booking</Link>
+        <Link href="/admin/website/services" className="inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-black/55 hover:text-black"><ArrowLeft className="size-4" /> Services and booking</Link>
         <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Local presentation</p>
-              <span className="rounded-full border border-[#6f9693]/25 bg-[#6f9693]/10 px-2 py-0.5 text-[10px] font-semibold text-[#466f6c]">Vagaro facts</span>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Website copy</p>
+              <span className="rounded-full border border-[#6f9693]/25 bg-[#6f9693]/10 px-2 py-0.5 text-[10px] font-semibold text-[#466f6c]">Booking details from Vagaro</span>
             </div>
             <h1 className="mt-2 font-serif text-4xl">{service.name}</h1>
             <p className="mt-2 text-sm text-black/55">{service.categoryName || 'Uncategorized'} · position {service.displayOrder + 1}</p>
@@ -60,14 +60,14 @@ export default async function ServicePresentationPage({ params, searchParams }: 
         </div>
       </header>
 
-      {status.saved === '1' && <div role="status" className="flex items-center gap-2 rounded-xl border border-emerald-700/20 bg-emerald-50 p-4 text-sm text-emerald-800"><CheckCircle2 className="size-4" /> Service copy saved and published.</div>}
+      {status.saved === '1' && <div role="status" className="flex items-center gap-2 rounded-xl border border-emerald-700/20 bg-emerald-50 p-4 text-sm text-emerald-800"><CheckCircle2 className="size-4" /> Service page updated.</div>}
       {status.conflict === '1' && <div role="alert" className="rounded-xl border border-amber-700/20 bg-amber-50 p-4 text-sm text-amber-900">This service changed after you opened it. Review the latest values below before saving again.</div>}
 
       <section className="grid gap-4 rounded-xl border border-black/10 bg-white p-5 sm:grid-cols-3">
         <Fact label="Name" value={service.name} />
         <Fact label="Duration" value={`${service.durationMinutes} minutes`} />
         <Fact label="Starting price" value={`$${(service.priceStarting / 100).toFixed(0)}`} />
-        <p className="sm:col-span-3 flex items-start gap-2 border-t border-black/10 pt-4 text-xs leading-5 text-black/55"><Info className="mt-0.5 size-3.5 shrink-0" /> These booking facts, active state, and ordering sync from Vagaro. Edit them in Vagaro, then verify the sync. The fields below are LashPop-owned overrides.</p>
+        <p className="sm:col-span-3 flex items-start gap-2 border-t border-black/10 pt-4 text-xs leading-5 text-black/55"><Info className="mt-0.5 size-3.5 shrink-0" /> Name, duration, price, availability, and order come from Vagaro. Edit those details in Vagaro. Edit the website subtitle and description below.</p>
       </section>
 
       <form action={updateServicePresentation} className="rounded-xl border border-black/10 bg-white p-5 sm:p-6">
@@ -79,12 +79,12 @@ export default async function ServicePresentationPage({ params, searchParams }: 
           <input id="subtitle" name="subtitle" defaultValue={service.subtitle || ''} maxLength={160} aria-describedby="subtitle-help" className="mt-2 min-h-11 w-full rounded-lg border border-black/15 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]" />
         </div>
         <div className="mt-5">
-          <label htmlFor="description" className="text-sm font-semibold">Customer-facing description</label>
-          <p id="description-help" className="mt-1 text-xs leading-5 text-black/50">Leave blank to use the latest Vagaro description. A local value will continue to win after future syncs.</p>
+          <label htmlFor="description" className="text-sm font-semibold">Website description</label>
+          <p id="description-help" className="mt-1 text-xs leading-5 text-black/50">Leave this blank to use the Vagaro description. Text entered here stays on the website after future Vagaro updates.</p>
           <textarea id="description" name="description" defaultValue={service.description || ''} maxLength={4000} rows={7} aria-describedby="description-help" className="mt-2 w-full rounded-lg border border-black/15 px-3 py-3 text-sm leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]" />
         </div>
         <div className="mt-5 rounded-lg bg-black/[0.035] p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/45">Current Vagaro fallback</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/45">Vagaro description used when the field is blank</p>
           <p className="mt-2 text-sm leading-6 text-black/60">{service.vagaroDescription || 'Vagaro has not supplied a description.'}</p>
         </div>
         <div className="mt-6 flex justify-end">

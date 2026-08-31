@@ -31,7 +31,11 @@ function summarizeSyncResult(value: unknown) {
   const payload = asRecord(value)
   const stages = asRecord(payload?.result)
   return {
-    success: typeof payload?.success === 'boolean' ? payload.success : null,
+    success: typeof payload?.success === 'boolean'
+      ? payload.success
+      : typeof payload?.allOk === 'boolean'
+        ? payload.allOk
+        : null,
     runId: typeof payload?.runId === 'string' ? payload.runId : null,
     meteredUsage: summarizeStats(stages?.meteredUsage),
     stages: Object.fromEntries(SYNC_STAGES.map((name) => {
@@ -104,9 +108,11 @@ export async function POST() {
 
     const data = await res.json().catch(() => ({}))
     const summary = summarizeSyncResult(data)
+    const stageResults = Object.values(summary.stages)
+    const partial = summary.success === false && stageResults.some((stage) => stage.success === true)
     if (!res.ok || summary.success === false) {
       await recordAdminAction({
-        action: 'vagaro.sync.failed',
+        action: partial ? 'vagaro.sync.partial' : 'vagaro.sync.failed',
         surface: 'admin',
         targetType: 'vagaro_sync',
         targetId: summary.runId ?? 'full',
@@ -114,7 +120,7 @@ export async function POST() {
         diff: {
           requested,
           outcome: {
-            status: 'failed',
+            status: partial ? 'partial' : 'failed',
             httpStatus: res.status,
             durationMs: Date.now() - startedAt,
             worker: summary,
@@ -122,8 +128,14 @@ export async function POST() {
         },
       })
       return NextResponse.json(
-        { error: 'Sync failed', status: res.status, result: data },
-        { status: 502 }
+        {
+          success: false,
+          partial,
+          error: partial ? 'Sync completed with issues' : 'Sync failed',
+          status: res.status,
+          result: data,
+        },
+        { status: partial ? 207 : 502 }
       )
     }
 

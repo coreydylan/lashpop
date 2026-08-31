@@ -40,23 +40,23 @@ export function MediaWorkspaceHeader({
 }: MediaWorkspaceHeaderProps) {
   return (
     <>
-      <header className="border-b border-black/10 bg-[#f5f0e9] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
-        <div className="mx-auto grid max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+      <header className="border-b border-black/10 bg-[#f5f0e9] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
+        <div className="mx-auto grid max-w-7xl gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Media library</p>
-            <h1 className="mt-2 max-w-3xl font-serif text-3xl leading-tight text-[#292a27] sm:text-4xl">
-              Keep every image organized and ready to publish.
+            <h1 className="mt-1 max-w-3xl font-serif text-3xl leading-tight text-[#292a27] sm:mt-2 sm:text-4xl">
+              Media library
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-black/55">
-              Upload once, then use collections, service tags, and team assignments wherever the website needs photography.
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60 sm:mt-3">
+              Upload and organize the photos and videos used on the LashPop website.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 xl:justify-end">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap xl:justify-end">
             <button
               type="button"
               onClick={onOpenCommandPalette}
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold text-[#292a27] hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold text-[#292a27] hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
             >
               <Command className="size-4" aria-hidden="true" />
               Actions
@@ -64,7 +64,7 @@ export function MediaWorkspaceHeader({
             </button>
             <Link
               href="/admin/assets/team"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold text-[#292a27] hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold text-[#292a27] hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
             >
               <Users className="size-4" aria-hidden="true" />
               Team photos
@@ -73,7 +73,7 @@ export function MediaWorkspaceHeader({
               type="button"
               onClick={onToggleUpload}
               aria-expanded={isUploadOpen}
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+              className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] sm:col-span-1"
             >
               <Upload className="size-4" aria-hidden="true" />
               {isUploadOpen ? 'Close upload' : 'Upload files'}
@@ -84,14 +84,14 @@ export function MediaWorkspaceHeader({
 
       <section className="border-b border-black/10 bg-[#f8f4ee] px-4 sm:px-6 lg:px-8" aria-label="Media library summary">
         <dl className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-y divide-black/10 border-x border-black/10 sm:grid-cols-4 sm:divide-y-0">
-          <Metric label="All assets" value={totalCount} />
-          <Metric label="In this view" value={visibleCount} />
-          <Metric label="Need organizing" value={untaggedCount} />
+          <Metric label="All files" value={totalCount} />
+          <Metric label="Shown" value={visibleCount} />
+          <Metric label="Without tags or team" value={untaggedCount} />
           <Metric label="Selected" value={selectedCount} accent={selectedCount > 0} />
         </dl>
       </section>
 
-      <section className="border-b border-black/10 bg-white px-4 py-4 sm:px-6 lg:px-8" aria-label="Search and library setup">
+      <section className="border-b border-black/10 bg-white px-4 py-4 sm:px-6 lg:px-8" aria-label="Search and organize media">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative block min-w-0 flex-1">
             <span className="sr-only">Search media by file name, tag, category, or team member</span>

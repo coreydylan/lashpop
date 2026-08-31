@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/admin/auth'
 import { getDb } from '@/db'
 import { adminAuditLog } from '@/db/schema/admin_audit_log'
 import { user as userSchema } from '@/db/schema/auth_user'
+import { auditActionLabel, auditSurfaceLabel, auditTargetReference } from '@/lib/admin/audit-copy'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,30 +48,30 @@ export default async function AuditLogPage() {
           <ScrollText className="size-7 text-[#9f4c33]" aria-hidden="true" /> Activity history
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
-          The latest {entries.length} persistent admin and media changes, with the operator and affected record.
+          The latest {entries.length} recorded Admin and Media actions, showing who did each action and the type of item involved.
         </p>
       </header>
 
       {entries.length === 0 ? (
         <div className="rounded-xl border border-black/10 bg-white p-12 text-center">
           <ScrollText className="mx-auto mb-4 size-10 text-black/20" />
-          <p className="text-sm text-black/50">No persistent changes have been recorded yet.</p>
+          <p className="text-sm text-black/50">No recorded activity yet.</p>
         </div>
       ) : (
         <ol className="overflow-hidden rounded-xl border border-black/10 bg-white divide-y divide-black/10">
           {entries.map((e) => (
             <li key={e.id} className="grid gap-3 px-5 py-4 sm:grid-cols-[auto_1fr_auto] sm:items-start">
               <span className={`mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${SURFACE_STYLES[e.surface] ?? 'bg-black/[0.03] text-black/55 border-black/10'}`}>
-                {e.surface}
+                {auditSurfaceLabel(e.surface)}
               </span>
               <div className="min-w-0">
                 <div className="text-sm text-[#292a27]">
-                  <span className="font-mono text-[13px] text-[#9f4c33]">{e.action}</span>
+                  <span className="text-[13px] font-medium text-[#9f4c33]">{auditActionLabel(e.action)}</span>
                   {e.targetType && (
-                    <span className="text-black/45"> · {e.targetType}{e.targetId ? ` (${e.targetId})` : ''}</span>
+                    <span className="text-black/45"> · {auditTargetReference(e.targetType, e.targetId)}</span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-black/45">{e.actorName || e.actorPhone || 'system'}{e.notes ? ` · ${e.notes}` : ''}</p>
+                <p className="mt-1 text-xs text-black/45">{e.actorName || e.actorPhone || 'System'}{e.notes ? ` · ${e.notes}` : ''}</p>
               </div>
               <time className="text-xs text-black/35">{formatWhen(e.createdAt)}</time>
             </li>

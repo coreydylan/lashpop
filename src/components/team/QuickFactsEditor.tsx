@@ -30,20 +30,20 @@ import {
 
 // Quick fact type definitions with icons
 const QUICK_FACT_TYPES = {
-  coffee: { label: "Go-To Coffee", icon: Coffee, emoji: "☕" },
-  drink: { label: "Favorite Drink", icon: Wine, emoji: "🍹" },
-  tv_show: { label: "Favorite TV Show", icon: Tv, emoji: "📺" },
-  movie: { label: "Favorite Movie", icon: Film, emoji: "🎬" },
+  coffee: { label: "Go-to coffee", icon: Coffee, emoji: "☕" },
+  drink: { label: "Favorite drink", icon: Wine, emoji: "🍹" },
+  tv_show: { label: "Favorite TV show", icon: Tv, emoji: "📺" },
+  movie: { label: "Favorite movie", icon: Film, emoji: "🎬" },
   hobby: { label: "Hobby", icon: Heart, emoji: "❤️" },
-  hidden_talent: { label: "Hidden Talent", icon: Sparkles, emoji: "✨" },
-  fun_fact: { label: "Fun Fact", icon: Star, emoji: "⭐" },
+  hidden_talent: { label: "Hidden talent", icon: Sparkles, emoji: "✨" },
+  fun_fact: { label: "Fun fact", icon: Star, emoji: "⭐" },
   pet: { label: "Pet", icon: PawPrint, emoji: "🐾" },
-  music: { label: "Favorite Music", icon: Music, emoji: "🎵" },
-  food: { label: "Favorite Food", icon: UtensilsCrossed, emoji: "🍽️" },
-  book: { label: "Favorite Book", icon: BookOpen, emoji: "📚" },
-  travel: { label: "Dream Destination", icon: Plane, emoji: "✈️" },
+  music: { label: "Favorite music", icon: Music, emoji: "🎵" },
+  food: { label: "Favorite food", icon: UtensilsCrossed, emoji: "🍽️" },
+  book: { label: "Favorite book", icon: BookOpen, emoji: "📚" },
+  travel: { label: "Dream destination", icon: Plane, emoji: "✈️" },
   sport: { label: "Sport", icon: Trophy, emoji: "🏆" },
-  zodiac: { label: "Zodiac Sign", icon: Sparkle, emoji: "♈" },
+  zodiac: { label: "Zodiac sign", icon: Sparkle, emoji: "♈" },
   custom: { label: "Custom", icon: Info, emoji: "💫" },
 } as const
 
@@ -145,7 +145,7 @@ export function QuickFactsEditor({
   }
 
   const handleDeleteFact = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this quick fact?')) return
+    if (!confirm('Delete this quick fact?')) return
 
     setSaving(true)
     try {
@@ -195,7 +195,7 @@ export function QuickFactsEditor({
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-dune flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-dusty-rose" />
-          Quick Facts
+          Quick facts
           {saved && (
             <span className="text-xs text-ocean-mist flex items-center gap-1">
               <Check className="w-3 h-3" /> Saved
@@ -207,7 +207,7 @@ export function QuickFactsEditor({
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-dusty-rose/10 text-dusty-rose rounded-full hover:bg-dusty-rose/20 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          Add Fact
+          Add fact
         </button>
       </div>
 
@@ -297,7 +297,7 @@ export function QuickFactsEditor({
       {/* Empty State */}
       {facts.length === 0 && !isAddingNew && (
         <div className="text-center py-6 text-dune/40 text-sm">
-          No quick facts yet. Add coffee orders, TV shows, hobbies...
+          No quick facts yet. Add a favorite drink, show, hobby, or another detail.
         </div>
       )}
 
@@ -337,7 +337,7 @@ export function QuickFactsEditor({
               {newFact.factType === 'custom' && (
                 <input
                   type="text"
-                  placeholder="Custom label (e.g., 'Guilty Pleasure')"
+                  placeholder="Custom label, for example Guilty pleasure"
                   value={newFact.customLabel}
                   onChange={(e) => setNewFact({ ...newFact, customLabel: e.target.value })}
                   className="w-full px-3 py-2 text-sm border border-sage/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-dusty-rose/20 focus:border-dusty-rose/40"
@@ -347,7 +347,7 @@ export function QuickFactsEditor({
               {/* Value Input */}
               <input
                 type="text"
-                placeholder={`Enter ${QUICK_FACT_TYPES[newFact.factType].label.toLowerCase()}...`}
+                placeholder={`Enter ${QUICK_FACT_TYPES[newFact.factType].label.toLowerCase()}…`}
                 value={newFact.value}
                 onChange={(e) => setNewFact({ ...newFact, value: e.target.value })}
                 className="w-full px-3 py-2 text-sm border border-sage/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-dusty-rose/20 focus:border-dusty-rose/40"
@@ -375,7 +375,7 @@ export function QuickFactsEditor({
                   ) : (
                     <Plus className="w-4 h-4" />
                   )}
-                  Add Fact
+                  Add fact
                 </button>
               </div>
             </div>

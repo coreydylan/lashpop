@@ -136,7 +136,7 @@ export function CredentialsEditor({
   }
 
   const handleDeleteCredential = async (index: number) => {
-    if (!confirm('Are you sure you want to delete this credential?')) return
+    if (!confirm('Delete this credential?')) return
 
     setSaving(true)
     try {
@@ -172,7 +172,7 @@ export function CredentialsEditor({
         <div>
           <h4 className="text-sm font-medium text-dune flex items-center gap-2">
             <Shield className="w-4 h-4 text-ocean-mist" />
-            Credentials & Certifications
+            Credentials and certifications
             {saved && (
               <span className="text-xs text-ocean-mist flex items-center gap-1">
                 <Check className="w-3 h-3" /> Saved
@@ -180,7 +180,7 @@ export function CredentialsEditor({
             )}
           </h4>
           <p className="text-xs text-dune/50 mt-0.5">
-            Shown on the homepage Credentials section and in JSON-LD for search engines
+            Shown in the homepage Credentials section. Search engines can also read this information.
           </p>
         </div>
         <button
@@ -188,7 +188,7 @@ export function CredentialsEditor({
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-ocean-mist/10 text-ocean-mist rounded-full hover:bg-ocean-mist/20 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          Add Credential
+          Add credential
         </button>
       </div>
 
@@ -256,7 +256,7 @@ export function CredentialsEditor({
                             className="text-[10px] px-2 py-0.5 bg-ocean-mist/10 rounded-full text-ocean-mist flex items-center gap-1 hover:bg-ocean-mist/20"
                           >
                             <ExternalLink className="w-2.5 h-2.5" />
-                            Verify
+                            Open verification page
                           </a>
                         )}
                       </div>
@@ -294,9 +294,9 @@ export function CredentialsEditor({
       {/* Empty State */}
       {credentials.length === 0 && !isAddingNew && (
         <div className="text-center py-6 text-dune/40 text-sm border border-dashed border-sage/20 rounded-xl">
-          No credentials yet. Add licenses, certifications, training...
+          No credentials yet. Add a license, certification, training, education, or award.
           <p className="text-xs mt-1 text-dune/30">
-            These appear on the homepage Credentials section and in search engine data
+            These appear on the homepage and in information provided to search engines.
           </p>
         </div>
       )}
@@ -337,7 +337,7 @@ export function CredentialsEditor({
               <div className="space-y-3">
                 <input
                   type="text"
-                  placeholder="Credential name (e.g., Licensed Esthetician)*"
+                  placeholder="Credential name, for example Licensed Esthetician"
                   value={newCredential.name}
                   onChange={(e) => setNewCredential({ ...newCredential, name: e.target.value })}
                   className="w-full px-3 py-2 text-sm border border-sage/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40"
@@ -346,7 +346,7 @@ export function CredentialsEditor({
 
                 <input
                   type="text"
-                  placeholder="Issuing organization (e.g., California Board of Cosmetology)"
+                  placeholder="Issuing organization, for example California Board of Cosmetology"
                   value={newCredential.issuer || ''}
                   onChange={(e) => setNewCredential({ ...newCredential, issuer: e.target.value })}
                   className="w-full px-3 py-2 text-sm border border-sage/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40"
@@ -355,7 +355,7 @@ export function CredentialsEditor({
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="text"
-                    placeholder="License/cert number"
+                    placeholder="License or certificate number"
                     value={newCredential.licenseNumber || ''}
                     onChange={(e) => setNewCredential({ ...newCredential, licenseNumber: e.target.value })}
                     className="w-full px-3 py-2 text-sm border border-sage/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40"
@@ -406,7 +406,7 @@ export function CredentialsEditor({
                   ) : (
                     <Plus className="w-4 h-4" />
                   )}
-                  Add Credential
+                  Add credential
                 </button>
               </div>
             </div>
@@ -451,7 +451,7 @@ function EditCredentialForm({
       <div className="grid grid-cols-2 gap-2">
         <input
           type="text"
-          placeholder="License #"
+          placeholder="License or certificate number"
           value={formData.licenseNumber || ''}
           onChange={(e) => setFormData({ ...formData, licenseNumber: e.target.value })}
           className="w-full px-2 py-1 text-xs border border-sage/20 rounded focus:outline-none focus:ring-1 focus:ring-ocean-mist/30"

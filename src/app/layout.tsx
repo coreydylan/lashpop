@@ -7,10 +7,9 @@ import { FindYourLookProvider } from '@/components/find-your-look'
 import { getSEOSettings } from '@/actions/seo'
 import { LocalBusinessSchema, WebSiteSchema, FAQSchema, ServicesSchema, ReviewSchema } from '@/components/seo'
 import { DesignModeGate } from '@/components/dev/DesignModeGate'
-import { Analytics } from '@vercel/analytics/react'
-import { SpeedInsights } from '@vercel/speed-insights/next'
 import { MarketingAnalytics } from '@/components/analytics/MarketingAnalytics'
 import { InteractionAnalytics } from '@/components/analytics/InteractionAnalytics'
+import { PublicWebAnalytics } from '@/components/analytics/PublicWebAnalytics'
 import { getCloudflareImageDeliveryOrigin } from '@/lib/cloudflare-image-delivery'
 import { resolveInteractionAnalyticsConfig } from '@/lib/interaction-analytics'
 import { resolvePublicImages } from '@/lib/public-image-delivery.server'
@@ -150,8 +149,7 @@ export default async function RootLayout({
             </FindYourLookProvider>
           </UserKnowledgeProvider>
         </AuthProvider>
-        <Analytics />
-        <SpeedInsights />
+        <PublicWebAnalytics />
         <MarketingAnalytics />
         <InteractionAnalytics config={interactionAnalyticsConfig} />
       </body>

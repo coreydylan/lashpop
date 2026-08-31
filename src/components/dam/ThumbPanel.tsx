@@ -250,7 +250,7 @@ export function ThumbPanel({
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
             >
               <CheckSquare className="w-5 h-5 text-dune" />
-              <span className="text-sm font-medium text-dune">Select All ({totalAssetsCount})</span>
+              <span className="text-sm font-medium text-dune">Select all ({totalAssetsCount})</span>
             </button>
           )}
 
@@ -263,7 +263,7 @@ export function ThumbPanel({
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
             >
               <Sparkles className="w-5 h-5 text-dusty-rose" />
-              <span className="text-sm font-medium text-dune">Apply Tags</span>
+              <span className="text-sm font-medium text-dune">Apply tags</span>
             </button>
           )}
 
@@ -277,7 +277,7 @@ export function ThumbPanel({
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-warm-sand/50 transition-colors bg-dusty-rose/5 border-b border-sage/10"
             >
               <Sparkles className="w-5 h-5 text-dusty-rose" />
-              <span className="text-sm font-semibold text-dusty-rose">Tag & Organize</span>
+              <span className="text-sm font-semibold text-dusty-rose">Tags and team</span>
             </button>
           )}
 
@@ -290,7 +290,7 @@ export function ThumbPanel({
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors border-t border-sage/10"
             >
               <Trash2 className="w-5 h-5 text-dusty-rose" />
-              <span className="text-sm font-medium text-dusty-rose">Delete Selected</span>
+              <span className="text-sm font-medium text-dusty-rose">Delete selected</span>
             </button>
           )}
           <button
@@ -300,7 +300,7 @@ export function ThumbPanel({
             }}
             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
           >
-            <span className="text-sm font-medium text-sage">Clear Selection</span>
+            <span className="text-sm font-medium text-sage">Clear selection</span>
           </button>
         </>
       ) : (
@@ -316,7 +316,7 @@ export function ThumbPanel({
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-warm-sand/50 transition-colors bg-dusty-rose/5 border-b border-sage/10"
             >
               <Sparkles className="w-5 h-5 text-dusty-rose" />
-              <span className="text-sm font-semibold text-dusty-rose">Command Palette</span>
+              <span className="text-sm font-semibold text-dusty-rose">Actions</span>
             </button>
           )}
 
@@ -345,7 +345,7 @@ export function ThumbPanel({
             >
               <div className="flex items-center gap-3">
                 <FolderTree className="w-5 h-5 text-dune" />
-                <span className="text-sm font-medium text-dune">Group By</span>
+                <span className="text-sm font-medium text-dune">Group by</span>
               </div>
               <div className="flex items-center gap-2">
                 {selectedGroupCategories.length > 0 && (
@@ -385,7 +385,7 @@ export function ThumbPanel({
             >
               <div className="flex items-center gap-3">
                 <LayoutGrid className="w-5 h-5 text-sage" />
-                <span className="text-sm font-medium text-dune">View & Settings</span>
+                <span className="text-sm font-medium text-dune">View</span>
               </div>
               <ChevronRight className="w-4 h-4 text-sage" />
             </button>
@@ -420,7 +420,7 @@ export function ThumbPanel({
           "text-sm",
           !activeCollectionId ? "text-dusty-rose font-medium" : "text-dune"
         )}>
-          All Assets
+          All media
         </span>
         {!activeCollectionId && (
           <div className="w-2 h-2 rounded-full bg-dusty-rose" />
@@ -457,7 +457,7 @@ export function ThumbPanel({
           }}
           className="w-full flex items-center gap-2 px-4 py-3 hover:bg-warm-sand/50 transition-colors border-t border-sage/10"
         >
-          <span className="text-sm font-medium text-dusty-rose">+ New Collection</span>
+          <span className="text-sm font-medium text-dusty-rose">New collection</span>
         </button>
       )}
     </div>
@@ -472,7 +472,7 @@ export function ThumbPanel({
         >
           <ChevronLeft className="w-4 h-4 text-sage" />
         </button>
-        <span className="text-sm font-semibold text-dune">Group By</span>
+        <span className="text-sm font-semibold text-dune">Group by</span>
       </div>
       {allGroupCategories.map((cat) => {
         const isSelected = selectedGroupCategories.includes(cat.name)
@@ -698,7 +698,7 @@ export function ThumbPanel({
         >
           <ChevronLeft className="w-4 h-4 text-sage" />
         </button>
-        <span className="text-sm font-semibold text-dune">View & Settings</span>
+        <span className="text-sm font-semibold text-dune">View</span>
       </div>
       {showGridToggle && (
         <button
@@ -711,12 +711,12 @@ export function ThumbPanel({
           {gridViewMode === "square" ? (
             <>
               <LayoutGrid className="w-5 h-5 text-dune" />
-              <span className="text-sm font-medium text-dune">Switch to Masonry</span>
+              <span className="text-sm font-medium text-dune">Use natural image shapes</span>
             </>
           ) : (
             <>
               <Grid3x3 className="w-5 h-5 text-dune" />
-              <span className="text-sm font-medium text-dune">Switch to Square Grid</span>
+              <span className="text-sm font-medium text-dune">Use square grid</span>
             </>
           )}
         </button>
@@ -730,7 +730,7 @@ export function ThumbPanel({
           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors"
         >
           <CreditCard className="w-5 h-5 text-dune" />
-          <span className="text-sm font-medium text-dune">Card Settings</span>
+          <span className="text-sm font-medium text-dune">Choose card details</span>
         </button>
       )}
       {hasFiltersOrGroups && (
@@ -742,7 +742,7 @@ export function ThumbPanel({
           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors border-t border-sage/10"
         >
           <X className="w-5 h-5 text-dusty-rose" />
-          <span className="text-sm font-medium text-dusty-rose">Clear All Filters & Groups</span>
+          <span className="text-sm font-medium text-dusty-rose">Clear filters and groups</span>
         </button>
       )}
     </div>
@@ -757,7 +757,7 @@ export function ThumbPanel({
         >
           <ChevronLeft className="w-4 h-4 text-sage" />
         </button>
-        <span className="text-sm font-semibold text-dune">Clear All</span>
+        <span className="text-sm font-semibold text-dune">Clear filters and groups</span>
       </div>
 
       {/* Clear All button */}
@@ -768,7 +768,7 @@ export function ThumbPanel({
         }}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-sand/50 transition-colors border-b border-sage/10"
       >
-        <span className="text-sm font-semibold text-dusty-rose">Clear All ({activeFilters.length})</span>
+        <span className="text-sm font-semibold text-dusty-rose">Clear all ({activeFilters.length})</span>
       </button>
 
       {/* Individual filters and groups */}
@@ -825,6 +825,7 @@ export function ThumbPanel({
     <>
       {/* Floating Action Button */}
       <button
+        type="button"
         onClick={() => {
           const newState = !isOpen
           setIsOpen(newState)
@@ -833,19 +834,14 @@ export function ThumbPanel({
           }
         }}
         data-tutorial="action-button"
+        aria-label={isOpen ? "Close media actions" : "Open media actions"}
+        aria-expanded={isOpen}
+        aria-controls="mobile-media-actions"
         className={clsx(
-          "fixed bottom-1/2 translate-y-1/2 right-6 z-50 w-14 h-14 shadow-2xl transition-all duration-300",
-          "flex items-center justify-center",
-          "bg-gradient-to-br from-dusty-rose to-dusty-rose/90",
-          "border border-cream/20",
-          "hover:scale-110 active:scale-95",
+          "fixed bottom-1/2 right-4 z-50 flex size-12 translate-y-1/2 items-center justify-center rounded-lg border border-dune/20 bg-dune text-cream shadow-lg transition-colors duration-200",
+          "hover:bg-rust focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2",
           isOpen && "rotate-45"
         )}
-        style={{
-          borderRadius: '20px',
-          boxShadow: '0 8px 32px rgba(194, 158, 148, 0.4)',
-          WebkitTapHighlightColor: 'transparent'
-        }}
       >
         {isOpen ? (
           <X className="w-6 h-6 text-cream" />
@@ -857,10 +853,13 @@ export function ThumbPanel({
       {/* Panel */}
       {isOpen && (
         <div
+          id="mobile-media-actions"
           ref={panelRef}
+          role="dialog"
+          aria-label="Media actions"
           className={clsx(
-            "fixed bottom-1/2 translate-y-[calc(50%-80px)] right-6 z-40 w-72 max-h-[70vh] overflow-y-auto",
-            "rounded-2xl shadow-2xl",
+            "fixed bottom-1/2 right-4 z-40 max-h-[70vh] w-[min(18rem,calc(100vw-2rem))] translate-y-[calc(50%-72px)] overflow-y-auto",
+            "rounded-lg shadow-xl",
             "backdrop-blur-md",
             "animate-in slide-in-from-bottom-4 fade-in duration-200"
           )}

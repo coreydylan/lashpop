@@ -188,7 +188,7 @@ export function GroupBySelector({
         style={{ minHeight: '26px', maxHeight: '26px' }}
       >
         <FolderTree className="w-3 h-3 flex-shrink-0" />
-        <span className="whitespace-nowrap">Group By</span>
+        <span className="whitespace-nowrap">Group by</span>
       </button>
       {renderDropdown()}
     </>

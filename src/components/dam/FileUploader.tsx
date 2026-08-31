@@ -74,7 +74,7 @@ interface FileUploaderProps {
 
 const rejectionMessages: Record<FileRejection, string> = {
   UNSUPPORTED_TYPE: "must be images or videos",
-  FILE_TOO_LARGE: "exceed the 200MB limit"
+  FILE_TOO_LARGE: "exceed the 200 MB limit"
 }
 
 const createClientId = () =>
@@ -95,7 +95,7 @@ const summarizeRejections = (rejections: FileRejection[]) => {
 
   return `Skipped ${rejections.length} ${
     rejections.length === 1 ? "file" : "files"
-  } — ${parts.join(" & ")}.`
+  } — ${parts.join(" and ")}.`
 }
 
 const validateFile = (file: File): FileRejection | null => {
@@ -239,14 +239,14 @@ export function FileUploader({
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text()
           console.error("[Upload] Upload failed:", uploadResponse.status, errorText)
-          throw new Error(`Upload failed: ${uploadResponse.status}`)
+          throw new Error("Could not upload this file")
         }
 
         const data = await uploadResponse.json()
         const result = data.results?.[0]
 
         if (!result || result.status !== "success") {
-          throw new Error(result?.message || "Upload failed")
+          throw new Error(result?.message || "Could not upload this file")
         }
 
         const asset = result.asset
@@ -276,7 +276,7 @@ export function FileUploader({
                   status: "error",
                   progress: 0,
                   errorCode: uploadError.code ?? "UPLOAD_FAILED",
-                  errorMessage: uploadError.message || "Upload failed. Please retry."
+                  errorMessage: uploadError.message || "Could not upload this file. Try again."
                 }
               : file
           )
@@ -284,8 +284,8 @@ export function FileUploader({
 
         setNotice({
           type: "error",
-          message: `Upload failed for ${pendingFile.file.name}: ${
-            uploadError.message || "Please retry."
+          message: `Could not upload ${pendingFile.file.name}: ${
+            uploadError.message || "Try again."
           }`
         })
       }
@@ -387,7 +387,7 @@ export function FileUploader({
         setQueuedAction(null)
         setNotice({
           type: "error",
-          message: "There are no successful uploads to add yet."
+          message: "No files have finished uploading yet."
         })
         return
       }
@@ -422,7 +422,7 @@ export function FileUploader({
           console.error("Failed to apply tags to batch:", error)
           setNotice({
             type: "error",
-            message: "Assets uploaded but tags failed to apply. Please retry."
+            message: "The files uploaded, but their tags were not saved. Add the tags again in the library."
           })
         }
       }
@@ -444,7 +444,7 @@ export function FileUploader({
     if (!hasQueuedUploads && !uploadedAssets.length) {
       setNotice({
         type: "error",
-        message: "Upload something first to continue."
+        message: "Add at least one file before continuing."
       })
       return
     }
@@ -552,9 +552,9 @@ export function FileUploader({
 
   const statusLabel = allUploadsComplete
     ? uploadStats.error > 0
-      ? `Finished — ${uploadStats.success} ready · ${uploadStats.error} failed`
-      : `Uploaded ${uploadStats.success} Photo${uploadStats.success === 1 ? "" : "s"}`
-    : `Uploading ${totalFiles} Photo${totalFiles === 1 ? "" : "s"} • ${
+      ? `Finished — ${uploadStats.success} uploaded · ${uploadStats.error} failed`
+      : `Uploaded ${uploadStats.success} ${uploadStats.success === 1 ? "file" : "files"}`
+    : `Uploading ${totalFiles} ${totalFiles === 1 ? "file" : "files"} • ${
         uploadStats.uploading
       } in progress${uploadStats.pending ? ` · ${uploadStats.pending} queued` : ""}`
 
@@ -576,7 +576,7 @@ export function FileUploader({
         >
           <div className="text-center bg-cream/90 rounded-3xl px-8 py-6 shadow-xl border border-sage/20">
             <p className="body text-dune font-semibold">Drop files to start uploading</p>
-            <p className="caption text-sage mt-1">You can drag anywhere on the page</p>
+            <p className="caption text-sage mt-1">You can drop files anywhere on this page</p>
           </div>
         </div>
       )}
@@ -617,7 +617,7 @@ export function FileUploader({
             </div>
             <div>
               <p className="body text-dune font-medium text-sm sm:text-base">Drop files here or tap to browse</p>
-              <p className="caption text-sage text-xs sm:text-sm">Upload images or videos (max 200MB)</p>
+              <p className="caption text-sage text-xs sm:text-sm">Images or videos, up to 200 MB each</p>
             </div>
           </div>
         ) : (
@@ -631,7 +631,7 @@ export function FileUploader({
                   onClick={() => fileInputRef.current?.click()}
                   className="caption text-sage hover:text-dune transition-colors text-xs sm:text-sm px-3 py-1 bg-cream/50 rounded-full"
                 >
-                  + Add more
+                  Add more files
                 </button>
               )}
             </div>
@@ -658,7 +658,7 @@ export function FileUploader({
 
             <div className="flex flex-wrap gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-sage">
               <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-cream/70 rounded-full">
-                Ready: {uploadStats.success}
+                Uploaded: {uploadStats.success}
               </span>
               <span className="px-2 sm:px-3 py-0.5 sm:py-1 bg-cream/70 rounded-full">
                 Uploading: {uploadStats.uploading}
@@ -676,12 +676,12 @@ export function FileUploader({
             <div className="border border-sage/20 rounded-xl p-3 sm:p-4 space-y-3 bg-cream/70">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="body text-dune font-semibold text-sm">Batch tags</p>
-                  <p className="text-[10px] sm:text-xs text-sage">Applied to all photos</p>
+                  <p className="body text-dune font-semibold text-sm">Tags for these files</p>
+                  <p className="text-[10px] sm:text-xs text-sage">Applied to every uploaded file</p>
                 </div>
                 {queuedAction && (
                   <span className="text-[10px] font-semibold text-dusty-rose bg-dusty-rose/10 rounded-full px-2 py-0.5">
-                    {queuedAction === "apply" ? "Auto-save pending" : "Skip tagging pending"}
+                    {queuedAction === "apply" ? "Tags will save when uploads finish" : "Will finish without tags"}
                   </span>
                 )}
               </div>
@@ -697,14 +697,14 @@ export function FileUploader({
                   }`}
                 >
                   {allUploadsComplete
-                    ? "Save & Add"
-                    : "Auto-save when done"}
+                    ? "Save tags"
+                    : "Save tags when uploads finish"}
                 </button>
                 <button
                   onClick={() => handleBatchAction("skip")}
                   className="py-2 sm:py-2.5 px-4 arch-full border border-sage/30 text-sm font-semibold text-sage hover:bg-sage/10 transition-colors"
                 >
-                  Skip
+                  Finish without tags
                 </button>
               </div>
             </div>
@@ -766,7 +766,7 @@ export function FileUploader({
                               <button
                                 className="p-1 bg-cream/20 rounded-full hover:bg-cream/30"
                                 onClick={() => handleRetry(fileWithPreview.id)}
-                                title="Retry"
+                                title="Retry upload"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
                               </button>

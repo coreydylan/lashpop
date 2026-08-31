@@ -33,7 +33,7 @@ export async function getServices() {
       description: sql<string | null>`COALESCE(${services.description}, ${services.vagaroDescription})`,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
-      // Vagaro is source of truth; fall back to local override then nothing
+      // Vagaro is the service image source when one is available.
       imageUrl: sql<string | null>`COALESCE(${services.vagaroImageUrl}, ${services.imageUrl})`,
       color: services.color,
       displayOrder: services.displayOrder,
@@ -70,7 +70,7 @@ export async function getServiceBySlug(slug: string) {
       description: sql<string | null>`COALESCE(${services.description}, ${services.vagaroDescription})`,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
-      // Vagaro is source of truth; fall back to local override then nothing
+      // Vagaro is the service image source when one is available.
       imageUrl: sql<string | null>`COALESCE(${services.vagaroImageUrl}, ${services.imageUrl})`,
       color: services.color,
       categoryId: services.categoryId,
@@ -162,7 +162,8 @@ export async function getAllServices() {
       description: sql<string | null>`COALESCE(${services.description}, ${services.vagaroDescription})`,
       durationMinutes: services.durationMinutes,
       priceStarting: services.priceStarting,
-      // Resolve image URL with priority: Vagaro (source of truth) -> DAM override -> Subcategory fallback
+      // Vagaro is the source of truth. Without a Vagaro image, use a selected
+      // Media image, then the service-group fallback.
       imageUrl: sql<string | null>`COALESCE(
         ${services.vagaroImageUrl},
         ${serviceKeyImage.filePath},

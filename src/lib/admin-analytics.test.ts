@@ -18,22 +18,26 @@ const CONFIG: AdminAnalyticsConfig = {
   teamId: 'team_experial',
 }
 
-const VISIT_FILTER =
-  "environment eq 'production' and " +
-  "not startswith(requestPath, '/admin') and " +
-  "not startswith(requestPath, '/api') and " +
-  "not startswith(requestPath, '/_next') and " +
-  "not startswith(requestPath, '/preview') and " +
-  "not startswith(requestPath, '/punchlist') and " +
-  "not startswith(requestPath, '/confirm') and " +
-  "not startswith(requestPath, '/login') and " +
-  "not startswith(requestPath, '/seoguide') and " +
-  "not startswith(requestPath, '/staffphoto') and " +
-  "not startswith(requestPath, '/dam')"
+const PUBLIC_REQUEST_PATH_FILTER =
+  "(requestPath eq '/' or requestPath eq '/services' or " +
+  "startswith(requestPath, '/services/') or requestPath eq '/work-with-us' or " +
+  "requestPath eq '/privacy' or requestPath eq '/terms')"
+
+const VISIT_FILTER = `environment eq 'production' and ${PUBLIC_REQUEST_PATH_FILTER}`
 
 const EVENT_FILTER =
   "environment eq 'production' and " +
-  "eventName in ('booking_started','booking_completed','quiz_started','quiz_completed','work_with_us_submitted','newsletter_signup_completed')"
+  "eventName in ('booking_started','booking_completed','quiz_started','quiz_completed','work_with_us_submitted','newsletter_signup_completed') and " +
+  PUBLIC_REQUEST_PATH_FILTER
+
+const PAGE_COUNTS = new Map([
+  ["requestPath eq '/'", { visitors: 4, pageviews: 8 }],
+  ["requestPath eq '/services'", { visitors: 3, pageviews: 6 }],
+  ["startswith(requestPath, '/services/')", { visitors: 2, pageviews: 5 }],
+  ["requestPath eq '/work-with-us'", { visitors: 1, pageviews: 3 }],
+  ["requestPath eq '/privacy'", { visitors: 1, pageviews: 2 }],
+  ["requestPath eq '/terms'", { visitors: 1, pageviews: 1 }],
+])
 
 interface CapturedCall {
   url: URL
@@ -62,8 +66,22 @@ function successfulProvider(): {
 
     const by = url.searchParams.getAll('by').join(',')
     const since = url.searchParams.get('since')
+    const filter = url.searchParams.get('filter') ?? ''
 
     if (url.pathname.endsWith('/visits/count')) {
+      const pageFilter = filter.replace("environment eq 'production' and ", '')
+      const pageCount = PAGE_COUNTS.get(pageFilter)
+      if (pageCount) {
+        return jsonResponse({
+          version: 1,
+          data: {
+            ...pageCount,
+            requestPath: '/private/provider/value',
+            customerEmail: 'page-private@example.com',
+          },
+        })
+      }
+
       return jsonResponse({
         version: 1,
         data:
@@ -87,7 +105,7 @@ function successfulProvider(): {
         version: 1,
         query: { internal: 'not projected' },
         data:
-          since === '2026-08-22'
+          since === '2026-08-22T00:00:00.000Z'
             ? [
                 {
                   timestamp: '2026-08-22T00:00:00.000Z',
@@ -148,50 +166,27 @@ function successfulProvider(): {
       })
     }
 
-    if (url.pathname.endsWith('/visits/aggregate') && by === 'route') {
-      return jsonResponse({
-        data: [
-          {
-            route: '/services',
-            visitors: 7,
-            pageviews: 14,
-            customerName: 'Private Customer',
-          },
-          {
-            route: '/services/[slug]',
-            requestPath: '/services/V1StGbhUoJ-vc3OSnoCTbHflC6rg3zmlt',
-            visitors: 4,
-            pageviews: 9,
-          },
-          { route: '/confirm/[token]', requestPath: '/confirm/619-555-0114', visitors: 100, pageviews: 100 },
-          { route: '/customers/[name]', requestPath: '/customers/alice-smith', visitors: 2, pageviews: 4 },
-          { route: '/empty', visitors: -4, pageviews: 'not-a-number' },
-        ],
-      })
-    }
-
-    if (url.pathname.endsWith('/events/aggregate') && by === 'day,eventName') {
+    if (url.pathname.endsWith('/events/aggregate') && by === 'eventName') {
       return jsonResponse({
         data:
-          since === '2026-08-22'
+          since === '2026-08-22T00:00:00.000Z'
             ? [
-                event('2026-08-22', ANALYTICS_EVENTS.bookingStarted, 10),
-                event('2026-08-28', ANALYTICS_EVENTS.bookingStarted, 10),
-                event('2026-08-22', ANALYTICS_EVENTS.bookingCompleted, 4),
-                event('2026-08-28', ANALYTICS_EVENTS.bookingCompleted, 6),
-                event('2026-08-22', ANALYTICS_EVENTS.quizStarted, 8),
-                event('2026-08-22', ANALYTICS_EVENTS.quizCompleted, 6),
-                event('2026-08-22', ANALYTICS_EVENTS.workWithUsSubmitted, 2),
-                event('2026-08-22', ANALYTICS_EVENTS.newsletterSignupCompleted, 3),
-                event('2026-08-22', 'unknown_private_event', 900),
+                event(ANALYTICS_EVENTS.bookingStarted, 20),
+                event(ANALYTICS_EVENTS.bookingCompleted, 10),
+                event(ANALYTICS_EVENTS.quizStarted, 8),
+                event(ANALYTICS_EVENTS.quizCompleted, 6),
+                event(ANALYTICS_EVENTS.workWithUsSubmitted, 2),
+                event(ANALYTICS_EVENTS.newsletterSignupCompleted, 3),
+                event('Others', 500),
+                event('unknown_private_event', 900),
               ]
             : [
-                event('2026-08-15', ANALYTICS_EVENTS.bookingStarted, 10),
-                event('2026-08-15', ANALYTICS_EVENTS.bookingCompleted, 2),
-                event('2026-08-15', ANALYTICS_EVENTS.quizStarted, 4),
-                event('2026-08-15', ANALYTICS_EVENTS.quizCompleted, 2),
-                event('2026-08-15', ANALYTICS_EVENTS.workWithUsSubmitted, 1),
-                event('2026-08-15', ANALYTICS_EVENTS.newsletterSignupCompleted, 1),
+                event(ANALYTICS_EVENTS.bookingStarted, 10),
+                event(ANALYTICS_EVENTS.bookingCompleted, 2),
+                event(ANALYTICS_EVENTS.quizStarted, 4),
+                event(ANALYTICS_EVENTS.quizCompleted, 2),
+                event(ANALYTICS_EVENTS.workWithUsSubmitted, 1),
+                event(ANALYTICS_EVENTS.newsletterSignupCompleted, 1),
               ],
       })
     }
@@ -202,9 +197,8 @@ function successfulProvider(): {
   return { calls, fetch }
 }
 
-function event(date: string, eventName: string, count: number): Record<string, unknown> {
+function event(eventName: string, count: number): Record<string, unknown> {
   return {
-    timestamp: `${date}T00:00:00.000Z`,
     eventName,
     count,
     visitors: Math.max(1, count - 1),
@@ -242,13 +236,12 @@ describe('Vercel Web Analytics adapter', () => {
       now: () => NOW,
     })
 
-    assert.equal(provider.calls.length, 8)
+    assert.equal(provider.calls.length, 13)
     for (const call of provider.calls) {
       assert.equal(call.url.origin, 'https://api.vercel.com')
       assert.equal(call.url.searchParams.get('projectId'), 'prj_lashpop')
       assert.equal(call.url.searchParams.get('teamId'), 'team_experial')
       assert.equal(call.url.searchParams.has('slug'), false)
-      assert.equal(call.url.searchParams.get('until') === '2026-08-28' || call.url.searchParams.get('until') === '2026-08-21', true)
       assert.equal(call.url.toString().includes(TOKEN), false)
       assert.equal(call.init.method, 'GET')
       assert.equal(new Headers(call.init.headers).get('Authorization'), `Bearer ${TOKEN}`)
@@ -260,12 +253,17 @@ describe('Vercel Web Analytics adapter', () => {
     const countCalls = provider.calls.filter((call) =>
       call.url.pathname.endsWith('/visits/count')
     )
-    assert.equal(countCalls.length, 2)
-    assert.equal(countCalls.every((call) => call.url.searchParams.get('filter') === VISIT_FILTER), true)
+    assert.equal(countCalls.length, 8)
     assert.equal(countCalls.every((call) => call.url.searchParams.has('by') === false), true)
     assert.equal(countCalls.every((call) => call.url.searchParams.has('limit') === false), true)
+    assert.equal(countCalls.every((call) => !call.url.searchParams.get('since')?.includes('T')), true)
+    assert.equal(countCalls.every((call) => !call.url.searchParams.get('until')?.includes('T')), true)
+    const totalCountCalls = countCalls.filter((call) =>
+      call.url.searchParams.get('filter') === VISIT_FILTER
+    )
+    assert.equal(totalCountCalls.length, 2)
     assert.deepEqual(
-      countCalls.map((call) => ({
+      totalCountCalls.map((call) => ({
         since: call.url.searchParams.get('since'),
         until: call.url.searchParams.get('until'),
       })),
@@ -274,16 +272,29 @@ describe('Vercel Web Analytics adapter', () => {
         { since: '2026-08-15', until: '2026-08-21' },
       ]
     )
+    const pageCountCalls = countCalls.filter((call) =>
+      call.url.searchParams.get('filter') !== VISIT_FILTER
+    )
+    assert.equal(pageCountCalls.length, 6)
+    assert.deepEqual(
+      pageCountCalls.map((call) =>
+        call.url.searchParams.get('filter')?.replace("environment eq 'production' and ", '')
+      ),
+      Array.from(PAGE_COUNTS.keys())
+    )
 
     const visitCalls = provider.calls.filter((call) =>
       call.url.pathname.endsWith('/visits/aggregate')
     )
-    assert.equal(visitCalls.length, 4)
+    assert.equal(visitCalls.length, 3)
     assert.equal(visitCalls.every((call) => call.url.searchParams.get('filter') === VISIT_FILTER), true)
+    assert.equal(visitCalls.every((call) => call.url.searchParams.get('since') === '2026-08-22T00:00:00.000Z'), true)
+    assert.equal(visitCalls.every((call) => call.url.searchParams.get('until') === '2026-08-28T23:59:59.999Z'), true)
     assert.deepEqual(
       visitCalls.map((call) => call.url.searchParams.getAll('by')),
-      [['day'], ['referrerHostname'], ['deviceType'], ['route']]
+      [['day'], ['referrerHostname'], ['deviceType']]
     )
+    assert.equal(visitCalls.some((call) => call.url.searchParams.getAll('by').includes('route')), false)
 
     const eventCalls = provider.calls.filter((call) =>
       call.url.pathname.endsWith('/events/aggregate')
@@ -292,7 +303,24 @@ describe('Vercel Web Analytics adapter', () => {
     assert.equal(eventCalls.every((call) => call.url.searchParams.get('filter') === EVENT_FILTER), true)
     assert.equal(eventCalls.every((call) => call.url.searchParams.get('filter')?.includes('eventData') === false), true)
     assert.equal(eventCalls.every((call) => call.url.searchParams.get('limit') === '6'), true)
-    assert.equal(eventCalls.every((call) => call.url.searchParams.getAll('by').join(',') === 'day,eventName'), true)
+    assert.equal(eventCalls.every((call) => call.url.searchParams.getAll('by').join(',') === 'eventName'), true)
+    assert.deepEqual(
+      eventCalls.map((call) => ({
+        since: call.url.searchParams.get('since'),
+        until: call.url.searchParams.get('until'),
+      })),
+      [
+        { since: '2026-08-22T00:00:00.000Z', until: '2026-08-28T23:59:59.999Z' },
+        { since: '2026-08-15T00:00:00.000Z', until: '2026-08-21T23:59:59.999Z' },
+      ]
+    )
+
+    for (const call of provider.calls) {
+      const filter = call.url.searchParams.get('filter') ?? ''
+      assert.match(filter, /requestPath/)
+      assert.doesNotMatch(filter, /not startswith/)
+      assert.doesNotMatch(filter, /customers|confirm|admin/)
+    }
 
     const serialized = JSON.stringify(dto)
     assert.equal(serialized.includes(TOKEN), false)
@@ -369,7 +397,7 @@ describe('Vercel Web Analytics adapter', () => {
       pageviews: 17,
       sharePercent: 66.7,
     })
-    assert.equal(dto.acquisition.sources[1]?.source, 'Direct or unavailable')
+    assert.equal(dto.acquisition.sources[1]?.source, 'Direct or unknown')
     assert.equal(dto.acquisition.sources.some((source) => source.source.includes('@')), false)
     assert.deepEqual(dto.acquisition.devices.map((row) => row.device), [
       'Mobile',
@@ -391,8 +419,7 @@ describe('Vercel Web Analytics adapter', () => {
     )
     assert.equal(bookingStarted?.current, 20)
     assert.equal(bookingStarted?.previous, 10)
-    assert.equal(bookingStarted?.daily.length, 7)
-    assert.deepEqual(bookingStarted?.daily[0], { date: '2026-08-22', count: 10 })
+    assert.equal('daily' in (bookingStarted ?? {}), false)
 
     const serialized = JSON.stringify(dto)
     for (const privateValue of [
@@ -403,6 +430,7 @@ describe('Vercel Web Analytics adapter', () => {
       'private@example.com',
       'private answer',
       'Private Customer',
+      'page-private@example.com',
       'unknown_private_event',
       'private-token',
       'V1StGbhUoJ-vc3OSnoCTbHflC6rg3zmlt',
@@ -414,6 +442,25 @@ describe('Vercel Web Analytics adapter', () => {
     ]) {
       assert.equal(serialized.includes(privateValue), false, privateValue)
     }
+  })
+
+  it('keeps 90-day action totals within the six event-name rows', async () => {
+    const provider = successfulProvider()
+    await getAdminAnalytics({
+      range: '90d',
+      config: CONFIG,
+      fetch: provider.fetch,
+      now: () => NOW,
+    })
+
+    const eventCalls = provider.calls.filter((call) =>
+      call.url.pathname.endsWith('/events/aggregate')
+    )
+    assert.equal(eventCalls.length, 2)
+    assert.equal(eventCalls.every((call) => call.url.searchParams.get('limit') === '6'), true)
+    assert.equal(eventCalls.every((call) => call.url.searchParams.getAll('by').join(',') === 'eventName'), true)
+    assert.equal(eventCalls.every((call) => call.url.searchParams.get('since')?.endsWith('T00:00:00.000Z')), true)
+    assert.equal(eventCalls.every((call) => call.url.searchParams.get('until')?.endsWith('T23:59:59.999Z')), true)
   })
 
   it('accepts a team slug as the sole optional authorization scope', async () => {
@@ -534,6 +581,6 @@ describe('safe analytics fixture', () => {
       Object.values(ANALYTICS_EVENTS)
     )
     assert.equal(first.conversion.events.every((row) => row.current > 0), true)
-    assert.equal(first.conversion.events.every((row) => row.daily.length === 7), true)
+    assert.equal(first.conversion.events.every((row) => 'daily' in row === false), true)
   })
 })

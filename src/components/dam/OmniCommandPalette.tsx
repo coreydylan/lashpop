@@ -95,33 +95,44 @@ export function OmniCommandPalette({
   const getGroupMeta = (groupName: string): { icon: LucideIcon; description: string } => {
     switch (groupName) {
       case "Tag":
-        return { icon: Tags, description: "Apply tags to photos" }
+      case "Tagging":
+        return { icon: Tags, description: "Add tags to files" }
       case "Set Tag":
-        return { icon: Tags, description: "Replace tags on selection" }
+        return { icon: Tags, description: "Replace tags on selected files" }
       case "Filter by Tag":
-        return { icon: Filter, description: "Narrow the gallery by tags" }
+      case "Filtering":
+        return { icon: Filter, description: "Show files that match a tag or team member" }
       case "Set Team Member":
-        return { icon: Users2, description: "Assign a featured artist" }
+      case "Team":
+        return { icon: Users2, description: "Assign files to a team member" }
       case "Filter by Team":
         return { icon: Users2, description: "Filter by team member" }
       case "Selection":
-        return { icon: Wand2, description: "Manage photo selections" }
+        return { icon: Wand2, description: "Select, deselect or delete files" }
       case "Select by Filter":
-        return { icon: Wand2, description: "Build selections based on tags and team" }
+      case "Select by filter":
+        return { icon: Wand2, description: "Select files that match a tag or team member" }
       case "Filters":
-        return { icon: Filter, description: "Reset or tweak active filters" }
+        return { icon: Filter, description: "Remove or change active filters" }
       case "Grouping":
-        return { icon: Layers, description: "Change how the grid clusters photos" }
+      case "Organization":
+        return { icon: Layers, description: "Group files or open a collection" }
       case "View":
-        return { icon: Eye, description: "Adjust gallery layout or density" }
+        return { icon: Eye, description: "Change the grid or media card details" }
       case "Actions":
-        return { icon: Share2, description: "Open supporting utilities" }
+      case "Quick actions":
+        return { icon: Share2, description: "Clear active filters and groups" }
       case "Photo Tools":
-        return { icon: Wand2, description: "Photo management actions" }
+        return { icon: Wand2, description: "Edit or delete the open photo" }
       case "Current Tags":
+      case "Current tags":
         return { icon: Tags, description: "Remove existing tags" }
+      case "Settings":
+        return { icon: Wand2, description: "Manage tags, collections and team photos" }
+      case "Help":
+        return { icon: Share2, description: "Learn how to use Media" }
       default:
-        return { icon: Tags, description: "Quick DAM action" }
+        return { icon: Tags, description: "Media action" }
     }
   }
 
@@ -275,7 +286,7 @@ export function OmniCommandPalette({
         if (contextSummary.activeAssetName) {
           return `Editing ${contextSummary.activeAssetName} · ${filterLabel}`
         }
-        return `${contextSummary.totalAssets} assets · ${filterLabel}`
+        return `${contextSummary.totalAssets} ${contextSummary.totalAssets === 1 ? 'file' : 'files'} · ${filterLabel}`
       })()
     : undefined
 
@@ -450,7 +461,7 @@ export function OmniCommandPalette({
                   isMobile ? "text-[10px] tracking-[0.2em]" : "text-xs tracking-[0.28em]"
                 )}>
                   <Sparkles className={isMobile ? "w-3 h-3" : "w-3.5 h-3.5"} />
-                  Command
+                  Actions
                 </div>
                 {contextLabel && !isMobile && (
                   <p className="text-sm text-dune/70 mt-1">{contextLabel}</p>
@@ -470,7 +481,7 @@ export function OmniCommandPalette({
                       isMobile ? "text-[10px] px-2 py-0.5" : "text-xs px-3 py-1"
                     )}
                   >
-                    All
+                    All actions
                   </button>
                 )}
                 {!isMobile && (
@@ -572,8 +583,8 @@ export function OmniCommandPalette({
           {mode === 'card-settings' ? (
             <div className="px-4 space-y-3">
               <div className="px-2 pb-2">
-                <h3 className="text-sm font-semibold text-dune mb-1">Card Tag Visibility</h3>
-                <p className="text-xs text-sage/70">Select which tags appear on asset thumbnails</p>
+                <h3 className="text-sm font-semibold text-dune mb-1">Details on media cards</h3>
+                <p className="text-xs text-sage/70">Choose which tags appear on each media card</p>
               </div>
 
               {/* Show All button - only show when some tags are hidden */}
@@ -589,7 +600,7 @@ export function OmniCommandPalette({
                   <svg className="w-4 h-4 text-dusty-rose" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  <span className="text-sm font-semibold text-dusty-rose">Show All Tags (Reset)</span>
+                  <span className="text-sm font-semibold text-dusty-rose">Show all tags</span>
                 </button>
               )}
 
@@ -643,8 +654,8 @@ export function OmniCommandPalette({
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-semibold text-dune">Team Member</div>
-                      <div className="text-xs text-sage/70 mt-0.5">Show artist attribution on cards</div>
+                      <div className="text-sm font-semibold text-dune">Team member</div>
+                      <div className="text-xs text-sage/70 mt-0.5">Show the assigned team member on cards</div>
                     </div>
                   </button>
                 )
@@ -718,7 +729,7 @@ export function OmniCommandPalette({
             <>
               {flatList.length === 0 && !showCategoryGrid && (
                 <div className="px-6 py-12 text-center text-sm text-sage/70">
-                  No matches yet. Try another keyword.
+                  No matching actions. Try another search.
                 </div>
               )}
 
@@ -922,7 +933,7 @@ export function OmniCommandPalette({
                           }}
                           className="text-xs font-semibold text-dusty-rose border border-dusty-rose/30 rounded-full px-3 py-1 hover:bg-dusty-rose/10 transition"
                         >
-                          Open
+                          View actions
                         </button>
                       </div>
                     </div>

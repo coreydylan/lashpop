@@ -51,11 +51,12 @@ interface TeamOption {
 interface Props {
   review: ReviewRow
   teamOptions: TeamOption[]
+  returnFocusId?: string
   onClose: () => void
   onSaved: () => void
 }
 
-export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved }: Props) {
+export default function ReviewEditDrawer({ review, teamOptions, returnFocusId, onClose, onSaved }: Props) {
   const locks = new Set(review.adminLockedFields ?? [])
   const titleId = useId()
   const descriptionId = useId()
@@ -69,6 +70,8 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
 
   const [qualityScore, setQualityScore] = useState<number | null>(review.qualityScore)
   const [editorNotes, setEditorNotes] = useState<string>(review.editorNotes ?? "")
+  const [savedQualityScore, setSavedQualityScore] = useState<number | null>(review.qualityScore)
+  const [savedEditorNotes, setSavedEditorNotes] = useState<string>(review.editorNotes ?? "")
   const [teamMemberId, setTeamMemberId] = useState<string | null>(review.teamMemberId)
   const [showOnWebsite, setShowOnWebsite] = useState<boolean>(review.showOnWebsite !== false)
   const [unlockFields, setUnlockFields] = useState<Set<string>>(new Set())
@@ -77,6 +80,7 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
   const [rescoring, setRescoring] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [statusMessage, setStatusMessage] = useState("")
   const [suggestion, setSuggestion] = useState<{
     teamMemberId: string | null
     teamMemberName: string | null
@@ -91,7 +95,9 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const previousOverflow = document.body.style.overflow
+    const previousOverscrollBehavior = document.body.style.overscrollBehavior
     document.body.style.overflow = "hidden"
+    document.body.style.overscrollBehavior = "none"
 
     const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus())
 
@@ -133,9 +139,15 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
       window.cancelAnimationFrame(focusFrame)
       document.removeEventListener("keydown", handleKeyDown)
       document.body.style.overflow = previousOverflow
-      if (opener?.isConnected) opener.focus()
+      document.body.style.overscrollBehavior = previousOverscrollBehavior
+      const returnTarget = returnFocusId ? document.getElementById(returnFocusId) : null
+      if (returnTarget instanceof HTMLElement && returnTarget.isConnected) {
+        returnTarget.focus()
+      } else if (opener?.isConnected) {
+        opener.focus()
+      }
     }
-  }, [])
+  }, [returnFocusId])
 
   function toggleUnlock(column: string) {
     const next = new Set(unlockFields)
@@ -150,14 +162,16 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
   async function handleSave() {
     setSaving(true)
     setError(null)
+    setStatusMessage("Saving review changes…")
     try {
       const body: Record<string, unknown> = {}
-      if (qualityScore !== review.qualityScore) body.qualityScore = qualityScore
-      if ((editorNotes || null) !== (review.editorNotes || null)) body.editorNotes = editorNotes || null
+      if (qualityScore !== savedQualityScore) body.qualityScore = qualityScore
+      if ((editorNotes || null) !== (savedEditorNotes || null)) body.editorNotes = editorNotes || null
       if (teamMemberId !== review.teamMemberId) body.teamMemberId = teamMemberId
       if (showOnWebsite !== (review.showOnWebsite !== false)) body.showOnWebsite = showOnWebsite
       if (unlockFields.size) body.unlock = Array.from(unlockFields)
       if (Object.keys(body).length === 0) {
+        setStatusMessage("No changes to save.")
         onClose()
         return
       }
@@ -167,13 +181,14 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
         body: JSON.stringify(body),
       })
       if (!res.ok) {
-        const t = await res.text()
-        throw new Error(t || `HTTP ${res.status}`)
+        throw new Error("Could not save review changes. Try again.")
       }
+      setStatusMessage("Review changes saved.")
       onSaved()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : "Could not save review changes. Try again.")
+      setStatusMessage("Review changes were not saved.")
     } finally {
       setSaving(false)
     }
@@ -183,15 +198,18 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
     setSuggesting(true)
     setError(null)
     setSuggestion(null)
+    setStatusMessage("Finding a stylist suggestion…")
     try {
       const res = await fetch(`/api/admin/website/reviews/${review.id}/suggest-stylist`, {
         method: "POST",
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "suggest failed")
+      if (!res.ok) throw new Error("Could not suggest a stylist. Try again.")
       setSuggestion(data)
+      setStatusMessage("Stylist suggestion ready. Review it before applying.")
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : "Could not suggest a stylist. Try again.")
+      setStatusMessage("No stylist suggestion was created.")
     } finally {
       setSuggesting(false)
     }
@@ -200,16 +218,23 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
   async function handleRescore() {
     setRescoring(true)
     setError(null)
+    setStatusMessage("Updating the quality score…")
     try {
       const res = await fetch(`/api/admin/website/reviews/${review.id}/rescore`, {
         method: "POST",
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "rescore failed")
+      const data = await res.json() as { error?: string; score?: number; notes?: string | null }
+      if (!res.ok) throw new Error(data.error || "Could not update the quality score. Try again later.")
+      if (typeof data.score !== 'number') throw new Error("Review scoring returned no score. Try again later.")
       setQualityScore(data.score)
       setEditorNotes(data.notes ?? "")
+      setSavedQualityScore(data.score)
+      setSavedEditorNotes(data.notes ?? "")
+      setStatusMessage("Score and notes updated.")
+      onSaved()
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : "Could not update the quality score. Try again later.")
+      setStatusMessage("The quality score was not updated.")
     } finally {
       setRescoring(false)
     }
@@ -219,15 +244,17 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
     if (!locks.has(column)) return null
     const isUnlocked = unlockFields.has(column)
     return (
-      <label className="text-xs text-dune/60 inline-flex items-center gap-1 cursor-pointer">
+      <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-xs text-dune/60 focus-within:ring-2 focus-within:ring-golden focus-within:ring-offset-2">
         <input
           type="checkbox"
+          name={`review-unlock-${review.id}-${column}`}
+          autoComplete="off"
           checked={isUnlocked}
           onChange={() => toggleUnlock(column)}
-          className="w-3 h-3"
+          className="size-5 accent-golden"
         />
-        {isUnlocked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-        {isUnlocked ? "Unlock (let editor manage)" : "Locked from editor"}
+        {isUnlocked ? <Unlock className="size-4" aria-hidden="true" /> : <Lock className="size-4" aria-hidden="true" />}
+        {isUnlocked ? "Allow automatic updates after saving" : "Keep this value fixed"}
       </label>
     )
   }
@@ -236,7 +263,8 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/30"
+      className="fixed inset-0 z-50 flex justify-end overscroll-none bg-black/30"
+      role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
@@ -249,13 +277,13 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
         aria-describedby={descriptionId}
         aria-busy={saving || suggesting || rescoring}
         tabIndex={-1}
-        className="w-full max-w-xl h-full bg-ivory shadow-2xl overflow-y-auto"
+        className="flex h-dvh w-full max-w-xl flex-col overflow-hidden overscroll-contain bg-ivory shadow-2xl sm:h-full sm:border-l sm:border-sage/20"
       >
-        <header className="sticky top-0 bg-ivory border-b border-sage/30 px-6 py-4 flex items-center justify-between">
-          <div>
-            <h2 id={titleId} className="text-xl font-semibold text-dune">Edit review</h2>
+        <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-sage/30 bg-ivory px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sm:px-6 sm:py-4">
+          <div className="min-w-0">
+            <h2 id={titleId} className="text-xl font-semibold text-dune">Edit review details</h2>
             <p id={descriptionId} className="sr-only">
-              Edit website display settings for {review.reviewerName}&apos;s review.
+              Edit the score, stylist, notes, and website visibility for {review.reviewerName}&apos;s review.
             </p>
           </div>
           <button
@@ -263,13 +291,13 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
             type="button"
             onClick={onClose}
             aria-label="Close review editor"
-            className="rounded-md p-2 text-dune/60 hover:text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-sage/30 bg-white text-dune/65 hover:border-sage/60 hover:text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden focus-visible:ring-offset-2"
           >
-            <X className="w-5 h-5" aria-hidden="true" />
+            <X className="size-5" aria-hidden="true" />
           </button>
         </header>
 
-        <div className="px-6 py-5 space-y-6">
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
           {/* Metadata */}
           <section className="space-y-1 pb-4 border-b border-sage/20">
             <p className="text-sm text-dune">
@@ -282,48 +310,54 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
                 </span>
               )}
             </p>
-            <p className="text-sm text-dune/80 whitespace-pre-wrap mt-2">{review.reviewText}</p>
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm text-dune/80">{review.reviewText}</p>
             {review.hiddenReason && (
-              <p className="text-xs text-amber-700 mt-2">
-                Currently hidden — reason: <code>{review.hiddenReason}</code>
+              <p className="mt-2 break-words text-xs text-amber-700">
+                {review.hiddenReason === 'stale_team_member'
+                  ? 'Hidden because the linked stylist is no longer active.'
+                  : 'Hidden by a saved review rule.'}
               </p>
             )}
           </section>
 
           {/* Quality score */}
           <section className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <label htmlFor={qualityId} className="block text-sm font-medium text-dune">
-                Quality score (1-10)
+                Homepage quality score (1 to 10)
               </label>
               <button
                 type="button"
                 onClick={handleRescore}
                 disabled={rescoring}
-                className="inline-flex items-center gap-1 text-xs text-golden hover:underline disabled:opacity-50"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-golden/30 bg-white px-3 text-xs font-semibold text-golden hover:border-golden/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {rescoring ? (
-                  <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                  <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                 ) : (
-                  <RotateCw className="w-3 h-3" aria-hidden="true" />
+                  <RotateCw className="size-4" aria-hidden="true" />
                 )}
-                Re-score with Claude
+                Update score
               </button>
             </div>
             <input
               id={qualityId}
+              name="review-quality-score"
+              autoComplete="off"
               type="number"
+              inputMode="numeric"
               min={1}
               max={10}
               value={qualityScore ?? ""}
               onChange={e =>
                 setQualityScore(e.target.value === "" ? null : Number(e.target.value))
               }
-              className="w-24 px-3 py-2 border border-sage/40 rounded-lg focus:outline-none focus:border-golden"
+              className="min-h-11 w-24 rounded-lg border border-sage/40 bg-white px-3 py-2 focus:border-golden focus:outline-none focus:ring-2 focus:ring-golden/25"
             />
+            <p className="text-xs text-dune/60">1 means generic or off-topic. 10 means specific, detailed, and suitable for the homepage.</p>
             {review.editorNotes && (
               <p className="text-xs text-dune/60 italic">
-                Editor notes: {review.editorNotes}
+                Score notes: {review.editorNotes}
               </p>
             )}
             <LockHint column="quality_score" />
@@ -331,31 +365,33 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
 
           {/* Team member tag */}
           <section className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <label htmlFor={stylistId} className="block text-sm font-medium text-dune">
-                Tagged stylist
+                Stylist mentioned
               </label>
               <button
                 type="button"
                 onClick={handleSuggest}
                 disabled={suggesting}
-                className="inline-flex items-center gap-1 text-xs text-golden hover:underline disabled:opacity-50"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-golden/30 bg-white px-3 text-xs font-semibold text-golden hover:border-golden/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {suggesting ? (
-                  <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                  <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                 ) : (
-                  <Sparkles className="w-3 h-3" aria-hidden="true" />
+                  <Sparkles className="size-4" aria-hidden="true" />
                 )}
-                Suggest from text
+                Suggest stylist
               </button>
             </div>
             <select
               id={stylistId}
+              name="review-tagged-stylist"
+              autoComplete="off"
               value={teamMemberId ?? ""}
               onChange={e => setTeamMemberId(e.target.value || null)}
-              className="w-full px-3 py-2 border border-sage/40 rounded-lg bg-white focus:outline-none focus:border-golden"
+              className="min-h-11 w-full rounded-lg border border-sage/40 bg-white px-3 py-2 focus:border-golden focus:outline-none focus:ring-2 focus:ring-golden/25"
             >
-              <option value="">(none — venue review)</option>
+              <option value="">No stylist — studio review</option>
               {teamOptions
                 .filter(t => t.isActive)
                 .map(t => (
@@ -363,7 +399,7 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
                     {t.name}
                   </option>
                 ))}
-              <option disabled>— inactive —</option>
+              <option disabled>Inactive stylists</option>
               {teamOptions
                 .filter(t => !t.isActive)
                 .map(t => (
@@ -374,25 +410,25 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
             </select>
             {suggestion && (
               <div
-                className="text-xs text-dune/70 bg-sage/10 px-3 py-2 rounded-lg space-y-1"
+                className="space-y-1 rounded-lg border border-sage/20 bg-sage/10 px-3 py-3 text-xs text-dune/70"
                 role="status"
                 aria-live="polite"
               >
                 <p>
-                  Suggestion:{" "}
+                  Suggested stylist:{" "}
                   <span className="font-medium text-dune">
-                    {suggestion.teamMemberName ?? "(no specific stylist)"}
+                    {suggestion.teamMemberName ?? "No specific stylist"}
                   </span>
-                  {suggestion.confidence != null && ` · confidence ${suggestion.confidence}/10`}
+                  {suggestion.confidence != null && ` · match confidence ${suggestion.confidence}/10`}
                 </p>
                 {suggestion.reason && <p className="italic">{suggestion.reason}</p>}
                 {suggestion.teamMemberId && suggestion.teamMemberId !== teamMemberId && (
                   <button
                     type="button"
                     onClick={() => setTeamMemberId(suggestion.teamMemberId)}
-                    className="text-golden hover:underline"
+                    className="mt-1 inline-flex min-h-11 items-center rounded-lg border border-golden/30 bg-white px-3 font-semibold text-golden hover:border-golden/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden focus-visible:ring-offset-2"
                   >
-                    Apply
+                    Use this stylist
                   </button>
                 )}
               </div>
@@ -402,18 +438,20 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
 
           {/* Visibility */}
           <fieldset className="space-y-2">
-            <legend className="block text-sm font-medium text-dune">Visibility</legend>
+            <legend className="block text-sm font-medium text-dune">Allow on website</legend>
             <div className="flex items-center gap-3">
-              <label htmlFor={visibilityId} className="inline-flex items-center gap-2 cursor-pointer">
+              <label htmlFor={visibilityId} className="inline-flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2 focus-within:ring-2 focus-within:ring-golden focus-within:ring-offset-2">
                 <input
                   id={visibilityId}
+                  name="review-website-visibility"
+                  autoComplete="off"
                   type="checkbox"
                   checked={showOnWebsite}
                   onChange={e => setShowOnWebsite(e.target.checked)}
-                  className="w-4 h-4 rounded text-golden focus:ring-golden"
+                  className="size-5 rounded accent-golden"
                 />
                 <span className="text-sm text-dune">
-                  {showOnWebsite ? "Visible on website" : "Hidden"}
+                  {showOnWebsite ? "Allowed to appear on website" : "Hidden from website"}
                 </span>
               </label>
             </div>
@@ -423,22 +461,24 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
           {/* Editor notes (read/edit) */}
           <section className="space-y-2">
             <label htmlFor={notesId} className="block text-sm font-medium text-dune">
-              Editor notes
+              Review notes
             </label>
             <textarea
               id={notesId}
+              name="review-editor-notes"
+              autoComplete="off"
               value={editorNotes}
               onChange={e => setEditorNotes(e.target.value)}
               rows={3}
-              placeholder="(empty)"
-              className="w-full px-3 py-2 text-sm border border-sage/40 rounded-lg focus:outline-none focus:border-golden"
+              placeholder="Add a note"
+              className="w-full resize-y rounded-lg border border-sage/40 bg-white px-3 py-3 text-sm leading-6 focus:border-golden focus:outline-none focus:ring-2 focus:ring-golden/25"
             />
             <LockHint column="editor_notes" />
           </section>
 
           {error && (
             <div
-              className="text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-lg"
+              className="break-words rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700"
               role="alert"
               aria-live="assertive"
             >
@@ -447,23 +487,34 @@ export default function ReviewEditDrawer({ review, teamOptions, onClose, onSaved
           )}
         </div>
 
-        <footer className="sticky bottom-0 bg-ivory border-t border-sage/30 px-6 py-4 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-dune/70 hover:text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden"
+        <footer className="sticky bottom-0 z-10 shrink-0 border-t border-sage/30 bg-ivory px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:py-4">
+          <p className="text-xs leading-5 text-dune/60">Fields you change stay fixed until you allow automatic updates for that field.</p>
+          <p
+            className={`mt-1 min-h-5 text-xs ${error ? "text-red-700" : "text-dune/60"}`}
+            role="status"
+            aria-live="polite"
           >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2 bg-golden text-white rounded-lg font-medium hover:bg-golden/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden focus-visible:ring-offset-2 disabled:opacity-60"
-          >
-            {saving && <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />}
-            {saving ? "Saving…" : "Save & lock"}
-          </button>
+            {statusMessage}
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="min-h-11 rounded-lg border border-sage/40 bg-white px-4 text-sm font-semibold text-dune/70 hover:border-sage/70 hover:text-dune focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-golden px-5 text-sm font-semibold text-white hover:bg-golden/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-golden focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving && <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          </div>
         </footer>
       </div>
     </div>,

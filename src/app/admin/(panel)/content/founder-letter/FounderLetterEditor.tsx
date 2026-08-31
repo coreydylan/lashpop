@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { FileText, Save, Check, AlertCircle, Plus, X, MoveUp, MoveDown, RefreshCw } from 'lucide-react'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingStatusLabel } from '@/lib/admin/settings-copy'
 import type { FounderLetterContent } from '@/types/founder-letter'
 
 interface FounderLetterEditorProps {
@@ -37,9 +38,9 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
       if (!res.ok) {
         if (res.status === 409 && data?.conflict) {
           setConflict(true)
-          throw new Error(`Another admin published a newer version. Load latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+          throw new Error('Someone saved a newer version while this page was open. Load the latest version to replace your unsaved changes.')
         }
-        throw new Error(data?.error ?? `Save failed (${res.status})`)
+        throw new Error(data?.error ?? 'Could not save the founder letter. Try again.')
       }
       setSavedState(data.content)
       setContent(data.content)
@@ -49,7 +50,7 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2500)
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error')
+      const error = err instanceof Error ? err : new Error('Could not save the founder letter. Try again.')
       setStatus('error')
       setErrorMsg(error.message)
       throw error
@@ -62,7 +63,7 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
     try {
       const res = await fetch('/api/admin/website/founder-letter')
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data?.error ?? `Reload failed (${res.status})`)
+      if (!res.ok) throw new Error(data?.error ?? 'Could not load the latest founder letter. Try again.')
       setContent(data.content)
       setSavedState(data.content)
       setBaseVersion(data.version)
@@ -71,7 +72,7 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
       setStatus('idle')
     } catch (err) {
       setStatus('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Unable to load the latest version')
+      setErrorMsg(err instanceof Error ? err.message : 'Could not load the latest founder letter. Try again.')
     }
   }
 
@@ -124,39 +125,44 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between gap-6 flex-wrap">
-        <div>
+      <div className="grid gap-4 sm:flex sm:items-start sm:justify-between sm:gap-6">
+        <div className="min-w-0">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dusty-rose to-terracotta flex items-center justify-center shadow-sm">
+            <div className="hidden size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-dusty-rose to-terracotta shadow-sm sm:flex">
               <FileText className="w-5 h-5 text-cream" />
             </div>
-            <h1 className="font-serif text-2xl text-dune font-semibold">Founder Letter</h1>
+            <h1 className="font-serif text-2xl text-dune font-semibold">Founder letter</h1>
           </div>
-          <p className="text-sm text-dune/70 max-w-2xl leading-relaxed">
-            The letter rendered on the homepage&apos;s founder section. Previously hardcoded
-            in <span className="font-mono text-xs">FounderLetterSection.tsx</span>; now
-            edited here.
+          <p className="max-w-2xl text-sm leading-relaxed text-dune/70">
+            Update the welcome letter customers read in the homepage founder section.
           </p>
           <p className="mt-1 text-xs text-dune/50">
-            {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+            {websiteSettingStatusLabel(sourceOwner, baseVersion)}
           </p>
         </div>
         <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={handleSave} />
       </div>
 
+      {status === 'error' && errorMsg ? (
+        <div className="flex items-start gap-2 border-l-2 border-terracotta bg-terracotta/10 px-3 py-2 text-sm text-terracotta" role="alert">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p className="min-w-0">{errorMsg}</p>
+        </div>
+      ) : null}
+
       {/* Editor */}
-      <section className="bg-white/70 backdrop-blur-sm border border-sage/15 rounded-2xl p-6 shadow-sm space-y-5">
+      <section className="space-y-5 rounded-lg border border-sage/15 bg-white/70 p-4 shadow-sm sm:p-6">
         <Field
           label="Heading"
           value={content.heading}
           onChange={v => setContent({ ...content, heading: v })}
-          help='Section H2, e.g. "Welcome to LashPop Studios"'
+          help='Main heading for this section, for example “Welcome to LashPop Studios”.'
         />
         <Field
           label="Greeting"
           value={content.greeting}
           onChange={v => setContent({ ...content, greeting: v })}
-          help='Opening line, italic, e.g. "I&apos;m so glad you&apos;re here."'
+          help='Opening line shown in italics, for example “I&apos;m so glad you&apos;re here.”'
         />
 
         <div>
@@ -173,42 +179,48 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
           </div>
           <div className="space-y-3">
             {content.paragraphs.map((p, i) => (
-              <div key={i} className="relative group">
+              <div key={i} className="group">
+                <div className="mb-1.5 flex items-center justify-between gap-3">
+                  <label htmlFor={`founder-paragraph-${i}`} className="text-xs font-medium text-dune/65">
+                    Paragraph {i + 1}
+                  </label>
+                  <div className="grid grid-cols-3 gap-1 sm:flex">
+                    <button
+                      type="button"
+                      onClick={() => moveParagraph(i, 'up')}
+                      disabled={i === 0}
+                      className="flex size-11 items-center justify-center rounded-md border border-sage/20 bg-cream text-dune/60 hover:text-dune disabled:opacity-30"
+                      aria-label={`Move paragraph ${i + 1} up`}
+                    >
+                      <MoveUp className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveParagraph(i, 'down')}
+                      disabled={i === content.paragraphs.length - 1}
+                      className="flex size-11 items-center justify-center rounded-md border border-sage/20 bg-cream text-dune/60 hover:text-dune disabled:opacity-30"
+                      aria-label={`Move paragraph ${i + 1} down`}
+                    >
+                      <MoveDown className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeParagraph(i)}
+                      disabled={content.paragraphs.length === 1}
+                      className="flex size-11 items-center justify-center rounded-md border border-sage/20 bg-cream text-red-700/70 hover:text-red-700 disabled:opacity-30"
+                      aria-label={`Delete paragraph ${i + 1}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
                 <textarea
+                  id={`founder-paragraph-${i}`}
                   value={p}
                   onChange={e => updateParagraph(i, e.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 rounded-xl border border-sage/25 bg-white focus:outline-none focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 text-sm text-dune resize-y"
+                  className="w-full resize-y rounded-lg border border-sage/25 bg-white px-3 py-2 text-sm text-dune focus:outline-none focus:border-terracotta focus:ring-2 focus:ring-terracotta/20"
                 />
-                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    type="button"
-                    onClick={() => moveParagraph(i, 'up')}
-                    disabled={i === 0}
-                    className="p-1 rounded bg-cream border border-sage/20 text-dune/60 hover:text-dune disabled:opacity-30"
-                    aria-label="Move up"
-                  >
-                    <MoveUp className="w-3 h-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveParagraph(i, 'down')}
-                    disabled={i === content.paragraphs.length - 1}
-                    className="p-1 rounded bg-cream border border-sage/20 text-dune/60 hover:text-dune disabled:opacity-30"
-                    aria-label="Move down"
-                  >
-                    <MoveDown className="w-3 h-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeParagraph(i)}
-                    disabled={content.paragraphs.length === 1}
-                    className="p-1 rounded bg-cream border border-sage/20 text-red-700/70 hover:text-red-700 disabled:opacity-30"
-                    aria-label="Delete paragraph"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
               </div>
             ))}
           </div>
@@ -219,19 +231,19 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
             label="Sign-off"
             value={content.signOff}
             onChange={v => setContent({ ...content, signOff: v })}
-            help='e.g. "Xo,"'
+            help='For example, “Xo,”'
           />
           <Field
             label="Signature"
             value={content.signature}
             onChange={v => setContent({ ...content, signature: v })}
-            help='Screen-reader / SEO text only — the visible signature is a handwritten graphic'
+            help='Alternative text for screen readers and search engines. The page shows a handwritten signature image.'
           />
         </div>
       </section>
 
       {/* Preview */}
-      <section className="bg-white/70 backdrop-blur-sm border border-sage/15 rounded-2xl p-6 shadow-sm">
+      <section className="rounded-lg border border-sage/15 bg-white/70 p-4 shadow-sm sm:p-6">
         <h2 className="text-xs font-medium text-dune/70 uppercase tracking-wide mb-4">Preview</h2>
         <div className="space-y-3 italic text-charcoal">
           <h3 className="text-2xl font-serif not-italic text-dune">{content.heading}</h3>
@@ -245,23 +257,6 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
         </div>
       </section>
 
-      {/* Sticky save bar */}
-      {(isDirty || status === 'saved' || status === 'error') && (
-        <div className="sticky bottom-4 z-30 flex justify-end">
-          <div className="bg-cream/95 backdrop-blur-xl border border-sage/20 rounded-2xl px-4 py-3 shadow-lg flex items-center gap-3">
-            {status === 'error' && (
-              <span className="text-sm text-red-700 flex items-center gap-1">
-                <AlertCircle className="w-4 h-4" />
-                {errorMsg ?? 'Save failed'}
-              </span>
-            )}
-            {isDirty && status !== 'saving' && (
-              <span className="text-xs text-dune/60">Unsaved changes</span>
-            )}
-            <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={handleSave} />
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -293,7 +288,7 @@ function SaveButton({
       type="button"
       onClick={onSave}
       disabled={disabled}
-      className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+      className={`inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:w-auto ${
         status === 'saved'
           ? 'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
           : 'bg-terracotta text-cream hover:bg-terracotta/90 disabled:opacity-40 disabled:cursor-not-allowed'
@@ -324,7 +319,7 @@ function Field({ label, value, onChange, help }: FieldProps) {
         type="text"
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2 rounded-xl border border-sage/25 bg-white focus:outline-none focus:border-terracotta focus:ring-2 focus:ring-terracotta/20 text-sm text-dune"
+        className="w-full rounded-lg border border-sage/25 bg-white px-3 py-2 text-sm text-dune focus:outline-none focus:border-terracotta focus:ring-2 focus:ring-terracotta/20"
       />
       {help && <span className="block text-xs text-dune/50 mt-1">{help}</span>}
     </label>

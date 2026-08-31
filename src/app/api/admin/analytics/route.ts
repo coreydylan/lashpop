@@ -17,10 +17,10 @@ const PRIVATE_HEADERS = {
 }
 
 const SAFE_ERROR_COPY: Partial<Record<AdminAnalyticsErrorCode, string>> = {
-  INVALID_CONFIG: 'Website performance is not connected in this environment yet.',
+  INVALID_CONFIG: 'Ask the website administrator to complete analytics setup, then try again.',
   INVALID_RANGE: 'Choose 7, 30 or 90 days.',
-  UPSTREAM_REQUEST_FAILED: 'Website performance could not be refreshed from Vercel.',
-  UPSTREAM_RESPONSE_INVALID: 'Vercel returned website performance in an unexpected format.',
+  UPSTREAM_REQUEST_FAILED: 'Website data could not be loaded. Try again.',
+  UPSTREAM_RESPONSE_INVALID: 'Website data could not be read. Try again.',
 }
 
 export async function GET(request: NextRequest) {
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (error instanceof AdminAnalyticsError) {
       const message = SAFE_ERROR_COPY[error.code]
-        || 'Website performance is temporarily unavailable.'
+        || 'Website data is temporarily unavailable.'
       const status = error.code === 'INVALID_RANGE'
         ? 400
         : error.code === 'INVALID_CONFIG'
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     console.error('[Admin analytics] Unexpected read failure')
     return privateJson(
-      { error: { code: 'unexpected_error', message: 'Website performance is temporarily unavailable.' } },
+      { error: { code: 'unexpected_error', message: 'Website data is temporarily unavailable.' } },
       500
     )
   }

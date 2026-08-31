@@ -127,7 +127,7 @@ export default function TeamPhotographyPage() {
       })
       const result = await response.json()
       if (!response.ok) {
-        throw new Error(result.error || "Photo upload failed.")
+        throw new Error(result.error || "Could not upload the photo.")
       }
 
       const uploadedPhotos = (result.photos || []) as TeamMemberPhoto[]
@@ -144,7 +144,7 @@ export default function TeamPhotographyPage() {
       }
     } catch (error) {
       console.error("Photo upload failed:", error)
-      setErrorMessage(error instanceof Error ? error.message : "Photo upload failed.")
+      setErrorMessage(error instanceof Error ? error.message : "Could not upload the photo.")
     } finally {
       setIsUploading(false)
       event.target.value = ""
@@ -181,8 +181,8 @@ export default function TeamPhotographyPage() {
       await Promise.all([fetchMemberPhotos(selectedMember.id), fetchTeamMembers()])
       setNotice(
         selectedMember.effectiveImageSource === "vagaro"
-          ? "Local primary updated. The live website portrait remains synced from Vagaro."
-          : "Primary profile photo updated.",
+          ? "Primary upload changed. The website still uses the Vagaro photo."
+          : "Website photo updated.",
       )
     } catch (error) {
       console.error("Failed to set primary:", error)
@@ -196,7 +196,7 @@ export default function TeamPhotographyPage() {
       setErrorMessage("Choose a different primary photo before deleting this one.")
       return
     }
-    if (!window.confirm(`Delete “${photo.fileName}”? This cannot be undone.`)) return
+    if (!window.confirm(`Delete “${photo.fileName}”? You cannot undo this.`)) return
 
     setErrorMessage(null)
     try {
@@ -231,16 +231,16 @@ export default function TeamPhotographyPage() {
               className="inline-flex min-h-11 items-center gap-2 rounded-lg text-xs font-semibold text-black/50 hover:text-[#9f4c33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
             >
               <ArrowLeft className="size-4" aria-hidden="true" />
-              Asset library
+              Media library
             </Link>
             <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Team photography</p>
-            <h1 className="mt-2 max-w-3xl font-serif text-3xl leading-tight sm:text-4xl">One approved portrait system for every stylist.</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-black/55">Keep source photos, primary selections, and website-ready crops together so profiles stay consistent across every surface.</p>
+            <h1 className="mt-2 max-w-3xl font-serif text-3xl leading-tight sm:text-4xl">Manage team profile photos</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-black/55">Choose the photo shown on the website and prepare the required crops.</p>
           </div>
           <div className="rounded-xl border border-black/10 bg-white px-5 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">Website portrait parity</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/40">Profiles with a photo</p>
             <p className="mt-1 font-serif text-2xl">{teamMembers.filter(hasLivePortrait).length} / {teamMembers.length}</p>
-            <p className="mt-1 text-xs text-black/45">website portraits visible</p>
+            <p className="mt-1 text-xs text-black/45">profiles show a website photo</p>
           </div>
         </header>
 
@@ -276,7 +276,7 @@ export default function TeamPhotographyPage() {
                   {selectedMember.name}’s photos
                 </button>
                 <h2 id="crop-editor-heading" className="mt-2 font-serif text-3xl">Prepare website crops</h2>
-                <p className="mt-1 text-sm text-black/50">Set each composition once; the generated versions can be reused across the site.</p>
+                <p className="mt-1 text-sm text-black/50">Set the square, horizontal, vertical and circle crops used on the website.</p>
               </div>
               {isSaving && <span className="inline-flex items-center gap-2 text-xs font-semibold text-black/45"><LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> Saving crops…</span>}
             </div>
@@ -307,8 +307,8 @@ function TeamRoster({ teamMembers, onSelect }: { teamMembers: TeamMember[]; onSe
     return (
       <section className="mt-2 rounded-xl border border-dashed border-black/20 bg-white px-6 py-16 text-center">
         <Users className="mx-auto size-7 text-[#9f4c33]" aria-hidden="true" />
-        <h2 className="mt-4 font-serif text-2xl">No team profiles are available yet.</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Team members sync into this workspace before photography can be assigned.</p>
+        <h2 className="mt-4 font-serif text-2xl">No team members found</h2>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Team members appear here after a Vagaro sync.</p>
       </section>
     )
   }
@@ -318,7 +318,7 @@ function TeamRoster({ teamMembers, onSelect }: { teamMembers: TeamMember[]; onSe
       <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           <h2 id="team-roster-heading" className="font-serif text-2xl">Choose a team member</h2>
-          <p className="mt-1 text-xs text-black/45">Every preview below matches the portrait currently shown on the website.</p>
+          <p className="mt-1 text-xs text-black/45">Every preview below matches the photo currently shown on the website.</p>
         </div>
         <p className="text-xs font-semibold text-black/40">{teamMembers.length} profiles</p>
       </div>
@@ -381,7 +381,7 @@ function MemberPhotoLibrary({
             All team members
           </button>
           <h2 id="member-photos-heading" className="mt-2 font-serif text-3xl">{member.name}</h2>
-          <p className="mt-1 text-sm text-black/50">{photos.length} local {photos.length === 1 ? "source photo" : "source photos"} · the live website portrait is shown below.</p>
+          <p className="mt-1 text-sm text-black/50">{photos.length} uploaded {photos.length === 1 ? "photo" : "photos"} · the current website photo is shown below.</p>
         </div>
         <label className={`inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-within:ring-2 focus-within:ring-[#c96f50] ${isUploading ? "pointer-events-none opacity-60" : ""}`}>
           {isUploading ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : <Upload className="size-4" aria-hidden="true" />}
@@ -401,28 +401,28 @@ function MemberPhotoLibrary({
           />
         </div>
         <div className="flex flex-col justify-center p-5 sm:p-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9f4c33]">Live website portrait</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9f4c33]">Website photo</p>
           <p className="mt-2 font-serif text-2xl">{liveSourceLabel(member)}</p>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-black/50">
             {member.effectiveImageSource === "vagaro"
-              ? "This is the exact Vagaro portrait the public team section currently uses. Local sources and crops below do not replace it."
+              ? "The website is using this Vagaro photo. Uploaded photos below do not replace it until the website photo source changes."
               : member.effectiveImageSource === "local"
-                ? "This local primary is the exact portrait the public team section currently uses."
-                : "The public team section currently has no portrait for this profile."}
+                ? "The website is using this photo uploaded in Admin."
+                : "The website does not show a photo for this team member."}
           </p>
           {member.effectiveImageSource === "vagaro" && !member.hasLocalPrimary && (
             <p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-amber-900">
-              <AlertCircle className="size-3.5" aria-hidden="true" /> No local primary selected; Vagaro remains live.
+              <AlertCircle className="size-3.5" aria-hidden="true" /> No uploaded primary photo. The website still uses Vagaro.
             </p>
           )}
           {member.hasLocalPrimary && !member.localPrimaryIsLive && (
             <p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-black/45">
-              <Crop className="size-3.5" aria-hidden="true" /> A local primary is prepared but is not the live website source.
+              <Crop className="size-3.5" aria-hidden="true" /> An uploaded primary photo is ready, but it is not the photo currently shown on the website.
             </p>
           )}
           {member.hasLocalPrimary && !member.hasRequiredLocalCrops && (
             <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold text-amber-900">
-              <AlertCircle className="size-3.5" aria-hidden="true" /> The local primary still needs its approved crop set.
+              <AlertCircle className="size-3.5" aria-hidden="true" /> Create all required crops for the primary photo.
             </p>
           )}
         </div>
@@ -433,8 +433,8 @@ function MemberPhotoLibrary({
       ) : photos.length === 0 ? (
         <div className="rounded-xl border border-dashed border-black/20 bg-white px-6 py-16 text-center">
           <ImagePlus className="mx-auto size-7 text-[#9f4c33]" aria-hidden="true" />
-          <h3 className="mt-4 font-serif text-2xl">Add the first approved portrait.</h3>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Use a high-resolution original. You’ll create reusable square, horizontal, vertical, and circular crops next.</p>
+          <h3 className="mt-4 font-serif text-2xl">Upload a profile photo</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Use the original full-resolution image. You will crop it for each website placement.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -455,7 +455,7 @@ function MemberPhotoLibrary({
                       <Trash2 className="size-4" aria-hidden="true" />
                     </button>
                     <span className="flex flex-wrap justify-end gap-1.5">
-                      {photo.isPrimary && <span className="rounded-full bg-[#292a27] px-2.5 py-1 text-[10px] font-semibold text-white">Local primary</span>}
+                      {photo.isPrimary && <span className="rounded-full bg-[#292a27] px-2.5 py-1 text-[10px] font-semibold text-white">Primary upload</span>}
                       {hasCrops && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800"><CheckCircle2 className="size-3" aria-hidden="true" /> Cropped</span>}
                     </span>
                   </div>
@@ -468,7 +468,7 @@ function MemberPhotoLibrary({
                       {hasCrops ? "Edit crops" : "Set crops"}
                     </button>
                     <button type="button" onClick={() => onSetPrimary(photo.id)} disabled={photo.isPrimary} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#f4dfd5] px-2 text-xs font-semibold text-[#87442f] hover:bg-[#ecd0c3] disabled:cursor-default disabled:bg-black/[0.04] disabled:text-black/35">
-                      {photo.isPrimary ? "Local primary" : "Make primary"}
+                      {photo.isPrimary ? "Primary upload" : "Make primary"}
                     </button>
                   </div>
                 </div>
@@ -519,7 +519,7 @@ function hasLivePortrait(member: TeamMember): boolean {
 }
 
 function liveSourceLabel(member: TeamMember): string {
-  if (member.effectiveImageSource === "vagaro") return "Live from Vagaro"
-  if (member.effectiveImageSource === "local") return "Live from local portrait"
-  return "No live portrait"
+  if (member.effectiveImageSource === "vagaro") return "From Vagaro"
+  if (member.effectiveImageSource === "local") return "Uploaded in Admin"
+  return "No website photo"
 }

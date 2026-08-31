@@ -25,6 +25,23 @@ const POSTHOG_API_HOSTS = new Set([
 
 const PUBLIC_PATH_RE = /^\/$|^\/(?:privacy|terms|work-with-us)\/?$|^\/services(?:\/[^/]+)?\/?$/
 
+export const PRIVATE_INTERACTION_SELECTORS = [
+  'form',
+  'input',
+  'textarea',
+  'select',
+  '[contenteditable]',
+  '[data-session-replay-block]',
+] as const
+
+export const PRIVATE_INTERACTION_SELECTOR = PRIVATE_INTERACTION_SELECTORS.join(', ')
+
+export const AUTOCAPTURE_IGNORE_SELECTORS = [
+  '.ph-no-autocapture',
+  '[data-ph-no-autocapture]',
+  ...PRIVATE_INTERACTION_SELECTORS,
+] as const
+
 function isExplicitlyEnabled(value: string | undefined): boolean {
   return value?.trim().toLowerCase() === 'true'
 }
@@ -53,6 +70,24 @@ export function resolveInteractionAnalyticsConfig({
 
 export function isInteractionAnalyticsAllowedPath(pathname: string): boolean {
   return PUBLIC_PATH_RE.test(pathname)
+}
+
+export function keepInteractionAnalyticsEvent<T>(
+  pathname: string,
+  event: T | null | undefined
+): T | null {
+  if (!event || !isInteractionAnalyticsAllowedPath(pathname)) return null
+  return event
+}
+
+export function isPublicAnalyticsUrl(value: string, origin = 'https://lashpopstudios.com'): boolean {
+  try {
+    const url = new URL(value, origin)
+    return url.origin === new URL(origin).origin
+      && isInteractionAnalyticsAllowedPath(url.pathname)
+  } catch {
+    return false
+  }
 }
 
 export function viewportBucket(width: number): 'phone' | 'tablet' | 'desktop' | 'wide' {
@@ -128,8 +163,11 @@ export function scrollMilestones(previousDepth: number, nextDepth: number): numb
 export function redactAnalyticsUrl(value: string): string {
   try {
     const url = new URL(value, 'https://lashpopstudios.com')
-    return `${url.origin}${url.pathname}`
+    const pathname = isInteractionAnalyticsAllowedPath(url.pathname)
+      ? url.pathname
+      : '/private-request'
+    return `${url.origin}${pathname}`
   } catch {
-    return value.split(/[?#]/, 1)[0]
+    return '/private-request'
   }
 }
