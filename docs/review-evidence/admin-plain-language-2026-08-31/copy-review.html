@@ -201,8 +201,8 @@ const THEME = {
    2. LEXICON  — live guardrails. Words are matched case-insensitively, whole-word.
    =========================================================================== */
 const LEXICON = {
-  preferred: ["visitors","page views","tracked actions","media library","booking categories","daily update"],
-  banned:    ["attention","momentum","signals","journey","Claude","LLM","DAM","taxonomy","worker tick","source of truth"],
+  preferred: ["visitors","page views","recorded actions","anonymous website totals","direct or unknown","media library","booking categories","daily update"],
+  banned:    ["attention","momentum","signals","journey","Claude","LLM","DAM","taxonomy","worker tick","source of truth","not a conversion rate","sources do not prove","not a funnel","not attribution","not a customer cohort","not a visitor-by-visitor funnel","no names or contact details","no customer profiles","query strings"],
   maxLineChars: 72,
 };
 
@@ -238,57 +238,82 @@ const PIECES = [
   { phase: "Navigation and page purpose" },
   { id:"analytics-nav", name:"Analytics navigation", when:"Admin navigation on phone and desktop", chosenVariant:1,
     variants:[
-      { title:"Website performance", body:"Traffic, discovery, and conversion signals" },
-      { title:"Website analytics", body:"Visitors, page views and tracked actions" },
+      { title:"Website analytics", body:"Daily traffic and recorded actions" },
+      { title:"Website analytics", body:"Visitors, page views and recorded actions" },
     ] },
   { id:"analytics-intro", name:"Analytics page introduction", when:"Top of /admin/analytics", chosenVariant:1,
     variants:[
-      { title:"Website performance", body:"See anonymous traffic and action signals, then confirm appointments in Vagaro and saved enquiries in the Inbox." },
-      { title:"Website analytics", body:"See visitors, page views and recorded website actions. Check appointments in Vagaro and applications in Inbox." },
+      { title:"Website analytics", body:"See daily traffic, popular pages and recorded actions. Use Vagaro for appointment status and Inbox for saved applications." },
+      { title:"Website analytics", body:"See daily traffic, referring websites, popular pages and recorded actions. Use Vagaro for appointment status and Inbox for saved applications." },
     ] },
   { id:"analytics-privacy", name:"Analytics privacy summary", when:"Under the Analytics page title", chosenVariant:1,
     variants:[
-      { title:"Anonymous aggregates only", body:"No customer profiles" },
-      { title:"Totals only", body:"No names or contact details" },
+      { title:"Anonymous website totals", body:"Appointment records are managed in Vagaro. Saved applications are managed in Inbox." },
+      { title:"Anonymous website totals", body:"Customer records stay in Vagaro and Inbox." },
     ] },
 
   { phase: "Analytics measures" },
   { id:"analytics-chart", name:"Traffic chart", when:"Analytics Overview", chosenVariant:1,
     variants:[
-      { title:"How attention moved", body:"Traffic rhythm" },
+      { title:"Daily website traffic", body:"Anonymous visitors and public page views" },
       { title:"Visitors and page views by day", body:"Website traffic" },
     ] },
-  { id:"analytics-booking", name:"Booking comparison", when:"Analytics Overview and Tracked actions", chosenVariant:1,
+  { id:"analytics-visitors", name:"Visitor total", when:"Analytics Overview", chosenVariant:1,
     variants:[
-      { title:"Booking signal rate", body:"Completions divided by starts in this period—not a customer cohort." },
-      { title:"Vagaro submissions ÷ tracked booking starts", body:"Separate event totals. A submission may be a booking request or confirmation; check Vagaro for the final status." },
+      { title:"Visitors", body:"Anonymous visitors counted during the selected period. The count starts again each day." },
+      { title:"Visitors", body:"Daily anonymous visitor total. The count starts again each day." },
     ] },
-  { id:"analytics-sources", name:"Source limitations", when:"Analytics Sources", chosenVariant:1,
+  { id:"analytics-page-views", name:"Page-view total", when:"Analytics Overview", chosenVariant:1,
     variants:[
-      { title:"Read this as discovery, not attribution", body:"Direct traffic can include bookmarks, typed addresses and visits where the referring site was not shared." },
-      { title:"Sources do not prove what caused a visit", body:"Direct or not provided can include typed addresses, bookmarks and visits where the browser did not share a referring site." },
+      { title:"Page views", body:"Every view of a public page adds to this total." },
+      { title:"Page views", body:"Total views of public pages, including repeat views." },
     ] },
-  { id:"analytics-actions", name:"Action-count explanation", when:"Analytics Tracked actions", chosenVariant:1,
+  { id:"analytics-booking", name:"Booking comparison", when:"Analytics Overview and Recorded actions", chosenVariant:1,
     variants:[
-      { title:"These are directional signals", body:"Repeats can count again, and some booking paths finish outside the embedded Vagaro flow." },
-      { title:"How tracked actions are counted", body:"Each event is counted, including repeat actions by the same visitor. Starts and submissions are separate totals, not a visitor-by-visitor funnel." },
+      { title:"Submissions per 100 tracked starts", body:"Vagaro submissions divided by tracked booking starts recorded in this period and scaled to 100 starts." },
+      { title:"Vagaro submissions per 100 tracked starts", body:"Vagaro submissions divided by tracked booking starts recorded in this period and scaled to 100 starts. Review each request or confirmation in Vagaro." },
+    ] },
+  { id:"analytics-look-results", name:"Find Your Look comparison", when:"Analytics Overview and Recorded actions", chosenVariant:1,
+    variants:[
+      { title:"Results per 100 opens", body:"Find Your Look results divided by opens recorded in this period and scaled to 100 opens." },
+      { title:"Find Your Look results per 100 opens", body:"Find Your Look results divided by opens recorded in this period and scaled to 100 opens. Compare date ranges to see how use changes." },
+    ] },
+  { id:"analytics-source-list", name:"Referring website list", when:"Analytics Sources", chosenVariant:1,
+    variants:[
+      { title:"Visitor sources", body:"Anonymous visitors grouped by the referring website attached to each visit." },
+      { title:"Referring websites", body:"Visitors grouped by the referring website attached to each visit. Compare date ranges to see where referred traffic changed." },
+    ] },
+  { id:"analytics-sources", name:"Direct or unknown explanation", when:"Analytics Sources", chosenVariant:1,
+    variants:[
+      { title:"About Direct or unknown", body:"This group covers typed addresses, bookmarks and visits with an unavailable referring website." },
+      { title:"What Direct or unknown includes", body:"Typed addresses, bookmarks and visits with an unavailable referring website." },
+    ] },
+  { id:"analytics-devices", name:"Device breakdown", when:"Analytics Sources", chosenVariant:1,
+    variants:[
+      { title:"Devices", body:"Visitors grouped by mobile, tablet and desktop screen type." },
+      { title:"Devices", body:"Shows the share of visitors using each screen type. Test the most-used screen sizes first." },
+    ] },
+  { id:"analytics-actions", name:"Action-count explanation", when:"Analytics Recorded actions", chosenVariant:1,
+    variants:[
+      { title:"How recorded actions add up", body:"Every recorded action adds one to its total, including repeat actions." },
+      { title:"How recorded actions add up", body:"Every recorded action adds one to its total, including repeat actions. Booking starts cover tracked service selections, Find Your Look booking selections and Naturtox links. Vagaro submissions come from the embedded form. Review each request or confirmation in Vagaro." },
     ] },
   { id:"analytics-pages", name:"Page ranking", when:"Analytics Pages", chosenVariant:1,
     variants:[
-      { title:"Pages earning attention", body:"Private, preview, admin and system paths are removed before these totals reach the board." },
-      { title:"Most-viewed public pages", body:"Only approved public pages are listed. Admin, preview and system pages are excluded. Individual service pages are grouped together." },
+      { title:"Public page views", body:"Views grouped by the public page opened during each visit." },
+      { title:"Most-viewed public pages", body:"This list covers the homepage, Services, Work with us, Privacy and Terms. Individual service pages appear as one group. Use the ranking to choose which public pages to update or test first." },
     ] },
 
   { phase: "Loading, empty and error states" },
   { id:"analytics-empty", name:"Analytics empty state", when:"No visits or tracked actions in the selected period", chosenVariant:1,
     variants:[
-      { title:"No activity in this period yet", body:"No public traffic or action signals matched these days. Try a longer period." },
-      { title:"No website data for the selected period", body:"The connection works, but there were no public page views or tracked actions in these days. Choose a longer period." },
+      { title:"Choose a longer reporting period", body:"The selected period contains 0 public page views and 0 recorded actions." },
+      { title:"Choose a longer reporting period", body:"The selected period contains 0 public page views and 0 tracked actions." },
     ] },
   { id:"analytics-error", name:"Analytics connection error", when:"Analytics cannot connect", chosenVariant:1,
     variants:[
-      { title:"Connection needed", body:"Website performance is not connected in this environment yet.", pill:"Try again" },
-      { title:"Website analytics is not connected", body:"This page only reads analytics. Trying again does not change the website, bookings or customer information.", pill:"Try again" },
+      { title:"Connect website analytics", body:"Ask the website administrator to complete analytics setup.", pill:"Try again" },
+      { title:"Connect website analytics", body:"Ask the website administrator to complete analytics setup, then try again.", pill:"Try again" },
     ] },
 
   { phase: "Website, reviews and media" },

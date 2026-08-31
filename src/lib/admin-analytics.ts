@@ -68,10 +68,6 @@ export interface AdminAnalyticsDto {
       previous: number
       change: number
       changePercent: number | null
-      daily: Array<{
-        date: string
-        count: number
-      }>
     }>
     bookingCompletionRate: AdminAnalyticsRatio
     quizCompletionRate: AdminAnalyticsRatio
@@ -132,12 +128,6 @@ interface TrafficPoint {
   pageviews: number
 }
 
-interface EventPoint {
-  date: string
-  eventName: AnalyticsEventName
-  count: number
-}
-
 interface AggregateRequest {
   dataset: 'visits' | 'events'
   window: AdminAnalyticsDateWindow
@@ -176,46 +166,37 @@ const EVENT_NAME_SET = new Set<string>(EVENT_NAMES)
 const EVENT_LABELS: Record<AnalyticsEventName, string> = {
   [ANALYTICS_EVENTS.bookingStarted]: 'Tracked booking starts',
   [ANALYTICS_EVENTS.bookingCompleted]: 'Vagaro booking submissions',
-  [ANALYTICS_EVENTS.quizStarted]: 'Quiz starts',
-  [ANALYTICS_EVENTS.quizCompleted]: 'Quiz results shown',
+  [ANALYTICS_EVENTS.quizStarted]: 'Find Your Look opens',
+  [ANALYTICS_EVENTS.quizCompleted]: 'Find Your Look results',
   [ANALYTICS_EVENTS.workWithUsSubmitted]: 'Applications saved',
   [ANALYTICS_EVENTS.newsletterSignupCompleted]: 'Newsletter subscriptions saved',
 }
 
-const INTERNAL_PATH_PREFIXES = [
-  '/admin',
-  '/api',
-  '/_next',
-  '/preview',
-  '/punchlist',
-  '/confirm',
-  '/login',
-  '/seoguide',
-  '/staffphoto',
-  '/dam',
+const PUBLIC_CONTENT_GROUPS = [
+  { route: '/', pathFilter: "requestPath eq '/'" },
+  { route: '/services', pathFilter: "requestPath eq '/services'" },
+  { route: '/services/[slug]', pathFilter: "startswith(requestPath, '/services/')" },
+  { route: '/work-with-us', pathFilter: "requestPath eq '/work-with-us'" },
+  { route: '/privacy', pathFilter: "requestPath eq '/privacy'" },
+  { route: '/terms', pathFilter: "requestPath eq '/terms'" },
 ] as const
 
-// Group content by framework route rather than raw request path. This is a
-// deliberate privacy boundary: dynamic URL segments never enter the DTO.
-const PUBLIC_CONTENT_ROUTES = new Set([
-  '/',
-  '/services',
-  '/services/[slug]',
-  '/work-with-us',
-  '/privacy',
-  '/terms',
-])
+const PUBLIC_CONTENT_ROUTES = new Set<string>(
+  PUBLIC_CONTENT_GROUPS.map((group) => group.route)
+)
 
-const VISIT_FILTER = [
-  "environment eq 'production'",
-  ...INTERNAL_PATH_PREFIXES.map(
-    (prefix) => `not startswith(requestPath, '${prefix}')`
-  ),
-].join(' and ')
+const PUBLIC_REQUEST_PATH_FILTER = `(${PUBLIC_CONTENT_GROUPS
+  .map((group) => group.pathFilter)
+  .join(' or ')})`
+
+// Positive public-path scoping keeps current and future private routes out of
+// every upstream total and breakdown, not just out of the browser projection.
+const VISIT_FILTER = `environment eq 'production' and ${PUBLIC_REQUEST_PATH_FILTER}`
 
 const EVENT_FILTER = [
   "environment eq 'production'",
   `eventName in (${EVENT_NAMES.map((name) => `'${name}'`).join(',')})`,
+  PUBLIC_REQUEST_PATH_FILTER,
 ].join(' and ')
 
 export function parseAdminAnalyticsRange(value: unknown): AdminAnalyticsRange {
@@ -277,24 +258,18 @@ export async function getAdminAnalytics(
       filter: VISIT_FILTER,
       limit: 10,
     }),
-    fetchAggregate(config, fetchImpl, {
-      dataset: 'visits',
-      window: rangeMetadata.current,
-      by: ['route'],
-      filter: VISIT_FILTER,
-      limit: 25,
-    }),
+    fetchPublicPageCounts(config, fetchImpl, rangeMetadata.current),
     fetchAggregate(config, fetchImpl, {
       dataset: 'events',
       window: rangeMetadata.current,
-      by: ['day', 'eventName'],
+      by: ['eventName'],
       filter: EVENT_FILTER,
       limit: EVENT_NAMES.length,
     }),
     fetchAggregate(config, fetchImpl, {
       dataset: 'events',
       window: rangeMetadata.previous,
-      by: ['day', 'eventName'],
+      by: ['eventName'],
       filter: EVENT_FILTER,
       limit: EVENT_NAMES.length,
     }),
@@ -495,15 +470,18 @@ function listDays(window: AdminAnalyticsDateWindow): string[] {
 async function fetchVisitCount(
   config: ValidConfig,
   fetchImpl: typeof globalThis.fetch,
-  window: AdminAnalyticsDateWindow
+  window: AdminAnalyticsDateWindow,
+  filter = VISIT_FILTER
 ): Promise<VisitTotals> {
   const url = new URL(`${VERCEL_ANALYTICS_API}/visits/count`)
   url.searchParams.set('projectId', config.projectId)
   if (config.teamId) url.searchParams.set('teamId', config.teamId)
   if (config.slug) url.searchParams.set('slug', config.slug)
+  // Vercel's count endpoint expands date-only bounds to complete days. Its
+  // aggregate endpoints behave differently and use explicit UTC instants below.
   url.searchParams.set('since', window.since)
   url.searchParams.set('until', window.until)
-  url.searchParams.set('filter', VISIT_FILTER)
+  url.searchParams.set('filter', filter)
 
   const payload = await fetchProviderJson(config, fetchImpl, url)
   if (!isRecord(payload) || !isRecord(payload.data)) {
@@ -522,6 +500,26 @@ async function fetchVisitCount(
   }
 }
 
+async function fetchPublicPageCounts(
+  config: ValidConfig,
+  fetchImpl: typeof globalThis.fetch,
+  window: AdminAnalyticsDateWindow
+): Promise<ProviderRow[]> {
+  return Promise.all(PUBLIC_CONTENT_GROUPS.map(async (group) => {
+    const totals = await fetchVisitCount(
+      config,
+      fetchImpl,
+      window,
+      `environment eq 'production' and ${group.pathFilter}`
+    )
+    return {
+      route: group.route,
+      visitors: totals.visitors,
+      pageviews: totals.pageviews,
+    }
+  }))
+}
+
 async function fetchAggregate(
   config: ValidConfig,
   fetchImpl: typeof globalThis.fetch,
@@ -531,8 +529,8 @@ async function fetchAggregate(
   url.searchParams.set('projectId', config.projectId)
   if (config.teamId) url.searchParams.set('teamId', config.teamId)
   if (config.slug) url.searchParams.set('slug', config.slug)
-  url.searchParams.set('since', request.window.since)
-  url.searchParams.set('until', request.window.until)
+  url.searchParams.set('since', providerWindowStart(request.window))
+  url.searchParams.set('until', providerWindowEnd(request.window))
   for (const dimension of request.by) {
     url.searchParams.append('by', dimension)
   }
@@ -545,6 +543,14 @@ async function fetchAggregate(
   }
 
   return payload.data.filter(isRecord)
+}
+
+function providerWindowStart(window: AdminAnalyticsDateWindow): string {
+  return `${window.since}T00:00:00.000Z`
+}
+
+function providerWindowEnd(window: AdminAnalyticsDateWindow): string {
+  return `${window.until}T23:59:59.999Z`
 }
 
 async function fetchProviderJson(
@@ -613,12 +619,10 @@ function buildDto(input: {
   const currentTraffic = mapTrafficRows(input.currentTrafficRows, input.range.current)
   const currentTrafficTotals = input.currentTrafficTotals
   const previousTrafficTotals = input.previousTrafficTotals
-  const currentEvents = mapEventRows(input.currentEventRows, input.range.current)
-  const previousEvents = mapEventRows(input.previousEventRows, input.range.previous)
+  const currentEventTotals = mapEventTotals(input.currentEventRows)
+  const previousEventTotals = mapEventTotals(input.previousEventRows)
 
   const eventMetrics = new Map<AnalyticsEventName, AdminAnalyticsMetric>()
-  const currentEventTotals = sumEvents(currentEvents)
-  const previousEventTotals = sumEvents(previousEvents)
 
   for (const eventName of EVENT_NAMES) {
     eventMetrics.set(
@@ -656,15 +660,6 @@ function buildDto(input: {
           name: eventName,
           label: EVENT_LABELS[eventName],
           ...metric,
-          daily: input.range.current
-            ? listDays(input.range.current).map((date) => ({
-                date,
-                count:
-                  currentEvents.find(
-                    (point) => point.date === date && point.eventName === eventName
-                  )?.count ?? 0,
-              }))
-            : [],
         }
       }),
       bookingCompletionRate: compareRatio(
@@ -706,29 +701,16 @@ function mapTrafficRows(rows: ProviderRow[], window: AdminAnalyticsDateWindow): 
   }))
 }
 
-function mapEventRows(rows: ProviderRow[], window: AdminAnalyticsDateWindow): EventPoint[] {
-  const byDateAndName = new Map<string, EventPoint>()
+function mapEventTotals(rows: ProviderRow[]): Map<AnalyticsEventName, number> {
+  const totals = new Map<AnalyticsEventName, number>()
 
   for (const row of rows) {
-    const date = readDay(row.timestamp ?? row.day)
     const eventName = readEventName(row.eventName)
-    if (!date || !eventName || !isDateInWindow(date, window)) continue
-
-    const key = `${date}:${eventName}`
-    const existing = byDateAndName.get(key)
-    byDateAndName.set(key, {
-      date,
-      eventName,
-      count: (existing?.count ?? 0) + readCount(row.count),
-    })
+    if (!eventName) continue
+    totals.set(eventName, (totals.get(eventName) ?? 0) + readCount(row.count))
   }
 
-  return Array.from(byDateAndName.values()).sort((a, b) => {
-    const dateComparison = a.date.localeCompare(b.date)
-    return dateComparison !== 0
-      ? dateComparison
-      : EVENT_NAMES.indexOf(a.eventName) - EVENT_NAMES.indexOf(b.eventName)
-  })
+  return totals
 }
 
 function mapSources(rows: ProviderRow[]): AdminAnalyticsDto['acquisition']['sources'] {
@@ -806,14 +788,6 @@ function mapPages(
     }))
     .filter((row) => row.visitors > 0 || row.pageviews > 0)
     .sort((a, b) => b.pageviews - a.pageviews || a.path.localeCompare(b.path))
-}
-
-function sumEvents(points: EventPoint[]): Map<AnalyticsEventName, number> {
-  const totals = new Map<AnalyticsEventName, number>()
-  for (const point of points) {
-    totals.set(point.eventName, (totals.get(point.eventName) ?? 0) + point.count)
-  }
-  return totals
 }
 
 function requireEventMetric(
@@ -907,11 +881,11 @@ function readEventName(value: unknown): AnalyticsEventName | null {
 }
 
 function normalizeSource(value: unknown): string {
-  if (typeof value !== 'string' || value.trim() === '') return 'Direct or not provided'
+  if (typeof value !== 'string' || value.trim() === '') return 'Direct or unknown'
   const trimmed = value.trim()
   const lower = trimmed.toLowerCase()
   if (['(direct)', 'direct', 'none', 'null', 'unknown'].includes(lower)) {
-    return 'Direct or not provided'
+    return 'Direct or unknown'
   }
   if (lower === 'others' || lower === 'other') return 'Other'
 

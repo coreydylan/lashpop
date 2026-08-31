@@ -22,12 +22,12 @@ export default async function AnalyticsPage() {
             Website analytics
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
-            See visitors, page views and recorded website actions. Check appointments in Vagaro and applications in Inbox.
+            Compare website traffic, referring websites, popular pages and recorded actions over time. Open Vagaro for booking status and Inbox for saved applications and newsletter subscriptions.
           </p>
         </div>
         <p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-black/55">
           <ShieldCheck className="size-4 text-rust" aria-hidden="true" />
-          Totals only · no names or contact details
+          Anonymous website totals
         </p>
       </header>
 

@@ -38,7 +38,7 @@ type LoadState =
 const VIEWS: Array<{ value: BoardView; label: string; shortLabel: string; icon: typeof Gauge }> = [
   { value: 'overview', label: 'Overview', shortLabel: 'Overview', icon: Gauge },
   { value: 'acquisition', label: 'Sources', shortLabel: 'Sources', icon: Compass },
-  { value: 'conversion', label: 'Tracked actions', shortLabel: 'Actions', icon: MousePointerClick },
+  { value: 'conversion', label: 'Recorded actions', shortLabel: 'Actions', icon: MousePointerClick },
   { value: 'content', label: 'Pages', shortLabel: 'Pages', icon: FileText },
 ]
 
@@ -49,12 +49,12 @@ const RANGE_OPTIONS: Array<{ value: AdminAnalyticsRange; days: number }> = [
 ]
 
 const EVENT_EXPLANATIONS: Record<AnalyticsEventName, string> = {
-  [ANALYTICS_EVENTS.bookingStarted]: 'Recorded when someone opened embedded Vagaro or a tracked external booking link from LashPop.',
-  [ANALYTICS_EVENTS.bookingCompleted]: 'The embedded Vagaro form reported a booking request or confirmation.',
-  [ANALYTICS_EVENTS.quizStarted]: 'Find Your Look opened from the lash service prompt.',
-  [ANALYTICS_EVENTS.quizCompleted]: 'Find Your Look produced a result.',
-  [ANALYTICS_EVENTS.workWithUsSubmitted]: 'A Work With Us application was saved in Inbox.',
-  [ANALYTICS_EVENTS.newsletterSignupCompleted]: 'A new or reactivated newsletter subscription was saved.',
+  [ANALYTICS_EVENTS.bookingStarted]: 'Counts each tracked service selection, Find Your Look booking selection and Naturtox link.',
+  [ANALYTICS_EVENTS.bookingCompleted]: 'Counts each request or confirmation reported by the embedded Vagaro form.',
+  [ANALYTICS_EVENTS.quizStarted]: 'Counts each opening of Find Your Look from the lash service prompt.',
+  [ANALYTICS_EVENTS.quizCompleted]: 'Counts each result shown in Find Your Look.',
+  [ANALYTICS_EVENTS.workWithUsSubmitted]: 'Counts each Work With Us application saved in Inbox.',
+  [ANALYTICS_EVENTS.newsletterSignupCompleted]: 'Counts each new or reactivated newsletter subscription saved in Inbox.',
 }
 
 export function AnalyticsBoard() {
@@ -121,7 +121,7 @@ export function AnalyticsBoard() {
 
         <div className="flex items-center gap-2 px-1 text-xs text-black/45">
           <CalendarDays className="size-4 text-rust" aria-hidden="true" />
-          <span>Compared with the previous period of the same length</span>
+          <span>Changes compare with the previous {RANGE_OPTIONS.find((option) => option.value === range)?.days} days</span>
         </div>
       </div>
 
@@ -197,9 +197,9 @@ function StatusLine({ data }: { data: AdminAnalyticsDto }) {
         {data.source === 'fixture' ? 'Test data' : 'Live website data'}
       </span>
       <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span>Complete days through {formatRangeDate(data.range.current.until)}</span>
+        <span>Reporting period: {formatRangeDate(data.range.current.since)} to {formatRangeDate(data.range.current.until)}</span>
         <span aria-hidden="true">·</span>
-        <time dateTime={data.generatedAt}>checked {formatTimestamp(data.generatedAt)}</time>
+        <time dateTime={data.generatedAt}>Checked {formatTimestamp(data.generatedAt)}</time>
       </span>
     </div>
   )
@@ -212,10 +212,10 @@ function OverviewView({ data }: { data: AdminAnalyticsDto }) {
   return (
     <div className="space-y-6">
       <section className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4" aria-label="Analytics summary">
-        <MetricCard label="Visitors" metric={data.overview.visitors} explanation="Anonymous visitors counted each day. The same person can count again on another day." icon={Users} />
-        <MetricCard label="Page views" metric={data.overview.pageviews} explanation="Public pages viewed, including repeat views." icon={FileText} />
-        <MetricCard label="Tracked booking starts" metric={data.overview.bookingStarts} explanation="Recorded openings of embedded Vagaro or tracked external booking links. Some external links may not be counted." icon={MousePointerClick} />
-        <MetricCard label="Vagaro booking submissions" metric={data.overview.bookingCompletions} explanation="Booking requests or confirmations reported by embedded Vagaro. Check Vagaro for the final status." icon={CheckCircle2} />
+        <MetricCard label="Visitors" metric={data.overview.visitors} explanation="Counts each anonymous visitor once per reporting day. Each day has its own visitor count." icon={Users} />
+        <MetricCard label="Page views" metric={data.overview.pageviews} explanation="Counts every view of an approved public page, including repeat views." icon={FileText} />
+        <MetricCard label="Tracked booking starts" metric={data.overview.bookingStarts} explanation="Counts tracked service selections, Find Your Look booking selections and Naturtox links." icon={MousePointerClick} />
+        <MetricCard label="Vagaro booking submissions" metric={data.overview.bookingCompletions} explanation="Counts requests and confirmations reported by embedded Vagaro. Open Vagaro to see each status." icon={CheckCircle2} />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
@@ -235,11 +235,15 @@ function OverviewView({ data }: { data: AdminAnalyticsDto }) {
 
         <aside className="rounded-2xl border border-black/10 bg-charcoal p-5 text-white sm:p-6">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/65">Summary</p>
-          <h2 className="mt-2 font-serif text-2xl">Top results</h2>
+          <h2 className="mt-2 font-serif text-2xl">This period at a glance</h2>
           <div className="mt-6 space-y-5">
             <OperatorNote label="Source with most visitors" value={topSource?.source || 'No source data'} detail={topSource ? `${formatNumber(topSource.visitors)} visitors` : 'No source data for the selected period.'} />
             <OperatorNote label="Page with most views" value={topPage ? publicPageLabel(topPage.path) : 'No page-view data'} detail={topPage ? `${formatNumber(topPage.pageviews)} page views` : 'No page-view data for the selected period.'} />
-            <OperatorNote label="Vagaro submissions ÷ tracked booking starts" value={formatRatio(data.conversion.bookingCompletionRate)} detail="Separate event totals. This is not a customer conversion rate. Check Vagaro for each booking status." />
+            <OperatorNote
+              label="Vagaro submissions per 100 tracked starts"
+              value={formatRatioValue(data.conversion.bookingCompletionRate, 'Available after the first tracked start')}
+              detail="Calculated as Vagaro submissions divided by tracked booking starts for this period, multiplied by 100. Open Vagaro to see each submission’s status."
+            />
           </div>
         </aside>
       </section>
@@ -253,7 +257,7 @@ function AcquisitionView({ data }: { data: AdminAnalyticsDto }) {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
       <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6">
-        <SectionHeading eyebrow="Sources" title="Visitors by source" detail="Referring websites reported by the browser. Query strings are not shown." />
+        <SectionHeading eyebrow="Sources" title="Referring websites" detail="Groups visitors by the website address shared by their browser, such as google.com. Percentages show each source’s share of the listed visitors." />
         <RankedBars
           items={data.acquisition.sources.map((item) => ({
             label: item.source,
@@ -266,7 +270,7 @@ function AcquisitionView({ data }: { data: AdminAnalyticsDto }) {
       </section>
 
       <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6">
-        <SectionHeading eyebrow="Devices" title="Visitors by device" detail="Use this when choosing which screen size to test." />
+        <SectionHeading eyebrow="Devices" title="Visitors by device" detail="Shows the share of visitors using each screen type. Test the most-used screen sizes first." />
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
           {data.acquisition.devices.length === 0 ? (
             <EmptyList copy="No device data for the selected period." />
@@ -284,8 +288,8 @@ function AcquisitionView({ data }: { data: AdminAnalyticsDto }) {
       </section>
 
       <div className="xl:col-span-2">
-        <InsightNote title="Sources do not prove what caused a visit">
-          Direct or not provided can include typed addresses, bookmarks and visits where the browser did not share a referring site. This report does not show campaign tags, also called UTM parameters.
+        <InsightNote title="What “Direct or unknown” includes">
+          Typed addresses, bookmarks and visits with an unavailable referring website.
         </InsightNote>
       </div>
     </div>
@@ -309,21 +313,23 @@ function ConversionView({ data }: { data: AdminAnalyticsDto }) {
           started={bookingStarted?.current ?? 0}
           completed={bookingCompleted?.current ?? 0}
           ratio={data.conversion.bookingCompletionRate}
-          ratioLabel="Vagaro submissions ÷ tracked booking starts"
+          ratioLabel="Vagaro submissions per 100 tracked starts"
+          emptyRatioLabel="Available after the first tracked start"
         />
         <SignalPair
-          title="Find Your Look quiz"
-          startedLabel="Quiz starts"
+          title="Find Your Look"
+          startedLabel="Find Your Look opens"
           completedLabel="Results shown"
           started={quizStarted?.current ?? 0}
           completed={quizCompleted?.current ?? 0}
           ratio={data.conversion.quizCompletionRate}
-          ratioLabel="Results shown ÷ quiz starts"
+          ratioLabel="Find Your Look results per 100 opens"
+          emptyRatioLabel="Available after the first open"
         />
       </section>
 
       <section>
-        <SectionHeading eyebrow="Tracked actions" title="Actions recorded on the website" detail="Each card shows the event counted. Repeat actions can count again." />
+        <SectionHeading eyebrow="Recorded actions" title="Actions recorded on the website" detail="Every recorded occurrence adds one to its total, including repeats." />
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {data.conversion.events.map((event) => (
             <article key={event.name} className="rounded-2xl border border-black/10 bg-white p-5">
@@ -340,8 +346,8 @@ function ConversionView({ data }: { data: AdminAnalyticsDto }) {
         </div>
       </section>
 
-      <InsightNote title="How tracked actions are counted">
-        Each event is counted, including repeat actions by the same visitor. Starts and submissions are separate totals, not a visitor-by-visitor funnel. Some external booking links may not record a start, and only embedded Vagaro reports submissions. A submission can be a booking request or confirmation; check Vagaro for the final status. Action totals start on August 29, 2026, so earlier visits have no matching action data.
+      <InsightNote title="How recorded actions add up">
+        Every recorded action adds one to its total, including repeats. The booking comparison uses all tracked starts and Vagaro submissions in the selected period. The Find Your Look comparison uses all opens and results. Action reporting began on August 29, 2026. Open Vagaro to see appointment status for submissions.
       </InsightNote>
     </div>
   )
@@ -350,7 +356,7 @@ function ConversionView({ data }: { data: AdminAnalyticsDto }) {
 function ContentView({ data }: { data: AdminAnalyticsDto }) {
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6">
-      <SectionHeading eyebrow="Pages" title="Most-viewed public pages" detail="Only approved public pages are listed. Admin, preview and system pages are excluded. Individual service pages are grouped together." />
+      <SectionHeading eyebrow="Pages" title="Most-viewed public pages" detail="Shows views for the Homepage, Services, individual service pages, Work with us, Privacy and Terms. Individual service pages are grouped together." />
       {data.content.pages.length === 0 ? (
         <div className="mt-6"><EmptyList copy="No public page views for the selected period." /></div>
       ) : (
@@ -427,7 +433,25 @@ function TrafficChart({ rows }: { rows: AdminAnalyticsDto['dailyTraffic'] }) {
   )
 }
 
-function SignalPair({ title, startedLabel, completedLabel, started, completed, ratio, ratioLabel }: { title: string; startedLabel: string; completedLabel: string; started: number; completed: number; ratio: AdminAnalyticsRatio; ratioLabel: string }) {
+function SignalPair({
+  title,
+  startedLabel,
+  completedLabel,
+  started,
+  completed,
+  ratio,
+  ratioLabel,
+  emptyRatioLabel,
+}: {
+  title: string
+  startedLabel: string
+  completedLabel: string
+  started: number
+  completed: number
+  ratio: AdminAnalyticsRatio
+  ratioLabel: string
+  emptyRatioLabel: string
+}) {
   return (
     <article className="overflow-hidden rounded-lg border border-black/10 bg-white">
       <div className="border-b border-black/10 bg-cream/35 px-5 py-4"><p className="text-xs font-semibold uppercase tracking-[0.13em] text-rust">{title}</p></div>
@@ -437,7 +461,8 @@ function SignalPair({ title, startedLabel, completedLabel, started, completed, r
         <SignalValue label={completedLabel} value={completed} />
       </div>
       <div className="flex flex-col items-start gap-1 border-t border-black/10 px-5 py-3 text-xs text-black/45 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-        <span>{ratioLabel}</span><span className="font-semibold text-charcoal">{formatRatio(ratio)}</span>
+        <span>{ratioLabel}</span>
+        <span className="font-semibold text-charcoal">{formatRatioValue(ratio, emptyRatioLabel)}</span>
       </div>
     </article>
   )
@@ -481,9 +506,9 @@ function AnalyticsError({ message, code, onRetry }: { message: string; code?: st
   return (
     <div className="rounded-lg border border-rust/25 bg-white p-6 sm:p-8" role="alert">
       <div className="flex size-11 items-center justify-center rounded-xl bg-cream text-rust"><CircleAlert className="size-5" aria-hidden="true" /></div>
-      <h2 className="mt-5 font-serif text-2xl text-charcoal">{configuration ? 'Website analytics is not connected' : 'Website analytics is unavailable'}</h2>
+      <h2 className="mt-5 font-serif text-2xl text-charcoal">{configuration ? 'Connect website analytics' : 'Website analytics is unavailable'}</h2>
       <p className="mt-2 max-w-xl text-sm leading-6 text-black/55">{message}</p>
-      <p className="mt-2 max-w-xl text-xs leading-5 text-black/40">This page only reads analytics. Trying again does not change the website, bookings or customer information.</p>
+      <p className="mt-2 max-w-xl text-xs leading-5 text-black/40">This report displays website analytics totals.</p>
       <button type="button" onClick={onRetry} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-charcoal px-4 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2">
         <RefreshCw className="size-4" aria-hidden="true" /> Try again
       </button>
@@ -495,16 +520,16 @@ function AnalyticsEmpty({ data }: { data: AdminAnalyticsDto }) {
   return (
     <div className="rounded-lg border border-black/10 bg-white p-7 text-center sm:p-10" role="status">
       <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-cream text-rust"><Gauge className="size-5" aria-hidden="true" /></span>
-      <h2 className="mt-5 font-serif text-2xl text-charcoal">No website data for the selected period</h2>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-black/50">The connection works, but there were no public page views or tracked actions in these {data.range.days} days. Choose a longer period.</p>
+      <h2 className="mt-5 font-serif text-2xl text-charcoal">0 page views and 0 recorded actions in this period</h2>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-black/50">Choose a longer period to view activity recorded before these {data.range.days} days.</p>
     </div>
   )
 }
 
 function PrivacyNote() {
   return (
-    <InsightNote title="What this report includes" icon={ShieldCheck}>
-      This report includes totals for approved public page patterns, referring websites, device types and recorded actions. It does not include names, emails, phone numbers, application text or quiz answers.
+    <InsightNote title="Where customer records live" icon={ShieldCheck}>
+      This report shows anonymous totals for public website activity. Booking records stay in Vagaro. Applications and newsletter subscriptions stay in Inbox.
     </InsightNote>
   )
 }
@@ -546,7 +571,7 @@ function deviceIcon(device: string) {
 
 function trendDetails(current: number, previous: number, changePercent: number | null) {
   if (previous === 0 && current > 0) return { direction: 'up' as const, label: 'Up from 0' }
-  if (changePercent === null || changePercent === 0) return { direction: 'flat' as const, label: 'No change' }
+  if (changePercent === null || changePercent === 0) return { direction: 'flat' as const, label: 'Same as previous period' }
   return {
     direction: changePercent > 0 ? 'up' as const : 'down' as const,
     label: `${changePercent > 0 ? 'Up' : 'Down'} ${Math.abs(changePercent).toFixed(0)}%`,
@@ -561,8 +586,9 @@ function formatPercent(value: number) {
   return `${value.toFixed(value >= 10 ? 0 : 1)}%`
 }
 
-function formatRatio(ratio: AdminAnalyticsRatio) {
-  return ratio.currentPercent === null ? 'No starts recorded' : formatPercent(ratio.currentPercent)
+function formatRatioValue(ratio: AdminAnalyticsRatio, emptyLabel: string) {
+  if (ratio.currentPercent === null) return emptyLabel
+  return ratio.currentPercent.toFixed(ratio.currentPercent >= 10 ? 0 : 1)
 }
 
 function formatTimestamp(value: string) {

@@ -8,7 +8,9 @@ These rules apply to every protected Admin page, including the Owner guide. They
 - Use short, active sentences and everyday words.
 - Use sentence case for headings, buttons and labels.
 - Name the actual page, action, count, error or next step.
-- Explain limits next to the affected data. Do not make totals sound like customer-by-customer tracking.
+- Define each measure by saying what adds to it and when the count starts again.
+- Put the source record and the operator's next action beside the measure when they matter.
+- State counting boundaries in direct terms, such as which booking links record a start or which pages appear in a ranking.
 - Name outside systems only when the operator must use or verify that system, such as Vagaro.
 - Keep implementation details, service credentials and provider error details out of the interface.
 
@@ -18,10 +20,13 @@ The approach follows GOV.UK guidance for [writing for user interfaces](https://w
 
 | Use | Do not use | Why |
 | --- | --- | --- |
-| Website analytics | Website performance | The page reports visits and actions, not page speed. |
+| Website analytics | Website performance | The page reports visits and recorded actions. |
 | Visitors and page views by day | How attention moved, traffic rhythm | Name the chart and measures. |
 | Tracked actions or recorded actions | Signals, directional signals | Name what the count contains. |
-| Vagaro submissions ÷ tracked booking starts | Signal rate, conversion rate | The totals are not joined by customer or session, and a submission may still need approval. |
+| Vagaro submissions per 100 tracked starts | Signal rate, conversion rate | Name the arithmetic. Vagaro holds each request or confirmation and its appointment status. |
+| Find Your Look results per 100 opens | Quiz conversion | Name the two recorded events and the scale shown. |
+| Direct or unknown | Direct or not provided | Use the label shown for typed addresses, bookmarks and visits with an unavailable referring website. |
+| Anonymous website totals | A privacy disclaimer as the measure label | Describe the data shown. Customer records stay in Vagaro and Inbox. |
 | Most-viewed public pages | Pages earning attention | Name the ranking. |
 | Media library | DAM | Use the product label shown in navigation. |
 | Booking category mapping | Taxonomy | Use the operator's task. |

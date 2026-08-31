@@ -4,6 +4,7 @@ import Script from 'next/script'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import { isMarketingTrackingEnabled } from '@/lib/analytics-events'
+import { isInteractionAnalyticsAllowedPath } from '@/lib/interaction-analytics'
 
 declare global {
   interface Window {
@@ -25,15 +26,18 @@ const META_PIXEL_ID_RE = /^\d+$/
 export function MarketingAnalytics() {
   const pathname = usePathname()
   const initialPageTracked = useRef(false)
+  const allowedPath = isInteractionAnalyticsAllowedPath(pathname)
   const marketingTrackingEnabled = isMarketingTrackingEnabled(
     process.env.NEXT_PUBLIC_MARKETING_TRACKING_ENABLED
   )
   const rawGtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim() || ''
   const rawMetaPixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() || ''
-  const gtmId = marketingTrackingEnabled && GTM_ID_RE.test(rawGtmId) ? rawGtmId : null
-  const metaPixelId = marketingTrackingEnabled && META_PIXEL_ID_RE.test(rawMetaPixelId) ? rawMetaPixelId : null
+  const gtmId = allowedPath && marketingTrackingEnabled && GTM_ID_RE.test(rawGtmId) ? rawGtmId : null
+  const metaPixelId = allowedPath && marketingTrackingEnabled && META_PIXEL_ID_RE.test(rawMetaPixelId) ? rawMetaPixelId : null
 
   useEffect(() => {
+    if (!allowedPath) return
+
     // Both bootstrap snippets record the initial document view. Only emit
     // another view when the App Router changes pages without a full reload.
     if (!initialPageTracked.current) {
@@ -54,7 +58,7 @@ export function MarketingAnalytics() {
     if (metaPixelId && typeof window.fbq === 'function') {
       window.fbq('track', 'PageView')
     }
-  }, [gtmId, metaPixelId, pathname])
+  }, [allowedPath, gtmId, metaPixelId, pathname])
 
   return (
     <>

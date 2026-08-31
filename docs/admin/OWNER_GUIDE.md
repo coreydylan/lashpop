@@ -91,15 +91,15 @@ See how many people visited, which pages they viewed, where visits came from and
 
 - How do I see visitors, page views, traffic sources and tracked website actions?
 
-> **Before you continue:** Vagaro booking submissions include booking requests and confirmations reported by the embedded form. Some external booking links may not record a start. Use Vagaro for the final appointment status.
+> **Before you continue:** Tracked booking starts count service selections, Find Your Look booking selections and Naturtox links. Vagaro submissions count requests and confirmations from the embedded form. Open Vagaro to see each submission's status.
 
 #### Steps
 
 1. **Open Website analytics.** Select Today, then Website analytics.
 2. **Choose a time period.** Use 7, 30 or 90 days. Every comparison uses the same number of earlier days.
 3. **Start with Overview.** Read visitors, page views, tracked booking starts and Vagaro booking submissions.
-4. **Open each report.** Use Sources, Tracked actions and Pages to see where visits came from, which actions were recorded and what people viewed.
-5. **Check the source record when needed.** Use Vagaro for final appointment records and Inbox for saved applications or newsletter signups. Tracked actions can include repeat actions by the same person.
+4. **Open each report.** Use Sources, Recorded actions and Pages to see where visits came from, which actions were recorded and what people viewed.
+5. **Check the source record when needed.** Use Vagaro for final appointment records and Inbox for saved applications or newsletter signups. Every recorded action adds one to its total, including repeats.
 
 #### Check your work
 

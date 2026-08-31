@@ -12,6 +12,19 @@ const boardSource = readFileSync(
   new URL('../components/admin-analytics/AnalyticsBoard.tsx', import.meta.url),
   'utf8'
 )
+const rootLayoutSource = readFileSync(new URL('../app/layout.tsx', import.meta.url), 'utf8')
+const publicAnalyticsSource = readFileSync(
+  new URL('../components/analytics/PublicWebAnalytics.tsx', import.meta.url),
+  'utf8'
+)
+const interactionAnalyticsSource = readFileSync(
+  new URL('../components/analytics/InteractionAnalytics.tsx', import.meta.url),
+  'utf8'
+)
+const marketingAnalyticsSource = readFileSync(
+  new URL('../components/analytics/MarketingAnalytics.tsx', import.meta.url),
+  'utf8'
+)
 
 describe('admin analytics route boundary', () => {
   it('authorizes before reading analytics and fails closed on credentials and fixtures', () => {
@@ -41,5 +54,30 @@ describe('admin analytics route boundary', () => {
     assert.doesNotMatch(boardSource, /Authorization/)
     assert.doesNotMatch(boardSource, /sessionToken/)
     assert.doesNotMatch(boardSource, /eventData/)
+  })
+
+  it('drops private routes before Vercel records them', () => {
+    assert.match(rootLayoutSource, /PublicWebAnalytics/)
+    assert.doesNotMatch(rootLayoutSource, /@vercel\/analytics\/react/)
+    assert.match(publicAnalyticsSource, /@vercel\/analytics\/next/)
+    assert.match(publicAnalyticsSource, /@vercel\/speed-insights\/next/)
+    assert.match(publicAnalyticsSource, /beforeSend=\{keepPublicEvent\}/)
+    assert.match(publicAnalyticsSource, /<SpeedInsights/)
+    assert.match(publicAnalyticsSource, /isPublicAnalyticsUrl/)
+  })
+
+  it('blocks form content and network bodies from replay and autocapture', () => {
+    assert.match(interactionAnalyticsSource, /PRIVATE_INTERACTION_SELECTOR/)
+    assert.match(interactionAnalyticsSource, /AUTOCAPTURE_IGNORE_SELECTORS/)
+    assert.match(interactionAnalyticsSource, /recordBody:\s*false/)
+    assert.match(interactionAnalyticsSource, /recordHeaders:\s*false/)
+    assert.match(interactionAnalyticsSource, /before_send/)
+    assert.match(interactionAnalyticsSource, /keepInteractionAnalyticsEvent\(window\.location\.pathname, event\)/)
+  })
+
+  it('keeps dormant marketing trackers off private routes', () => {
+    assert.match(marketingAnalyticsSource, /isInteractionAnalyticsAllowedPath\(pathname\)/)
+    assert.match(marketingAnalyticsSource, /if \(!allowedPath\) return/)
+    assert.match(marketingAnalyticsSource, /allowedPath && marketingTrackingEnabled/)
   })
 })
