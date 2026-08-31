@@ -193,7 +193,7 @@ export function OmniChip({
     // Unselect action (for tag-existing chips)
     if (onUnselectAssets) {
       defaultActions.push({
-        label: "Unselect these assets",
+        label: "Deselect these files",
         icon: <MousePointer className="w-3.5 h-3.5" />,
         onClick: onUnselectAssets,
       })
@@ -204,7 +204,7 @@ export function OmniChip({
       let removeLabel = "Remove"
       
       if (variant === "tag-existing" && count) {
-        removeLabel = `Remove from ${count} ${count === 1 ? 'asset' : 'assets'}`
+        removeLabel = `Remove from ${count} ${count === 1 ? 'file' : 'files'}`
       } else if (variant === "filter") {
         removeLabel = "Remove filter"
       } else if (variant === "group-by") {
@@ -244,7 +244,7 @@ export function OmniChip({
         )}
       >
         <Sparkles className="w-4 h-4 text-dusty-rose" />
-        <span>Command Palette</span>
+        <span>Actions</span>
         <span className="hidden sm:inline-flex items-center text-[11px] uppercase tracking-widest border border-current/40 rounded-full px-2 py-0.5">
           /
         </span>

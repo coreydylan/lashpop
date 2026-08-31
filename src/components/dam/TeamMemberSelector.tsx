@@ -36,7 +36,7 @@ export function TeamMemberSelector({ teamMembers, selectedId, onSelect }: TeamMe
         }`}
       >
         <Users className="w-4 h-4" />
-        <span className="text-sm font-medium">Add Team Member</span>
+        <span className="text-sm font-medium">Assign team member</span>
       </button>
 
       {/* Team Member Options - Horizontal scroll */}

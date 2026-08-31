@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import { MiniDamExplorer, type Asset } from '@/components/admin/MiniDamExplorer'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingSourceLabel } from '@/lib/admin/settings-copy'
 import type {
   SlideshowPreset,
   SlideshowImage,
@@ -209,15 +210,15 @@ export default function HeroSectionEditor() {
       const [archwayData, presetsData, assignmentsData] = await Promise.all([
         readResponse<{ settings: { desktop: HeroImage | null; mobile: HeroImage | null } } & VersionedResponse>(
           archwayRes,
-          'Failed to load the hero image settings.',
+          'Could not load the homepage image settings.',
         ),
         readResponse<{ presets: SlideshowPreset[] } & VersionedResponse>(
           presetsRes,
-          'Failed to load slideshow presets.',
+          'Could not load the saved slideshows.',
         ),
         readResponse<{ assignments: SlideshowAssignments } & VersionedResponse>(
           assignmentsRes,
-          'Failed to load slideshow assignments.',
+          'Could not load the slideshow choices for each device.',
         ),
       ])
 
@@ -248,7 +249,7 @@ export default function HeroSectionEditor() {
     } catch (err) {
       console.error('Error fetching data:', err)
       setHasLoadError(true)
-      setError(err instanceof Error ? err.message : 'Failed to load the hero settings.')
+      setError(err instanceof Error ? err.message : 'Could not load the homepage image settings. Try again.')
     } finally {
       setLoading(false)
     }
@@ -289,7 +290,7 @@ export default function HeroSectionEditor() {
       })
       const data = await readResponse<{
         settings: { desktop: HeroImage | null; mobile: HeroImage | null }
-      } & VersionedResponse>(response, 'Failed to save the hero image settings.')
+      } & VersionedResponse>(response, 'Could not save the homepage image settings.')
       setDesktopImage(data.settings.desktop)
       setMobileImage(data.settings.mobile)
       setPublishedArchway(cloneSnapshot(data.settings))
@@ -299,7 +300,7 @@ export default function HeroSectionEditor() {
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
       setHasConflict(err instanceof HeroSettingsRequestError && err.conflict)
-      setError(err instanceof Error ? err.message : 'Failed to save the hero image settings.')
+      setError(err instanceof Error ? err.message : 'Could not save the homepage image settings. Try again.')
       throw err
     } finally {
       setSaving(false)
@@ -320,7 +321,7 @@ export default function HeroSectionEditor() {
       })
       const data = await readResponse<{
         preset: SlideshowPreset
-      } & VersionedResponse>(response, 'Failed to save the slideshow preset.')
+      } & VersionedResponse>(response, 'Could not save the slideshow.')
       if (isNew) {
         setPresets(prev => [...prev, data.preset])
       } else {
@@ -337,7 +338,7 @@ export default function HeroSectionEditor() {
       setEditingImageIndex(null)
     } catch (err) {
       setHasConflict(err instanceof HeroSettingsRequestError && err.conflict)
-      setError(err instanceof Error ? err.message : 'Failed to save the slideshow preset.')
+      setError(err instanceof Error ? err.message : 'Could not save the slideshow. Try again.')
       throw err
     } finally {
       setSaving(false)
@@ -345,7 +346,7 @@ export default function HeroSectionEditor() {
   }
 
   const handleDeletePreset = async (presetId: string) => {
-    if (!confirm('Delete this preset?')) return
+    if (!confirm('Delete this slideshow?')) return
     setSaving(true)
     setError(null)
     setHasConflict(false)
@@ -358,14 +359,14 @@ export default function HeroSectionEditor() {
       })
       const data = await readResponse<VersionedResponse>(
         response,
-        'Failed to delete the slideshow preset.',
+        'Could not delete the slideshow.',
       )
       setPresets(prev => prev.filter(p => p.id !== presetId))
       setVersions(prev => ({ ...prev, presets: data.version }))
       setSourceOwners(prev => ({ ...prev, presets: data.sourceOwner }))
     } catch (err) {
       setHasConflict(err instanceof HeroSettingsRequestError && err.conflict)
-      setError(err instanceof Error ? err.message : 'Failed to delete the slideshow preset.')
+      setError(err instanceof Error ? err.message : 'Could not delete the slideshow. Try again.')
     } finally {
       setSaving(false)
     }
@@ -384,7 +385,7 @@ export default function HeroSectionEditor() {
       })
       const data = await readResponse<{
         assignments: SlideshowAssignments
-      } & VersionedResponse>(response, 'Failed to save slideshow assignments.')
+      } & VersionedResponse>(response, 'Could not save the slideshow choices.')
       setAssignments(data.assignments)
       setPublishedAssignments(cloneSnapshot(data.assignments))
       setVersions(prev => ({ ...prev, assignments: data.version }))
@@ -393,7 +394,7 @@ export default function HeroSectionEditor() {
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
       setHasConflict(err instanceof HeroSettingsRequestError && err.conflict)
-      setError(err instanceof Error ? err.message : 'Failed to save slideshow assignments.')
+      setError(err instanceof Error ? err.message : 'Could not save the slideshow choices. Try again.')
       throw err
     } finally {
       setSaving(false)
@@ -541,7 +542,7 @@ export default function HeroSectionEditor() {
 
   useDirtyBlock({
     id: 'website.hero.archway',
-    label: 'Hero archway images',
+    label: 'Homepage images',
     dirty: archwayDirty,
     save: saveSingleImage,
     discard: discardArchwayDraft,
@@ -549,7 +550,7 @@ export default function HeroSectionEditor() {
 
   useDirtyBlock({
     id: 'website.hero.assignments',
-    label: 'Hero slideshow assignments',
+    label: 'Slideshow choices by device',
     dirty: assignmentsDirty,
     save: saveAssignments,
     discard: discardAssignmentsDraft,
@@ -557,7 +558,7 @@ export default function HeroSectionEditor() {
 
   useDirtyBlock({
     id: 'website.hero.preset-editor',
-    label: 'Active hero slideshow preset',
+    label: 'Slideshow being edited',
     dirty: presetDirty,
     save: async () => {
       if (editingPreset) await savePreset(editingPreset)
@@ -603,19 +604,19 @@ export default function HeroSectionEditor() {
               <ImageIcon className="w-6 h-6 text-terracotta" />
             </div>
             <div className="min-w-0">
-              <h1 className="h2 text-dune">Hero Section</h1>
-              <p className="text-sm text-dune/60">Configure the above-the-fold arch image or slideshow</p>
+              <h1 className="h2 text-dune">Homepage image</h1>
+              <p className="text-sm text-dune/60">Edit the image or slideshow at the top of the homepage.</p>
             </div>
           </div>
           <div
             className="hidden sm:flex items-center gap-2 rounded-full border border-sage/20 bg-cream/70 px-3 py-1.5 text-xs text-dune/60"
-            aria-label={`Publishing source ${sourceOwners[activeSettingKey]}, version ${versions[activeSettingKey]}`}
+            aria-label={`Saved version ${versions[activeSettingKey]}`}
           >
             <span className="font-medium capitalize text-dune/80">
-              {sourceOwners[activeSettingKey].replace(/-/g, ' ')}
+              {websiteSettingSourceLabel(sourceOwners[activeSettingKey], versions[activeSettingKey])}
             </span>
             <span aria-hidden="true">·</span>
-            <span>Revision {versions[activeSettingKey]}</span>
+            <span>Version {versions[activeSettingKey]}</span>
           </div>
         </div>
       </motion.div>
@@ -637,7 +638,7 @@ export default function HeroSectionEditor() {
               {hasConflict
                 ? 'A newer revision is already published.'
                 : hasLoadError
-                  ? 'The hero settings could not be loaded.'
+                  ? 'The homepage image settings could not be loaded.'
                   : 'This change was not saved.'}
             </p>
             <p className="mt-0.5 text-sm text-dune/70">{error}</p>
@@ -732,8 +733,8 @@ export default function HeroSectionEditor() {
         onClose={() => setShowImagePicker(false)}
         onSelect={handleImageSelect}
         selectedAssetId={currentImage?.assetId}
-        title="Select Hero Image"
-        subtitle="Choose an image for the hero arch"
+        title="Choose homepage image"
+        subtitle="Choose an image for the top of the homepage"
       />
     </div>
   )
@@ -853,7 +854,7 @@ function SingleImageEditor({
         {/* Preview Panel */}
         <div className="glass min-w-0 rounded-lg border border-sage/20 p-4 sm:p-6">
           <h3 className="font-serif text-lg text-dune mb-4">
-            {activeDevice === 'desktop' ? 'Desktop' : 'Mobile'} Arch Preview
+            {activeDevice === 'desktop' ? 'Desktop' : 'Mobile'} preview
           </h3>
 
           <div className={`relative mx-auto ${activeDevice === 'desktop' ? 'aspect-[3/4] max-h-[500px]' : 'aspect-[9/16] max-h-[600px]'}`}>
@@ -868,7 +869,7 @@ function SingleImageEditor({
               {currentImage?.url ? (
                 <Image
                   src={currentImage.url}
-                  alt="Hero preview"
+                  alt="Homepage image preview"
                   fill
                   className="transition-[object-position] duration-300"
                   style={{
@@ -892,7 +893,7 @@ function SingleImageEditor({
             <div className="mt-6 space-y-4">
               <div className="flex items-center gap-2 text-sm text-dune/60">
                 <Move className="w-4 h-4" />
-                <span>Image Position</span>
+                <span>Image position</span>
               </div>
 
               <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
@@ -933,7 +934,7 @@ function SingleImageEditor({
                       : 'bg-cream/50 text-dune/60 border border-sage/20'
                   }`}
                 >
-                  Fill Arch
+                  Fill frame
                 </button>
                 <button
                   onClick={() => updateObjectFit('contain')}
@@ -943,7 +944,7 @@ function SingleImageEditor({
                       : 'bg-cream/50 text-dune/60 border border-sage/20'
                   }`}
                 >
-                  Fit Inside
+                  Show whole image
                 </button>
               </div>
             </div>
@@ -954,14 +955,14 @@ function SingleImageEditor({
         <div className="glass min-w-0 rounded-lg border border-sage/20 p-4 sm:p-6">
           <div className="mb-4 grid gap-3 sm:flex sm:items-center sm:justify-between">
             <h3 className="font-serif text-lg text-dune">
-              Select {activeDevice === 'desktop' ? 'Desktop' : 'Mobile'} Image
+              Choose {activeDevice === 'desktop' ? 'desktop' : 'mobile'} image
             </h3>
             <button
               onClick={() => openImagePicker(activeDevice)}
               className="btn btn-secondary w-full text-sm sm:w-auto"
             >
               <Folder className="w-4 h-4" />
-              Browse DAM
+              Choose from Media
             </button>
           </div>
 
@@ -970,16 +971,16 @@ function SingleImageEditor({
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-golden flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm text-dune font-medium">No hero images tagged yet</p>
+                  <p className="text-sm text-dune font-medium">No homepage images saved for quick access</p>
                   <p className="text-xs text-dune/60 mt-1">
-                    Click <strong>Browse DAM</strong> to pick any image.
+                    Choose an image from Media.
                   </p>
                 </div>
               </div>
             </div>
           ) : (
             <>
-              <p className="text-xs text-dune/50 mb-3">Quick picks (tagged with Website: Hero)</p>
+              <p className="text-xs text-dune/50 mb-3">Saved homepage images</p>
               <div className="grid grid-cols-2 gap-3">
                 {availableImages.filter(img => img.url).map((image) => (
                   <button
@@ -1015,25 +1016,25 @@ function SingleImageEditor({
           {currentImage && (
             <div className="mt-4 rounded-lg border border-sage/10 bg-sage/5 p-3">
               <p className="text-xs text-dune/60 mb-1">Currently selected for {activeDevice}</p>
-              <p className="text-sm text-dune font-medium truncate">{currentImage.fileName}</p>
+              <p className="truncate text-sm font-medium text-dune" title={currentImage.fileName}>{currentImage.fileName}</p>
             </div>
           )}
 
           {/* Status */}
           <div className="mt-6 pt-4 border-t border-sage/10">
-            <p className="text-xs text-dune/50 uppercase tracking-wider mb-3">Image Status</p>
+              <p className="text-xs text-dune/50 uppercase tracking-wider mb-3">Images in use</p>
             <div className="space-y-2">
               <div className="flex min-w-0 items-center gap-2">
                 <Monitor className="w-4 h-4 text-dune/40" />
                 <span className="text-sm text-dune/70">Desktop:</span>
-                <span className={`min-w-0 truncate text-sm ${desktopImage ? 'text-ocean-mist font-medium' : 'text-terracotta/70'}`}>
+                <span className={`min-w-0 truncate text-sm ${desktopImage ? 'text-ocean-mist font-medium' : 'text-terracotta/70'}`} title={desktopImage ? desktopImage.fileName : 'Not set (using default)'}>
                   {desktopImage ? desktopImage.fileName : 'Not set (using default)'}
                 </span>
               </div>
               <div className="flex min-w-0 items-center gap-2">
                 <Smartphone className="w-4 h-4 text-dune/40" />
                 <span className="text-sm text-dune/70">Mobile:</span>
-                <span className={`min-w-0 truncate text-sm ${mobileImage ? 'text-ocean-mist font-medium' : 'text-terracotta/70'}`}>
+                <span className={`min-w-0 truncate text-sm ${mobileImage ? 'text-ocean-mist font-medium' : 'text-terracotta/70'}`} title={mobileImage ? mobileImage.fileName : 'Not set (using default)'}>
                   {mobileImage ? mobileImage.fileName : 'Not set (using default)'}
                 </span>
               </div>
@@ -1104,7 +1105,7 @@ function SlideshowEditor({
             }`}
           >
             <Layers className="w-4 h-4" />
-            Presets
+            Saved
           </button>
           <button
             onClick={() => setSlideshowTab('editor')}
@@ -1115,7 +1116,7 @@ function SlideshowEditor({
             }`}
           >
             <Settings className="w-4 h-4" />
-            Editor
+            Edit
           </button>
           <button
             onClick={() => setSlideshowTab('assignments')}
@@ -1126,7 +1127,7 @@ function SlideshowEditor({
             }`}
           >
             <Monitor className="w-4 h-4" />
-            <span className="sm:hidden">Assign</span><span className="hidden sm:inline">Assignments</span>
+            <span className="sm:hidden">Use</span><span className="hidden sm:inline">Use by device</span>
           </button>
         </div>
       </div>
@@ -1191,17 +1192,17 @@ function PresetsList({ presets, onEdit, onDelete, onCreate }: PresetsListProps) 
       className="glass rounded-lg border border-sage/20 p-4 sm:p-6"
     >
       <div className="mb-6 grid gap-3 sm:flex sm:items-center sm:justify-between">
-        <h3 className="font-serif text-lg text-dune">Slideshow Presets</h3>
+        <h3 className="font-serif text-lg text-dune">Saved slideshows</h3>
         <button onClick={onCreate} className="btn btn-primary w-full text-sm sm:w-auto">
           <Plus className="w-4 h-4" />
-          New Preset
+          New slideshow
         </button>
       </div>
 
       {presets.length === 0 ? (
         <div className="p-8 text-center text-dune/50">
           <Layers className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>No presets yet. Create your first slideshow preset!</p>
+          <p>No slideshows saved.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -1281,7 +1282,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
         exit={{ opacity: 0 }}
         className="glass rounded-lg border border-sage/20 p-6 text-center sm:p-8"
       >
-        <p className="text-dune/50">Select a preset to edit or create a new one.</p>
+        <p className="text-dune/50">Choose a saved slideshow to edit, or create a new one.</p>
       </motion.div>
     )
   }
@@ -1305,7 +1306,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
       {/* Header */}
       <div className="grid gap-3 sm:flex sm:items-end sm:justify-between">
         <label className="block min-w-0 flex-1">
-          <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-dune/55">Preset name</span>
+          <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-dune/55">Slideshow name</span>
           <input
             type="text"
             value={preset.name}
@@ -1323,7 +1324,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
             className={`btn min-w-0 w-full text-sm sm:w-auto ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}
           >
             {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saved ? 'Saved!' : 'Save Preset'}
+            {saved ? 'Saved' : 'Save slideshow'}
           </button>
         </div>
       </div>
@@ -1335,14 +1336,14 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
             <h3 className="font-serif text-lg text-dune">Images</h3>
             <button onClick={() => openImagePicker()} className="btn btn-secondary w-full text-sm sm:w-auto">
               <Plus className="w-4 h-4" />
-              Add Image
+              Add image
             </button>
           </div>
 
           {preset.images.length === 0 ? (
             <div className="rounded-lg border border-dashed border-sage/20 p-6 text-center text-dune/50 sm:p-8">
               <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Add images to your slideshow</p>
+              <p className="text-sm">Add at least one image to this slideshow.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -1427,7 +1428,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
           <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
             <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              Timing
+              Slide timing
             </h3>
 
             <div className="space-y-4">
@@ -1440,13 +1441,13 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
                   })}
                   className="w-5 h-5 rounded border-sage/30 text-dusty-rose focus:ring-dusty-rose"
                 />
-                <span className="text-sm text-dune">Auto-advance slides</span>
+                <span className="text-sm text-dune">Move to the next slide automatically</span>
               </label>
 
               {preset.timing.autoAdvance && (
                 <div>
                   <label className="text-xs text-dune/50 uppercase tracking-wider">
-                    Interval: {preset.timing.interval / 1000}s
+                    Seconds between slides: {preset.timing.interval / 1000}
                   </label>
                   <input
                     type="range"
@@ -1471,7 +1472,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
                   })}
                   className="w-5 h-5 rounded border-sage/30 text-dusty-rose focus:ring-dusty-rose"
                 />
-                <span className="text-sm text-dune">Pause on hover</span>
+                <span className="text-sm text-dune">Pause while the pointer is over the slideshow</span>
               </label>
             </div>
           </div>
@@ -1493,7 +1494,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
                   })}
                   className="w-5 h-5 rounded border-sage/30 text-dusty-rose focus:ring-dusty-rose"
                 />
-                <span className="text-sm text-dune">Scroll wheel navigation</span>
+                <span className="text-sm text-dune">Let visitors change slides with a scroll wheel</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -1505,7 +1506,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
                   })}
                   className="w-5 h-5 rounded border-sage/30 text-dusty-rose focus:ring-dusty-rose"
                 />
-                <span className="text-sm text-dune">Swipe navigation (mobile)</span>
+                <span className="text-sm text-dune">Let visitors swipe on phones</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -1517,7 +1518,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
                   })}
                   className="w-5 h-5 rounded border-sage/30 text-dusty-rose focus:ring-dusty-rose"
                 />
-                <span className="text-sm text-dune">Show navigation dots</span>
+                <span className="text-sm text-dune">Show slide position dots</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -1529,7 +1530,7 @@ function PresetEditor({ preset, setPreset, onSave, onCancel, openImagePicker, sa
                   })}
                   className="w-5 h-5 rounded border-sage/30 text-dusty-rose focus:ring-dusty-rose"
                 />
-                <span className="text-sm text-dune">Loop slides</span>
+                <span className="text-sm text-dune">Return to the first slide after the last</span>
               </label>
             </div>
           </div>
@@ -1561,19 +1562,19 @@ function AssignmentsPanel({ presets, assignments, setAssignments, onSave, saving
       className="glass rounded-lg border border-sage/20 p-4 sm:p-6"
     >
       <div className="mb-6 grid gap-3 sm:flex sm:items-center sm:justify-between">
-        <h3 className="font-serif text-lg text-dune">Device Assignments</h3>
+        <h3 className="font-serif text-lg text-dune">Choose slideshow by device</h3>
         <button
           onClick={onSave}
           disabled={saving}
           className={`btn w-full text-sm sm:w-auto ${saved ? 'btn-secondary bg-ocean-mist/20 border-ocean-mist/30' : 'btn-primary'}`}
         >
           {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-          {saved ? 'Saved!' : 'Save Assignments'}
+          {saved ? 'Saved' : 'Save choices'}
         </button>
       </div>
 
       <p className="text-sm text-dune/60 mb-6">
-        Assign slideshow presets to desktop and mobile. If no preset is assigned, the single image setting will be used as a fallback.
+        Choose a slideshow for computers and phones. If you do not choose one, the homepage uses the single image.
       </p>
 
       <div className="space-y-6">
@@ -1638,19 +1639,19 @@ function AssignmentsPanel({ presets, assignments, setAssignments, onSave, saving
 
       {/* Current State Info */}
       <div className="mt-6 pt-4 border-t border-sage/10">
-        <p className="text-xs text-dune/50 uppercase tracking-wider mb-3">Current Configuration</p>
+        <p className="text-xs text-dune/50 uppercase tracking-wider mb-3">Current choices</p>
         <div className="space-y-2 text-sm text-dune/70">
           <p>
             <strong>Desktop:</strong> {assignments.desktop
               ? presets.find(p => p.id === assignments.desktop)?.name
-              : 'Single image fallback'}
+              : 'Single image'}
           </p>
           <p>
             <strong>Mobile:</strong> {assignments.mobileSameAsDesktop
               ? 'Same as desktop'
               : (assignments.mobile
                 ? presets.find(p => p.id === assignments.mobile)?.name
-                : 'Single image fallback')}
+                : 'Single image')}
           </p>
         </div>
       </div>

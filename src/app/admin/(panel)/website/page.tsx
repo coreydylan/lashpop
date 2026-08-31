@@ -3,11 +3,11 @@ import { ArrowRight, CheckCircle2, ExternalLink, Workflow } from 'lucide-react'
 import { ADMIN_AREAS, type ContentOwner } from '@/components/admin-shell/sections'
 
 const OWNER_COPY: Record<ContentOwner, string> = {
-  LashPop: 'Edited here and published directly by the studio.',
-  Vagaro: 'Core booking data syncs from Vagaro; presentation stays local.',
-  Automation: 'A worker keeps this current; admins configure the rules.',
-  System: 'Operational state and accountability, not public content.',
-  Mixed: 'Vagaro or automation owns the facts; LashPop owns selected presentation fields.',
+  LashPop: 'Edit and publish this content here.',
+  Vagaro: 'Booking details come from Vagaro. Edit how they appear here.',
+  Automation: 'This updates automatically. Change the rules here.',
+  System: 'View site activity and changes. This does not edit public content.',
+  Mixed: 'Booking details update automatically. Edit selected website text and images here.',
 }
 
 const OWNER_STYLE: Record<ContentOwner, string> = {
@@ -18,6 +18,14 @@ const OWNER_STYLE: Record<ContentOwner, string> = {
   Mixed: 'bg-[#8b748f]/10 text-[#654d6a] border-[#8b748f]/25',
 }
 
+const OWNER_LABEL: Record<ContentOwner, string> = {
+  LashPop: 'Edit here',
+  Vagaro: 'Edit in Vagaro',
+  Automation: 'Updates automatically',
+  System: 'View only',
+  Mixed: 'Vagaro and Admin',
+}
+
 export default function WebsiteOverviewPage() {
   const website = ADMIN_AREAS.find((area) => area.id === 'website')!
   const editors = website.sections.filter((section) => section.id !== 'website-home' && section.id !== 'service-launch')
@@ -26,9 +34,9 @@ export default function WebsiteOverviewPage() {
     <div className="space-y-6 sm:space-y-8">
       <header className="grid gap-4 border-b border-black/10 pb-5 sm:gap-6 sm:pb-7 lg:grid-cols-[1fr_22rem] lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Publishing workspace</p>
-          <h1 className="mt-1 max-w-3xl text-balance font-serif text-3xl leading-tight text-[#292a27] sm:mt-2 sm:text-4xl">Manage the public LashPop story.</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-black/60">Each editor below names its source of truth. Vagaro owns booking facts; LashPop owns how those facts are explained and presented.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Website</p>
+          <h1 className="mt-1 max-w-3xl text-balance font-serif text-3xl leading-tight text-[#292a27] sm:mt-2 sm:text-4xl">Edit the LashPop website</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-black/60">Choose a section to edit its text, images, or display rules. Booking details come from Vagaro.</p>
         </div>
         <div className="flex gap-2 lg:justify-end">
           <a href="/" target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">
@@ -41,11 +49,11 @@ export default function WebsiteOverviewPage() {
         <div className="grid gap-5 md:grid-cols-[auto_1fr_auto] md:items-center">
           <span className="hidden size-10 items-center justify-center rounded-md bg-[#292a27] text-white sm:flex"><Workflow className="size-5" aria-hidden="true" /></span>
           <div>
-            <h2 className="font-serif text-2xl">Launching or changing a service?</h2>
-            <p className="mt-1 text-sm leading-6 text-black/60">Use the guided workflow to verify Vagaro sync, booking order, homepage copy, stylist eligibility, imagery, and public presentation together.</p>
+            <h2 className="font-serif text-2xl">Add or update a service</h2>
+            <p className="mt-1 text-sm leading-6 text-black/60">Check the Vagaro booking details, website order, homepage text, eligible stylists, and images in one place.</p>
           </div>
           <Link href="/admin/workflows/service-launch" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">
-            Open workflow <ArrowRight className="size-4" />
+            Start service update <ArrowRight className="size-4" />
           </Link>
         </div>
       </section>
@@ -53,8 +61,8 @@ export default function WebsiteOverviewPage() {
       <section aria-labelledby="ownership-heading">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
-            <h2 id="ownership-heading" className="font-serif text-2xl">Publishing ownership</h2>
-            <p className="mt-1 text-sm text-black/55">Know what can safely be edited here and what will sync back in.</p>
+            <h2 id="ownership-heading" className="font-serif text-2xl">Choose what to edit</h2>
+            <p className="mt-1 text-sm text-black/55">Each section explains what you can change here and what comes from Vagaro.</p>
           </div>
           <CheckCircle2 className="hidden size-5 text-[#5f8174] sm:block" />
         </div>
@@ -69,7 +77,7 @@ export default function WebsiteOverviewPage() {
                   <span className="mt-1 line-clamp-2 text-xs leading-5 text-black/55">{OWNER_COPY[section.owner]}</span>
                   <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[#9f4c33] sm:mt-3">Open editor <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" /></span>
                 </span>
-                <span className={`rounded-md border px-2 py-1 text-[9px] font-semibold ${OWNER_STYLE[section.owner]}`}>{section.owner}</span>
+                <span className={`rounded-md border px-2 py-1 text-[9px] font-semibold ${OWNER_STYLE[section.owner]}`}>{OWNER_LABEL[section.owner]}</span>
               </Link>
             )
           })}

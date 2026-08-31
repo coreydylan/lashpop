@@ -622,6 +622,7 @@ export default function ServicesAdminPage() {
     return (
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={() => setImagePicker({
             isOpen: true,
             type,
@@ -630,6 +631,7 @@ export default function ServicesAdminPage() {
             currentAssetId: assetId
           })}
           disabled={isSaving}
+          aria-label={`Choose a Media image for ${itemName}`}
           className={clsx(
             dimensions,
             "rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 group relative",
@@ -662,6 +664,7 @@ export default function ServicesAdminPage() {
         </button>
         {asset && (
           <button
+            type="button"
             onClick={() => handleRemoveImage(type, itemId)}
             disabled={isSaving}
             className="p-1 rounded-md hover:bg-terracotta/10 text-terracotta/60 hover:text-terracotta transition-colors"
@@ -681,6 +684,7 @@ export default function ServicesAdminPage() {
     size: 'sm' | 'md' = 'md'
   ) => {
     const isSaving = saving === service.id
+    const imageControlledByVagaro = Boolean(service.vagaroImageUrl)
     const dimensions = size === 'sm' ? 'w-12 h-12' : 'w-16 h-16'
     const hasImage = !!service.resolvedImageUrl
 
@@ -688,11 +692,11 @@ export default function ServicesAdminPage() {
     const getSourceBadge = () => {
       switch (service.imageSource) {
         case 'dam':
-          return { label: 'DAM', className: 'bg-dusty-rose/20 text-dusty-rose border-dusty-rose/30' }
+          return { label: 'Media', className: 'bg-dusty-rose/20 text-dusty-rose border-dusty-rose/30' }
         case 'vagaro':
           return { label: 'Vagaro', className: 'bg-ocean-mist/20 text-ocean-mist border-ocean-mist/30' }
         case 'subcategory':
-          return { label: 'Subcategory', className: 'bg-sage/20 text-sage border-sage/30' }
+          return { label: 'Service group', className: 'bg-sage/20 text-sage border-sage/30' }
         default:
           return null
       }
@@ -710,10 +714,12 @@ export default function ServicesAdminPage() {
             serviceName: service.name,
             currentAssetId: service.keyImageAssetId
           })}
-          disabled={isSaving}
+          disabled={isSaving || imageControlledByVagaro}
+          aria-label={imageControlledByVagaro ? `${service.name} image is managed in Vagaro` : `Choose a Media image for ${service.name}`}
+          title={imageControlledByVagaro ? 'Change this service image in Vagaro.' : 'Choose a Media image.'}
           className={clsx(
             dimensions,
-            "rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 group relative",
+            "rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 group relative disabled:cursor-not-allowed",
             hasImage
               ? service.imageSource === 'dam'
                 ? "border-dusty-rose/30 hover:border-dusty-rose"
@@ -762,9 +768,9 @@ export default function ServicesAdminPage() {
               onClick={() => handleResetToVagaro(service.id, service.vagaroImageUrl)}
               disabled={isSaving}
               className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-ocean-mist/10 text-ocean-mist hover:bg-ocean-mist/20 transition-colors whitespace-nowrap"
-              title="Reset to Vagaro image"
+              title="Use the image from Vagaro"
             >
-              Reset
+              Use Vagaro
             </button>
           )}
 
@@ -774,7 +780,8 @@ export default function ServicesAdminPage() {
               onClick={() => handleRemoveImage('service', service.id)}
               disabled={isSaving}
               className="p-0.5 rounded hover:bg-terracotta/10 text-terracotta/40 hover:text-terracotta transition-colors"
-              title="Remove DAM override"
+              title="Remove custom image"
+              aria-label={`Remove custom image from ${service.name}`}
             >
               <X className="w-3 h-3" />
             </button>
@@ -808,7 +815,7 @@ export default function ServicesAdminPage() {
         ) : (
           <>
             <Unlink className="w-3 h-3 text-sage/40" />
-            <span className="text-[10px] text-sage/40">No sync</span>
+            <span className="text-[10px] text-sage/40">Not linked</span>
           </>
         )}
       </div>
@@ -837,7 +844,7 @@ export default function ServicesAdminPage() {
               <Layers className="w-6 h-6 text-ocean-mist" />
             </div>
             <div className="min-w-0">
-              <h1 className="h2 text-dune">Services Manager</h1>
+              <h1 className="h2 text-dune">Services and booking</h1>
               <p className="text-sm text-dune/60">
                 {services.length} services across {categories.length} categories
               </p>
@@ -845,7 +852,7 @@ export default function ServicesAdminPage() {
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
             <NextLink href="/admin/workflows/service-launch" className="btn btn-primary w-full sm:w-auto">
-              <span className="sm:hidden">Edit services</span><span className="hidden sm:inline">Add or update a service</span>
+              <span className="sm:hidden">Edit services</span><span className="hidden sm:inline">Add or update service</span>
             </NextLink>
             <button
               onClick={fetchData}
@@ -881,7 +888,7 @@ export default function ServicesAdminPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search services..."
+              placeholder="Search services…"
               className="w-full rounded-lg border border-sage/20 bg-cream py-2 pl-10 pr-4 text-sm text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
             />
           </div>
@@ -899,7 +906,7 @@ export default function ServicesAdminPage() {
                     : "text-dune/60 hover:text-dune"
                 )}
               >
-                {mode === 'categories' ? <><span className="sm:hidden">Categories</span><span className="hidden sm:inline">By Category</span></> : mode === 'services' ? <><span className="sm:hidden">List</span><span className="hidden sm:inline">List View</span></> : 'All'}
+                {mode === 'categories' ? <><span className="sm:hidden">Categories</span><span className="hidden sm:inline">By category</span></> : mode === 'services' ? 'List' : 'All'}
               </button>
             ))}
           </div>
@@ -916,7 +923,7 @@ export default function ServicesAdminPage() {
               )}
             >
               <ImageIcon className="w-3 h-3" />
-              Has Image
+              With custom image
             </button>
           </div>
         </div>
@@ -936,7 +943,7 @@ export default function ServicesAdminPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-dune">{services.length}</p>
-              <p className="text-xs text-dune/60">Total Services</p>
+              <p className="text-xs text-dune/60">All services</p>
             </div>
           </div>
         </div>
@@ -949,7 +956,7 @@ export default function ServicesAdminPage() {
               <p className="text-2xl font-semibold text-dune">
                 {services.filter(s => s.imageSource === 'dam').length}
               </p>
-              <p className="text-xs text-dune/60">DAM Overrides</p>
+              <p className="text-xs text-dune/60">Custom images</p>
             </div>
           </div>
         </div>
@@ -962,7 +969,7 @@ export default function ServicesAdminPage() {
               <p className="text-2xl font-semibold text-dune">
                 {services.filter(s => s.vagaroImageUrl).length}
               </p>
-              <p className="text-xs text-dune/60">Vagaro Images</p>
+              <p className="text-xs text-dune/60">Images from Vagaro</p>
             </div>
           </div>
         </div>
@@ -975,7 +982,7 @@ export default function ServicesAdminPage() {
               <p className="text-2xl font-semibold text-dune">
                 {services.filter(s => s.vagaroServiceId || s.vagaroServiceCode).length}
               </p>
-              <p className="text-xs text-dune/60">Vagaro Linked</p>
+              <p className="text-xs text-dune/60">Linked to Vagaro</p>
             </div>
           </div>
         </div>
@@ -1020,7 +1027,7 @@ export default function ServicesAdminPage() {
                   >
                     <h3 className="font-medium text-dune">{category.name}</h3>
                     <p className="text-xs text-dune/60">
-                      {serviceCount} services in {category.subcategories.length} subcategories
+                      {serviceCount} services in {category.subcategories.length} service groups
                     </p>
                   </button>
 
@@ -1038,7 +1045,8 @@ export default function ServicesAdminPage() {
                           })
                         }}
                         className="flex size-11 items-center justify-center rounded-md text-ocean-mist/60 transition-colors hover:bg-ocean-mist/10 hover:text-ocean-mist"
-                        title="Reorder subcategories"
+                        title="Reorder service groups"
+                        aria-label={`Reorder service groups in ${category.name}`}
                       >
                         <ArrowUpDown className="w-4 h-4" />
                       </button>
@@ -1058,7 +1066,8 @@ export default function ServicesAdminPage() {
                         })
                       }}
                       className="flex size-11 items-center justify-center rounded-md text-dusty-rose/60 transition-colors hover:bg-dusty-rose/10 hover:text-dusty-rose"
-                      title="Edit category content"
+                      title="Edit website details for this category"
+                      aria-label={`Edit website details for ${category.name}`}
                     >
                       <Edit3 className="w-4 h-4" />
                     </button>
@@ -1152,8 +1161,8 @@ export default function ServicesAdminPage() {
                                           <NextLink
                                             href={`/admin/website/services/${service.id}`}
                                             className="p-1.5 rounded-md hover:bg-dusty-rose/10 text-dusty-rose/60 hover:text-dusty-rose transition-colors"
-                                            title={`Edit customer-facing copy for ${service.name}`}
-                                            aria-label={`Edit customer-facing copy for ${service.name}`}
+                                            title={`Edit website copy for ${service.name}`}
+                                            aria-label={`Edit website copy for ${service.name}`}
                                           >
                                             <Edit3 className="w-3.5 h-3.5" />
                                           </NextLink>
@@ -1171,7 +1180,8 @@ export default function ServicesAdminPage() {
                                               })
                                             }}
                                             className="p-1.5 rounded-md hover:bg-ocean-mist/10 text-ocean-mist/50 hover:text-ocean-mist transition-colors"
-                                            title="Change subcategory"
+                                            title="Change service group"
+                                            aria-label={`Change service group for ${service.name}`}
                                           >
                                             <FolderOpen className="w-3.5 h-3.5" />
                                           </button>
@@ -1189,7 +1199,7 @@ export default function ServicesAdminPage() {
                         {/* Uncategorized Services */}
                         {uncategorizedServices.length > 0 && (
                           <div className="bg-cream/50 px-3 py-3 sm:px-8">
-                            <p className="text-xs text-dune/40 mb-2">Uncategorized</p>
+                            <p className="text-xs text-dune/40 mb-2">No service group</p>
                             <div className="space-y-1">
                               {uncategorizedServices.map(service => (
                                 <div
@@ -1198,8 +1208,16 @@ export default function ServicesAdminPage() {
                                 >
                                   {renderServiceImageCell(service, 'sm')}
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-dune truncate">{service.name}</p>
+                                    <p className="text-sm font-medium text-dune truncate" title={service.name}>{service.name}</p>
                                   </div>
+                                  <NextLink
+                                    href={`/admin/website/services/${service.id}`}
+                                    className="p-1.5 rounded-md hover:bg-dusty-rose/10 text-dusty-rose/60 hover:text-dusty-rose transition-colors"
+                                    title={`Edit website copy for ${service.name}`}
+                                    aria-label={`Edit website copy for ${service.name}`}
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </NextLink>
                                   {/* Change Subcategory Button */}
                                   <button
                                     onClick={(e) => {
@@ -1213,7 +1231,8 @@ export default function ServicesAdminPage() {
                                       })
                                     }}
                                     className="p-1.5 rounded-md hover:bg-ocean-mist/10 text-ocean-mist/50 hover:text-ocean-mist transition-colors"
-                                    title="Assign to subcategory"
+                                    title="Choose service group"
+                                    aria-label={`Choose service group for ${service.name}`}
                                   >
                                     <FolderOpen className="w-3.5 h-3.5" />
                                   </button>
@@ -1238,7 +1257,7 @@ export default function ServicesAdminPage() {
                   <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider">Image</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider">Service</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider hidden md:table-cell">Category</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider hidden lg:table-cell">Details</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider hidden lg:table-cell">Price and duration</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-dune/60 uppercase tracking-wider hidden lg:table-cell">Vagaro</th>
                 </tr>
               </thead>
@@ -1290,7 +1309,7 @@ export default function ServicesAdminPage() {
 
             {filteredServices.length === 0 && (
               <div className="p-8 text-center">
-                <p className="text-sm text-dune/60">No services found matching your filters</p>
+                <p className="text-sm text-dune/60">No services match your search or filters.</p>
               </div>
             )}
           </div>
@@ -1304,19 +1323,19 @@ export default function ServicesAdminPage() {
         transition={{ delay: 0.4 }}
         className="mt-10 rounded-lg border border-sage/15 bg-cream/60 p-4 sm:p-6"
       >
-        <h3 className="font-serif text-lg text-dune mb-3">Quick Tips</h3>
+        <h3 className="font-serif text-lg text-dune mb-3">How service images are chosen</h3>
         <ul className="space-y-2 text-sm text-dune/70">
           <li className="flex items-start gap-2">
             <span className="text-ocean-mist">&#8226;</span>
-            <span><strong>Vagaro Images</strong> (blue badge) are automatically synced from your Vagaro account.</span>
+            <span><strong>Vagaro images</strong> update from the service&apos;s Vagaro record.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-dusty-rose">&#8226;</span>
-            <span><strong>DAM Overrides</strong> (pink badge) let you replace the Vagaro image with a custom DAM image. Click &quot;Reset&quot; to revert.</span>
+            <span><strong>Media images</strong> are used only when the service has no Vagaro image.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-sage">&#8226;</span>
-            <span><strong>Image Priority:</strong> DAM override → Vagaro image → Subcategory fallback.</span>
+            <span><strong>The website uses:</strong> the Vagaro image first, then a Media image, then the service group image.</span>
           </li>
         </ul>
       </motion.div>
@@ -1327,8 +1346,8 @@ export default function ServicesAdminPage() {
         onClose={() => setImagePicker(null)}
         onSelect={handleImageSelect}
         selectedAssetId={imagePicker?.currentAssetId}
-        title={`Select Image for ${imagePicker?.itemName || 'Item'}`}
-        subtitle="Choose a key image from your media library"
+        title={`Choose image for ${imagePicker?.itemName || 'item'}`}
+        subtitle="Choose an image from your media library"
       />
 
       {/* Service Hero Image Picker (two-tier: service-tagged first, then all) */}
@@ -1375,7 +1394,7 @@ export default function ServicesAdminPage() {
                     <FileText className="w-5 h-5 text-dusty-rose" />
                   </div>
                   <div>
-                    <h2 className="font-serif text-xl text-dune">Edit Category Content</h2>
+                    <h2 className="font-serif text-xl text-dune">Edit category details</h2>
                     <p className="text-sm text-dune/60">{categoryContentEditor.categoryName}</p>
                   </div>
                 </div>
@@ -1392,7 +1411,7 @@ export default function ServicesAdminPage() {
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-dune mb-2">
                     <Type className="w-4 h-4 text-dusty-rose" />
-                    Customer-facing label
+                    Website category name
                   </label>
                   <input
                     type="text"
@@ -1405,7 +1424,7 @@ export default function ServicesAdminPage() {
                     className="w-full px-4 py-3 rounded-xl bg-cream/50 border border-sage/20 text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
                   />
                   <p className="mt-1 text-xs text-dune/50">
-                    LashPop owns this label. Vagaro can rename its source category without overwriting it.
+                    This name is saved in LashPop and will not change if the Vagaro category name changes.
                   </p>
                 </div>
 
@@ -1425,7 +1444,7 @@ export default function ServicesAdminPage() {
                     placeholder="e.g., Wake up ready."
                     className="w-full px-4 py-3 rounded-xl bg-cream/50 border border-sage/20 text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
                   />
-                  <p className="mt-1 text-xs text-dune/50">Short, catchy phrase shown on the landing page (e.g., &quot;Wake up ready.&quot;)</p>
+                  <p className="mt-1 text-xs text-dune/50">Short line shown on the service landing page, for example “Wake up ready.”</p>
                 </div>
 
                 {/* Description */}
@@ -1440,18 +1459,18 @@ export default function ServicesAdminPage() {
                       ...categoryContentEditor,
                       description: e.target.value
                     })}
-                    placeholder="Describe what makes this category special..."
+                    placeholder="Describe this service category…"
                     rows={4}
                     className="w-full px-4 py-3 rounded-xl bg-cream/50 border border-sage/20 text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30 resize-none"
                   />
-                  <p className="mt-1 text-xs text-dune/50">Longer description shown on the landing page service cards</p>
+                  <p className="mt-1 text-xs text-dune/50">Shown on this category&apos;s service cards.</p>
                 </div>
 
                 {/* Icon URL */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-dune mb-2">
                     <ImageIcon className="w-4 h-4 text-dusty-rose" />
-                    Icon Path
+                    Icon (website manager only)
                   </label>
                   <input
                     type="text"
@@ -1463,13 +1482,13 @@ export default function ServicesAdminPage() {
                     placeholder="/lashpop-images/services/lashes-icon.svg"
                     className="w-full px-4 py-3 rounded-xl bg-cream/50 border border-sage/20 text-dune placeholder:text-dune/40 focus:outline-none focus:ring-2 focus:ring-dusty-rose/30"
                   />
-                  <p className="mt-1 text-xs text-dune/50">Path to the SVG icon used on the landing page (e.g., /lashpop-images/services/lashes-icon.svg)</p>
+                  <p className="mt-1 text-xs text-dune/50">Use an approved website icon.</p>
                 </div>
 
                 {/* Preview */}
                 {categoryContentEditor.icon && (
                   <div className="p-4 rounded-xl bg-cream/50 border border-sage/10">
-                    <p className="text-xs text-dune/50 uppercase tracking-wider mb-3">Icon Preview</p>
+                    <p className="text-xs text-dune/50 uppercase tracking-wider mb-3">Icon preview</p>
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-8 relative">
                         <Image
@@ -1533,12 +1552,12 @@ export default function ServicesAdminPage() {
                   {saving === categoryContentEditor.categoryId ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      Saving...
+                      Saving…
                     </>
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      Save Changes
+                      Save changes
                     </>
                   )}
                 </button>
@@ -1577,7 +1596,7 @@ export default function ServicesAdminPage() {
                     <ArrowUpDown className="w-5 h-5 text-ocean-mist" />
                   </div>
                   <div>
-                    <h2 className="font-serif text-xl text-dune">Reorder Subcategories</h2>
+                    <h2 className="font-serif text-xl text-dune">Reorder service groups</h2>
                     <p className="text-sm text-dune/60">{subcategoryReorder.categoryName}</p>
                   </div>
                 </div>
@@ -1592,7 +1611,7 @@ export default function ServicesAdminPage() {
               {/* Content */}
               <div className="p-4 sm:p-6">
                 <p className="text-sm text-dune/60 mb-4">
-                  Drag items or use arrows to reorder. This order will be reflected in the service browser tabs.
+                  Drag the groups or use the arrows. The website service tabs will use this order.
                 </p>
 
                 <div className="space-y-2">
@@ -1673,12 +1692,12 @@ export default function ServicesAdminPage() {
                   {saving === subcategoryReorder.categoryId ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      Saving...
+                      Saving…
                     </>
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      Save Order
+                      Save order
                     </>
                   )}
                 </button>
@@ -1717,7 +1736,7 @@ export default function ServicesAdminPage() {
                     <FolderOpen className="w-5 h-5 text-ocean-mist" />
                   </div>
                   <div>
-                    <h2 className="font-serif text-xl text-dune">Change Subcategory</h2>
+                    <h2 className="font-serif text-xl text-dune">Change service group</h2>
                     <p className="text-sm text-dune/60 truncate max-w-[250px]">{serviceSubcatEditor.serviceName}</p>
                   </div>
                 </div>
@@ -1732,7 +1751,7 @@ export default function ServicesAdminPage() {
               {/* Content */}
               <div className="p-4 sm:p-6">
                 <p className="text-sm text-dune/60 mb-4">
-                  Select which subcategory this service should appear under in the service browser.
+                  Choose the group where this service will appear on the website.
                 </p>
 
                 {/* Grouped subcategories by category */}
@@ -1794,7 +1813,7 @@ export default function ServicesAdminPage() {
                 {saving === serviceSubcatEditor.serviceId && (
                   <div className="flex items-center gap-2 text-sm text-ocean-mist">
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    Saving...
+                    Saving…
                   </div>
                 )}
               </div>

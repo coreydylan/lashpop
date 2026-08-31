@@ -9,7 +9,7 @@ import { FounderLetterEditor } from './FounderLetterEditor'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Founder Letter — LashPop Admin',
+  title: 'Founder letter — LashPop Admin',
 }
 
 export default async function FounderLetterPage() {

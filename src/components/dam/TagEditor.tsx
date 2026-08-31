@@ -308,11 +308,11 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
         <div className="px-6 pt-6 pb-4 border-b border-sage/10">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-dune">Tag & Category Editor</h2>
+              <h2 className="text-lg font-semibold text-dune">Manage tags and categories</h2>
               <p className="text-sm text-sage/70 mt-1">
                 {selectedItems.size > 0
                   ? `${selectedItems.size} selected • Press Delete to remove`
-                  : "Click to select • Double-click to edit • Drag to reorder"}
+                  : "Select an item • Double-click to edit • Drag to reorder"}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -321,7 +321,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                 className="flex items-center gap-2 px-4 py-2 bg-dusty-rose text-white rounded-full text-sm font-medium hover:bg-dusty-rose/90 transition"
               >
                 <Save className="w-4 h-4" />
-                Save Changes
+                Save changes
               </button>
               <button
                 onClick={onClose}
@@ -339,7 +339,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
               ref={searchInputRef}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search categories and tags..."
+              placeholder="Search categories and tags…"
               className="flex-1 bg-transparent outline-none text-sm placeholder:text-sage/60"
             />
             {searchQuery && (
@@ -422,9 +422,9 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                       category.selectionMode === 'limited' && "bg-blue-100 text-blue-700",
                       (!category.selectionMode || category.selectionMode === 'multi') && "bg-green-100 text-green-700"
                     )}>
-                      {category.selectionMode === 'single' ? 'Single' :
+                      {category.selectionMode === 'single' ? 'One' :
                        category.selectionMode === 'limited' ? `Max ${category.selectionLimit || 3}` :
-                       'Multi'}
+                       'Any number'}
                     </span>
                   </div>
                 )}
@@ -443,7 +443,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                       "p-1.5 rounded transition",
                       settingsOpenFor === category.id ? "bg-sage/20" : "hover:bg-sage/10"
                     )}
-                    title="Selection mode settings"
+                    title="Choose how many tags people can select"
                   >
                     <Settings className="w-3.5 h-3.5 text-sage/70" />
                   </button>
@@ -454,7 +454,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="px-3 py-2 border-b border-sage/10">
-                        <span className="text-xs font-semibold text-sage uppercase tracking-wide">Selection Mode</span>
+                        <span className="text-xs font-semibold text-sage uppercase tracking-wide">Tags allowed</span>
                       </div>
                       <button
                         onClick={() => {
@@ -466,7 +466,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                           (!category.selectionMode || category.selectionMode === 'multi') && "bg-green-50"
                         )}
                       >
-                        <span>Multi (unlimited)</span>
+                        <span>Any number</span>
                         {(!category.selectionMode || category.selectionMode === 'multi') && (
                           <Check className="w-4 h-4 text-green-600" />
                         )}
@@ -481,7 +481,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                           category.selectionMode === 'single' && "bg-amber-50"
                         )}
                       >
-                        <span>Single (one only)</span>
+                        <span>One tag</span>
                         {category.selectionMode === 'single' && (
                           <Check className="w-4 h-4 text-amber-600" />
                         )}
@@ -496,14 +496,14 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                           category.selectionMode === 'limited' && "bg-blue-50"
                         )}
                       >
-                        <span>Limited (max {category.selectionLimit || 3})</span>
+                        <span>Up to {category.selectionLimit || 3} tags</span>
                         {category.selectionMode === 'limited' && (
                           <Check className="w-4 h-4 text-blue-600" />
                         )}
                       </button>
                       {category.selectionMode === 'limited' && (
                         <div className="px-3 py-2 border-t border-sage/10">
-                          <label className="text-xs text-sage block mb-1">Max tags:</label>
+                          <label className="text-xs text-sage block mb-1">Maximum tags</label>
                           <input
                             type="number"
                             min="1"
@@ -603,7 +603,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                           }}
                         >
                           {isServiceLinked ? (
-                            <span title="Linked to service">
+                            <span title="Managed in Services">
                               <Link className="w-3.5 h-3.5 text-purple-400" />
                             </span>
                           ) : (
@@ -642,7 +642,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
 
                           <div className="flex items-center gap-1">
                             {isServiceLinked && (
-                              <span className="text-xs text-purple-400 mr-1" title="Synced from services">
+                              <span className="text-xs text-purple-400 mr-1" title="Updated from Services">
                                 <Lock className="w-3 h-3 inline" />
                               </span>
                             )}
@@ -701,7 +701,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
                               }}
                             >
                               {isChildServiceLinked ? (
-                                <span title="Linked to service">
+                                <span title="Managed in Services">
                                   <Link className="w-3.5 h-3.5 text-purple-400" />
                                 </span>
                               ) : (
@@ -712,7 +712,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
 
                               <div className="flex items-center gap-1">
                                 {isChildServiceLinked && (
-                                  <span className="text-xs text-purple-400" title="Synced from services">
+                                  <span className="text-xs text-purple-400" title="Updated from Services">
                                     <Lock className="w-3 h-3 inline" />
                                   </span>
                                 )}
@@ -737,7 +737,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
             className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-sage/30 text-sage/70 hover:border-dusty-rose/40 hover:text-dusty-rose hover:bg-dusty-rose/5 transition"
           >
             <Plus className="w-4 h-4" />
-            <span className="text-sm font-medium">Add New Category</span>
+            <span className="text-sm font-medium">Add category</span>
           </button>
         </div>
 
@@ -755,7 +755,7 @@ export function TagEditor({ categories, onSave, onClose }: TagEditorProps) {
               className="flex items-center gap-2 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-full text-sm transition"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Delete Selected
+              Delete selected
             </button>
           )}
         </div>

@@ -26,7 +26,7 @@ export function AdminActionBar() {
     : activeOperation === 'discarding'
       ? `Discarding ${dirtyCount} ${dirtyCount === 1 ? 'change' : 'changes'}…`
       : errorCount > 0
-        ? `${errorCount} ${errorCount === 1 ? 'change needs' : 'changes need'} attention`
+        ? `${errorCount} ${errorCount === 1 ? 'change could' : 'changes could'} not be saved`
         : `${dirtyCount} unsaved ${dirtyCount === 1 ? 'change' : 'changes'}`
 
   return (
@@ -66,7 +66,7 @@ export function AdminActionBar() {
               className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-white/15 px-4 text-sm font-semibold text-white/75 hover:border-white/30 hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] disabled:cursor-not-allowed disabled:opacity-40 sm:flex-none"
             >
               <Trash2 className="size-4" aria-hidden="true" />
-              Discard
+              Discard changes
             </button>
             <button
               type="button"
@@ -77,7 +77,7 @@ export function AdminActionBar() {
               {activeOperation === 'saving'
                 ? <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
                 : <Save className="size-4" aria-hidden="true" />}
-              Save all
+              Save changes
             </button>
           </div>
         </div>

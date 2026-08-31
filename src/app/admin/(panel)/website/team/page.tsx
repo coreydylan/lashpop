@@ -323,11 +323,11 @@ export default function TeamManagerPage() {
         setTimeout(() => setSaved(false), 2000)
       } else {
         const data = await response.json()
-        alert(`Failed to save: ${data.error}`)
+        alert(`Could not save team changes: ${data.error}`)
       }
     } catch (error) {
       console.error('Error saving team settings:', error)
-      alert('Failed to save changes')
+      alert('Could not save team changes. Try again.')
     } finally {
       setSaving(false)
     }
@@ -342,15 +342,18 @@ export default function TeamManagerPage() {
     try {
       const response = await fetch('/api/admin/website/team/sync', { method: 'POST' })
       const data = await response.json().catch(() => ({}))
-      if (response.ok) {
+      if (data?.partial) {
+        setSyncMessage('Vagaro update completed with issues. Open Vagaro sync to see which step failed.')
+        await fetchTeamMembers()
+      } else if (response.ok && data?.success !== false) {
         setSyncMessage('Synced from Vagaro')
         await fetchTeamMembers()
       } else {
-        setSyncMessage(`Sync failed: ${data.error || response.statusText}`)
+        setSyncMessage(`Could not update from Vagaro: ${data.error || response.statusText}`)
       }
     } catch (error) {
       console.error('Error syncing from Vagaro:', error)
-      setSyncMessage('Sync failed — could not reach the sync worker')
+      setSyncMessage('Could not update from Vagaro. Try again.')
     } finally {
       setSyncing(false)
       setTimeout(() => setSyncMessage(null), 5000)
@@ -372,11 +375,11 @@ export default function TeamManagerPage() {
         ))
       } else {
         const data = await response.json()
-        alert(`Failed to update: ${data.error}`)
+        alert(`Could not update service categories: ${data.error}`)
       }
     } catch (error) {
       console.error('Error updating external categories:', error)
-      alert('Failed to update categories')
+      alert('Could not update service categories. Try again.')
     }
   }
 
@@ -423,15 +426,15 @@ export default function TeamManagerPage() {
               <Users className="w-6 h-6 text-ocean-mist" />
             </div>
             <div className="min-w-0">
-              <h1 className="h2 text-dune">Team Members</h1>
+              <h1 className="h2 text-dune">Team members</h1>
               <p className="text-sm text-dune/60">
-                {visibleCount} of {sourceActiveCount} active profiles visible on website
+                {visibleCount} of {sourceActiveCount} active profiles shown on the website
               </p>
             </div>
           </div>
           <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:max-w-xl sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
             {syncMessage && (
-              <span className={`col-span-2 text-sm sm:w-full sm:text-right ${syncMessage.startsWith('Sync failed') ? 'text-red-600' : 'text-ocean-mist'}`}>
+              <span role={syncMessage.startsWith('Could not') ? 'alert' : 'status'} aria-live={syncMessage.startsWith('Could not') ? 'assertive' : 'polite'} className={`col-span-2 text-sm sm:w-full sm:text-right ${syncMessage.startsWith('Could not') ? 'text-red-600' : syncMessage.includes('issues') ? 'text-amber-700' : 'text-ocean-mist'}`}>
                 {syncMessage}
               </span>
             )}
@@ -439,7 +442,7 @@ export default function TeamManagerPage() {
               onClick={handleSyncFromVagaro}
               className="btn btn-secondary min-w-0 w-full sm:w-auto"
               disabled={syncing}
-              title="Pull the latest photos, bios, and services from Vagaro now"
+              title="Get the latest photos, bios, and service assignments from Vagaro"
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Syncing…' : <><span className="sm:hidden">Sync</span><span className="hidden sm:inline">Sync from Vagaro</span></>}
@@ -457,7 +460,7 @@ export default function TeamManagerPage() {
               value={publicationReason}
               onChange={(event) => setPublicationReason(event.target.value)}
               maxLength={MAX_PUBLICATION_REASON_LENGTH}
-              placeholder="Why (optional, saved with the change)"
+              placeholder="Reason for change (optional)"
               className="col-span-2 min-w-0 w-full rounded-lg border border-sage/20 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40 sm:w-64"
               aria-label="Reason for this publication change"
             />
@@ -473,7 +476,7 @@ export default function TeamManagerPage() {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              {saved ? 'Saved!' : hasChanges ? 'Save Changes' : 'Saved'}
+              {saved ? 'Saved' : hasChanges ? 'Save changes' : 'Saved'}
             </button>
           </div>
         </div>
@@ -490,17 +493,17 @@ export default function TeamManagerPage() {
       >
         <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-dune">{teamMembers.length}</div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Total</div>
+          <div className="text-xs text-dune/50 uppercase tracking-wider">All profiles</div>
         </div>
         <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-ocean-mist">{visibleCount}</div>
-          <div className="text-xs text-dune/50 uppercase tracking-wider">Visible</div>
+          <div className="text-xs text-dune/50 uppercase tracking-wider">Shown</div>
         </div>
         <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-dune">
             {teamMembers.filter(m => m.vagaroEmployeeId).length}
           </div>
-          <div className="text-[10px] text-dune/50 uppercase tracking-wide sm:text-xs sm:tracking-wider">Vagaro Linked</div>
+          <div className="text-[10px] text-dune/50 uppercase tracking-wide sm:text-xs sm:tracking-wider">Linked to Vagaro</div>
         </div>
       </motion.div>
 
@@ -512,9 +515,8 @@ export default function TeamManagerPage() {
         className="mb-6 rounded-lg border border-ocean-mist/20 bg-ocean-mist/10 p-4"
       >
         <p className="text-sm text-dune/70">
-          <strong>Drag to reorder</strong> team members. The eye controls website publication only;
-          Vagaro sync controls whether a provider is active. New Vagaro providers stay hidden until reviewed.
-          Changes are saved when you click &quot;Save Changes&quot;.
+          Drag team members to change their website order. Show or hide a profile without changing the stylist&apos;s Vagaro status.
+          New Vagaro profiles stay hidden until you review and show them. Select Save changes when you finish.
         </p>
       </motion.div>
 
@@ -528,7 +530,7 @@ export default function TeamManagerPage() {
         {teamMembers.length === 0 ? (
           <div className="p-12 text-center">
             <AlertCircle className="w-12 h-12 text-dune/30 mx-auto mb-4" />
-            <p className="text-dune/60">No team members found</p>
+            <p className="text-dune/60">No team profiles found.</p>
           </div>
         ) : (
           <Reorder.Group 
@@ -655,16 +657,14 @@ export default function TeamManagerPage() {
                           <Lock className="w-3.5 h-3.5 flex-shrink-0" />
                           {member.usesLashpopBooking ? (
                             <span>
-                              <strong>Vagaro-synced stylist.</strong> Photo, bio, and service tags
-                              are pulled from Vagaro on every sync — edit them in Vagaro, not here.
+                              <strong>Updated from Vagaro.</strong> Change this stylist&apos;s photo, bio, and service assignments in Vagaro, then update this page.
                               {member.lastSyncedAt && (
                                 <> Last sync: {new Date(member.lastSyncedAt).toLocaleString()}.</>
                               )}
                             </span>
                           ) : (
                             <span>
-                              <strong>External-booking stylist.</strong> Vagaro sync is disabled
-                              for this row — all fields (photo, bio, categories) are admin-entered.
+                              <strong>Managed in Admin.</strong> This profile does not update from Vagaro. Edit the photo, bio, and service categories here.
                             </span>
                           )}
                         </div>
@@ -674,10 +674,10 @@ export default function TeamManagerPage() {
                           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium flex items-center gap-2">
                               <Users className="w-3.5 h-3.5" />
-                              Profile Image
+                              Profile photo
                               {member.usesLashpopBooking && (
                                 <span className="inline-flex items-center gap-1 text-[10px] text-dusty-rose normal-case tracking-normal font-normal">
-                                  <Lock className="w-2.5 h-2.5" /> synced from Vagaro
+                                  <Lock className="w-2.5 h-2.5" /> updated from Vagaro
                                 </span>
                               )}
                             </h4>
@@ -689,10 +689,10 @@ export default function TeamManagerPage() {
                                   ? 'bg-sage/10 text-dune/30 cursor-not-allowed'
                                   : 'bg-golden/20 text-golden hover:bg-golden/30'
                               }`}
-                              title={member.usesLashpopBooking ? 'Edit the photo in Vagaro — this row is sync-owned.' : undefined}
+                              title={member.usesLashpopBooking ? 'Change this photo in Vagaro, then update this page.' : undefined}
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              Select from DAM
+                              Choose from Media
                             </button>
                           </div>
                           <div className="flex items-center gap-4">
@@ -719,7 +719,7 @@ export default function TeamManagerPage() {
                                 )}
                               </p>
                               <p className="text-xs text-dune/50 mt-1">
-                                Click &quot;Select from DAM&quot; to choose a profile photo from your media library
+                                Choose a profile photo from the media library.
                               </p>
                             </div>
                           </div>
@@ -730,7 +730,7 @@ export default function TeamManagerPage() {
                           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium flex items-center gap-2">
                               <Images className="w-3.5 h-3.5" />
-                              Portfolio Album
+                              Portfolio photos
                               {albumPhotos[member.id] && (
                                 <span className="text-dune/40">({albumPhotos[member.id].length} photos)</span>
                               )}
@@ -740,7 +740,7 @@ export default function TeamManagerPage() {
                               className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-md bg-dusty-rose/20 px-3 py-1.5 text-xs font-medium text-dusty-rose transition-colors hover:bg-dusty-rose/30 sm:w-auto"
                             >
                               <ImagePlus className="w-3.5 h-3.5" />
-                              Add Photos
+                                Add photos
                             </button>
                           </div>
 
@@ -787,7 +787,7 @@ export default function TeamManagerPage() {
                                 onClick={() => openAlbumPicker(member.id)}
                                 className="mt-2 text-xs text-dusty-rose hover:underline"
                               >
-                                Add photos to showcase their work
+                                Add portfolio photos
                               </button>
                             </div>
                           )}
@@ -798,7 +798,7 @@ export default function TeamManagerPage() {
                               onClick={() => fetchAlbumPhotos(member.id)}
                               className="w-full py-3 text-xs text-dune/60 hover:text-dune hover:bg-sage/10 rounded-lg transition-colors"
                             >
-                              Load album photos
+                              Load portfolio photos
                             </button>
                           )}
                         </div>
@@ -839,13 +839,13 @@ export default function TeamManagerPage() {
                             className="flex items-center gap-2 text-ocean-mist hover:underline"
                           >
                             <LinkIcon className="w-4 h-4" />
-                            Booking Page
+                            Booking page
                             <ExternalLink className="w-3 h-3" />
                           </a>
                           {member.vagaroEmployeeId && (
                             <div className="flex items-center gap-2 text-dune/60">
                               <Briefcase className="w-4 h-4 text-dune/40" />
-                              Vagaro ID: {member.vagaroEmployeeId}
+                              Vagaro staff ID: {member.vagaroEmployeeId}
                             </div>
                           )}
                         </div>
@@ -854,8 +854,8 @@ export default function TeamManagerPage() {
                         <div className="space-y-3 rounded-lg border border-sage/10 bg-sage/5 p-3 sm:col-span-2 sm:p-4">
                           <div className="flex items-center gap-2">
                             <Tag className="w-4 h-4 text-dusty-rose" />
-                            <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium">Service Tags</h4>
-                            <span className="text-xs text-dune/40">(shown on profile card)</span>
+                            <h4 className="text-xs uppercase tracking-wider text-dune/60 font-medium">Service categories</h4>
+                            <span className="text-xs text-dune/40">(shown on the profile)</span>
                           </div>
 
                           {member.usesLashpopBooking ? (
@@ -863,7 +863,7 @@ export default function TeamManagerPage() {
                             <div className="space-y-1.5">
                               <p className="text-xs text-dune/50 flex items-center gap-1">
                                 <Lock className="w-3 h-3" />
-                                Synced from Vagaro (edit in Vagaro to change)
+                                Updated from Vagaro. Change service assignments in Vagaro, then update this page.
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {member.vagaroServiceCategories && member.vagaroServiceCategories.length > 0 ? (
@@ -878,7 +878,7 @@ export default function TeamManagerPage() {
                                   ))
                                 ) : (
                                   <span className="text-xs italic text-dune/40">
-                                    No tags yet — assign this stylist to services in Vagaro and re-sync.
+                                    No service categories yet. Assign this stylist to services in Vagaro, then update this page.
                                   </span>
                                 )}
                               </div>
@@ -886,7 +886,7 @@ export default function TeamManagerPage() {
                           ) : (
                             // External-mode: admin owns the category list.
                             <div className="space-y-1.5">
-                              <p className="text-xs text-dune/50">Categories (editable — admin-owned)</p>
+                              <p className="text-xs text-dune/50">Edit service categories here</p>
                               <div className="flex flex-wrap gap-2">
                                 {(member.externalServiceCategories || []).map((cat, i) => (
                                   <span
@@ -908,7 +908,7 @@ export default function TeamManagerPage() {
                                 <div className="relative group/dropdown">
                                   <button className="flex min-h-11 items-center gap-1 rounded-lg bg-sage/10 px-3 py-1.5 text-xs font-medium text-dune/60 transition-colors hover:bg-sage/20" aria-haspopup="menu">
                                     <Plus className="w-3 h-3" />
-                                    Add Tag
+                                    Add category
                                   </button>
                                   <div className="absolute left-0 top-full z-50 mt-1 hidden w-48 rounded-lg border border-sage/20 bg-white py-2 shadow-lg group-focus-within/dropdown:block group-hover/dropdown:block">
                                     {CATEGORY_OPTIONS
@@ -928,7 +928,7 @@ export default function TeamManagerPage() {
                               </div>
                               {(member.externalServiceCategories || []).length === 0 && (
                                 <p className="text-xs italic text-dune/40">
-                                  No categories set — chips won&apos;t render on this stylist&apos;s card.
+                                  No categories set. This profile will not show service labels.
                                 </p>
                               )}
                             </div>
@@ -971,7 +971,7 @@ export default function TeamManagerPage() {
                               Bio
                               {member.usesLashpopBooking && (
                                 <span className="inline-flex items-center gap-1 text-[10px] text-dusty-rose normal-case tracking-normal font-normal">
-                                  <Lock className="w-2.5 h-2.5" /> synced from Vagaro
+                                  <Lock className="w-2.5 h-2.5" /> updated from Vagaro
                                 </span>
                               )}
                             </h4>
@@ -993,7 +993,7 @@ export default function TeamManagerPage() {
                                 value={bioValue}
                                 onChange={(e) => setBioValue(e.target.value)}
                                 className="w-full px-3 py-2 text-sm border border-sage/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-ocean-mist/20 focus:border-ocean-mist/40 min-h-[120px] resize-y"
-                                placeholder="Enter bio..."
+                                placeholder="Enter bio…"
                               />
                               <div className="flex gap-2 justify-end">
                                 <button
@@ -1007,7 +1007,7 @@ export default function TeamManagerPage() {
                                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-ocean-mist text-white rounded-lg hover:bg-ocean-mist/90"
                                 >
                                   <Check className="w-3.5 h-3.5" />
-                                  Save Bio
+                                  Save bio
                                 </button>
                               </div>
                             </div>
@@ -1043,7 +1043,7 @@ export default function TeamManagerPage() {
         }}
         onSelect={handleImageSelect}
         selectedAssetId={editingImageMemberId ? teamMembers.find(m => m.id === editingImageMemberId)?.imageUrl : undefined}
-        title="Select Profile Image"
+        title="Choose profile photo"
         subtitle={editingImageMemberId ? `Choose a photo for ${teamMembers.find(m => m.id === editingImageMemberId)?.name}` : 'Choose a profile photo'}
       />
 
@@ -1058,7 +1058,7 @@ export default function TeamManagerPage() {
         allowMultiple={true}
         selectedAssetIds={[]}
         onMultiSelect={handleAlbumSelect}
-        title="Add Portfolio Photos"
+        title="Add portfolio photos"
         subtitle={albumPickerMemberId ? `Select photos for ${teamMembers.find(m => m.id === albumPickerMemberId)?.name}'s portfolio` : 'Select portfolio photos'}
       />
     </div>

@@ -204,7 +204,7 @@ export default function FAQManagerPage() {
   }
 
   const deleteCategory = async (id: string) => {
-    if (!confirm('Delete this category and all its FAQs?')) return
+    if (!confirm('Delete this category and every question in it?')) return
     
     try {
       const response = await fetch(`/api/admin/website/faqs?type=category&id=${id}`, {
@@ -222,7 +222,7 @@ export default function FAQManagerPage() {
   }
 
   const deleteItem = async (id: string) => {
-    if (!confirm('Delete this FAQ?')) return
+    if (!confirm('Delete this question and answer?')) return
     
     try {
       const response = await fetch(`/api/admin/website/faqs?type=item&id=${id}`, {
@@ -283,9 +283,9 @@ export default function FAQManagerPage() {
               <HelpCircle className="w-6 h-6 text-sage" />
             </div>
             <div className="min-w-0">
-              <h1 className="h2 text-dune">FAQ Manager</h1>
+              <h1 className="h2 text-dune">Frequently asked questions</h1>
               <p className="text-sm text-dune/60">
-                {categories.length} categories • {totalActive} active FAQs • {featuredCount} featured
+                {categories.length} categories · {totalActive} shown on website · {featuredCount} in Top FAQs
               </p>
             </div>
           </div>
@@ -303,7 +303,7 @@ export default function FAQManagerPage() {
               className="btn btn-primary"
             >
               <FolderPlus className="w-4 h-4" />
-              Add Category
+              Add category
             </button>
           </div>
         </div>
@@ -322,11 +322,11 @@ export default function FAQManagerPage() {
         </div>
         <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-sage">{totalActive}</div>
-          <div className="text-[10px] text-dune/55 uppercase tracking-wide sm:text-xs sm:tracking-wider">Active FAQs</div>
+          <div className="text-[10px] text-dune/55 uppercase tracking-wide sm:text-xs sm:tracking-wider">Shown</div>
         </div>
         <div className="min-w-0 px-2 py-3 text-center sm:p-4">
           <div className="text-2xl font-serif text-golden">{featuredCount}</div>
-          <div className="text-[10px] text-dune/55 uppercase tracking-wide sm:text-xs sm:tracking-wider">Featured</div>
+          <div className="text-[10px] text-dune/55 uppercase tracking-wide sm:text-xs sm:tracking-wider">Top FAQs</div>
         </div>
       </motion.div>
 
@@ -340,7 +340,7 @@ export default function FAQManagerPage() {
             className="fixed top-20 right-4 z-50 bg-ocean-mist text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2"
           >
             <Check className="w-4 h-4" />
-            Saved!
+            Saved
           </motion.div>
         )}
       </AnimatePresence>
@@ -362,7 +362,7 @@ export default function FAQManagerPage() {
               className="w-full max-w-md rounded-lg bg-cream p-4 shadow-2xl sm:rounded-2xl sm:p-6"
               onClick={e => e.stopPropagation()}
             >
-              <h3 className="font-serif text-lg text-dune mb-4">New Category</h3>
+              <h3 className="font-serif text-lg text-dune mb-4">Add category</h3>
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-dune/50 uppercase tracking-wider block mb-2">Name</label>
@@ -375,7 +375,7 @@ export default function FAQManagerPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-dune/50 uppercase tracking-wider block mb-2">Description (optional)</label>
+                  <label className="text-xs text-dune/50 uppercase tracking-wider block mb-2">Short description (optional)</label>
                   <input
                     type="text"
                     value={newCategory.description}
@@ -398,7 +398,7 @@ export default function FAQManagerPage() {
                   className="flex-1 btn btn-primary"
                 >
                   {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  Create
+                  Add category
                 </button>
               </div>
             </motion.div>
@@ -416,13 +416,13 @@ export default function FAQManagerPage() {
         {categories.length === 0 ? (
           <div className="glass rounded-lg border border-sage/20 p-8 text-center sm:rounded-2xl sm:p-12">
             <AlertCircle className="w-12 h-12 text-dune/30 mx-auto mb-4" />
-            <p className="text-dune/60 mb-4">No FAQ categories yet</p>
+            <p className="text-dune/60 mb-4">No question categories yet.</p>
             <button
               onClick={() => setIsAddingCategory(true)}
               className="btn btn-primary"
             >
               <FolderPlus className="w-4 h-4" />
-              Create First Category
+              Add first category
             </button>
           </div>
         ) : (
@@ -461,7 +461,7 @@ export default function FAQManagerPage() {
                           {category.displayName}
                         </h3>
                         <p className="text-xs text-dune/50">
-                          {getCategoryItems(category.id).length} FAQs
+                          {getCategoryItems(category.id).length} questions
                         </p>
                       </div>
                     )}
@@ -550,7 +550,7 @@ export default function FAQManagerPage() {
                               <MiniRichEditor
                                 value={editingItem.answer}
                                 onChange={(html) => setEditingItem({ ...editingItem, answer: html })}
-                                placeholder="Enter your answer..."
+                                placeholder="Enter your answer…"
                                 minHeight={100}
                               />
                               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -561,7 +561,7 @@ export default function FAQManagerPage() {
                                     onChange={e => setEditingItem({ ...editingItem, isFeatured: e.target.checked })}
                                     className="w-4 h-4 accent-golden"
                                   />
-                                  <span className="text-sm text-dune/70">Featured in Top FAQs</span>
+                                  <span className="text-sm text-dune/70">Show in Top FAQs</span>
                                 </label>
                                 <div className="grid grid-cols-2 gap-2 sm:flex">
                                   <button
@@ -651,7 +651,7 @@ export default function FAQManagerPage() {
                           <MiniRichEditor
                             value={newItem.answer}
                             onChange={(html) => setNewItem({ ...newItem, answer: html })}
-                            placeholder="Enter your answer..."
+                            placeholder="Enter your answer…"
                             minHeight={80}
                           />
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -662,7 +662,7 @@ export default function FAQManagerPage() {
                                 onChange={e => setNewItem({ ...newItem, isFeatured: e.target.checked })}
                                 className="w-4 h-4 accent-golden"
                               />
-                              <span className="text-sm text-dune/70">Featured in Top FAQs</span>
+                              <span className="text-sm text-dune/70">Show in Top FAQs</span>
                             </label>
                             <div className="grid grid-cols-2 gap-2 sm:flex">
                               <button
@@ -679,7 +679,7 @@ export default function FAQManagerPage() {
                                 disabled={!newItem.question.trim() || !newItem.answer.trim()}
                                 className="px-3 py-1.5 text-sm bg-dusty-rose text-white rounded-lg hover:bg-terracotta disabled:opacity-50"
                               >
-                                Add FAQ
+                                Add question
                               </button>
                             </div>
                           </div>
@@ -690,7 +690,7 @@ export default function FAQManagerPage() {
                           className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-sage/25 p-3 text-dune/50 transition-colors hover:border-dusty-rose/30 hover:text-dusty-rose"
                         >
                           <Plus className="w-4 h-4" />
-                          Add FAQ to this category
+                          Add question to this category
                         </button>
                       )}
                     </div>
@@ -710,9 +710,8 @@ export default function FAQManagerPage() {
         className="mt-6 rounded-lg border border-sage/20 bg-sage/10 p-4"
       >
         <p className="text-xs text-dune/70">
-          <strong>Tips:</strong> Mark FAQs as &quot;Featured&quot; (⭐) to include them in the &quot;Top FAQs&quot; section. 
-          Toggle visibility (👁) to show/hide FAQs on the website. Use the rich editor toolbar to format answers with 
-          bold, italic, lists, and links — or toggle HTML mode for advanced editing.
+          Add a question to Top FAQs to feature it near the top of the page. Show or hide questions without deleting them.
+          Use the editor toolbar for bold text, italics, lists, and links. Use HTML mode only when you need to edit the code.
         </p>
       </motion.div>
     </div>

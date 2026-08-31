@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Sparkles, RefreshCw, Save, Check, ChevronUp, ChevronDown, Eye, EyeOff, Plus, Trash2, ExternalLink, AlertCircle } from 'lucide-react'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingStatusLabel } from '@/lib/admin/settings-copy'
 import type { HomepageServiceCard, HomepageServicesContent } from '@/types/homepage-services'
 
 export default function HomepageServicesAdminPage() {
@@ -28,7 +29,7 @@ export default function HomepageServicesAdminPage() {
     setError(null)
     try {
       const res = await fetch('/api/admin/website/homepage-services')
-      if (!res.ok) throw new Error(`Failed to load (${res.status})`)
+      if (!res.ok) throw new Error('Could not load the homepage service cards. Refresh the page and try again.')
       const data: { content: HomepageServicesContent; version: number; sourceOwner: string } = await res.json()
       setCards(data.content.cards)
       setSavedCards(data.content.cards)
@@ -37,7 +38,7 @@ export default function HomepageServicesAdminPage() {
       setConflict(false)
       setPendingRemovalId(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load')
+      setError(e instanceof Error ? e.message : 'Could not load the homepage service cards. Refresh the page and try again.')
     } finally {
       setLoading(false)
     }
@@ -90,9 +91,9 @@ export default function HomepageServicesAdminPage() {
       if (!res.ok) {
         if (res.status === 409 && data?.conflict) {
           setConflict(true)
-          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+          throw new Error('Someone saved a newer version while this page was open. Load the latest version to replace your unsaved changes.')
         }
-        throw new Error(data.error || `Save failed (${res.status})`)
+        throw new Error(data.error || 'Could not save the homepage service cards. Try again.')
       }
       setCards(data.content.cards)
       setSavedCards(data.content.cards)
@@ -102,7 +103,7 @@ export default function HomepageServicesAdminPage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (e) {
-      const error = e instanceof Error ? e : new Error('Save failed')
+      const error = e instanceof Error ? e : new Error('Could not save the homepage service cards. Try again.')
       setError(error.message)
       throw error
     } finally {
@@ -146,7 +147,7 @@ export default function HomepageServicesAdminPage() {
           <div className="min-w-0">
             <h1 className="font-serif text-3xl leading-tight text-charcoal sm:text-4xl">Homepage service cards</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-dune/70">
-              Edit the order and language clients see in the homepage Choose a Service section.
+              Edit the cards customers see in the Choose a Service section on the homepage.
             </p>
           </div>
           <button
@@ -162,10 +163,10 @@ export default function HomepageServicesAdminPage() {
         <div className="mt-4 flex flex-col gap-1 text-xs text-dune/55 sm:flex-row sm:items-center sm:gap-2">
           <p>{enabledCount} of {cards.length} visible</p>
           <span className="hidden sm:inline" aria-hidden="true">·</span>
-          <p>{baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}</p>
+          <p>{websiteSettingStatusLabel(sourceOwner, baseVersion)}</p>
           <span className="hidden sm:inline" aria-hidden="true">·</span>
           <p className={error ? 'text-terracotta' : saved ? 'text-ocean-mist' : dirty ? 'text-terracotta' : ''} role="status" aria-live="polite">
-            {error ? 'Save needs attention' : saving ? 'Saving changes…' : saved ? 'Changes saved' : dirty ? 'Unsaved changes' : 'All changes saved'}
+            {error ? 'Could not save changes' : saving ? 'Saving changes…' : saved ? 'Changes saved' : dirty ? 'Unsaved changes' : 'All changes saved'}
           </p>
         </div>
       </header>
@@ -185,10 +186,10 @@ export default function HomepageServicesAdminPage() {
 
       <div className="mb-6 border-l-2 border-dusty-rose bg-dusty-rose/10 px-4 py-3 text-sm leading-6 text-dune/70">
         <p>
-          LashPop owns card copy, art, order, and visibility. Vagaro supplies the booking facts.
+          Edit card text, images, order, and visibility here. Service names, prices, and booking details come from Vagaro.
         </p>
         <Link href="/admin/website/services" className="mt-2 inline-flex min-h-11 items-center gap-1 font-semibold text-terracotta hover:text-rust">
-          View synced booking services <ExternalLink className="size-3.5" aria-hidden="true" />
+          View booking services <ExternalLink className="size-3.5" aria-hidden="true" />
         </Link>
       </div>
 
@@ -208,7 +209,7 @@ export default function HomepageServicesAdminPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 id={`service-card-${index}-title`} className="truncate text-sm font-semibold text-charcoal">
+                  <h2 id={`service-card-${index}-title`} className="truncate text-sm font-semibold text-charcoal" title={card.title.trim() || `Service card ${index + 1}`}>
                     {card.title.trim() || `Service card ${index + 1}`}
                   </h2>
                   <p className="mt-0.5 text-xs text-dune/55">{card.enabled ? 'Visible on homepage' : 'Hidden from homepage'}</p>
@@ -274,7 +275,7 @@ export default function HomepageServicesAdminPage() {
                 </label>
 
                 <label className="block min-w-0 sm:col-span-2" htmlFor={`service-card-${index}-icon`}>
-                  <span className="mb-1.5 block text-xs font-semibold text-charcoal">Icon path</span>
+                  <span className="mb-1.5 block text-xs font-semibold text-charcoal">Icon (website manager only)</span>
                   <input
                     id={`service-card-${index}-icon`}
                     name={`service-card-${index}-icon`}
@@ -284,8 +285,9 @@ export default function HomepageServicesAdminPage() {
                     onChange={(e) => updateCard(index, { icon: e.target.value })}
                     className="min-h-11 w-full rounded-md border border-sage/30 bg-ivory px-3 font-mono text-xs text-charcoal outline-none focus:border-terracotta focus:ring-2 focus:ring-terracotta/20"
                   />
+                  <span className="mt-1.5 block text-xs text-dune/50">Use an approved website icon.</span>
                   <span className="mt-1.5 block break-all text-xs text-dune/50">
-                    Destination slug: <code className="font-mono text-dune/70">{card.slug || 'Not assigned'}</code>
+                    Booking category: <code className="font-mono text-dune/70">{card.slug || 'Not linked'}</code>
                   </span>
                 </label>
               </div>
@@ -326,7 +328,7 @@ export default function HomepageServicesAdminPage() {
                   <h3 id={`remove-service-card-${index}`} className="text-sm font-semibold text-charcoal">
                     Remove {card.title.trim() || `service card ${index + 1}`}?
                   </h3>
-                  <p className="mt-1 text-xs leading-5 text-dune/70">The card leaves this draft now. The homepage changes only after you save.</p>
+                  <p className="mt-1 text-xs leading-5 text-dune/70">The card will be removed when you save these changes.</p>
                   <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
                     <button
                       type="button"
@@ -340,7 +342,7 @@ export default function HomepageServicesAdminPage() {
                       onClick={() => removeCard(card.id)}
                       className="inline-flex min-h-11 items-center justify-center rounded-md bg-terracotta px-3 text-sm font-semibold text-cream"
                     >
-                      Confirm remove
+                      Remove card
                     </button>
                   </div>
                 </div>

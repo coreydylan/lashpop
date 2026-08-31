@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { FileText, Save, Check, AlertCircle, Plus, X, MoveUp, MoveDown, RefreshCw } from 'lucide-react'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingStatusLabel } from '@/lib/admin/settings-copy'
 import type { FounderLetterContent } from '@/types/founder-letter'
 
 interface FounderLetterEditorProps {
@@ -37,9 +38,9 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
       if (!res.ok) {
         if (res.status === 409 && data?.conflict) {
           setConflict(true)
-          throw new Error(`Another admin published a newer version. Load latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+          throw new Error('Someone saved a newer version while this page was open. Load the latest version to replace your unsaved changes.')
         }
-        throw new Error(data?.error ?? `Save failed (${res.status})`)
+        throw new Error(data?.error ?? 'Could not save the founder letter. Try again.')
       }
       setSavedState(data.content)
       setContent(data.content)
@@ -49,7 +50,7 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2500)
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error')
+      const error = err instanceof Error ? err : new Error('Could not save the founder letter. Try again.')
       setStatus('error')
       setErrorMsg(error.message)
       throw error
@@ -62,7 +63,7 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
     try {
       const res = await fetch('/api/admin/website/founder-letter')
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data?.error ?? `Reload failed (${res.status})`)
+      if (!res.ok) throw new Error(data?.error ?? 'Could not load the latest founder letter. Try again.')
       setContent(data.content)
       setSavedState(data.content)
       setBaseVersion(data.version)
@@ -71,7 +72,7 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
       setStatus('idle')
     } catch (err) {
       setStatus('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Unable to load the latest version')
+      setErrorMsg(err instanceof Error ? err.message : 'Could not load the latest founder letter. Try again.')
     }
   }
 
@@ -130,13 +131,13 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
             <div className="hidden size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-dusty-rose to-terracotta shadow-sm sm:flex">
               <FileText className="w-5 h-5 text-cream" />
             </div>
-            <h1 className="font-serif text-2xl text-dune font-semibold">Founder Letter</h1>
+            <h1 className="font-serif text-2xl text-dune font-semibold">Founder letter</h1>
           </div>
           <p className="max-w-2xl text-sm leading-relaxed text-dune/70">
             Update the welcome letter customers read in the homepage founder section.
           </p>
           <p className="mt-1 text-xs text-dune/50">
-            {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+            {websiteSettingStatusLabel(sourceOwner, baseVersion)}
           </p>
         </div>
         <SaveButton isDirty={isDirty} status={status} conflict={conflict} onSave={handleSave} />
@@ -155,13 +156,13 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
           label="Heading"
           value={content.heading}
           onChange={v => setContent({ ...content, heading: v })}
-          help='Section H2, e.g. "Welcome to LashPop Studios"'
+          help='Main heading for this section, for example “Welcome to LashPop Studios”.'
         />
         <Field
           label="Greeting"
           value={content.greeting}
           onChange={v => setContent({ ...content, greeting: v })}
-          help='Opening line, italic, e.g. "I&apos;m so glad you&apos;re here."'
+          help='Opening line shown in italics, for example “I&apos;m so glad you&apos;re here.”'
         />
 
         <div>
@@ -230,13 +231,13 @@ export function FounderLetterEditor({ initialContent, initialVersion, initialSou
             label="Sign-off"
             value={content.signOff}
             onChange={v => setContent({ ...content, signOff: v })}
-            help='e.g. "Xo,"'
+            help='For example, “Xo,”'
           />
           <Field
             label="Signature"
             value={content.signature}
             onChange={v => setContent({ ...content, signature: v })}
-            help='Screen-reader / SEO text only — the visible signature is a handwritten graphic'
+            help='Alternative text for screen readers and search engines. The page shows a handwritten signature image.'
           />
         </div>
       </section>

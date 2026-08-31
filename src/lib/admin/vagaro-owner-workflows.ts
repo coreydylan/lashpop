@@ -10,7 +10,7 @@ export const VAGARO_SYNC_SCHEDULE = {
 export const VAGARO_OWNER_WORKFLOWS = {
   'team-member': {
     title: 'Add a team member',
-    summary: 'Create bookable providers in Vagaro first. LashPop imports the profile hidden so you can review it before publishing.',
+    summary: 'Create bookable providers in Vagaro first. LashPop adds each new profile as hidden so you can review it before publishing.',
     acknowledgement: 'I saved the employee, assigned their services, and enabled online booking in Vagaro.',
     vagaroSteps: [
       'In Vagaro, open Settings → Employee Profiles → Add Employee.',
@@ -21,13 +21,13 @@ export const VAGARO_OWNER_WORKFLOWS = {
       'Confirm the employee appears on the Vagaro listing with the expected photo, bio, services, and booking availability.',
     ],
     afterSyncSteps: [
-      'Find the newly imported profile. It should say Vagaro and remain hidden from the website.',
-      'Review the synced photo, bio, contact details, display order, and locked service chips.',
+      'Find the new profile. It should say Vagaro and remain hidden from the website.',
+      'Review the photo, bio, contact details, website order, and service labels from Vagaro.',
       'Add LashPop-only quick facts, credentials, and portfolio photos if needed.',
-      'Turn on the eye control, enter a short publication reason, and choose Save Changes.',
+      'Show the profile, enter a short reason for the change, and choose Save Changes.',
       'Open the public Find Your Stylist section and test the person’s booking path.',
     ],
-    expectedResult: 'A new provider is imported active but hidden. Sync never publishes or unpublishes the profile; the eye control and Save Changes are the publication gate.',
+    expectedResult: 'A new provider is added as active but hidden. The Vagaro update never publishes or unpublishes the profile. Show or hide the profile here, then choose Save Changes.',
     officialHelp: [
       {
         label: 'Vagaro: add an employee profile',
@@ -41,7 +41,7 @@ export const VAGARO_OWNER_WORKFLOWS = {
   },
   service: {
     title: 'Add or update a service',
-    summary: 'Create booking facts in Vagaro first. LashPop syncs the catalog, then keeps a brand-new service hidden until its exact booking widget is technically verified.',
+    summary: 'Create booking details in Vagaro first. LashPop imports the service, then keeps a new service hidden until its booking link is tested.',
     acknowledgement: 'I saved the service, assigned every provider, and turned on Show Service Online in Vagaro.',
     vagaroSteps: [
       'In Vagaro, open Settings → Service/Class Menu. On Services, choose Add → Service → Custom Service.',
@@ -51,13 +51,13 @@ export const VAGARO_OWNER_WORKFLOWS = {
       'Confirm every assigned provider accepts online bookings and that the service appears on Vagaro’s customer listing.',
     ],
     afterSyncSteps: [
-      'Open Settings → Vagaro sync and confirm the category, service, staff, and stylist-mapping stages completed.',
-      'Find the service in Booking setup needs attention. A new service should be pending and hidden, not publicly bookable.',
-      'Send the exact service name and category to the website operator for the authenticated full-catalog widget refresh and reviewed branch deployment.',
-      'After that release, use this launch checklist to confirm the verified booking mapping, category copy, image, homepage card, and eligible stylist chips.',
+      'Open Settings → Vagaro sync and confirm the category, service, team-member, and stylist-linking steps finished.',
+      'Find the service under Booking setup issues. A new service should be pending and hidden, not publicly bookable.',
+      'Send the exact service name and category to the website operator so they can refresh the booking catalog and release the verified booking link.',
+      'After that release, use this checklist to confirm the booking link, category text, image, homepage card, and eligible stylist labels.',
       'Open the public service card and complete a real desktop and phone booking-path check before calling it live.',
     ],
-    expectedResult: 'Existing services update automatically. A newly discovered service is imported inactive and pending because Vagaro does not expose its opaque, service-filtered widget URL through the sync APIs.',
+    expectedResult: 'Existing services update automatically. A new service is imported inactive and pending until the website operator verifies and releases its booking link.',
     officialHelp: [
       {
         label: 'Vagaro: add a custom service',

@@ -3,12 +3,12 @@
   "version": 3,
   "updated": "2026-08-29",
   "title": "LashPop admin owner capability contract",
-  "purpose": "The release-critical list of plain-English owner jobs, including the exact outside-system or technical handoff when a safe result cannot be completed inside the admin panel alone.",
+  "purpose": "The release-critical list of plain-English owner tasks, including what must happen outside Admin when a task cannot be completed safely here.",
   "outsideAdmin": [
     "Vagaro owns service prices, durations, appointment availability, booking destinations, and synced stylist facts.",
-    "A brand-new service requires an authenticated, full-catalog Vagaro widget refresh and reviewed website release after the owner finishes the Vagaro setup and admin sync. The admin keeps the service hidden until that technical handoff is complete.",
-    "The frozen public visual system, navigation structure, and legal page structure require a reviewed code change.",
-    "Work With Us benefits, pricing logic, forms, and policy rules remain system-owned; the admin owns the page introduction, path summaries, and photography."
+    "After the owner adds a new service in Vagaro and runs a sync, the website manager must create and check its Vagaro booking link and publish the reviewed website change. Admin keeps the service hidden until this is complete.",
+    "Changing the approved website design, navigation or legal page structure requires a reviewed code change.",
+    "Admin can change the Work with us introduction, path summaries and photos. Benefits, prices, forms and policy rules require a reviewed website change."
   ],
   "capabilities": [
     {
@@ -26,18 +26,18 @@
       "id": "today-overview",
       "area": "Today",
       "route": "/admin/overview",
-      "questions": ["Where do I see what needs attention today?"],
+      "questions": ["Where do I see today's Admin tasks?"],
       "verificationMode": "safe-live",
-      "evidence": [{ "file": "src/app/admin/(panel)/overview/page.tsx", "contains": ["Subscribers", "Sync"] }]
+      "evidence": [{ "file": "src/app/admin/(panel)/overview/page.tsx", "contains": ["Subscriber records", "Latest Vagaro update"] }]
     },
     {
       "id": "website-performance",
       "area": "Today",
       "route": "/admin/analytics",
-      "questions": ["How do I see which website traffic and booking signals need attention?"],
+      "questions": ["How do I see visitors, page views, traffic sources and tracked website actions?"],
       "verificationMode": "safe-live",
       "evidence": [
-        { "file": "src/app/admin/(panel)/analytics/page.tsx", "contains": ["Website performance", "AnalyticsBoard"] },
+        { "file": "src/app/admin/(panel)/analytics/page.tsx", "contains": ["Website analytics", "AnalyticsBoard"] },
         { "file": "src/app/api/admin/analytics/route.ts", "contains": ["requireAdminApi", "getAdminAnalytics"] }
       ]
     },
@@ -45,18 +45,18 @@
       "id": "website-overview",
       "area": "Website",
       "route": "/admin/website",
-      "questions": ["Where do I see which system owns each part of the website?"],
+      "questions": ["Where do I see where each website change belongs?"],
       "verificationMode": "safe-live",
-      "evidence": [{ "file": "src/app/admin/(panel)/website/page.tsx", "contains": ["Publishing ownership"] }]
+      "evidence": [{ "file": "src/app/admin/(panel)/website/page.tsx", "contains": ["Edit the LashPop website", "Choose what to edit"] }]
     },
     {
       "id": "service-launch",
       "area": "Website",
       "route": "/admin/workflows/service-launch",
-      "questions": ["How do I add or update a service in Vagaro, sync it, and know what still needs technical publication?", "How do I check that a new or updated service is ready to publish?"],
+      "questions": ["How do I add or update a service in Vagaro, sync it, and know what the website manager still needs to finish?", "How do I check that a new or updated service is ready to publish?"],
       "verificationMode": "safe-live",
       "evidence": [
-        { "file": "src/app/admin/(panel)/workflows/service-launch/page.tsx", "contains": ["Launch or update a service", "launch checks ready", "VagaroFirstWorkflow"] },
+        { "file": "src/app/admin/(panel)/workflows/service-launch/page.tsx", "contains": ["Launch or update a service", "checks passed", "VagaroFirstWorkflow"] },
         { "file": "src/lib/admin/vagaro-owner-workflows.ts", "contains": ["Settings → Service/Class Menu", "website operator", "inactive and pending"] }
       ]
     },
@@ -75,7 +75,7 @@
       "questions": ["How do I change the homepage headline or button labels?", "How do I choose the homepage hero photos and control the desktop and phone slideshow?"],
       "verificationMode": "no-op-publish",
       "evidence": [
-        { "file": "src/app/admin/(panel)/website/hero/HeroContentEditor.tsx", "contains": ["Headline", "Publish"] },
+        { "file": "src/app/admin/(panel)/website/hero/HeroContentEditor.tsx", "contains": ["Heading", "Booking button"] },
         { "file": "src/app/admin/(panel)/website/hero/page.tsx", "contains": ["Desktop", "Mobile", "slideshow"] }
       ]
     },
@@ -86,7 +86,7 @@
       "questions": ["How do I review synced services, choose service images, organize service groups, and confirm booking readiness?", "What comes from Vagaro, what can I edit in LashPop, and why can a new service stay hidden?"],
       "verificationMode": "inspect-external-owner",
       "evidence": [
-        { "file": "src/app/admin/(panel)/website/services/page.tsx", "contains": ["Vagaro", "Save Changes", "Assign to subcategory", "Add or update a service"] },
+        { "file": "src/app/admin/(panel)/website/services/page.tsx", "contains": ["Vagaro", "Save changes", "Change service group", "Add or update service"] },
         { "file": "src/lib/vagaro-booking-readiness.ts", "contains": ["static widget snapshot", "return 'pending'"] }
       ]
     },
@@ -96,7 +96,7 @@
       "route": "/admin/website/homepage-services",
       "questions": ["How do I add, edit, reorder, show, or hide a service card on the homepage?"],
       "verificationMode": "no-op-publish",
-      "evidence": [{ "file": "src/app/admin/(panel)/website/homepage-services/page.tsx", "contains": ["Homepage Service Cards", "Move up", "Save Changes"] }]
+      "evidence": [{ "file": "src/app/admin/(panel)/website/homepage-services/page.tsx", "contains": ["Homepage service cards", "Add service card", "Remove card"] }]
     },
     {
       "id": "team-stylists",
@@ -132,7 +132,7 @@
       "questions": ["How do I control how many Instagram posts appear, whether captions show, and how the carousel moves?", "How do I refresh the Instagram posts already available in the media library?"],
       "verificationMode": "no-op-publish",
       "evidence": [
-        { "file": "src/app/admin/(panel)/website/instagram/page.tsx", "contains": ["Number of Posts", "Show captions", "Sync Posts"] },
+        { "file": "src/app/admin/(panel)/website/instagram/page.tsx", "contains": ["Posts shown", "Show captions", "Refresh posts"] },
         { "file": "src/components/landing-v2/sections/InstagramCarousel.tsx", "contains": ["showCaptions", "item.caption"] }
       ]
     },
@@ -142,7 +142,7 @@
       "route": "/admin/website/faq",
       "questions": ["How do I add or change an FAQ?", "How do I organize FAQs into categories and choose which ones are visible or featured?"],
       "verificationMode": "temporary-record",
-      "evidence": [{ "file": "src/app/admin/(panel)/website/faq/page.tsx", "contains": ["Add FAQ", "Featured", "Delete this FAQ"] }]
+      "evidence": [{ "file": "src/app/admin/(panel)/website/faq/page.tsx", "contains": ["Add question", "Top FAQs", "Delete this question"] }]
     },
     {
       "id": "quiz",
@@ -150,7 +150,7 @@
       "route": "/admin/website/quiz",
       "questions": ["How do I add, crop, enable, or remove quiz comparison photos?", "How do I choose the photo and wording shown for each quiz result?"],
       "verificationMode": "inspect-high-impact",
-      "evidence": [{ "file": "src/app/admin/(panel)/website/quiz/page.tsx", "contains": ["Manage quiz photos and result page content", "Quiz Photo Tips"] }]
+      "evidence": [{ "file": "src/app/admin/(panel)/website/quiz/page.tsx", "contains": ["Find Your Look quiz", "Photo requirements"] }]
     },
     {
       "id": "work-with-us",
@@ -159,8 +159,8 @@
       "questions": ["How do I update the Work With Us introduction and its employee, booth, and training summaries?", "How do I add, show, hide, or remove Work With Us photos?"],
       "verificationMode": "no-op-publish",
       "evidence": [
-        { "file": "src/app/admin/(panel)/website/work-with-us/WorkWithUsContentEditor.tsx", "contains": ["Page introduction", "Benefits, pricing logic, forms, and photography remain system-owned"] },
-        { "file": "src/app/admin/(panel)/website/work-with-us/page.tsx", "contains": ["Add Photo", "carousel"] }
+        { "file": "src/app/admin/(panel)/website/work-with-us/WorkWithUsContentEditor.tsx", "contains": ["Page introduction", "Benefits, prices, and form fields cannot be changed here", "Manage photos below"] },
+        { "file": "src/app/admin/(panel)/website/work-with-us/page.tsx", "contains": ["Add photo", "Photos appear in this order"] }
       ]
     },
     {
@@ -179,7 +179,7 @@
       "verificationMode": "inspect-high-impact",
       "evidence": [
         { "file": "src/app/admin/(panel)/website/reviews/page.tsx", "contains": ["Remove from homepage", "Save"] },
-        { "file": "src/app/admin/(panel)/website/reviews/ReviewEditDrawer.tsx", "contains": ["Save & lock", "Visible on website"] }
+        { "file": "src/app/admin/(panel)/website/reviews/ReviewEditDrawer.tsx", "contains": ["Review changes saved", "Allow on website"] }
       ]
     },
     {
@@ -198,7 +198,7 @@
       "verificationMode": "temporary-asset",
       "evidence": [
         { "file": "src/components/admin-media/MediaWorkspaceHeader.tsx", "contains": ["Upload files", "Media library"] },
-        { "file": "src/components/dam/AssetMetadataEditor.tsx", "contains": ["Alt text", "Caption or notes", "Save details"] },
+        { "file": "src/components/dam/AssetMetadataEditor.tsx", "contains": ["Alt text", "Caption", "Save details"] },
         { "file": "src/app/api/dam/assets/[assetId]/route.ts", "contains": ["dam.asset.metadata.update", "altText", "caption"] },
         { "file": "src/app/admin/(panel)/assets/page.tsx", "contains": ["Collection"] }
       ]
@@ -233,7 +233,7 @@
       "route": "/admin/inbox/work-with-us",
       "questions": ["How do I read the details and contact information from a Work With Us application?"],
       "verificationMode": "inspect-sensitive-records",
-      "evidence": [{ "file": "src/app/admin/(panel)/inbox/work-with-us/page.tsx", "contains": ["Work With Us Applications", "Experience"] }]
+      "evidence": [{ "file": "src/app/admin/(panel)/inbox/work-with-us/page.tsx", "contains": ["Work with us applications", "Experience"] }]
     },
     {
       "id": "settings-overview",
@@ -266,12 +266,12 @@
       "id": "vagaro-sync",
       "area": "Settings",
       "route": "/admin/system/syncs",
-      "questions": ["How do I see whether Vagaro data and booking mappings are healthy?", "How often does Vagaro sync, what does it update, and when should I run it manually?", "How do I run a Vagaro sync now?"],
+      "questions": ["How do I check Vagaro categories, services, team members and booking links?", "How often does Vagaro sync, what does it update, and when should I run it manually?", "How do I run a Vagaro sync now?"],
       "verificationMode": "inspect-external-owner",
       "evidence": [
-        { "file": "src/app/admin/(panel)/system/syncs/page.tsx", "contains": ["Booking mappings", "Team members", "Automatic three times daily"] },
+        { "file": "src/app/admin/(panel)/system/syncs/page.tsx", "contains": ["Ready to book", "Team members", "Runs automatically three times a day"] },
         { "file": "src/lib/admin/vagaro-owner-workflows.ts", "contains": ["06:00", "14:00", "22:00"] },
-        { "file": "src/components/admin/VagaroFirstWorkflow.tsx", "contains": ["categories, services, public staff"] },
+        { "file": "src/components/admin/VagaroFirstWorkflow.tsx", "contains": ["categories, services, team members"] },
         { "file": "src/app/admin/(panel)/system/syncs/SyncNowButton.tsx", "contains": ["Sync from Vagaro now"] }
       ]
     },
@@ -279,7 +279,7 @@
       "id": "activity-history",
       "area": "Settings",
       "route": "/admin/system/audit-log",
-      "questions": ["How do I see who changed something in the admin panel?"],
+      "questions": ["How do I see what happened in Admin?"],
       "verificationMode": "safe-live",
       "evidence": [{ "file": "src/app/admin/(panel)/system/audit-log/page.tsx", "contains": ["Activity"] }]
     },

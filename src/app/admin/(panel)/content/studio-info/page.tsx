@@ -9,7 +9,7 @@ import { StudioInfoEditor } from './StudioInfoEditor'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Studio Info — LashPop Admin',
+  title: 'Studio information — LashPop Admin',
 }
 
 export default async function StudioInfoPage() {

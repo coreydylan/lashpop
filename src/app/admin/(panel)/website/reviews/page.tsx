@@ -242,10 +242,10 @@ export default function ReviewsManagerPage() {
       <header className="border-b border-sage/20 pb-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-terracotta">Reputation</p>
-            <h1 className="mt-1 text-balance font-serif text-3xl leading-tight text-dune">Review library</h1>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-terracotta">Website reviews</p>
+            <h1 className="mt-1 text-balance font-serif text-3xl leading-tight text-dune">Manage reviews</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-dune/70">
-              Choose which public reviews appear on the homepage and keep their order intentional.
+              Choose and order homepage reviews. Edit website visibility and link reviews to stylists.
             </p>
           </div>
 
@@ -300,8 +300,8 @@ export default function ReviewsManagerPage() {
       <section aria-labelledby="homepage-reviews-heading" className="border-y border-golden/25 bg-white">
         <div className="flex items-start justify-between gap-4 border-b border-golden/20 px-4 py-4 sm:px-5">
           <div>
-            <h2 id="homepage-reviews-heading" className="font-serif text-xl text-dune">On the homepage</h2>
-            <p className="mt-1 text-xs leading-5 text-dune/60">Use More to change order or remove a review.</p>
+            <h2 id="homepage-reviews-heading" className="font-serif text-xl text-dune">Chosen for the homepage</h2>
+            <p className="mt-1 text-xs leading-5 text-dune/60">Use the action menu to change the order or remove a review.</p>
           </div>
           <span className="shrink-0 text-sm font-semibold tabular-nums text-golden">{selectedReviews.length}</span>
         </div>
@@ -310,7 +310,7 @@ export default function ReviewsManagerPage() {
           <div className="px-5 py-10 text-center">
             <Star className="mx-auto size-6 text-dune/25" aria-hidden="true" />
             <p className="mt-3 text-sm font-semibold text-dune">No homepage reviews selected</p>
-            <p className="mt-1 text-xs text-dune/60">Open More on a review below, then choose Add to homepage.</p>
+            <p className="mt-1 text-xs text-dune/60">Open a review&apos;s action menu below, then choose Add to homepage.</p>
           </div>
         ) : (
           <ol className="divide-y divide-golden/15">
@@ -342,8 +342,8 @@ export default function ReviewsManagerPage() {
       <section aria-labelledby="all-reviews-heading" className="space-y-4">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <h2 id="all-reviews-heading" className="font-serif text-xl text-dune">All other reviews</h2>
-            <p className="mt-1 text-xs text-dune/60">Search public review text or narrow by source.</p>
+            <h2 id="all-reviews-heading" className="font-serif text-xl text-dune">Available reviews</h2>
+            <p className="mt-1 text-xs text-dune/60">Search reviewer names and review text, or filter by source.</p>
           </div>
           <span className="text-sm font-semibold tabular-nums text-dune/55">{filteredReviews.length}</span>
         </div>
@@ -442,9 +442,9 @@ export default function ReviewsManagerPage() {
 function SummaryStrip({ reviews, selectedCount }: { reviews: Review[]; selectedCount: number }) {
   const metrics = [
     { label: 'All reviews', value: reviews.length },
-    { label: 'Homepage', value: selectedCount },
-    { label: '5-star', value: reviews.filter((review) => review.rating === 5).length },
-    { label: 'Sources', value: new Set(reviews.map((review) => review.source)).size },
+    { label: 'Chosen for homepage', value: selectedCount },
+    { label: '5-star reviews', value: reviews.filter((review) => review.rating === 5).length },
+    { label: 'Review sources', value: new Set(reviews.map((review) => review.source)).size },
   ]
 
   return (
@@ -491,7 +491,7 @@ function ReviewListRow({
     : review.isSelected
       ? 'Homepage'
       : review.isLiveAuto
-        ? 'Live now'
+        ? 'Shown automatically'
         : null
 
   return (
@@ -523,15 +523,18 @@ function ReviewListRow({
               ))}
             </span>
             <span className="sr-only">{review.rating} out of 5 stars</span>
-            {typeof review.qualityScore === 'number' ? <span>Score {review.qualityScore}/10</span> : null}
+            {typeof review.qualityScore === 'number' ? <span>Quality {review.qualityScore}/10</span> : null}
             {(review.adminLockedFields?.length ?? 0) > 0 ? (
               <span className="inline-flex items-center gap-1">
-                <Lock className="size-3" aria-hidden="true" /> Locked
+                <Lock className="size-3" aria-hidden="true" /> Manually set
               </span>
             ) : null}
           </div>
 
-          <p className={`mt-2 break-words text-sm leading-6 text-dune/75 ${expanded ? '' : 'line-clamp-2'}`}>
+          <p
+            className={`mt-2 break-words text-sm leading-6 text-dune/75 ${expanded ? '' : 'line-clamp-2'}`}
+            aria-label={`Full review: “${review.reviewText}”`}
+          >
             “{review.reviewText}”
           </p>
 

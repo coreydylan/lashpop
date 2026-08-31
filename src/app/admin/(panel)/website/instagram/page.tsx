@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Instagram, RefreshCw, Settings, AlertCircle, ExternalLink, Heart, MessageCircle, Save, Check } from 'lucide-react'
 import Link from 'next/link'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingStatusLabel } from '@/lib/admin/settings-copy'
 
 interface InstagramPost {
   id: string
@@ -63,7 +64,7 @@ export default function InstagramCarouselEditor() {
     try {
       const response = await fetch('/api/admin/website/instagram')
       const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data?.error ?? `Failed to load settings (${response.status})`)
+      if (!response.ok) throw new Error(data?.error ?? 'Could not load the Instagram settings. Refresh the page and try again.')
       if (data.settings) {
         setSettings(data.settings)
         setSavedSettings(data.settings)
@@ -73,7 +74,7 @@ export default function InstagramCarouselEditor() {
       }
     } catch (error) {
       console.error('Error fetching Instagram settings:', error)
-      setError(error instanceof Error ? error.message : 'Failed to load Instagram settings')
+      setError(error instanceof Error ? error.message : 'Could not load the Instagram settings. Refresh the page and try again.')
     }
   }
 
@@ -91,9 +92,9 @@ export default function InstagramCarouselEditor() {
       if (!response.ok) {
         if (response.status === 409 && data?.conflict) {
           setConflict(true)
-          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+          throw new Error('Someone saved a newer version while this page was open. Load the latest version to replace your unsaved changes.')
         }
-        throw new Error(data?.error ?? `Failed to save settings (${response.status})`)
+        throw new Error(data?.error ?? 'Could not save the Instagram settings. Try again.')
       }
       setSettings(data.settings)
       setSavedSettings(data.settings)
@@ -103,7 +104,7 @@ export default function InstagramCarouselEditor() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (error) {
-      const saveError = error instanceof Error ? error : new Error('Failed to save settings')
+      const saveError = error instanceof Error ? error : new Error('Could not save the Instagram settings. Try again.')
       console.error('Error saving settings:', saveError)
       setError(saveError.message)
       throw saveError
@@ -178,10 +179,10 @@ export default function InstagramCarouselEditor() {
               <Instagram className="w-6 h-6 text-terracotta" />
             </div>
             <div className="min-w-0">
-              <h1 className="h2 text-dune">Instagram Carousel</h1>
-              <p className="text-sm text-dune/60">Social media feed display settings</p>
+              <h1 className="h2 text-dune">Instagram posts</h1>
+              <p className="text-sm text-dune/60">Choose how imported Instagram posts appear on the homepage.</p>
               <p className="text-xs text-dune/45">
-                {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+                {websiteSettingStatusLabel(sourceOwner, baseVersion)}
               </p>
             </div>
           </div>
@@ -191,7 +192,7 @@ export default function InstagramCarouselEditor() {
               className="btn btn-secondary min-w-0 w-full sm:w-auto"
             >
               <RefreshCw className="w-4 h-4" />
-              Sync Posts
+              Refresh posts
             </button>
             <button
               onClick={() => void save().catch(() => undefined)}
@@ -205,7 +206,7 @@ export default function InstagramCarouselEditor() {
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              {saved ? 'Saved!' : 'Save Settings'}
+              {saved ? 'Saved' : 'Save changes'}
             </button>
           </div>
         </div>
@@ -235,14 +236,14 @@ export default function InstagramCarouselEditor() {
           <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-6">
               <Settings className="w-5 h-5 text-dune/60" />
-              <h3 className="font-serif text-lg text-dune">Display Settings</h3>
+              <h3 className="font-serif text-lg text-dune">Display settings</h3>
             </div>
 
             <div className="space-y-6">
               {/* Max Posts */}
               <div>
                 <label htmlFor="instagram-max-posts" className="text-xs text-dune/50 uppercase tracking-wider mb-2 block">
-                  Number of Posts
+                  Posts shown
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -261,7 +262,7 @@ export default function InstagramCarouselEditor() {
               {/* Scroll Speed */}
               <div>
                 <label htmlFor="instagram-scroll-speed" className="text-xs text-dune/50 uppercase tracking-wider mb-2 block">
-                  Scroll Speed
+                  Automatic scroll speed (higher is faster)
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -298,9 +299,7 @@ export default function InstagramCarouselEditor() {
           {/* Info Box */}
           <div className="mt-4 rounded-lg border border-terracotta/20 bg-terracotta/10 p-4">
             <p className="text-xs text-dune/70">
-              <strong>Note:</strong> Instagram posts are synced automatically via the DAM. 
-              Posts tagged with <code className="bg-dune/10 px-1 rounded">Source: Instagram</code> 
-              will appear in this carousel.
+              Instagram posts imported into Media appear here automatically. Refresh this page after an import.
             </p>
           </div>
         </motion.div>
@@ -314,7 +313,7 @@ export default function InstagramCarouselEditor() {
         >
           <div className="glass rounded-lg border border-sage/20 p-4 sm:p-6">
             <div className="mb-6 grid gap-1 sm:flex sm:items-center sm:justify-between">
-              <h3 className="font-serif text-lg text-dune">Instagram Posts</h3>
+              <h3 className="font-serif text-lg text-dune">Imported posts</h3>
               <span className="text-sm text-dune/50">
                 Showing {Math.min(posts.length, settings.maxPosts)} of {posts.length}
               </span>
@@ -325,7 +324,7 @@ export default function InstagramCarouselEditor() {
                 <AlertCircle className="w-10 h-10 text-terracotta mx-auto mb-3 opacity-70" />
                 <p className="text-sm text-dune font-medium">No Instagram posts found</p>
                 <p className="text-xs text-dune/60 mt-1">
-                  Sync your Instagram posts in the DAM to display them here
+                  Import Instagram posts in Media, then refresh this page.
                 </p>
               </div>
             ) : (

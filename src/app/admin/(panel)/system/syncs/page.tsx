@@ -91,11 +91,11 @@ export default async function SyncsPage() {
   )
 
   const cards = [
-    { label: 'Booking categories', active: category.active, total: category.total, lastSync: category.lastSync, detail: 'active categories' },
+    { label: 'Booking categories', active: category.active, total: category.total, lastSync: category.lastSync, detail: 'categories shown in Vagaro' },
     { label: 'Services', active: svc.active, total: svc.total, lastSync: svc.lastSync, detail: 'active services' },
-    { label: 'Booking mappings', active: readyActiveBookings.length, total: activeVagaroServices.length, lastSync: svc.lastSync, detail: 'verified active services' },
+    { label: 'Ready to book', active: readyActiveBookings.length, total: activeVagaroServices.length, lastSync: svc.lastSync, detail: 'active services with a working booking link' },
     { label: 'Team members', active: team.active, total: team.total, lastSync: team.lastSync },
-    { label: 'Stylist mappings', active: stylistMappings.active, total: stylistMappings.total, lastSync: stylistMappings.lastSync, detail: 'stylists / service links' },
+    { label: 'Stylists with services', active: stylistMappings.active, total: stylistMappings.total, lastSync: stylistMappings.lastSync, detail: 'stylists linked to at least one service' },
   ]
 
   return (
@@ -106,8 +106,8 @@ export default async function SyncsPage() {
             <RefreshCw className="w-6 h-6 text-ocean-mist" />
           </div>
           <div className="min-w-0">
-            <h1 className="h2 text-dune">Vagaro Sync</h1>
-            <p className="text-sm text-dune/60">Category → service → public staff → stylist mapping pipeline</p>
+            <h1 className="h2 text-dune">Vagaro sync</h1>
+            <p className="text-sm text-dune/60">Copies booking categories, services and team assignments from Vagaro.</p>
           </div>
         </div>
         <div className="w-full [&>div]:w-full [&>div]:flex-col [&_button]:w-full sm:w-auto sm:[&>div]:w-auto sm:[&>div]:flex-row sm:[&_button]:w-auto">
@@ -118,8 +118,8 @@ export default async function SyncsPage() {
       <div className="mb-6 flex items-start gap-3 rounded-lg border border-ocean-mist/20 bg-ocean-mist/10 p-4 text-sm text-dune/70">
         <Clock className="w-4 h-4 text-ocean-mist" />
         <div>
-          <p className="font-medium text-dune">Automatic three times daily</p>
-          <p className="mt-0.5 text-dune/60">Runs start at 06:00, 14:00, and 22:00 UTC—currently 11:00 p.m., 7:00 a.m., and 3:00 p.m. Pacific during daylight time. Use the manual trigger after a Vagaro edit when you do not want to wait.</p>
+          <p className="font-medium text-dune">Runs automatically three times a day</p>
+          <p className="mt-0.5 text-dune/60">During daylight saving time, syncs start at 11 p.m., 7 a.m. and 3 p.m. Pacific. During standard time, they start at 10 p.m., 6 a.m. and 2 p.m. Run a sync now after changing Vagaro if you cannot wait for the next one.</p>
         </div>
       </div>
 
@@ -162,15 +162,15 @@ export default async function SyncsPage() {
           <div className="min-w-0 flex-1">
             <h2 className="font-serif text-xl text-dune">
               {bookingIssues.length || pendingServices.length
-                ? 'Booking setup needs attention'
-                : 'Every active Vagaro service is mapped'}
+                ? `${bookingIssues.length + pendingServices.length} ${bookingIssues.length + pendingServices.length === 1 ? 'service needs' : 'services need'} booking setup`
+                : 'All active services have booking links'}
             </h2>
             <p className="mt-1 text-sm leading-6 text-dune/65">
-              The public catalog sync discovers services automatically. A new service stays hidden until its static, service-filtered Vagaro widget is generated and verified.
+              Vagaro adds services to Admin automatically. New services stay hidden from the website until their booking link is ready.
             </p>
             {(pendingServices.length > 0 || bookingIssues.length > 0) && (
               <p className="mt-2 text-xs leading-5 text-dune/55">
-                Owner next step: confirm the service setup and assigned providers in Vagaro, then send the exact service name and category to the website operator for the authenticated widget refresh or mapping repair and reviewed branch release.
+                In Vagaro, check the service name, category and assigned stylists. Then open Launch a service to finish the website setup.
               </p>
             )}
 
@@ -179,15 +179,15 @@ export default async function SyncsPage() {
                 {[...bookingIssues, ...pendingServices].map((service) => (
                   <li key={service.id} className="rounded-lg border border-amber-300/70 bg-white/65 px-3 py-2">
                     <span className="font-semibold text-dune">{service.name}</span>
-                    <span className="text-dune/50"> · {service.category} · {service.status}</span>
+                    <span className="text-dune/50"> · {service.category} · {bookingStatusLabel(service.status)}</span>
                   </li>
                 ))}
               </ul>
             )}
 
             <div className="mt-4 grid gap-2 text-xs font-semibold sm:flex sm:flex-wrap sm:gap-x-5">
-              <a href="/admin/workflows/service-launch" className="inline-flex min-h-11 items-center text-terracotta hover:text-rust">Open service launch workflow</a>
-              <a href="/api/vagaro/catalog" target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center text-terracotta hover:text-rust">View public catalog status</a>
+              <a href="/admin/workflows/service-launch" className="inline-flex min-h-11 items-center text-terracotta hover:text-rust">Finish service setup</a>
+              <a href="/api/vagaro/catalog" target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center text-terracotta hover:text-rust">View booking catalog</a>
             </div>
           </div>
         </div>
@@ -196,14 +196,14 @@ export default async function SyncsPage() {
       <section className="mt-8 overflow-hidden rounded-lg border border-sage/15 bg-white/65 shadow-sm sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-sage/10 px-5 py-4">
           <div>
-            <h2 className="font-serif text-xl text-dune">Recent runs</h2>
-            <p className="mt-0.5 text-xs text-dune/50">Every stage is recorded so partial syncs are visible.</p>
+            <h2 className="font-serif text-xl text-dune">Recent syncs</h2>
+            <p className="mt-0.5 text-xs text-dune/50">Shows which parts of each sync finished.</p>
           </div>
           <Database className="h-5 w-5 text-ocean-mist" />
         </div>
 
         {recentRuns.length === 0 ? (
-          <div className="p-8 text-center text-sm text-dune/50">No recorded runs yet. The next manual or scheduled sync will appear here.</div>
+          <div className="p-8 text-center text-sm text-dune/50">No syncs recorded yet. The next automatic or manual sync will appear here.</div>
         ) : (
           <div className="divide-y divide-sage/10">
             {recentRuns.map((run) => {
@@ -211,8 +211,8 @@ export default async function SyncsPage() {
               const stages = [
                 ['categories', 'Categories'],
                 ['services', 'Services'],
-                ['publicStaff', 'Public staff'],
-                ['stylistServices', 'Stylist services'],
+                ['publicStaff', 'Team members'],
+                ['stylistServices', 'Stylist service links'],
               ] as const
               const ok = run.status === 'success'
               return (
@@ -222,10 +222,10 @@ export default async function SyncsPage() {
                       {ok ? <CheckCircle2 className="h-5 w-5 text-ocean-mist" /> : <AlertTriangle className="h-5 w-5 text-golden" />}
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium capitalize text-dune">{run.status}</span>
-                          <span className="rounded-md bg-sage/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-dune/50">{run.trigger}</span>
+                          <span className="font-medium text-dune">{syncRunStatusLabel(run.status)}</span>
+                          <span className="rounded-md bg-sage/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-dune/50">{syncTriggerLabel(run.trigger)}</span>
                         </div>
-                        <p className="mt-0.5 text-xs text-dune/45">{timeAgo(run.startedAt)} · run {run.id.slice(0, 8)}</p>
+                        <p className="mt-0.5 text-xs text-dune/45">Started {timeAgo(run.startedAt)}</p>
                       </div>
                     </div>
                     <div className="grid w-full grid-cols-2 gap-1.5 sm:w-auto sm:flex sm:flex-wrap sm:justify-end">
@@ -234,7 +234,7 @@ export default async function SyncsPage() {
                         return (
                           <span
                             key={key}
-                            title={stage?.error || label}
+                            title={stage?.success ? `${label} completed` : `${label} did not complete`}
                             className={`rounded-md px-2.5 py-1 text-center text-[10px] font-semibold ${
                               stage?.success
                                 ? 'bg-ocean-mist/10 text-ocean-mist'
@@ -247,7 +247,7 @@ export default async function SyncsPage() {
                       })}
                     </div>
                   </div>
-                  {run.error && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{run.error}</p>}
+                  {run.error && <p className="mt-3 rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">This sync did not finish. Check the Vagaro setup, then run the sync again.</p>}
                 </div>
               )
             })}
@@ -256,4 +256,27 @@ export default async function SyncsPage() {
       </section>
     </div>
   )
+}
+
+function bookingStatusLabel(status: string): string {
+  if (status === 'pending') return 'Booking link not set up'
+  if (status === 'identity-drift') return 'Service name or category changed'
+  if (status === 'url-mismatch') return 'Booking link needs updating'
+  if (status === 'retired') return 'Retired service'
+  return 'Booking link ready'
+}
+
+function syncRunStatusLabel(status: string): string {
+  if (status === 'success') return 'Completed'
+  if (status === 'running') return 'In progress'
+  if (status === 'partial') return 'Completed with issues'
+  if (status === 'failed' || status === 'error') return 'Failed'
+  return status.replace(/[_-]+/g, ' ')
+}
+
+function syncTriggerLabel(trigger: string): string {
+  if (trigger === 'manual') return 'Run by an Admin user'
+  if (trigger === 'scheduled' || trigger === 'cron') return 'Automatic'
+  if (trigger === 'webhook') return 'Vagaro update'
+  return trigger.replace(/[_-]+/g, ' ')
 }

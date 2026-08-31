@@ -15,8 +15,8 @@ interface UserRow {
 }
 
 const ROLE_COPY: Record<Exclude<AdminRole, null>, string> = {
-  owner: 'Full access, including roles and infrastructure controls.',
-  publisher: 'Can edit and publish content, reviews, and media.',
+  owner: 'Full access, including access roles and system settings.',
+  publisher: 'Can edit and publish website content, reviews and media.',
   viewer: 'Read-only access for verification and support.',
 }
 
@@ -35,11 +35,11 @@ export default function AdminAccessPage() {
     try {
       const response = await fetch('/api/admin/dam-users')
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Failed to load users')
+      if (!response.ok) throw new Error(data.error || 'Could not load Admin accounts')
       setUsers(data.users)
       setCurrentUserId(data.currentUserId)
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Failed to load users')
+      setError(loadError instanceof Error ? loadError.message : 'Could not load Admin accounts')
     } finally {
       setLoading(false)
     }
@@ -56,11 +56,11 @@ export default function AdminAccessPage() {
         body: JSON.stringify({ userId, adminRole }),
       })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Failed to update role')
+      if (!response.ok) throw new Error(data.error || 'Could not update access')
       setUsers((current) => current.map((user) => user.id === userId ? { ...user, adminRole } : user))
       setMessage('Access updated.')
     } catch (updateError) {
-      setError(updateError instanceof Error ? updateError.message : 'Failed to update role')
+      setError(updateError instanceof Error ? updateError.message : 'Could not update access')
     } finally {
       setUpdating(null)
     }
@@ -94,20 +94,20 @@ export default function AdminAccessPage() {
 
       <section className="overflow-hidden rounded-xl border border-black/10 bg-white" aria-busy={loading}>
         <div className="border-b border-black/10 px-5 py-4">
-          <h2 className="font-semibold">Registered people</h2>
-          <p className="mt-1 text-xs text-black/50">People must sign in once before they appear here.</p>
+          <h2 className="font-semibold">People with an Admin account</h2>
+          <p className="mt-1 text-xs text-black/50">A person appears here after signing in for the first time.</p>
         </div>
         {loading ? (
-          <div className="p-8 text-sm text-black/50">Loading access…</div>
+          <div className="p-8 text-sm text-black/50">Loading Admin accounts…</div>
         ) : users.length === 0 ? (
-          <div className="p-8 text-sm text-black/50">No registered users found.</div>
+          <div className="p-8 text-sm text-black/50">No one has signed in to Admin yet.</div>
         ) : (
           <ul className="divide-y divide-black/10">
             {users.map((user) => (
               <li key={user.id} className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_16rem] md:items-center">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-semibold">{user.name || 'Unnamed user'}</p>
+                    <p className="truncate text-sm font-semibold">{user.name || 'No name provided'}</p>
                     {user.id === currentUserId && <span className="rounded-full bg-black/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-black/50">You</span>}
                     {user.adminRole && <ShieldCheck className="size-4 text-[#a14f35]" aria-label={`${user.adminRole} access`} />}
                   </div>

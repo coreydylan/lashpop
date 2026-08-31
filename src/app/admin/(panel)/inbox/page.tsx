@@ -55,11 +55,11 @@ export default async function InboxOverviewPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/45">Inbox</p>
             <h1 className="mt-1 font-serif text-3xl text-[#292a27] sm:mt-2 sm:text-4xl">Inbox</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
-              Review newsletter interest and career inquiries without mixing them into website publishing work.
+              Review newsletter signups and job, booth rental or training applications.
             </p>
           </div>
           <p className="border-l-2 border-[#c96f50] pl-3 text-xs leading-5 text-black/55">
-            Subscriber consent status and application records are tracked separately
+            Newsletter consent and applications are stored separately
           </p>
         </div>
       </header>
@@ -88,11 +88,11 @@ export default async function InboxOverviewPage() {
           eyebrow="Newsletter"
           title={`${activeSubscriberCount} active ${activeSubscriberCount === 1 ? 'subscriber' : 'subscribers'}`}
           detail={latestSubscriber ? `Latest signup: ${formatDate(latestSubscriber.subscribedAt)}` : 'No newsletter signups have been recorded.'}
-          linkLabel="Manage subscriber directory"
+          linkLabel="View newsletter subscribers"
         >
           <div className="flex items-center gap-2 text-xs text-black/55">
             <Users className="size-4 text-[#a14f35]" aria-hidden="true" />
-            {subscribers.length} total consent {subscribers.length === 1 ? 'record' : 'records'} retained.
+            {subscribers.length} total subscriber {subscribers.length === 1 ? 'record' : 'records'} saved.
           </div>
         </InboxSummaryCard>
       </section>
@@ -101,7 +101,7 @@ export default async function InboxOverviewPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 px-5 py-4 sm:px-6">
           <div>
             <h2 className="font-serif text-xl text-[#292a27]">Recent applications</h2>
-            <p className="mt-1 text-xs text-black/50">Newest career and booth inquiries, with no bulk contact actions.</p>
+            <p className="mt-1 text-xs text-black/50">The four most recent job, booth rental and training applications.</p>
           </div>
           <Link
             href="/admin/inbox/work-with-us"

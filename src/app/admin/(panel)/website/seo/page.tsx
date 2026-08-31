@@ -38,6 +38,7 @@ import {
   BUSINESS_TYPES
 } from '@/types/seo'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingStatusLabel } from '@/lib/admin/settings-copy'
 import {
   Award,
   FileCheck,
@@ -65,7 +66,7 @@ type ImagePickerContext = {
 }
 
 const SEO_TABS = [
-  { id: 'site', label: 'Site Settings', phoneLabel: 'Site', icon: Globe },
+  { id: 'site', label: 'Business and site', phoneLabel: 'Site', icon: Globe },
   { id: 'homepage', label: 'Homepage', phoneLabel: 'Home', icon: Home },
   { id: 'workWithUs', label: 'Work With Us', phoneLabel: 'Careers', icon: Briefcase },
 ] as const satisfies ReadonlyArray<{
@@ -129,7 +130,7 @@ export default function SEOSettingsEditor() {
     setError(null)
     try {
       const response = await fetch('/api/admin/website/seo')
-      if (!response.ok) throw new Error('Failed to fetch SEO settings')
+      if (!response.ok) throw new Error('Could not load the search and sharing settings.')
       const data = await response.json()
       setSettings(data.settings)
       setSavedSettings(data.settings)
@@ -138,7 +139,7 @@ export default function SEOSettingsEditor() {
       setConflict(false)
     } catch (err) {
       console.error('Error fetching SEO settings:', err)
-      setError('Failed to load settings')
+      setError('Could not load the search and sharing settings. Refresh the page and try again.')
     } finally {
       setLoading(false)
     }
@@ -165,9 +166,9 @@ export default function SEOSettingsEditor() {
       if (!response.ok) {
         if (response.status === 409 && data?.conflict) {
           setConflict(true)
-          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+          throw new Error('Someone saved a newer version while this page was open. Load the latest version to replace your unsaved changes.')
         }
-        throw new Error(data?.error ?? `Failed to save settings (${response.status})`)
+        throw new Error(data?.error ?? 'Could not save the search and sharing settings. Try again.')
       }
       setSettings(data.settings)
       setSavedSettings(data.settings)
@@ -177,7 +178,7 @@ export default function SEOSettingsEditor() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to save')
+      const error = err instanceof Error ? err : new Error('Could not save the search and sharing settings. Try again.')
       setError(error.message)
       throw error
     } finally {
@@ -195,7 +196,7 @@ export default function SEOSettingsEditor() {
 
   useDirtyBlock({
     id: 'seo-settings',
-    label: 'SEO settings',
+    label: 'Search and sharing settings',
     dirty,
     save,
     discard,
@@ -277,7 +278,7 @@ export default function SEOSettingsEditor() {
 
   if (loading) {
     return (
-      <div className="flex h-96 items-center justify-center" role="status" aria-label="Loading SEO settings">
+      <div className="flex h-96 items-center justify-center" role="status" aria-label="Loading search and sharing settings">
         <div className="size-12 animate-spin rounded-full border-4 border-dusty-rose border-t-transparent motion-reduce:animate-none" aria-hidden="true" />
       </div>
     )
@@ -297,10 +298,10 @@ export default function SEOSettingsEditor() {
               <Search className="size-5 text-ocean-mist md:size-6" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <h1 className="font-serif text-2xl font-semibold leading-tight text-dune md:text-3xl">SEO Settings</h1>
-              <p className="mt-0.5 text-sm leading-5 text-dune/60">Manage search details and social sharing previews.</p>
+              <h1 className="font-serif text-2xl font-semibold leading-tight text-dune md:text-3xl">Search and sharing</h1>
+              <p className="mt-0.5 text-sm leading-5 text-dune/60">Edit how LashPop appears in search results and when pages are shared.</p>
               <p className="text-xs text-dune/45">
-                {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+                {websiteSettingStatusLabel(sourceOwner, baseVersion)}
               </p>
             </div>
           </div>
@@ -318,7 +319,7 @@ export default function SEOSettingsEditor() {
             ) : (
               <Save className="size-4" aria-hidden="true" />
             )}
-            {saved ? 'Saved!' : 'Save Changes'}
+            {saved ? 'Saved' : 'Save changes'}
           </button>
         </div>
       </motion.div>
@@ -349,7 +350,7 @@ export default function SEOSettingsEditor() {
         transition={{ delay: 0.05 }}
         className="mb-6"
       >
-        <div className="glass grid w-full grid-cols-3 gap-1 rounded-lg p-1 sm:inline-flex sm:w-auto sm:gap-2 sm:p-2 md:rounded-xl" role="tablist" aria-label="SEO sections">
+        <div className="glass grid w-full grid-cols-3 gap-1 rounded-lg p-1 sm:inline-flex sm:w-auto sm:gap-2 sm:p-2 md:rounded-xl" role="tablist" aria-label="Search and sharing sections">
           {SEO_TABS.map((tab, tabIndex) => {
             const Icon = tab.icon
             const selected = activeTab === tab.id
@@ -430,8 +431,8 @@ export default function SEOSettingsEditor() {
           setImagePickerContext(null)
         }}
         onSelect={handleImageSelect}
-        title="Select Social Image"
-        subtitle="Choose an image for social sharing (1200x630 recommended)"
+        title="Choose sharing image"
+        subtitle="Choose an image for shared links. Recommended size: 1200 by 630 pixels."
       />
     </div>
   )
@@ -461,14 +462,14 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
       <div className={SEO_PANEL_CLASS}>
         <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
           <Globe className="w-5 h-5" />
-          Business Information
+          Business information
         </h3>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-dune/50 uppercase tracking-wider flex items-center gap-1">
               <Type className="w-3 h-3" />
-              Business Name
+              Business name
             </label>
             <input
               type="text"
@@ -483,7 +484,7 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
           <div>
             <label className="text-xs text-dune/50 uppercase tracking-wider flex items-center gap-1">
               <Hash className="w-3 h-3" />
-              Business Type (Schema.org)
+              Business type for search engines
             </label>
             <select
               aria-label="Business type"
@@ -500,7 +501,7 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
           <div className="md:col-span-2">
             <label className="text-xs text-dune/50 uppercase tracking-wider flex items-center gap-1">
               <FileText className="w-3 h-3" />
-              Business Description
+              Business description
             </label>
             <textarea
               aria-label="Business description"
@@ -508,14 +509,14 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
               onChange={(e) => updateSite({ businessDescription: e.target.value })}
               rows={3}
               className={`${SEO_FIELD_CLASS} resize-none`}
-              placeholder="Describe your business..."
+              placeholder="Describe your business…"
             />
           </div>
 
           <div>
             <label className="text-xs text-dune/50 uppercase tracking-wider flex items-center gap-1">
               <LinkIcon className="w-3 h-3" />
-              Site URL
+              Website address
             </label>
             <input
               type="url"
@@ -530,7 +531,7 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
           <div>
             <label className="text-xs text-dune/50 uppercase tracking-wider flex items-center gap-1">
               <Type className="w-3 h-3" />
-              Site Name
+              Website name
             </label>
             <input
               type="text"
@@ -578,10 +579,10 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
       <div className={SEO_PANEL_CLASS}>
         <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
           <AtSign className="w-5 h-5" />
-          Social Profiles
+          Social profile links
         </h3>
         <p className="text-sm text-dune/60 mb-4">
-          These will be included in your Schema.org structured data for better search visibility.
+          Search engines use these links to connect LashPop with its official social profiles.
         </p>
 
         <div className="grid md:grid-cols-2 gap-4">
@@ -652,10 +653,10 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
           </div>
 
           <div>
-            <label className="text-xs text-dune/50 uppercase tracking-wider">Twitter / X</label>
+            <label className="text-xs text-dune/50 uppercase tracking-wider">X</label>
             <input
               type="url"
-              aria-label="Twitter or X profile URL"
+              aria-label="X profile URL"
               value={site.socialProfiles.twitter || ''}
               onChange={(e) => updateSocialProfiles({ twitter: e.target.value })}
               className={SEO_FIELD_CLASS}
@@ -675,18 +676,18 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
       <div className={SEO_PANEL_CLASS}>
         <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
           <ImageIcon className="w-5 h-5" />
-          Default Social Images
+          Default sharing images
         </h3>
         <p className="text-sm text-dune/60 mb-4">
-          These images are used as fallbacks when pages don&apos;t have their own social images set.
-          Recommended size: 1200x630 pixels for OG, 1200x628 for Twitter.
+          The website uses these images when a page does not have its own sharing image.
+          Recommended size: 1200 by 630 pixels.
         </p>
 
         <div className="grid md:grid-cols-3 gap-4">
           {/* Logo */}
           <ImageSelector
             label="Logo"
-            description="Square logo for Schema"
+            description="Square logo for search engines"
             image={site.logo}
             onSelect={() => openImagePicker({ type: 'site', field: 'logo' })}
             onRemove={() => removeImage({ type: 'site', field: 'logo' })}
@@ -694,8 +695,8 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
 
           {/* Default OG Image */}
           <ImageSelector
-            label="Default OG Image"
-            description="Facebook, LinkedIn sharing"
+            label="Default Facebook and LinkedIn image"
+            description="Used when pages are shared on Facebook or LinkedIn"
             image={site.defaultOgImage}
             onSelect={() => openImagePicker({ type: 'site', field: 'defaultOgImage' })}
             onRemove={() => removeImage({ type: 'site', field: 'defaultOgImage' })}
@@ -703,8 +704,8 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
 
           {/* Default Twitter Image */}
           <ImageSelector
-            label="Default Twitter Image"
-            description="Twitter/X card image"
+            label="Default X image"
+            description="Used when pages are shared on X"
             image={site.defaultTwitterImage}
             onSelect={() => openImagePicker({ type: 'site', field: 'defaultTwitterImage' })}
             onRemove={() => removeImage({ type: 'site', field: 'defaultTwitterImage' })}
@@ -716,15 +717,14 @@ function SiteSettingsTab({ site, updateSite, updateSocialProfiles, openImagePick
       <div className={SEO_PANEL_CLASS}>
         <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
           <FileText className="w-5 h-5" />
-          llms.txt Introduction
+          Additional business summary
         </h3>
         <p className="text-sm text-dune/60 mb-4">
-          Optional custom introduction for your llms.txt file. This helps AI assistants understand your business.
-          Leave blank to use the auto-generated content based on your services and business info.
+          Optional summary used by automated search tools. Leave it blank to use the business and service details above.
         </p>
 
         <textarea
-          aria-label="llms.txt introduction"
+          aria-label="Additional business summary"
           value={site.llmsTxtIntro || ''}
           onChange={(e) => updateSite({ llmsTxtIntro: e.target.value })}
           rows={4}
@@ -763,13 +763,13 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
       <div className={SEO_PANEL_CLASS}>
         <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
           <Type className="w-5 h-5" />
-          Meta Tags - {label}
+          Search listing for {label}
         </h3>
 
         <div className="space-y-4">
           <div>
             <label className="text-xs text-dune/50 uppercase tracking-wider">
-              Page Title
+              Search title
               <span className="ml-2 text-dune/30">({(seo.title || '').length}/60 characters)</span>
             </label>
             <input
@@ -784,7 +784,7 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
 
           <div>
             <label className="text-xs text-dune/50 uppercase tracking-wider">
-              Meta Description
+              Search description
               <span className="ml-2 text-dune/30">({(seo.metaDescription || '').length}/160 characters)</span>
             </label>
             <textarea
@@ -793,13 +793,13 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
               onChange={(e) => updatePage({ metaDescription: e.target.value })}
               rows={3}
               className={`${SEO_FIELD_CLASS} resize-none`}
-              placeholder="Describe this page in 160 characters or less..."
+              placeholder="Describe this page in 160 characters or less…"
             />
           </div>
 
           <div>
             <label className="text-xs text-dune/50 uppercase tracking-wider">
-              Canonical URL (optional)
+              Preferred page address (optional)
             </label>
             <input
               type="url"
@@ -807,7 +807,7 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
               value={seo.canonicalUrl || ''}
               onChange={(e) => updatePage({ canonicalUrl: e.target.value })}
               className={SEO_FIELD_CLASS}
-              placeholder="Leave empty to use default URL"
+              placeholder="Leave blank to use the page address"
             />
           </div>
 
@@ -820,7 +820,7 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
                 onChange={(e) => updatePage({ noIndex: e.target.checked })}
                 className="w-5 h-5 rounded border-sage/30 text-dusty-rose focus:ring-dusty-rose"
               />
-              <span className="text-sm text-dune">No Index</span>
+              <span className="text-sm text-dune">Hide this page from search results</span>
             </label>
 
             <label className="flex min-h-11 cursor-pointer items-center gap-2">
@@ -831,7 +831,7 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
                 onChange={(e) => updatePage({ noFollow: e.target.checked })}
                 className="w-5 h-5 rounded border-sage/30 text-dusty-rose focus:ring-dusty-rose"
               />
-              <span className="text-sm text-dune">No Follow</span>
+              <span className="text-sm text-dune">Tell search engines not to follow links on this page</span>
             </label>
           </div>
         </div>
@@ -841,42 +841,42 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
       <div className={SEO_PANEL_CLASS}>
         <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
           <Facebook className="w-5 h-5" />
-          OpenGraph (Facebook, LinkedIn)
+          Facebook and LinkedIn
         </h3>
         <p className="text-sm text-dune/60 mb-4">
-          Leave blank to use the meta title/description as fallbacks.
+          Leave these fields blank to use the search title and description.
         </p>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-4">
             <div>
-              <label className="text-xs text-dune/50 uppercase tracking-wider">OG Title</label>
+              <label className="text-xs text-dune/50 uppercase tracking-wider">Sharing title</label>
               <input
                 type="text"
-                aria-label={`${label} OpenGraph title`}
+                aria-label={`${label} sharing title for Facebook and LinkedIn`}
                 value={seo.ogTitle || ''}
                 onChange={(e) => updatePage({ ogTitle: e.target.value })}
                 className={SEO_FIELD_CLASS}
-                placeholder="Override title for social sharing"
+                placeholder="Leave blank to use the search title"
               />
             </div>
 
             <div>
-              <label className="text-xs text-dune/50 uppercase tracking-wider">OG Description</label>
+              <label className="text-xs text-dune/50 uppercase tracking-wider">Sharing description</label>
               <textarea
-                aria-label={`${label} OpenGraph description`}
+                aria-label={`${label} sharing description for Facebook and LinkedIn`}
                 value={seo.ogDescription || ''}
                 onChange={(e) => updatePage({ ogDescription: e.target.value })}
                 rows={3}
                 className={`${SEO_FIELD_CLASS} resize-none`}
-                placeholder="Override description for social sharing"
+                placeholder="Leave blank to use the search description"
               />
             </div>
 
             <div>
-              <label className="text-xs text-dune/50 uppercase tracking-wider">OG Type</label>
+              <label className="text-xs text-dune/50 uppercase tracking-wider">Page type</label>
               <select
-                aria-label={`${label} OpenGraph type`}
+                aria-label={`${label} page type for Facebook and LinkedIn`}
                 value={seo.ogType || 'website'}
                 onChange={(e) => updatePage({ ogType: e.target.value as PageSEO['ogType'] })}
                 className={SEO_FIELD_CLASS}
@@ -889,7 +889,7 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
           </div>
 
           <ImageSelector
-            label="OG Image"
+            label="Sharing image"
             description="1200x630 recommended"
             image={seo.ogImage}
             onSelect={() => openImagePicker({ type: 'page', page, field: 'ogImage' })}
@@ -902,54 +902,54 @@ function PageSEOTab({ page, label, seo, updatePage, openImagePicker, removeImage
       <div className={SEO_PANEL_CLASS}>
         <h3 className="font-serif text-lg text-dune mb-4 flex items-center gap-2">
           <AtSign className="w-5 h-5" />
-          Twitter Card
+          X
         </h3>
         <p className="text-sm text-dune/60 mb-4">
-          Leave blank to use OG or meta tags as fallbacks.
+          Leave these fields blank to use the Facebook and LinkedIn settings, then the search settings.
         </p>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-4">
             <div>
-              <label className="text-xs text-dune/50 uppercase tracking-wider">Twitter Title</label>
+              <label className="text-xs text-dune/50 uppercase tracking-wider">X title</label>
               <input
                 type="text"
-                aria-label={`${label} Twitter title`}
+                aria-label={`${label} title for X`}
                 value={seo.twitterTitle || ''}
                 onChange={(e) => updatePage({ twitterTitle: e.target.value })}
                 className={SEO_FIELD_CLASS}
-                placeholder="Override title for Twitter"
+                placeholder="Leave blank to use the sharing title"
               />
             </div>
 
             <div>
-              <label className="text-xs text-dune/50 uppercase tracking-wider">Twitter Description</label>
+              <label className="text-xs text-dune/50 uppercase tracking-wider">X description</label>
               <textarea
-                aria-label={`${label} Twitter description`}
+                aria-label={`${label} description for X`}
                 value={seo.twitterDescription || ''}
                 onChange={(e) => updatePage({ twitterDescription: e.target.value })}
                 rows={3}
                 className={`${SEO_FIELD_CLASS} resize-none`}
-                placeholder="Override description for Twitter"
+                placeholder="Leave blank to use the sharing description"
               />
             </div>
 
             <div>
-              <label className="text-xs text-dune/50 uppercase tracking-wider">Card Type</label>
+              <label className="text-xs text-dune/50 uppercase tracking-wider">X card layout</label>
               <select
-                aria-label={`${label} Twitter card type`}
+                aria-label={`${label} card layout for X`}
                 value={seo.twitterCard || 'summary_large_image'}
                 onChange={(e) => updatePage({ twitterCard: e.target.value as PageSEO['twitterCard'] })}
                 className={SEO_FIELD_CLASS}
               >
-                <option value="summary">Summary</option>
-                <option value="summary_large_image">Summary Large Image</option>
+                <option value="summary">Small image</option>
+                <option value="summary_large_image">Large image</option>
               </select>
             </div>
           </div>
 
           <ImageSelector
-            label="Twitter Image"
+            label="X image"
             description="1200x628 recommended"
             image={seo.twitterImage}
             onSelect={() => openImagePicker({ type: 'page', page, field: 'twitterImage' })}
@@ -1017,7 +1017,7 @@ function ImageSelector({ label, description, image, onSelect, onRemove }: ImageS
           aria-label={`Select ${label}`}
         >
           <ImageIcon className="size-8 text-dune/30" aria-hidden="true" />
-          <span className="text-xs text-dune/50">Select image</span>
+          <span className="text-xs text-dune/50">Choose image</span>
         </button>
       )}
     </div>
@@ -1092,12 +1092,10 @@ function BusinessCredentialsEditor({ credentials, onChange }: BusinessCredential
         <div className="min-w-0">
           <h3 className="font-serif text-lg text-dune flex items-center gap-2">
             <Shield className="w-5 h-5" />
-            Business Credentials
+            Licenses and certifications
           </h3>
           <p className="text-sm text-dune/60 mt-1">
-            Licenses, certifications, and accreditations for search engine structured data.
-            <br />
-            <span className="text-xs text-ocean-mist">These appear in JSON-LD but not publicly on the website.</span>
+            Search engines can read these licenses, certifications, and accreditations. They are not shown on the website.
           </p>
         </div>
         {!isAdding && (
@@ -1107,7 +1105,7 @@ function BusinessCredentialsEditor({ credentials, onChange }: BusinessCredential
             className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-ocean-mist/10 px-3 py-2 text-xs font-medium text-ocean-mist transition-colors hover:bg-ocean-mist/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist sm:w-auto md:rounded-xl"
           >
             <Plus className="size-3.5" aria-hidden="true" />
-            Add Credential
+            Add credential
           </button>
         )}
       </div>
@@ -1170,9 +1168,9 @@ function BusinessCredentialsEditor({ credentials, onChange }: BusinessCredential
       {/* Empty State */}
       {credentials.length === 0 && !isAdding && (
         <div className="text-center py-6 text-dune/40 text-sm border border-dashed border-sage/20 rounded-xl">
-          No business credentials yet.
+          No business credentials added.
           <p className="text-xs mt-1 text-dune/30">
-            Add licenses and certifications to boost E-E-A-T signals for search engines
+            Add accurate licenses and certifications for search engines to read.
           </p>
         </div>
       )}
@@ -1300,7 +1298,7 @@ function BusinessCredentialsEditor({ credentials, onChange }: BusinessCredential
                   className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-ocean-mist px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ocean-mist/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-mist focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   <Plus className="size-4" aria-hidden="true" />
-                  Add Credential
+                  Add credential
                 </button>
               </div>
             </div>

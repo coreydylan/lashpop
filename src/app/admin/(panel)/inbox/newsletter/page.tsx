@@ -5,7 +5,7 @@ import { listNewsletterSubscribers } from '@/app/actions/newsletter'
 import { SubscriberDirectory, type SubscriberRow } from './SubscriberDirectory'
 
 export const metadata: Metadata = {
-  title: 'Newsletter Subscribers — LashPop Admin',
+  title: 'Newsletter subscribers — LashPop Admin',
 }
 
 export const dynamic = 'force-dynamic'
@@ -34,12 +34,12 @@ export default async function NewsletterInboxPage() {
               <h1 className="font-serif text-3xl text-[#292a27] sm:text-4xl">Subscriber directory</h1>
             </div>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60 sm:mt-3">
-              See every website signup, preserve consent history, and prepare an active-only list for LashPop&apos;s approved email platform.
+              Review every newsletter signup and download a list of active subscribers.
             </p>
           </div>
           <div className="flex max-w-md items-start gap-3 border-l-2 border-[#c96f50] pl-3 text-xs leading-5 text-black/55 sm:border-l-0 sm:border-t sm:border-black/10 sm:pt-3">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#9a4932]" aria-hidden="true" />
-            The website keeps the signup ledger. Unsubscribes, bounces, complaints, and delivery controls must also remain enforced in the sending platform.
+            LashPop stores every signup and status change. Keep unsubscribed addresses, bounced addresses and spam complaints blocked in the service that sends the newsletter.
           </div>
         </div>
       </header>

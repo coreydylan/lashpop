@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 const PATH_LABELS: Record<string, { label: string; className: string }> = {
   employee: { label: 'Employee', className: 'bg-ocean-mist/15 text-ocean-mist border-ocean-mist/30' },
-  booth: { label: 'Booth Rental', className: 'bg-dusty-rose/15 text-dusty-rose border-dusty-rose/30' },
+  booth: { label: 'Booth rental', className: 'bg-dusty-rose/15 text-dusty-rose border-dusty-rose/30' },
   training: { label: 'Training', className: 'bg-golden/15 text-golden border-golden/30' },
 }
 
@@ -29,7 +29,7 @@ export default async function WorkWithUsInboxPage() {
           <Inbox className="w-6 h-6 text-dusty-rose" />
         </div>
         <div>
-          <h1 className="h2 text-dune">Work With Us Applications</h1>
+          <h1 className="h2 text-dune">Work with us applications</h1>
           <p className="text-sm text-dune/60">
             {submissions.length} {submissions.length === 1 ? 'submission' : 'submissions'} from the careers page
           </p>
@@ -73,8 +73,8 @@ export default async function WorkWithUsInboxPage() {
                   {s.experience && <Detail label="Experience" value={s.experience} />}
                   {s.specialty && s.specialty.length > 0 && <Detail label="Specialties" value={s.specialty.join(', ')} />}
                   {s.currentBusiness && <Detail label="Current business" value={s.currentBusiness} />}
-                  {s.desiredStartDate && <Detail label="Desired start" value={s.desiredStartDate} />}
-                  {typeof s.boothDays === 'number' && <Detail label="Booth days/wk" value={String(s.boothDays)} />}
+                  {s.desiredStartDate && <Detail label="Preferred start date" value={s.desiredStartDate} />}
+                  {typeof s.boothDays === 'number' && <Detail label="Booth days per week" value={String(s.boothDays)} />}
                 </dl>
 
                 {s.message && (

@@ -31,7 +31,7 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
     ?? categories[0]
 
   if (!selected) {
-    return <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 text-sm text-amber-900">No service categories are available yet. Run the Vagaro sync first.</div>
+    return <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 text-sm text-amber-900">No service categories are available yet. Update from Vagaro first.</div>
   }
 
   const sourceRows = taxonomy.rawCategories.filter((category) => category.mappedCategoryId === selected.id)
@@ -50,36 +50,35 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
   const homepageCard = homepage.cards.find((card) => card.slug === selected.slug || card.id === selected.slug)
   const describedServices = categoryServices.filter((service) => Boolean(service.description || service.vagaroDescription))
   const imagedServices = categoryServices.filter((service) => Boolean(service.resolvedImageUrl))
-  const bookingReadyServices = categoryServices.filter(
-    (service) => !service.vagaroServiceId || service.bookingStatus === 'ready',
-  )
+  const vagaroServices = categoryServices.filter((service) => Boolean(service.vagaroServiceId))
+  const bookingReadyServices = vagaroServices.filter((service) => service.bookingStatus === 'ready')
   const latestRun = runs[0]
   const sourceOrderMatches = sourceRows.length === 0 || sourceRows.some((source) => source.sourceOrder === selected.displayOrder)
 
   const checks = [
     {
-      label: 'Vagaro category is mapped',
+      label: 'Service group matches Vagaro',
       ok: sourceRows.length > 0 || selected.sourceType === 'manual',
-      detail: sourceRows.length > 0 ? sourceRows.map((source) => source.title).join(', ') : `Local ${selected.sourceType} category`,
+      detail: sourceRows.length > 0 ? sourceRows.map((source) => source.title).join(', ') : 'Created in LashPop',
       href: '/admin/system/syncs',
-      action: 'Review sync',
+      action: 'View Vagaro update',
     },
     {
       label: 'Booking visibility and order are ready',
       ok: selected.isActive && selected.showInBooking && sourceOrderMatches,
       detail: selected.showInBooking ? `Position ${selected.displayOrder + 1}${sourceOrderMatches ? '' : ' · differs from Vagaro'}` : 'Hidden from booking',
       href: '/admin/website/services',
-      action: 'Open taxonomy',
+      action: 'Open booking categories',
     },
     {
-      label: 'Customer-facing category copy is complete',
+      label: 'Website category text is complete',
       ok: Boolean(selected.description && selected.tagline),
-      detail: [selected.tagline ? 'tagline' : null, selected.description ? 'description' : null, selected.icon ? 'icon' : null].filter(Boolean).join(' · ') || 'No local presentation yet',
+      detail: [selected.tagline ? 'tagline' : null, selected.description ? 'description' : null, selected.icon ? 'icon' : null].filter(Boolean).join(' · ') || 'No website text or icon yet',
       href: '/admin/website/services',
-      action: 'Edit presentation',
+      action: 'Edit website details',
     },
     {
-      label: 'Homepage service card is live',
+      label: 'Homepage service card is shown',
       ok: Boolean(homepageCard?.enabled && homepageCard.description && homepageCard.icon),
       detail: homepageCard ? `${homepageCard.title}${homepageCard.enabled ? '' : ' · disabled'}` : 'No matching card',
       href: '/admin/website/homepage-services',
@@ -93,18 +92,20 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
       action: 'Review services',
     },
     {
-      label: 'Every Vagaro service has a verified booking mapping',
-      ok: categoryServices.length > 0 && bookingReadyServices.length === categoryServices.length,
-      detail: `${bookingReadyServices.length}/${categoryServices.length} verified · new services remain hidden until ready`,
+      label: 'Vagaro booking links are ready',
+      ok: vagaroServices.length === 0 || bookingReadyServices.length === vagaroServices.length,
+      detail: vagaroServices.length === 0
+        ? 'No Vagaro services in this group'
+        : `${bookingReadyServices.length}/${vagaroServices.length} ready · new Vagaro services remain hidden until their booking links work`,
       href: '/admin/system/syncs',
-      action: 'Review booking health',
+      action: 'Check booking links',
     },
     {
-      label: 'Eligible stylists surface on the public team',
+      label: 'Eligible stylists appear on the website',
       ok: eligibleStylists.length > 0 && visibleChipMembers.length >= eligibleStylists.length,
       detail: eligibleStylists.length > 0 ? eligibleStylists.map((stylist) => stylist.name).join(', ') : 'No eligible stylists returned by Vagaro',
       href: '/admin/website/team',
-      action: 'Review stylist chips',
+      action: 'Check stylist services',
     },
   ]
 
@@ -114,9 +115,9 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
     <div className="space-y-7">
       <header className="grid gap-5 border-b border-black/10 pb-6 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Guided workflow</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9f4c33]">Service checklist</p>
           <h1 className="mt-2 font-serif text-4xl">Launch or update a service</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">One verification path across Vagaro, booking, homepage marketing, service details, and stylist profiles.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">Check the Vagaro details, booking links, homepage card, service details, and stylist profiles.</p>
         </div>
         <form className="flex flex-col gap-2 sm:flex-row sm:items-end" method="get">
           <label htmlFor="category" className="text-xs font-semibold text-black/60 sm:sr-only">Service category</label>
@@ -135,14 +136,14 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
             {readyCount === checks.length ? <CheckCircle2 className="mt-0.5 size-6 text-emerald-700" /> : <AlertTriangle className="mt-0.5 size-6 text-amber-700" />}
             <div>
               <h2 className="font-serif text-2xl">{selected.name}</h2>
-              <p className="mt-1 text-sm text-black/60">{readyCount} of {checks.length} launch checks ready.</p>
+              <p className="mt-1 text-sm text-black/60">{readyCount} of {checks.length} checks passed.</p>
             </div>
           </div>
         </div>
         <div className="rounded-2xl border border-black/10 bg-white p-5">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/45"><RefreshCw className="size-3.5" /> Latest Vagaro run</div>
-          <p className="mt-3 text-sm font-semibold capitalize">{latestRun?.status || 'No recorded run'}</p>
-          <p className="mt-1 text-xs text-black/50">{latestRun?.startedAt ? new Date(latestRun.startedAt).toLocaleString() : 'Run a sync before launch.'}</p>
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-black/45"><RefreshCw className="size-3.5" /> Latest Vagaro update</div>
+          <p className="mt-3 text-sm font-semibold capitalize">{latestRun?.status || 'No recorded update'}</p>
+          <p className="mt-1 text-xs text-black/50">{latestRun?.startedAt ? new Date(latestRun.startedAt).toLocaleString() : 'Update from Vagaro before launch.'}</p>
         </div>
       </section>
 
@@ -162,8 +163,8 @@ export default async function ServiceLaunchPage({ searchParams }: { searchParams
       <section className="rounded-xl border border-black/10 bg-[#292a27] p-5 text-white">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="font-serif text-xl">Verify the public result</h2>
-            <p className="mt-1 text-xs leading-5 text-white/55">Open both destinations after every sync or publishing change.</p>
+            <h2 className="font-serif text-xl">Check the public website</h2>
+            <p className="mt-1 text-xs leading-5 text-white/55">Open both sections after every Vagaro update or website change.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <a href="/#services" target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-white px-4 text-sm font-semibold text-[#292a27]">Choose a Service <ExternalLink className="size-4" /></a>

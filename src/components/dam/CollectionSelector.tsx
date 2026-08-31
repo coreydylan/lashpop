@@ -35,7 +35,7 @@ export function CollectionSelector({
             : "bg-cream text-dune border-sage/20 hover:border-dusty-rose/40 hover:shadow-sm"
         )}
       >
-        All
+        All media
       </button>
 
       {/* Individual collection chips */}
@@ -69,7 +69,7 @@ export function CollectionSelector({
           className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-all border-2 border-dashed border-sage/30 text-sage hover:border-dusty-rose/50 hover:text-dusty-rose"
         >
           <Plus className="w-4 h-4" />
-          <span>New</span>
+          <span>New collection</span>
         </button>
       )}
     </div>

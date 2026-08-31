@@ -48,7 +48,7 @@ export function MediaWorkspaceHeader({
               Media library
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60 sm:mt-3">
-              Upload, organize, and assign the photography used across LashPop.
+              Upload and organize the photos and videos used on the LashPop website.
             </p>
           </div>
 
@@ -84,14 +84,14 @@ export function MediaWorkspaceHeader({
 
       <section className="border-b border-black/10 bg-[#f8f4ee] px-4 sm:px-6 lg:px-8" aria-label="Media library summary">
         <dl className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-y divide-black/10 border-x border-black/10 sm:grid-cols-4 sm:divide-y-0">
-          <Metric label="All assets" value={totalCount} />
-          <Metric label="In this view" value={visibleCount} />
-          <Metric label="Need organizing" value={untaggedCount} />
+          <Metric label="All files" value={totalCount} />
+          <Metric label="Shown" value={visibleCount} />
+          <Metric label="Without tags or team" value={untaggedCount} />
           <Metric label="Selected" value={selectedCount} accent={selectedCount > 0} />
         </dl>
       </section>
 
-      <section className="border-b border-black/10 bg-white px-4 py-4 sm:px-6 lg:px-8" aria-label="Search and library setup">
+      <section className="border-b border-black/10 bg-white px-4 py-4 sm:px-6 lg:px-8" aria-label="Search and organize media">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative block min-w-0 flex-1">
             <span className="sr-only">Search media by file name, tag, category, or team member</span>

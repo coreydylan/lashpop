@@ -725,7 +725,7 @@ export default function DAMPage() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to assign team member")
+        throw new Error("Could not assign the team member")
       }
     }
 
@@ -743,7 +743,7 @@ export default function DAMPage() {
       })
 
       if (!response.ok) {
-        throw new Error("Failed to save tags")
+        throw new Error("Could not save tags")
       }
     }
   }, [normalizeExclusiveTags])
@@ -1141,7 +1141,7 @@ export default function DAMPage() {
 
     if (assetIds.length === 0) return
 
-    if (!skipPrompt && !confirm(`Remove this ${label} from ${count} image${count !== 1 ? 's' : ''}?`)) return
+    if (!skipPrompt && !confirm(`Remove this ${label} from ${count} ${count === 1 ? 'file' : 'files'}?`)) return
 
     try {
       if (isTeamMemberTag) {
@@ -1157,7 +1157,7 @@ export default function DAMPage() {
         })
 
         if (!response.ok) {
-          throw new Error("Failed to remove team member")
+          throw new Error("Could not remove the team member")
         }
       } else {
         // Remove regular tag from selected assets
@@ -1173,7 +1173,7 @@ export default function DAMPage() {
         })
 
         if (!response.ok) {
-          throw new Error("Failed to remove tag")
+          throw new Error("Could not remove the tag")
         }
       }
 
@@ -1220,7 +1220,7 @@ export default function DAMPage() {
     if (assetIds.length === 0) return
     const first = window.confirm(`Delete ${contextLabel}?`)
     if (!first) return
-    const second = window.confirm("This action cannot be undone. Are you absolutely sure?")
+    const second = window.confirm("Delete permanently? You cannot undo this.")
     if (!second) return
     await handleDelete(assetIds)
   }, [handleDelete])
@@ -1275,8 +1275,8 @@ export default function DAMPage() {
 
       items.push({
         id: "clear-all-filters-groups",
-        group: "Quick Actions",
-        label: "✕ Clear all filters & groups",
+        group: "Quick actions",
+        label: "Clear filters and groups",
         description: `Remove ${clearText.join(' and ')}`,
         onSelect: () => {
           handleClearFilters()
@@ -1293,8 +1293,8 @@ export default function DAMPage() {
       group: "Selection",
       label: "Select all in view",
       description: assetCount === 0
-        ? "No assets available to select"
-        : `Highlight all ${assetCount} asset${assetCount === 1 ? "" : "s"} currently filtered`,
+        ? "No files available to select"
+        : `Select all ${assetCount} ${assetCount === 1 ? "file" : "files"} in this view`,
       disabled: assetCount === 0 || selectionCount === assetCount,
       onSelect: () => setSelectedAssets(assets.map((asset) => asset.id))
     })
@@ -1317,7 +1317,7 @@ export default function DAMPage() {
             id: `assign-${category.id}-${tag.id}`,
             group: "Tagging",
             label: `${category.displayName} › ${tag.displayName}`,
-            description: `Apply to ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
+            description: `Apply to ${selectionCount} selected ${selectionCount === 1 ? "file" : "files"}`,
             badge: category.displayName,
             onSelect: () => {
               const formatted = makeSelectedTag(category, tag)
@@ -1339,7 +1339,7 @@ export default function DAMPage() {
           id: `assign-team-${member.id}`,
           group: "Team",
           label: member.name,
-          description: `Assign to ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
+          description: `Assign to ${selectionCount} selected ${selectionCount === 1 ? "file" : "files"}`,
           badge: "Team",
           avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
           onSelect: () => {
@@ -1362,8 +1362,8 @@ export default function DAMPage() {
       items.push({
         id: "selection-apply",
         group: "Selection",
-        label: "Apply queued tags now",
-        description: omniTags.length > 0 ? `${omniTags.length} pending selections` : "Add tags to queue for instant apply",
+        label: "Apply tags",
+        description: omniTags.length > 0 ? `${omniTags.length} ${omniTags.length === 1 ? "tag" : "tags"} ready to apply` : "Choose tags before applying them",
         disabled: omniTags.length === 0,
         onSelect: () => {
           void handleApplyTags()
@@ -1374,7 +1374,7 @@ export default function DAMPage() {
         id: "selection-clear",
         group: "Selection",
         label: "Clear selection",
-        description: `Release ${selectionCount} asset${selectionCount === 1 ? "" : "s"}`,
+        description: `Deselect ${selectionCount} ${selectionCount === 1 ? "file" : "files"}`,
         onSelect: clearSelection
       })
 
@@ -1382,7 +1382,7 @@ export default function DAMPage() {
         id: "selection-delete",
         group: "Selection",
         label: selectionCount === 1 ? "Delete selected photo" : "Delete selected photos",
-        description: "Double confirmation required",
+        description: "You will confirm twice",
         onSelect: () => confirmDeleteAssets(selectedAssets, `${selectionCount} selected photo${selectionCount === 1 ? "" : "s"}`)
       })
     } else if (activeLightboxAsset) {
@@ -1396,8 +1396,8 @@ export default function DAMPage() {
         group: "Selection",
         label: activeAssetSelected ? "Remove from selection" : "Add to selection",
         description: activeAssetSelected
-          ? "Keep editing this photo without bulk state"
-          : "Include this photo in your bulk selection",
+          ? "Edit this photo without changing the other selected photos"
+          : "Add this photo to the current selection",
         onSelect: () => {
           setSelectedAssets((prev) =>
             activeAssetSelected ? prev.filter((id) => id !== activeLightboxAsset.id) : [...prev, activeLightboxAsset.id]
@@ -1472,7 +1472,7 @@ export default function DAMPage() {
         if (member) {
           items.push({
             id: `current-team-${member.id}`,
-            group: "Current Tags",
+            group: "Current tags",
             label: `Team › ${member.name}`,
             description: "Remove from this photo",
             avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
@@ -1484,7 +1484,7 @@ export default function DAMPage() {
       activeLightboxAsset.tags?.forEach((tag) => {
         items.push({
           id: `current-tag-${tag.id}`,
-          group: "Current Tags",
+          group: "Current tags",
           label: `${tag.category.displayName} › ${tag.displayName}`,
           description: "Remove from this photo",
           onSelect: () => handleRemoveTag(tag.id, 1, [activeLightboxAsset.id])
@@ -1498,7 +1498,7 @@ export default function DAMPage() {
         id: "single-delete",
         group: "Selection",
         label: "Delete this photo",
-        description: "Double confirmation required",
+        description: "You will confirm twice",
         onSelect: () => confirmDeleteAssets([activeLightboxAsset.id], `"${activeLightboxAsset.fileName}"`)
       })
     } else {
@@ -1520,7 +1520,7 @@ export default function DAMPage() {
             id: `filter-tag-${tag.id}`,
             group: "Filtering",
             label: `${category.displayName} › ${tag.displayName}`,
-            description: isActive ? "Click to remove filter" : "Click to add filter",
+            description: isActive ? "Remove this filter" : "Filter by this tag",
             isActive,
             badge: isActive ? "Active" : category.displayName,
             onSelect: () => handleTagFilterToggle(tag.id)
@@ -1543,7 +1543,7 @@ export default function DAMPage() {
           id: `filter-team-${member.id}`,
           group: "Filtering",
           label: `Team › ${member.name}`,
-          description: isActive ? "Active filter" : "Filter by this team member",
+          description: isActive ? "Remove this filter" : "Filter by this team member",
           isActive,
           badge: isActive ? "Active" : "Team",
           avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
@@ -1574,7 +1574,7 @@ export default function DAMPage() {
             id: `assign-disabled-${category.id}-${tag.id}`,
             group: "Tagging",
             label: `${category.displayName} › ${tag.displayName}`,
-            description: "Select assets first to apply tags",
+            description: "Select files before adding tags",
             badge: category.displayName,
             disabled: true,
             onSelect: () => {} // No-op
@@ -1591,7 +1591,7 @@ export default function DAMPage() {
           id: `assign-team-disabled-${member.id}`,
           group: "Team",
           label: member.name,
-          description: "Select assets first to assign team member",
+          description: "Select files before assigning a team member",
           badge: "Team",
           avatarUrl: member.cropCloseUpCircleUrl || member.imageUrl,
           disabled: true,
@@ -1606,11 +1606,11 @@ export default function DAMPage() {
     // Add toggle for selection mode
     items.push({
       id: "selection-mode-toggle",
-      group: "Select by Filter",
-      label: selectionMode === 'replace' ? "Mode: Replace Selection" : "Mode: Add to Selection",
+      group: "Select by filter",
+      label: selectionMode === 'replace' ? "Selection mode: replace" : "Selection mode: add",
       description: selectionMode === 'replace'
-        ? "Click to switch to additive mode"
-        : "Click to switch to replace mode",
+        ? "Switch so future matches are added to the current selection"
+        : "Switch so future matches replace the current selection",
       isActive: selectionMode === 'add',
       badge: selectionMode === 'replace' ? "Replace" : "Add",
       onSelect: () => setSelectionMode(mode => mode === 'replace' ? 'add' : 'replace')
@@ -1633,7 +1633,7 @@ export default function DAMPage() {
 
         items.push({
           id: `select-tag-${tag.id}`,
-          group: "Select by Filter",
+          group: "Select by filter",
           label: `${category.displayName} › ${tag.displayName}`,
           description: selectionMode === 'replace'
             ? `Select ${matchingCount} asset${matchingCount === 1 ? '' : 's'}`
@@ -1658,7 +1658,7 @@ export default function DAMPage() {
 
       items.push({
         id: `select-team-${member.id}`,
-        group: "Select by Filter",
+        group: "Select by filter",
         label: `Team › ${member.name}`,
         description: selectionMode === 'replace'
           ? `Select ${matchingCount} asset${matchingCount === 1 ? '' : 's'}`
@@ -1682,8 +1682,8 @@ export default function DAMPage() {
         items.push({
           id: "group-team",
           group: "Organization",
-          label: "Group by Team",
-          description: "Organize grid by team members",
+          label: "Group by team member",
+          description: "Show media in groups by team member",
           onSelect: () => handleGroupBy("team")
         })
       }
@@ -1694,7 +1694,7 @@ export default function DAMPage() {
             id: `group-${category.id}`,
             group: "Organization",
             label: `Group by ${category.displayName}`,
-            description: `Organize grid by ${category.displayName.toLowerCase()}`,
+            description: `Show media in groups by ${category.displayName.toLowerCase()}`,
             onSelect: () => handleGroupBy(category.name)
           })
         }
@@ -1706,7 +1706,7 @@ export default function DAMPage() {
         id: `remove-group-${categoryName}`,
         group: "Organization",
         label: `Remove ${getCategoryDisplayName(categoryName)} grouping`,
-        description: "Clear this grouping layer",
+        description: "Stop grouping by this category",
         onSelect: () => handleRemoveGroupBy(categoryName)
       })
     })
@@ -1719,7 +1719,7 @@ export default function DAMPage() {
           id: `collection-${collection.id}`,
           group: "Organization",
           label: `Collection › ${collection.displayName}`,
-          description: isActive ? "Currently viewing this collection" : "View this collection",
+          description: isActive ? "Remove this collection filter" : "View this collection",
           isActive,
           badge: isActive ? "Active" : "Collection",
           onSelect: () => setActiveCollectionId(isActive ? undefined : collection.id)
@@ -1730,8 +1730,8 @@ export default function DAMPage() {
         items.push({
           id: "collection-clear",
           group: "Organization",
-          label: "View all assets",
-          description: "Clear collection filter",
+          label: "View all media",
+          description: "Remove the collection filter",
           onSelect: () => setActiveCollectionId(undefined)
         })
       }
@@ -1744,23 +1744,23 @@ export default function DAMPage() {
       id: "view-toggle",
       group: "View",
       label: gridViewMode === "square" ? "Switch to aspect ratio view" : "Switch to square grid view",
-      description: "Toggle gallery layout mode",
+      description: "Change how the media grid is displayed",
       onSelect: toggleGridView
     })
 
     items.push({
       id: "view-card-settings",
       group: "View",
-      label: "Customize card display",
-      description: "Choose which tags appear on asset cards",
+      label: "Choose details on media cards",
+      description: "Choose which tags appear on each media card",
       onSelect: openCardSettings
     })
 
     items.push({
       id: "upload-toggle",
       group: "View",
-      label: isUploadOpen ? "Hide upload panel" : "Show upload panel",
-      description: "Toggle quick upload interface",
+      label: isUploadOpen ? "Close upload area" : "Open upload area",
+      description: isUploadOpen ? "Hide the upload form" : "Show the upload form",
       onSelect: toggleUploadPanel
     })
 
@@ -1770,8 +1770,8 @@ export default function DAMPage() {
     items.push({
       id: "manage-tags",
       group: "Settings",
-      label: "Manage tags & categories",
-      description: "Edit, rename, or reorganize tag system",
+      label: "Manage tags and categories",
+      description: "Add, rename, delete or reorder tags and categories",
       badge: "Admin",
       onSelect: () => {
         setIsCommandOpen(false)
@@ -1794,8 +1794,8 @@ export default function DAMPage() {
     items.push({
       id: "settings-team",
       group: "Settings",
-      label: "Team management",
-      description: "Manage team members and photos",
+      label: "Manage team photos",
+      description: "Choose profile photos and website crops",
       onSelect: () => {
         router.push("/admin/assets/team")
       }
@@ -1807,10 +1807,10 @@ export default function DAMPage() {
     items.push({
       id: "help-tutorial",
       group: "Help",
-      label: completedDesktop && completedMobile ? "Restart tutorial walkthrough" : "Start tutorial walkthrough",
+      label: completedDesktop && completedMobile ? "Restart tutorial" : "Start tutorial",
       description: isMobile
-        ? completedMobile ? "Review the mobile tutorial" : "Interactive guide for mobile users"
-        : completedDesktop ? "Review the desktop tutorial" : "Interactive guide for first-time users",
+        ? completedMobile ? "Review the mobile tutorial" : "Learn how to use Media on a phone"
+        : completedDesktop ? "Review the desktop tutorial" : "Learn the main Media tasks",
       badge: (completedDesktop && completedMobile) ? "Completed" : undefined,
       onSelect: () => {
         setIsCommandOpen(false)
@@ -1824,10 +1824,10 @@ export default function DAMPage() {
       id: "help-restart-tutorial",
       group: "Help",
       label: "Reset tutorial progress",
-      description: "Clear completion and start fresh",
+      description: "Mark the tutorial as not completed",
       disabled: !completedDesktop && !completedMobile,
       onSelect: () => {
-        if (confirm("Reset your tutorial progress? You can restart it anytime.")) {
+        if (confirm("Reset the tutorial? You can start it again at any time.")) {
           restartTutorial()
         }
       }
@@ -1837,19 +1837,19 @@ export default function DAMPage() {
       id: "help-shortcuts",
       group: "Help",
       label: "Keyboard shortcuts",
-      description: "View all available keyboard commands",
+      description: "View the keys for common actions",
       onSelect: () => {
-        alert("⌨️ Keyboard Shortcuts\n\n/ or ⌘K (Ctrl+K) - Open Command Palette\nEsc - Close Command Palette\n\n⌘+Click - Multi-select items\nClick & Drag - Select range\nShift+Click - Select range\n\nArrow Keys - Navigate Command Palette\nEnter - Execute selected command")
+        alert("Keyboard shortcuts\n\n/ or ⌘K (Ctrl+K): Open Actions\nEsc: Close Actions\n\n⌘+click: Select more than one file\nClick and drag: Select a range\nShift+click: Select a range\n\nArrow keys: Move through actions\nEnter: Choose an action")
       }
     })
 
     items.push({
       id: "help-tips",
       group: "Help",
-      label: "Quick tips & examples",
-      description: "Learn common workflows with examples",
+      label: "Task examples",
+      description: "See how to group files and add tags to several files",
       onSelect: () => {
-        alert("💡 Quick Tip: Group by Team\n\n1. Open Command Palette (/)\n2. Type 'group'\n3. Select 'Group by Team'\n4. Your grid reorganizes by artist!\n\n---\n\n💡 Quick Tip: Bulk Tagging\n\n1. Select multiple photos (click & drag)\n2. Open Command Palette (/)\n3. Choose tags from Tagging category\n4. Tags apply to all selected items!\n\n---\n\nMore tips available in the tutorial!")
+        alert("Group media by team member\n\n1. Open Actions (/).\n2. Type ‘group’.\n3. Choose ‘Group by team member’.\n\nAdd tags to several files\n\n1. Select the files.\n2. Open Actions (/).\n3. Choose tags under Tagging.\n4. Choose ‘Apply tags’.\n\nOpen the tutorial for more help.")
       }
     })
 
@@ -1975,7 +1975,7 @@ export default function DAMPage() {
     if (!hasTags) {
       return (
         <span className="text-sm text-cream/70">
-          No tags yet. Use the Action Palette or tag selector to add some magic.
+          No tags yet. Open Actions or use the tag selector to add one.
         </span>
       )
     }
@@ -2198,7 +2198,7 @@ export default function DAMPage() {
             <section className="mb-6 overflow-hidden rounded-xl border border-[#c96f50]/25 bg-white" aria-labelledby="media-upload-heading">
               <div className="border-b border-black/10 bg-[#f4dfd5] px-5 py-4">
                 <h2 id="media-upload-heading" className="font-serif text-xl">Add media to the library</h2>
-                <p className="mt-1 text-xs leading-5 text-black/50">Files stay selected after upload so you can organize them before moving on.</p>
+                <p className="mt-1 text-xs leading-5 text-black/50">Uploaded files stay selected so you can add tags or assign a team member.</p>
               </div>
               <div className="p-4 sm:p-5">
                 <Suspense fallback={<div className="py-10 text-center text-sm text-black/45">Preparing uploader…</div>}>
@@ -2213,8 +2213,8 @@ export default function DAMPage() {
 
           <div className="sr-only" aria-live="polite">
             {selectedAssets.length > 0
-              ? `${selectedAssets.length} ${selectedAssets.length === 1 ? 'asset' : 'assets'} selected.`
-              : `${assets.length} ${assets.length === 1 ? 'asset' : 'assets'} in the current view.`}
+              ? `${selectedAssets.length} ${selectedAssets.length === 1 ? 'file' : 'files'} selected.`
+              : `${assets.length} ${assets.length === 1 ? 'file' : 'files'} in the current view.`}
           </div>
 
           {dataError ? (
@@ -2222,8 +2222,8 @@ export default function DAMPage() {
               <span className="mx-auto flex size-12 items-center justify-center rounded-lg bg-red-50 text-red-700">
                 <AlertCircle className="size-5" aria-hidden="true" />
               </span>
-              <h2 className="mt-4 font-serif text-2xl">The media library could not be loaded.</h2>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Your files are still safe. Try the request again before uploading or reorganizing anything.</p>
+              <h2 className="mt-4 font-serif text-2xl">Could not load the media library</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Try again before uploading or changing any files.</p>
               <button
                 type="button"
                 onClick={() => void fetchAssets()}
@@ -2242,7 +2242,7 @@ export default function DAMPage() {
               <span className="mx-auto flex size-14 items-center justify-center rounded-lg bg-[#f4dfd5] text-[#9f4c33]">
                 <UploadIcon className="size-6" aria-hidden="true" />
               </span>
-              <h2 className="mt-5 font-serif text-2xl">Build the shared media library.</h2>
+              <h2 className="mt-5 font-serif text-2xl">Upload the first media files</h2>
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Upload the first set of approved photos, then add service, location, and team tags so other editors can find them.</p>
               <button
                 type="button"
@@ -2250,13 +2250,13 @@ export default function DAMPage() {
                 className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#292a27] px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
               >
                 <UploadIcon className="size-4" aria-hidden="true" />
-                Upload the first files
+                Upload files
               </button>
             </section>
           ) : assets.length === 0 ? (
             <section className="rounded-xl border border-black/10 bg-white px-6 py-14 text-center">
-              <h2 className="font-serif text-2xl">No media matches this view.</h2>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Clear the search, collection, and filters to return to the full library.</p>
+              <h2 className="font-serif text-2xl">No media found</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-black/50">Clear the search, collection and filters to see all media.</p>
               <button
                 type="button"
                 onClick={() => {
@@ -2266,7 +2266,7 @@ export default function DAMPage() {
                 }}
                 className="mt-5 inline-flex min-h-11 items-center rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
               >
-                Clear this view
+                Clear search and filters
               </button>
             </section>
           ) : (
@@ -2326,7 +2326,7 @@ export default function DAMPage() {
                 })
 
                 if (!response.ok) {
-                  throw new Error("Failed to save tags")
+                  throw new Error("Could not save tags")
                 }
 
                 // Refresh tag categories from database
@@ -2337,7 +2337,7 @@ export default function DAMPage() {
                 setIsTagEditorOpen(false)
               } catch (error) {
                 console.error("Error saving tags:", error)
-                alert("Failed to save tags. Please try again.")
+                alert("Could not save tags. Try again.")
               }
             }}
             onClose={() => setIsTagEditorOpen(false)}
@@ -2366,7 +2366,7 @@ export default function DAMPage() {
                   id: `cat-${Date.now()}`,
                   name: "collections",
                   displayName: "Collections",
-                  description: "Curated collections of assets",
+                  description: "Saved groups of media files",
                   color: "#BD8878", // terracotta
                   sortOrder: 999,
                   isCollection: true,
@@ -2404,7 +2404,7 @@ export default function DAMPage() {
               })
 
               if (!response.ok) {
-                throw new Error("Failed to save collections")
+                throw new Error("Could not save collections")
               }
 
               // Refresh tag categories from database
@@ -2415,7 +2415,7 @@ export default function DAMPage() {
               setIsCollectionManagerOpen(false)
             } catch (error) {
               console.error("Error saving collections:", error)
-              alert("Failed to save collections. Please try again.")
+              alert("Could not save collections. Try again.")
             }
           }}
           onClose={() => setIsCollectionManagerOpen(false)}
@@ -2428,7 +2428,7 @@ export default function DAMPage() {
       <TutorialWalkthrough />
 
       {/* Mobile Thumb Panel - only show on mobile */}
-      {isMobile && (
+      {isMobile && assets.length > 0 && (
         <>
           <ThumbPanel
             collections={collections}

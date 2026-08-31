@@ -37,9 +37,9 @@ type LoadState =
 
 const VIEWS: Array<{ value: BoardView; label: string; shortLabel: string; icon: typeof Gauge }> = [
   { value: 'overview', label: 'Overview', shortLabel: 'Overview', icon: Gauge },
-  { value: 'acquisition', label: 'Acquisition', shortLabel: 'Discovery', icon: Compass },
-  { value: 'conversion', label: 'Conversion', shortLabel: 'Actions', icon: MousePointerClick },
-  { value: 'content', label: 'Content & pages', shortLabel: 'Pages', icon: FileText },
+  { value: 'acquisition', label: 'Sources', shortLabel: 'Sources', icon: Compass },
+  { value: 'conversion', label: 'Tracked actions', shortLabel: 'Actions', icon: MousePointerClick },
+  { value: 'content', label: 'Pages', shortLabel: 'Pages', icon: FileText },
 ]
 
 const RANGE_OPTIONS: Array<{ value: AdminAnalyticsRange; days: number }> = [
@@ -49,12 +49,12 @@ const RANGE_OPTIONS: Array<{ value: AdminAnalyticsRange; days: number }> = [
 ]
 
 const EVENT_EXPLANATIONS: Record<AnalyticsEventName, string> = {
-  [ANALYTICS_EVENTS.bookingStarted]: 'A visitor opened a booking path from the website.',
-  [ANALYTICS_EVENTS.bookingCompleted]: 'The embedded Vagaro flow reported a completed booking.',
-  [ANALYTICS_EVENTS.quizStarted]: 'A visitor opened Find Your Look.',
-  [ANALYTICS_EVENTS.quizCompleted]: 'A visitor reached a Find Your Look result.',
-  [ANALYTICS_EVENTS.workWithUsSubmitted]: 'An application was saved successfully.',
-  [ANALYTICS_EVENTS.newsletterSignupCompleted]: 'A new or returning subscriber joined the list.',
+  [ANALYTICS_EVENTS.bookingStarted]: 'Recorded when someone opened embedded Vagaro or a tracked external booking link from LashPop.',
+  [ANALYTICS_EVENTS.bookingCompleted]: 'The embedded Vagaro form reported a booking request or confirmation.',
+  [ANALYTICS_EVENTS.quizStarted]: 'Find Your Look opened from the lash service prompt.',
+  [ANALYTICS_EVENTS.quizCompleted]: 'Find Your Look produced a result.',
+  [ANALYTICS_EVENTS.workWithUsSubmitted]: 'A Work With Us application was saved in Inbox.',
+  [ANALYTICS_EVENTS.newsletterSignupCompleted]: 'A new or reactivated newsletter subscription was saved.',
 }
 
 export function AnalyticsBoard() {
@@ -79,7 +79,7 @@ export function AnalyticsBoard() {
         }
         if (!response.ok || !payload.data) {
           throw new AnalyticsLoadError(
-            payload.error?.message || 'Website performance could not be loaded.',
+            payload.error?.message || 'Website analytics could not be loaded.',
             payload.error?.code
           )
         }
@@ -92,14 +92,14 @@ export function AnalyticsBoard() {
           setLoadState({ status: 'error', message: error.message, code: error.code })
           return
         }
-        setLoadState({ status: 'error', message: 'Website performance could not be loaded.' })
+        setLoadState({ status: 'error', message: 'Website analytics could not be loaded.' })
       })
 
     return () => controller.abort()
   }, [range, retryKey])
 
   return (
-    <section aria-label="Website performance board" className="space-y-4 sm:space-y-5">
+    <section aria-label="Website analytics" className="space-y-4 sm:space-y-5">
       <div className="flex flex-col gap-3 border-y border-black/10 bg-white p-3 sm:flex-row sm:items-center sm:justify-between sm:rounded-lg sm:border sm:p-4">
         <div className="grid grid-cols-3 gap-px bg-sage/20 p-px sm:rounded-md" role="group" aria-label="Reporting period">
           {RANGE_OPTIONS.map((option) => (
@@ -121,11 +121,11 @@ export function AnalyticsBoard() {
 
         <div className="flex items-center gap-2 px-1 text-xs text-black/45">
           <CalendarDays className="size-4 text-rust" aria-hidden="true" />
-          <span>Compared with the previous equal period</span>
+          <span>Compared with the previous period of the same length</span>
         </div>
       </div>
 
-      <div className="border-y border-black/10 bg-white p-1 sm:rounded-lg sm:border" role="tablist" aria-label="Performance views">
+      <div className="border-y border-black/10 bg-white p-1 sm:rounded-lg sm:border" role="tablist" aria-label="Analytics sections">
         <div className="grid grid-cols-2 gap-1 sm:flex">
           {VIEWS.map((item) => {
             const Icon = item.icon
@@ -194,12 +194,12 @@ function StatusLine({ data }: { data: AdminAnalyticsDto }) {
     <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-black/45">
       <span className="inline-flex items-center gap-2">
         <span className="size-2 rounded-full bg-terracotta" aria-hidden="true" />
-        {data.source === 'fixture' ? 'Safe preview data' : 'Vercel Web Analytics · production traffic'}
+        {data.source === 'fixture' ? 'Test data' : 'Live website data'}
       </span>
       <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span>Data through {formatRangeDate(data.range.current.until)}</span>
+        <span>Complete days through {formatRangeDate(data.range.current.until)}</span>
         <span aria-hidden="true">·</span>
-        <time dateTime={data.generatedAt}>refreshed {formatTimestamp(data.generatedAt)}</time>
+        <time dateTime={data.generatedAt}>checked {formatTimestamp(data.generatedAt)}</time>
       </span>
     </div>
   )
@@ -211,19 +211,19 @@ function OverviewView({ data }: { data: AdminAnalyticsDto }) {
 
   return (
     <div className="space-y-6">
-      <section className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4" aria-label="Performance summary">
-        <MetricCard label="Visitors" metric={data.overview.visitors} explanation="Anonymous people who viewed the public site." icon={Users} />
-        <MetricCard label="Page views" metric={data.overview.pageviews} explanation="Every public page view, including repeat views." icon={FileText} />
-        <MetricCard label="Booking starts" metric={data.overview.bookingStarts} explanation="Times a website booking path was opened." icon={MousePointerClick} />
-        <MetricCard label="Booking completions" metric={data.overview.bookingCompletions} explanation="Success signals returned by embedded Vagaro." icon={CheckCircle2} />
+      <section className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4" aria-label="Analytics summary">
+        <MetricCard label="Visitors" metric={data.overview.visitors} explanation="Anonymous visitors counted each day. The same person can count again on another day." icon={Users} />
+        <MetricCard label="Page views" metric={data.overview.pageviews} explanation="Public pages viewed, including repeat views." icon={FileText} />
+        <MetricCard label="Tracked booking starts" metric={data.overview.bookingStarts} explanation="Recorded openings of embedded Vagaro or tracked external booking links. Some external links may not be counted." icon={MousePointerClick} />
+        <MetricCard label="Vagaro booking submissions" metric={data.overview.bookingCompletions} explanation="Booking requests or confirmations reported by embedded Vagaro. Check Vagaro for the final status." icon={CheckCircle2} />
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
         <div className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-rust">Traffic rhythm</p>
-              <h2 className="mt-1 font-serif text-2xl text-charcoal">How attention moved</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-rust">Website traffic</p>
+              <h2 className="mt-1 font-serif text-2xl text-charcoal">Visitors and page views by day</h2>
             </div>
             <div className="flex items-center gap-4 text-[11px] text-black/45">
               <LegendSwatch className="bg-terracotta" label="Page views" />
@@ -234,12 +234,12 @@ function OverviewView({ data }: { data: AdminAnalyticsDto }) {
         </div>
 
         <aside className="rounded-2xl border border-black/10 bg-charcoal p-5 text-white sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/65">Operator read</p>
-          <h2 className="mt-2 font-serif text-2xl">Where to look next</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/65">Summary</p>
+          <h2 className="mt-2 font-serif text-2xl">Top results</h2>
           <div className="mt-6 space-y-5">
-            <OperatorNote label="Strongest source" value={topSource?.source || 'No referral source yet'} detail={topSource ? `${formatNumber(topSource.visitors)} visitors` : 'Wait for more traffic.'} />
-            <OperatorNote label="Most-viewed page" value={topPage?.path || 'No page activity yet'} detail={topPage ? `${formatNumber(topPage.pageviews)} views` : 'Wait for more traffic.'} />
-            <OperatorNote label="Booking signal rate" value={formatRatio(data.conversion.bookingCompletionRate)} detail="Completions divided by starts in this period—not a customer cohort." />
+            <OperatorNote label="Source with most visitors" value={topSource?.source || 'No source data'} detail={topSource ? `${formatNumber(topSource.visitors)} visitors` : 'No source data for the selected period.'} />
+            <OperatorNote label="Page with most views" value={topPage ? publicPageLabel(topPage.path) : 'No page-view data'} detail={topPage ? `${formatNumber(topPage.pageviews)} page views` : 'No page-view data for the selected period.'} />
+            <OperatorNote label="Vagaro submissions ÷ tracked booking starts" value={formatRatio(data.conversion.bookingCompletionRate)} detail="Separate event totals. This is not a customer conversion rate. Check Vagaro for each booking status." />
           </div>
         </aside>
       </section>
@@ -253,23 +253,23 @@ function AcquisitionView({ data }: { data: AdminAnalyticsDto }) {
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
       <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6">
-        <SectionHeading eyebrow="Acquisition" title="How people arrived" detail="Referral sources are anonymous and query strings are not shown." />
+        <SectionHeading eyebrow="Sources" title="Visitors by source" detail="Referring websites reported by the browser. Query strings are not shown." />
         <RankedBars
           items={data.acquisition.sources.map((item) => ({
             label: item.source,
             value: item.visitors,
-            secondary: `${formatNumber(item.pageviews)} views`,
+            secondary: `${formatNumber(item.pageviews)} page views`,
             share: item.sharePercent,
           }))}
-          empty="No referral sources are visible for this period."
+          empty="No source data for the selected period."
         />
       </section>
 
       <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6">
-        <SectionHeading eyebrow="Device mix" title="Where the site was used" detail="Use this to choose the screen size that deserves the next hands-on check." />
+        <SectionHeading eyebrow="Devices" title="Visitors by device" detail="Use this when choosing which screen size to test." />
         <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
           {data.acquisition.devices.length === 0 ? (
-            <EmptyList copy="No device activity is visible for this period." />
+            <EmptyList copy="No device data for the selected period." />
           ) : data.acquisition.devices.map((item) => {
             const Icon = deviceIcon(item.device)
             return (
@@ -284,8 +284,8 @@ function AcquisitionView({ data }: { data: AdminAnalyticsDto }) {
       </section>
 
       <div className="xl:col-span-2">
-        <InsightNote title="Read this as discovery, not attribution">
-          Direct traffic can include bookmarks, typed addresses and visits where the referring site was not shared. Campaign-level UTM reporting requires Vercel Web Analytics Plus and is not assumed here.
+        <InsightNote title="Sources do not prove what caused a visit">
+          Direct or not provided can include typed addresses, bookmarks and visits where the browser did not share a referring site. This report does not show campaign tags, also called UTM parameters.
         </InsightNote>
       </div>
     </div>
@@ -303,25 +303,27 @@ function ConversionView({ data }: { data: AdminAnalyticsDto }) {
     <div className="space-y-6">
       <section className="grid gap-4 lg:grid-cols-2">
         <SignalPair
-          title="Booking handoff"
-          startedLabel="Booking paths opened"
-          completedLabel="Vagaro success signals"
+          title="Booking starts and submissions"
+          startedLabel="Tracked booking starts"
+          completedLabel="Vagaro booking submissions"
           started={bookingStarted?.current ?? 0}
           completed={bookingCompleted?.current ?? 0}
           ratio={data.conversion.bookingCompletionRate}
+          ratioLabel="Vagaro submissions ÷ tracked booking starts"
         />
         <SignalPair
-          title="Find Your Look"
-          startedLabel="Quizzes opened"
-          completedLabel="Results reached"
+          title="Find Your Look quiz"
+          startedLabel="Quiz starts"
+          completedLabel="Results shown"
           started={quizStarted?.current ?? 0}
           completed={quizCompleted?.current ?? 0}
           ratio={data.conversion.quizCompletionRate}
+          ratioLabel="Results shown ÷ quiz starts"
         />
       </section>
 
       <section>
-        <SectionHeading eyebrow="Action signals" title="What visitors did" detail="Every card defines the exact website signal being counted." />
+        <SectionHeading eyebrow="Tracked actions" title="Actions recorded on the website" detail="Each card shows the event counted. Repeat actions can count again." />
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {data.conversion.events.map((event) => (
             <article key={event.name} className="rounded-2xl border border-black/10 bg-white p-5">
@@ -338,8 +340,8 @@ function ConversionView({ data }: { data: AdminAnalyticsDto }) {
         </div>
       </section>
 
-      <InsightNote title="These are directional signals">
-        Repeats can count again, booking starts include paths that finish outside the embedded Vagaro flow, and tracking failures never block a visitor. Custom action history begins with the August 29, 2026 instrumentation release; earlier traffic has no matching action history. Quiz-result tracking begins with this dashboard release and cannot backfill earlier results.
+      <InsightNote title="How tracked actions are counted">
+        Each event is counted, including repeat actions by the same visitor. Starts and submissions are separate totals, not a visitor-by-visitor funnel. Some external booking links may not record a start, and only embedded Vagaro reports submissions. A submission can be a booking request or confirmation; check Vagaro for the final status. Action totals start on August 29, 2026, so earlier visits have no matching action data.
       </InsightNote>
     </div>
   )
@@ -348,25 +350,25 @@ function ConversionView({ data }: { data: AdminAnalyticsDto }) {
 function ContentView({ data }: { data: AdminAnalyticsDto }) {
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6">
-      <SectionHeading eyebrow="Content" title="Pages earning attention" detail="Private, preview, admin and system paths are removed before these totals reach the board." />
+      <SectionHeading eyebrow="Pages" title="Most-viewed public pages" detail="Only approved public pages are listed. Admin, preview and system pages are excluded. Individual service pages are grouped together." />
       {data.content.pages.length === 0 ? (
-        <div className="mt-6"><EmptyList copy="No public page activity is visible for this period." /></div>
+        <div className="mt-6"><EmptyList copy="No public page views for the selected period." /></div>
       ) : (
         <div className="mt-6 overflow-hidden rounded-xl border border-black/10">
           <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem_5rem] gap-3 border-b border-black/10 bg-cream/35 px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-black/40 md:grid">
-            <span>Public route</span><span className="text-right">Visitors</span><span className="text-right">Views</span><span className="text-right">Share</span>
+            <span>Page</span><span className="text-right">Visitors</span><span className="text-right">Page views</span><span className="text-right">Share of page views</span>
           </div>
           <ol className="divide-y divide-black/10">
             {data.content.pages.map((page, index) => (
               <li key={page.path} className="grid gap-4 px-4 py-4 md:grid-cols-[minmax(0,1fr)_7rem_7rem_5rem] md:items-center md:gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="w-6 shrink-0 font-mono text-xs font-semibold tabular-nums text-rust">{String(index + 1).padStart(2, '0')}</span>
-                  <span className="min-w-0 truncate font-mono text-xs text-charcoal" title={page.path}>{page.path}</span>
+                  <span className="min-w-0 truncate text-sm font-semibold text-charcoal" title={publicPageLabel(page.path)}>{publicPageLabel(page.path)}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-right md:contents">
                   <SmallStat label="Visitors" value={formatNumber(page.visitors)} />
-                  <SmallStat label="Views" value={formatNumber(page.pageviews)} />
-                  <SmallStat label="Share" value={formatPercent(page.sharePercent)} />
+                  <SmallStat label="Page views" value={formatNumber(page.pageviews)} />
+                  <SmallStat label="Share of page views" value={formatPercent(page.sharePercent)} />
                 </div>
               </li>
             ))}
@@ -395,7 +397,7 @@ function TrendPill({ current, previous, changePercent }: { current: number; prev
   const details = trendDetails(current, previous, changePercent)
   const Icon = details.direction === 'up' ? ArrowUpRight : details.direction === 'down' ? ArrowDownRight : Minus
   return (
-    <span className="inline-flex min-h-7 items-center gap-1 rounded-full border border-black/10 bg-ivory px-2.5 text-[10px] font-semibold text-black/55" title="Compared with the previous equal period">
+    <span className="inline-flex min-h-7 items-center gap-1 rounded-full border border-black/10 bg-ivory px-2.5 text-[10px] font-semibold text-black/55" title="Compared with the previous period">
       <Icon className="size-3" aria-hidden="true" /> {details.label}
     </span>
   )
@@ -403,13 +405,13 @@ function TrendPill({ current, previous, changePercent }: { current: number; prev
 
 function TrafficChart({ rows }: { rows: AdminAnalyticsDto['dailyTraffic'] }) {
   const chart = useMemo(() => buildChart(rows), [rows])
-  if (!rows.length) return <div className="mt-8"><EmptyList copy="No daily traffic is visible for this period." /></div>
+  if (!rows.length) return <div className="mt-8"><EmptyList copy="No visitor or page-view data for the selected period." /></div>
 
   return (
     <div className="mt-6">
       <svg viewBox="0 0 720 230" className="h-auto w-full" role="img" aria-labelledby="traffic-chart-title traffic-chart-description">
-        <title id="traffic-chart-title">Daily public website traffic</title>
-        <desc id="traffic-chart-description">Page views and visitors over the selected period.</desc>
+        <title id="traffic-chart-title">Visitors and page views by day</title>
+        <desc id="traffic-chart-description">Daily visitor and page-view totals for the selected period.</desc>
         {[35, 85, 135, 185].map((y) => <line key={y} x1="20" x2="700" y1={y} y2={y} className="stroke-black/10" strokeDasharray="3 6" />)}
         <path d={chart.areaPath} fill="rgb(var(--cream))" opacity="0.7" />
         <path d={chart.pageviewsPath} fill="none" stroke="rgb(var(--terracotta))" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
@@ -425,7 +427,7 @@ function TrafficChart({ rows }: { rows: AdminAnalyticsDto['dailyTraffic'] }) {
   )
 }
 
-function SignalPair({ title, startedLabel, completedLabel, started, completed, ratio }: { title: string; startedLabel: string; completedLabel: string; started: number; completed: number; ratio: AdminAnalyticsRatio }) {
+function SignalPair({ title, startedLabel, completedLabel, started, completed, ratio, ratioLabel }: { title: string; startedLabel: string; completedLabel: string; started: number; completed: number; ratio: AdminAnalyticsRatio; ratioLabel: string }) {
   return (
     <article className="overflow-hidden rounded-lg border border-black/10 bg-white">
       <div className="border-b border-black/10 bg-cream/35 px-5 py-4"><p className="text-xs font-semibold uppercase tracking-[0.13em] text-rust">{title}</p></div>
@@ -434,8 +436,8 @@ function SignalPair({ title, startedLabel, completedLabel, started, completed, r
         <ArrowRight className="hidden size-5 text-dune/60 sm:block" aria-hidden="true" />
         <SignalValue label={completedLabel} value={completed} />
       </div>
-      <div className="flex items-center justify-between gap-3 border-t border-black/10 px-5 py-3 text-xs text-black/45">
-        <span>Signal ratio</span><span className="font-semibold text-charcoal">{formatRatio(ratio)}</span>
+      <div className="flex flex-col items-start gap-1 border-t border-black/10 px-5 py-3 text-xs text-black/45 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <span>{ratioLabel}</span><span className="font-semibold text-charcoal">{formatRatio(ratio)}</span>
       </div>
     </article>
   )
@@ -465,7 +467,7 @@ function RankedBars({ items, empty }: { items: Array<{ label: string; value: num
 function AnalyticsLoading() {
   return (
     <div role="status" aria-live="polite" className="space-y-5">
-      <span className="sr-only">Loading website performance</span>
+      <span className="sr-only">Loading website analytics</span>
       <div className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4">
         {[0, 1, 2, 3].map((item) => <div key={item} className="h-40 animate-pulse bg-white p-4 motion-reduce:animate-none sm:h-48 sm:rounded-lg sm:border sm:border-black/10 sm:p-5"><div className="size-9 rounded-md bg-cream/65 sm:size-10" /><div className="mt-6 h-9 w-20 rounded bg-cream/65 sm:mt-8" /><div className="mt-3 h-3 w-24 rounded bg-cream/65" /></div>)}
       </div>
@@ -479,9 +481,9 @@ function AnalyticsError({ message, code, onRetry }: { message: string; code?: st
   return (
     <div className="rounded-lg border border-rust/25 bg-white p-6 sm:p-8" role="alert">
       <div className="flex size-11 items-center justify-center rounded-xl bg-cream text-rust"><CircleAlert className="size-5" aria-hidden="true" /></div>
-      <h2 className="mt-5 font-serif text-2xl text-charcoal">{configuration ? 'Connection needed' : 'Performance is unavailable'}</h2>
+      <h2 className="mt-5 font-serif text-2xl text-charcoal">{configuration ? 'Website analytics is not connected' : 'Website analytics is unavailable'}</h2>
       <p className="mt-2 max-w-xl text-sm leading-6 text-black/55">{message}</p>
-      <p className="mt-2 max-w-xl text-xs leading-5 text-black/40">No website, booking or customer action was changed. The board is read-only.</p>
+      <p className="mt-2 max-w-xl text-xs leading-5 text-black/40">This page only reads analytics. Trying again does not change the website, bookings or customer information.</p>
       <button type="button" onClick={onRetry} className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-charcoal px-4 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-terracotta focus-visible:ring-offset-2">
         <RefreshCw className="size-4" aria-hidden="true" /> Try again
       </button>
@@ -493,16 +495,16 @@ function AnalyticsEmpty({ data }: { data: AdminAnalyticsDto }) {
   return (
     <div className="rounded-lg border border-black/10 bg-white p-7 text-center sm:p-10" role="status">
       <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-cream text-rust"><Gauge className="size-5" aria-hidden="true" /></span>
-      <h2 className="mt-5 font-serif text-2xl text-charcoal">No activity in this period yet</h2>
-      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-black/50">The connection is working, but no public traffic or action signals matched these {data.range.days} days. Try a longer period.</p>
+      <h2 className="mt-5 font-serif text-2xl text-charcoal">No website data for the selected period</h2>
+      <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-black/50">The connection works, but there were no public page views or tracked actions in these {data.range.days} days. Choose a longer period.</p>
     </div>
   )
 }
 
 function PrivacyNote() {
   return (
-    <InsightNote title="Private by design" icon={ShieldCheck}>
-      This board receives only aggregate counts, allowlisted public route patterns, source hostnames and device categories. Vercel credentials and raw provider responses stay on the server; names, emails, phone numbers, application text and quiz answers never enter this view.
+    <InsightNote title="What this report includes" icon={ShieldCheck}>
+      This report includes totals for approved public page patterns, referring websites, device types and recorded actions. It does not include names, emails, phone numbers, application text or quiz answers.
     </InsightNote>
   )
 }
@@ -543,11 +545,11 @@ function deviceIcon(device: string) {
 }
 
 function trendDetails(current: number, previous: number, changePercent: number | null) {
-  if (previous === 0 && current > 0) return { direction: 'up' as const, label: 'New' }
+  if (previous === 0 && current > 0) return { direction: 'up' as const, label: 'Up from 0' }
   if (changePercent === null || changePercent === 0) return { direction: 'flat' as const, label: 'No change' }
   return {
     direction: changePercent > 0 ? 'up' as const : 'down' as const,
-    label: `${Math.abs(changePercent).toFixed(0)}%`,
+    label: `${changePercent > 0 ? 'Up' : 'Down'} ${Math.abs(changePercent).toFixed(0)}%`,
   }
 }
 
@@ -560,7 +562,7 @@ function formatPercent(value: number) {
 }
 
 function formatRatio(ratio: AdminAnalyticsRatio) {
-  return ratio.currentPercent === null ? 'Not enough signal' : formatPercent(ratio.currentPercent)
+  return ratio.currentPercent === null ? 'No starts recorded' : formatPercent(ratio.currentPercent)
 }
 
 function formatTimestamp(value: string) {
@@ -569,6 +571,18 @@ function formatTimestamp(value: string) {
 
 function formatRangeDate(value: string) {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T00:00:00.000Z`))
+}
+
+function publicPageLabel(path: string) {
+  const labels: Record<string, string> = {
+    '/': 'Homepage',
+    '/services': 'Services',
+    '/services/[slug]': 'Individual service pages',
+    '/work-with-us': 'Work with us',
+    '/privacy': 'Privacy',
+    '/terms': 'Terms',
+  }
+  return labels[path] ?? path
 }
 
 function buildChart(rows: AdminAnalyticsDto['dailyTraffic']) {

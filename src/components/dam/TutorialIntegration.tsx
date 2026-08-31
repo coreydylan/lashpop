@@ -70,8 +70,8 @@ export function TutorialIntegration({
       {/* Selection Methods Tutorial */}
       <TutorialTooltip
         show={currentStep === 'selection-methods'}
-        title="Selection Methods"
-        description="Tap to select single items. On mobile, long-press an item to start multi-select mode. On desktop, click and drag to select multiple items at once."
+        title="Select files"
+        description="Tap a file to select it. On a phone, press and hold a file to select more than one. On a computer, click and drag to select several files."
         position="bottom"
         targetElement={gridRef}
         onComplete={() => completeStep('selection-methods')}
@@ -81,8 +81,8 @@ export function TutorialIntegration({
       {/* Command Palette Tutorial */}
       <TutorialTooltip
         show={currentStep === 'command-palette'}
-        title="Command Palette"
-        description="Press '/' or click the Command button to open the palette. Search for tags, filters, and actions. Use keyboard shortcuts for faster workflow."
+        title="Open Actions"
+        description="Press / or choose Actions. Search for a tag, filter or task."
         position="top"
         targetElement={commandButtonRef}
         onComplete={() => completeStep('command-palette')}
@@ -92,8 +92,8 @@ export function TutorialIntegration({
       {/* Tagging & Filtering Tutorial */}
       <TutorialTooltip
         show={currentStep === 'tagging-filtering'}
-        title="Tagging & Filtering"
-        description="Add tags to organize your assets. Use filters to quickly find specific items. Tags can be customized in the tag editor for your workflow."
+        title="Add tags and filters"
+        description="Add tags to organize files. Use filters to show files with a specific tag or team member."
         position="bottom"
         targetElement={commandButtonRef}
         onComplete={() => completeStep('tagging-filtering')}
@@ -103,8 +103,8 @@ export function TutorialIntegration({
       {/* Batch Actions Tutorial */}
       <TutorialTooltip
         show={currentStep === 'batch-actions'}
-        title="Batch Actions"
-        description="With multiple items selected, you can perform bulk operations like adding tags, assigning team members, or deleting multiple assets at once."
+        title="Change several files"
+        description="Select several files to add the same tags, assign the same team member or delete them together."
         position="bottom"
         targetElement={gridRef}
         onComplete={() => completeStep('batch-actions')}

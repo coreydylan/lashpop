@@ -81,7 +81,7 @@ export function OmniBar({
     ? "bg-dusty-rose text-cream shadow-xl hover:bg-dusty-rose/90"
     : "bg-dusty-rose text-cream shadow-lg hover:bg-dusty-rose/80"
 
-  const assetLabel = `asset${assetsCount !== 1 ? "s" : ""}`
+  const assetLabel = `file${assetsCount !== 1 ? "s" : ""}`
   const showTotals = totalAssetsCount > assetsCount
 
   const hasGroupBy = Boolean(groupByContent)
@@ -356,13 +356,13 @@ export function OmniBar({
                         ? "bg-dusty-rose text-cream hover:bg-dusty-rose/90"
                         : "bg-dusty-rose text-cream hover:bg-dusty-rose/80"
                     )}
-                    aria-label="Press ESC again to deselect"
+                    aria-label={`Press Escape again to deselect ${selectedCount} ${selectedCount === 1 ? 'file' : 'files'}`}
                   >
                     <span>Press</span>
                     <span className="inline-flex items-center border border-current/40 rounded px-1.5 py-0.5 text-[10px] font-semibold">
                       ESC
                     </span>
-                    <span>again to deselect {selectedCount}</span>
+                    <span>again to deselect {selectedCount} {selectedCount === 1 ? 'file' : 'files'}</span>
                   </button>
                 ) : (
                   <button
@@ -385,7 +385,7 @@ export function OmniBar({
                   onClick={onApplyTags}
                   className={clsx("px-6 py-2 rounded-full font-semibold transition-colors", applyButtonClass)}
                 >
-                  Apply
+                  Apply tags
                 </button>
               )}
             </>
@@ -419,7 +419,7 @@ export function OmniBar({
                 <button
                   onClick={onOpenCardSettings}
                   className={clsx("p-2 rounded-full transition-colors flex items-center justify-center", hoverClass)}
-                  title="Customize card display"
+                  title="Choose details on media cards"
                 >
                   <CreditCard className={clsx("w-4 h-4", iconColor)} />
                 </button>
@@ -466,7 +466,7 @@ export function OmniBar({
                     )}
                     aria-label="Confirm deselect"
                   >
-                    <span>Unselect {selectedCount} items?</span>
+                    <span>Deselect {selectedCount} {selectedCount === 1 ? 'file' : 'files'}?</span>
                   </button>
                 )}
               </div>

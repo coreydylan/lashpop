@@ -46,17 +46,17 @@ interface SubscriberDirectoryProps {
 const STATUS_META: Record<SubscriberStatus, { label: string; description: string; className: string }> = {
   active: {
     label: 'Active',
-    description: 'Eligible for export to the approved email platform.',
+    description: 'Can be copied or downloaded for an approved newsletter.',
     className: 'border-emerald-700/20 bg-emerald-50 text-emerald-800',
   },
   unsubscribed: {
     label: 'Unsubscribed',
-    description: 'Opted out. Keep the consent record, but never export this address.',
+    description: 'Do not send. The person opted out, but the consent record stays here.',
     className: 'border-black/15 bg-[#f4f1ec] text-black/60',
   },
   suppressed: {
     label: 'Suppressed',
-    description: 'Paused internally because of a bounce, complaint, or manual hold.',
+    description: 'Do not send. The address bounced, was reported as spam or was paused by an Admin user.',
     className: 'border-amber-700/20 bg-amber-50 text-amber-800',
   },
 }
@@ -117,14 +117,14 @@ export function SubscriberDirectory({ initialSubscribers, canManage }: Subscribe
   return (
     <div className="space-y-6">
       <section aria-label="Subscriber totals" className="grid grid-cols-2 gap-px border-y border-black/10 bg-black/10 sm:gap-3 sm:border-0 sm:bg-transparent xl:grid-cols-4">
-        <MetricCard icon={Users} label="All records" value={subscribers.length} detail="Complete consent ledger" />
+        <MetricCard icon={Users} label="All records" value={subscribers.length} detail="Complete consent history" />
         <MetricCard icon={UserRoundCheck} label="Active" value={activeSubscribers.length} detail="Eligible for export" tone="terracotta" />
         <MetricCard icon={Clock3} label="Last 30 days" value={recentCount} detail="New or renewed signups" />
         <MetricCard
           icon={CircleOff}
           label="Inactive"
           value={subscribers.length - activeSubscribers.length}
-          detail="Unsubscribed or suppressed"
+          detail="Unsubscribed or do not send"
         />
       </section>
 
@@ -188,7 +188,7 @@ export function SubscriberDirectory({ initialSubscribers, canManage }: Subscribe
           <div className="px-6 py-16 text-center">
             <Mail className="mx-auto size-9 text-black/20" aria-hidden="true" />
             <h2 className="mt-4 font-serif text-xl text-[#292a27]">No subscribers match</h2>
-            <p className="mt-1 text-sm text-black/50">Clear the search or change the filters to see the complete ledger.</p>
+            <p className="mt-1 text-sm text-black/50">Clear the search or change the filters to see all subscriber records.</p>
           </div>
         ) : (
           <>
@@ -343,7 +343,7 @@ function SubscriberDrawer({ subscriber, canManage, onClose, onUpdated }: {
   const requestClose = useCallback(() => {
     if (saving) return
     if (dirty) {
-      setError('Save or discard your changes before closing this record.')
+      setError('Save or discard your changes before closing these subscriber details.')
       discardButtonRef.current?.focus()
       return
     }
@@ -352,7 +352,7 @@ function SubscriberDrawer({ subscriber, canManage, onClose, onUpdated }: {
 
   useDirtyBlock({
     id: `newsletter-subscriber-${subscriber.id}`,
-    label: `Newsletter record for ${subscriber.email}`,
+    label: `Subscriber details for ${subscriber.email}`,
     dirty,
     save,
     discard,
@@ -459,9 +459,9 @@ function SubscriberDrawer({ subscriber, canManage, onClose, onUpdated }: {
       >
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-black/10 bg-[#fbf8f3]/95 px-5 py-5 backdrop-blur sm:px-7">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/45">Subscriber record</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-black/45">Subscriber details</p>
             <h2 id="subscriber-drawer-title" className="mt-1 truncate font-serif text-2xl text-[#292a27]">{subscriber.email}</h2>
-            <p id="subscriber-drawer-description" className="sr-only">Review consent history and internal newsletter notes.</p>
+            <p id="subscriber-drawer-description" className="sr-only">Review email status, consent history and Admin notes.</p>
           </div>
           <button
             ref={closeButtonRef}
@@ -484,7 +484,7 @@ function SubscriberDrawer({ subscriber, canManage, onClose, onUpdated }: {
 
           <fieldset disabled={!canManage || saving}>
             <legend className="text-sm font-semibold text-[#292a27]">Consent status</legend>
-            <p className="mt-1 text-xs leading-5 text-black/50">Inactive records remain visible so consent history is never lost.</p>
+            <p className="mt-1 text-xs leading-5 text-black/50">Unsubscribed and blocked addresses stay here to preserve the consent record.</p>
             <div className="mt-3 space-y-2">
               {(Object.keys(STATUS_META) as SubscriberStatus[]).map((option) => (
                 <label key={option} className={`flex cursor-pointer gap-3 rounded-xl border p-3.5 ${status === option ? 'border-[#c96f50] bg-[#c96f50]/8' : 'border-black/10 bg-white'} ${!canManage ? 'cursor-default opacity-75' : ''}`}>
@@ -506,8 +506,8 @@ function SubscriberDrawer({ subscriber, canManage, onClose, onUpdated }: {
           </fieldset>
 
           <label className="block">
-            <span className="text-sm font-semibold text-[#292a27]">Internal notes</span>
-            <span className="mt-1 block text-xs leading-5 text-black/50">Context for the studio team only. Do not add sensitive personal information.</span>
+            <span className="text-sm font-semibold text-[#292a27]">Admin notes</span>
+            <span className="mt-1 block text-xs leading-5 text-black/50">For LashPop staff only. Do not add sensitive personal information.</span>
             <textarea
               name="subscriber-notes"
               autoComplete="off"
@@ -516,7 +516,7 @@ function SubscriberDrawer({ subscriber, canManage, onClose, onUpdated }: {
               disabled={!canManage || saving}
               maxLength={2_000}
               rows={6}
-              placeholder="For example: requested to pause after a bounce report…"
+              placeholder="For example: paused after an email bounced…"
               className="mt-3 w-full resize-y rounded-xl border border-black/15 bg-white p-3 text-sm leading-6 text-[#292a27] outline-none placeholder:text-black/30 focus:border-[#c96f50] focus:ring-2 focus:ring-[#c96f50]/20 disabled:bg-black/[0.03]"
             />
             <span className="mt-1 block text-right text-[11px] text-black/40">{notes.length} / 2,000</span>
@@ -536,7 +536,7 @@ function SubscriberDrawer({ subscriber, canManage, onClose, onUpdated }: {
               <button ref={discardButtonRef} type="button" onClick={discardAndClose} disabled={saving} className="min-h-11 rounded-lg border border-black/15 bg-white px-4 text-sm font-semibold text-[#292a27] hover:border-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] disabled:cursor-not-allowed disabled:opacity-60">{dirty ? 'Discard changes' : 'Close'}</button>
               <button type="button" onClick={handleSaveClick} disabled={saving || !dirty} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#a14f35] px-4 text-sm font-semibold text-white hover:bg-[#88412d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
                 <CheckCircle2 className="size-4" aria-hidden="true" />
-                {saving ? 'Saving…' : 'Save record'}
+                {saving ? 'Saving…' : 'Save changes'}
               </button>
             </div>
           )}

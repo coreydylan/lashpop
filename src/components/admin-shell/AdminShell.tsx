@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { ExternalLink, LogOut, Menu, X } from 'lucide-react'
-import { ADMIN_AREAS, findAreaByPath, findSectionByPath, type ContentOwner } from './sections'
+import { ADMIN_AREAS, findAreaByPath, findSectionByPath } from './sections'
 import { AdminWorkspaceProvider, useAdminWorkspace } from './AdminWorkspaceContext'
 import { AdminActionBar } from './AdminActionBar'
 
@@ -17,14 +17,6 @@ interface AdminShellProps {
     role?: string | null
   }
   contentMode?: 'constrained' | 'fullbleed'
-}
-
-const OWNER_STYLES: Record<ContentOwner, string> = {
-  LashPop: 'border-[#d99177]/30 bg-[#d99177]/10 text-[#9e5037]',
-  Vagaro: 'border-[#7da3a0]/30 bg-[#7da3a0]/10 text-[#3d6d69]',
-  Automation: 'border-[#ad8b4d]/30 bg-[#ad8b4d]/10 text-[#745a27]',
-  System: 'border-[#8c8d86]/30 bg-[#8c8d86]/10 text-[#5d5e59]',
-  Mixed: 'border-[#8b748f]/30 bg-[#8b748f]/10 text-[#654d6a]',
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -200,7 +192,7 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
             <BrandMark />
             <span>
               <span className="block font-serif text-lg leading-tight">LashPop Admin</span>
-              <span className="block text-xs text-white/50">Studio operations</span>
+              <span className="block text-xs text-white/50">Website and studio tools</span>
             </span>
           </GuardedLink>
         </div>
@@ -221,7 +213,6 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/45">{currentArea.label}</p>
-                {currentSection && <OwnerBadge owner={currentSection.owner} />}
               </div>
               <p className="mt-1 truncate font-serif text-xl font-semibold leading-tight text-[#292a27]">{currentTitle}</p>
               <p className="mt-0.5 truncate text-sm text-black/60">{currentSection?.description ?? currentArea.description}</p>
@@ -232,7 +223,7 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
               rel="noreferrer"
               className="hidden min-h-11 shrink-0 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-medium hover:border-black/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] sm:inline-flex"
             >
-              Preview site <ExternalLink className="size-4" />
+              View website <ExternalLink className="size-4" />
             </a>
           </div>
         </div>
@@ -247,7 +238,7 @@ function AdminNav({ pathname, onNavigate }: { pathname: string | null; onNavigat
 
   return (
     <nav aria-label="Admin navigation" className="py-2">
-      <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">Work areas</p>
+      <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">Sections</p>
       <ul className="space-y-1">
         {ADMIN_AREAS.map((area) => {
           const active = area.id === currentArea.id
@@ -277,7 +268,6 @@ function AdminNav({ pathname, onNavigate }: { pathname: string | null; onNavigat
                           className={`flex min-h-11 items-center justify-between gap-2 rounded-md px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] ${sectionActive ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white/85'}`}
                         >
                           <span className="truncate">{section.label}</span>
-                          <span className="shrink-0 text-[9px] uppercase tracking-wide text-white/30">{section.owner === 'LashPop' ? 'Local' : section.owner}</span>
                         </GuardedLink>
                       </li>
                     )
@@ -318,7 +308,7 @@ function UserFooter({ user, onNavigate }: { user: AdminShellProps['user']; onNav
           <p className="truncate text-sm font-medium text-white/90">{user.name || user.email || user.phoneNumber || 'Admin'}</p>
           <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-white/35">{user.role || 'Administrator'}</p>
         </div>
-        <GuardedLink href="/" onNavigate={onNavigate} className="inline-flex min-h-11 items-center rounded-md px-2 py-1 text-xs text-white/50 hover:bg-white/5 hover:text-white">Site</GuardedLink>
+        <GuardedLink href="/" onNavigate={onNavigate} className="inline-flex min-h-11 items-center rounded-md px-2 py-1 text-xs text-white/50 hover:bg-white/5 hover:text-white">View website</GuardedLink>
       </div>
       <button
         type="button"
@@ -332,10 +322,6 @@ function UserFooter({ user, onNavigate }: { user: AdminShellProps['user']; onNav
       <p className="mt-2 min-h-4 text-center text-[10px] text-[#e38a69]" role="status" aria-live="polite">{signOutError}</p>
     </div>
   )
-}
-
-function OwnerBadge({ owner }: { owner: ContentOwner }) {
-  return <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${OWNER_STYLES[owner]}`}>{owner}</span>
 }
 
 function BrandMark({ compact = false }: { compact?: boolean }) {

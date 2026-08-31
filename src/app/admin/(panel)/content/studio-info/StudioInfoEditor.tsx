@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import { Building2, Save, Check, AlertCircle, Phone, Mail, MapPin, Clock, Calendar, ExternalLink, RefreshCw } from 'lucide-react'
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingStatusLabel } from '@/lib/admin/settings-copy'
 import type { StudioSettings } from '@/types/studio'
 
 interface StudioInfoEditorProps {
@@ -37,9 +38,9 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
       if (!res.ok) {
         if (res.status === 409 && data?.conflict) {
           setConflict(true)
-          throw new Error(`Another admin published a newer version. Load latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+          throw new Error('Someone saved a newer version while this page was open. Load the latest version to replace your unsaved changes.')
         }
-        throw new Error(data?.error ?? `Save failed (${res.status})`)
+        throw new Error(data?.error ?? 'Could not save the studio information. Try again.')
       }
       setSavedState(data.settings)
       setS(data.settings)
@@ -49,7 +50,7 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2500)
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error')
+      const error = err instanceof Error ? err : new Error('Could not save the studio information. Try again.')
       setStatus('error')
       setErrorMsg(error.message)
       throw error
@@ -62,7 +63,7 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
     try {
       const res = await fetch('/api/admin/website/studio')
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data?.error ?? `Reload failed (${res.status})`)
+      if (!res.ok) throw new Error(data?.error ?? 'Could not load the latest studio information. Try again.')
       setS(data.settings)
       setSavedState(data.settings)
       setBaseVersion(data.version)
@@ -71,7 +72,7 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
       setStatus('idle')
     } catch (err) {
       setStatus('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Unable to load the latest version')
+      setErrorMsg(err instanceof Error ? err.message : 'Could not load the latest studio information. Try again.')
     }
   }
 
@@ -130,12 +131,12 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
         />
       </Section>
 
-      <Section icon={MapPin} title="Address & Map" description="The public studio address and map location.">
+      <Section icon={MapPin} title="Address and map" description="The studio address and map location shown to customers.">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Street" value={s.address.street} onChange={v => setS({ ...s, address: { ...s.address, street: v } })} />
           <Field label="City" value={s.address.city} onChange={v => setS({ ...s, address: { ...s.address, city: v } })} />
           <Field label="State" value={s.address.state} onChange={v => setS({ ...s, address: { ...s.address, state: v } })} />
-          <Field label="ZIP" value={s.address.zip} onChange={v => setS({ ...s, address: { ...s.address, zip: v } })} />
+          <Field label="ZIP code" value={s.address.zip} onChange={v => setS({ ...s, address: { ...s.address, zip: v } })} />
           <Field
             label="Latitude"
             value={String(s.coordinates.lat)}
@@ -153,20 +154,20 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
         </div>
       </Section>
 
-      <Section icon={Phone} title="Contact" description="The phone numbers and email addresses customers use.">
+      <Section icon={Phone} title="Contact" description="Public contact details and the reserved notification address.">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field
-            label="Phone (display)"
+            label="Phone shown on website"
             value={s.phone}
             onChange={v => setS({ ...s, phone: v })}
             help="As shown to customers, for example (760) 212-0448."
             icon={Phone}
           />
           <Field
-            label="Phone (E.164)"
+            label="Phone for links"
             value={s.phoneE164}
             onChange={v => setS({ ...s, phoneE164: v })}
-            help="Dialing format, for example +17602120448."
+            help="Include the country code and numbers only, for example +17602120448."
           />
           <Field
             label="Public email"
@@ -177,26 +178,26 @@ export function StudioInfoEditor({ initialSettings, initialVersion, initialSourc
             className="sm:col-span-2"
           />
           <Field
-            label="Inbound email"
+            label="Notification email"
             value={s.inboundEmail}
             onChange={v => setS({ ...s, inboundEmail: v })}
-            help="Where applications and newsletter signups are delivered."
+            help="Reserved for future Admin notifications. Applications and signups are stored in Inbox."
             type="email"
             className="sm:col-span-2"
           />
         </div>
       </Section>
 
-      <Section icon={Clock} title="Hours" description="The short hours summary shown to customers.">
+      <Section icon={Clock} title="Opening hours" description="The short hours summary shown to customers.">
         <Field
-          label="Hours (short)"
+          label="Hours summary"
           value={s.hoursShort}
           onChange={v => setS({ ...s, hoursShort: v })}
           help="One-line summary, e.g. “8a–7:30p every day, by appointment only”."
         />
       </Section>
 
-      <Section icon={Calendar} title="Booking" description="The Vagaro destination opened by booking buttons.">
+      <Section icon={Calendar} title="Booking" description="Booking buttons open this Vagaro page.">
         <Field
           label="Vagaro booking URL"
           value={s.vagaroBookingUrl}
@@ -244,13 +245,13 @@ function Header({
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-dusty-rose to-terracotta shadow-sm md:rounded-xl">
             <Building2 className="size-5 text-cream" aria-hidden="true" />
           </div>
-          <h1 className="font-serif text-2xl font-semibold text-dune">Studio Info</h1>
+          <h1 className="font-serif text-2xl font-semibold text-dune">Studio information</h1>
         </div>
         <p className="max-w-2xl text-sm leading-6 text-dune/70">
-          Update the studio details customers see across the website, booking links, maps, and social profiles.
+          Edit the contact details, address, hours, booking link, and social profiles shown on the website.
         </p>
         <p className="mt-1 text-xs text-dune/50">
-          {version === 0 ? 'Not published yet' : `Version ${version}`} · Source: {sourceOwner}
+          {websiteSettingStatusLabel(sourceOwner, version)}
         </p>
       </div>
       <div className="w-full sm:w-auto">

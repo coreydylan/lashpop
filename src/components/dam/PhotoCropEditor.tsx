@@ -25,11 +25,11 @@ interface PhotoCropEditorProps {
 type CropType = "fullVertical" | "fullHorizontal" | "mediumCircle" | "closeUpCircle" | "square"
 
 const CROP_CONFIGS = {
-  fullVertical: { label: "Full Vertical", aspect: 3 / 4, shape: "rect" as const },
-  fullHorizontal: { label: "Full Horizontal", aspect: 16 / 9, shape: "rect" as const },
+  fullVertical: { label: "Full vertical", aspect: 3 / 4, shape: "rect" as const },
+  fullHorizontal: { label: "Full horizontal", aspect: 16 / 9, shape: "rect" as const },
   square: { label: "Square", aspect: 1 / 1, shape: "rect" as const },
-  mediumCircle: { label: "Medium Circle", aspect: 1 / 1, shape: "circle" as const },
-  closeUpCircle: { label: "Close-Up Circle", aspect: 1 / 1, shape: "circle" as const }
+  mediumCircle: { label: "Medium circle", aspect: 1 / 1, shape: "circle" as const },
+  closeUpCircle: { label: "Close-up circle", aspect: 1 / 1, shape: "circle" as const }
 }
 
 const SCALE_LIMITS = {
@@ -293,14 +293,14 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
       <div className="bg-sage/10 arch-full p-4 text-center space-y-1.5">
         {!hasSuggestedCrops ? (
           <p className="text-sm text-dune font-medium">
-            <span className="font-semibold">Step 1:</span> Drop the <span className="text-dusty-rose">+</span> marker on the center of the face to give the tool a reference point.
+            <span className="font-semibold">Step 1:</span> Place the <span className="text-dusty-rose">+</span> marker on the center of the face.
           </p>
         ) : (
           <>
             <p className="text-sm text-dune font-medium">
-              <span className="font-semibold">Step 2:</span> Preview, click to reposition, and tweak zoom for each format.
+              <span className="font-semibold">Step 2:</span> Check each crop, select the photo to reposition it and adjust the zoom.
             </p>
-            <p className="text-xs text-sage font-medium">Tip: click anywhere on the photo to move the selected crop, then use the slider for tighter or wider framing.</p>
+            <p className="text-xs text-sage font-medium">Select anywhere on the photo to move the crop. Use the slider to make the crop wider or tighter.</p>
           </>
         )}
       </div>
@@ -447,14 +447,14 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
           title={!isImageReady ? "Photo is still loading" : undefined}
         >
           <Sparkles className="w-5 h-5" />
-          <span className="font-semibold">{isImageReady ? "Generate Smart Crops" : "Preparing photo..."}</span>
+          <span className="font-semibold">{isImageReady ? "Create crop previews" : "Preparing photo…"}</span>
         </button>
       ) : (
         /* Step 2: Crop Selection & Adjustment */
         <>
           {/* Crop Type Selector */}
           <div>
-            <label className="text-sm font-medium text-dune mb-2 block">Preview Crop Format:</label>
+            <label className="text-sm font-medium text-dune mb-2 block">Crop format</label>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(CROP_CONFIGS) as CropType[]).map((type) => (
                 <button
@@ -475,14 +475,14 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
           {/* Fine-tune Zoom Controls */}
           <div className="bg-warm-sand/20 arch-full p-4">
             <label className="text-sm font-medium text-dune mb-3 block text-center">
-              Fine-tune {config.label} zoom:
+              Adjust {config.label} zoom
             </label>
             <div className="flex items-center justify-center gap-4 max-w-md mx-auto">
               <button
                 onClick={handleZoomOut}
                 disabled={crop.scale <= SCALE_LIMITS.min}
                 className="btn bg-white hover:bg-warm-sand/30 text-dune px-4 py-2 disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Zoom Out"
+                title="Zoom out"
               >
                 <ZoomOut className="w-5 h-5" />
               </button>
@@ -508,7 +508,7 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
                 onClick={handleZoomIn}
                 disabled={crop.scale >= SCALE_LIMITS.max}
                 className="btn bg-white hover:bg-warm-sand/30 text-dune px-4 py-2 disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Zoom In"
+                title="Zoom in"
               >
                 <ZoomIn className="w-5 h-5" />
               </button>
@@ -533,7 +533,7 @@ export function PhotoCropEditor({ imageUrl, onSave }: PhotoCropEditorProps) {
               onClick={() => onSave(crops)}
               className="btn btn-primary flex-1 py-3"
             >
-              Save All Crop Settings
+              Save crops
             </button>
           </div>
         </>

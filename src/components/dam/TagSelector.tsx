@@ -421,7 +421,7 @@ export function TagSelector({ selectedTags, onTagsChange }: TagSelectorProps) {
         )}
       >
         <Plus className="w-4 h-4" />
-        <span className="text-sm font-medium">Add Tag</span>
+        <span className="text-sm font-medium">Add tag</span>
       </button>
 
       {renderDropdown()}

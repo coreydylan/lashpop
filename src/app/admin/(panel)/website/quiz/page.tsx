@@ -47,25 +47,25 @@ const LASH_STYLES: { id: LashStyle; label: string; color: string; description: s
     id: 'classic',
     label: 'Classic',
     color: 'ocean-mist',
-    description: 'Natural, polished look with one extension per natural lash'
+    description: 'One extension on each natural lash for a natural look'
   },
   {
     id: 'hybrid',
     label: 'Hybrid',
     color: 'sage',
-    description: 'Blend of classic and volume for texture and fullness'
+    description: 'A mix of classic and volume lashes for added texture and fullness'
   },
   {
     id: 'wetAngel',
     label: 'Wet / Angel',
     color: 'dusty-rose',
-    description: 'Modern, glossy spikes for a fresh model-off-duty look'
+    description: 'Narrow lash spikes with a glossy, defined finish'
   },
   {
     id: 'volume',
     label: 'Volume',
     color: 'terracotta',
-    description: 'Bold, fluffy lashes with maximum fullness and drama'
+    description: 'Multiple lightweight extensions on each natural lash for a fuller look'
   },
 ]
 
@@ -404,9 +404,9 @@ export default function QuizAdminPage() {
               <Sparkles className="w-6 h-6 text-terracotta" />
             </div>
             <div className="min-w-0">
-              <h1 className="h2 text-dune">Find Your Look Quiz</h1>
+              <h1 className="h2 text-dune">Find Your Look quiz</h1>
               <p className="text-sm text-dune/60">
-                Manage quiz photos and result page content
+                Choose comparison photos and edit the result shown for each lash style.
               </p>
             </div>
           </div>
@@ -438,7 +438,7 @@ export default function QuizAdminPage() {
           )}
         >
           <ImageIcon className="mr-1 inline-block size-4 sm:mr-2" />
-          <span className="sm:hidden">Photos</span><span className="hidden sm:inline">Comparison Photos</span>
+          <span className="sm:hidden">Photos</span><span className="hidden sm:inline">Comparison photos</span>
         </button>
         <button
           onClick={() => setActiveTab('results')}
@@ -450,7 +450,7 @@ export default function QuizAdminPage() {
           )}
         >
           <Sparkles className="mr-1 inline-block size-4 sm:mr-2" />
-          <span className="sm:hidden">Results</span><span className="hidden sm:inline">Result Pages</span>
+          <span className="sm:hidden">Results</span><span className="hidden sm:inline">Result pages</span>
         </button>
       </motion.div>
 
@@ -471,7 +471,7 @@ export default function QuizAdminPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-dune">{stats.total}</p>
-              <p className="text-xs text-dune/60">Total Photos</p>
+              <p className="text-xs text-dune/60">All photos</p>
             </div>
           </div>
         </div>
@@ -482,7 +482,7 @@ export default function QuizAdminPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-dune">{stats.enabled}</p>
-              <p className="text-xs text-dune/60">Enabled</p>
+              <p className="text-xs text-dune/60">Used in quiz</p>
             </div>
           </div>
         </div>
@@ -510,7 +510,7 @@ export default function QuizAdminPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-dune">{stats.stylesWithPhotos}/4</p>
-              <p className="text-xs text-dune/60">Styles Ready</p>
+              <p className="text-xs text-dune/60">Styles ready</p>
             </div>
           </div>
         </div>
@@ -526,10 +526,9 @@ export default function QuizAdminPage() {
         >
           <AlertCircle className="w-5 h-5 text-golden flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-dune">Quiz Not Ready</p>
+            <p className="text-sm font-medium text-dune">Quiz needs more photos</p>
             <p className="text-xs text-dune/70 mt-1">
-              Each lash style needs at least 2 enabled photos for the quiz to work properly.
-              Currently {4 - stats.stylesWithPhotos} style{4 - stats.stylesWithPhotos !== 1 ? 's' : ''} need more photos.
+              Each lash style needs at least 2 photos turned on. Add photos to {4 - stats.stylesWithPhotos} more style{4 - stats.stylesWithPhotos !== 1 ? 's' : ''}.
             </p>
           </div>
         </motion.div>
@@ -583,7 +582,7 @@ export default function QuizAdminPage() {
                       "px-2 py-0.5 rounded-full text-[10px] font-medium",
                       isReady ? "bg-ocean-mist/10 text-ocean-mist" : "bg-golden/10 text-golden"
                     )}>
-                      {enabledCount} enabled
+                      {enabledCount} used in quiz
                     </span>
                   </div>
                   <p className="text-xs text-dune/60 mt-0.5">{style.description}</p>
@@ -677,7 +676,7 @@ export default function QuizAdminPage() {
                               <div className="absolute top-2 left-2 flex items-center gap-1">
                                 {!photo.isEnabled && (
                                   <span className="px-1.5 py-0.5 rounded bg-sage/80 text-white text-[10px]">
-                                    Disabled
+                                    Not used
                                   </span>
                                 )}
                                 {!photo.cropData && !photo.cropUrl && (
@@ -687,7 +686,7 @@ export default function QuizAdminPage() {
                                 )}
                                 {isLegacySquareQuizCrop(photo.cropUrl) && (
                                   <span className="px-1.5 py-0.5 rounded bg-golden/80 text-white text-[10px]">
-                                    Needs safe crop
+                                    Crop needs updating
                                   </span>
                                 )}
                               </div>
@@ -713,7 +712,7 @@ export default function QuizAdminPage() {
                         )}
                       >
                         <Plus className="w-4 h-4" />
-                        <span className="text-sm font-medium">Add Photo from DAM</span>
+                        <span className="text-sm font-medium">Add photo from Media</span>
                       </button>
                     </div>
                   </motion.div>
@@ -731,23 +730,23 @@ export default function QuizAdminPage() {
         transition={{ delay: 0.5 }}
         className="mt-10 rounded-lg border border-sage/15 bg-cream/60 p-4 sm:p-6"
       >
-        <h3 className="font-serif text-lg text-dune mb-3">Quiz Photo Tips</h3>
+        <h3 className="font-serif text-lg text-dune mb-3">Photo requirements</h3>
         <ul className="space-y-2 text-sm text-dune/70">
           <li className="flex items-start gap-2">
             <span className="text-dusty-rose">&#8226;</span>
-            <span>Each style needs <strong>at least 2 enabled photos</strong> for the quiz to work properly.</span>
+            <span>Turn on at least 2 photos for each lash style.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-ocean-mist">&#8226;</span>
-            <span>Use the <strong>crop tool</strong> to focus on the lash close-up area. Photos are displayed as squares.</span>
+            <span>Crop each photo around the lashes. Quiz photos are shown in a portrait frame.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-terracotta">&#8226;</span>
-            <span>The quiz randomly selects photos and compares them head-to-head until a style wins.</span>
+            <span>The quiz shows photos in pairs until one lash style wins.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-sage">&#8226;</span>
-            <span>3-4 photos per style gives good variety. More than 6 may be excessive.</span>
+            <span>Use 3 to 4 photos per style for enough variety.</span>
           </li>
         </ul>
       </motion.div>
@@ -762,7 +761,7 @@ export default function QuizAdminPage() {
           className="space-y-4"
         >
           <p className="text-sm text-dune/60 mb-6">
-            Customize the result page for each lash style. Set an image and edit all the text shown to users.
+            Edit the image, name, description, and bullet points customers see for each result.
           </p>
 
           {LASH_STYLES.map((style, index) => {
@@ -829,7 +828,7 @@ export default function QuizAdminPage() {
                         {/* Result Image */}
                         <div>
                           <label className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-2 block">
-                            Result Image
+                            Result image
                           </label>
                           <div className="flex flex-col items-start gap-3 sm:flex-row sm:gap-4">
                             {settings.resultImageFilePath ? (
@@ -872,12 +871,12 @@ export default function QuizAdminPage() {
                                 className="flex size-28 shrink-0 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-sage/30 text-dune/40 transition-colors hover:border-dusty-rose/40 hover:text-dusty-rose sm:size-32"
                               >
                                 <Plus className="w-6 h-6" />
-                                <span className="text-xs">Add Image</span>
+                                <span className="text-xs">Add image</span>
                               </button>
                             )}
                             <div className="min-w-0 flex-1 text-xs text-dune/50">
                               <p>This image shows on the result page after the quiz.</p>
-                              <p className="mt-1">Recommended: Square crop focused on lashes.</p>
+                              <p className="mt-1">Use a square crop focused on the lashes.</p>
                             </div>
                           </div>
                         </div>
@@ -885,14 +884,14 @@ export default function QuizAdminPage() {
                         {/* Display Name */}
                         <div>
                           <label className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-2 block">
-                            Display Name
+                            Name shown to customers
                           </label>
                           <input
                             type="text"
                             value={settings.displayName}
                             onChange={(e) => handleUpdateResultText(style.id, 'displayName', e.target.value)}
                             className="w-full rounded-lg border border-sage/20 px-3 py-2 text-sm outline-none focus:border-dusty-rose/50 focus:ring-2 focus:ring-dusty-rose/20"
-                            placeholder="e.g., Classic Lashes"
+                            placeholder="For example, Classic Lashes"
                           />
                         </div>
 
@@ -906,14 +905,14 @@ export default function QuizAdminPage() {
                             onChange={(e) => handleUpdateResultText(style.id, 'description', e.target.value)}
                             rows={3}
                             className="w-full resize-none rounded-lg border border-sage/20 px-3 py-2 text-sm outline-none focus:border-dusty-rose/50 focus:ring-2 focus:ring-dusty-rose/20"
-                            placeholder="Describe this lash style..."
+                            placeholder="Describe this lash style…"
                           />
                         </div>
 
                         {/* Best For */}
                         <div>
                           <label className="text-xs font-medium text-dune/60 uppercase tracking-wider mb-2 block">
-                            Best For (bullet points)
+                            Best for
                           </label>
                           <div className="space-y-2">
                             {settings.bestFor.map((item, i) => (
@@ -946,7 +945,7 @@ export default function QuizAdminPage() {
                               className="text-xs text-dusty-rose hover:text-dusty-rose/80 flex items-center gap-1"
                             >
                               <Plus className="w-3 h-3" />
-                              Add bullet point
+                              Add item
                             </button>
                           </div>
                         </div>
@@ -965,8 +964,8 @@ export default function QuizAdminPage() {
         isOpen={damPicker?.isOpen ?? false}
         onClose={() => setDamPicker(null)}
         onSelect={handleAddPhoto}
-        title={`Add Photo for ${LASH_STYLES.find(s => s.id === damPicker?.lashStyle)?.label || 'Quiz'}`}
-        subtitle="Select a lash photo from your media library"
+        title={`Add photo for ${LASH_STYLES.find(s => s.id === damPicker?.lashStyle)?.label || 'quiz'}`}
+        subtitle="Choose a lash photo from your media library"
       />
 
       {/* DAM Picker Modal (Result Images) */}
@@ -974,8 +973,8 @@ export default function QuizAdminPage() {
         isOpen={resultDamPicker?.isOpen ?? false}
         onClose={() => setResultDamPicker(null)}
         onSelect={handleSetResultImage}
-        title={`Result Image for ${LASH_STYLES.find(s => s.id === resultDamPicker?.lashStyle)?.label || 'Result'}`}
-        subtitle="Select an image for the result page"
+        title={`Result image for ${LASH_STYLES.find(s => s.id === resultDamPicker?.lashStyle)?.label || 'result'}`}
+        subtitle="Choose an image for the result page"
       />
 
       {/* Crop Editor Modal (Comparison Photos) */}
@@ -1033,9 +1032,9 @@ export default function QuizAdminPage() {
                   <Trash2 className="w-6 h-6 text-terracotta" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg text-dune">Delete Photo?</h3>
+                  <h3 className="font-serif text-lg text-dune">Delete this quiz photo?</h3>
                   <p className="text-sm text-dune/60 mt-1">
-                    This will permanently remove this photo from the quiz. This action cannot be undone.
+                    The photo will be removed from the quiz. It will stay in Media.
                   </p>
                 </div>
               </div>
@@ -1054,7 +1053,7 @@ export default function QuizAdminPage() {
                   {saving === deleteConfirm ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      Deleting...
+                      Deleting…
                     </>
                   ) : (
                     <>

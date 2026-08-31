@@ -369,7 +369,7 @@ describe('Vercel Web Analytics adapter', () => {
       pageviews: 17,
       sharePercent: 66.7,
     })
-    assert.equal(dto.acquisition.sources[1]?.source, 'Direct or unavailable')
+    assert.equal(dto.acquisition.sources[1]?.source, 'Direct or not provided')
     assert.equal(dto.acquisition.sources.some((source) => source.source.includes('@')), false)
     assert.deepEqual(dto.acquisition.devices.map((row) => row.device), [
       'Mobile',

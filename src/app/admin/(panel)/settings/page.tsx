@@ -21,8 +21,8 @@ const ROLE_LABELS: Record<AdminRole, string> = {
 }
 
 const ROLE_DESCRIPTIONS: Record<AdminRole, string> = {
-  owner: 'Full access, including roles and system controls.',
-  publisher: 'Can edit and publish website, review, and media content.',
+  owner: 'Full access, including access roles and system settings.',
+  publisher: 'Can edit and publish website content, reviews and media.',
   viewer: 'Read-only access for verification and support.',
 }
 
@@ -89,9 +89,9 @@ export default async function SettingsOverviewPage() {
     <div className="mx-auto max-w-6xl space-y-7">
       <header className="border-b border-black/10 pb-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/45">Settings</p>
-        <h1 className="mt-2 font-serif text-3xl text-[#292a27] sm:text-4xl">Access and system health</h1>
+        <h1 className="mt-2 font-serif text-3xl text-[#292a27] sm:text-4xl">Manage access and check Vagaro</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-black/60">
-          See who can operate the admin, whether Vagaro is current, and what persistent changes have been recorded.
+          See who can use Admin, when Vagaro last synced and the latest recorded activity.
         </p>
       </header>
 
@@ -115,7 +115,7 @@ export default async function SettingsOverviewPage() {
         <article className="rounded-xl border border-black/10 bg-white p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-black/45">Vagaro connection</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-black/45">Latest Vagaro update</p>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <h2 className="font-serif text-3xl text-[#292a27]">{syncState.heading}</h2>
                 <StatusPill tone={syncState.tone} label={syncState.label} />
@@ -127,15 +127,15 @@ export default async function SettingsOverviewPage() {
           </div>
           <dl className="mt-5 grid gap-3 border-t border-black/10 pt-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-xs text-black/45">Latest run</dt>
+              <dt className="text-xs text-black/45">Last sync</dt>
               <dd className="mt-1 font-medium text-[#292a27]">{formatDate(latestRun?.completedAt ?? latestRun?.startedAt)}</dd>
             </div>
             <div>
-              <dt className="text-xs text-black/45">Trigger</dt>
-              <dd className="mt-1 font-medium capitalize text-[#292a27]">{latestRun?.trigger ?? 'No runs yet'}</dd>
+              <dt className="text-xs text-black/45">Started by</dt>
+              <dd className="mt-1 font-medium text-[#292a27]">{syncTriggerLabel(latestRun?.trigger)}</dd>
             </div>
           </dl>
-          {latestRun?.error && <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">{latestRun.error}</p>}
+          {latestRun?.error && <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">The Vagaro update did not finish. Open Vagaro sync to see which step failed, then try again.</p>}
           <SettingsLink href="/admin/system/syncs" label="Open Vagaro sync" />
         </article>
       </section>
@@ -169,7 +169,7 @@ export default async function SettingsOverviewPage() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-black/45">Activity history</p>
               <h2 className="mt-2 font-serif text-3xl text-[#292a27]">
-                {auditCount} {auditCount === 1 ? 'recorded change' : 'recorded changes'}
+                {auditCount} {auditCount === 1 ? 'recorded action' : 'recorded actions'}
               </h2>
             </div>
             <span className="flex size-11 items-center justify-center rounded-xl bg-[#9a7a42]/10 text-[#765c2f]">
@@ -178,11 +178,11 @@ export default async function SettingsOverviewPage() {
           </div>
           <div className="mt-5 rounded-lg border border-black/10 bg-[#f8f4ee] px-4 py-3">
             <div className="flex items-center gap-2 text-xs text-black/45">
-              <Clock3 className="size-4" aria-hidden="true" /> Latest recorded activity
+              <Clock3 className="size-4" aria-hidden="true" /> Latest activity
             </div>
             <p className="mt-2 text-sm font-medium text-[#292a27]">{formatDate(auditSummary?.latestAt)}</p>
           </div>
-          <p className="mt-4 text-xs leading-5 text-black/50">This count covers the central admin audit log. Detailed DAM interaction history is stored separately.</p>
+          <p className="mt-4 text-xs leading-5 text-black/50">Includes recorded actions in Admin and Media.</p>
           <SettingsLink href="/admin/system/audit-log" label="View activity history" />
         </article>
       </section>
@@ -193,15 +193,25 @@ export default async function SettingsOverviewPage() {
 function getSyncState(status: string | undefined): { heading: string; label: string; tone: 'good' | 'warning' | 'bad' | 'neutral' } {
   switch (status) {
     case 'success':
-      return { heading: 'Connected', label: 'Latest run succeeded', tone: 'good' }
+      return { heading: 'Latest sync worked', label: 'Completed successfully', tone: 'good' }
     case 'running':
-      return { heading: 'Syncing now', label: 'Run in progress', tone: 'warning' }
+      return { heading: 'Syncing now', label: 'Sync in progress', tone: 'warning' }
+    case 'partial':
+      return { heading: 'Latest sync completed with issues', label: 'Check the failed steps', tone: 'warning' }
     case 'failed':
     case 'error':
-      return { heading: 'Needs attention', label: 'Latest run failed', tone: 'bad' }
+      return { heading: 'Latest sync failed', label: 'Open the sync page to retry', tone: 'bad' }
     default:
-      return { heading: 'Not verified', label: 'No recorded run', tone: 'neutral' }
+      return { heading: 'No sync recorded', label: 'Status is unknown', tone: 'neutral' }
   }
+}
+
+function syncTriggerLabel(trigger: string | null | undefined): string {
+  if (!trigger) return 'No sync recorded'
+  if (trigger === 'manual') return 'An Admin user'
+  if (trigger === 'scheduled' || trigger === 'cron') return 'Automatic schedule'
+  if (trigger === 'webhook') return 'A Vagaro update'
+  return trigger.replace(/[_-]+/g, ' ')
 }
 
 function StatusPill({ tone, label }: { tone: 'good' | 'warning' | 'bad' | 'neutral'; label: string }) {

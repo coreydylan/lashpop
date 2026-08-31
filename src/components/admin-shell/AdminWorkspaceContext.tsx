@@ -124,7 +124,7 @@ export function AdminWorkspaceProvider({ children }: { children: ReactNode }) {
 
   const saveAll = useCallback(async (): Promise<DirtyOperationResult> => {
     if (operatingRef.current) {
-      setAnnouncement('Another change operation is already in progress')
+      setAnnouncement('Wait for the current save or discard to finish')
       return { succeeded: [], failed: [] }
     }
 
@@ -168,7 +168,7 @@ export function AdminWorkspaceProvider({ children }: { children: ReactNode }) {
 
   const discardAll = useCallback(async (): Promise<DirtyOperationResult> => {
     if (operatingRef.current) {
-      setAnnouncement('Another change operation is already in progress')
+      setAnnouncement('Wait for the current save or discard to finish')
       return { succeeded: [], failed: [] }
     }
 
@@ -234,7 +234,7 @@ export function AdminWorkspaceProvider({ children }: { children: ReactNode }) {
   const confirmNavigation = useCallback(async () => {
     if (blocksRef.current.size === 0) return true
     if (operatingRef.current) {
-      setAnnouncement('Wait for the current change operation before leaving')
+      setAnnouncement('Wait for saving or discarding to finish before leaving')
       return false
     }
 
@@ -294,12 +294,12 @@ export function AdminWorkspaceProvider({ children }: { children: ReactNode }) {
   const confirmationCopy = confirmation?.kind === 'navigate'
     ? {
         title: 'Leave without saving?',
-        description: `${countLabel(confirmation.count)} will be discarded before you leave this page. This cannot be undone.`,
+        description: `${countLabel(confirmation.count)} will be discarded before you leave this page. You cannot undo this.`,
         confirmLabel: 'Discard and leave',
       }
     : {
         title: 'Discard all unsaved changes?',
-        description: `${countLabel(confirmation?.count ?? 0)} will be reset to the last saved values. This cannot be undone.`,
+        description: `${countLabel(confirmation?.count ?? 0)} will return to the last saved values. You cannot undo this.`,
         confirmLabel: 'Discard changes',
       }
 

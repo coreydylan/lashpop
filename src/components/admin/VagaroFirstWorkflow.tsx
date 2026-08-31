@@ -33,7 +33,7 @@ export function VagaroFirstWorkflow({
   const [open, setOpen] = useState(defaultOpen)
   const [acknowledged, setAcknowledged] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [syncResult, setSyncResult] = useState<'success' | 'failed' | null>(null)
+  const [syncResult, setSyncResult] = useState<'success' | 'warning' | 'failed' | null>(null)
   const [syncMessage, setSyncMessage] = useState<string | null>(null)
 
   const runSync = async () => {
@@ -45,19 +45,26 @@ export function VagaroFirstWorkflow({
     try {
       const response = await fetch('/api/admin/website/team/sync', { method: 'POST' })
       const data = await response.json().catch(() => ({}))
-      if (!response.ok) {
+      if (data?.partial) {
+        setSyncResult('warning')
+        setSyncMessage('The Vagaro update completed with issues. Open Vagaro sync to see which step failed.')
+        await onSyncComplete?.()
+        router.refresh()
+        return
+      }
+      if (!response.ok || data?.success === false) {
         setSyncResult('failed')
-        setSyncMessage(data.error || 'The sync did not complete. Open Vagaro Sync to review the failed stage.')
+        setSyncMessage('The Vagaro update did not finish. Open Vagaro sync to see which step failed.')
         return
       }
 
       setSyncResult('success')
-      setSyncMessage('The full Vagaro pipeline finished. Continue with the review and publication steps below.')
+      setSyncMessage('The Vagaro update finished. Review the changes below before publishing.')
       await onSyncComplete?.()
       router.refresh()
     } catch {
       setSyncResult('failed')
-      setSyncMessage('The sync worker could not be reached. Nothing was published; try again or review Vagaro Sync.')
+      setSyncMessage('Could not start the Vagaro update. Nothing was published. Try again or open Vagaro sync.')
     } finally {
       setSyncing(false)
     }
@@ -105,12 +112,12 @@ export function VagaroFirstWorkflow({
             </div>
 
             <div className="rounded-2xl border border-sage/20 bg-white/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-dune/50">2. Return here and sync</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-dune/50">2. Return here and update from Vagaro</p>
               <p className="mt-2 text-sm leading-6 text-dune/65">
-                The pipeline always runs in this order: categories, services, public staff, then each stylist’s service assignments.
+                The update runs in this order: categories, services, team members, then each stylist&apos;s service assignments.
               </p>
               <p className="mt-2 text-xs leading-5 text-dune/50">
-                It runs {VAGARO_SYNC_SCHEDULE.cadence} at {VAGARO_SYNC_SCHEDULE.cronUtc.join(', ')} UTC. During Pacific daylight time that is {VAGARO_SYNC_SCHEDULE.daylightPacific.join(', ')}; during standard time it is {VAGARO_SYNC_SCHEDULE.standardPacific.join(', ')}.
+                Automatic updates run {VAGARO_SYNC_SCHEDULE.cadence}. During Pacific daylight saving time: {VAGARO_SYNC_SCHEDULE.daylightPacific.join(', ')}. During Pacific standard time: {VAGARO_SYNC_SCHEDULE.standardPacific.join(', ')}.
               </p>
 
               <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-sage/20 bg-cream/60 p-3 text-sm leading-5 text-dune/75">
@@ -130,18 +137,18 @@ export function VagaroFirstWorkflow({
                 className="btn btn-primary mt-4 disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
-                {syncing ? 'Running full sync…' : 'Run the full Vagaro sync'}
+                {syncing ? 'Updating from Vagaro…' : 'Update from Vagaro now'}
               </button>
 
               {!acknowledged && (
                 <p className="mt-2 flex items-start gap-2 text-xs leading-5 text-dune/50">
                   <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
-                  Sync is locked until you confirm the Vagaro setup is complete.
+                  Confirm the Vagaro setup above before starting the update.
                 </p>
               )}
 
               {syncMessage && (
-                <p role={syncResult === 'failed' ? 'alert' : 'status'} className={`mt-3 flex items-start gap-2 rounded-xl p-3 text-xs leading-5 ${syncResult === 'failed' ? 'bg-dusty-rose/10 text-dune' : 'bg-ocean-mist/10 text-dune'}`}>
+                <p role={syncResult === 'failed' ? 'alert' : 'status'} className={`mt-3 flex items-start gap-2 rounded-xl p-3 text-xs leading-5 ${syncResult === 'success' ? 'bg-ocean-mist/10 text-dune' : 'bg-dusty-rose/10 text-dune'}`}>
                   {syncResult === 'success' ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ocean-mist" /> : <AlertCircle className="mt-0.5 size-4 shrink-0 text-dusty-rose" />}
                   {syncMessage}
                 </p>
@@ -150,7 +157,7 @@ export function VagaroFirstWorkflow({
           </div>
 
           <div className="mt-5 rounded-2xl border border-sage/20 bg-sage/5 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-dune/50">3. Review before publication</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-dune/50">3. Review before publishing</p>
             <p className="mt-2 text-sm leading-6 text-dune/65">{workflow.expectedResult}</p>
             <ol className="mt-3 grid gap-2 sm:grid-cols-2">
               {workflow.afterSyncSteps.map((step) => (

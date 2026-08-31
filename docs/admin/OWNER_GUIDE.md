@@ -56,57 +56,57 @@ Use your approved phone number to open LashPop Admin. Sign out when you finish o
 ![The LashPop Admin sign-in page with a phone number box and Send code button.](../../public/admin-guide/screenshots/01-sign-in.png)
 
 <!-- capability:today-overview -->
-### See what needs attention today
+### Review today's Admin tasks
 
-Start here to see new enquiries, recent changes and whether the Vagaro update is healthy.
+Start here to see newsletter signups, applications, recorded activity and the latest Vagaro update.
 
-**Open:** Today → Operations overview
+**Open:** Today → Admin overview
 
 **Questions this guide answers**
 
-- Where do I see what needs attention today?
+- Where do I see today's Admin tasks?
 
 #### Steps
 
 1. **Open Today.** Select Today in the main menu.
-2. **Read the warning first.** If you see a warning, open it before publishing website changes.
-3. **Check new activity.** Review newsletter signups, applications and recent admin changes.
+2. **Check the latest Vagaro update.** If the update failed or is late, open Vagaro sync before publishing website changes.
+3. **Check new activity.** Review newsletter signups, applications and recent activity.
 4. **Open the work you need.** Select a card to go straight to that part of Admin.
 
 #### Check your work
 
-- You know whether the site needs attention.
-- You have opened each new item that needs a response.
+- You checked the latest Vagaro update.
+- You opened each new signup or application that you need to review.
 
-![The Today page showing health, inbox totals and recent changes.](../../public/admin-guide/screenshots/02-today-overview.png)
+![The Admin overview showing tasks, inbox totals and recent activity.](../../public/admin-guide/screenshots/02-today-overview.png)
 
 <!-- capability:website-performance -->
-### Read website performance
+### Review website analytics
 
-See how people find the site, what they view and which important actions are recorded.
+See how many people visited, which pages they viewed, where visits came from and which website actions were recorded.
 
-**Open:** Today → Website performance
+**Open:** Today → Website analytics
 
 **Questions this guide answers**
 
-- How do I see which website traffic and booking signals need attention?
+- How do I see visitors, page views, traffic sources and tracked website actions?
 
-> **Before you continue:** Booking completion is a website signal. Use Vagaro when you need the final appointment record.
+> **Before you continue:** Vagaro booking submissions include booking requests and confirmations reported by the embedded form. Some external booking links may not record a start. Use Vagaro for the final appointment status.
 
 #### Steps
 
-1. **Open Website performance.** Select Today, then Website performance.
+1. **Open Website analytics.** Select Today, then Website analytics.
 2. **Choose a time period.** Use 7, 30 or 90 days. Every comparison uses the same number of earlier days.
-3. **Start with Overview.** Read the traffic and booking cards, then check the plain-language operator note.
-4. **Open the focused views.** Use Discovery, Actions and Pages to understand where people came from, what they did and what they viewed.
-5. **Confirm important activity.** Use Vagaro for final appointments and the Admin Inbox for saved forms. Website totals are directional signals.
+3. **Start with Overview.** Read visitors, page views, tracked booking starts and Vagaro booking submissions.
+4. **Open each report.** Use Sources, Tracked actions and Pages to see where visits came from, which actions were recorded and what people viewed.
+5. **Check the source record when needed.** Use Vagaro for final appointment records and Inbox for saved applications or newsletter signups. Tracked actions can include repeat actions by the same person.
 
 #### Check your work
 
 - The selected period matches the question you are asking.
-- You know which source, action or page deserves attention next.
+- You know which source, tracked action or page to review next.
 
-![The Website performance page with traffic, discovery, action and page views.](../../public/admin-guide/screenshots/02a-website-performance.png)
+![The Website analytics page with visitors, page views, traffic sources and tracked actions.](../../public/admin-guide/screenshots/02a-website-performance.png)
 
 <!-- capability:owner-guide -->
 ### Find help in LashPop Admin
@@ -138,24 +138,24 @@ Search by the job you want to complete, or browse a work area.
 <!-- capability:website-overview -->
 ### Know where to make a website change
 
-Use the Website overview to learn whether to make a change in LashPop Admin or Vagaro.
+Use the Website overview to learn whether to make a change in Admin, Vagaro or both.
 
 **Open:** Website → Website overview
 
 **Questions this guide answers**
 
-- Where do I see which system owns each part of the website?
+- Where do I see where each website change belongs?
 
 #### Steps
 
 1. **Open Website.** Select Website, then Website overview.
 2. **Find the part you want to change.** Look for the card that matches the page or content.
-3. **Read where the change belongs.** LashPop means change it here. Vagaro means change it in Vagaro first. Mixed means both places are involved.
+3. **Read where the change belongs.** Edit here means use Admin. Edit in Vagaro means start in Vagaro. Updates automatically means the page explains the rules. Vagaro and Admin means both places are involved.
 4. **Open the correct page.** Select the card to continue.
 
 #### Check your work
 
-- You know which system owns the information.
+- You know where to make the change.
 - You have not entered the same change in two places.
 
 ![The Website overview showing each website area and where to make changes.](../../public/admin-guide/screenshots/03-website-overview.png)
@@ -169,7 +169,7 @@ Set up the service in Vagaro, bring the latest details into LashPop, then comple
 
 **Questions this guide answers**
 
-- How do I add or update a service in Vagaro, sync it, and know what still needs technical publication?
+- How do I add or update a service in Vagaro, sync it, and know what the website manager still needs to finish?
 - How do I check that a new or updated service is ready to publish?
 
 > **Before you continue:** Do not copy another service's booking link. A wrong link can send customers to the wrong appointment.
@@ -182,7 +182,7 @@ Set up the service in Vagaro, bring the latest details into LashPop, then comple
 #### Steps
 
 1. **Set up the service in Vagaro.** In Vagaro, open Settings, then Service/Class Menu. Add or edit the service, turn on online booking and choose every provider who offers it. This step happens in Vagaro.
-2. **Confirm the Vagaro work.** Return to LashPop. Read the checklist, tick the confirmation box and select Sync from Vagaro.
+2. **Confirm the Vagaro work.** Return to LashPop. Read the checklist, tick the confirmation box and select Update from Vagaro now.
 3. **Find the service.** Choose the service category and select Check service.
 4. **Complete each launch check.** Review booking, wording, photos, homepage card and eligible team members. Open each incomplete item from the checklist.
 5. **Ask for the booking connection.** For a brand-new service, send the exact service name and Vagaro category to the website manager. Keep it hidden until they confirm the booking button is ready.
@@ -268,7 +268,7 @@ Update the first words and photos people see when they open the website.
 
 Review the service details copied from Vagaro and the way LashPop presents them on the website.
 
-**Open:** Website → Services & booking
+**Open:** Website → Services and booking
 
 **Questions this guide answers**
 
@@ -279,7 +279,7 @@ Review the service details copied from Vagaro and the way LashPop presents them 
 
 1. **Change booking facts in Vagaro.** Change names, prices, appointment length, availability and providers in Vagaro. This step happens in Vagaro.
 2. **Bring the latest details into LashPop.** Open Settings, then Vagaro sync. Run the update only after the Vagaro changes are complete.
-3. **Open Services & booking.** Review the category, order, description and image for each changed service.
+3. **Open Services and booking.** Review the category, order, description and image for each changed service.
 4. **Read the booking status.** Ready means the booking button has been checked. Pending means the service must stay hidden until the website manager finishes the connection.
 5. **Save the website presentation.** Save local wording, image and order changes.
 
@@ -323,7 +323,7 @@ Control the service choices shown in the Choose a service section.
 
 Keep each profile accurate, choose who appears on the website and put the team in the right order.
 
-**Open:** Website → Team & stylists
+**Open:** Website → Team and stylists
 
 **Questions this guide answers**
 
@@ -343,7 +343,7 @@ Keep each profile accurate, choose who appears on the website and put the team i
 #### Steps
 
 1. **Set up a new Vagaro team member.** In Vagaro, add the employee profile, public photo, biography, services and prices. Turn on online booking. This step happens in Vagaro.
-2. **Bring the latest profile into LashPop.** Open Team & stylists. Confirm the Vagaro work, then select Sync from Vagaro.
+2. **Bring the latest profile into LashPop.** Open Team and stylists. Confirm the Vagaro work, then select Sync from Vagaro.
 3. **Review the profile while it is hidden.** Check the photo, biography, services, contact details and booking link. New people stay hidden until you approve them.
 4. **Add LashPop-only details.** Add portfolio photos, quick facts or credentials when needed. For someone who does not use Vagaro, you can also edit their main photo, biography and service labels here.
 5. **Choose visibility and order.** Use the eye control to show or hide the person. Move cards into the order you want.
@@ -355,7 +355,7 @@ Keep each profile accurate, choose who appears on the website and put the team i
 - Each visible profile has the approved photo and words.
 - Services and booking match Vagaro.
 
-![The Team and stylists page with the new-person checklist, profile cards and visibility controls.](../../public/admin-guide/screenshots/09a-add-team-member-workflow.png)
+![The Team and stylists page with the new-person checklist and the no team profiles state.](../../public/admin-guide/screenshots/09a-add-team-member-workflow.png)
 
 <!-- capability:founder-letter -->
 ### Update the founder letter
@@ -424,7 +424,7 @@ Choose how the homepage Instagram row behaves and refresh the saved posts.
 1. **Open Instagram.** Select Website, then Instagram.
 2. **Choose what people see.** Set the number of posts and choose whether captions appear.
 3. **Choose how it moves.** Turn automatic movement on or off and set a comfortable speed.
-4. **Refresh saved posts when needed.** Select Sync posts to bring the latest available Instagram posts into the media library.
+4. **Add new Instagram photos.** Import the approved Instagram photos in Media, then select Refresh posts to update the photos available here.
 5. **Save and watch the full row.** Save changes. Open the homepage and watch the carousel on a phone and computer.
 
 #### Check your work
@@ -463,7 +463,7 @@ Write clear answers, group related questions and choose what appears on the webs
 - The answer is short, clear and current.
 - Visibility and Featured settings are correct.
 
-![The FAQ page with categories, questions, visibility and featured controls.](../../public/admin-guide/screenshots/12-faq.png)
+![The FAQ page with question totals, category filters and the no questions state.](../../public/admin-guide/screenshots/12-faq.png)
 
 <!-- capability:quiz -->
 ### Change Find Your Look quiz photos or results
@@ -499,7 +499,7 @@ Manage the photos people compare and the result they see at the end.
 - No eye edge is cut off.
 - Each clear answer path gives the correct result and photo.
 
-![The Find Your Look page with comparison photos, crop tools and result settings.](../../public/admin-guide/screenshots/13-find-your-look.png)
+![The Find Your Look page with photo totals, style sections and the no photos state.](../../public/admin-guide/screenshots/13-find-your-look.png)
 
 <!-- capability:work-with-us -->
 ### Change the Work With Us page
@@ -536,7 +536,7 @@ Update the page introduction, path summaries and photo carousel.
 
 Update page titles, descriptions and share images without changing the visible page copy.
 
-**Open:** Website → Search & sharing
+**Open:** Website → Search and sharing
 
 **Questions this guide answers**
 
@@ -544,7 +544,7 @@ Update page titles, descriptions and share images without changing the visible p
 
 #### Steps
 
-1. **Open Search & sharing.** Select Website, then Search & sharing.
+1. **Open Search and sharing.** Select Website, then Search and sharing.
 2. **Choose the page.** Open the page whose search or share preview you want to change.
 3. **Write the title and description.** Say what the page offers in plain language. Put the most useful words first.
 4. **Choose the share image.** Use an approved image that stays clear when cropped wide.
@@ -565,7 +565,7 @@ Update page titles, descriptions and share images without changing the visible p
 
 Choose the reviews people see and lock an approved correction when the automatic choice is wrong.
 
-**Open:** Reviews & reputation → Review library
+**Open:** Reviews and reputation → Review library
 
 **Questions this guide answers**
 
@@ -576,11 +576,11 @@ Choose the reviews people see and lock an approved correction when the automatic
 
 #### Steps
 
-1. **Open Review library.** Select Reviews & reputation, then Review library.
-2. **Find the review.** Search by customer, words in the review or stylist.
+1. **Open Review library.** Select Reviews and reputation, then Review library.
+2. **Find the review.** Search by customer or words in the review, or filter by review source.
 3. **Choose homepage reviews.** Add or remove the review from the homepage and place chosen reviews in the order you want.
 4. **Correct a wrong detail.** Open the review. Change visibility, stylist, score or notes only when you have checked the source.
-5. **Save and lock an approved correction.** Use Save and lock when the automatic review update must not replace your correction.
+5. **Save the approved correction.** Select Save changes. Fields you change become manually set, so automatic updates leave them alone until you unlock them.
 
 #### Check your work
 
@@ -595,7 +595,7 @@ Choose the reviews people see and lock an approved correction when the automatic
 
 Control how LashPop scores reviews and refreshes the automatic homepage selection.
 
-**Open:** Reviews & reputation → Automation
+**Open:** Reviews and reputation → Automation
 
 **Questions this guide answers**
 
@@ -610,7 +610,7 @@ Control how LashPop scores reviews and refreshes the automatic homepage selectio
 
 #### Steps
 
-1. **Open Automation.** Select Reviews & reputation, then Automation.
+1. **Open Automation.** Select Reviews and reputation, then Automation.
 2. **Change one rule at a time.** Adjust the score or rotation setting you need. Leave unrelated settings alone.
 3. **Save the settings.** Review the numbers once more, then select Save.
 4. **Check the next result.** Review the homepage choices after the next automatic update.
@@ -626,11 +626,11 @@ Control how LashPop scores reviews and refreshes the automatic homepage selectio
 ## Media
 
 <!-- capability:media-library -->
-### Upload and organise website media
+### Upload and organize website media
 
 Keep approved photos and videos easy to find, understand and reuse.
 
-**Open:** Media → Asset library
+**Open:** Media → Media library
 
 **Questions this guide answers**
 
@@ -646,9 +646,9 @@ Keep approved photos and videos easy to find, understand and reuse.
 
 #### Steps
 
-1. **Open Asset library.** Select Media, then Asset library.
+1. **Open Media library.** Select Media, then Media library.
 2. **Upload the files.** Select Upload files and choose the approved photos or videos. Wait for every upload to finish.
-3. **Add a useful description.** Open each item. Add alt text that describes the image for someone who cannot see it. Add a caption or internal note when helpful.
+3. **Add a useful description.** Open each item. Add alt text that describes the image for someone who cannot see it. Add a caption only when a website section needs one.
 4. **Make it easy to find.** Add the right person, service, tag or collection. Use words the team will search for later.
 5. **Check the file.** Open the large preview. Make sure it is sharp, upright and the intended file.
 
@@ -658,12 +658,12 @@ Keep approved photos and videos easy to find, understand and reuse.
 - Alt text explains the important content.
 - Search and filters can find the item.
 
-![The Asset library with upload, search, filters, tags and image details.](../../public/admin-guide/screenshots/18-media-library.png)
+![The Media library with upload, search, filters and the no files state.](../../public/admin-guide/screenshots/18-media-library.png)
 
 <!-- capability:team-photography -->
 ### Manage a team member's portrait and album
 
-See the portrait used on the website and prepare local photos and crops for each team member.
+See the photo used on the website and prepare uploaded photos and crops for each team member.
 
 **Open:** Media → Team photography
 
@@ -677,16 +677,16 @@ See the portrait used on the website and prepare local photos and crops for each
 2. **Choose the person.** The card shows the portrait currently used on the website. Select the person to open their photo library.
 3. **Upload an approved source photo.** Select Upload photos and choose the original file.
 4. **Set every crop.** Open Set crops. Keep the face and important details inside each preview shape, then save all crops.
-5. **Choose the local primary.** Select Make primary on the prepared photo. If the profile comes from Vagaro, the page will tell you that Vagaro still supplies the live website portrait.
-6. **Check the website portrait.** Compare the Live website portrait panel with the public team card.
+5. **Choose the primary upload.** Select Make primary on the prepared photo. If the profile comes from Vagaro, the page tells you that the website still uses the Vagaro photo.
+6. **Check the website photo.** Compare the Website photo panel with the public team card.
 
 #### Check your work
 
-- The live portrait matches the public website.
-- The local primary file opens.
+- The website photo matches the public team card.
+- The primary uploaded file opens.
 - All crop previews keep the face inside the frame.
 
-![The Team photography page with website portraits, local photos and crop controls.](../../public/admin-guide/screenshots/19-team-photography.png)
+![The Team photography page with update guidance and the no team members state.](../../public/admin-guide/screenshots/19-team-photography.png)
 
 ## Inbox
 
@@ -771,12 +771,12 @@ Review an applicant's submitted answers and contact details in one place.
 - You reviewed the complete application.
 - Contact details were not shared outside the people who need them.
 
-![The Applications page with an applicant summary and submitted details.](../../public/admin-guide/screenshots/22-applications.png)
+![The Applications page with search controls and the no applications state.](../../public/admin-guide/screenshots/22-applications.png)
 
 ## Settings
 
 <!-- capability:settings-overview -->
-### Check your access and Vagaro health
+### Check your access and latest Vagaro update
 
 See what your Admin role allows and whether the latest Vagaro update completed.
 
@@ -796,9 +796,9 @@ See what your Admin role allows and whether the latest Vagaro update completed.
 #### Check your work
 
 - Your role matches what you expect.
-- The latest Vagaro status is healthy or you know what needs attention.
+- The latest Vagaro update completed, or you opened Vagaro sync to review the failure.
 
-![The Settings overview showing the current role and latest Vagaro update.](../../public/admin-guide/screenshots/23-settings-overview.png)
+![The Settings overview showing the current role and no recorded Vagaro update.](../../public/admin-guide/screenshots/23-settings-overview.png)
 
 <!-- capability:admin-access -->
 ### Give or remove Admin access
@@ -842,7 +842,7 @@ Check when Vagaro last updated LashPop and run it again after an important Vagar
 
 **Questions this guide answers**
 
-- How do I see whether Vagaro data and booking mappings are healthy?
+- How do I check Vagaro categories, services, team members and booking links?
 - How do I run a Vagaro sync now?
 - How often does Vagaro sync, what does it update, and when should I run it manually?
 
@@ -851,8 +851,8 @@ Check when Vagaro last updated LashPop and run it again after an important Vagar
 #### Steps
 
 1. **Open Vagaro sync.** Select Settings, then Vagaro sync.
-2. **Read the latest status.** Check categories, services, public staff and team-to-service links. A warning tells you which part needs attention.
-3. **Know when it runs.** LashPop checks Vagaro automatically three times a day: 6am, 2pm and 10pm Pacific time.
+2. **Read the latest status.** Check categories, services, team members and stylist service links. If a step failed, use its name to check the matching Vagaro details before running the sync again.
+3. **Know when it runs.** Vagaro sync runs three times a day. During daylight saving time it starts at 11 p.m., 7 a.m. and 3 p.m. Pacific. During standard time it starts at 10 p.m., 6 a.m. and 2 p.m. Pacific.
 4. **Run it after an important change.** Use Sync from Vagaro now after you finish a service, price, availability or staff change in Vagaro.
 5. **Wait for every part to finish.** Do not close the page while the update is running. Read any warning before publishing.
 
@@ -865,29 +865,29 @@ Check when Vagaro last updated LashPop and run it again after an important Vagar
 ![The Vagaro sync page showing update status, booking checks and the Sync now control.](../../public/admin-guide/screenshots/24-vagaro-sync.png)
 
 <!-- capability:activity-history -->
-### See who changed something
+### Review Admin activity
 
-Use Activity history to see what changed, who changed it and when.
+Use Activity history to see recorded changes, requests and attempts, who made them and when.
 
 **Open:** Settings → Activity history
 
 **Questions this guide answers**
 
-- How do I see who changed something in the admin panel?
+- How do I see what happened in Admin?
 
 #### Steps
 
 1. **Open Activity history.** Select Settings, then Activity history.
-2. **Find the change.** Use the date, person, page or action to narrow the list.
-3. **Open the record.** Read what changed before and after the action.
+2. **Find the activity.** Use the date, person and action to find the right entry.
+3. **Read the entry.** Check the recorded action and affected item before trying to undo anything.
 4. **Use the right recovery page.** If you need to undo website settings, open Website versions. For other changes, confirm the safest next step before editing.
 
 #### Check your work
 
-- You found the correct record.
-- You understand what changed before trying to undo it.
+- You found the correct activity.
+- You understand the recorded action before trying to undo it.
 
-![The Activity history page with dated Admin changes and the person responsible.](../../public/admin-guide/screenshots/25-activity-history.png)
+![The Activity history page with the no recorded activity state.](../../public/admin-guide/screenshots/25-activity-history.png)
 
 <!-- capability:website-history -->
 ### Restore an older website version
@@ -910,17 +910,16 @@ Review an older saved version and restore it as a new version so the full histor
 #### Steps
 
 1. **Open Website versions.** Select Settings, then Website versions.
-2. **Find the last correct version.** Use the section name, date and person. Open the details before restoring.
-3. **Compare the saved values.** Make sure the older version contains the exact wording or settings you want.
-4. **Select Restore.** Read the confirmation, then restore only when you are certain.
-5. **Check the website.** Open the affected page on a phone and computer. The restored values are saved as a new version.
+2. **Find the last correct version.** Use the section name, date, person and version number. Check Activity history if you are not sure which version was correct.
+3. **Select Restore.** Read the confirmation, then restore only when you are certain.
+4. **Check the website.** Open the affected page on a phone and computer. The restored values are saved as a new version.
 
 #### Check your work
 
 - The intended values are live.
 - The earlier and restored versions both remain in history.
 
-![The Website versions page with dates, saved changes and Restore controls.](../../public/admin-guide/screenshots/26-website-history.png)
+![The Website versions page with filters and the no saved versions state.](../../public/admin-guide/screenshots/26-website-history.png)
 
 ## If something looks wrong
 

@@ -12,6 +12,7 @@ import {
   Play,
 } from "lucide-react"
 import { useDirtyBlock } from '@/components/admin-shell/useDirtyBlock'
+import { websiteSettingStatusLabel } from '@/lib/admin/settings-copy'
 
 interface ReviewSettings {
   homepage_capacity: number
@@ -39,24 +40,24 @@ interface FieldDef {
 const FIELDS: FieldDef[] = [
   {
     key: "homepage_capacity",
-    label: "Homepage carousel size",
-    description: "Total reviews shown on the homepage. Admin pins + auto-rotating slots combined.",
+    label: "Reviews shown on the homepage",
+    description: "Includes reviews you choose and reviews selected automatically.",
     kind: "int",
     min: 3,
     max: 20,
   },
   {
     key: "auto_promote_min_quality_score",
-    label: "Min quality score for auto-promote",
-    description: "Reviews must score at least this to be eligible for the carousel. Unscored (null) reviews still qualify so fresh content can land.",
+    label: "Minimum quality score",
+    description: "Reviews need this score to be selected automatically. New reviews without a score can still be selected.",
     kind: "int",
     min: 1,
     max: 10,
   },
   {
     key: "auto_promote_min_text_length",
-    label: "Min review text length (chars)",
-    description: "Filters out one-liners. 80 chars ≈ a couple of sentences.",
+    label: "Minimum review length",
+    description: "Shorter reviews will not be selected automatically. 80 characters is about one or two sentences.",
     kind: "int",
     min: 0,
     max: 500,
@@ -64,17 +65,17 @@ const FIELDS: FieldDef[] = [
   },
   {
     key: "auto_promote_recency_months",
-    label: "Recency window (months)",
-    description: "Reviews older than this can't be auto-promoted. Pinned reviews bypass this.",
+    label: "Maximum review age in months",
+    description: "Older reviews will not be selected automatically. Reviews you choose can still appear.",
     kind: "int",
     min: 1,
     max: 60,
   },
   {
     key: "recency_decay_days_per_point",
-    label: "Recency decay (days per point)",
+    label: "Days before an older review loses 1 ranking point",
     description:
-      "Newer reviews win unless older ones score meaningfully higher. Every N days of age subtract 1 point from a review's quality score for sort purposes. 180 = a 12-month-old 10/10 ties with a brand-new 8/10. Lower = sharper bias toward fresh.",
+      "A lower number favors newer reviews more strongly. At 180 days, a one-year-old 10/10 review ranks about the same as a new 8/10 review.",
     kind: "int",
     min: 30,
     max: 9999,
@@ -82,40 +83,40 @@ const FIELDS: FieldDef[] = [
   },
   {
     key: "diversity_cap_per_source",
-    label: "Max auto-picks per source",
-    description: "Caps Google, Yelp, or Vagaro from dominating the carousel.",
+    label: "Maximum reviews from one source",
+    description: "Limits how many reviews can be selected automatically from Google, Yelp, or Vagaro.",
     kind: "int",
     min: 1,
     max: 9,
   },
   {
     key: "diversity_cap_per_stylist",
-    label: "Max auto-picks per stylist",
-    description: "Caps any single stylist from monopolizing the carousel.",
+    label: "Maximum reviews for one stylist",
+    description: "Limits how many reviews can be selected automatically for one stylist.",
     kind: "int",
     min: 1,
     max: 9,
   },
   {
     key: "highlights_per_stylist",
-    label: "Highlights per stylist (profile pages)",
-    description: "Number of curated reviews to show on each team member's profile.",
+    label: "Reviews on each stylist profile",
+    description: "Sets how many selected reviews appear on each stylist's page.",
     kind: "int",
     min: 1,
     max: 10,
   },
   {
     key: "editor_pass_interval_days",
-    label: "Editor pass interval (days)",
-    description: "How often Claude re-scores reviews, re-checks ex-staff hides, and rebuilds highlight reels.",
+    label: "Days between automatic review checks",
+    description: "Sets how often the site updates review scores, checks review text for former staff, and updates stylist profile reviews.",
     kind: "int",
     min: 1,
     max: 30,
   },
   {
     key: "editor_pass_enabled",
-    label: "Editor pass enabled",
-    description: "When off, the LLM editor never runs. Auto-promote still rotates fresh reviews; quality scores stay frozen.",
+    label: "Run automatic review checks",
+    description: "Turn this off to stop score and stylist-profile updates. Homepage reviews can still rotate, but scores will not change.",
     kind: "bool",
   },
 ]
@@ -142,7 +143,7 @@ export default function ReviewSettingsPage() {
     try {
       const res = await fetch("/api/admin/website/review-settings")
       const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data?.error ?? `Failed to load settings (${res.status})`)
+      if (!res.ok) throw new Error(data?.error ?? 'Could not load the review display rules. Refresh the page and try again.')
       setSettings(data.settings as ReviewSettings)
       setSavedSettings(data.settings as ReviewSettings)
       setBaseVersion(data.version)
@@ -169,9 +170,9 @@ export default function ReviewSettingsPage() {
       if (!res.ok) {
         if (res.status === 409 && data?.conflict) {
           setConflict(true)
-          throw new Error(`Another admin published a newer version. Reload latest to discard this draft and continue from version ${data.currentVersion ?? 'the newest version'}.`)
+          throw new Error('Someone saved a newer version while this page was open. Load the latest version to replace your unsaved changes.')
         }
-        throw new Error(data?.error ?? `Save failed (${res.status})`)
+        throw new Error(data?.error ?? 'Could not save the review display rules. Try again.')
       }
       setSettings(data.settings as ReviewSettings)
       setSavedSettings(data.settings as ReviewSettings)
@@ -213,8 +214,8 @@ export default function ReviewSettingsPage() {
     try {
       const res = await fetch("/api/admin/website/review-settings", { method: "POST" })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "trigger failed")
-      setTriggerMessage(data.note ?? "Editor pass triggered.")
+      if (!res.ok) throw new Error('Could not request the review update. Try again.')
+      setTriggerMessage(data.note ? "Review update requested. Check back in 5 to 15 minutes." : "Review update requested. Check back soon.")
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -233,7 +234,8 @@ export default function ReviewSettingsPage() {
   if (!settings) {
     return (
       <div className="p-12 text-red-600">
-        Failed to load. {error ? <>Reason: {error}</> : null}
+        <p className="font-semibold">Review display rules are unavailable.</p>
+        {error ? <p className="mt-1">{error}</p> : null}
       </div>
     )
   }
@@ -247,13 +249,12 @@ export default function ReviewSettingsPage() {
       >
         <SettingsIcon className="mt-1 hidden size-7 text-golden sm:block" aria-hidden="true" />
         <div>
-          <h1 className="font-serif text-3xl text-dune">Review pipeline</h1>
+          <h1 className="font-serif text-3xl text-dune">Review display rules</h1>
           <p className="text-sm text-dune/60 mt-1 max-w-xl">
-            Controls how reviews flow into the homepage carousel and the per-stylist
-            highlight reels. Saved values take effect on the next daily Worker tick.
+            Set which reviews can appear on the homepage and stylist pages. Saved changes apply during the next daily update.
           </p>
           <p className="mt-1 text-xs text-dune/45">
-            {baseVersion === 0 ? 'Not published yet' : `Version ${baseVersion}`} · Source: {sourceOwner}
+            {websiteSettingStatusLabel(sourceOwner, baseVersion)}
           </p>
         </div>
       </motion.header>
@@ -335,7 +336,7 @@ export default function ReviewSettingsPage() {
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-sage/50 px-5 py-2.5 text-dune hover:bg-sage/10 disabled:opacity-60"
         >
           {triggering ? <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Play className="w-4 h-4" aria-hidden="true" />}
-          Trigger editor pass now
+          Run review update now
         </button>
 
         {savedAt && (

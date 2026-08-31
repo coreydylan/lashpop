@@ -123,9 +123,9 @@ export default function WorkWithUsCarouselAdminPage() {
               <Users className="w-6 h-6 text-dusty-rose" />
             </div>
             <div className="min-w-0">
-              <h1 className="h2 text-dune">Work With Us Carousel</h1>
+              <h1 className="h2 text-dune">Work With Us photos</h1>
               <p className="text-sm text-dune/60">
-                Manage photos displayed in the team carousel
+                Choose the photos shown between the work option cards.
               </p>
             </div>
           </div>
@@ -156,7 +156,7 @@ export default function WorkWithUsCarouselAdminPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-dune">{stats.total}</p>
-              <p className="text-xs text-dune/60">Total Photos</p>
+              <p className="text-xs text-dune/60">All photos</p>
             </div>
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function WorkWithUsCarouselAdminPage() {
             </div>
             <div>
               <p className="text-2xl font-semibold text-dune">{stats.enabled}</p>
-              <p className="text-xs text-dune/60">Enabled</p>
+              <p className="text-xs text-dune/60">Shown</p>
             </div>
           </div>
         </div>
@@ -181,14 +181,14 @@ export default function WorkWithUsCarouselAdminPage() {
         className="glass rounded-lg border border-sage/15 p-4 sm:p-6"
       >
         <div className="mb-4 grid gap-3 sm:flex sm:items-center sm:justify-between">
-          <h2 className="font-serif text-lg text-dune">Carousel Photos</h2>
+          <h2 className="font-serif text-lg text-dune">Page photos</h2>
           <button
             onClick={() => setDamPickerOpen(true)}
             disabled={saving === 'adding'}
             className="btn btn-primary w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" />
-            Add Photo
+            Add photo
           </button>
         </div>
 
@@ -226,8 +226,8 @@ export default function WorkWithUsCarouselAdminPage() {
                         ? "bg-ocean-mist/90 hover:bg-ocean-mist text-white"
                         : "bg-white/90 hover:bg-white text-dune"
                     )}
-                    title={photo.isEnabled ? 'Disable' : 'Enable'}
-                    aria-label={`${photo.isEnabled ? 'Disable' : 'Enable'} ${photo.fileName}`}
+                    title={photo.isEnabled ? 'Hide from page' : 'Show on page'}
+                    aria-label={`${photo.isEnabled ? 'Hide' : 'Show'} ${photo.fileName} on the Work With Us page`}
                   >
                     {saving === photo.id ? (
                       <RefreshCw className="w-4 h-4 animate-spin" />
@@ -260,7 +260,7 @@ export default function WorkWithUsCarouselAdminPage() {
                 {!photo.isEnabled && (
                   <div className="absolute top-2 right-2">
                     <span className="px-1.5 py-0.5 rounded bg-sage/80 text-white text-[10px]">
-                      Disabled
+                      Hidden
                     </span>
                   </div>
                 )}
@@ -276,7 +276,7 @@ export default function WorkWithUsCarouselAdminPage() {
               className="btn btn-secondary"
             >
               <Plus className="w-4 h-4" />
-              Add Your First Photo
+              Add photo
             </button>
           </div>
         )}
@@ -293,15 +293,15 @@ export default function WorkWithUsCarouselAdminPage() {
         <ul className="space-y-2 text-sm text-dune/70">
           <li className="flex items-start gap-2">
             <span className="text-dusty-rose">•</span>
-            <span>Photos appear in the carousel between the career cards and expanded sections.</span>
+            <span>Photos appear between the work option cards and their details.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-ocean-mist">•</span>
-            <span>Use the <strong>eye icon</strong> to enable/disable photos without deleting them.</span>
+            <span>Hide a photo to remove it from the page without deleting it.</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-terracotta">•</span>
-            <span>Photos are displayed in the order shown here. Add at least 4-6 photos for best results.</span>
+            <span>Photos appear in this order. Use 4 to 6 photos for a balanced carousel.</span>
           </li>
         </ul>
       </motion.div>
@@ -311,7 +311,7 @@ export default function WorkWithUsCarouselAdminPage() {
         isOpen={damPickerOpen}
         onClose={() => setDamPickerOpen(false)}
         onSelect={handleAddPhoto}
-        title="Add Carousel Photo"
+        title="Add Work With Us photo"
         subtitle="Select a team or culture photo from your media library"
       />
 
@@ -339,9 +339,9 @@ export default function WorkWithUsCarouselAdminPage() {
                   <Trash2 className="w-6 h-6 text-terracotta" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg text-dune">Delete Photo?</h3>
+                  <h3 className="font-serif text-lg text-dune">Remove photo from this page?</h3>
                   <p className="text-sm text-dune/60 mt-1">
-                    This will remove this photo from the carousel. This action cannot be undone.
+                    The photo will stay in Media but will no longer appear on the Work With Us page.
                   </p>
                 </div>
               </div>
@@ -360,12 +360,12 @@ export default function WorkWithUsCarouselAdminPage() {
                   {saving === deleteConfirm ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      Deleting...
+                      Removing…
                     </>
                   ) : (
                     <>
                       <Trash2 className="w-4 h-4" />
-                      Delete
+                      Remove photo
                     </>
                   )}
                 </button>

@@ -174,12 +174,12 @@ const EVENT_NAMES = Object.values(ANALYTICS_EVENTS) as AnalyticsEventName[]
 const EVENT_NAME_SET = new Set<string>(EVENT_NAMES)
 
 const EVENT_LABELS: Record<AnalyticsEventName, string> = {
-  [ANALYTICS_EVENTS.bookingStarted]: 'Booking started',
-  [ANALYTICS_EVENTS.bookingCompleted]: 'Booking completed',
-  [ANALYTICS_EVENTS.quizStarted]: 'Quiz started',
-  [ANALYTICS_EVENTS.quizCompleted]: 'Quiz completed',
-  [ANALYTICS_EVENTS.workWithUsSubmitted]: 'Work With Us submitted',
-  [ANALYTICS_EVENTS.newsletterSignupCompleted]: 'Newsletter signup completed',
+  [ANALYTICS_EVENTS.bookingStarted]: 'Tracked booking starts',
+  [ANALYTICS_EVENTS.bookingCompleted]: 'Vagaro booking submissions',
+  [ANALYTICS_EVENTS.quizStarted]: 'Quiz starts',
+  [ANALYTICS_EVENTS.quizCompleted]: 'Quiz results shown',
+  [ANALYTICS_EVENTS.workWithUsSubmitted]: 'Applications saved',
+  [ANALYTICS_EVENTS.newsletterSignupCompleted]: 'Newsletter subscriptions saved',
 }
 
 const INTERNAL_PATH_PREFIXES = [
@@ -907,11 +907,11 @@ function readEventName(value: unknown): AnalyticsEventName | null {
 }
 
 function normalizeSource(value: unknown): string {
-  if (typeof value !== 'string' || value.trim() === '') return 'Direct or unavailable'
+  if (typeof value !== 'string' || value.trim() === '') return 'Direct or not provided'
   const trimmed = value.trim()
   const lower = trimmed.toLowerCase()
   if (['(direct)', 'direct', 'none', 'null', 'unknown'].includes(lower)) {
-    return 'Direct or unavailable'
+    return 'Direct or not provided'
   }
   if (lower === 'others' || lower === 'other') return 'Other'
 

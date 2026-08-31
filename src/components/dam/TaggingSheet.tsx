@@ -106,10 +106,10 @@ export function TaggingSheet({
               <div className="flex items-center justify-between px-6 py-5">
                 <div>
                   <h2 className="h3 text-dune">
-                    Tag {assets.length} {assets.length === 1 ? "Asset" : "Assets"}
+                    Add tags to {assets.length} {assets.length === 1 ? "file" : "files"}
                   </h2>
                   <p className="caption text-sage mt-2">
-                    Add tags to organize your content
+                    Tags make these files easier to find
                   </p>
                 </div>
                 <button
@@ -192,7 +192,7 @@ export function TaggingSheet({
               {/* Team Member */}
               <div>
                 <label className="caption text-dune mb-4 block">
-                  Team Member
+                  Team member
                 </label>
                 <TeamMemberDropdown
                   teamMembers={teamMembers}
@@ -204,7 +204,7 @@ export function TaggingSheet({
               {/* Tags */}
               <div>
                 <label className="caption text-dune mb-4 block">
-                  Tags <span className="text-sage">(organize your content)</span>
+                  Tags <span className="text-sage">(used for search and filters)</span>
                 </label>
                 <TagSelector
                   selectedTags={selectedTags}
@@ -220,13 +220,13 @@ export function TaggingSheet({
                   onClick={onClose}
                   className="btn btn-secondary flex-1 py-5 touch-manipulation"
                 >
-                  Skip
+                  Continue without tags
                 </button>
                 <button
                   onClick={handleSave}
                   className="btn btn-primary flex-1 py-5 touch-manipulation shadow-lg"
                 >
-                  Save Tags
+                  Save tags
                 </button>
               </div>
             </div>
