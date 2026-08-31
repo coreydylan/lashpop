@@ -1,13 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getAllServices, getServiceCategoriesForLanding } from '@/actions/services'
+import {
+  publicServiceCategoryLabel,
+  publicServiceSubtitle,
+} from '@/lib/public-service-presentation'
 
 const SITE_URL = 'https://lashpopstudios.com'
 
 export const metadata: Metadata = {
   title: 'Lash, Brow, Facial & Beauty Services | LashPop Studios',
   description:
-    'Explore eyelash extensions, brows, facials, waxing, permanent makeup, fine line tattoos, and more at LashPop Studios in Oceanside, CA.',
+    'Explore eyelash extensions, brows, facials, waxing, permanent makeup, tiny tattoos, and more at LashPop Studios in Oceanside, CA.',
   alternates: { canonical: `${SITE_URL}/services` },
   openGraph: {
     title: 'Beauty Services at LashPop Studios',
@@ -29,6 +33,10 @@ export default async function ServicesPage() {
     getServiceCategoriesForLanding(),
     getAllServices(),
   ])
+  const publicCategories = categories.map((category) => ({
+    ...category,
+    name: publicServiceCategoryLabel(category.slug, category.name),
+  }))
 
   return (
     <main className="min-h-screen bg-ivory text-charcoal">
@@ -66,7 +74,7 @@ export default async function ServicesPage() {
 
       <nav aria-label="Service categories" className="px-6 pb-14 md:px-10">
         <div className="mx-auto flex max-w-6xl flex-wrap gap-2">
-          {categories.map((category) => (
+          {publicCategories.map((category) => (
             <a
               key={category.id}
               href={`#${category.slug}`}
@@ -80,7 +88,7 @@ export default async function ServicesPage() {
 
       <div className="px-6 pb-24 md:px-10 md:pb-32">
         <div className="mx-auto max-w-6xl space-y-20">
-          {categories.map((category) => {
+          {publicCategories.map((category) => {
             const categoryServices = services.filter(
               (service) => service.categorySlug === category.slug,
             )
@@ -119,9 +127,9 @@ export default async function ServicesPage() {
                       <h3 className="font-display text-2xl leading-tight transition-colors group-hover:text-terracotta">
                         {service.name}
                       </h3>
-                      {service.subtitle && (
+                      {publicServiceSubtitle(service.name, service.subtitle) && (
                         <p className="mt-3 line-clamp-2 text-sm leading-6 text-charcoal/60">
-                          {service.subtitle}
+                          {publicServiceSubtitle(service.name, service.subtitle)}
                         </p>
                       )}
                       <div className="mt-auto flex items-end justify-between gap-4 pt-8 text-xs font-semibold uppercase tracking-[0.12em] text-charcoal/55">

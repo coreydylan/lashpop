@@ -97,6 +97,7 @@ export function PhotoComparisonRound({
             alt="Left option"
             priority
             sizes="(max-width: 768px) 45vw, 200px"
+            objectFit="contain"
             objectPosition={getQuizPhotoObjectPosition(pair.left)}
           />
           {/* Selection overlay */}
@@ -139,6 +140,7 @@ export function PhotoComparisonRound({
             alt="Right option"
             priority
             sizes="(max-width: 768px) 45vw, 200px"
+            objectFit="contain"
             objectPosition={getQuizPhotoObjectPosition(pair.right)}
           />
           {/* Selection overlay */}

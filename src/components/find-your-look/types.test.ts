@@ -126,6 +126,25 @@ test('each decisive photo leader can finish after three completed comparisons', 
   }
 })
 
+test('ordinary mixed two-to-one photo majorities finish for every lash style', () => {
+  const baseline = getQuestionnaireScores('B', 'B')
+  const runnersUp = {
+    classic: 'wetAngel',
+    wetAngel: 'hybrid',
+    hybrid: 'volume',
+    volume: 'classic',
+  } as const
+
+  for (const winner of ['classic', 'wetAngel', 'hybrid', 'volume'] as const) {
+    const photoScores = {
+      ...createEmptyScores(),
+      [winner]: 2,
+      [runnersUp[winner]]: 1,
+    }
+    assert.equal(checkWinCondition(photoScores, 3, winner, baseline), winner)
+  }
+})
+
 test('an ambiguous path keeps all six comparisons before the questionnaire tie-break', () => {
   const photoScores = { classic: 1, wetAngel: 1, hybrid: 1, volume: 1 }
   const volumeQuestionnaire = getQuestionnaireScores('C', 'D')

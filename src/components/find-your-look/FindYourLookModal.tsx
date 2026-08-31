@@ -971,6 +971,7 @@ function ResultScreen({
             fallbackSrcs={resultImageFallbacks}
             alt={result.displayName}
             sizes="(max-width: 768px) 100vw, 400px"
+            objectFit="contain"
           />
         </div>
 

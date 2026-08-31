@@ -67,6 +67,25 @@ test('duplicate titles in different Vagaro categories have different loaders', (
   }
 })
 
+test('Brows and Permanent Makeup Microblading duplicates keep exact parent identities', () => {
+  const firstAppointments = manifest.mappings.filter(
+    mapping => mapping.name === 'Microblading (1st Appointment)',
+  )
+
+  assert.deepEqual(
+    firstAppointments.map(({ vagaroServiceId, category }) => ({ vagaroServiceId, category })),
+    [
+      { vagaroServiceId: '39547580', category: 'Brows' },
+      {
+        vagaroServiceId: '23862411',
+        category: 'Permanent Makeup (Microblading/Nanobrows/Freckles/Lip Blushing)',
+      },
+    ],
+  )
+  assert.equal(new Set(firstAppointments.map(mapping => mapping.encryptedParentServiceId)).size, 2)
+  assert.equal(new Set(firstAppointments.map(mapping => mapping.widgetUrl)).size, 2)
+})
+
 test('a valid loader assigned to the wrong service fails closed', () => {
   const [first, second] = manifest.mappings
   assert.ok(first)

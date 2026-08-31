@@ -724,7 +724,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
       'permanent makeup': 'Permanent Makeup',
       'lip blush': 'Permanent Makeup',
       'jewelry': 'Permanent Jewelry',
-      'fine line tattoo': 'Fine Line Tattoos'
+      'fine line tattoo': 'Tiny Tattoos'
     }
 
     const categories = new Set<string>()
@@ -1172,14 +1172,14 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
                 slot. The edge pipeline resizes on demand now, so the source
                 stays full-res. New filename busts year-long immutable caches. */}
             <Image
-              src="/lashpop-images/team/team-group-photo-full.jpg"
+              src="/lashpop-images/team/team-group-photo-2026-08-11.jpg"
               alt="The LashPop Studios team"
               fill
               priority={false}
               sizes="100vw"
               className="object-cover object-center"
               placeholder="blur"
-              blurDataURL={getPublicImageBlur('/lashpop-images/team/team-group-photo-full.jpg')}
+              blurDataURL={getPublicImageBlur('/lashpop-images/team/team-group-photo-2026-08-11.jpg')}
             />
           </div>
         </div>
