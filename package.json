@@ -37,7 +37,7 @@
     "images:verify-direct": "node scripts/cloudflare-images/verify-direct.mjs",
     "images:verify-hosted": "node scripts/cloudflare-images/verify-hosted.mjs",
     "test:fixtures": "node scripts/check-browser-fixtures.mjs",
-    "test:public-content": "tsx --test src/lib/public-service-presentation.test.ts src/lib/newsletter-persistence.test.ts src/types/studio.test.ts",
+    "test:public-content": "tsx --test src/lib/public-faq-categories.test.ts src/lib/public-service-presentation.test.ts src/lib/newsletter-persistence.test.ts src/types/studio.test.ts",
     "test:staff": "tsx --test src/lib/team-publication-contract.test.ts src/lib/admin/team-presentation.test.ts src/lib/admin/owner-guide-content.test.ts src/lib/team-portrait.test.ts src/lib/admin/vagaro-owner-workflows.test.ts src/db/migrations-cascade.test.ts",
     "test:vagaro": "npm run test:vagaro-widget && npm run test:vagaro-embed && npm run test:vagaro-health && npm run test:vagaro-images && npm run test:vagaro-manifest && npm run test:vagaro-readiness && npm run test:roster-reconcile",
     "fixtures:browser:refresh": "DOTENV_CONFIG_PATH=.env.production.local tsx -r dotenv/config scripts/export-browser-fixture.ts --write",
