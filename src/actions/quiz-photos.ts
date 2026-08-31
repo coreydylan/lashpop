@@ -19,6 +19,10 @@ import {
   QUIZ_RESULT_CROP_ASPECT,
   getQuizCropPercentBox,
 } from "@/components/find-your-look/quiz-crop"
+import {
+  classifyQuizCropVariant,
+  type QuizCropVariant,
+} from "@/lib/quiz-crop-variant"
 
 // Lash style → lash_type tag name used by import-quiz-photos.ts
 const LASH_STYLE_TO_TAG_NAME: Record<LashStyle, string> = {
@@ -38,6 +42,7 @@ export interface QuizPhotoWithAsset {
   lashStyle: LashStyle
   cropData: QuizPhotoCropData | null
   cropUrl: string | null
+  cropVariant?: QuizCropVariant
   isEnabled: boolean
   sortOrder: number
   createdAt: Date
@@ -77,7 +82,15 @@ export async function getAllQuizPhotos(): Promise<QuizPhotoWithAsset[]> {
 export async function getQuizPhotosForQuiz(): Promise<Record<LashStyle, QuizPhotoWithAsset[]>> {
   if (process.env.PLAYWRIGHT_FIXTURES === "1") {
     const fixture = (await import("@/test-fixtures/homepage-quiz.json")).default
-    return resolvePublicImages(fixture.quizPhotos as unknown as Record<LashStyle, QuizPhotoWithAsset[]>)
+    return resolvePublicImages(Object.fromEntries(
+      Object.entries(fixture.quizPhotos).map(([style, photos]) => [
+        style,
+        photos.map((photo) => ({
+          ...photo,
+          cropVariant: classifyQuizCropVariant(photo.cropUrl),
+        })),
+      ]),
+    ) as unknown as Record<LashStyle, QuizPhotoWithAsset[]>)
   }
 
   const db = getDb()
@@ -110,7 +123,10 @@ export async function getQuizPhotosForQuiz(): Promise<Record<LashStyle, QuizPhot
   }
 
   for (const photo of results) {
-    grouped[photo.lashStyle as LashStyle].push(photo as QuizPhotoWithAsset)
+    grouped[photo.lashStyle as LashStyle].push({
+      ...photo,
+      cropVariant: classifyQuizCropVariant(photo.cropUrl),
+    } as QuizPhotoWithAsset)
   }
 
   return resolvePublicImages(grouped)

@@ -61,6 +61,7 @@ interface FAQCategory {
   name: string
   displayName: string
   displayOrder: number
+  contentPending?: boolean
 }
 
 interface FAQItem {
@@ -344,6 +345,14 @@ export function FAQSection({ categories, itemsByCategory, featuredItems }: FAQSe
               />
             )
           })}
+          {filteredFAQs.length === 0 && categories.find((category) => category.id === activeCategory)?.contentPending && (
+            <div className="rounded-xl border border-dusty-rose/20 bg-white/70 px-6 py-10 text-center shadow-sm md:rounded-2xl">
+              <p className="font-display text-xl text-charcoal">Tiny Tattoos FAQs are coming soon.</p>
+              <p className="mt-2 text-sm leading-6 text-charcoal/65">
+                The LashPop team is finalizing the questions and answers for this section.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* CTA */}

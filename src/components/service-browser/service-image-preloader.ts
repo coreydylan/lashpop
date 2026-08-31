@@ -23,6 +23,7 @@ type PreloadMode = 'active' | 'intent'
 interface CachedImage {
   image: HTMLImageElement
   promise: Promise<void>
+  ready: boolean
 }
 
 // Keep detached elements alive for the page lifetime so their responsive
@@ -68,6 +69,11 @@ function cacheKey(image: ServiceImageCandidate): string {
   return `${image.src}|${image.sizes}`
 }
 
+export function isServiceImageReady(src: string | null | undefined): boolean {
+  const trimmed = src?.trim()
+  return Boolean(trimmed && imageCache.get(cacheKey(candidate(trimmed)))?.ready)
+}
+
 function requestImage(
   image: ServiceImageCandidate,
   priority: 'high' | 'low',
@@ -82,11 +88,15 @@ function requestImage(
   element.sizes = image.sizes
   element.srcset = getServiceImageSrcSet(image)
 
+  let entry: CachedImage
   const promise = new Promise<void>((resolve) => {
     element.onload = () => {
       // decode() is best-effort: a successful network load is still useful if
       // a browser declines the detached decode request.
-      void element.decode().catch(() => undefined).finally(resolve)
+      void element.decode().catch(() => undefined).finally(() => {
+        entry.ready = true
+        resolve()
+      })
     }
     element.onerror = () => {
       imageCache.delete(key)
@@ -94,7 +104,8 @@ function requestImage(
     }
   })
 
-  imageCache.set(key, { image: element, promise })
+  entry = { image: element, promise, ready: false }
+  imageCache.set(key, entry)
   element.src = cfImageLoader({
     src: image.src,
     width: image.widths[image.widths.length - 1],

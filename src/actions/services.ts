@@ -18,6 +18,10 @@ import {
 import { and, eq, asc, desc, inArray, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/sqlite-core"
 import { resolvePublicImages } from "@/lib/public-image-delivery.server"
+import {
+  presentPublicService,
+  presentPublicServiceCategory,
+} from "@/lib/public-service-presentation"
 
 export async function getServices() {
   const db = getDb()
@@ -44,19 +48,19 @@ export async function getServices() {
     .where(eq(services.isActive, true))
     .orderBy(services.displayOrder)
 
-  return resolvePublicImages(allServices)
+  return resolvePublicImages(allServices.map(presentPublicService))
 }
 
 export async function getServiceBySlug(slug: string) {
   if (process.env.PLAYWRIGHT_FIXTURES === "1") {
     const fixture = (await import("@/test-fixtures/homepage-services.json")).default
     const service = fixture.services.find((candidate) => candidate.slug === slug)
-    return service ? resolvePublicImages({
+    return service ? resolvePublicImages(presentPublicService({
       ...service,
       categoryId: null,
       subcategoryId: null,
       vagaroServiceId: null,
-    }) : null
+    })) : null
   }
 
   const db = getDb()
@@ -103,12 +107,12 @@ export async function getServiceBySlug(slug: string) {
       widgetUrl: service.vagaroWidgetUrl,
     })
 
-  return resolvePublicImages({
+  return resolvePublicImages(presentPublicService({
     ...publicService,
     // Fail closed on a stale/swapped mapping. The service page can still
     // render, but it cannot send a customer into the wrong Vagaro flow.
     vagaroWidgetUrl: bookingReady ? service.vagaroWidgetUrl : null,
-  })
+  }))
 }
 
 export async function getServicesByCategory(categorySlug: string) {
@@ -135,7 +139,7 @@ export async function getServicesByCategory(categorySlug: string) {
     )
     .orderBy(services.displayOrder)
 
-  return resolvePublicImages(categoryServices.map((service) => ({
+  return resolvePublicImages(categoryServices.map((service) => presentPublicService({
     ...service,
     vagaroImageSourceUrl: null,
   })))
@@ -205,12 +209,12 @@ export async function getAllServices() {
         widgetUrl: service.vagaroWidgetUrl,
       })
 
-    return {
+    return presentPublicService({
       ...publicService,
       // Never expose a merely plausible loader to the browser. It must match
       // the generated manifest by numeric ID, title, category, and full URL.
       vagaroWidgetUrl: bookingReady ? service.vagaroWidgetUrl : null,
-    }
+    })
   }))
 }
 
@@ -844,7 +848,7 @@ export async function getVagaroSyncRunsAdmin(limit = 10) {
 export async function getServiceCategoriesForLanding() {
   if (process.env.PLAYWRIGHT_FIXTURES === "1") {
     const fixture = (await import("@/test-fixtures/homepage-services.json")).default
-    return fixture.serviceCategories
+    return fixture.serviceCategories.map(presentPublicServiceCategory)
   }
 
   const db = getDb()
@@ -863,7 +867,7 @@ export async function getServiceCategoriesForLanding() {
     .where(and(eq(serviceCategories.isActive, true), eq(serviceCategories.showInBooking, true)))
     .orderBy(asc(serviceCategories.displayOrder))
 
-  return categories
+  return categories.map(presentPublicServiceCategory)
 }
 
 // Reset service to use Vagaro image (removes DAM override)

@@ -271,6 +271,20 @@ test('hero loading uses media-scoped preloads and no competing sheen', async ({ 
     opacity: '1',
   }))
 
+  const heroDensity = await visibleHeroImage.evaluate((image) => {
+    const element = image as HTMLImageElement
+    const requestedWidth = Number(
+      new URL(element.currentSrc).pathname.match(/(?:^|\/)w=(\d+)(?:,|\/|$)/)?.[1] || 0,
+    )
+    return {
+      // naturalWidth is density-corrected for a srcset candidate in Chromium,
+      // so compare the physical Cloudflare derivative width instead.
+      available: requestedWidth / element.getBoundingClientRect().width,
+      required: window.devicePixelRatio,
+    }
+  })
+  expect(heroDensity.available).toBeGreaterThanOrEqual(heroDensity.required - 0.05)
+
   if (testInfo.project.name === 'visual-mobile') {
     await expect(page.locator('header.md\\:hidden')).toBeVisible()
     await expect(page.locator('main.mobile-scroll-container')).toBeVisible()
@@ -289,7 +303,8 @@ test('core values enter as one reduced-motion-safe reveal', async ({ page }) => 
   ))).toBe(true)
 
   await reveal.scrollIntoViewIfNeeded()
-  await expect(reveal).toHaveCSS('opacity', '1')
+  await expect.poll(async () => Number(await reveal.evaluate((element) => getComputedStyle(element).opacity)))
+    .toBeGreaterThanOrEqual(0.99)
   await expect.poll(async () => reveal.evaluate((element) => getComputedStyle(element).transform)).toBe('none')
 
   await page.evaluate(() => window.scrollTo(0, 0))

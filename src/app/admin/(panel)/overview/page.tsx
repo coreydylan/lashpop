@@ -70,7 +70,7 @@ export default async function TodayPage() {
     unscored.count > 0 ? { label: `Score ${unscored.count} public ${unscored.count === 1 ? 'review' : 'reviews'}`, detail: 'Fresh reviews need the reputation pipeline or a manual pass.', href: '/admin/website/reviews', tone: 'attention' as const } : null,
     !syncHealthy ? { label: 'Check the Vagaro sync', detail: latestRun ? `Latest run is ${latestRun.status} from ${formatWhen(latestRun.startedAt)}.` : 'No sync run has been recorded.', href: '/admin/system/syncs', tone: 'attention' as const } : null,
     defaultOnly.length > 0 ? { label: `Confirm ${defaultOnly.length} default-backed website ${defaultOnly.length === 1 ? 'section' : 'sections'}`, detail: 'They work today, but no admin-confirmed row has been saved yet.', href: '/admin/website', tone: 'normal' as const } : null,
-    { label: 'Verify Fine Line Tattoos end to end', detail: 'Confirm booking order, copy, imagery, and Evie + Kelly Richter’s profile chips.', href: '/admin/workflows/service-launch?category=fine-line-tattoos', tone: 'normal' as const },
+    { label: 'Verify Tiny Tattoos end to end', detail: 'Confirm booking order, copy, imagery, and Evie + Kelly Richter’s profile chips.', href: '/admin/workflows/service-launch?category=fine-line-tattoos', tone: 'normal' as const },
   ].filter(Boolean) as Array<{ label: string; detail: string; href: string; tone: 'attention' | 'normal' }>
 
   return (

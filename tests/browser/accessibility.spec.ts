@@ -1,26 +1,15 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { createHash } from 'node:crypto'
 import { preparePublicHome } from './helpers'
 
 const QUIZ_EVIDENCE_DIR = process.env.LASHPOP_QUIZ_EVIDENCE_DIR ?? '/tmp/registry'
-const CLOUDFLARE_IMAGES_ACCOUNT_HASH = 'zXebLwufc8AGAQU5E9oXHw'
-
-function directR2(source: string) {
-  const url = new URL(source)
-  const key = decodeURIComponent(url.pathname.replace(/^\/+/, ''))
-  const imageId = `lp/${createHash('sha256').update(`r2:${key}`).digest('hex')}`
-  return `https://imagedelivery.net/${CLOUDFLARE_IMAGES_ACCOUNT_HASH}/${imageId}/public`
-}
-
 type QuizPath = {
   name: string
   q1Button: RegExp
   q2Button: RegExp
   resultStyle: 'classic' | 'wetAngel' | 'hybrid' | 'volume'
   resultHeading: string
-  configuredResultImage: string
   expectedPairKeys: string[]
 }
 
@@ -39,6 +28,7 @@ async function walkQuizPath(page: Page, path: QuizPath) {
   await quiz.getByRole('button', { name: path.q2Button }).click()
 
   const roundHistory: string[] = []
+  let selectedResultPhoto: string | null = null
   for (let round = 0; round < 6; round += 1) {
     const result = quiz.locator('[data-quiz-result-style]')
     if (await result.isVisible().catch(() => false)) break
@@ -52,6 +42,7 @@ async function walkQuizPath(page: Page, path: QuizPath) {
     const targetPhoto = comparison.locator(`[data-lash-style="${path.resultStyle}"]`)
 
     if (await targetPhoto.isVisible().catch(() => false)) {
+      selectedResultPhoto = await targetPhoto.getAttribute('data-quiz-photo-src')
       await targetPhoto.click()
     } else {
       await quiz.getByRole('button', { name: 'Neither of these' }).click()
@@ -74,9 +65,10 @@ async function walkQuizPath(page: Page, path: QuizPath) {
   await expect(result).toBeVisible()
   await expect(result.getByRole('heading', { name: path.resultHeading })).toBeVisible()
   const resultImageFrame = result.locator('[data-quiz-result-image-src]')
+  expect(selectedResultPhoto).not.toBeNull()
   await expect(resultImageFrame).toHaveAttribute(
     'data-quiz-result-image-src',
-    path.configuredResultImage,
+    selectedResultPhoto!,
   )
   const resultImage = resultImageFrame.locator('img')
   await expect(resultImage).toBeVisible()
@@ -194,6 +186,25 @@ test('Classic Fill reaches the exact booking handoff', async ({ page }) => {
   await expect(page.locator('script[src*="vagaro"]')).toHaveCount(1)
 })
 
+test('service photos remain decoded after returning from the Vagaro handoff', async ({ page }) => {
+  await preparePublicHome(page)
+
+  await page.getByRole('button', { name: /^LASH EXTENSIONS/ }).click()
+  const browser = page.getByRole('dialog')
+  const classicFill = browser.getByRole('button', { name: /^Classic Fill/ })
+  await classicFill.locator('img[data-service-image]').waitFor({ state: 'visible' })
+  await classicFill.click()
+  await browser.getByRole('button', { name: 'Go back' }).click()
+
+  const restored = browser.locator('img[data-service-image]')
+  await expect.poll(() => restored.count()).toBeGreaterThan(1)
+  await expect.poll(async () => restored.evaluateAll((images) => images.every((image) => (
+    image.getAttribute('data-loaded') === 'true'
+    && (image as HTMLImageElement).naturalWidth > 0
+    && getComputedStyle(image).opacity === '1'
+  )))).toBe(true)
+})
+
 test('service browser prioritizes and smoothly resolves visible card photos', async ({ page }) => {
   await preparePublicHome(page)
 
@@ -304,7 +315,6 @@ for (const path of [
     q2Button: /Barely there/,
     resultStyle: 'classic',
     resultHeading: 'Classic Lashes',
-    configuredResultImage: directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/classic-full-set-approved.jpg'),
     expectedPairKeys: ['classic-volume', 'classic-wetAngel', 'classic-hybrid'],
   },
   {
@@ -313,7 +323,6 @@ for (const path of [
     q2Button: /Bold and dramatic/,
     resultStyle: 'volume',
     resultHeading: 'Volume Lashes',
-    configuredResultImage: directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/volume-full-set-approved.jpg'),
     expectedPairKeys: ['classic-volume', 'volume-wetAngel', 'hybrid-volume'],
   },
   {
@@ -322,7 +331,6 @@ for (const path of [
     q2Button: /Barely there/,
     resultStyle: 'hybrid',
     resultHeading: 'Hybrid Lashes',
-    configuredResultImage: directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/hybrid-full-set-approved.jpg'),
     expectedPairKeys: [
       'classic-volume',
       'classic-wetAngel',
@@ -336,7 +344,6 @@ for (const path of [
     q2Button: /Barely there/,
     resultStyle: 'wetAngel',
     resultHeading: 'Wet / Angel Lashes',
-    configuredResultImage: directR2('https://pub-b6624c485ec245d68de72be196a72d75.r2.dev/uploads/quiz/results/2026-08-27/wetAngel-full-set-approved.jpg'),
     expectedPairKeys: [
       'classic-volume',
       'classic-wetAngel',
@@ -428,7 +435,7 @@ test('quiz comparison cards stay filled without reusing legacy square crop maste
       await images.evaluateAll((elements) =>
         elements.map((image) => window.getComputedStyle(image).objectFit),
       ),
-    ).toEqual(['cover', 'cover'])
+    ).toEqual(['contain', 'contain'])
 
     if (process.env.LASHPOP_QUIZ_EVIDENCE === '1' && viewport.width === 1440) {
       await page.waitForTimeout(750)

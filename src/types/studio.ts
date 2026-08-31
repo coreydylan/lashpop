@@ -64,7 +64,9 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
     state: 'CA',
     zip: '92054',
   },
-  coordinates: { lat: 33.1959, lng: -117.3795 },
+  // Geocoded to the configured street address (429 S Coast Hwy), not the
+  // nearby Mission Avenue / Coast Highway intersection.
+  coordinates: { lat: 33.1913757, lng: -117.3758363 },
   phone: '(760) 212-0448',
   phoneE164: '+17602120448',
   email: 'lashpopstudios@gmail.com',
@@ -91,11 +93,21 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
 export function mergeStudioSettings(input: Partial<StudioSettings> | null | undefined): StudioSettings {
   const base = DEFAULT_STUDIO_SETTINGS
   if (!input) return base
-  return {
+  const merged = {
     ...base,
     ...input,
     address: { ...base.address, ...(input.address ?? {}) },
     coordinates: { ...base.coordinates, ...(input.coordinates ?? {}) },
     social: { ...base.social, ...(input.social ?? {}) },
   }
+
+  const hasConfiguredAddress = merged.address.street.trim().toLowerCase() === '429 s coast hwy'
+    && merged.address.city.trim().toLowerCase() === 'oceanside'
+    && merged.address.zip.trim() === '92054'
+  const hasKnownIntersectionPin = Math.abs(merged.coordinates.lat - 33.1959) < 0.000001
+    && Math.abs(merged.coordinates.lng - -117.3795) < 0.000001
+
+  return hasConfiguredAddress && hasKnownIntersectionPin
+    ? { ...merged, coordinates: { ...DEFAULT_STUDIO_SETTINGS.coordinates } }
+    : merged
 }

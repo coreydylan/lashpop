@@ -43,6 +43,7 @@ export interface QuizPhoto {
   lashStyle: LashStyle
   cropData: { x: number; y: number; scale: number } | null
   cropUrl: string | null
+  cropVariant?: import('@/lib/quiz-crop-variant').QuizCropVariant
   isEnabled: boolean
   sortOrder: number
   filePath: string
@@ -137,11 +138,12 @@ export const RESULT_IMAGES: Record<LashStyle, string> = {
 // Quiz configuration
 export const QUIZ_CONFIG = {
   // The client-approved flow returns a result as soon as three completed
-  // comparisons produce a decisive two-vote lead. All six unique pairings
+  // comparisons produce a unique two-of-three majority. All six unique pairings
   // remain available only when the photo choices are still ambiguous.
   MIN_ROUNDS: 3,
   MAX_ROUNDS: 6,
-  WIN_MARGIN: 2,
+  WIN_MARGIN: 1,
+  MIN_WIN_SCORE: 2,
 }
 
 // Helper: create empty scores object
@@ -302,6 +304,7 @@ export function checkWinCondition(
 
   if (
     completedRounds >= QUIZ_CONFIG.MIN_ROUNDS
+    && photoScores[first] >= QUIZ_CONFIG.MIN_WIN_SCORE
     && photoMargin >= QUIZ_CONFIG.WIN_MARGIN
   ) {
     return first

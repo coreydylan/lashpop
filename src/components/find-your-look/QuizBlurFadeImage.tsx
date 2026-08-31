@@ -12,6 +12,7 @@ interface QuizBlurFadeImageProps {
   priority?: boolean
   className?: string
   objectPosition?: string
+  objectFit?: 'cover' | 'contain'
   fallbackSrcs?: Array<string | null | undefined>
 }
 
@@ -22,6 +23,7 @@ export function QuizBlurFadeImage({
   priority = false,
   className = '',
   objectPosition,
+  objectFit = 'cover',
   fallbackSrcs = [],
 }: QuizBlurFadeImageProps) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
@@ -58,7 +60,7 @@ export function QuizBlurFadeImage({
           onError={() => {
             setFailedSrcs((current) => new Set(current).add(activeSrc))
           }}
-          className={`object-cover will-change-[opacity,filter,transform] transition-[opacity,filter,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+          className={`${objectFit === 'contain' ? 'object-contain' : 'object-cover'} will-change-[opacity,filter,transform] transition-[opacity,filter,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
             isLoaded
               ? 'opacity-100 blur-0 scale-100'
               : 'opacity-0 blur-[14px] scale-[1.04]'

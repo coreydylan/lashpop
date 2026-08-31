@@ -24,7 +24,7 @@ test('keeps the canonical result first and removes empty or duplicate fallbacks'
   )
 })
 
-test('keeps the admin-configured result crop first, ahead of every fallback', () => {
+test('shows the exact selected winning photo before the old configured result image', () => {
   const photos = {
     classic: [photo('classic', 'disabled', false), photo('classic', 'classic-enabled')],
     wetAngel: [],
@@ -42,8 +42,8 @@ test('keeps the admin-configured result crop first, ahead of every fallback', ()
       legacyFallbackImage: 'https://example.com/legacy-placeholder.jpg',
     }),
     [
-      'https://example.com/admin-result-crop.jpg',
       'https://example.com/classic-selected.jpg',
+      'https://example.com/admin-result-crop.jpg',
       'https://example.com/classic-enabled.jpg',
       'https://example.com/booking.jpg',
       'https://example.com/legacy-placeholder.jpg',

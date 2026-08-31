@@ -26,7 +26,7 @@ const FOOTER_SERVICES: FooterService[] = [
   { label: 'Waxing', slug: 'waxing' },
   { label: 'Permanent Makeup', slug: 'permanent-makeup' },
   { label: 'Permanent Jewelry', slug: 'specialty' },
-  { label: 'Fine Line Tattoos', slug: 'fine-line-tattoos' },
+  { label: 'Tiny Tattoos', slug: 'fine-line-tattoos' },
   { label: 'Botox', externalUrl: 'https://www.naturtox.com/' },
 ]
 

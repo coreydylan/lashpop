@@ -3,6 +3,7 @@
 import { getDb } from "@/db"
 import { serviceCategories } from "@/db/schema/service_categories"
 import { and, eq, asc } from "drizzle-orm"
+import { presentPublicServiceCategory } from "@/lib/public-service-presentation"
 
 export async function getServiceCategories() {
   const db = getDb()
@@ -12,7 +13,7 @@ export async function getServiceCategories() {
     .where(and(eq(serviceCategories.isActive, true), eq(serviceCategories.showInBooking, true)))
     .orderBy(asc(serviceCategories.displayOrder))
 
-  return categories.map(cat => ({
+  return categories.map(cat => presentPublicServiceCategory({
     id: cat.id,
     name: cat.displayName || cat.name,
     slug: cat.slug,
