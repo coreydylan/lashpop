@@ -168,3 +168,79 @@ test("Evie's Instagram migration updates only the verified team row and records 
   assert.equal(audits.n, 1);
   db.close();
 });
+
+test('website notes migration applies only the guarded client-approved data corrections', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec('PRAGMA foreign_keys = ON');
+
+  const files = migrationFiles();
+  const migration = '0013_lashpop_website_notes.sql';
+  const migrationIndex = files.indexOf(migration);
+  assert.notEqual(migrationIndex, -1, `${migration} must remain in the production migration chain`);
+  for (const file of files.slice(0, migrationIndex)) apply(db, file);
+
+  insertRow(db, 'website_settings', {
+    id: 'studio-settings',
+    section: 'studio',
+    config: JSON.stringify({
+      address: { street: '429 South Coast Highway' },
+      coordinates: { lat: 33.1959, lng: -117.3795 },
+    }),
+  });
+  insertRow(db, 'service_categories', {
+    id: 'unrelated-category',
+    name: 'Unrelated Category',
+    slug: 'unrelated-category',
+    display_name: 'Unrelated Public Label',
+  });
+
+  const unrelatedCategoryBefore = db.prepare(
+    "SELECT name, display_name FROM service_categories WHERE slug = 'unrelated-category'",
+  ).get() as { name: string; display_name: string };
+  const unrelatedVagaroId = 'vsc-15071993';
+  db.prepare('UPDATE vagaro_service_categories SET team_label = ? WHERE id = ?').run('Brows', unrelatedVagaroId);
+
+  apply(db, migration);
+
+  const tattoos = db.prepare(
+    "SELECT name, display_name FROM service_categories WHERE slug = 'fine-line-tattoos'",
+  ).get() as { name: string; display_name: string };
+  assert.equal(tattoos.name, 'Tiny Tattoos');
+  assert.equal(tattoos.display_name, 'Tiny Tattoos');
+
+  const vagaro = db.prepare(
+    "SELECT team_label FROM vagaro_service_categories WHERE id = 'vsc-39970485'",
+  ).get() as { team_label: string };
+  assert.equal(vagaro.team_label, 'Tiny Tattoos');
+
+  const studio = db.prepare(
+    "SELECT json_extract(config, '$.coordinates.lat') AS lat, json_extract(config, '$.coordinates.lng') AS lng FROM website_settings WHERE section = 'studio'",
+  ).get() as { lat: number; lng: number };
+  assert.equal(studio.lat, 33.1913757);
+  assert.equal(studio.lng, -117.3758363);
+
+  const unrelatedCategoryAfter = db.prepare(
+    "SELECT name, display_name FROM service_categories WHERE slug = 'unrelated-category'",
+  ).get() as { name: string; display_name: string };
+  assert.equal(unrelatedCategoryAfter.name, unrelatedCategoryBefore.name);
+  assert.equal(unrelatedCategoryAfter.display_name, unrelatedCategoryBefore.display_name);
+  const unrelatedVagaro = db.prepare(
+    'SELECT team_label FROM vagaro_service_categories WHERE id = ?',
+  ).get(unrelatedVagaroId) as { team_label: string };
+  assert.equal(unrelatedVagaro.team_label, 'Brows');
+
+  const ownerEditedConfig = JSON.stringify({
+    address: { street: '429 South Coast Highway' },
+    coordinates: { lat: 33.2, lng: -117.38 },
+  });
+  db.prepare("UPDATE website_settings SET config = ? WHERE section = 'studio'").run(ownerEditedConfig);
+  apply(db, migration);
+  const replayedConfig = db.prepare(
+    "SELECT config FROM website_settings WHERE section = 'studio'",
+  ).get() as { config: string };
+  assert.equal(replayedConfig.config, ownerEditedConfig, 'a replay must preserve a later owner coordinate edit');
+
+  const check = db.prepare('PRAGMA foreign_key_check').all();
+  assert.equal(check.length, 0, `foreign_key_check found violations: ${JSON.stringify(check)}`);
+  db.close();
+});
