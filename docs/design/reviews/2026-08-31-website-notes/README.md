@@ -26,5 +26,5 @@ The Website Notes ask for a Tiny Tattoos FAQ section but explicitly say the ques
 ## Scope reconciliation
 
 - The content, image, quiz, service-browser, and browser-acceptance changes in this pull request map directly to the Website Notes items above. `tests/browser/accessibility.spec.ts` contains functional acceptance checks for those items; it does not change accessibility policy or production analytics.
-- No analytics source or analytics dependency changes are included. Incidental dependency-lock refreshes were removed; `package.json` changes only add the focused Website Notes test suite to the existing launch gate.
+- No analytics source or analytics dependency changes are included. `package.json` changes only add the focused Website Notes test suite to the existing launch gate. The lockfile-only transitive refresh is retained because reverting it reintroduces three audited vulnerabilities in Browserslist, `postcss-selector-parser`, and `sanitize-html`; it adds no application dependency or runtime feature.
 - The sole production migration path is `workers/lashpop-db/migrations/0013_lashpop_website_notes.sql`, which is part of the Worker/D1 migration chain. Its updates and rollback statements are value-guarded, and the migration has not been applied to production.
