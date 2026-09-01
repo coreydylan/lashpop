@@ -50,6 +50,21 @@ export interface StudioSettings {
   updatedAt?: string
 }
 
+export const AUTHORITATIVE_STUDIO_COORDINATES: StudioCoordinates = {
+  lat: 33.191413395594,
+  lng: -117.375833916173,
+}
+
+const LEGACY_INTERSECTION_COORDINATES: StudioCoordinates = {
+  lat: 33.1959,
+  lng: -117.3795,
+}
+
+function usesLegacyIntersectionPin(coordinates: StudioCoordinates): boolean {
+  return coordinates.lat === LEGACY_INTERSECTION_COORDINATES.lat
+    && coordinates.lng === LEGACY_INTERSECTION_COORDINATES.lng
+}
+
 /**
  * Defaults reflect the *current* hardcoded values across the codebase
  * (per `tmp/admin-audit.md` Part 2 Section A). Treat as the seed for
@@ -64,7 +79,7 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
     state: 'CA',
     zip: '92054',
   },
-  coordinates: { lat: 33.1959, lng: -117.3795 },
+  coordinates: AUTHORITATIVE_STUDIO_COORDINATES,
   phone: '(760) 212-0448',
   phoneE164: '+17602120448',
   email: 'lashpopstudios@gmail.com',
@@ -91,11 +106,16 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
 export function mergeStudioSettings(input: Partial<StudioSettings> | null | undefined): StudioSettings {
   const base = DEFAULT_STUDIO_SETTINGS
   if (!input) return base
+  const coordinates = { ...base.coordinates, ...(input.coordinates ?? {}) }
   return {
     ...base,
     ...input,
     address: { ...base.address, ...(input.address ?? {}) },
-    coordinates: { ...base.coordinates, ...(input.coordinates ?? {}) },
+    // Correct the one known legacy value that placed the marker at Mission
+    // Avenue and Coast Highway instead of the verified 429 S Coast Hwy parcel.
+    coordinates: usesLegacyIntersectionPin(coordinates)
+      ? AUTHORITATIVE_STUDIO_COORDINATES
+      : coordinates,
     social: { ...base.social, ...(input.social ?? {}) },
   }
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Clock, DollarSign } from 'lucide-react'
@@ -32,6 +32,7 @@ interface ServiceCardProps {
 export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
+  const imageRef = useRef<HTMLImageElement>(null)
   const priceDisplay = service.priceStarting
     ? `$${(service.priceStarting / 100).toFixed(0)}+`
     : null
@@ -44,9 +45,14 @@ export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
   const showPhoto = Boolean(service.imageUrl && !imageFailed)
   const prioritizePhoto = index < 6
 
-  useEffect(() => {
-    setImageLoaded(false)
-    setImageFailed(false)
+  useLayoutEffect(() => {
+    const image = imageRef.current
+    const restoredFromBrowserCache = Boolean(image?.complete && image.naturalWidth > 0)
+    const completedWithError = Boolean(
+      image?.complete && image.currentSrc && image.naturalWidth === 0,
+    )
+    setImageLoaded(restoredFromBrowserCache)
+    setImageFailed(completedWithError)
   }, [service.imageUrl])
 
   return (
@@ -80,6 +86,7 @@ export function ServiceCard({ service, index, onClick }: ServiceCardProps) {
         )}
         {showPhoto ? (
           <Image
+            ref={imageRef}
             src={service.imageUrl!}
             alt={service.name}
             fill

@@ -8,6 +8,10 @@ import {
 } from '@/actions/services';
 import { getAssetsByServiceSlug } from '@/actions/dam';
 import { ServiceDetailClient } from './ServiceDetailClient';
+import {
+  publicServiceCategoryLabel,
+  publicServiceSubtitle,
+} from '@/lib/public-service-presentation';
 
 const SITE_URL = 'https://lashpopstudios.com';
 
@@ -38,16 +42,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const category = categories.find((item) => item.slug === slug);
 
   if (category) {
+    const categoryName = publicServiceCategoryLabel(category.slug, category.name);
     const description =
       category.description ||
-      `Explore ${category.name.toLowerCase()} services at LashPop Studios in Oceanside, CA.`;
+      `Explore ${categoryName.toLowerCase()} services at LashPop Studios in Oceanside, CA.`;
 
     return {
-      title: `${category.name} Services in Oceanside, CA | LashPop Studios`,
+      title: `${categoryName} Services in Oceanside, CA | LashPop Studios`,
       description,
       alternates: { canonical: `${SITE_URL}/services/${category.slug}` },
       openGraph: {
-        title: `${category.name} Services | LashPop Studios`,
+        title: `${categoryName} Services | LashPop Studios`,
         description,
         url: `${SITE_URL}/services/${category.slug}`,
         type: 'website',
@@ -68,7 +73,18 @@ export default async function ServiceDetailPage({ params }: Props) {
   if (service) {
     const gallery = await getAssetsByServiceSlug(slug);
 
-    return <ServiceDetailClient service={service} gallery={gallery} />;
+    return (
+      <ServiceDetailClient
+        service={{
+          ...service,
+          subtitle: publicServiceSubtitle(service.name, service.subtitle),
+          categoryName: service.categoryName
+            ? publicServiceCategoryLabel(service.categorySlug, service.categoryName)
+            : null,
+        }}
+        gallery={gallery}
+      />
+    );
   }
 
   const categories = await getServiceCategoriesForLanding();
@@ -77,6 +93,7 @@ export default async function ServiceDetailPage({ params }: Props) {
   if (!category) {
     notFound();
   }
+  const categoryName = publicServiceCategoryLabel(category.slug, category.name);
 
   const categoryServices = await getServicesByCategory(category.slug);
 
@@ -88,7 +105,7 @@ export default async function ServiceDetailPage({ params }: Props) {
           <span aria-hidden="true" className="mx-3">/</span>
           <Link href="/services" className="transition-colors hover:text-terracotta">Services</Link>
           <span aria-hidden="true" className="mx-3">/</span>
-          <span aria-current="page">{category.name}</span>
+          <span aria-current="page">{categoryName}</span>
         </nav>
 
         <header className="max-w-3xl">
@@ -96,7 +113,7 @@ export default async function ServiceDetailPage({ params }: Props) {
             LashPop Studios
           </p>
           <h1 className="font-display text-5xl leading-none tracking-tight sm:text-6xl md:text-7xl">
-            {category.name}
+            {categoryName}
           </h1>
           {category.tagline && (
             <p className="mt-6 font-display text-2xl text-charcoal/80">{category.tagline}</p>
@@ -109,7 +126,7 @@ export default async function ServiceDetailPage({ params }: Props) {
         </header>
 
         <section aria-labelledby="available-services" className="mt-14 border-t border-charcoal/15 pt-8">
-          <h2 id="available-services" className="sr-only">Available {category.name} services</h2>
+          <h2 id="available-services" className="sr-only">Available {categoryName} services</h2>
           {categoryServices.length > 0 ? (
             <div className="grid gap-px overflow-hidden rounded-2xl border border-charcoal/10 bg-charcoal/10 sm:grid-cols-2">
               {categoryServices.map((item) => (
@@ -121,9 +138,9 @@ export default async function ServiceDetailPage({ params }: Props) {
                   <h3 className="font-display text-2xl leading-tight transition-colors group-hover:text-terracotta">
                     {item.name}
                   </h3>
-                  {item.subtitle && (
+                  {publicServiceSubtitle(item.name, item.subtitle) && (
                     <p className="mt-3 line-clamp-2 text-sm leading-6 text-charcoal/60">
-                      {item.subtitle}
+                      {publicServiceSubtitle(item.name, item.subtitle)}
                     </p>
                   )}
                   <span className="mt-auto pt-7 text-xs font-semibold uppercase tracking-[0.14em] text-charcoal/55">

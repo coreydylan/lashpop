@@ -13,6 +13,12 @@ import { getHeroContent } from "@/actions/hero-content"
 import { ReviewSchema } from "@/components/seo"
 import { resolveTeamPhotoParity } from "@/lib/team-portrait"
 import { resolvePublicImages } from "@/lib/public-image-delivery.server"
+import {
+  publicServiceCategoryLabel,
+  publicServiceSubtitle,
+  publicTeamServiceCategoryLabel,
+} from "@/lib/public-service-presentation"
+import { mergeStudioSettings } from "@/types/studio"
 import LandingPageV2Client from "./LandingPageV2Client"
 import type { CarouselDisplayPhoto } from '@/actions/work-with-us-carousel'
 
@@ -59,6 +65,7 @@ async function getHomePageData(): Promise<HomePageData> {
       ...servicesFixture.default,
       ...teamFixture.default,
       ...contentFixture.default,
+      studio: mergeStudioSettings(contentFixture.default.studio),
       ...socialData,
       workWithUsPhotos: [],
     } as unknown as HomePageData)
@@ -148,7 +155,7 @@ export default async function HomePage() {
     .map((card) => ({
       id: card.id,
       slug: card.slug,
-      title: card.title,
+      title: publicServiceCategoryLabel(card.slug, card.title),
       tagline: card.tagline,
       description: card.description,
       icon: card.icon,
@@ -159,14 +166,16 @@ export default async function HomePage() {
     id: service.id || service.slug || `service-${service.name}`,
     name: service.name,
     slug: service.slug,
-    subtitle: service.subtitle,
+    subtitle: publicServiceSubtitle(service.name, service.subtitle),
     description: service.description,
     durationMinutes: service.durationMinutes,
     priceStarting: service.priceStarting,
     imageUrl: service.imageUrl,
     color: service.color,
     displayOrder: service.displayOrder,
-    categoryName: service.categoryName,
+    categoryName: service.categoryName
+      ? publicServiceCategoryLabel(service.categorySlug, service.categoryName)
+      : null,
     categorySlug: service.categorySlug,
     subcategoryName: service.subcategoryName,
     subcategorySlug: service.subcategorySlug,
@@ -191,8 +200,8 @@ export default async function HomePage() {
     // and orchestrator handoff; the live DB column is gone. Pass the same
     // serviceCategories array so any downstream fallback path sees something
     // sensible instead of an empty placeholder.
-    specialties: member.serviceCategories ?? [],
-    serviceCategories: member.serviceCategories, // From dual-mode router in actions/team.ts
+    specialties: (member.serviceCategories ?? []).map(publicTeamServiceCategoryLabel),
+    serviceCategories: member.serviceCategories?.map(publicTeamServiceCategoryLabel),
     // Vagaro bio (BusinessSummary) wins; fall back to locally-entered bio
     bio: member.vagaroBio || member.bio || undefined,
     quote: member.quote || undefined,
@@ -230,7 +239,10 @@ export default async function HomePage() {
       reviewStats={reviewStats}
       instagramPosts={instagramPosts}
       instagramSettings={instagramSettings}
-      serviceCategories={serviceCategories}
+      serviceCategories={serviceCategories.map((category) => ({
+        ...category,
+        name: publicServiceCategoryLabel(category.slug, category.name),
+      }))}
       homepageServices={homepageServiceCards}
       faqData={faqData}
       heroConfig={heroConfig}

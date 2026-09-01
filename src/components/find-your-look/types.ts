@@ -136,12 +136,12 @@ export const RESULT_IMAGES: Record<LashStyle, string> = {
 
 // Quiz configuration
 export const QUIZ_CONFIG = {
-  // The client-approved flow returns a result as soon as three completed
-  // comparisons produce a decisive two-vote lead. All six unique pairings
-  // remain available only when the photo choices are still ambiguous.
+  // The client-approved flow returns a result once at least three comparisons
+  // produce a unique leader with two photo selections (a normal 2–1 majority).
+  // All six unique pairings remain available only while choices are ambiguous.
   MIN_ROUNDS: 3,
   MAX_ROUNDS: 6,
-  WIN_MARGIN: 2,
+  MIN_WINNING_SELECTIONS: 2,
 }
 
 // Helper: create empty scores object
@@ -298,11 +298,12 @@ export function checkWinCondition(
     tieBreakStyle,
   )
   const [first, second] = ranked
-  const photoMargin = photoScores[first] - photoScores[second]
+  const hasUniqueLeader = photoScores[first] > photoScores[second]
 
   if (
     completedRounds >= QUIZ_CONFIG.MIN_ROUNDS
-    && photoMargin >= QUIZ_CONFIG.WIN_MARGIN
+    && photoScores[first] >= QUIZ_CONFIG.MIN_WINNING_SELECTIONS
+    && hasUniqueLeader
   ) {
     return first
   }

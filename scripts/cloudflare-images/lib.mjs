@@ -132,6 +132,7 @@ async function runtimeLocalReferences() {
     const files = await walkFiles(root)
     for (const file of files) {
       if (!/\.(?:css|js|jsx|ts|tsx)$/.test(file)) continue
+      if (/\.(?:test|spec)\.(?:js|jsx|ts|tsx)$/.test(file)) continue
       const contents = await readFile(file, 'utf8')
       for (const match of contents.matchAll(/(\/lashpop-images\/[A-Za-z0-9_./@%+\-]+)/g)) {
         const imagePath = match[1].split(/[?#]/, 1)[0]

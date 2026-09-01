@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto'
 import { preparePublicHome } from './helpers'
 
 const QUIZ_EVIDENCE_DIR = process.env.LASHPOP_QUIZ_EVIDENCE_DIR ?? '/tmp/registry'
+const WEBSITE_NOTES_EVIDENCE_DIR = process.env.LASHPOP_WEBSITE_NOTES_EVIDENCE_DIR
 const CLOUDFLARE_IMAGES_ACCOUNT_HASH = 'zXebLwufc8AGAQU5E9oXHw'
 
 function directR2(source: string) {
@@ -80,6 +81,7 @@ async function walkQuizPath(page: Page, path: QuizPath) {
   )
   const resultImage = resultImageFrame.locator('img')
   await expect(resultImage).toBeVisible()
+  await expect(resultImage).toHaveCSS('object-fit', 'contain')
   await expect.poll(
     () => resultImage.evaluate((image) => (image as HTMLImageElement).naturalWidth),
   ).toBeGreaterThan(0)
@@ -120,6 +122,78 @@ test("Evie's team profile uses her client-approved Instagram handle", async ({ p
   const instagram = page.locator('a[href="https://instagram.com/thedarlinspot"]')
   await expect(instagram.first()).toBeAttached()
   await expect(instagram.first()).toContainText('thedarlinspot')
+})
+
+test('public service labels use Tiny Tattoos and omit the six approved fill subtitles', async ({ page }) => {
+  await preparePublicHome(page)
+
+  await expect(page.getByRole('button', { name: /^TINY TATTOOS/ })).toBeVisible()
+  if (WEBSITE_NOTES_EVIDENCE_DIR) {
+    await page.locator('section[data-section-id="services"]').screenshot({
+      path: `${WEBSITE_NOTES_EVIDENCE_DIR}/after-services-desktop.png`,
+    })
+  }
+  const team = page.locator('section[data-section-id="team"]')
+  await team.scrollIntoViewIfNeeded()
+  await expect(team.getByText('Tiny Tattoos', { exact: true }).first()).toBeVisible()
+
+  await page.getByRole('button', { name: /^LASH EXTENSIONS/ }).click()
+  const browser = page.getByRole('dialog')
+  for (const service of [
+    ['Classic Fill', 'Maintain Your Classic Look'],
+    ['Classic Mini Fill', 'Quick Touch-Up'],
+    ['Hybrid Fill', 'Maintain Your Hybrid Style'],
+    ['Hybrid Mini Fill', 'Quick Touch-Up'],
+    ['Wet/Angel Fill', 'Maintain Your Wispy Style'],
+    ['Wet/Angel Mini Fill', 'Quick Refresh'],
+  ] as const) {
+    const card = browser.getByRole('button', { name: new RegExp(`^${service[0]}`) })
+    await expect(card).toBeVisible()
+    await expect(card).not.toContainText(service[1])
+  }
+})
+
+test('hero and replacement team photo render from sharp responsive sources', async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await preparePublicHome(page)
+
+    const hero = page.locator('img[alt="LashPop Studio Interior"]:visible')
+    await expect(hero).toBeVisible()
+    const heroEvidence = await hero.evaluate((image) => {
+      const element = image as HTMLImageElement
+      const rect = element.getBoundingClientRect()
+      return {
+        currentSrc: element.currentSrc,
+        naturalWidth: element.naturalWidth,
+        renderedWidth: rect.width,
+        dpr: window.devicePixelRatio,
+      }
+    })
+    expect(heroEvidence.currentSrc).toMatch(/^https:\/\/imagedelivery\.net\//)
+    expect(heroEvidence.naturalWidth).toBeGreaterThanOrEqual(
+      Math.floor(heroEvidence.renderedWidth * Math.min(heroEvidence.dpr, 2)),
+    )
+
+    const teamPhoto = page.getByAltText('The LashPop Studios team')
+    await teamPhoto.scrollIntoViewIfNeeded()
+    await expect(teamPhoto).toBeVisible()
+    await expect.poll(
+      () => teamPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    ).toBeGreaterThan(0)
+    await expect(teamPhoto).toHaveAttribute(
+      'src',
+      /lp\/d1b7c28c1c6f05603a6e6feb91309010196c0f8dbf02b205560683bee223fda8/,
+    )
+    if (WEBSITE_NOTES_EVIDENCE_DIR) {
+      await teamPhoto.screenshot({
+        path: `${WEBSITE_NOTES_EVIDENCE_DIR}/after-team-photo-${viewport.width}.png`,
+      })
+    }
+  }
 })
 
 test('public LashPop rasters use Cloudflare Images directly with no Worker or provider origin', async ({ page }) => {
@@ -216,6 +290,37 @@ test('service browser prioritizes and smoothly resolves visible card photos', as
 
   const currentSource = await firstPhoto.evaluate((image) => (image as HTMLImageElement).currentSrc)
   expect(currentSource).toMatch(/\/w=(320|600),q=\d+,fit=scale-down,metadata=none$/)
+})
+
+test('service card photos restore after returning from the Vagaro booking view', async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await preparePublicHome(page)
+
+    await page.getByRole('button', { name: /^LASH EXTENSIONS/ }).click()
+    const browser = page.getByRole('dialog')
+    const firstPhoto = browser.locator('img[data-service-image]').first()
+    await expect(firstPhoto).toHaveAttribute('data-loaded', 'true')
+
+    await browser.getByRole('button', { name: /^Classic Fill/ }).click()
+    await expect(browser.getByRole('heading', { name: 'Book Classic Fill' })).toBeVisible()
+    await browser.getByRole('button', { name: 'Go back' }).click()
+
+    await expect(browser.getByRole('button', { name: /^Classic Fill/ })).toBeVisible()
+    await expect(firstPhoto).toHaveAttribute('data-loaded', 'true')
+    await expect.poll(
+      () => firstPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth),
+    ).toBeGreaterThan(0)
+    if (WEBSITE_NOTES_EVIDENCE_DIR) {
+      await browser.screenshot({
+        path: `${WEBSITE_NOTES_EVIDENCE_DIR}/after-booking-back-${viewport.width}.png`,
+      })
+    }
+
+  }
 })
 
 test('quiz reaches one stable result image when every comparison is skipped', async ({ page }) => {
@@ -428,7 +533,7 @@ test('quiz comparison cards stay filled without reusing legacy square crop maste
       await images.evaluateAll((elements) =>
         elements.map((image) => window.getComputedStyle(image).objectFit),
       ),
-    ).toEqual(['cover', 'cover'])
+    ).toEqual(['contain', 'contain'])
 
     if (process.env.LASHPOP_QUIZ_EVIDENCE === '1' && viewport.width === 1440) {
       await page.waitForTimeout(750)
