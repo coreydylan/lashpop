@@ -32,4 +32,3 @@ export async function persistNewsletterSubscription(
   await store.reactivate(existing.id, now)
   return 'reactivated'
 }
-

@@ -13,6 +13,7 @@ import path from 'node:path';
 // disappears. Any future rebuild of a parent table has to keep this green.
 
 const MIGRATIONS_DIR = path.join(process.cwd(), 'workers/lashpop-db/migrations');
+const LEGACY_DRIZZLE_DIR = path.join(process.cwd(), 'drizzle');
 
 const CHILD_TABLES = [
   'sets',
@@ -177,6 +178,15 @@ test('website notes migration applies only the guarded client-approved data corr
   const migration = '0013_lashpop_website_notes.sql';
   const migrationIndex = files.indexOf(migration);
   assert.notEqual(migrationIndex, -1, `${migration} must remain in the production migration chain`);
+  const duplicatePaths = readdirSync(LEGACY_DRIZZLE_DIR)
+    .filter((file) => /lashpop_website_notes\.sql$/.test(file));
+  assert.deepEqual(
+    duplicatePaths,
+    [],
+    'website notes must use only the Worker/D1 production migration chain',
+  );
+  const migrationSource = readFileSync(path.join(MIGRATIONS_DIR, migration), 'utf8');
+  assert.match(migrationSource, /Rollback \(also guarded to avoid overwriting later edits\)/);
   for (const file of files.slice(0, migrationIndex)) apply(db, file);
 
   insertRow(db, 'website_settings', {

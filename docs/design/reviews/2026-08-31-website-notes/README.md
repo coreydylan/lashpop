@@ -22,3 +22,9 @@ The deterministic Cloudflare Images ID is `lp/d1b7c28c1c6f05603a6e6feb9130901019
 ## Deferred dependency
 
 The Website Notes ask for a Tiny Tattoos FAQ section but explicitly say the questions and answers are still to come from Jake and Emily. No placeholder FAQ content or empty public category was invented.
+
+## Scope reconciliation
+
+- The content, image, quiz, service-browser, and browser-acceptance changes in this pull request map directly to the Website Notes items above. `tests/browser/accessibility.spec.ts` contains functional acceptance checks for those items; it does not change accessibility policy or production analytics.
+- No analytics source or analytics dependency changes are included. Incidental dependency-lock refreshes were removed; `package.json` changes only add the focused Website Notes test suite to the existing launch gate.
+- The sole production migration path is `workers/lashpop-db/migrations/0013_lashpop_website_notes.sql`, which is part of the Worker/D1 migration chain. Its updates and rollback statements are value-guarded, and the migration has not been applied to production.

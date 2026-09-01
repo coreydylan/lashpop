@@ -37,4 +37,3 @@ export function publicServiceSubtitle(
   if (SUBTITLE_HIDDEN_SERVICES.has(normalized(serviceName))) return null
   return subtitle?.trim() || null
 }
-

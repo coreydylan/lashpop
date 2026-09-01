@@ -33,4 +33,3 @@ test('removes only the six approved lash-fill subtitles', () => {
 
   assert.equal(publicServiceSubtitle('Classic Full Set', 'Natural look'), 'Natural look')
 })
-
