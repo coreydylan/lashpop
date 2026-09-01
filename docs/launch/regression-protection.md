@@ -1,14 +1,15 @@
 # Visual Regression Protection
 
-The launch appearance is protected by three independent controls:
+The launch appearance is protected by four independent controls:
 
 1. **Canonical contract:** `docs/design/brand-contract.json` owns the approved fonts, palette, spacing, and radii. `src/styles/brand-contract.css` is the runtime token surface.
 2. **Static and runtime enforcement:** `npm run check:design` rejects changed token values, missing font wiring, broken Tailwind mappings, and new color literals in public-site surfaces. The browser suite also verifies that those values and fonts resolve in the rendered page.
 3. **Rendered enforcement:** Playwright screenshots compare 320px, 390px, and 1440px output to reviewed baselines. Accessibility checks fail serious/critical regressions other than the explicitly accepted `color-contrast` rule.
+4. **Fixed-header boundary enforcement:** The mobile browser gate deliberately aligns both the FAQ title and its sticky category rail below the fixed site header at 320px and 390px. It fails unless the target actually entered the viewport, every header control remains contained and non-overlapping, and the sticky surface resolves immediately below the header.
 
 ## Required visual coverage matrix
 
-`tests/browser/visual-coverage.ts` is the single source of truth for the release-blocking matrix. It currently declares 19 named surfaces across three viewports, producing 57 rendered states. Every rendered state must pass three independent checks: approved screenshot, horizontal containment, and critical geometry/image integrity. That makes 171 required checks on every browser-regression run.
+`tests/browser/visual-coverage.ts` is the single source of truth for the release-blocking matrix. It currently declares 19 named surfaces across three viewports, producing 57 rendered states. Every rendered state must pass three independent checks: approved screenshot, horizontal containment, and critical geometry/image integrity. Two additional mobile header-boundary states require containment, non-overlap, page-heading separation, and sticky-surface separation. That makes 179 required checks on every browser-regression run.
 
 The matrix covers:
 
@@ -16,7 +17,7 @@ The matrix covers:
 - Public routes: services index, Classic service detail, Work With Us, Privacy, and Terms.
 - Stateful flows: scrolled navigation, expanded FAQ, service browser, Classic Fill booking handoff, and quiz welcome.
 
-`npm run check:visual-coverage` fails if an exact 320px, 390px, or 1440px project is removed; if a required surface or state disappears; if either the macOS or Linux baseline is missing; or if total coverage falls below 50 rendered states and 150 checks. `npm run test:visual`, `npm run test:launch`, and the required `browser-regression` workflow all enforce this guard.
+`npm run check:visual-coverage` fails if an exact 320px, 390px, or 1440px project is removed; if the 320px or 390px header-boundary contract is weakened; if a required surface or state disappears; if either the macOS or Linux baseline is missing; or if total coverage falls below 50 rendered states and 175 checks. `npm run test:visual`, `npm run test:launch`, and the required `browser-regression` workflow all enforce this guard.
 
 When a new public route, major page section, fixed/sticky shell, or meaningful interaction is added, add it to this manifest and its Playwright suite in the same pull request. Coverage may grow without changing the minimums; shrinking it is a launch-affecting change and requires explicit owner review.
 

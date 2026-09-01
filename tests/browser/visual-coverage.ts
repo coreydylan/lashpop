@@ -38,8 +38,20 @@ export const CHECKS_PER_RENDERED_STATE = [
   'critical-geometry-and-image-integrity',
 ] as const
 
+export const MOBILE_HEADER_BOUNDARY_VIEWPORTS = [
+  { id: 'narrow', width: 320, height: 720 },
+  { id: 'mobile', width: 390, height: 844 },
+] as const
+
+export const CHECKS_PER_MOBILE_HEADER_BOUNDARY_STATE = [
+  'header-controls-contained',
+  'header-controls-non-overlapping',
+  'section-heading-below-header',
+  'sticky-surface-below-header',
+] as const
+
 export const MIN_REQUIRED_RENDERED_STATES = 50
-export const MIN_REQUIRED_VISUAL_CHECKS = 150
+export const MIN_REQUIRED_VISUAL_CHECKS = 175
 
 export function visualCoverageTotals() {
   const surfaces =
@@ -47,6 +59,16 @@ export function visualCoverageTotals() {
     + ROUTE_VISUAL_SURFACES.length
     + INTERACTION_VISUAL_SURFACES.length
   const renderedStates = surfaces * VISUAL_PROJECTS.length
-  const checks = renderedStates * CHECKS_PER_RENDERED_STATE.length
-  return { surfaces, renderedStates, checks }
+  const renderedChecks = renderedStates * CHECKS_PER_RENDERED_STATE.length
+  const mobileHeaderBoundaryStates = MOBILE_HEADER_BOUNDARY_VIEWPORTS.length
+  const mobileHeaderBoundaryChecks =
+    mobileHeaderBoundaryStates * CHECKS_PER_MOBILE_HEADER_BOUNDARY_STATE.length
+  const checks = renderedChecks + mobileHeaderBoundaryChecks
+  return {
+    surfaces,
+    renderedStates,
+    mobileHeaderBoundaryStates,
+    mobileHeaderBoundaryChecks,
+    checks,
+  }
 }
