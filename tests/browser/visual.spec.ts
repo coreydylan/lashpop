@@ -3,7 +3,10 @@ import type { Locator, Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { preparePublicHome } from './helpers'
-import { HOME_VISUAL_SURFACES } from './visual-coverage'
+import {
+  HOME_VISUAL_SURFACES,
+  MOBILE_HEADER_BOUNDARY_VIEWPORTS,
+} from './visual-coverage'
 
 const contract = JSON.parse(
   readFileSync(resolve(process.cwd(), 'docs/design/brand-contract.json'), 'utf8')
@@ -149,22 +152,68 @@ test('mobile stylist chips remain contained by the viewport', async ({ page }, t
 test('mobile header stays isolated from FAQ content after hydration', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'visual-mobile', 'Mobile-only header contract')
 
-  for (const viewport of [
-    { width: 320, height: 720 },
-    { width: 390, height: 844 },
-  ]) {
+  for (const viewport of MOBILE_HEADER_BOUNDARY_VIEWPORTS) {
     await page.setViewportSize(viewport)
     await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.evaluate(() => document.fonts.ready)
 
     const scroller = page.locator('.mobile-scroll-container')
     const header = page.locator('[data-mobile-site-header]')
     const faq = page.locator('#faq')
+    const faqHeading = faq.getByRole('heading', { level: 2 }).first()
     await expect(scroller).toBeVisible()
-    await faq.scrollIntoViewIfNeeded()
+    await expect(header).toBeVisible()
+    await expect(faqHeading).toBeVisible()
+
+    const alignInMobileScroller = async (
+      selector: string,
+      topOffset: number,
+      useParent = false,
+    ) => {
+      await page.evaluate(({ selector, topOffset, useParent }) => {
+        const scroller = document.querySelector('.mobile-scroll-container') as HTMLElement | null
+        const selected = document.querySelector(selector) as HTMLElement | null
+        const target = useParent ? selected?.parentElement : selected
+        if (!scroller || !target) {
+          throw new Error(`Unable to align mobile visual target: ${selector}`)
+        }
+        const scrollerRect = scroller.getBoundingClientRect()
+        const targetRect = target.getBoundingClientRect()
+        scroller.scrollTop += targetRect.top - scrollerRect.top - topOffset
+      }, { selector, topOffset, useParent })
+    }
+
+    const headerHeight = await header.evaluate((element) =>
+      element.getBoundingClientRect().bottom,
+    )
+    await alignInMobileScroller('#faq', headerHeight)
 
     await expect.poll(() => header.evaluate((element) =>
       getComputedStyle(element).backgroundColor,
     )).toBe('rgb(250, 246, 242)')
+
+    const headingBoundary = await page.evaluate(() => {
+      const headerRect = document.querySelector('[data-mobile-site-header]')!
+        .getBoundingClientRect()
+      const faqRect = document.querySelector('#faq')!.getBoundingClientRect()
+      const headingRect = document.querySelector('#faq h2')!.getBoundingClientRect()
+      const scroller = document.querySelector('.mobile-scroll-container') as HTMLElement
+      return {
+        viewportHeight: window.innerHeight,
+        scrollerScrollTop: scroller.scrollTop,
+        headerBottom: headerRect.bottom,
+        faqTop: faqRect.top,
+        headingTop: headingRect.top,
+        headingBottom: headingRect.bottom,
+      }
+    })
+    expect(headingBoundary.scrollerScrollTop).toBeGreaterThan(0)
+    expect(headingBoundary.faqTop).toBeGreaterThanOrEqual(headingBoundary.headerBottom - 1)
+    expect(headingBoundary.faqTop).toBeLessThanOrEqual(headingBoundary.headerBottom + 1)
+    expect(headingBoundary.headingTop).toBeGreaterThanOrEqual(headingBoundary.headerBottom)
+    expect(headingBoundary.headingBottom).toBeLessThanOrEqual(headingBoundary.viewportHeight)
+
+    await alignInMobileScroller('#faq [aria-label="FAQ categories"]', headerHeight, true)
 
     const geometry = await page.evaluate(() => {
       const headerElement = document.querySelector('[data-mobile-site-header]')!
@@ -186,11 +235,15 @@ test('mobile header stays isolated from FAQ content after hydration', async ({ p
           bottom: rect.bottom,
         })),
         faqCategoriesTop: faqCategories.top,
+        faqCategoriesBottom: faqCategories.bottom,
+        viewportHeight: window.innerHeight,
       }
     })
 
     expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth + 1)
     expect(geometry.faqCategoriesTop).toBeGreaterThanOrEqual(geometry.header.bottom - 1)
+    expect(geometry.faqCategoriesTop).toBeLessThanOrEqual(geometry.header.bottom + 1)
+    expect(geometry.faqCategoriesBottom).toBeLessThanOrEqual(geometry.viewportHeight)
     for (const control of geometry.controls) {
       expect(control.left).toBeGreaterThanOrEqual(0)
       expect(control.right).toBeLessThanOrEqual(geometry.viewportWidth)

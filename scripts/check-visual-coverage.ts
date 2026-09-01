@@ -1,10 +1,12 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
+  CHECKS_PER_MOBILE_HEADER_BOUNDARY_STATE,
   HOME_VISUAL_SURFACES,
   INTERACTION_VISUAL_SURFACES,
   MIN_REQUIRED_RENDERED_STATES,
   MIN_REQUIRED_VISUAL_CHECKS,
+  MOBILE_HEADER_BOUNDARY_VIEWPORTS,
   ROUTE_VISUAL_SURFACES,
   VISUAL_PROJECTS,
   visualCoverageTotals,
@@ -17,6 +19,32 @@ if (
   || [...requiredWidths].some((project) => !configuredWidths.has(project))
 ) {
   throw new Error('Visual coverage must include exact 320, 390, and 1440 projects')
+}
+
+const requiredHeaderWidths = new Set([320, 390])
+const configuredHeaderWidths = new Set(
+  MOBILE_HEADER_BOUNDARY_VIEWPORTS.map((viewport) => viewport.width),
+)
+if (
+  configuredHeaderWidths.size !== requiredHeaderWidths.size
+  || [...requiredHeaderWidths].some((width) => !configuredHeaderWidths.has(width))
+) {
+  throw new Error('Mobile header boundary coverage must include exact 320 and 390 widths')
+}
+
+const requiredHeaderChecks = [
+  'header-controls-contained',
+  'header-controls-non-overlapping',
+  'section-heading-below-header',
+  'sticky-surface-below-header',
+]
+const configuredHeaderChecks = new Set<string>(
+  CHECKS_PER_MOBILE_HEADER_BOUNDARY_STATE,
+)
+for (const check of requiredHeaderChecks) {
+  if (!configuredHeaderChecks.has(check)) {
+    throw new Error(`Missing required mobile header boundary check: ${check}`)
+  }
 }
 
 const requiredHome = ['hero', 'founder', 'services', 'team', 'reviews', 'gallery', 'faq', 'find-us', 'footer']
@@ -75,5 +103,7 @@ if (!allowMissing) {
 
 console.log(
   `Visual coverage verified: ${totals.surfaces} named surfaces, `
-  + `${totals.renderedStates} rendered states, ${totals.checks} required checks.`,
+  + `${totals.renderedStates} rendered states, `
+  + `${totals.mobileHeaderBoundaryStates} mobile header boundary states, `
+  + `${totals.checks} required checks.`,
 )
