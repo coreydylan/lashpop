@@ -157,6 +157,7 @@ test('hero and replacement team photo render from sharp responsive sources', asy
   for (const viewport of [
     { width: 1440, height: 1000 },
     { width: 390, height: 844 },
+    { width: 2560, height: 1440 },
   ]) {
     await page.setViewportSize(viewport)
     await preparePublicHome(page)
@@ -178,18 +179,56 @@ test('hero and replacement team photo render from sharp responsive sources', asy
       Math.floor(heroEvidence.renderedWidth * Math.min(heroEvidence.dpr, 2)),
     )
 
-    const teamPhoto = page.getByAltText('The LashPop Studios team')
-    await teamPhoto.scrollIntoViewIfNeeded()
+    const teamPhotoFrame = page.locator('[data-team-group-photo-frame]')
+    const teamPhoto = page.locator('[data-team-group-photo-foreground]')
+    const teamPhotoBackdrop = page.locator('[data-team-group-photo-backdrop]')
+    await teamPhotoFrame.scrollIntoViewIfNeeded()
     await expect(teamPhoto).toBeVisible()
     await expect.poll(
       () => teamPhoto.evaluate((image) => (image as HTMLImageElement).naturalWidth),
     ).toBeGreaterThan(0)
+    await teamPhoto.evaluate((image) => (image as HTMLImageElement).decode())
     await expect(teamPhoto).toHaveAttribute(
       'src',
-      /lp\/d1b7c28c1c6f05603a6e6feb91309010196c0f8dbf02b205560683bee223fda8/,
+      /lp\/6d8046ab6bca7fcb90ff1fd57b69d69260070576c0ebc03cd98876e632795283/,
     )
+    const layout = await teamPhoto.evaluate((image) => {
+      const element = image as HTMLImageElement
+      const imageRect = element.getBoundingClientRect()
+      const frameRect = element.parentElement!.getBoundingClientRect()
+      const sourceAspect = element.naturalWidth / element.naturalHeight
+      const renderedAspect = imageRect.width / imageRect.height
+      const verticalCropRatio = renderedAspect > sourceAspect
+        ? 1 - sourceAspect / renderedAspect
+        : 0
+
+      return {
+        frameWidth: frameRect.width,
+        imageWidth: imageRect.width,
+        sourceAspect,
+        renderedAspect,
+        verticalCropRatio,
+        objectFit: getComputedStyle(element).objectFit,
+      }
+    })
+
+    if (viewport.width < 2048) {
+      await expect(teamPhotoBackdrop).toBeHidden()
+      expect(layout.imageWidth).toBeCloseTo(layout.frameWidth, 0)
+      expect(layout.renderedAspect).toBeCloseTo(7670 / 4857, 2)
+      expect(layout.objectFit).toBe('cover')
+      expect(layout.verticalCropRatio).toBeLessThan(0.06)
+    } else {
+      await expect(teamPhotoBackdrop).toBeVisible()
+      await expect(teamPhotoBackdrop).toHaveCSS('object-fit', 'cover')
+      await expect(teamPhotoBackdrop).toHaveCSS('filter', /blur\(48px\)/)
+      expect(layout.frameWidth).toBeGreaterThan(layout.imageWidth)
+      expect(layout.imageWidth).toBeCloseTo(2048, 0)
+      expect(layout.objectFit).toBe('cover')
+      expect(layout.verticalCropRatio).toBeLessThan(0.07)
+    }
     if (WEBSITE_NOTES_EVIDENCE_DIR) {
-      await teamPhoto.screenshot({
+      await teamPhotoFrame.screenshot({
         path: `${WEBSITE_NOTES_EVIDENCE_DIR}/after-team-photo-${viewport.width}.png`,
       })
     }

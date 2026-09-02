@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import cfImageLoader from '@/lib/cf-image-loader'
 import { FadeInImage } from '@/components/team/FadeInImage'
-import { getPublicImageBlur } from '@/lib/image-blur'
+import { TeamGroupPhoto } from './TeamGroupPhoto'
 import { Instagram, Phone, Calendar, Star, X, Sparkles, Mail, ChevronLeft, ChevronRight, Hand, Check, UserPlus, Award, FileCheck, GraduationCap, Trophy, BookOpen } from 'lucide-react'
 import { useBookingOrchestrator } from '@/contexts/BookingOrchestratorContext'
 import useEmblaCarousel from 'embla-carousel-react'
@@ -1163,26 +1163,7 @@ export function EnhancedTeamSectionClient({ teamMembers, serviceCategories = [] 
           </a>
         </div>
 
-        {/* Team Group Photo - Full Width, taller crop */}
-        <div className="mt-12 md:mt-20">
-          <div className="relative w-full overflow-hidden aspect-[767/409] max-h-[820px]">
-            {/* -full: the photographer's 5280px original, recovered from git
-                history (03fc67d) — a Feb 2026 "compress large images" commit had
-                crushed it to 1534px, which read blurry on a full-bleed retina
-                slot. The edge pipeline resizes on demand now, so the source
-                stays full-res. New filename busts year-long immutable caches. */}
-            <Image
-              src="/lashpop-images/team/team-group-photo-2026-08-11.jpg"
-              alt="The LashPop Studios team"
-              fill
-              priority={false}
-              sizes="100vw"
-              className="object-cover object-center"
-              placeholder="blur"
-              blurDataURL={getPublicImageBlur('/lashpop-images/team/team-group-photo-2026-08-11.jpg')}
-            />
-          </div>
-        </div>
+        <TeamGroupPhoto />
       </section>
 
       {/* Desktop full-page takeover — renders behind the site header (z-50) */}
