@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { ExternalLink, LogOut, Menu, X } from 'lucide-react'
+import { ChevronRight, ExternalLink, LogOut, Menu, X } from 'lucide-react'
 import { ADMIN_AREAS, findAreaByPath, findSectionByPath, type ContentOwner } from './sections'
 import { AdminWorkspaceProvider, useAdminWorkspace } from './AdminWorkspaceContext'
 import { AdminActionBar } from './AdminActionBar'
@@ -54,9 +54,18 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [mobileOpen])
 
+  useEffect(() => {
+    if (!mobileOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [mobileOpen])
+
   return (
-    <div className="admin-app min-h-screen bg-[#f5f0e9] text-[#292a27]">
-      <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-black/10 bg-[#f8f4ee]/95 px-4 backdrop-blur lg:hidden">
+    <div className="admin-app min-h-screen bg-[#f6f2ec] text-[#292a27]">
+      <header className="admin-mobile-header fixed inset-x-0 top-0 z-50 flex h-[calc(4rem+env(safe-area-inset-top))] items-end justify-between border-b border-black/[0.08] bg-[#fbf8f3]/[0.96] px-4 pb-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:hidden">
         <GuardedLink href="/admin/overview" className="flex min-h-11 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]">
           <BrandMark />
           <span>
@@ -67,7 +76,7 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
         <button
           type="button"
           onClick={() => setMobileOpen((open) => !open)}
-          className="flex size-11 items-center justify-center rounded-lg border border-black/10 bg-white text-[#292a27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
+          className="flex size-11 items-center justify-center rounded-full border border-black/10 bg-white text-[#292a27] shadow-[0_2px_10px_rgba(31,27,23,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50]"
           aria-label={mobileOpen ? 'Close admin navigation' : 'Open admin navigation'}
           aria-expanded={mobileOpen}
           aria-controls="admin-mobile-navigation"
@@ -77,10 +86,10 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
       </header>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/35 pt-16 lg:hidden" onMouseDown={() => setMobileOpen(false)}>
+        <div className="admin-nav-scrim fixed inset-0 z-40 bg-[#1d1b18]/25 pt-[calc(4rem+env(safe-area-inset-top))] backdrop-blur-[1px] lg:hidden" onMouseDown={() => setMobileOpen(false)}>
           <aside
             id="admin-mobile-navigation"
-            className="h-full w-[min(92vw,22rem)] overflow-y-auto bg-[#20211f] text-white shadow-2xl"
+            className="admin-mobile-drawer h-full w-[min(92vw,22rem)] overflow-y-auto bg-[#fbf8f3] text-[#292a27] shadow-[18px_0_56px_rgba(31,27,23,0.18)]"
             onMouseDown={(event) => event.stopPropagation()}
           >
             <AdminNav pathname={pathname} />
@@ -89,13 +98,13 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
         </div>
       )}
 
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-white/10 bg-[#20211f] text-white lg:flex">
+      <aside className="admin-desktop-rail fixed inset-y-0 left-0 z-40 hidden w-72 flex-col border-r border-black/[0.08] bg-[#fbf8f3] text-[#292a27] lg:flex">
         <div className="px-5 pb-5 pt-7">
           <GuardedLink href="/admin/overview" className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69]">
             <BrandMark />
             <span>
-              <span className="block font-serif text-lg leading-tight">LashPop Admin</span>
-              <span className="block text-xs text-white/50">Studio operations</span>
+              <span className="block font-serif text-lg leading-tight">LashPop</span>
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.16em] text-black/40">Studio desk</span>
             </span>
           </GuardedLink>
         </div>
@@ -105,12 +114,12 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
         <UserFooter user={user} />
       </aside>
 
-      <main className="min-h-screen pt-16 lg:pl-72 lg:pt-0">
-        <div className="border-b border-black/10 bg-[#f8f4ee] px-4 py-4 sm:px-6 lg:px-8">
+      <main className="min-h-screen pt-[calc(4rem+env(safe-area-inset-top))] lg:pl-72 lg:pt-0">
+        <div className="admin-context-bar border-b border-black/[0.08] bg-[#fbf8f3]/80 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-black/45">{currentArea.label}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-black/42">{currentArea.label}</p>
                 {currentSection && <OwnerBadge owner={currentSection.owner} />}
               </div>
               <p className="mt-1 truncate text-sm text-black/60">{currentSection?.description ?? currentArea.description}</p>
@@ -119,13 +128,13 @@ function AdminShellContent({ children, user, contentMode = 'constrained' }: Admi
               href="/"
               target="_blank"
               rel="noreferrer"
-              className="hidden min-h-11 shrink-0 items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm font-medium hover:border-black/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] sm:inline-flex"
+              className="hidden min-h-11 shrink-0 items-center gap-2 rounded-full border border-black/10 bg-white px-4 text-sm font-semibold shadow-[0_1px_6px_rgba(31,27,23,0.04)] hover:border-black/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] sm:inline-flex"
             >
               Preview site <ExternalLink className="size-4" />
             </a>
           </div>
         </div>
-        {fullbleed ? children : <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>}
+        {fullbleed ? children : <div className="mx-auto max-w-7xl px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-28 lg:px-8 lg:py-9">{children}</div>}
       </main>
     </div>
   )
@@ -136,8 +145,8 @@ function AdminNav({ pathname }: { pathname: string | null }) {
 
   return (
     <nav aria-label="Admin navigation" className="py-2">
-      <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/35">Work areas</p>
-      <ul className="space-y-1">
+      <p className="px-4 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-black/38">Work areas</p>
+      <ul className="space-y-1 px-2">
         {ADMIN_AREAS.map((area) => {
           const active = area.id === currentArea.id
           const Icon = area.icon
@@ -146,14 +155,15 @@ function AdminNav({ pathname }: { pathname: string | null }) {
               <GuardedLink
                 href={area.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] ${active ? 'bg-white text-[#20211f]' : 'text-white/72 hover:bg-white/[0.08] hover:text-white'}`}
+                className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] ${active ? 'bg-[#ebe1d7] text-[#292a27] shadow-[inset_0_0_0_1px_rgba(126,91,70,0.08)]' : 'text-black/60 hover:bg-black/[0.035] hover:text-[#292a27]'}`}
               >
-                <Icon className={`size-4 shrink-0 ${active ? 'text-[#b75f42]' : 'text-white/45'}`} />
+                <Icon className={`size-4 shrink-0 ${active ? 'text-[#a84f35]' : 'text-black/35'}`} />
                 <span className="truncate">{area.label}</span>
+                {active && <ChevronRight className="ml-auto size-3.5 text-[#a84f35]/65" aria-hidden="true" />}
               </GuardedLink>
 
               {active && area.sections.length > 1 && (
-                <ul className="mb-3 mt-1 space-y-0.5 border-l border-white/15 py-1 pl-3 ml-5">
+                <ul className="mb-3 mt-1 space-y-0.5 border-l border-black/[0.09] py-1 pl-2 ml-5">
                   {area.sections.map((section) => {
                     const sectionActive = pathname === section.href || pathname?.startsWith(`${section.href}/`)
                     return (
@@ -161,10 +171,10 @@ function AdminNav({ pathname }: { pathname: string | null }) {
                         <GuardedLink
                           href={section.href}
                           aria-current={sectionActive ? 'page' : undefined}
-                          className={`flex min-h-10 items-center justify-between gap-2 rounded-md px-3 py-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] ${sectionActive ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white/85'}`}
+                          className={`flex min-h-10 items-center justify-between gap-2 rounded-lg px-3 py-2 text-xs font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] ${sectionActive ? 'bg-white text-[#292a27] shadow-[0_1px_4px_rgba(31,27,23,0.06)]' : 'text-black/48 hover:bg-white/60 hover:text-[#292a27]'}`}
                         >
                           <span className="truncate">{section.label}</span>
-                          <span className="shrink-0 text-[9px] uppercase tracking-wide text-white/30">{section.owner === 'LashPop' ? 'Local' : section.owner}</span>
+                          <span className="shrink-0 text-[9px] uppercase tracking-wide text-black/30">{section.owner === 'LashPop' ? 'Local' : section.owner}</span>
                         </GuardedLink>
                       </li>
                     )
@@ -199,36 +209,36 @@ function UserFooter({ user }: { user: AdminShellProps['user'] }) {
   }
 
   return (
-    <div className="border-t border-white/10 px-5 py-4">
+    <div className="border-t border-black/[0.08] px-5 py-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-white/90">{user.name || user.email || user.phoneNumber || 'Admin'}</p>
-          <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-white/35">{user.role || 'Administrator'}</p>
+          <p className="truncate text-sm font-semibold text-[#292a27]">{user.name || user.email || user.phoneNumber || 'Admin'}</p>
+          <p className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-black/38">{user.role || 'Administrator'}</p>
         </div>
-        <GuardedLink href="/" className="rounded-md px-2 py-1 text-xs text-white/50 hover:bg-white/5 hover:text-white">Site</GuardedLink>
+        <GuardedLink href="/" className="rounded-md px-2 py-1 text-xs font-semibold text-black/45 hover:bg-black/[0.04] hover:text-[#292a27]">Site</GuardedLink>
       </div>
       <button
         type="button"
         onClick={() => void handleSignOut()}
         disabled={signingOut}
-        className="mt-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-semibold text-white/65 hover:border-white/20 hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e38a69] disabled:cursor-wait disabled:opacity-50"
+        className="mt-3 flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-xs font-semibold text-black/55 hover:border-black/20 hover:bg-black/[0.035] hover:text-[#292a27] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] disabled:cursor-wait disabled:opacity-50"
       >
         <LogOut className="size-3.5" aria-hidden="true" />
         {signingOut ? 'Signing out…' : 'Sign out'}
       </button>
-      <p className="mt-2 min-h-4 text-center text-[10px] text-[#e38a69]" role="status" aria-live="polite">{signOutError}</p>
+      <p className="mt-2 min-h-4 text-center text-[10px] text-[#a84f35]" role="status" aria-live="polite">{signOutError}</p>
     </div>
   )
 }
 
 function OwnerBadge({ owner }: { owner: ContentOwner }) {
-  return <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${OWNER_STYLES[owner]}`}>{owner}</span>
+  return <span className={`rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] ${OWNER_STYLES[owner]}`}>{owner}</span>
 }
 
 function BrandMark() {
   return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#c96f50] font-serif text-lg text-white shadow-sm" aria-hidden="true">
-      L
+    <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-[#a84f35]/20 bg-[#292a27] font-serif text-[13px] tracking-[0.08em] text-[#fbf8f3] shadow-sm" aria-hidden="true">
+      LP
     </span>
   )
 }

@@ -221,6 +221,60 @@
   padding-left: var(--safe-area-inset-left);
 }
 
+/*
+ * Admin is an operator workspace, not a second marketing site. These small,
+ * scoped rules keep the many existing editor surfaces visually coherent while
+ * preserving their page-level brand content and controls.
+ */
+.admin-app {
+  --admin-surface: #fbf8f3;
+  --admin-canvas: rgb(var(--ivory));
+  --admin-ink: #292a27;
+  --admin-accent: rgb(var(--terracotta-ink));
+  -webkit-text-size-adjust: 100%;
+}
+
+.admin-app :is(input, select, textarea) {
+  max-width: 100%;
+}
+
+.admin-app textarea {
+  min-height: 6.5rem;
+}
+
+.admin-app :is(button, a, input, select, textarea) {
+  touch-action: manipulation;
+}
+
+.admin-app input:not([type='checkbox']):not([type='radio']),
+.admin-app select {
+  min-height: 2.75rem;
+}
+
+.admin-app input[type='checkbox'],
+.admin-app input[type='radio'] {
+  accent-color: var(--admin-accent);
+}
+
+.admin-app [role='dialog'] {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 639px) {
+  .admin-app {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .admin-app .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  .admin-app :is(input, select, textarea) {
+    font-size: 16px;
+  }
+}
+
 /* iOS Touch Optimization
  *
  * Applies tap-delay/highlight fixes and the iOS HIG 44x44pt minimum tap target
