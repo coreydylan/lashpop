@@ -99,21 +99,36 @@ test('a valid loader assigned to the wrong service fails closed', () => {
   )
 })
 
-test('keeps the renamed Tiny Tattoos service on its verified loader', () => {
-  const tinyTattoos = manifest.mappings.find(
-    mapping => mapping.vagaroServiceId === '35729654',
-  )
+test('keeps the three current Tiny Tattoos services on their verified loaders', () => {
+  const expected = [
+    { vagaroServiceId: '41101423', name: 'One Tiny Tattoo' },
+    { vagaroServiceId: '41101425', name: 'Two Tiny Tattoos' },
+    { vagaroServiceId: '41101427', name: 'Three Tiny Tattoos' },
+  ]
 
-  assert.ok(tinyTattoos)
-  assert.equal(tinyTattoos.name, 'Tiny Tattoos')
-  assert.equal(tinyTattoos.category, 'Tiny Tattoos')
+  for (const { vagaroServiceId, name } of expected) {
+    const mapping = manifest.mappings.find(
+      mapping => mapping.vagaroServiceId === vagaroServiceId,
+    )
+
+    assert.ok(mapping, name)
+    assert.equal(mapping.name, name)
+    assert.equal(mapping.category, 'Tiny Tattoos')
+    assert.equal(
+      hasBookingConfiguration({
+        vagaroServiceId: mapping.vagaroServiceId,
+        vagaroWidgetUrl: mapping.widgetUrl,
+        serviceName: name,
+        serviceCategory: 'Tiny Tattoos',
+      }),
+      true,
+    )
+  }
+
+  // Regression: the deleted generic predecessor must not keep a mapping,
+  // or a category could stay empty while its replacement rows wait unverified.
   assert.equal(
-    hasBookingConfiguration({
-      vagaroServiceId: tinyTattoos.vagaroServiceId,
-      vagaroWidgetUrl: tinyTattoos.widgetUrl,
-      serviceName: 'Tiny Tattoos',
-      serviceCategory: 'Tiny Tattoos',
-    }),
-    true,
+    manifest.mappings.some(mapping => mapping.vagaroServiceId === '35729654'),
+    false,
   )
 })
