@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-29T21:48:51.790Z",
+  "generatedAt": "2026-09-16T01:21:40.000Z",
   "source": "Vagaro Booking Widget builder service catalog + save-widgetdetails response",
-  "mappingCount": 90,
+  "mappingCount": 92,
   "mappings": [
     {
       "databaseServiceId": "4c85c182-f4f5-4b28-8f15-b478bebcc5f3",
@@ -176,13 +176,31 @@
       "widgetUrl": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfYPcHiPcW?v=aRyjqVdYak5baNb2unwKSmiKsrGCJizrVziyI585njwG#"
     },
     {
-      "databaseServiceId": "117d650c-de23-487d-875a-ce10ada91bad",
-      "vagaroServiceId": "35729654",
-      "name": "Tiny Tattoos",
+      "databaseServiceId": "28d9838a-93ed-4ab8-9c30-b724eefacfd8",
+      "vagaroServiceId": "41101423",
+      "name": "One Tiny Tattoo",
       "category": "Tiny Tattoos",
-      "encryptedServiceId": "6gjXDu8Vcr5WydtbHb3r7w==",
+      "encryptedServiceId": "Jm016AF8BGMk9nF5xvKr7A==",
       "encryptedParentServiceId": "4-3GD81acJsg53~T4qPxWA==",
-      "widgetUrl": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfYPcHiPce?v=swlN4y3YLvFyVk4lRpyjUo28ODY4nm8e760Wz8N2GInm#"
+      "widgetUrl": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQce?v=bOiZ1D4csrsM2Z9VAX1Kbsu4Teo6K8SRJElbiUZ8UQS#"
+    },
+    {
+      "databaseServiceId": "7d3157c6-3902-41e3-bdb9-9e0881e7ab1e",
+      "vagaroServiceId": "41101427",
+      "name": "Three Tiny Tattoos",
+      "category": "Tiny Tattoos",
+      "encryptedServiceId": "4AojcS1nUly3AFlJSxaK1w==",
+      "encryptedParentServiceId": "4-3GD81acJsg53~T4qPxWA==",
+      "widgetUrl": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQcu?v=Pn2RuphD2KJ89Kq5jakB8WOHIdCGgPuv5mziF4CI7kO#"
+    },
+    {
+      "databaseServiceId": "72cb5cd8-bccb-4241-9dee-fd65f60bb841",
+      "vagaroServiceId": "41101425",
+      "name": "Two Tiny Tattoos",
+      "category": "Tiny Tattoos",
+      "encryptedServiceId": "UmEjV-pQ1i5iv2MmIoziUg==",
+      "encryptedParentServiceId": "4-3GD81acJsg53~T4qPxWA==",
+      "widgetUrl": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQcm?v=JZ5PjezwbVyvjcT50kf5f7Hw3VqVE8iFCZeADtrxyslW#"
     },
     {
       "databaseServiceId": "60bc17fe-57da-4347-bb47-57adf59bd516",

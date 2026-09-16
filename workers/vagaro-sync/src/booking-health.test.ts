@@ -42,15 +42,14 @@ test('rejects an unverified loader when a numeric Vagaro service id is known', (
 })
 
 test('rejects identity drift for an otherwise verified loader', () => {
-  const known = '35729654'
-  const verifiedUrl =
-    'https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfYPcHiPce?v=swlN4y3YLvFyVk4lRpyjUo28ODY4nm8e760Wz8N2GInm#'
+  const known = '41101423'
+  const verifiedUrl = 'https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQce?v=bOiZ1D4csrsM2Z9VAX1Kbsu4Teo6K8SRJElbiUZ8UQS#'
 
   assert.equal(
     hasBookingConfiguration({
       vagaroServiceId: known,
       vagaroWidgetUrl: verifiedUrl,
-      serviceName: 'Tiny Tattoos',
+      serviceName: 'One Tiny Tattoo',
       serviceCategory: 'Tiny Tattoos',
     }),
     true,
@@ -59,7 +58,7 @@ test('rejects identity drift for an otherwise verified loader', () => {
     hasBookingConfiguration({
       vagaroServiceId: known,
       vagaroWidgetUrl: verifiedUrl,
-      serviceName: 'Tiny Tattoos',
+      serviceName: 'One Tiny Tattoo',
       serviceCategory: 'Moved Category',
     }),
     false,
