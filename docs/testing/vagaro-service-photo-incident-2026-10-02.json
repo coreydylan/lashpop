@@ -55,6 +55,7 @@
     "ownershipEvidence": "Subdomain of the provider's official vagaro.com domain, used directly for service photos by its first-party public booking page",
     "publishedContractLimit": "Vagaro's public support documentation describes service photos but does not publish a stable CDN-host API guarantee. This evidence is current first-party behavior, not a documented API promise.",
     "safeNormalization": "Existing size-path normalization preserves this host; no supported transformation maps it to rackcdn.com.",
+    "originalSizeReadCheck": "One observed service photo, changed only from /Service/340x340/ to /Service/Original/, opened successfully as a 1675x1675 JPEG on the same assets.vagaro.com origin. No upload, sync, or provider-side mutation occurred.",
     "requiredApproval": "Allow only HTTPS assets.vagaro.com under /business/<id>/Service/ with supported image-size segments, no URL credentials or nondefault port, and fail closed on off-policy redirects. Keep existing rackcdn validation and optional-image isolation.",
     "deploymentPlan": [
       "After explicit source-policy approval, implement the exact host/path allowance and redirect validation with regression tests.",
