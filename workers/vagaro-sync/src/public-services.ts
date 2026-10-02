@@ -1,3 +1,5 @@
+import { fetchVagaroImageSource } from './cloudflare-images'
+
 // Vagaro's public services endpoint — same booking-page composite that
 // /lashpop32/services calls. Returns ServicePhotoURL per service.
 //
@@ -66,7 +68,7 @@ export function originalServicePhotoUrl(url: string | undefined | null): string 
 export async function probeVagaroPhotoUrl(url: string | null | undefined): Promise<string | null> {
   if (!url) return null
   try {
-    const res = await fetch(url, { method: 'HEAD' })
+    const res = await fetchVagaroImageSource(url, new Headers(), 'HEAD')
     if (res.ok) return url
   } catch {
     // Network errors treated the same as 404 — better to skip than to write

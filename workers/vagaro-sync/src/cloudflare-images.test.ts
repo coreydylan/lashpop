@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { probeVagaroPhotoUrl } from './public-services'
 
 import {
   ingestVagaroImage,
@@ -61,6 +62,135 @@ test('accepts only HTTPS Vagaro CDN image sources', () => {
   assert.equal(validateVagaroImageSource(request.sourceUrl).hostname, 'images.ssl.cf2.rackcdn.com')
   assert.throws(() => validateVagaroImageSource('https://example.com/staff.jpg'), /allow-listed/)
   assert.throws(() => validateVagaroImageSource('http://images.rackcdn.com/staff.jpg'), /HTTPS/)
+})
+
+const serviceAssetUrl = 'https://assets.vagaro.com/business/testbusiness123/Service/Original/123_456$2026_10_02.jpg'
+
+test('accepts the verified service asset shape without widening to other hosts or paths', () => {
+  assert.equal(validateVagaroImageSource(serviceAssetUrl).hostname, 'assets.vagaro.com')
+  assert.doesNotThrow(() => validateVagaroImageSource(serviceAssetUrl.replace('/Original/', '/340x340/')))
+  for (const url of [
+    serviceAssetUrl.replace('https:', 'http:'),
+    serviceAssetUrl.replace('assets.vagaro.com', 'assets.vagaro.com.attacker.example'),
+    serviceAssetUrl.replace('assets.vagaro.com', 'other.vagaro.com'),
+    serviceAssetUrl.replace('assets.vagaro.com', 'user:password@assets.vagaro.com'),
+    serviceAssetUrl.replace('assets.vagaro.com', 'assets.vagaro.com:8443'),
+    serviceAssetUrl.replace('/Service/', '/Staff/'),
+    serviceAssetUrl.replace('/Original/', '/999x999/'),
+    serviceAssetUrl.replace('/Service/Original/', '/Service/Original/extra/'),
+    serviceAssetUrl.replace('/Service/', '/%2fService/'),
+    serviceAssetUrl + '?token=private',
+    serviceAssetUrl + '#fragment',
+    '/business/test/Service/Original/photo.jpg',
+    'https://127.0.0.1/business/test/Service/Original/photo.jpg',
+    'https://user:password@images.rackcdn.com/photo.jpg',
+  ]) assert.throws(() => validateVagaroImageSource(url), undefined, url)
+})
+
+test('ingests an approved Vagaro asset through a validated relative redirect', async () => {
+  const previousFetch = globalThis.fetch
+  const state = fakeRegistry()
+  const target = serviceAssetUrl.replace('/Original/', '/340x340/')
+  let sourceReads = 0
+  let uploads = 0
+  globalThis.fetch = async (input, init) => {
+    const url = String(input)
+    if (url === serviceAssetUrl || url === target) {
+      sourceReads++
+      assert.equal(init?.redirect, 'manual')
+      if (url === serviceAssetUrl) return new Response(null, { status: 302, headers: {
+        location: new URL(target).pathname,
+      } })
+      return new Response(Uint8Array.from([1, 2, 3]), { headers: { 'content-type': 'image/jpeg' } })
+    }
+    assert.equal(new URL(url).hostname, 'api.cloudflare.com')
+    if (init?.method === 'POST') {
+      uploads++
+      return Response.json({ success: true })
+    }
+    return new Response('missing', { status: 404 })
+  }
+  try {
+    const result = await ingestVagaroImage(env, state.registry, { ...request,
+      sourceKind: 'vagaro-service', sourceUrl: serviceAssetUrl })
+    assert.equal(result.status, 'ready')
+    assert.equal(result.sourceUrl, serviceAssetUrl)
+    assert.equal(sourceReads, 2)
+    assert.equal(uploads, 1)
+    assert.equal(state.row()?.source_url, serviceAssetUrl)
+  } finally { globalThis.fetch = previousFetch }
+})
+
+test('blocks off-policy redirect destinations before any request or upload', async () => {
+  const previousFetch = globalThis.fetch
+  try {
+    for (const destination of [
+      'https://attacker.example/image.jpg',
+      'http://assets.vagaro.com/business/test/Service/Original/photo.jpg',
+      'https://assets.vagaro.com/private/photo.jpg',
+      'https://user:password@images.rackcdn.com/photo.jpg',
+    ]) {
+      const state = fakeRegistry()
+      let reads = 0
+      globalThis.fetch = async (input, init) => {
+        reads++
+        assert.equal(String(input), serviceAssetUrl)
+        assert.equal(init?.redirect, 'manual')
+        return new Response(null, { status: 302, headers: { location: destination } })
+      }
+      await assert.rejects(ingestVagaroImage(env, state.registry, {
+        ...request, sourceUrl: serviceAssetUrl }), /allow-listed/)
+      assert.equal(reads, 1)
+      assert.equal(state.failures.length, 1)
+      assert.equal(state.row(), null)
+    }
+  } finally { globalThis.fetch = previousFetch }
+})
+
+test('bounds redirect loops and rejects missing destinations', async () => {
+  const previousFetch = globalThis.fetch
+  try {
+    for (const location of [serviceAssetUrl, null]) {
+      const state = fakeRegistry()
+      let reads = 0
+      globalThis.fetch = async (_input, init) => {
+        reads++
+        assert.equal(init?.redirect, 'manual')
+        return new Response(null, { status: 302, headers: location ? { location } : {} })
+      }
+      await assert.rejects(ingestVagaroImage(env, state.registry, {
+        ...request, sourceUrl: serviceAssetUrl }), /redirect.*(limit|destination)/)
+      assert.equal(reads, location ? 4 : 1)
+      assert.equal(state.row(), null)
+    }
+  } finally { globalThis.fetch = previousFetch }
+})
+
+test('preliminary photo HEAD probes enforce the same policy before any request', async () => {
+  const previousFetch = globalThis.fetch
+  let reads = 0
+  globalThis.fetch = async (input, init) => {
+    reads++
+    assert.equal(String(input), serviceAssetUrl)
+    assert.equal(init?.method, 'HEAD')
+    assert.equal(init?.redirect, 'manual')
+    return new Response(null, { status: 200 })
+  }
+  try {
+    assert.equal(await probeVagaroPhotoUrl('https://attacker.example/photo.jpg'), null)
+    assert.equal(reads, 0)
+    assert.equal(await probeVagaroPhotoUrl(serviceAssetUrl), serviceAssetUrl)
+    assert.equal(reads, 1)
+    globalThis.fetch = async (input, init) => {
+      reads++
+      assert.equal(String(input), serviceAssetUrl)
+      assert.equal(init?.method, 'HEAD')
+      assert.equal(init?.redirect, 'manual')
+      return new Response(null, { status: 302, headers: { location: 'https://attacker.example/photo.jpg' } })
+    }
+    assert.equal(await probeVagaroPhotoUrl(serviceAssetUrl), null)
+    assert.equal(reads, 2)
+  } finally { globalThis.fetch = previousFetch }
 })
 
 test('ingestion uploads once and reuses a conditional 304 idempotently', async () => {

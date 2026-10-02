@@ -86,6 +86,7 @@ async function main() {
       '--project=visual-narrow',
     ], env)
     await run(playwrightBin, ['test', '--project=accessibility'], env)
+    await run(playwrightBin, ['test', '--config=playwright.booking.config.ts', '--project=launcher-desktop', '--project=launcher-mobile'], env)
   } finally {
     await stopServer(server)
   }

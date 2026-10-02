@@ -1,0 +1,82 @@
+{
+  "rows": [
+    {
+      "id": "117d650c-de23-487d-875a-ce10ada91bad",
+      "name": "Tiny Tattoos",
+      "main_category": "Tiny Tattoos",
+      "vagaro_service_id": "35729654",
+      "vagaro_widget_url": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapOUc9CvdfQOapkvdfYPcHiPce?v=swlN4y3YLvFyVk4lRpyjUo28ODY4nm8e760Wz8N2GInm#",
+      "vagaro_service_code": null,
+      "is_active": 0,
+      "price_starting": 10000,
+      "duration_minutes": 60,
+      "updated_at": 1789279370199
+    },
+    {
+      "id": "28d9838a-93ed-4ab8-9c30-b724eefacfd8",
+      "name": "One Tiny Tattoo",
+      "main_category": "Tiny Tattoos",
+      "vagaro_service_id": "41101423",
+      "vagaro_widget_url": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQce?v=bOiZ1D4csrsM2Z9VAX1Kbsu4Teo6K8SRJElbiUZ8UQS#",
+      "vagaro_service_code": null,
+      "is_active": 1,
+      "price_starting": 0,
+      "duration_minutes": 60,
+      "updated_at": 1790953898073
+    },
+    {
+      "id": "72cb5cd8-bccb-4241-9dee-fd65f60bb841",
+      "name": "Two Tiny Tattoos",
+      "main_category": "Tiny Tattoos",
+      "vagaro_service_id": "41101425",
+      "vagaro_widget_url": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQcm?v=JZ5PjezwbVyvjcT50kf5f7Hw3VqVE8iFCZeADtrxyslW#",
+      "vagaro_service_code": null,
+      "is_active": 1,
+      "price_starting": 0,
+      "duration_minutes": 60,
+      "updated_at": 1790953899926
+    },
+    {
+      "id": "7d3157c6-3902-41e3-bdb9-9e0881e7ab1e",
+      "name": "Three Tiny Tattoos",
+      "main_category": "Tiny Tattoos",
+      "vagaro_service_id": "41101427",
+      "vagaro_widget_url": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQcu?v=Pn2RuphD2KJ89Kq5jakB8WOHIdCGgPuv5mziF4CI7kO#",
+      "vagaro_service_code": null,
+      "is_active": 1,
+      "price_starting": 0,
+      "duration_minutes": 60,
+      "updated_at": 1790953902164
+    }
+  ],
+  "verifiedManifestSourceCommit": "8878cf03834183c1bfd40ac1c80353268e8b7a02",
+  "verifiedMappings": [
+    {
+      "databaseServiceId": "28d9838a-93ed-4ab8-9c30-b724eefacfd8",
+      "vagaroServiceId": "41101423",
+      "name": "One Tiny Tattoo",
+      "category": "Tiny Tattoos",
+      "encryptedServiceId": "Jm016AF8BGMk9nF5xvKr7A==",
+      "encryptedParentServiceId": "4-3GD81acJsg53~T4qPxWA==",
+      "widgetUrl": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQce?v=bOiZ1D4csrsM2Z9VAX1Kbsu4Teo6K8SRJElbiUZ8UQS#"
+    },
+    {
+      "databaseServiceId": "7d3157c6-3902-41e3-bdb9-9e0881e7ab1e",
+      "vagaroServiceId": "41101427",
+      "name": "Three Tiny Tattoos",
+      "category": "Tiny Tattoos",
+      "encryptedServiceId": "4AojcS1nUly3AFlJSxaK1w==",
+      "encryptedParentServiceId": "4-3GD81acJsg53~T4qPxWA==",
+      "widgetUrl": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQcu?v=Pn2RuphD2KJ89Kq5jakB8WOHIdCGgPuv5mziF4CI7kO#"
+    },
+    {
+      "databaseServiceId": "72cb5cd8-bccb-4241-9dee-fd65f60bb841",
+      "vagaroServiceId": "41101425",
+      "name": "Two Tiny Tattoos",
+      "category": "Tiny Tattoos",
+      "encryptedServiceId": "UmEjV-pQ1i5iv2MmIoziUg==",
+      "encryptedParentServiceId": "4-3GD81acJsg53~T4qPxWA==",
+      "widgetUrl": "https://www.vagaro.com//resources/WidgetEmbeddedLoader/OZqsEJatCoPqFJ1y6BuPFXcz3Hy6puSdBuOc1WJD1wOc1WO61Ctdg4tjxMG9pUxapkUcvCu7gCmjZcoapkvdfYPd9iQcm?v=JZ5PjezwbVyvjcT50kf5f7Hw3VqVE8iFCZeADtrxyslW#"
+    }
+  ]
+}

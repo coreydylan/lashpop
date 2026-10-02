@@ -1,0 +1,160 @@
+{
+  "conclusion": "No broken tattoo mapping established. Confirmed stale verification metadata and separate automated provider-runtime blockage.",
+  "website": "https://lashpopstudios.com/",
+  "websiteDeploymentCommit": "not established",
+  "workerVersion": "2242a717-487d-4986-908a-2b1575c8bbb0",
+  "deployedManifestGeneratedAt": "2026-07-29T21:48:51.790Z",
+  "workerManifestSha256": "ec96d249b71ee8825b2a02dc7cbb0461779d521423f8e031eb61fc6b7e150b16",
+  "verifiedMappingsSourceCommit": "8878cf03834183c1bfd40ac1c80353268e8b7a02",
+  "databaseUrlsMatchSeptemberSnapshots": true,
+  "officialCatalogIntent": "All three active, nondeleted, IsOnlineService=true and ShowOnline=true",
+  "userObservation": "Corey reports correct tattoo selection through the actual website in his working session. Automated provider-blocked tests do not disprove it.",
+  "diagnosticCorrection": "Standalone generic menu rendering and absence of script elements after loader execution were not valid evidence of wrong mappings. Network request comparison strips only the fragment. The header Book Now scrolls to services; mobile uses one service carousel card, not the desktop grid.",
+  "results": [
+    {
+      "service": "One Tiny Tattoo",
+      "serviceId": "41101423",
+      "path": "Choose a Service \u2192 Lash Extensions \u2192 Tiny Tattoos tab \u2192 One Tiny Tattoo",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "151.0.7922.34",
+      "session": "fresh anonymous test context",
+      "timestamp": "2026-10-02T15:48:42.121Z",
+      "loaderMatchesProduction": true,
+      "providerErrors": [
+        "/US02/api/v2/public/widget/getwidgetservices: net::ERR_FAILED",
+        "/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessid: net::ERR_FAILED",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/widget/getwidgetservicesOK",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessidOK"
+      ],
+      "outcome": "provider-runtime-blocked",
+      "screenshot": "tattoo-live-41101423-390.png"
+    },
+    {
+      "service": "Two Tiny Tattoos",
+      "serviceId": "41101425",
+      "path": "Choose a Service \u2192 Lash Extensions \u2192 Tiny Tattoos tab \u2192 Two Tiny Tattoos",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "151.0.7922.34",
+      "session": "fresh anonymous test context",
+      "timestamp": "2026-10-02T15:48:59.023Z",
+      "loaderMatchesProduction": true,
+      "providerErrors": [
+        "/US02/api/v2/public/widget/getwidgetservices: net::ERR_FAILED",
+        "/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessid: net::ERR_FAILED"
+      ],
+      "outcome": "provider-runtime-blocked",
+      "screenshot": "tattoo-live-41101425-390.png"
+    },
+    {
+      "service": "Three Tiny Tattoos",
+      "serviceId": "41101427",
+      "path": "Choose a Service \u2192 Lash Extensions \u2192 Tiny Tattoos tab \u2192 Three Tiny Tattoos",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "browser": "151.0.7922.34",
+      "session": "fresh anonymous test context",
+      "timestamp": "2026-10-02T15:48:50.068Z",
+      "loaderMatchesProduction": true,
+      "providerErrors": [
+        "/US02/api/v2/public/widget/getwidgetservices: net::ERR_FAILED",
+        "/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessid: net::ERR_FAILED",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/widget/getwidgetservicesOK",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessidOK"
+      ],
+      "outcome": "provider-runtime-blocked",
+      "screenshot": "tattoo-live-41101427-390.png"
+    },
+    {
+      "service": "One Tiny Tattoo",
+      "serviceId": "41101423",
+      "path": "Choose a Service \u2192 Lash Extensions \u2192 Tiny Tattoos tab \u2192 One Tiny Tattoo",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "151.0.7922.34",
+      "session": "fresh anonymous test context",
+      "timestamp": "2026-10-02T15:48:14.808Z",
+      "loaderMatchesProduction": true,
+      "providerErrors": [
+        "/US02/api/v2/public/widget/getwidgetservices: net::ERR_FAILED",
+        "/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessid: net::ERR_FAILED",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/widget/getwidgetservicesOK",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessidOK"
+      ],
+      "outcome": "provider-runtime-blocked",
+      "screenshot": "tattoo-live-41101423-1280.png"
+    },
+    {
+      "service": "Two Tiny Tattoos",
+      "serviceId": "41101425",
+      "path": "Choose a Service \u2192 Lash Extensions \u2192 Tiny Tattoos tab \u2192 Two Tiny Tattoos",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "151.0.7922.34",
+      "session": "fresh anonymous test context",
+      "timestamp": "2026-10-02T15:48:35.035Z",
+      "loaderMatchesProduction": true,
+      "providerErrors": [
+        "/US02/api/v2/public/widget/getwidgetservices: net::ERR_FAILED",
+        "/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessid: net::ERR_FAILED",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/widget/getwidgetservicesOK",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessidOK"
+      ],
+      "outcome": "provider-runtime-blocked",
+      "screenshot": "tattoo-live-41101425-1280.png"
+    },
+    {
+      "service": "Three Tiny Tattoos",
+      "serviceId": "41101427",
+      "path": "Choose a Service \u2192 Lash Extensions \u2192 Tiny Tattoos tab \u2192 Three Tiny Tattoos",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "browser": "151.0.7922.34",
+      "session": "fresh anonymous test context",
+      "timestamp": "2026-10-02T15:48:26.248Z",
+      "loaderMatchesProduction": true,
+      "providerErrors": [
+        "/US02/api/v2/public/widget/getwidgetservices: net::ERR_FAILED",
+        "/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessid: net::ERR_FAILED",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/widget/getwidgetservicesOK",
+        "\uf00dOops!An Error Has Occurredhttps://api.vagaro.com/US02/api/v2/public/promotion/getallpromotiondetailsbybusinessidOK"
+      ],
+      "outcome": "provider-runtime-blocked",
+      "screenshot": "tattoo-live-41101427-1280.png"
+    }
+  ],
+  "beforeState": "tiny-tattoo-booking-before-2026-10-02.json",
+  "rollback": "No production changes; Worker2242 and existing URLs retained. Earlier release rollback receipt preserved.",
+  "additionalSyncs": 0,
+  "mappingsRegenerated": 0,
+  "warningsSuppressed": false,
+  "safeguards": {
+    "agentInstructions": "AGENTS.md",
+    "runbook": "docs/VAGARO_BOOKING_CONTRACT.md",
+    "metadataDiagnostics": "getBookingConfigurationIssue returns invalid-loader/missing-manifest-entry/url-mismatch/identity-drift while preserving strict hasBookingConfiguration behavior",
+    "tests": "46 Vagaro unit/contract tests and 4 real-launcher provider-stub browser tests passed; all 6 live checks failed distinctly as provider-runtime-blocked",
+    "ci": "scripts/run-browser-gates.mjs includes deterministic launcher tests; live tests opt-in with explicit deployed URL"
+  },
+  "validation": {
+    "lint": "passed",
+    "appTypes": "passed",
+    "workerTypes": "passed",
+    "designContract": "passed",
+    "quizTests": 23,
+    "fixtureBuild": "passed",
+    "launchCandidate": "not declared; no public UI change or deployment"
+  }
+}

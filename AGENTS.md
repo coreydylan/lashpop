@@ -25,6 +25,34 @@ Before declaring website work complete, run:
 
 Color-contrast failures are an explicitly documented launch exception; do not change colors to resolve them. All other accessibility regressions remain defects.
 
+## Vagaro booking diagnosis
+
+Before declaring a booking link broken or regenerating a mapping, read
+`docs/VAGARO_BOOKING_CONTRACT.md` and reproduce the customer's exact path on the
+actual deployed website. Start at `https://lashpopstudios.com/`, use **Choose a
+Service** to open a category, choose the exact service, and inspect the provider's service-selection
+screen inside the existing modal on desktop and mobile. An outer `Book <service>`
+heading does not prove the embedded provider selected that service.
+The header's **Book Now** scrolls to services; it does not itself open the modal.
+On mobile, use the current service card or its carousel controls, then the modal's
+category tabs. Record the actual clicks rather than assuming the desktop grid exists.
+
+Record the website URL/build identity (or explicitly unknown), worker deployment
+version, manifest revision/hash, database service ID/name/category, complete loader
+request (including its version token), browser/session, viewport, provider errors,
+and screenshots before a broken-link conclusion or configuration write. Strip only
+the URL fragment when comparing network requests; the fragment is not sent over HTTP.
+
+Separate these findings: standalone/harness behavior; missing/stale verification
+metadata; provider/network/runtime blockage; and a reproduced customer-visible
+wrong-service screen. A missing manifest entry or failed standalone test alone
+does not prove a customer-visible failure. A generic menu behind a provider error
+is inconclusive. Treat contrary user evidence as a reason to stop changes and
+reconcile environment/context. Preserve working mappings and legitimate warnings.
+Do not regenerate loaders, refresh the full catalog, or request admin sign-in just
+to clear a warning without establishing its cause. See the runbook's diagnostic
+checklist and `npm run test:vagaro-launcher` / `npm run test:vagaro-live`.
+
 ## Change and merge rules
 
 - Do not push directly to `main`. Work on a branch and use a pull request.
