@@ -69,20 +69,28 @@ test('fails closed when a different valid-looking loader is stored', () => {
   )
 })
 
-test('accepts the current Tiny Tattoos identity for the verified service', () => {
-  const tinyTattoos = widgetManifest.mappings.find(
-    mapping => mapping.vagaroServiceId === '35729654',
-  )
+test('accepts the current Tiny Tattoos services on their verified loaders', () => {
+  const expected = [
+    { vagaroServiceId: '41101423', name: 'One Tiny Tattoo' },
+    { vagaroServiceId: '41101425', name: 'Two Tiny Tattoos' },
+    { vagaroServiceId: '41101427', name: 'Three Tiny Tattoos' },
+  ]
 
-  assert.ok(tinyTattoos)
-  assert.equal(
-    getVagaroBookingStatus({
-      vagaroServiceId: tinyTattoos.vagaroServiceId,
-      name: 'Tiny Tattoos',
-      category: 'Tiny Tattoos',
-      widgetUrl: tinyTattoos.widgetUrl,
-      isActive: true,
-    }),
-    'ready',
-  )
+  for (const { vagaroServiceId, name } of expected) {
+    const mapping = widgetManifest.mappings.find(
+      mapping => mapping.vagaroServiceId === vagaroServiceId,
+    )
+
+    assert.ok(mapping, name)
+    assert.equal(
+      getVagaroBookingStatus({
+        vagaroServiceId: mapping.vagaroServiceId,
+        name,
+        category: 'Tiny Tattoos',
+        widgetUrl: mapping.widgetUrl,
+        isActive: true,
+      }),
+      'ready',
+    )
+  }
 })
