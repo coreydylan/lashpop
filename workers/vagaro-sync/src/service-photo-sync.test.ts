@@ -66,7 +66,7 @@ test('the confirmed URL rejection no longer prevents 56 photo-bearing service up
   assert.equal(stats.synced, 91)
   assert.equal(stats.failed, 0)
   assert.equal(stats.photoFailures.length, 56)
-  assert.match(stats.photoFailures[0].error, /HTTPS on an allow-listed rackcdn.com host/)
+  assert.match(stats.photoFailures[0].error, /HTTPS on an allow-listed Vagaro image host and path/)
   assert.equal(registryReads, 0)
   assert.equal(state.patches.length, 91)
   assert.equal(state.patches[0].priceStarting, 4900)

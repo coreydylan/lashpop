@@ -70,10 +70,29 @@ async function sha256(value: string | ArrayBuffer): Promise<string> {
 
 export function validateVagaroImageSource(sourceUrl: string): URL {
   const url = new URL(sourceUrl)
-  if (url.protocol !== 'https:' || !/\.rackcdn\.com$/i.test(url.hostname)) {
-    throw new Error('Vagaro image source must be HTTPS on an allow-listed rackcdn.com host')
+  const legacyCdn = /\.rackcdn\.com$/i.test(url.hostname)
+  const serviceAsset = url.hostname === 'assets.vagaro.com'
+    && /^\/business\/[a-z0-9_-]+\/Service\/(Original|155x155|340x340|400x400)\/[a-z0-9_$.-]+\.(jpe?g|png|webp|gif|avif)$/i.test(url.pathname)
+    && !url.search && !url.hash
+  if (url.protocol !== 'https:' || url.username || url.password || url.port
+    || !(legacyCdn || serviceAsset)) {
+    throw new Error('Vagaro image source must be HTTPS on an allow-listed Vagaro image host and path')
   }
   return url
+}
+
+async function fetchVagaroImageSource(sourceUrl: string, headers: Headers): Promise<Response> {
+  let url = validateVagaroImageSource(sourceUrl)
+  for (let redirects = 0; redirects <= 3; redirects++) {
+    // Never let fetch follow a redirect before validating its destination.
+    const response = await fetch(url.href, { headers, redirect: 'manual' })
+    if (![301, 302, 303, 307, 308].includes(response.status)) return response
+    const location = response.headers.get('location')
+    if (!location) throw new Error('Vagaro image redirect is missing a destination')
+    if (redirects === 3) throw new Error('Vagaro image source exceeded the redirect limit')
+    url = validateVagaroImageSource(new URL(location, url).href)
+  }
+  throw new Error('Vagaro image source exceeded the redirect limit')
 }
 
 function deliveryUrl(accountHash: string, imageId: string): string {
@@ -197,7 +216,7 @@ export async function ingestVagaroImage(
   }
 
   try {
-    const source = await fetch(request.sourceUrl, { headers: conditionalHeaders })
+    const source = await fetchVagaroImageSource(request.sourceUrl, conditionalHeaders)
     if (source.status === 304 && current?.status === 'ready') {
       await registry.touch(request.sourceKey, now)
       return {
