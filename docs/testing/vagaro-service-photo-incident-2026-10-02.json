@@ -13,7 +13,7 @@
     "message": "Vagaro image source must be HTTPS on an allow-listed rackcdn.com host",
     "stack": ["validateVagaroImageSource", "ingestVagaroImage", "syncService", "syncAllServices", "runSync"],
     "evidence": "Existing authorized Wrangler live tail received the scheduled invocation after WebSocket keepalives were verified. The tool truncated the large output; 36 complete visible service-failure entries contained this exception. D1 independently confirmed 56 failures.",
-    "incomingRejectedUrls": "Not captured; do not infer a replacement hostname or weaken the allow-list."
+    "incomingRejectedUrls": "Exact 06:00 composite response was not captured. A subsequent independent read of the official public booking page found 54 service-photo elements on assets.vagaro.com; do not claim these are an exact replay of all 56 rejected URLs."
   },
   "releaseBase": {
     "workerVersion": "5544ded0-9c80-4eba-b986-2c7c75296b55",
@@ -24,11 +24,11 @@
   "fix": {
     "behavior": "Photo-ingestion exceptions are recorded separately while catalog upserts continue. Existing image fields are omitted on rejection; new hidden services have no untrusted image fields. Preserved ingestion results keep their matching original source URL.",
     "security": "The HTTPS/rackcdn.com validator is unchanged. No rejected source is fetched, uploaded, or persisted as a new service image.",
-    "remainingPhotoLimitation": "Rejected incoming images remain unimported and are reported in photoFailures; existing working images are preserved. Supporting any new CDN requires verifying the actual source and a separate deliberate allow-list change.",
+    "remainingPhotoLimitation": "Rejected incoming images remain unimported and are reported in photoFailures; existing working images are preserved. The observed assets.vagaro.com origin requires a separate specifically approved narrow source allowance.",
     "productionChanged": false
   },
   "validation": {
-    "originalDeployedCodeRegression": "Expected test failure: 35 updates versus required 91",
+    "originalDeployedCodeRegression": "Expected test failure: 35 updates versus required 91. The fixture uses 56 synthetic untrusted.example URLs that throw the same confirmed validator exception; it does not replay the exact production URLs.",
     "patchedRegression": "4 tests passed; 91 updates, zero catalog failures, 56 separately reported photo failures",
     "testVagaro": "36 tests passed",
     "testQuiz": "23 tests passed",
@@ -39,5 +39,29 @@
     "fixtureBuild": "passed; database configured to localhost fixture, no production access",
     "diffCheck": "passed",
     "productionDeployment": "not performed"
+  },
+  "publicSourceObservation": {
+    "page": "https://www.vagaro.com/lashpop32/services",
+    "method": "Supported Chrome DOM reads of image and background-image attributes; no runtime state, auth secrets, or private API data read",
+    "observedServicePhotoElements": 54,
+    "origin": "https://assets.vagaro.com",
+    "pathShape": "/business/[opaque-id]/Service/340x340/[filename]",
+    "credentials": false,
+    "queryParameters": [],
+    "fragment": false,
+    "port": "default",
+    "relative": false,
+    "dnsCname": "assets.vagaro.com.cdn.cloudflare.net.",
+    "ownershipEvidence": "Subdomain of the provider's official vagaro.com domain, used directly for service photos by its first-party public booking page",
+    "publishedContractLimit": "Vagaro's public support documentation describes service photos but does not publish a stable CDN-host API guarantee. This evidence is current first-party behavior, not a documented API promise.",
+    "safeNormalization": "Existing size-path normalization preserves this host; no supported transformation maps it to rackcdn.com.",
+    "requiredApproval": "Allow only HTTPS assets.vagaro.com under /business/<id>/Service/ with supported image-size segments, no URL credentials or nondefault port, and fail closed on off-policy redirects. Keep existing rackcdn validation and optional-image isolation.",
+    "deploymentPlan": [
+      "After explicit source-policy approval, implement the exact host/path allowance and redirect validation with regression tests.",
+      "Read-check observed Original-size assets and validate mocked ingestion of the observed source shape, including malicious host/path and redirect rejection.",
+      "Run affected tests, lint, type checks and fixture build; review the release diff based on deployed 4bce63d.",
+      "After separate deployment approval, deploy a candidate Worker version and retain 5544ded0-9c80-4eba-b986-2c7c75296b55 as rollback.",
+      "Observe the next naturally scheduled run; confirm all 91 catalog records and zero photo-source validation failures without forcing a sync."
+    ]
   }
 }
