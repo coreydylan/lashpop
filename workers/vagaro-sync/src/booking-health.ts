@@ -30,9 +30,18 @@ export interface ServiceSyncHealth {
  *
  * See ../../docs/VAGARO_BOOKING_CONTRACT.md.
  */
-export function hasBookingConfiguration(service: BookingConfiguration): boolean {
+export type BookingConfigurationIssue =
+  | 'invalid-loader'
+  | 'missing-manifest-entry'
+  | 'url-mismatch'
+  | 'identity-drift'
+
+export function getBookingConfigurationIssue(
+  service: BookingConfiguration,
+  mappings = widgetManifest.mappings,
+): BookingConfigurationIssue | null {
   const widgetUrl = service.vagaroWidgetUrl?.trim()
-  if (!widgetUrl) return false
+  if (!widgetUrl) return 'invalid-loader'
 
   try {
     const parsed = new URL(widgetUrl)
@@ -45,30 +54,35 @@ export function hasBookingConfiguration(service: BookingConfiguration): boolean 
       isVagaroHost &&
       isGeneratedLoader &&
       hasVersionToken
-    if (!isGeneratedUrl) return false
+    if (!isGeneratedUrl) return 'invalid-loader'
 
     const vagaroServiceId = service.vagaroServiceId?.trim()
-    if (!vagaroServiceId) return true
+    if (!vagaroServiceId) return null
 
-    const verified = widgetManifest.mappings.find(
+    const verified = mappings.find(
       mapping => mapping.vagaroServiceId === vagaroServiceId,
     )
-    if (!verified || verified.widgetUrl !== widgetUrl) return false
+    if (!verified) return 'missing-manifest-entry'
+    if (verified.widgetUrl !== widgetUrl) return 'url-mismatch'
 
     if (service.serviceName?.trim() && service.serviceName.trim() !== verified.name) {
-      return false
+      return 'identity-drift'
     }
     if (
       service.serviceCategory?.trim() &&
       service.serviceCategory.trim() !== verified.category
     ) {
-      return false
+      return 'identity-drift'
     }
 
-    return true
+    return null
   } catch {
-    return false
+    return 'invalid-loader'
   }
+}
+
+export function hasBookingConfiguration(service: BookingConfiguration): boolean {
+  return getBookingConfigurationIssue(service) === null
 }
 
 export function serviceSyncHealthError(health: ServiceSyncHealth): string | null {

@@ -87,7 +87,7 @@
     "rollbackVersion": "5544ded0-9c80-4eba-b986-2c7c75296b55",
     "rollbackCommand": "wrangler versions deploy 5544ded0-9c80-4eba-b986-2c7c75296b55@100 --env '' --yes",
     "pullRequest": "https://github.com/coreydylan/lashpop/pull/56",
-    "forcedSyncTriggered": false,
+    "forcedSyncTriggered": true,
     "baselineBeforeVerification": {
       "latestRun": "e8b903a3-7cb9-49ae-8344-40f307137a90",
       "latestRunStatus": "partial",
@@ -97,7 +97,26 @@
       "readyVagaroServiceImageRegistryRows": 58
     },
     "nextNaturalRun": "2026-10-02T22:00:00Z",
-    "verification": "pending; version-filtered live tail is connected",
+    "verification": {
+      "manualRunId": "79e083c5-76dc-40ce-b148-a4166858f01a",
+      "trigger": "manual",
+      "startedAt": "2026-10-02T15:09:43.938Z",
+      "completedAt": "2026-10-02T15:11:59.971Z",
+      "status": "partial",
+      "httpStatus": 207,
+      "servicesSynced": 91,
+      "servicesFailed": 0,
+      "photoFailures": 0,
+      "readyServiceImageRegistryEntries": 58,
+      "approvedVagaroAssetsSources": 56,
+      "serviceImageRegistryErrors": 0,
+      "remainingWarnings": [
+        "One Tiny Tattoo",
+        "Two Tiny Tattoos",
+        "Three Tiny Tattoos"
+      ],
+      "bookingWarningDiagnosis": "Deployed worker manifest lacks the three September replacement IDs; D1 URLs match verified September snapshots. Separate provider runtime testing blocked; not proof of broken URLs."
+    },
     "previousRolloutVersion": "159489e5-e9c8-463c-a6f0-6f05ecf2b1c7",
     "preliminaryHEADProbePolicy": "Same exact source and redirect checks as ingestion GET requests"
   },

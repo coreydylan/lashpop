@@ -1,0 +1,74 @@
+[
+  {
+    "status": 200,
+    "total": 195,
+    "tattoos": [
+      {
+        "serviceId": 41101423,
+        "name": "One Tiny Tattoo",
+        "flags": {
+          "IsOnlineService": true,
+          "IsShowPriceOnline": true,
+          "ShowOnline": true,
+          "IsIncludeTaxInOnlinePricing": false
+        }
+      },
+      {
+        "serviceId": 41101425,
+        "name": "Two Tiny Tattoos",
+        "flags": {
+          "IsOnlineService": true,
+          "IsShowPriceOnline": true,
+          "ShowOnline": true,
+          "IsIncludeTaxInOnlinePricing": false
+        }
+      },
+      {
+        "serviceId": 41101427,
+        "name": "Three Tiny Tattoos",
+        "flags": {
+          "IsOnlineService": true,
+          "IsShowPriceOnline": true,
+          "ShowOnline": true,
+          "IsIncludeTaxInOnlinePricing": false
+        }
+      },
+      {
+        "serviceId": 41101423,
+        "name": "One Tiny Tattoo",
+        "flags": {
+          "IsActive": true,
+          "IsSoftDeleted": false,
+          "IsOnlineService": true,
+          "IsShowPriceOnline": true,
+          "ShowOnline": true,
+          "IsIncludeTaxInOnlinePricing": false
+        }
+      },
+      {
+        "serviceId": 41101425,
+        "name": "Two Tiny Tattoos",
+        "flags": {
+          "IsActive": true,
+          "IsSoftDeleted": false,
+          "IsOnlineService": true,
+          "IsShowPriceOnline": true,
+          "ShowOnline": true,
+          "IsIncludeTaxInOnlinePricing": false
+        }
+      },
+      {
+        "serviceId": 41101427,
+        "name": "Three Tiny Tattoos",
+        "flags": {
+          "IsActive": true,
+          "IsSoftDeleted": false,
+          "IsOnlineService": true,
+          "IsShowPriceOnline": true,
+          "ShowOnline": true,
+          "IsIncludeTaxInOnlinePricing": false
+        }
+      }
+    ]
+  }
+]

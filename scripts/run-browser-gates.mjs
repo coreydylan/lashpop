@@ -81,6 +81,7 @@ async function main() {
     await waitForServer(baseUrl, server)
     await run(playwrightBin, ['test', '--project=visual-desktop', '--project=visual-mobile'], env)
     await run(playwrightBin, ['test', '--project=accessibility'], env)
+    await run(playwrightBin, ['test', '--config=playwright.booking.config.ts', '--project=launcher-desktop', '--project=launcher-mobile'], env)
   } finally {
     await stopServer(server)
   }

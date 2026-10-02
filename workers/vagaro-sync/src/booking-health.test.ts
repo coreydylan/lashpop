@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { hasBookingConfiguration, serviceSyncHealthError } from './booking-health'
+import tattooSnapshots from '../../../tests/fixtures/vagaro-tattoo-mappings.json'
+import { resolveVagaroServiceWidgetUrl } from '../../../src/lib/vagaro-widget'
+import { getBookingConfigurationIssue, hasBookingConfiguration, serviceSyncHealthError } from './booking-health'
 
 const GENERATED_LOADER =
   'https://www.vagaro.com//resources/WidgetEmbeddedLoader/example6fWR0?v=service-token#'
@@ -88,4 +90,33 @@ test('reports healthy service syncs without an error', () => {
     }),
     null
   )
+})
+
+test('a missing manifest entry is configuration evidence, independent of launcher validity', () => {
+  for (const mapping of tattooSnapshots.mappings) {
+    const service = {
+      vagaroServiceId: mapping.vagaroServiceId,
+      vagaroWidgetUrl: mapping.widgetUrl,
+      serviceName: mapping.name,
+      serviceCategory: mapping.category,
+    }
+    assert.equal(resolveVagaroServiceWidgetUrl({ widgetUrl: mapping.widgetUrl }), mapping.widgetUrl)
+    assert.equal(getBookingConfigurationIssue(service, []), 'missing-manifest-entry')
+    assert.equal(getBookingConfigurationIssue(service, tattooSnapshots.mappings), null)
+    // A newer verified manifest may resolve metadata drift; it proves no live runtime outcome.
+    assert.ok(serviceSyncHealthError({ failed: 0, bookingMisconfigured: [mapping.name], bookingPending: [] }))
+  }
+})
+
+test('diagnosis keeps swapped loaders, identity drift, and invalid links distinct', () => {
+  const [one, three] = tattooSnapshots.mappings
+  const service = {
+    vagaroServiceId: one.vagaroServiceId,
+    vagaroWidgetUrl: one.widgetUrl,
+    serviceName: one.name,
+    serviceCategory: one.category,
+  }
+  assert.equal(getBookingConfigurationIssue({ ...service, vagaroWidgetUrl: three.widgetUrl }, tattooSnapshots.mappings), 'url-mismatch')
+  assert.equal(getBookingConfigurationIssue({ ...service, serviceName: three.name }, tattooSnapshots.mappings), 'identity-drift')
+  assert.equal(getBookingConfigurationIssue({ ...service, vagaroWidgetUrl: 'https://www.vagaro.com/lashpop32/book-now?ServiceId=41101423' }, tattooSnapshots.mappings), 'invalid-loader')
 })

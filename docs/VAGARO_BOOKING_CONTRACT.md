@@ -54,6 +54,79 @@ not silently fall back to the all-services widget.
 
 ## Adding or repairing a service
 
+### Diagnose before generating anything
+
+The canonical customer path is the deployed LashPop website, not a loader URL
+opened by itself: `https://lashpopstudios.com/` → **Choose a Service** → category card → exact
+service → provider service-selection screen inside the existing modal. The home
+service card opens the modal; its category tabs allow switching to Tiny Tattoos.
+The header's Book Now only scrolls to services. Mobile renders one carousel card at
+a time, so use its slide controls or open the visible Lash Extensions card and
+switch to the Tiny Tattoos tab. Record which entry the customer used. Test
+desktop and mobile. Never make an appointment or submit customer data for this check.
+
+Before declaring a link broken or changing a mapping:
+
+1. Record timestamp, website URL and build identity (explicitly unknown if not
+   established), deployed sync-worker version, source/manifest revision and hash,
+   service numeric ID/name/category, full stored loader URL, browser/version,
+   session state and viewport. Preserve the before-state and rollback target.
+2. Reproduce the exact public-site launcher. Capture the loader **network request**
+   or the script before execution: Vagaro removes its original script element.
+   Strip only the URL fragment for network comparisons; preserve the entire opaque
+   path and `?v=` token. Compare it with production D1 and the manifest bundled in
+   the **deployed** worker, separately from the website's manifest.
+3. Inspect the embedded provider screen, not just LashPop's `Book <service>` heading.
+   Save screenshots and provider request failures/statuses. A matching name in an
+   all-services menu is not service-selection proof. Stop before confirmation,
+   payment, account creation or customer-data entry.
+4. Classify the evidence. `missing-manifest-entry` can mean stale verification
+   metadata; `url-mismatch` or `identity-drift` needs investigation. Neither proves
+   a live customer-visible failure. A standalone loader/harness failure remains
+   standalone evidence. Provider/network errors make the runtime check **blocked**,
+   even if a generic menu or the expected name appears behind an error dialog.
+5. Reconcile contrary user evidence and browser/session differences before edits.
+   Preserve working mappings. Regenerate only after confirming mapping failure or
+   a newly unconfigured service; updating verified metadata does not require new
+   loaders. Do not suppress genuine warnings or rewrite historical sync receipts.
+
+`getBookingConfigurationIssue` in the sync worker returns a structured metadata
+reason while `hasBookingConfiguration` retains the existing strict policy.
+`npm run test:vagaro` covers missing-manifest versus swapped/invalid loaders.
+`npm run test:vagaro-launcher` exercises the real website component and loader
+injection with a deterministic provider stub; it proves the launcher contract,
+**not Vagaro's live response**. It runs in browser CI.
+
+For explicit read-only live checks, run:
+
+```bash
+PLAYWRIGHT_BASE_URL=https://lashpopstudios.com npm run test:vagaro-live
+```
+
+This opens the actual Lash Extensions service card, switches the modal to Tiny
+Tattoos, and selects each current tattoo service on desktop and mobile,
+compares loader requests against the recorded builder snapshots, captures provider
+errors and screenshots, and fails with a distinct runtime-blocked message when
+selection cannot be established. Do not reinterpret blocked tests as bad mappings
+or run an extra production sync just to diagnose stored booking configuration.
+Use a normal supported browser session to reconcile an automated provider blockage;
+never bypass a denial or extract credentials.
+
+### October 2, 2026 incident
+
+Production D1's three tattoo URLs already matched the admin-builder snapshots
+merged in `8878cf0` / PR55. Worker version
+`2242a717-487d-4986-908a-2b1575c8bbb0` still bundled the July29 manifest without
+IDs `41101423`, `41101425`, `41101427`. That explains the three metadata warnings.
+Corey reported that the real website correctly selected the tattoo services.
+Anonymous headless Chromium checks encountered `getwidgetservices` network failures
+and Vagaro error dialogs, so they did **not** disprove that report or establish
+broken mappings. The earlier inference from standalone generic-menu rendering was
+unsupported. These are historical observations, not an assumption that future
+tattoo bookings always work. Evidence: `docs/testing/tiny-tattoo-booking-reconciliation-2026-10-02.json`.
+
+### Repair after diagnosis
+
 1. Sign into Vagaro in Safari and open:
    `Settings → Booking → Booking Widget`.
 2. From the repository, run:
