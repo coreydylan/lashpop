@@ -92,5 +92,15 @@
     },
     "nextNaturalRun": "2026-10-02T22:00:00Z",
     "verification": "pending; version-filtered live tail is connected"
+  },
+  "repositoryGateLimit": {
+    "pullRequest": 56,
+    "qualityJob": 110883509715,
+    "failedStep": "Run npm run test:launch",
+    "cause": "npm audit reports 4 pre-existing website dependency vulnerabilities: axios, brace-expansion, DOMPurify and Next.js",
+    "lockfileChangedByThisPatch": false,
+    "workerRuntimeAffectedPackages": "The reported website packages are not imported by this Worker",
+    "merge": "Not attempted; quality and browser-regression gates remain required",
+    "scope": "Website dependency updates are separate from the approved exact CDN source-policy and Worker sync repair"
   }
 }
