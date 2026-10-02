@@ -244,3 +244,14 @@ inspect the rendered contents of Vagaro's cross-origin iframe. Before a client
 handoff, open representative services in a normal desktop and mobile browser
 and confirm that Vagaro honors the filter. A generated URL existing is not by
 itself proof that Vagaro's runtime returned the filtered screen.
+
+
+### Metadata alignment release, October 2, 2026
+
+The September manifest was released in Worker version
+`a6f44603-85f0-49b4-b0b2-80126aafa5b0` at 16:02 UTC, retaining the existing
+URLs, bindings, secrets and cron. The post-deployment read-only audit found zero
+metadata issues across 91 active services. This is not fresh end-to-end booking
+verification; the six provider-blocked runtime checks and historical partial sync
+receipt remain unchanged. See `docs/testing/vagaro-booking-metadata-correction-2026-10-02.json`.
+Always read the current deployment before using this historical release as evidence.

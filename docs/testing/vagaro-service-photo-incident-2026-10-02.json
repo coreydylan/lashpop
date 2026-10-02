@@ -129,5 +129,14 @@
     "workerRuntimeAffectedPackages": "The reported website packages are not imported by this Worker",
     "merge": "Not attempted; quality and browser-regression gates remain required",
     "scope": "Website dependency updates are separate from the approved exact CDN source-policy and Worker sync repair"
+  },
+  "followUpMetadataRelease": {
+    "version": "a6f44603-85f0-49b4-b0b2-80126aafa5b0",
+    "deployedAt": "2026-10-02T16:02:36.930001Z",
+    "codeCommit": "9dfa951",
+    "metadataAuditIssues": 0,
+    "bookingUrlsChanged": false,
+    "freshBookingRuntimeVerified": false,
+    "receipt": "vagaro-booking-metadata-correction-2026-10-02.json"
   }
 }

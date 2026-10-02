@@ -1,5 +1,5 @@
 {
-  "status": "validated source correction; deployment pending",
+  "status": "deployed; metadata audit clean; live provider selection remains unverified",
   "priorGuardCommit": "ea3d96f",
   "authoritativeVerificationCommit": "8878cf03834183c1bfd40ac1c80353268e8b7a02",
   "generatedAt": "2026-09-16T01:21:40.000Z",
@@ -32,5 +32,43 @@
     "otherDirtyFilesUntouched": true
   },
   "safeIntegration": "Review the existing draft PR into a clean integration branch from current origin/main. Keep the canonical dirty checkout intact; do not reset, stash automatically, or merge before required checks pass. September manifest correction is already on origin/main; Worker deployment still needs aligning.",
-  "productionRequirement": "Deploy a narrow Worker release retaining bindings, secrets and cron. No database URL changes, widget regeneration, website deployment, new permission grant or full sync needed."
+  "productionRequirement": "Deploy a narrow Worker release retaining bindings, secrets and cron. No database URL changes, widget regeneration, website deployment, new permission grant or full sync needed.",
+  "codeCommit": "9dfa951",
+  "deployment": {
+    "candidateVersion": "a6f44603-85f0-49b4-b0b2-80126aafa5b0",
+    "priorVersion": "2242a717-487d-4986-908a-2b1575c8bbb0",
+    "bindingsIdentical": true,
+    "currentTrafficUnchanged": true,
+    "codeCommit": "9dfa951",
+    "manifestSha256": "5414c5c54171bb27759eb4cc66bfa35d27e75df5db6625865c525ae5d04c937e",
+    "deploymentId": "cd58b3e8-edaa-451c-9aa2-68b4bc01965d",
+    "deployedAt": "2026-10-02T16:02:36.930001Z",
+    "trafficPercent": 100,
+    "schedule": {
+      "schedules": [
+        {
+          "cron": "0 6,14,22 * * *",
+          "created_on": "2026-07-22T20:59:20.613741Z",
+          "modified_on": "2026-08-29T22:15:31.166054Z"
+        }
+      ]
+    },
+    "healthHTTPStatus": 200,
+    "healthOK": true,
+    "postDeployDatabaseMappingsUnchanged": true,
+    "postDeployBookingConfigurationIssues": 0,
+    "newSyncTriggered": false,
+    "nextScheduledSync": "2026-10-02T22:00:00Z",
+    "rollbackVersion": "2242a717-487d-4986-908a-2b1575c8bbb0",
+    "rollbackCommand": "wrangler versions deploy 2242a717-487d-4986-908a-2b1575c8bbb0@100 --env '' --yes"
+  },
+  "validation": {
+    "vagaroTestsPassed": 46,
+    "lint": "passed",
+    "appTypes": "passed",
+    "workerTypes": "passed",
+    "fixtureBuild": "passed",
+    "priorLauncherRegressionTestsPassed": 4,
+    "liveProviderTests": "6 provider-runtime-blocked results preserved; not rerun for a metadata-only deployment"
+  }
 }
