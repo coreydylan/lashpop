@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { probeVagaroPhotoUrl } from './public-services'
 
 import {
   ingestVagaroImage,
@@ -162,6 +163,33 @@ test('bounds redirect loops and rejects missing destinations', async () => {
       assert.equal(reads, location ? 4 : 1)
       assert.equal(state.row(), null)
     }
+  } finally { globalThis.fetch = previousFetch }
+})
+
+test('preliminary photo HEAD probes enforce the same policy before any request', async () => {
+  const previousFetch = globalThis.fetch
+  let reads = 0
+  globalThis.fetch = async (input, init) => {
+    reads++
+    assert.equal(String(input), serviceAssetUrl)
+    assert.equal(init?.method, 'HEAD')
+    assert.equal(init?.redirect, 'manual')
+    return new Response(null, { status: 200 })
+  }
+  try {
+    assert.equal(await probeVagaroPhotoUrl('https://attacker.example/photo.jpg'), null)
+    assert.equal(reads, 0)
+    assert.equal(await probeVagaroPhotoUrl(serviceAssetUrl), serviceAssetUrl)
+    assert.equal(reads, 1)
+    globalThis.fetch = async (input, init) => {
+      reads++
+      assert.equal(String(input), serviceAssetUrl)
+      assert.equal(init?.method, 'HEAD')
+      assert.equal(init?.redirect, 'manual')
+      return new Response(null, { status: 302, headers: { location: 'https://attacker.example/photo.jpg' } })
+    }
+    assert.equal(await probeVagaroPhotoUrl(serviceAssetUrl), null)
+    assert.equal(reads, 2)
   } finally { globalThis.fetch = previousFetch }
 })
 

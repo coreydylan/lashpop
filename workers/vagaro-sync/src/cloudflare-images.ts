@@ -81,11 +81,15 @@ export function validateVagaroImageSource(sourceUrl: string): URL {
   return url
 }
 
-async function fetchVagaroImageSource(sourceUrl: string, headers: Headers): Promise<Response> {
+export async function fetchVagaroImageSource(
+  sourceUrl: string,
+  headers: Headers,
+  method: 'GET' | 'HEAD' = 'GET',
+): Promise<Response> {
   let url = validateVagaroImageSource(sourceUrl)
   for (let redirects = 0; redirects <= 3; redirects++) {
     // Never let fetch follow a redirect before validating its destination.
-    const response = await fetch(url.href, { headers, redirect: 'manual' })
+    const response = await fetch(url.href, { method, headers, redirect: 'manual' })
     if (![301, 302, 303, 307, 308].includes(response.status)) return response
     const location = response.headers.get('location')
     if (!location) throw new Error('Vagaro image redirect is missing a destination')
