@@ -1,0 +1,43 @@
+{
+  "observedRun": {
+    "id": "2c542e0b-adaa-4901-a7b2-38eb30d38c0f",
+    "trigger": "natural scheduled cron, 0 6,14,22 * * *",
+    "startedAt": "2026-10-02T06:00:58.118Z",
+    "completedAt": "2026-10-02T06:01:48.378Z",
+    "status": "partial",
+    "synced": 35,
+    "failed": 56,
+    "total": 91
+  },
+  "confirmedException": {
+    "message": "Vagaro image source must be HTTPS on an allow-listed rackcdn.com host",
+    "stack": ["validateVagaroImageSource", "ingestVagaroImage", "syncService", "syncAllServices", "runSync"],
+    "evidence": "Existing authorized Wrangler live tail received the scheduled invocation after WebSocket keepalives were verified. The tool truncated the large output; 36 complete visible service-failure entries contained this exception. D1 independently confirmed 56 failures.",
+    "incomingRejectedUrls": "Not captured; do not infer a replacement hostname or weaken the allow-list."
+  },
+  "releaseBase": {
+    "workerVersion": "5544ded0-9c80-4eba-b986-2c7c75296b55",
+    "gitCommit": "4bce63d",
+    "checkoutMain": "33b1eaf",
+    "deployedCommitIsAncestorOfCheckoutMain": false
+  },
+  "fix": {
+    "behavior": "Photo-ingestion exceptions are recorded separately while catalog upserts continue. Existing image fields are omitted on rejection; new hidden services have no untrusted image fields. Preserved ingestion results keep their matching original source URL.",
+    "security": "The HTTPS/rackcdn.com validator is unchanged. No rejected source is fetched, uploaded, or persisted as a new service image.",
+    "remainingPhotoLimitation": "Rejected incoming images remain unimported and are reported in photoFailures; existing working images are preserved. Supporting any new CDN requires verifying the actual source and a separate deliberate allow-list change.",
+    "productionChanged": false
+  },
+  "validation": {
+    "originalDeployedCodeRegression": "Expected test failure: 35 updates versus required 91",
+    "patchedRegression": "4 tests passed; 91 updates, zero catalog failures, 56 separately reported photo failures",
+    "testVagaro": "36 tests passed",
+    "testQuiz": "23 tests passed",
+    "checkDesign": "passed",
+    "lint": "passed",
+    "appTypes": "passed",
+    "workerTypes": "passed",
+    "fixtureBuild": "passed; database configured to localhost fixture, no production access",
+    "diffCheck": "passed",
+    "productionDeployment": "not performed"
+  }
+}

@@ -267,6 +267,8 @@ export interface SyncStats {
   bookingMisconfigured: string[]
   /** Newly discovered services kept hidden until widget metadata is supplied. */
   bookingPending: string[]
+  /** Photo failures do not prevent catalog updates or erase a working image. */
+  photoFailures: { serviceId: string; error: string }[]
 }
 
 export interface PublicStaffStats {
@@ -301,6 +303,7 @@ interface SyncedService {
   id: string | null
   isActive: boolean
   bookingReady: boolean
+  photoError: string | null
 }
 
 async function syncService(
@@ -356,13 +359,23 @@ async function syncService(
   const photoById = photosByServiceId.get(serviceId) ?? null
   const photoByTitle = photosByTitle.get(serviceTitleKey(title)) ?? null
   const photoUrl = photoById ?? photoByTitle
-  const ingestedPhoto = photosAvailable && photoUrl && imageIngestor
-    ? await imageIngestor({
+  let ingestedPhoto: VagaroImageResult | null = null
+  let photoError: string | null = null
+  if (photosAvailable && photoUrl && imageIngestor) {
+    try {
+      ingestedPhoto = await imageIngestor({
         sourceKey: `vagaro:service:${serviceId}`,
         sourceKind: 'vagaro-service',
         sourceUrl: photoUrl,
       })
-    : null
+    } catch (error) {
+      // Images are optional enrichment. Keep validation fail-closed while
+      // allowing identity, pricing, category and booking data to keep syncing.
+      // Omit photo fields below so an existing working image stays intact.
+      photoError = error instanceof Error ? error.message : String(error)
+      console.warn(`service photo sync failed: ${serviceId}`, photoError)
+    }
+  }
   if (!photoById && photoByTitle) {
     console.log(`photo match for "${title}" was by title only, not serviceId — verify mapping`)
   }
@@ -473,7 +486,7 @@ async function syncService(
         mainCategory: parentTitle || 'Other Services',
         ...vagaroDataPatch,
         ...(photosAvailable && photoUrl && ingestedPhoto ? {
-          vagaroImageSourceUrl: photoUrl,
+          vagaroImageSourceUrl: ingestedPhoto.sourceUrl,
           vagaroImageUrl: ingestedPhoto.deliveryUrl,
         } : {}),
         ...(categoryId ? { categoryId } : {}),
@@ -487,6 +500,7 @@ async function syncService(
     return {
       id: existing[0].id,
       isActive: existing[0].isActive,
+      photoError,
       // Validate against the identity Vagaro returned in THIS run, not the
       // pre-update row. A category move or rename can make a static widget
       // snapshot stale even though its URL remains structurally valid.
@@ -522,7 +536,7 @@ async function syncService(
       vagaroServiceId: serviceId,
       vagaroParentServiceId: parentServiceId,
       ...vagaroDataPatch,
-      vagaroImageSourceUrl: photoUrl,
+      vagaroImageSourceUrl: ingestedPhoto?.sourceUrl ?? null,
       vagaroImageUrl: ingestedPhoto?.deliveryUrl ?? null,
       categoryId,
       name: title,
@@ -550,6 +564,7 @@ async function syncService(
       id: inserted[0]?.id ?? null,
       isActive: false,
       bookingReady: false,
+      photoError,
     }
   }
 }
@@ -620,6 +635,7 @@ export async function syncAllServices(
   let lastError: unknown = null
   const bookingMisconfigured: string[] = []
   const bookingPending: string[] = []
+  const photoFailures: SyncStats['photoFailures'] = []
   // Local service IDs touched (inserted or updated) this run. Used by the
   // reconciliation pass below to deactivate rows Vagaro no longer offers.
   const touchedServiceIds = new Set<string>()
@@ -655,6 +671,9 @@ export async function syncAllServices(
         imageIngestor,
       )
       if (syncedService.id) touchedServiceIds.add(syncedService.id)
+      if (syncedService.photoError) {
+        photoFailures.push({ serviceId: rec.serviceId, error: syncedService.photoError })
+      }
       if (!syncedService.bookingReady) {
         if (syncedService.isActive) bookingMisconfigured.push(rec.serviceTitle)
         else bookingPending.push(rec.serviceTitle)
@@ -738,6 +757,7 @@ export async function syncAllServices(
     deactivated,
     bookingMisconfigured,
     bookingPending,
+    photoFailures,
   }
 }
 

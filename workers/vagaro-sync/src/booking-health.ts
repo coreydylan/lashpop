@@ -12,6 +12,7 @@ export interface ServiceSyncHealth {
   failed: number
   bookingMisconfigured: string[]
   bookingPending: string[]
+  photoFailures?: { serviceId: string; error: string }[]
 }
 
 /**
@@ -75,6 +76,9 @@ export function serviceSyncHealthError(health: ServiceSyncHealth): string | null
 
   if (health.failed > 0) {
     issues.push(`${health.failed} service record(s) failed`)
+  }
+  if (health.photoFailures?.length) {
+    issues.push(`${health.photoFailures.length} service photo update(s) failed; catalog records still synced`)
   }
   if (health.bookingMisconfigured.length > 0) {
     issues.push(
