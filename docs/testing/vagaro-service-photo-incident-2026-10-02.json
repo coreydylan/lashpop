@@ -24,13 +24,13 @@
   "fix": {
     "behavior": "Photo-ingestion exceptions are recorded separately while catalog upserts continue. Existing image fields are omitted on rejection; new hidden services have no untrusted image fields. Preserved ingestion results keep their matching original source URL.",
     "security": "The HTTPS/rackcdn.com validator is unchanged. No rejected source is fetched, uploaded, or persisted as a new service image.",
-    "remainingPhotoLimitation": "Rejected incoming images remain unimported and are reported in photoFailures; existing working images are preserved. The observed assets.vagaro.com origin requires a separate specifically approved narrow source allowance.",
-    "productionChanged": false
+    "remainingPhotoLimitation": "The specifically approved assets.vagaro.com service-photo allowance is now deployed. Full ingestion and catalog recovery await the next natural production sync; residual photo failures will remain visible and existing images remain protected.",
+    "productionChanged": true
   },
   "validation": {
     "originalDeployedCodeRegression": "Expected test failure: 35 updates versus required 91. The fixture uses 56 synthetic untrusted.example URLs that throw the same confirmed validator exception; it does not replay the exact production URLs.",
     "patchedRegression": "4 tests passed; 91 updates, zero catalog failures, 56 separately reported photo failures",
-    "testVagaro": "36 tests passed",
+    "testVagaro": "40 tests passed after the source allowance and redirect checks",
     "testQuiz": "23 tests passed",
     "checkDesign": "passed",
     "lint": "passed",
@@ -38,7 +38,9 @@
     "workerTypes": "passed",
     "fixtureBuild": "passed; database configured to localhost fixture, no production access",
     "diffCheck": "passed",
-    "productionDeployment": "not performed"
+    "workerBundleDryRun": "passed",
+    "observedAssetNormalGET": "200 image/jpeg, no redirect; a separate Python HEAD was rejected with 403",
+    "productionDeployment": "approved and performed; natural sync verification pending"
   },
   "publicSourceObservation": {
     "page": "https://www.vagaro.com/lashpop32/services",
@@ -56,7 +58,7 @@
     "publishedContractLimit": "Vagaro's public support documentation describes service photos but does not publish a stable CDN-host API guarantee. This evidence is current first-party behavior, not a documented API promise.",
     "safeNormalization": "Existing size-path normalization preserves this host; no supported transformation maps it to rackcdn.com.",
     "originalSizeReadCheck": "One observed service photo, changed only from /Service/340x340/ to /Service/Original/, opened successfully as a 1675x1675 JPEG on the same assets.vagaro.com origin. No upload, sync, or provider-side mutation occurred.",
-    "requiredApproval": "Allow only HTTPS assets.vagaro.com under /business/<id>/Service/ with supported image-size segments, no URL credentials or nondefault port, and fail closed on off-policy redirects. Keep existing rackcdn validation and optional-image isolation.",
+    "sourcePolicyApproval": "Corey specifically approved allowing HTTPS assets.vagaro.com service-image paths, security tests and deployment. Exact host/path restrictions, credential/port checks and redirect validation implemented; other Vagaro subdomains remain rejected.",
     "deploymentPlan": [
       "After explicit source-policy approval, implement the exact host/path allowance and redirect validation with regression tests.",
       "Read-check observed Original-size assets and validate mocked ingestion of the observed source shape, including malicious host/path and redirect rejection.",
@@ -64,5 +66,31 @@
       "After separate deployment approval, deploy a candidate Worker version and retain 5544ded0-9c80-4eba-b986-2c7c75296b55 as rollback.",
       "Observe the next naturally scheduled run; confirm all 91 catalog records and zero photo-source validation failures without forcing a sync."
     ]
+  },
+  "deployment": {
+    "version": "159489e5-e9c8-463c-a6f0-6f05ecf2b1c7",
+    "deploymentId": "b1093c09-e3c2-48f9-9a25-2852d7679f2c",
+    "deployedAt": "2026-10-02T14:33:18.134131Z",
+    "trafficPercent": 100,
+    "codeCommit": "8a20368",
+    "interveningProductionDeployment": false,
+    "bindingsUnchanged": true,
+    "existingSecretsRetained": true,
+    "healthCheck": "ok: true",
+    "cronUnchanged": "0 6,14,22 * * *",
+    "rollbackVersion": "5544ded0-9c80-4eba-b986-2c7c75296b55",
+    "rollbackCommand": "wrangler versions deploy 5544ded0-9c80-4eba-b986-2c7c75296b55@100 --env '' --yes",
+    "pullRequest": "https://github.com/coreydylan/lashpop/pull/56",
+    "forcedSyncTriggered": false,
+    "baselineBeforeVerification": {
+      "latestRun": "e8b903a3-7cb9-49ae-8344-40f307137a90",
+      "latestRunStatus": "partial",
+      "latestRunError": "services: 56 service record(s) failed",
+      "totalServiceRows": 116,
+      "serviceRowsWithImage": 68,
+      "readyVagaroServiceImageRegistryRows": 58
+    },
+    "nextNaturalRun": "2026-10-02T22:00:00Z",
+    "verification": "pending; version-filtered live tail is connected"
   }
 }
