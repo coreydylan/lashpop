@@ -406,7 +406,7 @@ export default function ReviewsManagerPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-4 gap-4 mb-6"
+        className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-4 sm:gap-4"
       >
         <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
           <div className="text-2xl font-serif text-dune">{reviews.length + selectedReviews.length}</div>

@@ -153,7 +153,7 @@ export default async function SettingsOverviewPage() {
               <Users className="size-5" aria-hidden="true" />
             </span>
           </div>
-          <div className="mt-5 grid grid-cols-3 gap-2">
+          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
             {(Object.keys(ROLE_LABELS) as AdminRole[]).map((role) => (
               <div key={role} className="rounded-lg border border-black/10 bg-[#f8f4ee] px-3 py-3">
                 <p className="text-xl font-semibold text-[#292a27]">{roleCounts[role]}</p>

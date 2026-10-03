@@ -314,7 +314,7 @@ export default function FAQManagerPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-3 gap-4 mb-6"
+        className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-3 sm:gap-4"
       >
         <div className="glass rounded-2xl p-4 border border-sage/20 text-center">
           <div className="text-2xl font-serif text-dune">{categories.length}</div>
@@ -709,4 +709,3 @@ export default function FAQManagerPage() {
     </div>
   )
 }
-

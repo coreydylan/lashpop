@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, FormEvent } from "react"
-import { Phone, Image as ImageIcon } from "lucide-react"
+import { ArrowRight, Phone, ShieldCheck } from "lucide-react"
 import { motion } from "framer-motion"
 import { toE164 } from "@/lib/phone-utils"
 
@@ -84,97 +84,48 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cream via-warm-sand to-dusty-rose/30 px-4 overflow-hidden relative">
-      {/* Floating decorative elements */}
+    <main className="admin-login min-h-[100dvh] bg-[#f6f2ec] px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] text-[#292a27] sm:grid sm:place-items-center sm:p-8">
       <motion.div
-        animate={{
-          y: [0, -20, 0],
-          rotate: [0, 5, 0]
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        className="absolute top-20 right-20 w-32 h-32 rounded-full bg-sage/20 blur-3xl"
-      />
-      <motion.div
-        animate={{
-          y: [0, 20, 0],
-          rotate: [0, -5, 0]
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1
-        }}
-        className="absolute bottom-20 left-20 w-40 h-40 rounded-full bg-dusty-rose/20 blur-3xl"
-      />
-      <motion.div
-        animate={{
-          y: [0, -15, 0],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 0.5
-        }}
-        className="absolute top-1/3 left-1/4 w-24 h-24 rounded-full bg-golden/20 blur-2xl"
-      />
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="max-w-md w-full space-y-8 relative z-10"
+        transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+        className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-md flex-col justify-center sm:min-h-0 sm:w-full"
       >
-        {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.8 }}
-          className="text-center"
-        >
-          <div className="mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-gradient-to-br from-dusty-rose/30 to-terracotta/30 backdrop-blur-sm border border-dusty-rose/20 mb-6">
-            <ImageIcon className="h-10 w-10 text-terracotta" strokeWidth={1.5} />
+        <header className="border-b border-black/[0.09] pb-6">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 items-center justify-center rounded-full bg-[#292a27] font-serif text-xs tracking-[0.09em] text-[#fbf8f3]">LP</span>
+            <div>
+              <p className="font-serif text-xl leading-none">LashPop</p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-black/42">Studio desk</p>
+            </div>
           </div>
-          <h2 className="h2 text-dune">
-            Studio Admin
-          </h2>
-          <p className="mt-3 caption text-golden">
-            LashPop Studios
-          </p>
-          <p className="mt-2 body text-dune/60">
-            Sign in with your phone number
-          </p>
-        </motion.div>
+          <h1 className="mt-9 font-serif text-[2.15rem] leading-[1.02] tracking-[-0.02em] sm:text-4xl">Sign in to manage the studio.</h1>
+          <p className="mt-3 max-w-sm text-sm leading-6 text-black/55">Use the phone number connected to your LashPop admin access.</p>
+        </header>
 
-        {/* Form Section */}
         <motion.form
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.8 }}
-          className="mt-8 space-y-6"
+          transition={{ delay: 0.08, duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-7"
           onSubmit={step === "phone" ? handleSendOTP : handleVerifyOTP}
         >
-          <div className="glass border border-sage/20 rounded-3xl p-8 shadow-xl">
+          <div className="rounded-2xl border border-black/[0.1] bg-[#fbf8f3] p-5 shadow-[0_16px_44px_rgba(49,39,32,0.08)] sm:p-7">
             <div className="space-y-5">
               {step === "phone" ? (
                 <div>
-                  <label htmlFor="phoneNumber" className="block text-sm font-light text-dune/80 mb-2">
-                    Phone Number
+                  <label htmlFor="phoneNumber" className="block text-sm font-semibold text-[#292a27] mb-2">
+                    Phone number
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-sage" strokeWidth={1.5} />
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#a84f35]" strokeWidth={1.7} />
                     <input
                       id="phoneNumber"
                       name="phoneNumber"
                       type="tel"
                       autoComplete="tel"
                       required
-                      className="appearance-none relative block w-full pl-12 pr-4 py-3.5 border border-sage/30 placeholder-dune/40 text-dune bg-cream/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-dusty-rose/50 focus:border-dusty-rose transition-all"
+                      className="appearance-none relative block min-h-12 w-full rounded-xl border border-black/15 bg-white pl-12 pr-4 text-[#292a27] placeholder:text-black/35 focus:outline-none focus:ring-2 focus:ring-[#c96f50]/60 focus:border-[#c96f50] transition-colors"
                       placeholder="(555) 123-4567"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
@@ -184,8 +135,8 @@ export default function AdminLogin() {
                 </div>
               ) : (
                 <div>
-                  <label htmlFor="otp" className="block text-sm font-light text-dune/80 mb-2">
-                    Verification Code
+                  <label htmlFor="otp" className="block text-sm font-semibold text-[#292a27] mb-2">
+                    Verification code
                   </label>
                   <div className="relative">
                     <input
@@ -197,7 +148,7 @@ export default function AdminLogin() {
                       autoComplete="one-time-code"
                       required
                       maxLength={6}
-                      className="appearance-none relative block w-full px-4 py-3.5 border border-sage/30 placeholder-dune/40 text-dune bg-cream/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-dusty-rose/50 focus:border-dusty-rose transition-all text-center text-2xl tracking-widest font-mono"
+                      className="appearance-none relative block min-h-14 w-full rounded-xl border border-black/15 bg-white px-4 text-center font-mono text-2xl tracking-[0.38em] text-[#292a27] placeholder:text-black/25 focus:outline-none focus:ring-2 focus:ring-[#c96f50]/60 focus:border-[#c96f50] transition-colors"
                       placeholder="000000"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
@@ -205,7 +156,7 @@ export default function AdminLogin() {
                       autoFocus
                     />
                   </div>
-                  <p className="mt-2 text-xs text-center text-dune/60">
+                  <p className="mt-2 text-xs text-center text-black/52">
                     Sent to {phoneNumber}
                   </p>
                   <button
@@ -215,7 +166,7 @@ export default function AdminLogin() {
                       setOtp("")
                       setError("")
                     }}
-                    className="mt-2 text-xs text-center w-full text-dusty-rose hover:text-terracotta transition-colors"
+                    className="mt-2 min-h-11 w-full text-center text-xs font-semibold text-[#a84f35] hover:text-[#7f3927] transition-colors"
                   >
                     Change number
                   </button>
@@ -226,42 +177,39 @@ export default function AdminLogin() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-2xl bg-terracotta/10 border border-terracotta/30 p-4"
+                  className="rounded-xl border border-[#a84f35]/25 bg-[#a84f35]/[0.08] p-4"
                 >
-                  <p className="text-sm text-terracotta font-light">{error}</p>
+                  <p className="text-sm text-[#8f402b]">{error}</p>
                 </motion.div>
               )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center items-center gap-2 py-3.5 px-6 border border-transparent font-light rounded-full text-cream bg-gradient-to-r from-dusty-rose to-terracotta hover:from-terracotta hover:to-dusty-rose focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dusty-rose disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+                className="group relative flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#292a27] px-6 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(31,27,23,0.15)] transition-colors hover:bg-[#3a3530] focus:outline-none focus:ring-2 focus:ring-[#c96f50] focus:ring-offset-2 focus:ring-offset-[#fbf8f3] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <>
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-5 h-5 border-2 border-cream/30 border-t-cream rounded-full"
+                      className="size-5 rounded-full border-2 border-white/30 border-t-white"
                     />
-                    <span className="caption">{step === "phone" ? "Sending..." : "Verifying..."}</span>
+                    <span>{step === "phone" ? "Sending…" : "Verifying…"}</span>
                   </>
                 ) : (
                   <>
-                    <Phone className="w-4 h-4" />
-                    <span className="caption">{step === "phone" ? "Send Code" : "Verify & Access"}</span>
+                    {step === "phone" ? <Phone className="size-4" /> : <ArrowRight className="size-4" />}
+                    <span>{step === "phone" ? "Send code" : "Verify and enter"}</span>
                   </>
                 )}
               </button>
             </div>
           </div>
 
-          {/* Footer note */}
-          <p className="text-center text-xs text-dune/40 font-light">
-            Secure phone authentication for LashPop Studios team
-          </p>
         </motion.form>
+        <p className="mt-5 flex items-center gap-2 text-xs leading-5 text-black/42"><ShieldCheck className="size-4 shrink-0 text-[#a84f35]" /> Private access for the LashPop team.</p>
       </motion.div>
-    </div>
+    </main>
   )
 }

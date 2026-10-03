@@ -191,7 +191,32 @@ export function SubscriberDirectory({ initialSubscribers, canManage }: Subscribe
             <p className="mt-1 text-sm text-black/50">Clear the search or change the filters to see the complete ledger.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <ol className="divide-y divide-black/10 sm:hidden" aria-label="Newsletter subscriber consent records">
+            {filteredSubscribers.map((subscriber) => (
+              <li key={subscriber.id} className="px-4 py-4">
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(subscriber.id)}
+                  className="block min-h-11 w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c96f50] focus-visible:ring-offset-2"
+                  aria-label={`Open subscriber record for ${subscriber.email}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0 break-all text-sm font-semibold text-[#292a27]">{subscriber.email}</span>
+                    <ChevronRight className="mt-0.5 size-4 shrink-0 text-[#9a4932]" aria-hidden="true" />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-black/52">
+                    <StatusBadge status={subscriber.status} />
+                    <time dateTime={subscriber.subscribedAt ?? undefined}>Joined {formatDate(subscriber.subscribedAt, true)}</time>
+                    <span>{sourceLabel(subscriber.source)}</span>
+                  </div>
+                  {subscriber.notes && <p className="mt-2 overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-5 text-black/45">{subscriber.notes}</p>}
+                </button>
+              </li>
+            ))}
+          </ol>
+
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[48rem] text-left text-sm">
               <caption className="sr-only">Newsletter subscriber consent records</caption>
               <thead className="text-[11px] font-semibold uppercase tracking-[0.12em] text-black/45">
@@ -232,6 +257,7 @@ export function SubscriberDirectory({ initialSubscribers, canManage }: Subscribe
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
 
