@@ -103,7 +103,7 @@
       ]
     },
     {
-      "sql": "select \"id\", \"source\", \"source_url\", \"source_urls\", \"reviewer_name\", \"subject\", \"team_member_id\", \"review_text\", \"rating\", \"review_date\", \"response_text\", \"response_date\", \"raw_payload\", \"show_on_website\", \"include_in_schema\", \"homepage_dismissed\", \"hidden_reason\", \"quality_scored_at\", \"editor_notes\", \"admin_locked_fields\", \"created_at\", \"updated_at\" from \"reviews\" where (\"reviews\".\"id\" in (?, ?) and \"reviews\".\"show_on_website\" = ?)",
+      "sql": "select \"id\", \"source\", \"source_url\", \"source_urls\", \"reviewer_name\", \"subject\", \"team_member_id\", \"review_text\", \"rating\", \"review_date\", \"response_text\", \"response_date\", \"raw_payload\", \"show_on_website\", \"include_in_schema\", \"homepage_dismissed\", \"hidden_reason\", \"quality_score\", \"quality_scored_at\", \"editor_notes\", \"admin_locked_fields\", \"created_at\", \"updated_at\" from \"reviews\" where (\"reviews\".\"id\" in (?, ?) and \"reviews\".\"show_on_website\" = ?)",
       "kind": "review-ids",
       "params": []
     },
@@ -113,8 +113,48 @@
       "params": []
     },
     {
-      "sql": "select \"id\", \"source\", \"source_url\", \"source_urls\", \"reviewer_name\", \"subject\", \"team_member_id\", \"review_text\", \"rating\", \"review_date\", \"response_text\", \"response_date\", \"raw_payload\", \"show_on_website\", \"include_in_schema\", \"homepage_dismissed\", \"hidden_reason\", \"quality_scored_at\", \"editor_notes\", \"admin_locked_fields\", \"created_at\", \"updated_at\" from \"reviews\" where (\"reviews\".\"rating\" >= ? and \"reviews\".\"show_on_website\" = ?) order by \"reviews\".\"review_date\" desc limit ?",
+      "sql": "select \"id\", \"source\", \"source_url\", \"source_urls\", \"reviewer_name\", \"subject\", \"team_member_id\", \"review_text\", \"rating\", \"review_date\", \"response_text\", \"response_date\", \"raw_payload\", \"show_on_website\", \"include_in_schema\", \"homepage_dismissed\", \"hidden_reason\", \"quality_score\", \"quality_scored_at\", \"editor_notes\", \"admin_locked_fields\", \"created_at\", \"updated_at\" from \"reviews\" where (\"reviews\".\"rating\" >= ? and \"reviews\".\"show_on_website\" = ?) order by \"reviews\".\"review_date\" desc limit ?",
       "kind": "high-rated",
+      "params": []
+    },
+    {
+      "sql": "select \"id\", COALESCE(\"display_name\", \"name\"), \"slug\", \"description\", \"tagline\", \"icon\", \"display_order\" from \"service_categories\" where (\"service_categories\".\"is_active\" = ? and \"service_categories\".\"show_in_booking\" = ?) order by \"service_categories\".\"display_order\" asc",
+      "kind": "exact",
+      "params": [
+        1,
+        1
+      ]
+    },
+    {
+      "sql": "select \"services\".\"id\", \"services\".\"name\", \"services\".\"slug\", \"services\".\"subtitle\", COALESCE(\"services\".\"description\", \"services\".\"vagaro_description\"), \"services\".\"duration_minutes\", \"services\".\"price_starting\", COALESCE(\"services\".\"vagaro_image_url\", \"services\".\"image_url\"), \"services\".\"color\", \"services\".\"category_id\", \"service_categories\".\"name\", \"service_categories\".\"slug\", \"services\".\"subcategory_id\", \"service_subcategories\".\"name\", \"service_subcategories\".\"slug\", \"services\".\"vagaro_widget_url\", \"services\".\"vagaro_service_code\", \"services\".\"vagaro_service_id\", \"services\".\"main_category\" from \"services\" left join \"service_categories\" on \"services\".\"category_id\" = \"service_categories\".\"id\" left join \"service_subcategories\" on \"services\".\"subcategory_id\" = \"service_subcategories\".\"id\" where (\"services\".\"slug\" = ? and \"services\".\"is_active\" = ?) limit ?",
+      "kind": "public-service",
+      "params": []
+    },
+    {
+      "sql": "select \"assets\".\"external_id\", \"assets\".\"file_path\", \"assets\".\"source_metadata\", \"assets\".\"caption\", \"assets\".\"uploaded_at\" from \"assets\" inner join \"asset_tags\" on \"assets\".\"id\" = \"asset_tags\".\"asset_id\" where \"asset_tags\".\"tag_id\" = ? order by \"assets\".\"uploaded_at\" desc limit ?",
+      "kind": "instagram",
+      "params": []
+    },
+    {
+      "sql": "select \"slug\", \"updated_at\" from \"services\" where \"services\".\"is_active\" = ?",
+      "kind": "exact",
+      "params": [
+        1
+      ]
+    },
+    {
+      "sql": "select \"id\", \"name\", \"display_name\", \"slug\", \"description\", \"tagline\", \"icon\", \"display_order\", \"is_active\", \"source_type\", \"show_in_booking\", \"sync_status\", \"last_synced_at\", \"key_image_asset_id\", \"created_at\", \"updated_at\" from \"service_categories\" where \"service_categories\".\"slug\" = ? limit ?",
+      "kind": "category-slug",
+      "params": []
+    },
+    {
+      "sql": "select \"id\", \"vagaro_service_id\", \"vagaro_parent_service_id\", \"vagaro_widget_url\", \"vagaro_service_code\", \"vagaro_data\", \"vagaro_image_url\", \"vagaro_image_source_url\", \"category_id\", \"subcategory_id\", \"name\", \"slug\", \"subtitle\", \"description\", \"vagaro_description\", \"duration_minutes\", \"price_starting\", \"image_url\", \"color\", \"display_order\", \"is_active\", \"main_category\", \"sub_category\", \"display_title\", \"key_image_asset_id\", \"use_demo_photos\", \"created_at\", \"updated_at\", \"last_synced_at\" from \"services\" where (\"services\".\"category_id\" = ? and \"services\".\"is_active\" = ?) order by \"services\".\"display_order\"",
+      "kind": "category-services",
+      "params": []
+    },
+    {
+      "sql": "select \"asset_id\" from \"asset_services\" where \"asset_services\".\"service_id\" = ?",
+      "kind": "service-id",
       "params": []
     }
   ],
@@ -821,5 +861,122 @@
     "cb2019cc-82cb-4745-a9e6-c475fa7df86f",
     "d3f3edb5-33ed-4fb4-814f-490e6dae0ca5",
     "05e2f72d-3f36-497b-8140-175f00680cc3"
-  ]
+  ],
+  "serviceIds": [
+    "03241052-cb05-411e-913d-e097bd161561",
+    "10a3dc1d-d402-469a-b8da-ab15c0d444f7",
+    "14e8c12d-6e45-4175-8c6a-ab8459bc49ba",
+    "181ee5e4-24cb-4321-9038-dbf0916ac622",
+    "185001b5-ef5a-43a2-80e1-5e99e8564427",
+    "1c65dba1-244b-4df0-8248-03184d8b39e7",
+    "1d24fc3b-c8e7-4462-a210-2b95c92e6034",
+    "1e208b61-3d93-4c51-b49e-7eca1ac979c6",
+    "1f28456c-7fdc-4dd1-a426-d6c8f659f824",
+    "209fd7ae-65b9-4be7-8dc1-c7b320388b91",
+    "248226bb-aa15-4b59-9bb4-f7a9225f2dbd",
+    "270f590e-1ed5-4c50-b657-cdeb665cad04",
+    "29c54996-5367-4daa-bc69-cddd683774cb",
+    "2bd4bb38-1148-4230-bacf-75e8fc509dc3",
+    "2d67c45a-0cd3-42db-bc09-c53d2c916c58",
+    "31212f41-9995-4b6e-b7f0-4f19f0510634",
+    "3154d4ba-c93c-4cac-9404-9f5a0ddbe5be",
+    "366c2b29-adcf-4cba-a5ce-669bbe7360dd",
+    "36abc885-ed4f-4bee-8a18-cd4ed15ba7ba",
+    "399a6304-bb5e-45da-9c5c-e6711ddcb967",
+    "417c00ec-aae2-4f60-9466-cd829861c224",
+    "419b60c5-dee8-4701-86c7-f7c7ffeda067",
+    "42151ca6-6dd0-493f-a90d-cd5c8f1f3894",
+    "4bf17577-3180-464f-b9d4-d5eed240d3ac",
+    "4c85c182-f4f5-4b28-8f15-b478bebcc5f3",
+    "556e89a7-a7bf-4c70-92e3-7642cbb84194",
+    "5979e206-c87c-4e61-abb9-52690735c9d0",
+    "60bc17fe-57da-4347-bb47-57adf59bd516",
+    "650938d2-607e-4a11-a4d2-66302b8a2a4c",
+    "66279f12-6ad8-402a-b6b0-e060c10c2020",
+    "67cdc2bc-d2e6-46a8-a7b1-c18e9c3b4d2f",
+    "6a1fc6c8-e231-4793-bb37-fb0164223bb9",
+    "70128fa2-9c97-44c3-ae39-fc5fc3d728f6",
+    "7291ea20-0abd-4c36-ae2e-e5b7fcef51fa",
+    "72e961b8-ac95-4db3-9cf9-ea31c7f56d9f",
+    "74c534d5-5161-4477-bcad-10ee4bd943aa",
+    "77d42b71-71c9-4db6-8db4-3202ad73d48f",
+    "7b3da425-ce8e-4959-9832-d4efc8c03d0f",
+    "7c22d668-d2c5-4cf7-97d4-d4c961427d15",
+    "7d4cc43c-5a0d-4a70-9597-3306a88476c9",
+    "7d537598-4429-4c03-ba77-45c130a9812c",
+    "82aa4005-3fbc-4e6b-9143-da1d97355e92",
+    "82b243c7-5015-4699-a9e3-7c1f90c5615b",
+    "87fe1ade-c663-4531-a600-4abbab07b551",
+    "892adedb-cccd-4e2b-b331-717daff44762",
+    "89595e66-9ae3-4025-8b29-dfe8b4f43bb8",
+    "8a61ee23-2cf1-4164-8525-c35303a64210",
+    "8d8e06d6-d41e-4d3a-92e8-0efdac97ee10",
+    "92be4300-ee96-4b60-bac0-c0ef92c17c70",
+    "92d78c5a-7199-4424-994c-a4728407f775",
+    "9585a06e-85d5-4c59-bb6c-4fd674176317",
+    "97e9e73d-ab49-47cf-a2d8-7f7fff7e3d28",
+    "a32009e1-319b-41c4-b153-11b23fab32da",
+    "a3d149b2-e284-4e22-ba9b-a8b1497b1d38",
+    "a4a725df-1a6c-4434-9c1b-d3c0713fd647",
+    "a57d0d77-329d-4e80-99cc-ab5760a91537",
+    "afdd6326-6e1e-4bc1-8d6c-f95dc1c5e849",
+    "b5058f4e-9b7c-4250-a01d-f311c02fed9a",
+    "b581d126-af64-4a40-8b38-6eaff8c43e67",
+    "b5d9168c-6452-4d1e-a331-3ec57c35e151",
+    "b65520e5-3b36-4b7c-a28b-f83bfbbf1105",
+    "b9a7c484-c90e-462d-b9ac-db0b45a1a0ef",
+    "b9d4aa62-0fb7-41f9-b087-186894ccef50",
+    "c27d88ef-4298-49bb-a6aa-49fad674f254",
+    "c3770a49-6902-4e63-aa2f-4273fc834402",
+    "c5734134-2913-4292-b79a-85ef638ec5ab",
+    "c8d0582c-f875-49ec-9b80-b5715680b21a",
+    "cab85bfb-53b8-4cc2-8e1e-d001667f99bc",
+    "caf5bdd0-bd41-467e-b745-7290f7d607d0",
+    "cddcd36b-3197-49d0-af60-a91997ac3eb2",
+    "cfed3783-a093-40b5-be01-efebd02bd5e7",
+    "d5743be2-4333-42ec-bd86-ae46aaac1ae2",
+    "d722fcf4-bccb-4d8d-83ac-95ff4cbaa094",
+    "d7e6e20b-5dcf-45e2-be9c-ce2113950377",
+    "da8715dd-8acc-42e3-8c92-8f9dbda12d29",
+    "de901c00-8469-4e3b-98ce-5f9d89781721",
+    "e133f0ce-1101-41c3-9a36-05b0c12d7952",
+    "e587e384-66be-40d3-8e92-79d123ab0f46",
+    "eaadb981-16f7-4b8d-ba37-7ee385399fe0",
+    "ec6423b0-7a02-44d5-8cba-189bd509a089",
+    "ef00d086-bbcf-456d-8452-8bb9a52d543a",
+    "ef03cd65-eb83-4a34-99b0-c280d172d79b",
+    "f81256e0-a676-40e4-9964-763d4feaa936",
+    "f994cf55-cae1-4f08-a67a-84c98911f627",
+    "f9a68722-93c5-4e01-bf7c-ebb4dd72589e",
+    "fa0dea85-69f1-4c53-839e-ee98b7d66234",
+    "fb442c23-e2eb-41a1-9ae6-86c0da5cf656",
+    "fecdc31d-6451-4a96-a407-07c3f2cf670a",
+    "ff51a66a-6374-46b5-a559-e4efdb608d3a",
+    "28d9838a-93ed-4ab8-9c30-b724eefacfd8",
+    "72cb5cd8-bccb-4241-9dee-fd65f60bb841",
+    "7d3157c6-3902-41e3-bdb9-9e0881e7ab1e"
+  ],
+  "categoryIds": [
+    "16416739-84fe-444e-9bbe-61f8a27152fa",
+    "4d3c731b-e55c-45e0-bd6b-2df692f614ee",
+    "60f1d079-e613-47d3-a9d1-3f22f519e120",
+    "af16bf92-4856-41c6-80cd-58bc62b87c34",
+    "cdcf308c-9aea-435b-8b5b-b67d32775e62",
+    "dc41dd66-b1e8-4150-86eb-8ec8bb455423",
+    "efb59a90-2c59-47d2-8d7d-56490ca2f795",
+    "f054c339-4564-4cf6-b09d-4a65076516a1",
+    "4ab37a96-6476-4ad8-a093-bd4f7ec2bf5a"
+  ],
+  "categorySlugs": [
+    "specialty",
+    "injectables",
+    "facials",
+    "brows",
+    "bundles",
+    "lashes",
+    "waxing",
+    "permanent-makeup",
+    "fine-line-tattoos"
+  ],
+  "instagramTag": "1597928b-6035-4890-a258-68b3c05186ba"
 }

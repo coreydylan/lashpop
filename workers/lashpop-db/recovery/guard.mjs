@@ -9,6 +9,11 @@ export function isPublicRead(input) {
   const r = rules.find(r => r.normalized === normalize(input.sql)); if (!r) return false;
   const p = input.params;
   switch (r.kind) {
+    case "public-service": return p.length===3 && typeof p[0]==="string" && /^[a-z0-9][a-z0-9-]{0,127}$/.test(p[0]) && p[1]===1 && p[2]===1;
+    case "instagram": return p.length===2 && p[0]===config.instagramTag && Number.isInteger(p[1]) && p[1]>0 && p[1]<=20;
+    case "category-slug": return p.length===2 && config.categorySlugs.includes(p[0]) && p[1]===1;
+    case "category-services": return p.length===2 && config.categoryIds.includes(p[0]) && p[1]===1;
+    case "service-id": return p.length===1 && config.serviceIds.includes(p[0]);
     case "exact": return JSON.stringify(p) === JSON.stringify(r.params);
     case "service-slug": return p.length===2 && slugs.has(p[0]) && p[1]===1;
     case "public-setting": return p.length===2 && sections.has(p[0]) && p[1]===1;
