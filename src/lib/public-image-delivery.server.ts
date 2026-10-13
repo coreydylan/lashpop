@@ -5,6 +5,7 @@ import { createHash } from "node:crypto"
 import {
   cloudflareImageDeliveryUrl,
   isCloudflareImageDeliveryUrl,
+  publicCloudflareDeliveryUrl,
   staticCloudflareImageUrl,
 } from "@/lib/cloudflare-image-delivery"
 
@@ -39,7 +40,7 @@ function canonicalSource(value: string): string | null {
 }
 
 export function resolvePublicImageUrl(value: string): string {
-  if (isCloudflareImageDeliveryUrl(value)) return value
+  if (isCloudflareImageDeliveryUrl(value)) return publicCloudflareDeliveryUrl(value)
   const staticUrl = staticCloudflareImageUrl(value)
   if (staticUrl) return staticUrl
   const canonical = canonicalSource(value)

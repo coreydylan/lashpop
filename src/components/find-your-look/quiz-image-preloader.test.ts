@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import test from 'node:test'
+
+// These assertions pin normal hosted delivery. Recovery-mode URL and srcset
+// behavior is exercised separately by src/lib/image-recovery.test.ts.
+delete process.env.NEXT_PUBLIC_IMAGE_RECOVERY_ORIGIN
 import type { LashStyle, QuizPhoto } from './types'
 import {
   getQuizImageLoadPlan,
