@@ -1,0 +1,21 @@
+{
+  "name": "lashpop-public-media-recovery",
+  "main": "src/index.js",
+  "account_id": "6403dd5f08611df5a2b944ea9ee7af6b",
+  "compatibility_date": "2026-10-13",
+  "workers_dev": false,
+  "preview_urls": false,
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "lashpop-dam"
+    }
+  ],
+  "images": {
+    "binding": "IMAGES"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.01
+  }
+}

@@ -2,6 +2,7 @@ import {
   cloudflareFlexibleVariantUrl,
   isCloudflareImageDeliveryUrl,
   staticCloudflareImageUrl,
+  publicCloudflareDeliveryUrl,
 } from "@/lib/cloudflare-image-delivery"
 
 type Props = { src: string; width: number; quality?: number }
@@ -19,7 +20,9 @@ function qualityForWidth(width: number, requested?: number): number {
 }
 
 function directSource(src: string): string | null {
-  if (isCloudflareImageDeliveryUrl(src)) return src
+  if (isCloudflareImageDeliveryUrl(src)) return publicCloudflareDeliveryUrl(src)
+  const recoveryOrigin = process.env.NEXT_PUBLIC_IMAGE_RECOVERY_ORIGIN?.replace(/\/$/, '')
+  if (recoveryOrigin && src.startsWith(`${recoveryOrigin}/image/`)) return src
   return staticCloudflareImageUrl(src)
 }
 
