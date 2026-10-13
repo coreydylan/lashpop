@@ -1,0 +1,22 @@
+{
+  "name": "lashpop-public-recovery-reader",
+  "main": "reader.mjs",
+  "account_id": "6403dd5f08611df5a2b944ea9ee7af6b",
+  "compatibility_date": "2026-07-15",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "preview_urls": false,
+  "routes": [],
+  "triggers": {
+    "crons": []
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "claro-test-lashpop-production-20261013",
+      "database_id": "fbf46446-a6f5-4bf8-800c-a3dca63825d4"
+    }
+  ]
+}
