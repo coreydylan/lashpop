@@ -9,6 +9,7 @@ import {
 import { user } from "./schema/auth_user"
 import { session } from "./schema/auth_session"
 import { verification } from "./schema/auth_verification"
+import { account } from "./schema/auth_account"
 
 // User profile schemas
 import { profiles } from "./schema/profiles"
@@ -87,6 +88,7 @@ const dbSchema = {
   user,
   session,
   verification,
+  account,
 
   // Profile tables
   profiles,
@@ -246,6 +248,7 @@ export {
   user,
   session,
   verification,
+  account,
   // Profiles
   profiles,
   vagaroSyncMappings,

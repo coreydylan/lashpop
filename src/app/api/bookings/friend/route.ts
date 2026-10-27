@@ -5,7 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { getSessionFromHeaders } from '@/lib/auth'
 import { getDb } from '@/db'
 import { friendBookingRequests } from '@/db/schema/friend_booking_requests'
 import { user as userSchema } from '@/db/schema/auth_user'
@@ -18,7 +18,7 @@ import { toE164 } from '@/lib/phone-utils'
 export async function POST(req: NextRequest) {
   try {
     // Get session
-    const session = await auth.api.getSession({ headers: req.headers })
+    const session = await getSessionFromHeaders(req.headers)
 
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -362,3 +362,37 @@ test('documented Emily rollback restores the requested fields and preserves late
   assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
   db.close();
 });
+
+test('auth schema additions preserve existing users, session tokens, expiry and verification rows', () => {
+  const db = new DatabaseSync(':memory:');
+  db.exec('PRAGMA foreign_keys = ON');
+  const files = migrationFiles();
+  const migration = '0015_auth_schema_compatibility.sql';
+  const index = files.indexOf(migration);
+  assert.notEqual(index, -1);
+  for (const file of files.slice(0, index)) apply(db, file);
+  insertRow(db, 'user', { id: 'existing-auth-user', name: null, email: null, phone_number: '+15555550123', admin_role: 'owner', dam_access: 1 });
+  insertRow(db, 'session', { id: 'existing-session', user_id: 'existing-auth-user', token: 'existing-opaque-token', expires_at: 2_000_000_000_000, created_at: 1_700_000_000_000 });
+  insertRow(db, 'verification', { id: 'existing-verification', identifier: 'local-fixture', value: 'fixture-value', expires_at: 2_000_000_000_000, created_at: 1_700_000_000_001 });
+  const user = db.prepare('SELECT * FROM user').all();
+  const session = db.prepare('SELECT * FROM session').get()!;
+  const verification = db.prepare('SELECT * FROM verification').get()!;
+  apply(db, migration);
+  assert.deepEqual(db.prepare('SELECT * FROM user').all(), user);
+  for (const [column, value] of Object.entries(session)) {
+    assert.equal(db.prepare('SELECT * FROM session').get()?.[column], value);
+  }
+  for (const [column, value] of Object.entries(verification)) {
+    assert.equal(db.prepare('SELECT * FROM verification').get()?.[column], value);
+  }
+  assert.equal(db.prepare('SELECT updated_at FROM session').get()?.updated_at, session.created_at);
+  assert.equal(db.prepare('SELECT updated_at FROM verification').get()?.updated_at, verification.created_at);
+  assert.equal(db.prepare('SELECT count(*) AS n FROM account').get()?.n, 0);
+  // The previous production app can continue writing its original column set
+  // during the additive migration/deployment window.
+  insertRow(db, 'session', { id: 'legacy-insert', user_id: 'existing-auth-user', token: 'legacy-insert-token' });
+  assert.equal(db.prepare("SELECT updated_at FROM session WHERE id = 'legacy-insert'").get()?.updated_at, 0);
+  assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
+  assert.equal(db.prepare('PRAGMA quick_check').get()?.quick_check, 'ok');
+  db.close();
+});
