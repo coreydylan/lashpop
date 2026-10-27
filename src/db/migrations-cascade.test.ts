@@ -254,3 +254,111 @@ test('website notes migration applies only the guarded client-approved data corr
   assert.equal(check.length, 0, `foreign_key_check found violations: ${JSON.stringify(check)}`);
   db.close();
 });
+
+const EMILY_MIGRATION = '0014_emily_team_edits.sql';
+const PAIGE_ID = '0bf9968f-69ea-4e66-ae3a-8c80ec3c7296';
+const KELLY_R_ID = 'ff5f9b78-e530-4b7f-808b-c20f90f6e5da';
+const KELLY_K_ID = 'f99aef2d-9a3a-4868-a17b-9a74ed274bcc';
+const KELLY_FACT_ID = 'fc789695-c63c-46fd-be93-4f08bfcb6096';
+const KELLY_MOVIE_ID = '4f02a8f7-e218-4b1b-b0e1-0d64ce04c8f5';
+const OLD_KELLY_FACT = 'Can recite The Nightmare Before Christmas word for word';
+
+function emilyMigrationDatabase(): DatabaseSync {
+  const db = new DatabaseSync(':memory:');
+  db.exec('PRAGMA foreign_keys = ON');
+  const files = migrationFiles();
+  const index = files.indexOf(EMILY_MIGRATION);
+  assert.notEqual(index, -1);
+  for (const file of files.slice(0, index)) apply(db, file);
+  insertRow(db, 'team_members', { id: PAIGE_ID, name: 'Paige Gordon', is_active: 1, show_on_website: 1 });
+  insertRow(db, 'team_members', { id: KELLY_R_ID, name: 'Kelly Richter', fun_fact: OLD_KELLY_FACT, is_active: 1, show_on_website: 1 });
+  insertRow(db, 'team_members', { id: KELLY_K_ID, name: 'Kelly Katona', fun_fact: 'Keep Kelly Katona', is_active: 1, show_on_website: 1 });
+  insertRow(db, 'team_quick_facts', { id: KELLY_FACT_ID, team_member_id: KELLY_R_ID, fact_type: 'fun_fact', value: OLD_KELLY_FACT });
+  insertRow(db, 'team_quick_facts', { id: KELLY_MOVIE_ID, team_member_id: KELLY_R_ID, fact_type: 'movie', value: 'The Nightmare Before Christmas' });
+  insertRow(db, 'team_quick_facts', { id: 'kelly-coffee', team_member_id: KELLY_R_ID, fact_type: 'coffee', value: 'Iced vanilla latte' });
+  insertRow(db, 'team_quick_facts', { id: 'kelly-k-movie', team_member_id: KELLY_K_ID, fact_type: 'movie', value: 'Pride & Prejudice' });
+  insertRow(db, 'team_member_photos', { id: 'paige-photo', team_member_id: PAIGE_ID });
+  return db;
+}
+
+test('Emily team edits hide Paige, update only Kelly Richter and are safe to replay', () => {
+  const db = emilyMigrationDatabase();
+  const beforeKellyK = db.prepare('SELECT * FROM team_members WHERE id = ?').get(KELLY_K_ID);
+  const beforeFacts = db.prepare('SELECT * FROM team_quick_facts WHERE id IN (?, ?) ORDER BY id').all('kelly-coffee', 'kelly-k-movie');
+  const beforePhoto = db.prepare('SELECT * FROM team_member_photos WHERE id = ?').get('paige-photo');
+  apply(db, EMILY_MIGRATION);
+
+  const paige = db.prepare('SELECT show_on_website, is_active, show_on_website_actor, show_on_website_reason FROM team_members WHERE id = ?').get(PAIGE_ID) as {
+    show_on_website: number; is_active: number; show_on_website_actor: string; show_on_website_reason: string;
+  };
+  assert.equal(paige.show_on_website, 0);
+  assert.equal(paige.is_active, 1, 'website removal must not deactivate a provider');
+  assert.equal(paige.show_on_website_actor, 'migration:0014_emily_team_edits');
+  assert.match(paige.show_on_website_reason, /Emily Rogers/);
+  assert.deepEqual(db.prepare('SELECT * FROM team_member_photos WHERE id = ?').get('paige-photo'), beforePhoto);
+  assert.equal(db.prepare('SELECT fun_fact FROM team_members WHERE id = ?').get(KELLY_R_ID)?.fun_fact, 'I’ve traveled to 11 countries');
+  assert.equal(db.prepare('SELECT value FROM team_quick_facts WHERE id = ?').get(KELLY_FACT_ID)?.value, 'I’ve traveled to 11 countries');
+  assert.equal(db.prepare('SELECT value FROM team_quick_facts WHERE id = ?').get(KELLY_MOVIE_ID)?.value, 'Twilight');
+  assert.deepEqual(db.prepare('SELECT * FROM team_members WHERE id = ?').get(KELLY_K_ID), beforeKellyK);
+  assert.deepEqual(db.prepare('SELECT * FROM team_quick_facts WHERE id IN (?, ?) ORDER BY id').all('kelly-coffee', 'kelly-k-movie'), beforeFacts);
+  const audit = db.prepare("SELECT target_id, diff FROM admin_audit_log WHERE notes LIKE 'Migration 0014:%' ORDER BY target_id").all();
+  assert.equal(audit.length, 4);
+  assert.deepEqual(JSON.parse((audit.find(row => row.target_id === KELLY_MOVIE_ID) as { diff: string }).diff), {
+    before: { value: 'The Nightmare Before Christmas' }, after: { value: 'Twilight' },
+  });
+  const state = db.prepare('SELECT * FROM team_members ORDER BY id').all();
+  const facts = db.prepare('SELECT * FROM team_quick_facts ORDER BY id').all();
+  apply(db, EMILY_MIGRATION);
+  assert.deepEqual(db.prepare('SELECT * FROM team_members ORDER BY id').all(), state);
+  assert.deepEqual(db.prepare('SELECT * FROM team_quick_facts ORDER BY id').all(), facts);
+  assert.deepEqual(db.prepare("SELECT target_id, diff FROM admin_audit_log WHERE notes LIKE 'Migration 0014:%' ORDER BY target_id").all(), audit);
+  assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
+  db.close();
+});
+
+test('Emily migration preserves subsequent owner edits and renamed or mismatched identities', () => {
+  const db = emilyMigrationDatabase();
+  db.prepare('UPDATE team_members SET show_on_website_reason = ? WHERE id = ?').run('Owner chose to publish Paige', PAIGE_ID);
+  db.prepare('UPDATE team_members SET fun_fact = ? WHERE id = ?').run('A newer fun fact', KELLY_R_ID);
+  db.prepare('UPDATE team_quick_facts SET value = ? WHERE id = ?').run('A newer movie', KELLY_MOVIE_ID);
+  db.prepare('UPDATE team_quick_facts SET team_member_id = ? WHERE id = ?').run(KELLY_K_ID, KELLY_FACT_ID);
+  const members = db.prepare('SELECT * FROM team_members ORDER BY id').all();
+  const facts = db.prepare('SELECT * FROM team_quick_facts ORDER BY id').all();
+  apply(db, EMILY_MIGRATION);
+  assert.deepEqual(db.prepare('SELECT * FROM team_members ORDER BY id').all(), members);
+  assert.deepEqual(db.prepare('SELECT * FROM team_quick_facts ORDER BY id').all(), facts);
+  assert.equal(db.prepare("SELECT count(*) AS n FROM admin_audit_log WHERE notes LIKE 'Migration 0014:%'").get()?.n, 0);
+
+  db.prepare('UPDATE team_members SET name = ? WHERE id = ?').run('Another Paige', PAIGE_ID);
+  db.prepare('UPDATE team_members SET name = ?, fun_fact = ? WHERE id = ?').run('Another Kelly', OLD_KELLY_FACT, KELLY_R_ID);
+  db.prepare('UPDATE team_quick_facts SET value = ? WHERE id = ?').run('The Nightmare Before Christmas', KELLY_MOVIE_ID);
+  apply(db, EMILY_MIGRATION);
+  assert.equal(db.prepare('SELECT value FROM team_quick_facts WHERE id = ?').get(KELLY_MOVIE_ID)?.value, 'The Nightmare Before Christmas');
+  assert.equal(db.prepare("SELECT count(*) AS n FROM admin_audit_log WHERE notes LIKE 'Migration 0014:%'").get()?.n, 0);
+  db.close();
+});
+
+test('documented Emily rollback restores the requested fields and preserves later edits', () => {
+  const db = emilyMigrationDatabase();
+  const runbook = readFileSync(path.join(process.cwd(), 'docs/ops/emily-team-edits-2026-10-27.md'), 'utf8');
+  const rollback = runbook.match(/```sql\n([\s\S]*?)\n```/)?.[1];
+  assert.ok(rollback, 'the release runbook must contain executable rollback SQL');
+  apply(db, EMILY_MIGRATION);
+  db.exec(rollback);
+  assert.equal(db.prepare('SELECT show_on_website FROM team_members WHERE id = ?').get(PAIGE_ID)?.show_on_website, 1);
+  assert.equal(db.prepare('SELECT show_on_website_actor FROM team_members WHERE id = ?').get(PAIGE_ID)?.show_on_website_actor, null);
+  assert.equal(db.prepare('SELECT fun_fact FROM team_members WHERE id = ?').get(KELLY_R_ID)?.fun_fact, OLD_KELLY_FACT);
+  assert.equal(db.prepare('SELECT value FROM team_quick_facts WHERE id = ?').get(KELLY_FACT_ID)?.value, OLD_KELLY_FACT);
+  assert.equal(db.prepare('SELECT value FROM team_quick_facts WHERE id = ?').get(KELLY_MOVIE_ID)?.value, 'The Nightmare Before Christmas');
+
+  apply(db, EMILY_MIGRATION);
+  db.prepare('UPDATE team_members SET show_on_website_actor = ? WHERE id = ?').run('owner:later-edit', PAIGE_ID);
+  db.prepare('UPDATE team_members SET fun_fact = ? WHERE id = ?').run('Newer fact', KELLY_R_ID);
+  db.prepare('UPDATE team_quick_facts SET value = ? WHERE id = ?').run('Newer movie', KELLY_MOVIE_ID);
+  db.exec(rollback);
+  assert.equal(db.prepare('SELECT show_on_website FROM team_members WHERE id = ?').get(PAIGE_ID)?.show_on_website, 0);
+  assert.equal(db.prepare('SELECT fun_fact FROM team_members WHERE id = ?').get(KELLY_R_ID)?.fun_fact, 'Newer fact');
+  assert.equal(db.prepare('SELECT value FROM team_quick_facts WHERE id = ?').get(KELLY_MOVIE_ID)?.value, 'Newer movie');
+  assert.deepEqual(db.prepare('PRAGMA foreign_key_check').all(), []);
+  db.close();
+});
