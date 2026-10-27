@@ -11,7 +11,8 @@ export const verification = pgTable('verification', {
   identifier: text('identifier').notNull(), // phone number or email
   value: text('value').notNull(), // OTP code
   expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
 export type Verification = typeof verification.$inferSelect

@@ -16,7 +16,8 @@ export const session = pgTable('session', {
   token: text('token').notNull().unique(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
-  createdAt: timestamp('created_at').defaultNow().notNull()
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
 export type Session = typeof session.$inferSelect
